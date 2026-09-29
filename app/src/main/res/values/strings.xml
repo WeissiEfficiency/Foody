@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Foody</string>
+
+    <!-- Navigation -->
+    <string name="nav_recipes">Rezepte</string>
+    <string name="nav_planner">Planer</string>
+    <string name="nav_shopping">Einkauf</string>
+    <string name="nav_pantry">Vorrat</string>
+    <string name="nav_settings">Einstellungen</string>
+
+    <!-- Aktionen -->
+    <string name="action_add">Hinzufügen</string>
+    <string name="action_apply">Übernehmen</string>
+    <string name="action_archive">Archivieren</string>
+    <string name="action_unarchive">Wiederherstellen</string>
+    <string name="action_back">Zurück</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_close">Schließen</string>
+    <string name="action_delete">Löschen</string>
+    <string name="action_duplicate">Duplizieren</string>
+    <string name="action_edit">Bearbeiten</string>
+    <string name="action_import">Importieren</string>
+    <string name="action_less_servings">Eine Portion weniger</string>
+    <string name="action_more_servings">Eine Portion mehr</string>
+    <string name="action_remove">Entfernen</string>
+    <string name="action_save">Speichern</string>
+    <string name="action_share">Teilen</string>
+    <string name="action_undo">Rückgängig</string>
+    <string name="search">Suchen</string>
+    <string name="unknown">unbekannt</string>
+
+    <!-- Felder -->
+    <string name="field_amount">Menge</string>
+    <string name="field_basis">Nährwertbasis</string>
+    <string name="field_best_before">Mindestens haltbar bis (JJJJ-MM-TT)</string>
+    <string name="field_category">Kategorie</string>
+    <string name="field_cook">Kochen (Min.)</string>
+    <string name="field_density">Dichte (g je ml)</string>
+    <string name="field_ingredient">Zutat</string>
+    <string name="field_name">Name</string>
+    <string name="field_note">Hinweis (z. B. gewürfelt)</string>
+    <string name="field_optional">optional</string>
+    <string name="field_piece_weight">Stückgewicht (g)</string>
+    <string name="field_prep">Vorbereitung (Min.)</string>
+    <string name="field_recipe">Rezept</string>
+    <string name="field_servings">Portionen</string>
+    <string name="field_slot">Mahlzeit</string>
+    <string name="field_source">Quelle</string>
+    <string name="field_tags">Tags / Kategorien (kommagetrennt)</string>
+    <string name="field_unit">Einheit</string>
+
+    <string name="error_amount">Bitte eine Menge größer als 0 angeben.</string>
+    <string name="error_number">Keine gültige Zahl</string>
+    <string name="error_required">Pflichtfeld</string>
+
+    <!-- Rezepte -->
+    <string name="recipe_new">Neues Rezept</string>
+    <string name="recipe_edit">Rezept bearbeiten</string>
+    <string name="recipe_search">Rezepte oder Tags suchen</string>
+    <string name="recipe_show_archived">Archiv</string>
+    <string name="recipe_empty">Noch keine Rezepte. Lege dein erstes Rezept an.</string>
+    <string name="recipe_no_match">Keine passenden Rezepte gefunden.</string>
+    <string name="recipe_image">Rezeptbild</string>
+    <string name="recipe_pick_image">Bild wählen</string>
+    <string name="recipe_ingredients">Zutaten</string>
+    <string name="recipe_steps">Zubereitung</string>
+    <string name="recipe_notes">Notizen</string>
+    <string name="recipe_add_ingredient">Zutat hinzufügen</string>
+    <string name="recipe_add_step">Schritt hinzufügen</string>
+    <string name="recipe_copy_suffix">(Kopie)</string>
+    <string name="recipe_delete_title">Rezept löschen?</string>
+    <string name="recipe_delete_text">Das Rezept und alle Planpositionen damit werden endgültig gelöscht. Bestehende Einkaufslisten bleiben erhalten.</string>
+    <string name="servings_count">%1$d Portionen</string>
+    <string name="minutes_total">%1$d Min.</string>
+    <string name="prep_minutes">Vorbereitung %1$d Min.</string>
+    <string name="cook_minutes">Kochen %1$d Min.</string>
+    <string name="optional_suffix">(optional)</string>
+    <string name="step_n">Schritt %1$d</string>
+
+    <!-- Zutaten -->
+    <string name="ingredients_title">Zutaten</string>
+    <string name="ingredients_manage">Zutaten &amp; Nährwerte verwalten</string>
+    <string name="ingredient_new">Neue Zutat</string>
+    <string name="ingredient_edit">Zutat bearbeiten</string>
+    <string name="ingredient_in_use">Die Zutat wird noch in Rezepten verwendet und kann nicht gelöscht werden.</string>
+    <string name="ingredient_name_taken">Eine Zutat mit diesem Namen existiert bereits.</string>
+    <string name="ingredient_no_nutrients">Keine Nährwerte hinterlegt</string>
+    <string name="ingredient_will_be_created">„%1$s“ wird als neue Zutat angelegt.</string>
+    <string name="kj_per_100g">%1$s kJ je 100 g</string>
+    <string name="kj_per_100ml">%1$s kJ je 100 ml</string>
+    <string name="basis_100g">je 100 g</string>
+    <string name="basis_100ml">je 100 ml</string>
+    <string name="nutrients_hint">Leere Felder gelten als unbekannt, nicht als 0.</string>
+    <string name="source_manual">manuell</string>
+
+    <!-- Nährwerte -->
+    <string name="nutrition_title">Nährwerte</string>
+    <string name="nutrition_per_recipe">pro Rezept</string>
+    <string name="nutrition_per_serving">pro Portion</string>
+    <string name="nutrition_completeness">Nährwerte zu %1$d %% vollständig – mit * markierte Summen sind Untergrenzen.</string>
+    <string name="nutrition_disclaimer">Nährwerte sind rechnerische Näherungswerte und ersetzen keine ernährungsmedizinische Beratung.</string>
+    <string name="nutrient_energy">Energie</string>
+    <string name="nutrient_protein">Eiweiß</string>
+    <string name="nutrient_carbs">Kohlenhydrate</string>
+    <string name="nutrient_fat">Fett</string>
+    <string name="nutrient_fiber">Ballaststoffe</string>
+    <string name="nutrient_sugar">davon Zucker</string>
+    <string name="nutrient_salt">Salz</string>
+
+    <!-- Planer -->
+    <string name="planner_previous">Vorheriger Zeitraum</string>
+    <string name="planner_next">Nächster Zeitraum</string>
+    <string name="planner_add_for">Gericht für %1$s planen</string>
+    <string name="planner_no_recipes">Lege zuerst ein Rezept an.</string>
+    <string name="planner_cooked">Gekocht</string>
+    <string name="planner_mark_cooked">Als gekocht markieren und Vorrat abbuchen</string>
+    <string name="planner_move_earlier">Einen Tag früher</string>
+    <string name="planner_move_later">Einen Tag später</string>
+    <string name="days_n">%1$d Tage</string>
+    <string name="days_custom">Beliebig</string>
+    <string name="days_count">Anzahl Tage (1–31)</string>
+    <string name="slot_breakfast">Frühstück</string>
+    <string name="slot_lunch">Mittagessen</string>
+    <string name="slot_dinner">Abendessen</string>
+    <string name="slot_snack">Snack</string>
+
+    <!-- Einkauf -->
+    <string name="shopping_generate">Liste erzeugen</string>
+    <string name="shopping_create">Erzeugen</string>
+    <string name="shopping_create_empty">Leere Liste anlegen</string>
+    <string name="shopping_default_name">Einkaufsliste</string>
+    <string name="shopping_empty">Noch keine Einkaufsliste. Plane Gerichte und erzeuge daraus eine Liste.</string>
+    <string name="shopping_add_manual">Artikel hinzufügen</string>
+    <string name="shopping_from">ab %1$s</string>
+    <string name="shopping_name_for">Einkauf %1$s – %2$s</string>
+    <string name="shopping_use_pantry">Vorrat abziehen</string>
+    <string name="shopping_from_pantry">%1$s aus Vorrat</string>
+    <string name="shopping_preview_hint">Bereits vorhandene Artikel abwählen:</string>
+    <string name="shopping_nothing_planned">Im gewählten Zeitraum ist nichts geplant.</string>
+    <string name="shopping_recalculate">Neu berechnen</string>
+    <string name="shopping_delete_list">Liste löschen</string>
+    <string name="shopping_delete_list_text">Die Einkaufsliste wird endgültig gelöscht.</string>
+    <string name="diff_none">Keine Änderungen gegenüber der aktuellen Liste.</string>
+    <string name="diff_added">+ %1$s: %2$s</string>
+    <string name="diff_changed">~ %1$s: %2$s → %3$s</string>
+    <string name="diff_removed">− %1$s entfällt</string>
+    <string name="diff_removed_kept">− %1$s entfällt (bereits abgehakt, bleibt erhalten)</string>
+    <string name="sources_title">Herkunft anzeigen</string>
+    <string name="sources_none">Keine Herkunftsdaten.</string>
+    <string name="item_deleted">Eintrag gelöscht</string>
+    <string name="state_checked">erledigt</string>
+    <string name="state_open">offen</string>
+    <string name="share_title">Einkaufsliste teilen</string>
+    <string name="share_error">Keine App zum Teilen gefunden.</string>
+
+    <!-- Vorrat -->
+    <string name="pantry_add">Vorrat hinzufügen</string>
+    <string name="pantry_edit">Vorrat bearbeiten</string>
+    <string name="pantry_empty">Kein Vorrat erfasst. Vorräte werden beim Erzeugen einer Einkaufsliste abgezogen.</string>
+    <string name="pantry_best_before">MHD %1$s</string>
+
+    <!-- Einstellungen -->
+    <string name="backup_title">Datensicherung</string>
+    <string name="backup_hint">Alle Daten bleiben auf diesem Gerät. Sichere sie bei Bedarf als JSON-Datei.</string>
+    <string name="backup_export">Als JSON exportieren</string>
+    <string name="backup_import">JSON importieren</string>
+    <string name="backup_import_warning">Beim Import werden alle vorhandenen Daten durch den Inhalt der Datei ersetzt.</string>
+    <string name="backup_exported">Sicherung gespeichert</string>
+    <string name="backup_imported">Sicherung importiert</string>
+    <string name="backup_error">Vorgang fehlgeschlagen. Deine Daten wurden nicht verändert.</string>
+    <string name="privacy_title">Datenschutz</string>
+    <string name="privacy_text">Foody benötigt kein Konto und keinen Server. Rezepte, Planung, Vorräte und Einkaufslisten werden ausschließlich lokal gespeichert. Beim Teilen entscheidest du, an welche App Daten übergeben werden.</string>
+    <string name="data_delete_all">Alle Daten löschen</string>
+    <string name="data_delete_warning">Alle Rezepte, Zutaten, Pläne, Vorräte und Einkaufslisten werden unwiderruflich gelöscht.</string>
+    <string name="data_deleted">Alle Daten gelöscht</string>
+    <string name="about_title">Hinweis</string>
+</resources>
