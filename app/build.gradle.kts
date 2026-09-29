@@ -45,7 +45,9 @@ android {
 }
 
 kotlin {
-    jvmToolchain(17)
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
 }
 
 // Room-Gradle-Plugin exportiert Schemata je Variante konfliktfrei (statt ksp-Arg room.schemaLocation).
