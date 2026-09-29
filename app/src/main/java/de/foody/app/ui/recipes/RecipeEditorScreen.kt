@@ -125,7 +125,9 @@ class RecipeEditorViewModel @Inject constructor(
     private suspend fun load() {
         val id = recipeId ?: run { set { it.copy(loaded = true) }; return }
         val r = recipes.get(id) ?: return
-        val names = recipes.getIngredients(id).map { it.ingredientId }.distinct()
+        val lines = recipes.getIngredients(id)
+        val steps = recipes.getSteps(id)
+        val names = lines.map { it.ingredientId }.distinct()
             .associateWith { ingredients.get(it)?.canonicalName.orEmpty() }
         set {
             EditorState(
@@ -137,11 +139,11 @@ class RecipeEditorViewModel @Inject constructor(
                 imageUri = r.imageUri,
                 tags = r.tags,
                 notes = r.notes.orEmpty(),
-                lines = recipes.getIngredients(id).map {
+                lines = lines.map {
                     EditorLine(ingredientId = it.ingredientId, ingredientText = names[it.ingredientId].orEmpty(),
                         amount = it.amount.display(3), unit = it.unit, note = it.preparationNote.orEmpty(), optional = it.optional)
                 }.ifEmpty { listOf(EditorLine()) },
-                steps = recipes.getSteps(id).map { it.text }.ifEmpty { listOf("") },
+                steps = steps.map { it.text }.ifEmpty { listOf("") },
             )
         }
     }
