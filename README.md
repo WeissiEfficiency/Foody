@@ -19,6 +19,8 @@ konsolidierte Einkaufslisten.
   Abhaken, Löschen mit Rückgängig, Herkunftsanzeige („300 g Curry + 150 g Reispfanne“), Neuberechnung mit Diff.
 - **Teilen** der Liste als Text über das Android-Sharesheet (z. B. an Bring!).
 - **Vorrat** mit Menge, Einheit und MHD.
+- **Rezept-Import aus Markdown** (z. B. Web-Clipper-Export von Chefkoch): Titel, Quelle, Zutaten inkl. Gruppen,
+  Mengen/Einheiten, Zubereitung; mehrere Dateien auf einmal. Mengen ohne Zahl werden „nach Bedarf“ (n. B.).
 - **JSON-Export/-Import** und vollständige lokale Löschung.
 
 ## Projektstruktur

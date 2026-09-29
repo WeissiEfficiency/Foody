@@ -50,7 +50,8 @@
     <string name="field_tags">Tags / Kategorien (kommagetrennt)</string>
     <string name="field_unit">Einheit</string>
 
-    <string name="error_amount">Bitte eine Menge größer als 0 angeben.</string>
+    <string name="error_amount">Keine gültige Menge. Leer lassen für „nach Bedarf“.</string>
+    <string name="amount_as_needed">n. B.</string>
     <string name="error_number">Keine gültige Zahl</string>
     <string name="error_required">Pflichtfeld</string>
 
@@ -77,6 +78,14 @@
     <string name="cook_minutes">Kochen %1$d Min.</string>
     <string name="optional_suffix">(optional)</string>
     <string name="step_n">Schritt %1$d</string>
+
+    <!-- Import -->
+    <string name="import_action">Rezepte aus Markdown importieren</string>
+    <string name="import_tag">Import</string>
+    <string name="import_source">Quelle: %1$s</string>
+    <string name="import_check_servings">Portionenzahl war in der Datei nicht angegeben – auf %1$d gesetzt, bitte prüfen.</string>
+    <string name="import_done">%1$d Rezept(e) importiert</string>
+    <string name="import_done_with_errors">%1$d Rezept(e) importiert, %2$d Datei(en) nicht erkannt</string>
 
     <!-- Zutaten -->
     <string name="ingredients_title">Zutaten</string>

@@ -66,7 +66,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.roundToInt
 
-data class DisplayLine(val name: String, val amountText: String, val note: String?, val optional: Boolean)
+data class DisplayLine(val name: String, val amountText: String?, val note: String?, val optional: Boolean)
 
 data class RecipeDetailUiState(
     val recipe: RecipeEntity? = null,
@@ -96,7 +96,7 @@ class RecipeDetailViewModel @Inject constructor(
             servings = servings,
             lines = lines.map { l ->
                 val scaled = RecipeScaler.scale(l.amount, recipe.defaultServings, servings)
-                DisplayLine(ingMap[l.ingredientId]?.name.orEmpty(), formatAmount(scaled, l.unit), l.preparationNote, l.optional)
+                DisplayLine(ingMap[l.ingredientId]?.name.orEmpty(), if (scaled.signum() == 0) null else formatAmount(scaled, l.unit), l.preparationNote, l.optional)
             },
             steps = steps,
             nutrition = NutritionCalculator.calculate(recipe.toDomain(lines), ingMap, servings),
@@ -159,7 +159,7 @@ fun RecipeDetailScreen(
             item { SectionTitle(stringResource(R.string.recipe_ingredients)) }
             itemsIndexed(state.lines) { _, l ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(l.amountText, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(0.35f))
+                    Text(l.amountText ?: stringResource(R.string.amount_as_needed), fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(0.35f))
                     Column(Modifier.weight(0.65f)) {
                         Text(l.name + if (l.optional) " " + stringResource(R.string.optional_suffix) else "")
                         l.note?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
