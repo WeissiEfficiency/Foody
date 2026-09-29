@@ -3,7 +3,8 @@
 # AndroidX/AGP konnten in der Build-Umgebung nicht gegen Google Maven geprüft werden –
 # vor dem ersten Build mit den aktuellen stabilen Release Notes abgleichen.
 agp = "8.13.0"
-kotlin = "2.4.20"
+# Kotlin 2.3.x: Hilt 2.57 liest Kotlin-Metadaten nur bis 2.3.
+kotlin = "2.3.21"
 ksp = "2.3.12"
 # Hilt >= 2.59 setzt AGP 9 voraus; 2.57.2 ist mit AGP 8.x kompatibel.
 hilt = "2.57.2"
