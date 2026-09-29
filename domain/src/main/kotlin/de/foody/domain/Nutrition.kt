@@ -42,7 +42,8 @@ object NutritionCalculator {
         includeOptional: Boolean = false,
     ): NutritionResult {
         val scaled = RecipeScaler.scale(recipe, servings)
-        val lines = scaled.ingredients.filter { includeOptional || !it.optional }
+        // Menge 0 = „nach Bedarf“ (z. B. Salz): ohne Beitrag und ohne Einfluss auf die Vollständigkeit
+        val lines = scaled.ingredients.filter { (includeOptional || !it.optional) && it.amount.signum() > 0 }
         val totals = mutableMapOf<Nutrient, BigDecimal>()
         val known = mutableMapOf<Nutrient, Int>()
         val missing = mutableSetOf<String>()

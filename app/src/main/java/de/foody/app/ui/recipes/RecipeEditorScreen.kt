@@ -100,7 +100,8 @@ data class EditorState(
 ) {
     val nameError get() = name.isBlank()
     val servingsError get() = (servings.toIntOrNull() ?: 0) < 1
-    fun lineError(l: EditorLine) = l.ingredientText.isNotBlank() && (parseDecimal(l.amount)?.signum() ?: -1) <= 0
+    // Leere Menge = „nach Bedarf“ (0); sonst muss eine Zahl ≥ 0 angegeben sein.
+    fun lineError(l: EditorLine) = l.ingredientText.isNotBlank() && l.amount.isNotBlank() && (parseDecimal(l.amount)?.signum() ?: -1) < 0
     val valid get() = !nameError && !servingsError && lines.none { lineError(it) }
 }
 
@@ -141,7 +142,7 @@ class RecipeEditorViewModel @Inject constructor(
                 notes = r.notes.orEmpty(),
                 lines = lines.map {
                     EditorLine(ingredientId = it.ingredientId, ingredientText = names[it.ingredientId].orEmpty(),
-                        amount = it.amount.display(3), unit = it.unit, note = it.preparationNote.orEmpty(), optional = it.optional)
+                        amount = if (it.amount.signum() == 0) "" else it.amount.display(3), unit = it.unit, note = it.preparationNote.orEmpty(), optional = it.optional)
                 }.ifEmpty { listOf(EditorLine()) },
                 steps = steps.map { it.text }.ifEmpty { listOf("") },
             )
@@ -162,7 +163,7 @@ class RecipeEditorViewModel @Inject constructor(
             val lines = s.lines.filter { it.ingredientText.isNotBlank() }.map { l ->
                 // Freitext → vorhandene oder neue kanonische Zutat
                 val ingId = l.ingredientId ?: ingredients.getOrCreate(l.ingredientText).id
-                RecipeDraft.Line(ingId, parseDecimal(l.amount)!!, l.unit, l.note.ifBlank { null }, l.optional)
+                RecipeDraft.Line(ingId, parseDecimal(l.amount) ?: java.math.BigDecimal.ZERO, l.unit, l.note.ifBlank { null }, l.optional)
             }
             recipes.save(
                 RecipeDraft(
