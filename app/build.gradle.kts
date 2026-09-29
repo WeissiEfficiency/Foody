@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.room)
 }
 
 android {
@@ -47,8 +48,12 @@ kotlin {
     jvmToolchain(17)
 }
 
+// Room-Gradle-Plugin exportiert Schemata je Variante konfliktfrei (statt ksp-Arg room.schemaLocation).
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
 ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
     arg("room.generateKotlin", "true")
 }
 
