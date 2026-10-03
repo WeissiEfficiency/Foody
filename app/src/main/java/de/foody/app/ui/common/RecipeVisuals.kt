@@ -1,5 +1,7 @@
 package de.foody.app.ui.common
 
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -73,9 +75,11 @@ fun recipeEmoji(name: String): String {
         .minByOrNull { it.first }?.second ?: "🍽️"
 }
 
-private fun gradientFor(name: String): Brush {
+private fun gradientFor(name: String, dark: Boolean): Brush {
     val (a, b) = placeholderGradients[Math.floorMod(name.hashCode(), placeholderGradients.size)]
-    return Brush.linearGradient(listOf(a, b))
+    // Im Dark Mode abgedunkelt, damit helle Pastelltöne nicht blenden
+    return if (dark) Brush.linearGradient(listOf(lerp(a, Color.Black, 0.45f), lerp(b, Color.Black, 0.45f)))
+    else Brush.linearGradient(listOf(a, b))
 }
 
 /** Foto des Rezepts oder ein farbiger Platzhalter mit passendem Emoji. Füllt den Modifier. */
@@ -84,7 +88,7 @@ fun RecipeImage(imageUri: String?, name: String, modifier: Modifier = Modifier, 
     if (imageUri != null) {
         AsyncImage(imageUri, stringResource(R.string.recipe_image), contentScale = ContentScale.Crop, modifier = modifier)
     } else {
-        Box(modifier.background(gradientFor(name)), contentAlignment = Alignment.Center) {
+        Box(modifier.background(gradientFor(name, MaterialTheme.colorScheme.background.luminance() < 0.5f)), contentAlignment = Alignment.Center) {
             // Rein dekorativ: TalkBack soll nicht das Emoji vorlesen
             Text(recipeEmoji(name), fontSize = emojiSize, modifier = Modifier.clearAndSetSemantics {})
         }

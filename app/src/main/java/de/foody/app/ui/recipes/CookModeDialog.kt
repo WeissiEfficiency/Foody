@@ -1,5 +1,6 @@
 package de.foody.app.ui.recipes
 
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -95,7 +96,11 @@ fun CookModeDialog(
                             stringResource(R.string.step_of, page + 1, steps.size).uppercase(),
                             style = EyebrowStyle, color = MaterialTheme.colorScheme.primary,
                         )
-                        Text(steps[page].text, style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 34.sp))
+                        // Groß für Armlänge, aber normal gewichtet: lange fette Absätze lesen sich schlechter
+                        Text(
+                            steps[page].text,
+                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal, lineHeight = 36.sp),
+                        )
                         StepTimerChips(stepTimers.getOrNull(page).orEmpty()) { t ->
                             running += RunningTimer(t.label, System.currentTimeMillis() + t.duration.toMillis())
                         }
