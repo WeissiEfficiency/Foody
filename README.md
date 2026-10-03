@@ -22,6 +22,8 @@ konsolidierte Einkaufslisten.
   **Synonyme** vereinheitlichen Namen („Mehl“ → „Weizenmehl“), Dubletten lassen sich zusammenführen.
 - **Planer:** 1, 2, 3, 7 oder beliebig viele Tage; frei benennbare Mahlzeiten-Slots; verschieben; „gekocht“ bucht
   den Verbrauch vom Vorrat ab.
+  **„Leere Tage füllen“** schlägt Abendessen für freie Tage vor – zuerst, was der Vorrat hergibt, dann Favoriten;
+  ohne Wiederholung der letzten zwei Wochen; mit Vorschau und „Neu mischen“.
 - **Einkaufsliste:** Vorschau mit Abwählen vorhandener Artikel, Vorratsabzug, Snapshot, manuelle Einträge,
   Abhaken, Löschen mit Rückgängig, Herkunftsanzeige („300 g Curry + 150 g Reispfanne“), Neuberechnung mit Diff.
   Gruppiert nach Supermarkt-Abteilung; Rezepte lassen sich auch **direkt** auf die Liste setzen. Wasser wird nie

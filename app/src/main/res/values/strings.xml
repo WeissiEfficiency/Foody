@@ -160,6 +160,12 @@
     <string name="planner_cooked">Gekocht</string>
     <string name="planner_eyebrow">Wochenplan</string>
     <string name="planner_today">Heute</string>
+    <string name="planner_suggest">Leere Tage füllen</string>
+    <string name="planner_suggest_title">Vorschlag</string>
+    <string name="planner_suggest_hint">Abendessen für die leeren Tage ab heute – was der Vorrat hergibt und Favoriten zuerst.</string>
+    <string name="planner_suggest_nothing">Ab heute ist im gewählten Zeitraum kein Tag mehr frei – oder alle Rezepte waren in den letzten zwei Wochen schon dran.</string>
+    <string name="planner_suggest_reshuffle">Neu mischen</string>
+    <string name="planner_suggest_accept">Übernehmen</string>
     <string name="planner_add_short">Gericht planen</string>
     <string name="planner_mark_cooked">Als gekocht markieren und Vorrat abbuchen</string>
     <string name="planner_move_earlier">Einen Tag früher</string>

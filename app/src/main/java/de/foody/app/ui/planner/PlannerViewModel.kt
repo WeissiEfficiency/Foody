@@ -1,6 +1,11 @@
 package de.foody.app.ui.planner
 
-import androidx.compose.foundation.layout.size
+import de.foody.app.data.repo.PantryRepository
+import de.foody.domain.MealSuggestions
+import de.foody.domain.PantryCoverage
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -31,7 +36,8 @@ data class PlannerUiState(
 @HiltViewModel
 class PlannerViewModel @Inject constructor(
     private val plan: PlanRepository,
-    recipes: RecipeRepository,
+    private val recipes: RecipeRepository,
+    private val pantry: PantryRepository,
     private val saved: SavedStateHandle,
 ) : ViewModel() {
     private val start = saved.getStateFlow("start", LocalDate.now().toEpochDay())
@@ -58,4 +64,36 @@ class PlannerViewModel @Inject constructor(
     fun move(slot: MealSlotEntity, delta: Long) = viewModelScope.launch { plan.update(slot.copy(date = slot.date.plusDays(delta))) }
     fun delete(slot: MealSlotEntity) = viewModelScope.launch { plan.delete(slot.id) }
     fun cooked(slot: MealSlotEntity) = viewModelScope.launch { plan.markCooked(slot.id) }
+
+    /** Vorschlag für die leeren Tage ab heute; [seed] macht „Neu mischen“ reproduzierbar. */
+    data class Proposal(val seed: Long, val entries: List<Pair<LocalDate, RecipeEntity>>)
+
+    private val _proposal = MutableStateFlow<Proposal?>(null)
+    val proposal = _proposal.asStateFlow()
+
+    fun suggest(seed: Long = System.currentTimeMillis()) = viewModelScope.launch {
+        val s = state.value
+        val today = LocalDate.now()
+        val empty = s.range.days.filter { it >= today && s.slotsByDay[it].isNullOrEmpty() }
+        if (empty.isEmpty() || s.activeRecipes.isEmpty()) {
+            _proposal.value = Proposal(seed, emptyList())
+            return@launch
+        }
+        val inPantry = pantry.observeAll().first().filter { it.amount.signum() > 0 }.map { it.ingredientId }.toSet()
+        val missing = PantryCoverage.missingByRecipe(recipes.observeRequired().first(), inPantry)
+        // Auch die schon geplanten Tage des Zeitraums zählen: Was diese Woche dran ist, wird nicht noch einmal vorgeschlagen
+        val lastPlanned = plan.lastPlannedByRecipe(empty.min().minusDays(MealSuggestions.REPEAT_GAP_DAYS), s.range.endInclusive)
+        val candidates = s.activeRecipes.map { MealSuggestions.Candidate(it.id, it.favorite, missing[it.id], lastPlanned[it.id]) }
+        val picks = MealSuggestions.suggest(candidates, empty, seed)
+        _proposal.value = Proposal(seed, picks.entries.sortedBy { it.key }.mapNotNull { (day, id) -> s.recipes[id]?.let { day to it } })
+    }
+
+    fun reshuffle() { _proposal.value?.let { suggest(it.seed + 1) } }
+    fun dismissProposal() { _proposal.value = null }
+
+    fun acceptProposal(slotType: String) = viewModelScope.launch {
+        val entries = _proposal.value?.entries.orEmpty()
+        _proposal.value = null
+        entries.forEach { (day, recipe) -> plan.add(day, slotType, recipe.id, recipe.defaultServings) }
+    }
 }

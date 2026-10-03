@@ -256,6 +256,10 @@ class PlanRepository @Inject constructor(
 ) {
     fun observeRange(start: LocalDate, end: LocalDate) = dao.observeRange(start, end)
 
+    /** Spätestes Plandatum je Rezept im Zeitraum – für Vorschläge ohne Wiederholung. */
+    suspend fun lastPlannedByRecipe(start: LocalDate, end: LocalDate): Map<String, LocalDate> =
+        dao.getRange(start, end).groupBy { it.recipeId }.mapValues { (_, slots) -> slots.maxOf { it.date } }
+
     suspend fun add(date: LocalDate, slotType: String, recipeId: String, servings: Int) {
         val now = System.currentTimeMillis()
         dao.upsert(
