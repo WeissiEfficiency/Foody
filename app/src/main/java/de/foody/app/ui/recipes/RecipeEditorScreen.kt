@@ -1,5 +1,10 @@
 package de.foody.app.ui.recipes
 
+import de.foody.app.data.RecipePhotoStore
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -92,6 +97,8 @@ data class EditorState(
     val prep: String = "",
     val cook: String = "",
     val imageUri: String? = null,
+    /** Bild beim Öffnen – wird es ersetzt oder entfernt, räumt Speichern die alte eigene Fotodatei auf. */
+    val originalImageUri: String? = null,
     val tags: String = "",
     val notes: String = "",
     val lines: List<EditorLine> = listOf(EditorLine()),
@@ -109,6 +116,7 @@ data class EditorState(
 class RecipeEditorViewModel @Inject constructor(
     private val recipes: RecipeRepository,
     private val ingredients: IngredientRepository,
+    private val photos: RecipePhotoStore,
     private val saved: SavedStateHandle,
 ) : ViewModel() {
     private val recipeId = saved.toRoute<RecipeEditorRoute>().id
@@ -138,6 +146,7 @@ class RecipeEditorViewModel @Inject constructor(
                 prep = r.prepMinutes?.toString().orEmpty(),
                 cook = r.cookMinutes?.toString().orEmpty(),
                 imageUri = r.imageUri,
+                originalImageUri = r.imageUri,
                 tags = r.tags,
                 notes = r.notes.orEmpty(),
                 lines = lines.map {
@@ -152,6 +161,14 @@ class RecipeEditorViewModel @Inject constructor(
     fun set(f: (EditorState) -> EditorState) {
         _state.update(f)
         saved["draft"] = json.encodeToString(EditorState.serializer(), _state.value)
+    }
+
+    /** Zieldatei für ein Kamerafoto; der Pfad muss eine Neuerstellung der Activity überstehen. */
+    fun newPhotoTarget() = photos.newPhotoTarget()
+
+    fun onPhotoTaken(path: String, success: Boolean) {
+        val file = java.io.File(path)
+        if (success) set { it.copy(imageUri = photos.storedUri(file)) } else file.delete()
     }
 
     fun updateLine(key: String, f: (EditorLine) -> EditorLine) = set { s -> s.copy(lines = s.lines.map { if (it.key == key) f(it) else it }) }
@@ -171,6 +188,7 @@ class RecipeEditorViewModel @Inject constructor(
                     s.notes, s.tags, lines, s.steps,
                 ),
             )
+            if (s.originalImageUri != s.imageUri) photos.deleteIfUnused(s.originalImageUri)
             saved.remove<String>("draft")
             onDone()
         }
@@ -188,6 +206,11 @@ fun RecipeEditorScreen(onDone: () -> Unit, onManageIngredients: () -> Unit, vm: 
             runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
             vm.set { it.copy(imageUri = uri.toString()) }
         }
+    }
+    var pendingPhoto by rememberSaveable { mutableStateOf<String?>(null) }
+    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+        pendingPhoto?.let { vm.onPhotoTaken(it, ok) }
+        pendingPhoto = null
     }
     Scaffold(
         topBar = {
@@ -222,6 +245,11 @@ fun RecipeEditorScreen(onDone: () -> Unit, onManageIngredients: () -> Unit, vm: 
                     OutlinedButton({ picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
                         Icon(Icons.Default.Image, null); Text(stringResource(R.string.recipe_pick_image))
                     }
+                    OutlinedButton({
+                        val (file, uri) = vm.newPhotoTarget()
+                        pendingPhoto = file.path
+                        camera.launch(uri)
+                    }) { Icon(Icons.Outlined.PhotoCamera, null); Text(stringResource(R.string.photo_take)) }
                     if (s.imageUri != null) TextButton({ vm.set { it.copy(imageUri = null) } }) { Text(stringResource(R.string.action_remove)) }
                 }
                 s.imageUri?.let { AsyncImage(it, stringResource(R.string.recipe_image), contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth().height(160.dp)) }

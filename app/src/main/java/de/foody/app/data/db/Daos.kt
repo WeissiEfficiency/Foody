@@ -95,6 +95,12 @@ interface RecipeDao {
         insertSteps(steps)
     }
 
+    @Query("SELECT COUNT(*) FROM recipe WHERE imageUri = :uri")
+    suspend fun countByImage(uri: String): Int
+
+    @Query("UPDATE recipe SET imageUri = :uri, updatedAt = :now WHERE id = :id")
+    suspend fun setImage(id: String, uri: String?, now: Long)
+
     @Query("SELECT * FROM recipe WHERE sourceUrl = :url LIMIT 1")
     suspend fun findBySourceUrl(url: String): RecipeEntity?
 
