@@ -1,5 +1,11 @@
 package de.foody.app.ui.planner
 
+import de.foody.app.data.GoalPreferences
+import de.foody.app.data.repo.IngredientRepository
+import de.foody.app.data.repo.toDomain
+import de.foody.domain.DayNutrition
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
 import de.foody.app.data.repo.PantryRepository
 import de.foody.domain.MealSuggestions
 import de.foody.domain.PantryCoverage
@@ -30,6 +36,10 @@ data class PlannerUiState(
     val slotsByDay: Map<LocalDate, List<MealSlotEntity>> = emptyMap(),
     val recipes: Map<String, RecipeEntity> = emptyMap(),
     val activeRecipes: List<RecipeEntity> = emptyList(),
+    /** Nährwerte je Tag pro Person (nur Tage mit Mahlzeiten). */
+    val dayNutrition: Map<LocalDate, DayNutrition> = emptyMap(),
+    /** Tagesziel in kcal aus den Einstellungen; null = kein Ziel. */
+    val dailyGoalKcal: Int? = null,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -38,6 +48,8 @@ class PlannerViewModel @Inject constructor(
     private val plan: PlanRepository,
     private val recipes: RecipeRepository,
     private val pantry: PantryRepository,
+    ingredients: IngredientRepository,
+    goals: GoalPreferences,
     private val saved: SavedStateHandle,
 ) : ViewModel() {
     private val start = saved.getStateFlow("start", LocalDate.now().toEpochDay())
@@ -45,14 +57,24 @@ class PlannerViewModel @Inject constructor(
 
     private val rangeFlow = combine(start, days) { s, d -> DateRange.ofDays(LocalDate.ofEpochDay(s), d) }
 
-    val state = combine(
+    private val base = combine(
         rangeFlow,
         rangeFlow.flatMapLatest { r -> plan.observeRange(r.start, r.endInclusive) },
         // Eine Abfrage für alle Rezepte (archivierte für bestehende Planpositionen), aktive daraus im Speicher
         recipes.observeAll(),
     ) { range, slots, all ->
         PlannerUiState(range, range.days.size, slots.groupBy { it.date }, all.associateBy { it.id }, all.filter { it.archivedAt == null })
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlannerUiState())
+    }
+
+    val state = combine(base, recipes.observeAllLines(), ingredients.observeAll(), goals.dailyKcal) { s, lines, all, goal ->
+        val ingMap = all.associate { it.id to it.toDomain() }
+        val byRecipe = lines.groupBy { it.recipeId }
+        val nutrition = s.slotsByDay.mapNotNull { (day, slots) ->
+            val meals = slots.mapNotNull { slot -> s.recipes[slot.recipeId]?.toDomain(byRecipe[slot.recipeId].orEmpty()) }
+            DayNutrition.of(meals, ingMap)?.let { day to it }
+        }.toMap()
+        s.copy(dayNutrition = nutrition, dailyGoalKcal = goal)
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlannerUiState())
 
     fun shift(daysDelta: Long) { saved["start"] = start.value + daysDelta }
     fun today() { saved["start"] = LocalDate.now().toEpochDay() }

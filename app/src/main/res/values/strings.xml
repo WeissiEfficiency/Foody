@@ -193,6 +193,14 @@
     <string name="planner_cooked">Gekocht</string>
     <string name="planner_eyebrow">Wochenplan</string>
     <string name="planner_today">Heute</string>
+    <string name="planner_day_nutrition" tools:ignore="PluralsCandidate">%1$s kcal · %2$d g Eiweiß · %3$d g KH · %4$d g Fett pro Person</string>
+    <plurals name="planner_average">
+        <item quantity="one">Ø %1$d kcal pro Tag und Person (%2$d geplanter Tag)</item>
+        <item quantity="other">Ø %1$d kcal pro Tag und Person (%2$d geplante Tage)</item>
+    </plurals>
+    <string name="goal_title">Tagesziel</string>
+    <string name="goal_hint">Optional: Der Planer zeigt dann je Tag, wie viel davon die geplanten Mahlzeiten abdecken.</string>
+    <string name="goal_label">Kalorien pro Tag</string>
     <string name="planner_suggest">Leere Tage füllen</string>
     <string name="planner_suggest_title">Vorschlag</string>
     <string name="planner_suggest_hint">Abendessen für die leeren Tage ab heute – was der Vorrat hergibt und Favoriten zuerst.</string>
