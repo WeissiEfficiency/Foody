@@ -1,5 +1,6 @@
 package de.foody.app.ui.common
 
+import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.foundation.border
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.semantics.Role
@@ -116,7 +117,14 @@ val RecipeEntity.totalMinutes: Int get() = (prepMinutes ?: 0) + (cookMinutes ?: 
 
 /** Rasterkarte: großes quadratisches Bild, darunter Titel und Zeit – wie in Rezept-Feeds. */
 @Composable
-fun RecipeGridCard(recipe: RecipeEntity, onClick: () -> Unit, modifier: Modifier = Modifier, selected: Boolean = false) {
+fun RecipeGridCard(
+    recipe: RecipeEntity,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    selected: Boolean = false,
+    /** Kurzer Hinweis oben links im Bild, z. B. „Alles da“ beim Vorratsfilter. */
+    badge: String? = null,
+) {
     Column(
         modifier.clip(MaterialTheme.shapes.medium)
             .selectable(selected = selected, onClick = onClick, role = Role.Button),
@@ -134,6 +142,9 @@ fun RecipeGridCard(recipe: RecipeEntity, onClick: () -> Unit, modifier: Modifier
                     modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(28.dp)
                         .background(Color.White.copy(alpha = 0.9f), CircleShape).padding(5.dp),
                 )
+            }
+            if (badge != null) {
+                MetaPill(badge, Modifier.align(Alignment.TopStart).padding(8.dp), icon = Icons.Outlined.Inventory2, onImage = true)
             }
             if (recipe.totalMinutes > 0) {
                 MetaPill(
