@@ -48,6 +48,14 @@ class RecipePhotoStore @Inject constructor(
         if (recipeDao.countByImage(uri!!) == 0) file.delete()
     }
 
+    /**
+     * Darf Foody diesen Bildverweis lesen? Eigene Fotos (file: im Fotoordner) und content:-Links, für die das System
+     * ohnehin eine Freigabe verlangt. Alles andere – etwa file:-Pfade zur eigenen Datenbank aus einer manipulierten
+     * Sicherung – würde Foody mit seinen eigenen Rechten lesen und beim nächsten Export mit einpacken.
+     */
+    fun isAllowedImage(uri: String?): Boolean =
+        uri != null && (uri.startsWith("content://") || owned(uri) != null)
+
     private fun owned(uri: String?): File? {
         if (uri == null || !uri.startsWith("file:")) return null
         val file = runCatching { File(uri.toUri().path!!).canonicalFile }.getOrNull() ?: return null
