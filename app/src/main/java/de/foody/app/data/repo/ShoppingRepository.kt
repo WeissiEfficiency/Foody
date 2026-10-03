@@ -9,6 +9,7 @@ import de.foody.domain.DateRange
 import de.foody.domain.DiffType
 import de.foody.domain.GenerateShoppingListUseCase
 import de.foody.domain.IngredientCatalog
+import de.foody.domain.MealSlot
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Quantity
 import de.foody.domain.ShoppingDiff
@@ -25,6 +26,9 @@ data class NeedPreview(
     /** Rezeptname + Datum je Quelle, für die Herkunftsanzeige. */
     val sourceLabels: List<Pair<String, Quantity>>,
 )
+
+/** Ergebnis von [ShoppingRepository.addRecipe]: Zielliste und Zahl der neuen bzw. erhöhten Einträge. */
+data class AddRecipeResult(val listId: String, val listName: String, val added: Int)
 
 @Singleton
 class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
@@ -141,6 +145,54 @@ class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
             }
             dao.upsertList(list.copy(generationVersion = list.generationVersion + 1, updatedAt = System.currentTimeMillis()))
         }
+
+    /**
+     * Setzt die Zutaten eines Rezepts (skaliert auf [servings]) direkt auf die neueste Einkaufsliste,
+     * ohne Umweg über den Planer; gibt es keine Liste, wird eine angelegt.
+     * Gleiche Zutat + Dimension wird aufaddiert. Die Einträge gelten als manuell, damit „Neu berechnen“
+     * (das nur Planpositionen kennt) sie nicht als „entfällt“ löscht. Ausgelassen werden wie im Planer:
+     * „nach Bedarf“, optionale Zutaten und Zutaten, die nie eingekauft werden (Wasser).
+     */
+    suspend fun addRecipe(recipeId: String, servings: Int, defaultListName: String): AddRecipeResult = db.withTransaction {
+        val recipeDao = db.recipeDao()
+        val recipe = recipeDao.get(recipeId) ?: error("Rezept $recipeId nicht gefunden")
+        val ingredientEntities = db.ingredientDao().getAll().associateBy { it.id }
+        val today = java.time.LocalDate.now()
+        val neverBuy = ingredientEntities.values.filter { IngredientCatalog.neverBuy(it.canonicalName) }.map { it.id }.toSet()
+        val needs = generate(
+            DateRange.ofDays(today, 1),
+            listOf(MealSlot("recipe:$recipeId", today, "", recipeId, servings)),
+            mapOf(recipeId to recipe.toDomain(recipeDao.getIngredients(recipeId))),
+            ingredientEntities.mapValues { it.value.toDomain() },
+            excludedIngredientIds = neverBuy,
+        ).filter { !it.toBuy.isZero() }
+
+        val now = System.currentTimeMillis()
+        val list = dao.getLists().maxByOrNull { it.createdAt }
+            ?: ShoppingListEntity(newId(), defaultListName, null, null, 1, now, now).also { dao.upsertList(it) }
+        val existing = dao.getItems(list.id)
+        var order = existing.maxOfOrNull { it.sortOrder + 1 } ?: 0
+        for (n in needs) {
+            val base = MeasureUnit.baseOf(n.toBuy.dimension)
+            val match = existing.firstOrNull {
+                it.manual && !it.checked && it.ingredientId == n.ingredientId && it.amount != null && it.unit?.dimension == n.toBuy.dimension
+            }
+            if (match != null) {
+                val sum = Quantity.of(match.amount!!, match.unit!!) + n.toBuy
+                dao.upsertItem(match.copy(amount = sum.amountIn(base), unit = base))
+            } else {
+                val ing = ingredientEntities[n.ingredientId]
+                dao.upsertItem(
+                    ShoppingItemEntity(
+                        newId(), list.id, n.ingredientId, ing?.canonicalName ?: n.ingredientId, n.toBuy.amountIn(base), base,
+                        checked = false, manual = true, category = ing?.category, sortOrder = order++,
+                    ),
+                )
+            }
+        }
+        dao.upsertList(list.copy(updatedAt = now))
+        AddRecipeResult(list.id, list.name, needs.size)
+    }
 
     suspend fun addManual(listId: String, name: String) {
         val order = dao.getItems(listId).maxOfOrNull { it.sortOrder + 1 } ?: 0

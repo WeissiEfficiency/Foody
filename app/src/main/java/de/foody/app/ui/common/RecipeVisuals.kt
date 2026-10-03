@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -82,7 +83,8 @@ fun RecipeImage(imageUri: String?, name: String, modifier: Modifier = Modifier, 
         AsyncImage(imageUri, stringResource(R.string.recipe_image), contentScale = ContentScale.Crop, modifier = modifier)
     } else {
         Box(modifier.background(gradientFor(name)), contentAlignment = Alignment.Center) {
-            Text(recipeEmoji(name), fontSize = emojiSize)
+            // Rein dekorativ: TalkBack soll nicht das Emoji vorlesen
+            Text(recipeEmoji(name), fontSize = emojiSize, modifier = Modifier.clearAndSetSemantics {})
         }
     }
 }

@@ -1,6 +1,26 @@
 package de.foody.app.ui.shopping
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import de.foody.app.ui.common.HeaderAction
+import de.foody.app.ui.common.RoundCheck
+import de.foody.app.ui.common.ScreenHeader
+import de.foody.app.ui.theme.EyebrowStyle
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,9 +34,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
@@ -24,12 +42,9 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -37,7 +52,6 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,6 +64,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
@@ -95,56 +111,81 @@ fun ShoppingScreen(vm: ShoppingViewModel = hiltViewModel()) {
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(s.selected?.name ?: stringResource(R.string.nav_shopping)) },
-                actions = {
-                    if (s.selected != null) {
-                        if (s.selected?.rangeStart != null) {
-                            IconButton({ vm.recalculate() }) { Icon(Icons.Default.Refresh, stringResource(R.string.shopping_recalculate)) }
-                        }
-                        IconButton({
-                            scope.launch {
-                                val snap = vm.snapshot() ?: return@launch
-                                val result = AndroidShareExporter(context, chooserTitle).export(snap)
-                                if (result is ExportResult.Failure) snackbar.showSnackbar(shareError)
-                            }
-                        }) { Icon(Icons.Default.Share, stringResource(R.string.action_share)) }
-                        IconButton({ confirmDeleteList = true }) { Icon(Icons.Default.DeleteSweep, stringResource(R.string.shopping_delete_list)) }
-                    }
-                },
-            )
-        },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = vm::openGenerate,
                 icon = { Icon(Icons.AutoMirrored.Filled.PlaylistAdd, null) },
                 text = { Text(stringResource(R.string.shopping_generate)) },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
             )
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         Column(Modifier.padding(padding)) {
+            ScreenHeader(stringResource(R.string.nav_shopping), s.selected?.name ?: stringResource(R.string.shopping_title_empty)) {
+                if (s.selected != null) {
+                    if (s.selected?.rangeStart != null) {
+                        HeaderAction(Icons.Default.Refresh, stringResource(R.string.shopping_recalculate)) { vm.recalculate() }
+                    }
+                    HeaderAction(Icons.Default.Share, stringResource(R.string.action_share)) {
+                        scope.launch {
+                            val snap = vm.snapshot() ?: return@launch
+                            val result = AndroidShareExporter(context, chooserTitle).export(snap)
+                            if (result is ExportResult.Failure) snackbar.showSnackbar(shareError)
+                        }
+                    }
+                    HeaderAction(Icons.Default.DeleteSweep, stringResource(R.string.shopping_delete_list)) { confirmDeleteList = true }
+                }
+            }
             if (s.lists.size > 1) {
-                Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    s.lists.forEach { l -> FilterChip(l.id == s.selected?.id, { vm.select(l.id) }, label = { Text(l.name) }) }
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    s.lists.forEach { l ->
+                        FilterChip(
+                            l.id == s.selected?.id, { vm.select(l.id) }, label = { Text(l.name) },
+                            shape = RoundedCornerShape(50),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+                            ),
+                        )
+                    }
                 }
             }
             val selected = s.selected
             if (selected == null) {
-                TextButton({ vm.createEmpty(defaultEmptyName) }, Modifier.padding(16.dp)) { Text(stringResource(R.string.shopping_create_empty)) }
-                EmptyState(stringResource(R.string.shopping_empty))
+                EmptyState(stringResource(R.string.shopping_empty), Modifier.weight(1f))
+                OutlinedButton(
+                    { vm.createEmpty(defaultEmptyName) },
+                    Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(50),
+                ) { Text(stringResource(R.string.shopping_create_empty)) }
+                Spacer(Modifier.height(88.dp))
                 return@Column
             }
-            Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(manualText, { manualText = it }, placeholder = { Text(stringResource(R.string.shopping_add_manual)) },
-                    singleLine = true, modifier = Modifier.weight(1f))
-                TextButton(enabled = manualText.isNotBlank(), onClick = { vm.addManual(manualText); manualText = "" }) {
-                    Text(stringResource(R.string.action_add))
+            val open = s.items.filter { !it.checked }
+            val done = s.items.filter { it.checked }
+            LazyColumn(
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 104.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                item { ShoppingProgress(done.size, s.items.size) }
+                item {
+                    AddItemField(manualText, { manualText = it }) { vm.addManual(manualText); manualText = "" }
                 }
-            }
-            LazyColumn {
-                items(s.items, key = { it.id }) { item -> ShoppingRow(item, vm) }
+                // Offene Artikel nach Abteilung gruppiert – so läuft man den Supermarkt einmal ab
+                open.groupBy { it.category }.toSortedMap(compareBy(nullsLast()) { it }).forEach { (category, items) ->
+                    item(key = "cat-$category") { GroupTitle(category ?: stringResource(R.string.shopping_category_other)) }
+                    items(items, key = { it.id }) { item -> ShoppingRow(item, vm) }
+                }
+                if (done.isNotEmpty()) {
+                    item(key = "done") { GroupTitle(stringResource(R.string.shopping_done_section, done.size)) }
+                    items(done, key = { it.id }) { item -> ShoppingRow(item, vm) }
+                }
             }
         }
     }
@@ -163,7 +204,7 @@ fun ShoppingScreen(vm: ShoppingViewModel = hiltViewModel()) {
                     }
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf(1, 2, 3, 7, 14).forEach { d ->
-                            FilterChip(g.days == d, { vm.updateGenerate { it.copy(days = d) } }, label = { Text(stringResource(R.string.days_n, d)) })
+                            FilterChip(g.days == d, { vm.updateGenerate { it.copy(days = d) } }, label = { Text(pluralStringResource(R.plurals.days_n, d, d)) })
                         }
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -252,27 +293,85 @@ private fun oldText(i: ShoppingItemEntity): String =
     if (i.amount != null && i.unit != null) formatQuantity(Quantity.of(i.amount, i.unit)) else ""
 
 @Composable
+private fun ShoppingProgress(done: Int, total: Int) {
+    if (total == 0) return
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            stringResource(R.string.shopping_progress, done, total),
+            style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        LinearProgressIndicator(
+            progress = { done.toFloat() / total },
+            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)),
+            trackColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            drawStopIndicator = {},
+        )
+    }
+}
+
+@Composable
+private fun AddItemField(text: String, onText: (String) -> Unit, onAdd: () -> Unit) {
+    TextField(
+        text, onText,
+        placeholder = { Text(stringResource(R.string.shopping_add_manual)) },
+        singleLine = true,
+        shape = RoundedCornerShape(50),
+        colors = TextFieldDefaults.colors(
+            focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        ),
+        trailingIcon = {
+            FilledIconButton(onAdd, enabled = text.isNotBlank()) { Icon(Icons.Default.Add, stringResource(R.string.action_add)) }
+        },
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+    )
+}
+
+@Composable
+private fun GroupTitle(text: String) {
+    Text(
+        text.uppercase(), style = EyebrowStyle, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 12.dp, bottom = 2.dp),
+    )
+}
+
+@Composable
 private fun ShoppingRow(item: ShoppingItemEntity, vm: ShoppingViewModel) {
     val stateDesc = stringResource(if (item.checked) R.string.state_checked else R.string.state_open)
-    ListItem(
-        headlineContent = {
-            Text(item.name, textDecoration = if (item.checked) TextDecoration.LineThrough else null)
-        },
-        supportingContent = {
-            val parts = listOfNotNull(
-                item.amount?.let { a -> item.unit?.let { u -> formatQuantity(Quantity.of(a, u)) } },
-                item.category,
+    Surface(
+        onClick = { vm.toggle(item) },
+        shape = MaterialTheme.shapes.medium,
+        color = if (item.checked) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerLowest,
+        shadowElevation = if (item.checked) 0.dp else 1.dp,
+        modifier = Modifier.fillMaxWidth().semantics { stateDescription = stateDesc },
+    ) {
+        Row(Modifier.padding(start = 14.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            RoundCheck(item.checked, item.name, { vm.toggle(item) })
+            Text(
+                item.name,
+                style = MaterialTheme.typography.bodyLarge,
+                textDecoration = if (item.checked) TextDecoration.LineThrough else null,
+                color = if (item.checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f).padding(horizontal = 14.dp),
             )
-            if (parts.isNotEmpty()) Text(parts.joinToString(" · "))
-        },
-        leadingContent = { Checkbox(item.checked, { vm.toggle(item) }) },
-        trailingContent = {
-            Row {
-                if (!item.manual) IconButton({ vm.showSources(item) }) { Icon(Icons.Default.Info, stringResource(R.string.sources_title)) }
-                IconButton({ vm.delete(item) }) { Icon(Icons.Default.Delete, stringResource(R.string.action_delete)) }
+            item.amount?.let { a -> item.unit?.let { u ->
+                Text(
+                    formatQuantity(Quantity.of(a, u)),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = if (item.checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
+                )
+            } }
+            // Nebenaktionen dezent, damit Name und Menge im Vordergrund stehen
+            val muted = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            if (!item.manual) {
+                IconButton({ vm.showSources(item) }) {
+                    Icon(Icons.Outlined.Info, stringResource(R.string.sources_title), Modifier.size(20.dp), tint = muted)
+                }
             }
-        },
-        modifier = Modifier.clickable { vm.toggle(item) }.semantics { stateDescription = stateDesc },
-    )
-    HorizontalDivider()
+            IconButton({ vm.delete(item) }) {
+                Icon(Icons.Outlined.Delete, stringResource(R.string.action_delete), Modifier.size(20.dp), tint = muted)
+            }
+        }
+    }
 }

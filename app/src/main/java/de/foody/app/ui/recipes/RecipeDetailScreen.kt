@@ -26,6 +26,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.AddShoppingCart
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import de.foody.app.data.repo.AddRecipeResult
+import de.foody.app.data.repo.ShoppingRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
@@ -111,6 +121,7 @@ data class RecipeDetailUiState(
 class RecipeDetailViewModel @Inject constructor(
     private val repo: RecipeRepository,
     ingredients: IngredientRepository,
+    private val shopping: ShoppingRepository,
     private val saved: SavedStateHandle,
 ) : ViewModel() {
     val id = saved.toRoute<RecipeDetailRoute>().id
@@ -145,6 +156,15 @@ class RecipeDetailViewModel @Inject constructor(
     fun archive(archived: Boolean) = viewModelScope.launch { repo.setArchived(id, archived) }
     fun delete(onDone: () -> Unit) = viewModelScope.launch { repo.delete(id); onDone() }
     fun duplicate(suffix: String, onDone: (String) -> Unit) = viewModelScope.launch { repo.duplicate(id, suffix)?.let(onDone) }
+
+    /** Einmaliges Ergebnis von „Auf die Einkaufsliste“; die UI quittiert es nach Anzeige. */
+    private val _added = MutableStateFlow<AddRecipeResult?>(null)
+    val added = _added.asStateFlow()
+    fun addedShown() { _added.value = null }
+
+    fun addToShopping(defaultListName: String) = viewModelScope.launch {
+        _added.value = shopping.addRecipe(id, state.value.servings, defaultListName)
+    }
 }
 
 @Composable
@@ -157,11 +177,23 @@ fun RecipeDetailScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     var confirmDelete by remember { mutableStateOf(false) }
     var cooking by rememberSaveable { mutableStateOf(false) }
+    val snackbar = remember { SnackbarHostState() }
+    val added by vm.added.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val defaultListName = stringResource(R.string.shopping_default_name)
+    LaunchedEffect(added) {
+        val a = added ?: return@LaunchedEffect
+        vm.addedShown()
+        snackbar.showSnackbar(
+            if (a.added == 0) context.getString(R.string.shopping_added_none)
+            else context.getString(R.string.shopping_added, a.added, a.listName),
+        )
+    }
     val listState = rememberLazyListState()
     val copySuffix = stringResource(R.string.recipe_copy_suffix)
     val recipe = state.recipe ?: return
 
-    Scaffold(contentWindowInsets = WindowInsets(0)) { padding ->
+    Scaffold(contentWindowInsets = WindowInsets(0), snackbarHost = { SnackbarHost(snackbar) }) { padding ->
         LazyColumn(Modifier.padding(padding).fillMaxSize(), state = listState) {
             item {
                 Hero(
@@ -191,6 +223,15 @@ fun RecipeDetailScreen(
                                 Spacer(Modifier.size(8.dp))
                                 Text(stringResource(R.string.cook_mode_start), style = MaterialTheme.typography.titleMedium)
                             }
+                        }
+                        OutlinedButton(
+                            { vm.addToShopping(defaultListName) },
+                            Modifier.fillMaxWidth().height(52.dp),
+                            shape = RoundedCornerShape(50),
+                        ) {
+                            Icon(Icons.Outlined.AddShoppingCart, null)
+                            Spacer(Modifier.size(8.dp))
+                            Text(stringResource(R.string.recipe_add_to_shopping), style = MaterialTheme.typography.titleSmall)
                         }
                     }
                 }

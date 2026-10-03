@@ -46,11 +46,14 @@ import androidx.compose.ui.window.DialogProperties
 import de.foody.app.R
 import de.foody.app.data.db.InstructionStepEntity
 import de.foody.app.ui.theme.EyebrowStyle
+import de.foody.domain.StepTimerParser
+import androidx.compose.runtime.remember
 import kotlinx.coroutines.launch
 
 /**
  * Schritt-für-Schritt-Kochmodus: ein Arbeitsschritt pro Seite, große Schrift, darunter die Zutaten,
  * die in diesem Schritt erwähnt werden – mit der Menge für die gewählte Portionenzahl.
+ * Erkannte Zeitangaben („20 Minuten“) lassen sich als Timer starten.
  * Das Display bleibt an, solange der Modus offen ist.
  */
 @Composable
@@ -68,6 +71,8 @@ fun CookModeDialog(
         }
         val pager = rememberPagerState { steps.size }
         val scope = rememberCoroutineScope()
+        val running = rememberRunningTimers()
+        val stepTimers = remember(steps) { steps.map { StepTimerParser.find(it.text) } }
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -91,6 +96,9 @@ fun CookModeDialog(
                             style = EyebrowStyle, color = MaterialTheme.colorScheme.primary,
                         )
                         Text(steps[page].text, style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 34.sp))
+                        StepTimerChips(stepTimers.getOrNull(page).orEmpty()) { t ->
+                            running += RunningTimer(t.label, System.currentTimeMillis() + t.duration.toMillis())
+                        }
                         val lines = stepLines.getOrNull(page).orEmpty()
                         if (lines.isNotEmpty()) {
                             Column(
@@ -113,6 +121,7 @@ fun CookModeDialog(
                         }
                     }
                 }
+                RunningTimersBar(running)
                 Row(Modifier.fillMaxWidth().padding(20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     val first = pager.currentPage == 0
                     val last = pager.currentPage == steps.lastIndex
