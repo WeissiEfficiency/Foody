@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "de.foody.app"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "de.foody.app"
