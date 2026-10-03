@@ -20,7 +20,7 @@ data class ImportResult(val importedIds: List<String>, val failed: Int, val skip
 class RecipeImportRepository @Inject constructor(
     private val recipes: RecipeRepository,
     private val ingredients: IngredientRepository,
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) {
     suspend fun import(
         uris: List<Uri>,

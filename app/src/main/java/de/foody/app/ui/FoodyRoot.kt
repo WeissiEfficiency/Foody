@@ -45,7 +45,7 @@ import kotlinx.serialization.Serializable
 @Serializable object SettingsRoute
 @Serializable object IngredientsRoute
 
-private enum class TopLevel(val route: Any, @StringRes val label: Int, val icon: ImageVector) {
+private enum class TopLevel(val route: Any, @param:StringRes val label: Int, val icon: ImageVector) {
     RECIPES(RecipesRoute, R.string.nav_recipes, Icons.Default.RestaurantMenu),
     PLANNER(PlannerRoute, R.string.nav_planner, Icons.Default.CalendarMonth),
     SHOPPING(ShoppingRoute, R.string.nav_shopping, Icons.AutoMirrored.Filled.List),
