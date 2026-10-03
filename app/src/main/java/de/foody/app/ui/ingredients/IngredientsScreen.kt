@@ -1,5 +1,6 @@
 package de.foody.app.ui.ingredients
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -63,6 +64,7 @@ fun IngredientsScreen(onBack: () -> Unit, vm: IngredientsViewModel = hiltViewMod
     LaunchedEffect(msgText) { if (msgText != null) { snackbar.showSnackbar(msgText); vm.messageShown() } }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.ingredients_title)) },

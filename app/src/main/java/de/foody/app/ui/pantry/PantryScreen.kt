@@ -1,5 +1,7 @@
 package de.foody.app.ui.pantry
 
+import androidx.compose.ui.graphics.Color
+import de.foody.app.ui.theme.FoodyGlass
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -66,6 +68,7 @@ fun PantryScreen(vm: PantryViewModel = hiltViewModel()) {
     var editingId by rememberSaveable { mutableStateOf<String?>(null) }
     var creating by rememberSaveable { mutableStateOf(false) }
     Scaffold(
+        containerColor = Color.Transparent,
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
         floatingActionButton = {
             if (s.rows.isNotEmpty()) ExtendedFloatingActionButton(
@@ -114,8 +117,8 @@ private fun PantryCard(row: PantryRow, today: LocalDate, onEdit: () -> Unit, onD
     Surface(
         onClick = onEdit,
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        shadowElevation = 1.dp,
+        color = FoodyGlass.fill,
+        border = FoodyGlass.border,
         modifier = modifier.fillMaxWidth(),
     ) {
         Row(Modifier.padding(start = 16.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {

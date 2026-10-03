@@ -1,5 +1,8 @@
 package de.foody.app.ui
 
+import de.foody.app.ui.theme.FoodyBackground
+import de.foody.app.ui.theme.FoodyGlass
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.window.core.layout.WindowSizeClass
 import de.foody.app.ui.recipes.RecipesTwoPane
@@ -86,12 +89,13 @@ fun FoodyRoot() {
             selectedTextColor = colors.primary,
         ),
     )
+    FoodyBackground {
     NavigationSuiteScaffold(
         navigationSuiteColors = NavigationSuiteDefaults.colors(
-            navigationBarContainerColor = colors.surfaceContainerLowest,
-            navigationRailContainerColor = colors.surfaceContainerLowest,
+            navigationBarContainerColor = FoodyGlass.fill,
+            navigationRailContainerColor = FoodyGlass.fill,
         ),
-        containerColor = colors.background,
+        containerColor = Color.Transparent,
         navigationSuiteItems = {
             TopLevel.entries.forEach { item ->
                 item(
@@ -147,5 +151,6 @@ fun FoodyRoot() {
             composable<IngredientsRoute> { IngredientsScreen(onBack = { nav.popBackStack() }) }
         }
         }
+    }
     }
 }

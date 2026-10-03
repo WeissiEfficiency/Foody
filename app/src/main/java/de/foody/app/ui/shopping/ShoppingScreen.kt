@@ -1,5 +1,6 @@
 package de.foody.app.ui.shopping
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -90,6 +91,7 @@ fun ShoppingScreen(vm: ShoppingViewModel = hiltViewModel()) {
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
         floatingActionButton = {
             ExtendedFloatingActionButton(
