@@ -118,6 +118,7 @@
     <string name="import_files">Markdown-Dateien wählen</string>
     <string name="import_folder">Ganzen Ordner importieren (Ideen)</string>
     <string name="import_source">Quelle: %1$s</string>
+    <string name="import_estimated_servings" tools:ignore="PluralsCandidate">Portionenzahl war in der Datei nicht angegeben – aus den Mengen auf %1$d geschätzt, bitte prüfen.</string>
     <string name="import_check_servings" tools:ignore="PluralsCandidate">Portionenzahl war in der Datei nicht angegeben – auf %1$d gesetzt, bitte prüfen.</string>
     <string name="import_running">Dateien werden gesucht …</string>
     <string name="import_progress" tools:ignore="PluralsCandidate">Importiere %1$d von %2$d …</string>
