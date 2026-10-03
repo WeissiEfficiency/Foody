@@ -147,5 +147,6 @@ dependencies {
     androidTestImplementation(libs.coroutines.test)
     androidTestImplementation(libs.kotlin.test.junit)
     androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.espresso.core)
     debugImplementation(libs.compose.ui.test.manifest)
 }

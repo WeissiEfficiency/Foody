@@ -15,6 +15,8 @@ import de.foody.app.data.repo.RecipeRepository
 import de.foody.app.ui.recipes.RecipeListUiState
 import de.foody.app.ui.recipes.RecipeListViewModel
 import de.foody.domain.MeasureUnit
+import de.foody.domain.RecipeSort
+import de.foody.domain.Diet
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -46,7 +48,7 @@ class RecipeListViewModelTest {
         recipe("Gemüsepfanne", "z")
         recipe("Risotto", "r")
         recipes.setArchived(recipe("Altes Curry", "r"), archived = true)
-        vm = RecipeListViewModel(recipes, PantryRepository(db.pantryDao()), importer, SavedStateHandle())
+        vm = RecipeListViewModel(recipes, PantryRepository(db.pantryDao()), IngredientRepository(db, db.ingredientDao(), context), importer, SavedStateHandle())
     }
 
     @After fun tearDown() = db.close()
@@ -97,5 +99,25 @@ class RecipeListViewModelTest {
         vm.onTogglePantry()
         awaitNames(listOf("Gemüsepfanne", "Paprikapfanne", "Risotto")) { !it.pantryOnly && it.missing.isEmpty() }
         Unit
+    }
+
+    @Test fun vegetarianFilterHidesMeatAndSortByNewest() = runBlocking {
+        db.ingredientDao().upsert(IngredientEntity(id = "h", canonicalName = "Hähnchenbrust", category = "Fleisch & Fisch", createdAt = 0, updatedAt = 0))
+        recipes.save(
+            RecipeDraft(id = null, name = "Hähnchen-Curry", defaultServings = 2,
+                ingredients = listOf(RecipeDraft.Line("h", BigDecimal.ONE, MeasureUnit.PIECE, null, false))),
+        )
+        awaitNames(listOf("Gemüsepfanne", "Hähnchen-Curry", "Risotto"))
+
+        vm.onToggleDiet(Diet.VEGETARIAN)
+        awaitNames(listOf("Gemüsepfanne", "Risotto")) { Diet.VEGETARIAN in it.diets }
+
+        vm.resetDiscover()
+        awaitNames(listOf("Gemüsepfanne", "Hähnchen-Curry", "Risotto")) { it.diets.isEmpty() && it.sort == RecipeSort.NAME }
+
+        // Das zuletzt angelegte Rezept steht bei „Neueste“ vorn
+        vm.onSort(RecipeSort.NEWEST)
+        val newest = runBlocking { withTimeout(5_000) { vm.state.first { it.sort == RecipeSort.NEWEST && it.recipes.size == 3 } } }
+        assertEquals("Hähnchen-Curry", newest.names().first())
     }
 }

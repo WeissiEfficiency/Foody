@@ -1,5 +1,14 @@
 package de.foody.app.ui.recipes
 
+import de.foody.domain.Diet
+import de.foody.domain.RecipeSort
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -89,6 +98,7 @@ fun RecipeListScreen(
     val importMessage by vm.importMessage.collectAsStateWithLifecycle()
     val importProgress by vm.importProgress.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    var showFilter by rememberSaveable { mutableStateOf(false) }
     val resources = LocalResources.current
     val importTag = stringResource(R.string.import_tag)
     val ideasTag = stringResource(R.string.import_tag_ideas)
@@ -131,7 +141,7 @@ fun RecipeListScreen(
             )
         },
     ) { padding ->
-        val browsing = state.query.isBlank() && state.tag == null && !state.showArchived && !state.pantryOnly
+        val browsing = state.query.isBlank() && state.tag == null && !state.showArchived && !state.pantryOnly && state.diets.isEmpty()
         LazyVerticalGrid(
             state = gridState,
             columns = GridCells.Adaptive(minSize = 156.dp),
@@ -152,7 +162,7 @@ fun RecipeListScreen(
                 item(key = "daily", span = { GridItemSpan(maxLineSpan) }) { DailyPicksPager(state.dailyPicks, onOpen) }
             }
             item(key = "search", span = { GridItemSpan(maxLineSpan) }) { SearchBar(state.query, vm::onQuery) }
-            item(key = "filters", span = { GridItemSpan(maxLineSpan) }) { TagRow(state, vm::onTag, vm::onToggleArchived, vm::onToggleFavorites, vm::onTogglePantry) }
+            item(key = "filters", span = { GridItemSpan(maxLineSpan) }) { TagRow(state, vm::onTag, vm::onToggleArchived, vm::onToggleFavorites, vm::onTogglePantry, onOpenFilter = { showFilter = true }) }
             item(key = "title", span = { GridItemSpan(maxLineSpan) }) {
                 Text(
                     stringResource(if (state.showArchived) R.string.recipe_section_archive else R.string.recipe_section_all, state.recipes.size),
@@ -185,11 +195,17 @@ fun RecipeListScreen(
                 val badge = state.missing[r.id]?.let { n ->
                     if (n == 0) stringResource(R.string.pantry_all_there) else pluralStringResource(R.plurals.pantry_missing, n, n)
                 }
-                RecipeGridCard(r, onClick = { onOpen(r.id) }, modifier = Modifier.animateItem(), selected = r.id == selectedId, badge = badge)
+                RecipeGridCard(
+                    r, onClick = { onOpen(r.id) }, modifier = Modifier.animateItem(), selected = r.id == selectedId, badge = badge,
+                    kcal = state.profiles[r.id]?.takeIf { it.reliable }?.kcalPerServing,
+                )
             }
         }
         // Scrim hinter der Statusleiste, damit gescrollte Inhalte nicht mit der Uhrzeit kollidieren
         Box(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(MaterialTheme.colorScheme.background.copy(alpha = 0.94f)))
+    }
+    if (showFilter) {
+        DiscoverSheet(state, vm::onToggleDiet, vm::onSort, vm::resetDiscover, onDismiss = { showFilter = false })
     }
 }
 
@@ -271,6 +287,7 @@ private fun TagRow(
     onToggleArchived: () -> Unit,
     onToggleFavorites: () -> Unit,
     onTogglePantry: () -> Unit,
+    onOpenFilter: () -> Unit,
 ) {
     val chipColors = FilterChipDefaults.filterChipColors(
         selectedContainerColor = MaterialTheme.colorScheme.secondary,
@@ -279,8 +296,18 @@ private fun TagRow(
     )
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
+            // Ernährung und Sortierung im Blatt – die Chip-Zeile bleibt kurz
+            val active = state.diets.size + if (state.sort != RecipeSort.NAME) 1 else 0
             FilterChip(
-                state.tag == null && !state.showArchived && !state.favoritesOnly && !state.pantryOnly,
+                active > 0, onOpenFilter,
+                label = { Text(if (active > 0) stringResource(R.string.filter_button_count, active) else stringResource(R.string.filter_button)) },
+                leadingIcon = { Icon(Icons.Default.Tune, null, Modifier.size(16.dp)) },
+                colors = chipColors, shape = RoundedCornerShape(50),
+            )
+        }
+        item {
+            FilterChip(
+                state.tag == null && !state.showArchived && !state.favoritesOnly && !state.pantryOnly && state.diets.isEmpty(),
                 {
                     onTag(null)
                     if (state.showArchived) onToggleArchived()
@@ -331,6 +358,54 @@ private fun ImportProgress(done: Int, total: Int) {
             LinearProgressIndicator(Modifier.fillMaxWidth())
         } else {
             LinearProgressIndicator(progress = { done.toFloat() / total }, modifier = Modifier.fillMaxWidth(), drawStopIndicator = {})
+        }
+    }
+}
+
+/** Ernährungsfilter und Sortierung als Blatt (wie Filter in Rezept-Apps), damit die Chip-Zeile übersichtlich bleibt. */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun DiscoverSheet(
+    state: RecipeListUiState,
+    onToggleDiet: (Diet) -> Unit,
+    onSort: (RecipeSort) -> Unit,
+    onReset: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    // Gleiche Hervorhebung wie die Chip-Zeile: ausgewählt = dunkel, sonst wären Zustände kaum zu unterscheiden
+    val chipColors = FilterChipDefaults.filterChipColors(
+        selectedContainerColor = MaterialTheme.colorScheme.secondary,
+        selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+    )
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.filter_diet_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                TextButton(onReset) { Text(stringResource(R.string.filter_reset)) }
+            }
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    Diet.VEGETARIAN to R.string.diet_vegetarian, Diet.VEGAN to R.string.diet_vegan,
+                    Diet.HIGH_PROTEIN to R.string.diet_high_protein, Diet.LOW_CARB to R.string.diet_low_carb,
+                    Diet.LIGHT to R.string.diet_light,
+                ).forEach { (d, label) ->
+                    FilterChip(d in state.diets, { onToggleDiet(d) }, label = { Text(stringResource(label)) }, shape = RoundedCornerShape(50), colors = chipColors)
+                }
+            }
+            Text(stringResource(R.string.filter_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.sort_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    RecipeSort.NAME to R.string.sort_name, RecipeSort.NEWEST to R.string.sort_newest,
+                    RecipeSort.KCAL_ASC to R.string.sort_kcal, RecipeSort.PROTEIN_DESC to R.string.sort_protein,
+                ).forEach { (s, label) ->
+                    FilterChip(state.sort == s, { onSort(s) }, label = { Text(stringResource(label)) }, shape = RoundedCornerShape(50), colors = chipColors)
+                }
+            }
+            Text(
+                pluralStringResource(R.plurals.filter_result_count, state.recipes.size, state.recipes.size),
+                style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary,
+            )
         }
     }
 }

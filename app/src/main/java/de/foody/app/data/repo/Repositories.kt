@@ -177,6 +177,7 @@ class RecipeRepository @Inject constructor(private val dao: RecipeDao) {
     fun observeActive() = dao.observeActive()
     fun observeAll() = dao.observeAll()
     fun observeRecipe(id: String) = dao.observe(id)
+    fun observeAllLines() = dao.observeAllIngredients()
     fun observeRequired() = dao.observeRequired().map { rows ->
         rows.map { PantryCoverage.Requirement(it.recipeId, it.ingredientId, it.ingredientName) }
     }

@@ -1,5 +1,14 @@
 package de.foody.app.ui.recipes
 
+import de.foody.app.data.repo.IngredientRepository
+import de.foody.app.data.repo.toDomain
+import de.foody.domain.Diet
+import de.foody.domain.RecipeProfile
+import de.foody.domain.RecipeProfiles
+import de.foody.domain.RecipeSort
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onStart
 import android.net.Uri
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.items
@@ -40,6 +49,11 @@ data class RecipeListUiState(
     val recipes: List<RecipeEntity> = emptyList(),
     /** Fehlende Pflichtzutaten je Rezept-ID – nur bei [pantryOnly] gefüllt, für das Abzeichen auf der Karte. */
     val missing: Map<String, Int> = emptyMap(),
+    /** Gewählte Ernährungsfilter (alle müssen zutreffen) und Sortierung. */
+    val diets: Set<Diet> = emptySet(),
+    val sort: RecipeSort = RecipeSort.NAME,
+    /** Kurzprofil je Rezept-ID (kcal je Portion, Ernährungsform) – für Filter, Sortierung und Karten. */
+    val profiles: Map<String, RecipeProfile> = emptyMap(),
     /** Tags aller aktiven Rezepte, häufigste zuerst – für die Filter-Chips. */
     val tags: List<String> = emptyList(),
     /** Tagesauswahl aus allen aktiven Rezepten, unabhängig von Suche und Filter. */
@@ -54,6 +68,7 @@ private fun RecipeEntity.tagList() = tags.split(',').map { it.trim() }.filter { 
 class RecipeListViewModel @Inject constructor(
     repo: RecipeRepository,
     pantry: PantryRepository,
+    ingredients: IngredientRepository,
     private val importer: RecipeImportRepository,
     private val saved: SavedStateHandle,
 ) : ViewModel() {
@@ -62,10 +77,18 @@ class RecipeListViewModel @Inject constructor(
     private val tag = saved.getStateFlow<String?>("tag", null)
     private val favoritesOnly = saved.getStateFlow("favorites", false)
     private val pantryOnly = saved.getStateFlow("pantry", false)
+    // Als Text gespeichert, damit SavedStateHandle sie ohne eigenen Saver übersteht
+    private val dietsRaw = saved.getStateFlow("diets", "")
+    private val sortRaw = saved.getStateFlow("sort", RecipeSort.NAME.name)
 
-    /** Tag-, Favoriten- und Vorratsfilter wirken im Speicher auf das Suchergebnis. */
-    private data class LocalFilter(val tag: String?, val favoritesOnly: Boolean, val pantryOnly: Boolean)
-    private val localFilter = combine(tag, favoritesOnly, pantryOnly, ::LocalFilter)
+    /** Tag-, Favoriten-, Vorrats- und Ernährungsfilter wirken im Speicher auf das Suchergebnis. */
+    private data class LocalFilter(
+        val tag: String?, val favoritesOnly: Boolean, val pantryOnly: Boolean, val diets: Set<Diet>, val sort: RecipeSort,
+    )
+    private val localFilter = combine(tag, favoritesOnly, pantryOnly, dietsRaw, sortRaw) { t, fav, pan, d, s ->
+        LocalFilter(t, fav, pan, d.split(',').mapNotNull { runCatching { Diet.valueOf(it) }.getOrNull() }.toSet(),
+            runCatching { RecipeSort.valueOf(s) }.getOrDefault(RecipeSort.NAME))
+    }
 
     /** Fehlende Pflichtzutaten je Rezept; nur Vorratseinträge mit Menge zählen als vorhanden. */
     private val missing = combine(repo.observeRequired(), pantry.observeAll()) { required, items ->
@@ -81,14 +104,27 @@ class RecipeListViewModel @Inject constructor(
         .distinctUntilChanged()
         .flatMapLatest { (q, a) -> if (q.isEmpty() && !a) active else repo.observe(q, a) }
 
+    /**
+     * Kurzprofil (kcal je Portion, Ernährungsform) aller aktiven Rezepte. Bei rund hundert Rezepten ein paar
+     * Millisekunden – im Hintergrund-Thread, und nur neu, wenn sich Rezepte, Zeilen oder Zutaten ändern.
+     */
+    private val profiles = combine(active, repo.observeAllLines(), ingredients.observeAll()) { recipes, lines, all ->
+        val ingMap = all.associate { it.id to it.toDomain() }
+        val byRecipe = lines.groupBy { it.recipeId }
+        recipes.associate { r -> r.id to RecipeProfiles.profile(r.toDomain(byRecipe[r.id].orEmpty()), ingMap) }
+    }.flowOn(Dispatchers.Default).shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
+
     // Vorratsabgleich nur berechnen, solange der Filter an ist
     private val missingIfNeeded = pantryOnly.flatMapLatest { on -> if (on) missing else flowOf(emptyMap()) }
 
-    val state = combine(query, archived, localFilter, combine(filtered, missingIfNeeded, ::Pair), active) { q, a, f, (list, missing), active ->
+    val state = combine(
+        query, archived, localFilter, combine(filtered, missingIfNeeded, profiles.onStart { emit(emptyMap()) }, ::Triple), active,
+    ) { q, a, f, (list, missing, profiles), active ->
         val matching = list.filter { r ->
             (f.tag == null || f.tag in r.tagList()) && (!f.favoritesOnly || r.favorite) &&
-                (!f.pantryOnly || (missing[r.id] ?: Int.MAX_VALUE) <= MAX_MISSING)
-        }
+                (!f.pantryOnly || (missing[r.id] ?: Int.MAX_VALUE) <= MAX_MISSING) &&
+                (f.diets.isEmpty() || profiles[r.id]?.diets?.containsAll(f.diets) == true)
+        }.let { sortRecipes(it, f.sort, profiles) }
         RecipeListUiState(
             query = q,
             showArchived = a,
@@ -98,6 +134,9 @@ class RecipeListViewModel @Inject constructor(
             // Stabil sortiert: erst „Alles da“, dann „1 fehlt“ – innerhalb jeweils die gewohnte Reihenfolge
             recipes = if (f.pantryOnly) matching.sortedBy { missing[it.id] } else matching,
             missing = if (f.pantryOnly) missing else emptyMap(),
+            diets = f.diets,
+            sort = f.sort,
+            profiles = profiles,
             tags = active.flatMap { it.tagList() }.groupingBy { it }.eachCount()
                 .entries.sortedByDescending { it.value }.map { it.key }.take(8),
             dailyPicks = DailyPicks.pick(active, LocalDate.now()) { it.id },
@@ -110,6 +149,12 @@ class RecipeListViewModel @Inject constructor(
     fun onTag(t: String?) { saved["tag"] = if (tag.value == t) null else t }
     fun onToggleFavorites() { saved["favorites"] = !favoritesOnly.value }
     fun onTogglePantry() { saved["pantry"] = !pantryOnly.value }
+    fun onToggleDiet(d: Diet) {
+        val now = dietsRaw.value.split(',').filter { it.isNotEmpty() }.toSet()
+        saved["diets"] = (if (d.name in now) now - d.name else now + d.name).joinToString(",")
+    }
+    fun onSort(s: RecipeSort) { saved["sort"] = s.name }
+    fun resetDiscover() { saved["diets"] = ""; saved["sort"] = RecipeSort.NAME.name }
 
     /** Einmaliges Import-Ergebnis; die UI quittiert es nach Anzeige. */
     data class ImportMessage(val imported: Int, val failed: Int, val skipped: Int, val openId: String?)
@@ -149,3 +194,12 @@ class RecipeListViewModel @Inject constructor(
         const val MAX_MISSING = 1
     }
 }
+
+/** Sortierung; Rezepte ohne verlässliche Nährwerte stehen bei Nährwert-Sortierungen hinten. */
+private fun sortRecipes(list: List<RecipeEntity>, sort: RecipeSort, profiles: Map<String, RecipeProfile>): List<RecipeEntity> =
+    when (sort) {
+        RecipeSort.NAME -> list
+        RecipeSort.NEWEST -> list.sortedByDescending { it.createdAt }
+        RecipeSort.KCAL_ASC -> list.sortedBy { r -> profiles[r.id]?.takeIf { it.reliable }?.kcalPerServing ?: Int.MAX_VALUE }
+        RecipeSort.PROTEIN_DESC -> list.sortedByDescending { r -> profiles[r.id]?.takeIf { it.reliable }?.proteinPerServing ?: -1 }
+    }
