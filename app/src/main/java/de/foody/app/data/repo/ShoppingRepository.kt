@@ -125,30 +125,33 @@ class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
         return ShoppingDiff.diff(old, { it.key() }, { it.quantity() }, previews.map { it.need }) to previews
     }
 
-    /** Wendet einen Diff an. Abgehakte Einträge bleiben erhalten und werden nicht gelöscht. */
+    /**
+     * Wendet einen Diff an. Abgehakte Einträge bleiben erhalten und werden nicht gelöscht; ein abgehakter Eintrag
+     * kommt nur zurück auf die Liste, wenn jetzt mehr gebraucht wird als gekauft wurde.
+     */
     suspend fun applyDiff(listId: String, entries: List<ShoppingDiffEntry<ShoppingItemEntity>>, previews: List<NeedPreview>) =
         db.withTransaction {
             val list = dao.getList(listId) ?: return@withTransaction
             val byKey = previews.associateBy { it.need.key }
-            var order = dao.getItems(listId).maxOfOrNull { it.sortOrder + 1 } ?: 0
-            for (e in entries) {
-                when (e.type) {
-                    DiffType.ADDED -> {
-                        val (items, sources) = buildItems(listId, listOf(byKey.getValue(e.key)), order++)
-                        dao.insertItems(items); dao.insertSources(sources)
-                    }
-                    DiffType.CHANGED -> {
-                        val old = e.old!!
-                        val (items, sources) = buildItems(listId, listOf(byKey.getValue(e.key)))
-                        val fresh = items.single()
-                        dao.upsertItem(old.copy(amount = fresh.amount, unit = fresh.unit, checked = false))
-                        dao.deleteSources(old.id)
-                        dao.insertSources(sources.map { it.copy(shoppingItemId = old.id) })
-                    }
-                    DiffType.REMOVED -> if (!e.old!!.checked) dao.deleteItem(e.old!!.id)
-                    DiffType.UNCHANGED -> Unit
-                }
+            val order = dao.getItems(listId).maxOfOrNull { it.sortOrder + 1 } ?: 0
+            // Ein buildItems-Aufruf je Art statt je Eintrag: Rezeptnamen und Plandaten nur einmal laden
+            val added = entries.filter { it.type == DiffType.ADDED }
+            val (newItems, newSources) = buildItems(listId, added.map { byKey.getValue(it.key) }, order)
+            dao.insertItems(newItems); dao.insertSources(newSources)
+
+            val changed = entries.filter { it.type == DiffType.CHANGED }
+            val (freshItems, freshSources) = buildItems(listId, changed.map { byKey.getValue(it.key) })
+            val sourcesByItem = freshSources.groupBy { it.shoppingItemId }
+            for ((e, fresh) in changed.zip(freshItems)) {
+                val old = e.old!!
+                val needsMore = old.quantity().dimension != fresh.quantity().dimension ||
+                    fresh.quantity().baseAmount > old.quantity().baseAmount
+                dao.upsertItem(old.copy(amount = fresh.amount, unit = fresh.unit, checked = old.checked && !needsMore))
+                dao.deleteSources(old.id)
+                dao.insertSources(sourcesByItem[fresh.id].orEmpty().map { it.copy(shoppingItemId = old.id) })
             }
+
+            for (e in entries) if (e.type == DiffType.REMOVED && !e.old!!.checked) dao.deleteItem(e.old!!.id)
             dao.upsertList(list.copy(generationVersion = list.generationVersion + 1, updatedAt = System.currentTimeMillis()))
         }
 
