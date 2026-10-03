@@ -1,5 +1,8 @@
 package de.foody.app.ui
 
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.window.core.layout.WindowSizeClass
+import de.foody.app.ui.recipes.RecipesTwoPane
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.CompositionLocalProvider
@@ -64,6 +67,8 @@ fun FoodyRoot() {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val dest = backStack?.destination
+    // Ab „expanded“ (≥ 840 dp) passen Raster und Rezept nebeneinander; darunter bleibt die Ein-Spalten-Navigation.
+    val twoPane = currentWindowAdaptiveInfo().windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)
 
     // NavigationSuiteScaffold wechselt automatisch zwischen Bottom Bar (Telefon) und Rail (Tablet).
     val colors = MaterialTheme.colorScheme
@@ -108,11 +113,15 @@ fun FoodyRoot() {
         SharedTransitionLayout {
         NavHost(nav, startDestination = RecipesRoute) {
             composable<RecipesRoute> {
-                CompositionLocalProvider(LocalSharedTransitionScope provides this@SharedTransitionLayout, LocalNavAnimatedScope provides this) {
-                    RecipeListScreen(
-                        onOpen = { nav.navigate(RecipeDetailRoute(it)) },
-                        onCreate = { nav.navigate(RecipeEditorRoute()) },
-                    )
+                if (twoPane) {
+                    RecipesTwoPane(onEdit = { id -> nav.navigate(RecipeEditorRoute(id)) }, onCreate = { nav.navigate(RecipeEditorRoute()) })
+                } else {
+                    CompositionLocalProvider(LocalSharedTransitionScope provides this@SharedTransitionLayout, LocalNavAnimatedScope provides this) {
+                        RecipeListScreen(
+                            onOpen = { nav.navigate(RecipeDetailRoute(it)) },
+                            onCreate = { nav.navigate(RecipeEditorRoute()) },
+                        )
+                    }
                 }
             }
             composable<RecipeDetailRoute> {
