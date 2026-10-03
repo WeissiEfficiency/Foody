@@ -65,6 +65,9 @@
     <string name="recipe_image">Rezeptbild</string>
     <string name="recipe_pick_image">Bild wählen</string>
     <string name="photo_take">Foto aufnehmen</string>
+    <string name="photo_prompt_title">Wie ist es geworden?</string>
+    <string name="photo_prompt_text">Ein Foto von deinem Gericht macht das Rezept in der Übersicht auf einen Blick wiedererkennbar.</string>
+    <string name="action_not_now">Nicht jetzt</string>
     <string name="photo_replace">Foto ersetzen</string>
     <string name="recipe_ingredients">Zutaten</string>
     <string name="recipe_steps">Zubereitung</string>

@@ -227,6 +227,7 @@ fun RecipeDetailScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     var confirmDelete by remember { mutableStateOf(false) }
     var cooking by rememberSaveable { mutableStateOf(false) }
+    var askPhoto by rememberSaveable { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
     var pendingPhoto by rememberSaveable { mutableStateOf<String?>(null) }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
@@ -344,7 +345,22 @@ fun RecipeDetailScreen(
     }
 
     if (cooking) {
-        CookModeDialog(recipe.name, state.steps, state.stepLines, onClose = { cooking = false })
+        CookModeDialog(
+            recipe.name, state.steps, state.stepLines,
+            onClose = { cooking = false },
+            // Gerade fertig gekocht ist der beste Moment für das erste eigene Foto
+            onFinish = { cooking = false; askPhoto = recipe.imageUri == null },
+        )
+    }
+    if (askPhoto) {
+        AlertDialog(
+            onDismissRequest = { askPhoto = false },
+            icon = { Icon(Icons.Outlined.PhotoCamera, null) },
+            title = { Text(stringResource(R.string.photo_prompt_title)) },
+            text = { Text(stringResource(R.string.photo_prompt_text)) },
+            confirmButton = { TextButton({ askPhoto = false; takePhoto() }) { Text(stringResource(R.string.photo_take)) } },
+            dismissButton = { TextButton({ askPhoto = false }) { Text(stringResource(R.string.action_not_now)) } },
+        )
     }
     if (confirmDelete) {
         AlertDialog(
