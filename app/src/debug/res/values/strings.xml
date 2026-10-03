@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Debug-Build neben der Alltagsversion auf dem Startbildschirm unterscheidbar -->
+    <string name="app_name">Foody Debug</string>
+</resources>
