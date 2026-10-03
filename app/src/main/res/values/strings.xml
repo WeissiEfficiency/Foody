@@ -104,6 +104,12 @@
     <string name="timer_start">%1$s</string>
     <string name="timer_done">%1$s – fertig!</string>
     <string name="timer_cancel">Timer schließen</string>
+    <string name="timer_channel_running">Laufende Kochtimer</string>
+    <string name="timer_channel_done">Abgelaufene Kochtimer</string>
+    <plurals name="timer_running_count">
+        <item quantity="one">%1$d Kochtimer läuft</item>
+        <item quantity="other">%1$d Kochtimer laufen</item>
+    </plurals>
 
     <!-- Import -->
     <string name="import_action">Rezepte aus Markdown importieren</string>

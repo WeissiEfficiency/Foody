@@ -222,8 +222,12 @@ fun RecipeDetailScreen(
     }
 
     if (cooking) {
+        val timers by vm.timers.collectAsStateWithLifecycle()
         CookModeDialog(
             recipe.name, state.steps, state.stepLines,
+            timers = timers,
+            onStartTimer = vm::startTimer,
+            onDismissTimer = vm::dismissTimer,
             onClose = { cooking = false },
             // Gerade fertig gekocht ist der beste Moment für das erste eigene Foto
             onFinish = { cooking = false; askPhoto = recipe.imageUri == null },

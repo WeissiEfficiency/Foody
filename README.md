@@ -13,7 +13,8 @@ konsolidierte Einkaufslisten.
 - **Startseite:** drei „Rezepte des Tages“, Bildraster, Filter nach Tags und Favoriten; **„Aus dem Vorrat“** zeigt,
   was sich mit dem Vorrat kochen lässt (höchstens eine fehlende Zutat). Auf Tablets Liste und Rezept nebeneinander.
 - **Kochmodus:** ein Schritt pro Seite, Display bleibt an; „Du brauchst“ zeigt die im Schritt genannte Teilmenge
-  („0,25 l von 0,5 l Bier“); erkannte Zeitangaben („20 Minuten“) als **Timer** mit Signalton; nach dem letzten
+  („0,25 l von 0,5 l Bier“); erkannte Zeitangaben („20 Minuten“) als **Timer**, die auch bei ausgeschaltetem
+  Bildschirm oder im Hintergrund weiterlaufen und das Ende als Benachrichtigung melden; nach dem letzten
   Schritt die Einladung zum ersten eigenen Foto.
 - **Portionen skalieren** in der Detailansicht und im Planer.
 - **Nährwerte:** Energie (kJ/kcal), Eiweiß, Kohlenhydrate, Fett, Ballaststoffe, Zucker, Salz – pro Rezept und pro
@@ -78,5 +79,6 @@ Die APK aufs Handy kopieren und öffnen (einmalig „Installation aus dieser Que
 
 ## Datenschutz
 
-Kein Konto, kein Server, keine Berechtigungen. Alle Daten liegen lokal in Room; kein automatisches Cloud-Backup.
+Kein Konto, kein Server, kein Internetzugriff. Berechtigungen nur für Kochtimer im Hintergrund
+(Benachrichtigungen – ab Android 13 abfragbar und ablehnbar –, Vordergrunddienst, Wakelock bis zum Timer-Ende). Alle Daten liegen lokal in Room; kein automatisches Cloud-Backup.
 Cleartext-Traffic ist per Network Security Config verboten.
