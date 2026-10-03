@@ -114,7 +114,13 @@ class IngredientRepository @Inject constructor(
         db.withTransaction {
             for (seed in SeedData.ingredients(System.currentTimeMillis())) {
                 val existing = dao.findByName(seed.canonicalName)
-                if (existing == null) dao.insertAll(listOf(seed)) else dao.upsert(existing.fillFrom(seed))
+                when {
+                    existing == null -> dao.insertAll(listOf(seed))
+                    // Unveränderter Starteintrag (gleiche ID, Quelle noch „Startdaten“): Korrekturen übernehmen
+                    existing.id == seed.id && existing.nutrientSource == SeedData.SOURCE ->
+                        dao.upsert(seed.copy(createdAt = existing.createdAt, version = existing.version))
+                    else -> dao.upsert(existing.fillFrom(seed))
+                }
             }
         }
         prefs.edit().putInt("seedVersion", SeedData.VERSION).apply()
@@ -161,7 +167,8 @@ data class RecipeDraft(
 
 @Singleton
 class RecipeRepository @Inject constructor(private val dao: RecipeDao) {
-    fun observe(query: String, archived: Boolean) = dao.observe(query, archived)
+    /** Suche in Name, Tags und Zutaten; % und _ werden wörtlich genommen. */
+    fun observe(query: String, archived: Boolean) = dao.observe(escapeLike(query), archived)
     fun observeActive() = dao.observeActive()
     fun observeRecipe(id: String) = dao.observe(id)
     fun observeIngredients(id: String) = dao.observeIngredients(id)
@@ -277,3 +284,6 @@ class PantryRepository @Inject constructor(private val dao: PantryDao) {
 }
 
 internal fun Dimension.baseUnit() = MeasureUnit.baseOf(this)
+
+/** Maskiert LIKE-Platzhalter, damit „50%“ nicht als Muster gilt (passend zu ESCAPE '!' in der Abfrage). */
+internal fun escapeLike(q: String): String = q.replace("!", "!!").replace("%", "!%").replace("_", "!_")

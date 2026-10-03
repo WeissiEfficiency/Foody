@@ -9,7 +9,7 @@ import java.math.BigDecimal
  * Vor einer Store-Veröffentlichung gegen eine lizenzierte Quelle prüfen.
  */
 object SeedData {
-    private const val SOURCE = "Näherungswert (Startdaten)"
+    const val SOURCE = "Näherungswert (Startdaten)"
 
     private data class Row(
         val id: String, val name: String, val category: String,
@@ -35,7 +35,8 @@ object SeedData {
         Row("seed-paprika", "Paprika", "Obst & Gemüse", "120", "1", "5", "0.3", "2", "4", "0", piece = "150"),
         Row("seed-haehnchen", "Hähnchenbrust", "Fleisch & Fisch", "450", "23", "0", "1.5", "0", "0", "0.2"),
         Row("seed-hackfleisch", "Rinderhack", "Fleisch & Fisch", "1000", "20", "0", "17", "0", "0", "0.2"),
-        Row("seed-olivenoel", "Olivenöl", "Öle & Gewürze", "3700", "0", "0", "100", "0", "0", "0", NutrientBasis.PER_100_ML, density = "0.91"),
+        // v3: 3.700 kJ gelten je 100 g (nicht je 100 ml) – Basis korrigiert, die Dichte rechnet ml um
+        Row("seed-olivenoel", "Olivenöl", "Öle & Gewürze", "3700", "0", "0", "100", "0", "0", "0", density = "0.91"),
         Row("seed-salz", "Salz", "Öle & Gewürze", "0", "0", "0", "0", "0", "0", "100"),
         Row("seed-pfeffer", "Pfeffer", "Öle & Gewürze", null, null, null, null, null, null, null),
         Row("seed-kokosmilch", "Kokosmilch", "Konserven", "800", "2", "3", "19", "0", "2", "0", NutrientBasis.PER_100_ML, density = "1.0"),
@@ -55,7 +56,7 @@ object SeedData {
     )
 
     /** Bei Erweiterung erhöhen: neue Zeilen werden dann auch in bestehende Installationen übernommen. */
-    const val VERSION = 2
+    const val VERSION = 3
 
     /** Kanonische Namen aller Startzutaten (für Tests und Abgleich). */
     val names: List<String> get() = rows.map { it.name }

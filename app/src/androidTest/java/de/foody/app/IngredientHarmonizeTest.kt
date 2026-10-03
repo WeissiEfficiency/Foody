@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.app.data.db.FoodyDatabase
 import de.foody.app.data.db.IngredientEntity
 import de.foody.app.data.db.PantryItemEntity
+import de.foody.app.data.db.SeedData
 import de.foody.app.data.repo.IngredientRepository
 import de.foody.app.data.repo.RecipeDraft
 import de.foody.app.data.repo.RecipeRepository
@@ -78,5 +79,21 @@ class IngredientHarmonizeTest {
         assertNull(db.ingredientDao().get("b"))
         val a = assertNotNull(db.ingredientDao().get("a"))
         assertEquals(0, BigDecimal("300").compareTo(a.energyKj))
+    }
+
+    @Test fun seedUpgradeCorrectsUntouchedSeedRowsOnly() = runTest {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        context.getSharedPreferences("foody", android.content.Context.MODE_PRIVATE).edit().clear().putInt("seedVersion", 2).commit()
+        val oldOil = ingredient("seed-olivenoel", "Olivenöl", kj = "3700")
+            .copy(nutrientBasis = NutrientBasis.PER_100_ML, nutrientSource = SeedData.SOURCE)
+        val userButter = ingredient("seed-butter", "Butter", kj = "3000").copy(nutrientSource = "manuell")
+        db.ingredientDao().upsert(oldOil)
+        db.ingredientDao().upsert(userButter)
+
+        ingredients.seedIfNeeded()
+
+        assertEquals(NutrientBasis.PER_100_G, db.ingredientDao().get("seed-olivenoel")?.nutrientBasis)
+        assertEquals(0, BigDecimal("3000").compareTo(db.ingredientDao().get("seed-butter")?.energyKj)) // Nutzerwert bleibt
+        assertNotNull(db.ingredientDao().findByName("Pflanzenöl")) // neue Einträge aus v2 kommen dazu
     }
 }

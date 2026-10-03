@@ -42,6 +42,7 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -142,18 +143,29 @@ class RecipeListViewModel @Inject constructor(
     val importMessage = _importMessage.asStateFlow()
     fun importMessageShown() { _importMessage.value = null }
 
+    /** Fortschritt eines laufenden Imports (erledigt, gesamt); null, wenn keiner läuft. */
+    private val _importProgress = MutableStateFlow<Pair<Int, Int>?>(null)
+    val importProgress = _importProgress.asStateFlow()
+
     fun import(uris: List<Uri>, tag: String, notes: (String?) -> String) = launchImport {
         // Rezept-Exporte enthalten keine Portionenzahl → 4 als Vorgabe, im Hinweis zur Prüfung markiert
-        importer.import(uris, DEFAULT_IMPORT_SERVINGS, tag, notes)
+        importer.import(uris, DEFAULT_IMPORT_SERVINGS, tag, notes, ::onProgress)
     }
 
     fun importFolder(tree: Uri, tag: String, notes: (String?) -> String) = launchImport {
-        importer.importFolder(tree, DEFAULT_IMPORT_SERVINGS, tag, notes)
+        importer.importFolder(tree, DEFAULT_IMPORT_SERVINGS, tag, notes, ::onProgress)
     }
 
+    private fun onProgress(done: Int, total: Int) { _importProgress.value = done to total }
+
     private fun launchImport(block: suspend () -> ImportResult) = viewModelScope.launch {
-        val result = block()
-        _importMessage.value = ImportMessage(result.importedIds.size, result.failed, result.importedIds.singleOrNull())
+        _importProgress.value = 0 to 0
+        try {
+            val result = block()
+            _importMessage.value = ImportMessage(result.importedIds.size, result.failed, result.importedIds.singleOrNull())
+        } finally {
+            _importProgress.value = null
+        }
     }
 
     companion object {
@@ -165,6 +177,7 @@ class RecipeListViewModel @Inject constructor(
 fun RecipeListScreen(onOpen: (String) -> Unit, onCreate: () -> Unit, vm: RecipeListViewModel = hiltViewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val importMessage by vm.importMessage.collectAsStateWithLifecycle()
+    val importProgress by vm.importProgress.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val context = LocalContext.current
     val importTag = stringResource(R.string.import_tag)
@@ -214,6 +227,9 @@ fun RecipeListScreen(onOpen: (String) -> Unit, onCreate: () -> Unit, vm: RecipeL
         ) {
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Header(onImportFiles = { filesLauncher.launch(arrayOf("text/*", "application/octet-stream")) }, onImportFolder = { folderLauncher.launch(null) })
+            }
+            importProgress?.let { (done, total) ->
+                item(span = { GridItemSpan(maxLineSpan) }) { ImportProgress(done, total) }
             }
             if (browsing && state.dailyPicks.isNotEmpty()) {
                 item(span = { GridItemSpan(maxLineSpan) }) { DailyPicksPager(state.dailyPicks, onOpen) }
@@ -332,5 +348,23 @@ private fun TagRow(state: RecipeListUiState, onTag: (String?) -> Unit, onToggleA
                 colors = chipColors, shape = RoundedCornerShape(50))
         }
         item { Spacer(Modifier.size(4.dp)) }
+    }
+}
+
+@Composable
+private fun ImportProgress(done: Int, total: Int) {
+    Column(
+        Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.primaryContainer).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            if (total == 0) stringResource(R.string.import_running) else stringResource(R.string.import_progress, done, total),
+            style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+        if (total == 0) {
+            LinearProgressIndicator(Modifier.fillMaxWidth())
+        } else {
+            LinearProgressIndicator(progress = { done.toFloat() / total }, modifier = Modifier.fillMaxWidth(), drawStopIndicator = {})
+        }
     }
 }

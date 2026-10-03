@@ -9,6 +9,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.ui.Alignment
+import de.foody.app.ui.common.AutocompleteField
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -117,6 +125,7 @@ fun PantryScreen(vm: PantryViewModel = hiltViewModel()) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PantryDialog(
     initial: PantryItemEntity?,
@@ -125,34 +134,66 @@ private fun PantryDialog(
     onSave: (String, java.math.BigDecimal, MeasureUnit, LocalDate?) -> Unit,
 ) {
     var ingredientId by rememberSaveable { mutableStateOf(initial?.ingredientId) }
+    var ingredientText by rememberSaveable {
+        mutableStateOf(ingredients.firstOrNull { it.id == initial?.ingredientId }?.canonicalName.orEmpty())
+    }
     var amount by rememberSaveable { mutableStateOf(initial?.amount?.display(3).orEmpty()) }
     var unit by rememberSaveable { mutableStateOf(initial?.unit ?: MeasureUnit.GRAM) }
-    var bestBefore by rememberSaveable { mutableStateOf(initial?.bestBeforeDate?.toString().orEmpty()) }
-    val parsedDate = runCatching { LocalDate.parse(bestBefore.trim()) }.getOrNull()
+    var bestBefore by rememberSaveable { mutableStateOf(initial?.bestBeforeDate?.toEpochDay()) }
+    var pickingDate by rememberSaveable { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(if (initial == null) R.string.pantry_add else R.string.pantry_edit)) },
         text = {
             FormColumn {
-                DropdownField(stringResource(R.string.field_ingredient), ingredients.firstOrNull { it.id == ingredientId }, ingredients,
-                    { it.canonicalName }, { ingredientId = it.id })
+                // Suche statt Dropdown: nach Importen gibt es schnell mehrere hundert Zutaten
+                AutocompleteField(
+                    stringResource(R.string.field_ingredient), ingredientText,
+                    { ingredientText = it; ingredientId = ingredients.firstOrNull { i -> i.canonicalName.equals(it.trim(), true) }?.id },
+                    ingredients, { it.canonicalName }, { ingredientText = it.canonicalName; ingredientId = it.id },
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     DecimalField(amount, { amount = it }, stringResource(R.string.field_amount), Modifier.weight(1f))
                     DropdownField(stringResource(R.string.field_unit), unit, MeasureUnit.entries.toList(), { it.symbol }, { unit = it }, Modifier.weight(1f))
                 }
-                androidx.compose.material3.OutlinedTextField(
-                    bestBefore, { bestBefore = it }, label = { Text(stringResource(R.string.field_best_before)) },
-                    isError = bestBefore.isNotBlank() && parsedDate == null, singleLine = true,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedButton({ pickingDate = true }, Modifier.weight(1f)) {
+                        Icon(Icons.Outlined.Event, null)
+                        Text(
+                            bestBefore?.let { stringResource(R.string.pantry_best_before, LocalDate.ofEpochDay(it).medium()) }
+                                ?: stringResource(R.string.pantry_pick_best_before),
+                            Modifier.padding(start = 8.dp),
+                        )
+                    }
+                    if (bestBefore != null) {
+                        IconButton({ bestBefore = null }) { Icon(Icons.Default.Close, stringResource(R.string.pantry_clear_best_before)) }
+                    }
+                }
             }
         },
         confirmButton = {
             val amt = parseDecimal(amount)
             TextButton(
-                enabled = ingredientId != null && amt != null && amt.signum() >= 0 && (bestBefore.isBlank() || parsedDate != null),
-                onClick = { onSave(ingredientId!!, amt!!, unit, parsedDate) },
+                enabled = ingredientId != null && amt != null && amt.signum() >= 0,
+                onClick = { onSave(ingredientId!!, amt!!, unit, bestBefore?.let(LocalDate::ofEpochDay)) },
             ) { Text(stringResource(R.string.action_save)) }
         },
         dismissButton = { TextButton(onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
+    if (pickingDate) {
+        // DatePicker rechnet in UTC-Millisekunden; Umrechnung über UTC hält den Kalendertag stabil (Invariante 12)
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = (bestBefore ?: LocalDate.now().toEpochDay()) * 86_400_000L,
+        )
+        DatePickerDialog(
+            onDismissRequest = { pickingDate = false },
+            confirmButton = {
+                TextButton({
+                    state.selectedDateMillis?.let { bestBefore = Math.floorDiv(it, 86_400_000L) }
+                    pickingDate = false
+                }) { Text(stringResource(R.string.action_apply)) }
+            },
+            dismissButton = { TextButton({ pickingDate = false }) { Text(stringResource(R.string.action_cancel)) } },
+        ) { DatePicker(state) }
+    }
 }

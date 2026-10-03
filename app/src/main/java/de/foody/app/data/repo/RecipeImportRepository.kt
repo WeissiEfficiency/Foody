@@ -21,7 +21,13 @@ class RecipeImportRepository @Inject constructor(
     private val ingredients: IngredientRepository,
     @ApplicationContext private val context: Context,
 ) {
-    suspend fun import(uris: List<Uri>, defaultServings: Int, tag: String, notesTemplate: (String?) -> String): ImportResult {
+    suspend fun import(
+        uris: List<Uri>,
+        defaultServings: Int,
+        tag: String,
+        notesTemplate: (String?) -> String,
+        onProgress: (done: Int, total: Int) -> Unit = { _, _ -> },
+    ): ImportResult {
         val ids = mutableListOf<String>()
         var failed = 0
         for (uri in uris) {
@@ -31,6 +37,7 @@ class RecipeImportRepository @Inject constructor(
                 } ?: error("Datei nicht lesbar")
                 importText(text, defaultServings, tag, notesTemplate)
             }.onSuccess { it?.let(ids::add) ?: failed++ }.onFailure { failed++ }
+            onProgress(ids.size + failed, uris.size)
         }
         return ImportResult(ids, failed)
     }
@@ -39,9 +46,15 @@ class RecipeImportRepository @Inject constructor(
      * Importiert alle Markdown-Dateien eines per Ordnerauswahl freigegebenen Verzeichnisses
      * (z. B. eine Sammlung von Rezeptideen). Unterordner werden nicht durchsucht.
      */
-    suspend fun importFolder(treeUri: Uri, defaultServings: Int, tag: String, notesTemplate: (String?) -> String): ImportResult {
+    suspend fun importFolder(
+        treeUri: Uri,
+        defaultServings: Int,
+        tag: String,
+        notesTemplate: (String?) -> String,
+        onProgress: (done: Int, total: Int) -> Unit = { _, _ -> },
+    ): ImportResult {
         val files = withContext(Dispatchers.IO) { markdownFilesIn(treeUri) }
-        return import(files, defaultServings, tag, notesTemplate)
+        return import(files, defaultServings, tag, notesTemplate, onProgress)
     }
 
     private fun markdownFilesIn(treeUri: Uri): List<Uri> {

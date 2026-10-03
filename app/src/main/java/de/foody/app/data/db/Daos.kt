@@ -45,9 +45,13 @@ interface RecipeDao {
     @Query(
         """SELECT * FROM recipe
            WHERE (:archived = 1 AND archivedAt IS NOT NULL OR :archived = 0 AND archivedAt IS NULL)
-             AND (name LIKE '%' || :query || '%' OR tags LIKE '%' || :query || '%')
+             AND (name LIKE '%' || :query || '%' ESCAPE '!'
+                  OR tags LIKE '%' || :query || '%' ESCAPE '!'
+                  OR id IN (SELECT ri.recipeId FROM recipe_ingredient ri JOIN ingredient i ON i.id = ri.ingredientId
+                            WHERE i.canonicalName LIKE '%' || :query || '%' ESCAPE '!'))
            ORDER BY name COLLATE NOCASE""",
     )
+    /** Sucht in Name, Tags und Zutaten. [query] muss für LIKE maskiert sein (siehe RecipeRepository). */
     fun observe(query: String, archived: Boolean): Flow<List<RecipeEntity>>
 
     @Query("SELECT * FROM recipe WHERE archivedAt IS NULL ORDER BY name COLLATE NOCASE")
