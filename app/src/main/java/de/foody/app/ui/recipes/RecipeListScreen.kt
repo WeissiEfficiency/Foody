@@ -140,18 +140,20 @@ fun RecipeListScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
+            // Feste Schlüssel: Verschwindet ein Eintrag darüber (Tagesauswahl beim Suchen), behält das Suchfeld
+            // seine Identität – sonst würde es neu aufgebaut und verlöre nach dem ersten Buchstaben den Fokus.
+            item(key = "header", span = { GridItemSpan(maxLineSpan) }) {
                 Header(onImportFiles = { filesLauncher.launch(arrayOf("text/*", "application/octet-stream")) }, onImportFolder = { folderLauncher.launch(null) })
             }
             importProgress?.let { (done, total) ->
-                item(span = { GridItemSpan(maxLineSpan) }) { ImportProgress(done, total) }
+                item(key = "import", span = { GridItemSpan(maxLineSpan) }) { ImportProgress(done, total) }
             }
             if (browsing && state.dailyPicks.isNotEmpty()) {
-                item(span = { GridItemSpan(maxLineSpan) }) { DailyPicksPager(state.dailyPicks, onOpen) }
+                item(key = "daily", span = { GridItemSpan(maxLineSpan) }) { DailyPicksPager(state.dailyPicks, onOpen) }
             }
-            item(span = { GridItemSpan(maxLineSpan) }) { SearchBar(state.query, vm::onQuery) }
-            item(span = { GridItemSpan(maxLineSpan) }) { TagRow(state, vm::onTag, vm::onToggleArchived, vm::onToggleFavorites, vm::onTogglePantry) }
-            item(span = { GridItemSpan(maxLineSpan) }) {
+            item(key = "search", span = { GridItemSpan(maxLineSpan) }) { SearchBar(state.query, vm::onQuery) }
+            item(key = "filters", span = { GridItemSpan(maxLineSpan) }) { TagRow(state, vm::onTag, vm::onToggleArchived, vm::onToggleFavorites, vm::onTogglePantry) }
+            item(key = "title", span = { GridItemSpan(maxLineSpan) }) {
                 Text(
                     stringResource(if (state.showArchived) R.string.recipe_section_archive else R.string.recipe_section_all, state.recipes.size),
                     style = MaterialTheme.typography.titleLarge,
@@ -159,7 +161,7 @@ fun RecipeListScreen(
                 )
             }
             if (!state.loading && state.recipes.isEmpty()) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
+                item(key = "empty", span = { GridItemSpan(maxLineSpan) }) {
                     EmptyState(
                         stringResource(
                             when {
