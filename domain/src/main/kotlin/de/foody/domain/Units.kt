@@ -3,8 +3,12 @@ package de.foody.domain
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-/** Nicht beliebig mischbare Mengendimensionen. */
-enum class Dimension { MASS, VOLUME, COUNT }
+/**
+ * Nicht beliebig mischbare Mengendimensionen. Packungen und Dosen sind eigene Dimensionen: „1 Pck. Hefe“
+ * (7 g Trockenhefe) ist etwas anderes als „1 Stück Hefe“ (42-g-Würfel), und auf der Einkaufsliste soll
+ * „2 Dosen“ stehen, nicht „2 Stk.“.
+ */
+enum class Dimension(val countable: Boolean) { MASS(false), VOLUME(false), COUNT(true), PACKAGE(true), CAN(true) }
 
 /**
  * Einheiten mit Faktor zur Basiseinheit der Dimension.
@@ -20,8 +24,8 @@ enum class MeasureUnit(val symbol: String, val dimension: Dimension, val factorT
     TEASPOON("TL", Dimension.VOLUME, BigDecimal("5")),
     TABLESPOON("EL", Dimension.VOLUME, BigDecimal("15")),
     PIECE("Stk.", Dimension.COUNT, BigDecimal.ONE),
-    PACKAGE("Pck.", Dimension.COUNT, BigDecimal.ONE),
-    CAN("Dose", Dimension.COUNT, BigDecimal.ONE),
+    PACKAGE("Pck.", Dimension.PACKAGE, BigDecimal.ONE),
+    CAN("Dose", Dimension.CAN, BigDecimal.ONE),
     ;
 
     companion object {
@@ -29,6 +33,8 @@ enum class MeasureUnit(val symbol: String, val dimension: Dimension, val factorT
             Dimension.MASS -> GRAM
             Dimension.VOLUME -> MILLILITER
             Dimension.COUNT -> PIECE
+            Dimension.PACKAGE -> PACKAGE
+            Dimension.CAN -> CAN
         }
     }
 }
@@ -66,7 +72,19 @@ data class ConversionInfo(
     val densityGPerMl: BigDecimal? = null,
     /** Gramm je Stück, null = unbekannt. */
     val pieceWeightG: BigDecimal? = null,
-)
+    /** Gramm je Packung (z. B. Vanillezucker 8 g), null = unbekannt. */
+    val packageWeightG: BigDecimal? = null,
+    /** Gramm je Dose (Abtropf- bzw. Füllgewicht), null = unbekannt. */
+    val canWeightG: BigDecimal? = null,
+) {
+    /** Gramm je Einheit einer Zähl-Dimension; Masse und Volumen haben keine. */
+    fun gramsPerUnit(dimension: Dimension): BigDecimal? = when (dimension) {
+        Dimension.COUNT -> pieceWeightG
+        Dimension.PACKAGE -> packageWeightG
+        Dimension.CAN -> canWeightG
+        Dimension.MASS, Dimension.VOLUME -> null
+    }?.takeIf { it.signum() > 0 }
+}
 
 object UnitConverter {
     /**
@@ -78,14 +96,15 @@ object UnitConverter {
         val grams: BigDecimal = when (q.dimension) {
             Dimension.MASS -> q.baseAmount
             Dimension.VOLUME -> info.densityGPerMl?.let { q.baseAmount * it } ?: return null
-            Dimension.COUNT -> info.pieceWeightG?.let { q.baseAmount * it } ?: return null
+            Dimension.COUNT, Dimension.PACKAGE, Dimension.CAN ->
+                info.gramsPerUnit(q.dimension)?.let { q.baseAmount * it } ?: return null
         }
         val result: BigDecimal = when (target) {
             Dimension.MASS -> grams
             Dimension.VOLUME -> info.densityGPerMl?.takeIf { it.signum() > 0 }
                 ?.let { grams.divide(it, MATH_SCALE, RoundingMode.HALF_UP) } ?: return null
-            Dimension.COUNT -> info.pieceWeightG?.takeIf { it.signum() > 0 }
-                ?.let { grams.divide(it, MATH_SCALE, RoundingMode.HALF_UP) } ?: return null
+            Dimension.COUNT, Dimension.PACKAGE, Dimension.CAN ->
+                info.gramsPerUnit(target)?.let { grams.divide(it, MATH_SCALE, RoundingMode.HALF_UP) } ?: return null
         }
         return Quantity(result, target)
     }
@@ -97,6 +116,8 @@ object QuantityFormatter {
         Dimension.MASS -> if (q.baseAmount.abs() >= BigDecimal("1000")) MeasureUnit.KILOGRAM else MeasureUnit.GRAM
         Dimension.VOLUME -> if (q.baseAmount.abs() >= BigDecimal("1000")) MeasureUnit.LITER else MeasureUnit.MILLILITER
         Dimension.COUNT -> MeasureUnit.PIECE
+        Dimension.PACKAGE -> MeasureUnit.PACKAGE
+        Dimension.CAN -> MeasureUnit.CAN
     }
 
     fun format(q: Quantity, unit: MeasureUnit = displayUnit(q)): String {

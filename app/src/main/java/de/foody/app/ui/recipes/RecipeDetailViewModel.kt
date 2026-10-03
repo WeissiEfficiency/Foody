@@ -19,7 +19,6 @@ import de.foody.app.data.repo.toDomain
 import de.foody.app.ui.RecipeDetailRoute
 import de.foody.app.ui.common.display
 import de.foody.app.ui.common.formatAmount
-import de.foody.domain.Dimension
 import de.foody.domain.NutritionCalculator
 import de.foody.domain.NutritionResult
 import de.foody.domain.RecipeScaler
@@ -84,7 +83,7 @@ class RecipeDetailViewModel @Inject constructor(
                 StepIngredientMatcher.mentions(s.text, names).mapNotNull { m ->
                     val line = byId[m.ingredientId] ?: return@mapNotNull null
                     // „2 Eier“ hat kein Einheitswort: dann gilt die Stück-Einheit der Rezeptzeile
-                    val unit = m.unit ?: unitById[m.ingredientId]?.takeIf { it.dimension == Dimension.COUNT }
+                    val unit = m.unit ?: unitById[m.ingredientId]?.takeIf { it.dimension.countable }
                     val stepAmount = if (m.amount != null && unit != null) {
                         formatAmount(RecipeScaler.scale(m.amount!!, recipe.defaultServings, servings), unit)
                     } else {

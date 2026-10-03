@@ -106,7 +106,11 @@ object MarkdownRecipeImporter {
                 val rest = m.groupValues[2].trim()
                 val firstToken = rest.substringBefore(' ').substringBefore(',').lowercase()
                 val mapped = GermanAmounts.unitOf(firstToken)
-                if (mapped != null) {
+                if (firstToken.startsWith("prise")) {
+                    // Eine Prise ist keine kaufbare oder sinnvoll rechenbare Menge → „nach Bedarf“ mit Hinweis
+                    amount = null
+                    notes += amountText.trim()
+                } else if (mapped != null) {
                     unit = mapped
                     rest.removePrefix(rest.substringBefore(' ').substringBefore(',')).trim(',', ' ')
                         .takeIf { it.isNotEmpty() }?.let(notes::add)
@@ -134,19 +138,28 @@ object MarkdownRecipeImporter {
      * „Paprikaschote(n) rote“ → „Paprikaschote“ + [„rote“]; „Salz und Pfeffer“ bleibt zusammen.
      * Der Name besteht aus den führenden großgeschriebenen Wörtern (Substantive).
      */
+    /** Namen mit kleingeschriebenem zweitem Wort, die sonst nach dem ersten Wort abgeschnitten würden. */
+    private val multiWordNames = listOf("crème fraîche", "creme fraiche", "crème fraiche", "crème double")
+
     private fun splitName(text: String): Pair<String, List<String>> {
         val base = text.substringBefore(',')
-            .replace(Regex("""\((n|e|er|en|s|nen)\)"""), "")
+            .replace(Regex("""\((n|e|er|en|s|se|nen)\)"""), "")
             .replace(Regex("""/(n|e|en)\b"""), "")
             .replace(Regex("""\s+"""), " ")
             .trim()
         val afterComma = text.substringAfter(',', "").trim()
+        multiWordNames.firstOrNull { base.lowercase().startsWith(it) }?.let { known ->
+            val rest = base.drop(known.length).trim()
+            return base.take(known.length) to listOfNotNull(rest.ifBlank { null }, afterComma.ifBlank { null })
+        }
         val tokens = base.split(' ').filter { it.isNotEmpty() }
         var end = if (tokens.isEmpty()) 0 else 1
         while (end < tokens.size) {
             val t = tokens[end]
             end += when {
                 t.first().isUpperCase() -> 1
+                // „Weizenmehl Type 405“: die Typnummer gehört zum Namen
+                t.all(Char::isDigit) && tokens[end - 1] == "Type" -> 1
                 t == "und" && end + 1 < tokens.size && tokens[end + 1].first().isUpperCase() -> 2
                 else -> break
             }

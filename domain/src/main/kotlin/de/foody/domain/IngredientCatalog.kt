@@ -22,7 +22,7 @@ object IngredientCatalog {
         alias("Karotte", "Möhre", "Möhren", "Mohrrübe")
         alias("Kartoffel", "Kartoffeln", "Kartoffeln, festkochend", "Kartoffeln, mehligkochend")
         alias("Zwiebel", "Zwiebeln", "Gemüsezwiebel")
-        alias("Ei", "Eier")
+        alias("Ei", "Eier", "Ei Gr. M", "Eier Gr. M", "Ei Gr. L", "Eier Gr. L", "Ei, Größe M", "Eier, Größe M")
         alias("Tomate", "Tomaten")
         alias("Dosentomaten", "Tomaten, geschälte", "Tomaten aus der Dose", "Pizzatomaten", "Tomaten, stückige")
         alias("Rinderhack", "Rinderhackfleisch", "Hackfleisch vom Rind")
@@ -35,10 +35,65 @@ object IngredientCatalog {
         alias("Pfeffer", "Pfeffer, schwarz", "schwarzer Pfeffer", "Pfeffer aus der Mühle")
         alias("Zucker", "weißer Zucker", "Kristallzucker")
         alias("Wasser", "Leitungswasser")
-        alias("Gemüsebrühe", "Gemüsefond")
+        // Fertige Brühen liegen nährwertlich alle bei wenigen kcal je 100 ml – eine Stammzutat genügt
+        alias("Gemüsebrühe", "Gemüsefond", "Brühe", "Fleischbrühe", "Rinderbrühe", "Geflügelbrühe", "Hühnerbrühe", "Rinderfond")
         alias("Kokosmilch", "Kokosmilch, ungesüßt")
         alias("Eigelb", "Eigelbe")
+        // Version 4: häufigste Zutaten der importierten Rezepte ohne Nährwerte
+        alias("Pfeffer", "Pfefferkörner", "Pfeffer, weiß", "weißer Pfeffer")
+        alias("Hefe", "Frischhefe", "Backhefe", "Hefewürfel")
+        alias("Trockenhefe", "Trockenbackhefe")
+        alias("Ingwer", "Ingwerwurzel", "Ingwer, frisch")
+        alias("Crème fraîche", "Creme fraiche", "Crème fraiche", "Creme fraîche")
+        alias("Chilischote", "Chili", "Peperoni, rot", "Chilischote, rot")
+        alias("Lorbeerblatt", "Lorbeerblätter", "Lorbeer")
+        alias("Pimentkörner", "Piment", "Pimentkorn")
+        alias("Gemüsebrühepulver", "Brühpulver", "gekörnte Brühe", "Gemüsebrühe, instant", "Instant-Gemüsebrühe")
+        alias("Quark", "Magerquark", "Speisequark")
+        alias("Joghurt", "Naturjoghurt", "Joghurt, natur")
+        alias("Champignons", "Champignon", "Pilze, braune")
+        alias("Frühlingszwiebel", "Lauchzwiebel", "Lauchzwiebeln")
+        alias("Lauch", "Porree")
+        alias("Speisestärke", "Maisstärke", "Stärke")
+        alias("Vanillepuddingpulver", "Puddingpulver, Vanille", "Puddingpulver")
+        alias("Sojasauce", "Sojasoße", "Sojasauce, helle", "Sojasauce, dunkle")
+        alias("Sesamöl", "Sesamöl, geröstet")
+        alias("Knollensellerie", "Sellerie", "Sellerieknolle")
+        alias("Butterschmalz", "Ghee")
+        alias("Mozzarella", "Büffelmozzarella")
+        alias("Parmesan", "Parmigiano", "Parmesankäse", "Grana Padano")
+        alias("Rotwein", "Rotwein, trocken")
+        alias("Weißwein", "Weißwein, trocken")
+        alias("Eiweiß", "Eiklar")
+        alias("Schnittlauch", "Schnittlauchröllchen")
+        alias("Semmelbrösel", "Paniermehl")
+        alias("Brötchen", "Semmel", "Semmeln", "Weizenbrötchen")
+        alias("Rindfleisch", "Rindergulasch", "Gulasch, Rind", "Rinderbraten")
+        alias("Schweinebraten", "Schweinenacken", "Schweineschulter", "Schweinenacken, ohne Knochen")
+        alias("Schweinefilet", "Schweinelende")
+        alias("Kochschinken", "Schinken", "Schinken, gekocht")
+        alias("Balsamico", "Aceto Balsamico", "Balsamicoessig")
+        alias("Brokkoli", "Broccoli")
+        alias("Hokkaidokürbis", "Kürbis", "Hokkaido")
     }
+
+    /**
+     * Typische Packungsgröße in Gramm – „1 Pck. Vanillezucker“ = 8 g. Faustwerte gängiger Marken; ohne Eintrag
+     * lässt sich eine Packung nicht in Gramm umrechnen (Nährwert dann unvollständig statt falsch).
+     */
+    private val packageGrams = mapOf(
+        "vanillezucker" to "8", "backpulver" to "15", "hefe" to "7", "trockenhefe" to "7",
+        "vanillepuddingpulver" to "37", "gemüsebrühepulver" to "10",
+    )
+
+    /** Typischer Doseninhalt in Gramm (Abtropfgewicht bei Hülsenfrüchten und Mais). */
+    private val canGrams = mapOf(
+        "dosentomaten" to "400", "tomate" to "400", "kokosmilch" to "400",
+        "kidneybohnen" to "250", "kichererbsen" to "240", "mais" to "285", "weiße bohnen" to "250",
+    )
+
+    fun packageWeightG(name: String): java.math.BigDecimal? = packageGrams[key(canonicalName(name))]?.toBigDecimal()
+    fun canWeightG(name: String): java.math.BigDecimal? = canGrams[key(canonicalName(name))]?.toBigDecimal()
 
     private val neverBuyKeys = setOf("wasser", "leitungswasser", "eiswürfel", "heißes wasser", "kaltes wasser")
 

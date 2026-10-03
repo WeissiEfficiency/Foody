@@ -12,6 +12,7 @@ import de.foody.domain.Nutrient
 import de.foody.domain.NutrientProfile
 import de.foody.domain.PantryItem
 import de.foody.domain.Quantity
+import de.foody.domain.IngredientCatalog
 import de.foody.domain.Recipe
 import de.foody.domain.RecipeIngredient
 import java.util.UUID
@@ -22,7 +23,12 @@ fun IngredientEntity.toDomain() = Ingredient(
     id = id,
     name = canonicalName,
     category = category,
-    conversion = ConversionInfo(densityGPerMl, pieceWeightG),
+    // Packungs- und Dosengewichte sind Faustwerte je Zutat aus dem Katalog (kein eigenes Datenbankfeld)
+    conversion = ConversionInfo(
+        densityGPerMl, pieceWeightG,
+        packageWeightG = IngredientCatalog.packageWeightG(canonicalName),
+        canWeightG = IngredientCatalog.canWeightG(canonicalName),
+    ),
     nutrients = nutrientBasis?.let { basis ->
         NutrientProfile(
             basis = basis,
