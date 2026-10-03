@@ -49,6 +49,8 @@ data class BackupDto(
     @Serializable data class Recipe(
         val id: String, val name: String, val servings: Int, val prep: Int?, val cook: Int?, val imageUri: String?,
         val notes: String?, val tags: String, val archivedAt: Long?, val createdAt: Long, val updatedAt: Long,
+        // Seit DB v2; Standardwerte halten ältere Sicherungen lesbar
+        val favorite: Boolean = false, val sourceUrl: String? = null,
     )
     @Serializable data class RecipeIngredient(
         val id: String, val recipeId: String, val ingredientId: String, val amount: String, val unit: String,
@@ -110,7 +112,7 @@ class BackupRepository @Inject constructor(
                     it.energyKj.s(), it.protein.s(), it.carbs.s(), it.fat.s(), it.fiber.s(), it.sugar.s(), it.salt.s(), it.nutrientSource, it.createdAt, it.updatedAt)
             },
             recipes = r.getAll().map {
-                BackupDto.Recipe(it.id, it.name, it.defaultServings, it.prepMinutes, it.cookMinutes, it.imageUri, it.notes, it.tags, it.archivedAt, it.createdAt, it.updatedAt)
+                BackupDto.Recipe(it.id, it.name, it.defaultServings, it.prepMinutes, it.cookMinutes, it.imageUri, it.notes, it.tags, it.archivedAt, it.createdAt, it.updatedAt, it.favorite, it.sourceUrl)
             },
             recipeIngredients = r.getAllIngredients().map {
                 BackupDto.RecipeIngredient(it.id, it.recipeId, it.ingredientId, it.amount.toPlainString(), it.unit.name, it.sortOrder, it.preparationNote, it.optional)
@@ -137,7 +139,7 @@ class BackupRepository @Inject constructor(
             )
         }
         d.recipes.forEach {
-            db.recipeDao().upsert(RecipeEntity(it.id, it.name, it.servings, it.prep, it.cook, it.imageUri, it.notes, it.tags, it.archivedAt, it.createdAt, it.updatedAt))
+            db.recipeDao().upsert(RecipeEntity(it.id, it.name, it.servings, it.prep, it.cook, it.imageUri, it.notes, it.tags, it.archivedAt, it.createdAt, it.updatedAt, favorite = it.favorite, sourceUrl = it.sourceUrl))
         }
         db.recipeDao().insertIngredients(d.recipeIngredients.map {
             RecipeIngredientEntity(it.id, it.recipeId, it.ingredientId, BigDecimal(it.amount), MeasureUnit.valueOf(it.unit), it.sortOrder, it.note, it.optional)

@@ -85,6 +85,10 @@
     <string name="home_title">Was kochen wir?</string>
     <string name="daily_picks">Rezept des Tages</string>
     <string name="filter_all">Alle</string>
+    <string name="filter_favorites">Favoriten</string>
+    <string name="favorite">Favorit</string>
+    <string name="favorite_add">Als Favorit merken</string>
+    <string name="favorite_remove">Aus Favoriten entfernen</string>
     <string name="recipe_section_all">Deine Rezepte (%1$d)</string>
     <string name="recipe_section_archive">Archiv (%1$d)</string>
     <string name="cook_mode_start">Jetzt kochen</string>
@@ -107,7 +111,8 @@
     <string name="import_done">%1$d Rezept(e) importiert</string>
     <string name="import_running">Dateien werden gesucht …</string>
     <string name="import_progress">Importiere %1$d von %2$d …</string>
-    <string name="import_done_with_errors">%1$d Rezept(e) importiert, %2$d Datei(en) nicht erkannt</string>
+    <string name="import_skipped">%1$d bereits vorhanden</string>
+    <string name="import_failed">%1$d Datei(en) nicht erkannt</string>
 
     <!-- Zutaten -->
     <string name="ingredients_title">Zutaten</string>

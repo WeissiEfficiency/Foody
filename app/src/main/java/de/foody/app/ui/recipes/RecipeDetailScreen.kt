@@ -36,7 +36,10 @@ import de.foody.app.data.repo.AddRecipeResult
 import de.foody.app.data.repo.ShoppingRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.Archive
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import de.foody.app.ui.theme.Coral
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
@@ -154,6 +157,7 @@ class RecipeDetailViewModel @Inject constructor(
 
     fun setServings(n: Int) { saved["servings"] = n }
     fun archive(archived: Boolean) = viewModelScope.launch { repo.setArchived(id, archived) }
+    fun toggleFavorite() = viewModelScope.launch { state.value.recipe?.let { repo.setFavorite(id, !it.favorite) } }
     fun delete(onDone: () -> Unit) = viewModelScope.launch { repo.delete(id); onDone() }
     fun duplicate(suffix: String, onDone: (String) -> Unit) = viewModelScope.launch { repo.duplicate(id, suffix)?.let(onDone) }
 
@@ -198,6 +202,7 @@ fun RecipeDetailScreen(
             item {
                 Hero(
                     recipe, onBack, onEdit,
+                    onFavorite = vm::toggleFavorite,
                     onDuplicate = { vm.duplicate(copySuffix, onOpenOther) },
                     onArchive = { vm.archive(recipe.archivedAt == null) },
                     onDelete = { confirmDelete = true },
@@ -289,6 +294,7 @@ private fun Hero(
     recipe: RecipeEntity,
     onBack: () -> Unit,
     onEdit: () -> Unit,
+    onFavorite: () -> Unit,
     onDuplicate: () -> Unit,
     onArchive: () -> Unit,
     onDelete: () -> Unit,
@@ -305,6 +311,14 @@ private fun Hero(
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back))
             }
             Spacer(Modifier.weight(1f))
+            androidx.compose.material3.FilledIconButton(onFavorite, colors = roundButton) {
+                Icon(
+                    if (recipe.favorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    stringResource(if (recipe.favorite) R.string.favorite_remove else R.string.favorite_add),
+                    tint = if (recipe.favorite) Coral else Color(0xFF1C2321),
+                )
+            }
+            Spacer(Modifier.size(8.dp))
             androidx.compose.material3.FilledIconButton(onEdit, colors = roundButton) {
                 Icon(Icons.Outlined.Edit, stringResource(R.string.action_edit))
             }

@@ -155,6 +155,8 @@ data class RecipeDraft(
     val tags: String,
     val ingredients: List<Line>,
     val steps: List<String>,
+    /** Quell-URL bei Importen; null übernimmt beim Bearbeiten die gespeicherte. */
+    val sourceUrl: String? = null,
 ) {
     data class Line(
         val ingredientId: String,
@@ -194,6 +196,9 @@ class RecipeRepository @Inject constructor(private val dao: RecipeDao) {
             createdAt = existing?.createdAt ?: now,
             updatedAt = now,
             version = (existing?.version ?: 0) + 1,
+            // Favorit und Quelle gehören nicht zum Editor-Entwurf und bleiben beim Bearbeiten erhalten
+            favorite = existing?.favorite ?: false,
+            sourceUrl = d.sourceUrl ?: existing?.sourceUrl,
         )
         val lines = d.ingredients.mapIndexed { i, l ->
             RecipeIngredientEntity(newId(), id, l.ingredientId, l.amount, l.unit, i, l.note, l.optional)
@@ -203,18 +208,26 @@ class RecipeRepository @Inject constructor(private val dao: RecipeDao) {
         return id
     }
 
-    suspend fun duplicate(id: String, copySuffix: String): String? {
+    /** Gespeichertes Rezept als Entwurf (gleiche ID); null, wenn es nicht existiert. */
+    suspend fun draftOf(id: String): RecipeDraft? {
         val r = dao.get(id) ?: return null
-        val lines = dao.getIngredients(id)
-        val steps = dao.getSteps(id)
-        return save(
-            RecipeDraft(
-                null, "${r.name} $copySuffix", r.defaultServings, r.prepMinutes, r.cookMinutes, r.imageUri, r.notes, r.tags,
-                lines.map { RecipeDraft.Line(it.ingredientId, it.amount, it.unit, it.preparationNote, it.optional) },
-                steps.map { it.text },
-            ),
+        return RecipeDraft(
+            r.id, r.name, r.defaultServings, r.prepMinutes, r.cookMinutes, r.imageUri, r.notes, r.tags,
+            dao.getIngredients(id).map { RecipeDraft.Line(it.ingredientId, it.amount, it.unit, it.preparationNote, it.optional) },
+            dao.getSteps(id).map { it.text },
+            r.sourceUrl,
         )
     }
+
+    /** Kopie ohne Quell-URL (sonst gälte sie als Dublette des Imports) und ohne Favoriten-Markierung. */
+    suspend fun duplicate(id: String, copySuffix: String): String? {
+        val d = draftOf(id) ?: return null
+        return save(d.copy(id = null, name = "${d.name} $copySuffix", sourceUrl = null))
+    }
+
+    suspend fun setFavorite(id: String, favorite: Boolean) = dao.setFavorite(id, favorite, System.currentTimeMillis())
+
+    suspend fun findBySourceUrl(url: String) = dao.findBySourceUrl(url)
 
     suspend fun setArchived(id: String, archived: Boolean) {
         val now = System.currentTimeMillis()

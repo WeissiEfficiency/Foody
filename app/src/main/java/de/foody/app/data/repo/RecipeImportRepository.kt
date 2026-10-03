@@ -12,7 +12,8 @@ import java.math.BigDecimal
 import javax.inject.Inject
 import javax.inject.Singleton
 
-data class ImportResult(val importedIds: List<String>, val failed: Int)
+/** [skipped]: Dateien, deren Quelle bereits importiert wurde. */
+data class ImportResult(val importedIds: List<String>, val failed: Int, val skipped: Int = 0)
 
 /** Importiert Rezepte aus Markdown-Dateien (z. B. Web-Clipper-Export von Rezeptseiten). */
 @Singleton
@@ -30,16 +31,23 @@ class RecipeImportRepository @Inject constructor(
     ): ImportResult {
         val ids = mutableListOf<String>()
         var failed = 0
+        var skipped = 0
         for (uri in uris) {
             runCatching {
                 val text = withContext(Dispatchers.IO) {
                     context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
                 } ?: error("Datei nicht lesbar")
-                importText(text, defaultServings, tag, notesTemplate)
-            }.onSuccess { it?.let(ids::add) ?: failed++ }.onFailure { failed++ }
-            onProgress(ids.size + failed, uris.size)
+                importOne(text, defaultServings, tag, notesTemplate)
+            }.onSuccess { outcome ->
+                when (outcome) {
+                    is Outcome.Imported -> ids += outcome.id
+                    Outcome.AlreadyImported -> skipped++
+                    Outcome.NotRecognized -> failed++
+                }
+            }.onFailure { failed++ }
+            onProgress(ids.size + failed + skipped, uris.size)
         }
-        return ImportResult(ids, failed)
+        return ImportResult(ids, failed, skipped)
     }
 
     /**
@@ -72,9 +80,21 @@ class RecipeImportRepository @Inject constructor(
     }
 
     /** null, wenn der Text kein erkennbares Rezept enthält. */
-    suspend fun importText(text: String, defaultServings: Int, tag: String, notesTemplate: (String?) -> String): String? {
+    private sealed interface Outcome {
+        data class Imported(val id: String) : Outcome
+        data object AlreadyImported : Outcome
+        data object NotRecognized : Outcome
+    }
+
+    /** ID des neuen Rezepts; null, wenn der Text kein Rezept enthält oder die Quelle schon importiert wurde. */
+    suspend fun importText(text: String, defaultServings: Int, tag: String, notesTemplate: (String?) -> String): String? =
+        (importOne(text, defaultServings, tag, notesTemplate) as? Outcome.Imported)?.id
+
+    private suspend fun importOne(text: String, defaultServings: Int, tag: String, notesTemplate: (String?) -> String): Outcome {
         val parsed = MarkdownRecipeImporter.parse(text)
-        if (parsed.name.isBlank() || parsed.ingredients.isEmpty()) return null
+        if (parsed.name.isBlank() || parsed.ingredients.isEmpty()) return Outcome.NotRecognized
+        // Gleiche Quelle schon vorhanden (auch archiviert) → nicht doppelt anlegen
+        if (parsed.sourceUrl != null && recipes.findBySourceUrl(parsed.sourceUrl!!) != null) return Outcome.AlreadyImported
         val lines = parsed.ingredients.map { ing ->
             RecipeDraft.Line(
                 ingredientId = ingredients.getOrCreate(ing.name).id,
@@ -97,7 +117,8 @@ class RecipeImportRepository @Inject constructor(
                 tags = tag,
                 ingredients = lines,
                 steps = parsed.steps,
+                sourceUrl = parsed.sourceUrl,
             ),
-        )
+        ).let(Outcome::Imported)
     }
 }

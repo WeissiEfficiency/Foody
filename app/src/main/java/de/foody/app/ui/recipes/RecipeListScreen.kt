@@ -31,6 +31,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.FileDownload
@@ -95,6 +96,7 @@ data class RecipeListUiState(
     val query: String = "",
     val showArchived: Boolean = false,
     val tag: String? = null,
+    val favoritesOnly: Boolean = false,
     val recipes: List<RecipeEntity> = emptyList(),
     /** Tags aller aktiven Rezepte, häufigste zuerst – für die Filter-Chips. */
     val tags: List<String> = emptyList(),
@@ -115,16 +117,22 @@ class RecipeListViewModel @Inject constructor(
     private val query = saved.getStateFlow("query", "")
     private val archived = saved.getStateFlow("archived", false)
     private val tag = saved.getStateFlow<String?>("tag", null)
+    private val favoritesOnly = saved.getStateFlow("favorites", false)
+
+    /** Tag- und Favoritenfilter wirken im Speicher auf das Suchergebnis. */
+    private data class LocalFilter(val tag: String?, val favoritesOnly: Boolean)
+    private val localFilter = combine(tag, favoritesOnly, ::LocalFilter)
 
     private val filtered = combine(query, archived) { q, a -> q to a }
         .flatMapLatest { (q, a) -> repo.observe(q.trim(), a) }
 
-    val state = combine(query, archived, tag, filtered, repo.observeActive()) { q, a, t, list, active ->
+    val state = combine(query, archived, localFilter, filtered, repo.observeActive()) { q, a, f, list, active ->
         RecipeListUiState(
             query = q,
             showArchived = a,
-            tag = t,
-            recipes = if (t == null) list else list.filter { t in it.tagList() },
+            tag = f.tag,
+            favoritesOnly = f.favoritesOnly,
+            recipes = list.filter { r -> (f.tag == null || f.tag in r.tagList()) && (!f.favoritesOnly || r.favorite) },
             tags = active.flatMap { it.tagList() }.groupingBy { it }.eachCount()
                 .entries.sortedByDescending { it.value }.map { it.key }.take(8),
             dailyPicks = DailyPicks.pick(active, LocalDate.now()) { it.id },
@@ -135,9 +143,10 @@ class RecipeListViewModel @Inject constructor(
     fun onQuery(q: String) { saved["query"] = q }
     fun onToggleArchived() { saved["archived"] = !archived.value }
     fun onTag(t: String?) { saved["tag"] = if (tag.value == t) null else t }
+    fun onToggleFavorites() { saved["favorites"] = !favoritesOnly.value }
 
     /** Einmaliges Import-Ergebnis; die UI quittiert es nach Anzeige. */
-    data class ImportMessage(val imported: Int, val failed: Int, val openId: String?)
+    data class ImportMessage(val imported: Int, val failed: Int, val skipped: Int, val openId: String?)
 
     private val _importMessage = MutableStateFlow<ImportMessage?>(null)
     val importMessage = _importMessage.asStateFlow()
@@ -162,7 +171,7 @@ class RecipeListViewModel @Inject constructor(
         _importProgress.value = 0 to 0
         try {
             val result = block()
-            _importMessage.value = ImportMessage(result.importedIds.size, result.failed, result.importedIds.singleOrNull())
+            _importMessage.value = ImportMessage(result.importedIds.size, result.failed, result.skipped, result.importedIds.singleOrNull())
         } finally {
             _importProgress.value = null
         }
@@ -198,11 +207,11 @@ fun RecipeListScreen(onOpen: (String) -> Unit, onCreate: () -> Unit, vm: RecipeL
         val m = importMessage ?: return@LaunchedEffect
         vm.importMessageShown()
         m.openId?.let(onOpen)
-        val text = if (m.failed == 0) {
-            context.getString(R.string.import_done, m.imported)
-        } else {
-            context.getString(R.string.import_done_with_errors, m.imported, m.failed)
-        }
+        val text = buildList {
+            add(context.getString(R.string.import_done, m.imported))
+            if (m.skipped > 0) add(context.getString(R.string.import_skipped, m.skipped))
+            if (m.failed > 0) add(context.getString(R.string.import_failed, m.failed))
+        }.joinToString(", ")
         snackbar.showSnackbar(text)
     }
     Scaffold(
@@ -235,7 +244,7 @@ fun RecipeListScreen(onOpen: (String) -> Unit, onCreate: () -> Unit, vm: RecipeL
                 item(span = { GridItemSpan(maxLineSpan) }) { DailyPicksPager(state.dailyPicks, onOpen) }
             }
             item(span = { GridItemSpan(maxLineSpan) }) { SearchBar(state.query, vm::onQuery) }
-            item(span = { GridItemSpan(maxLineSpan) }) { TagRow(state, vm::onTag, vm::onToggleArchived) }
+            item(span = { GridItemSpan(maxLineSpan) }) { TagRow(state, vm::onTag, vm::onToggleArchived, vm::onToggleFavorites) }
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Text(
                     stringResource(if (state.showArchived) R.string.recipe_section_archive else R.string.recipe_section_all, state.recipes.size),
@@ -330,15 +339,26 @@ private fun SearchBar(query: String, onQuery: (String) -> Unit) {
 }
 
 @Composable
-private fun TagRow(state: RecipeListUiState, onTag: (String?) -> Unit, onToggleArchived: () -> Unit) {
+private fun TagRow(state: RecipeListUiState, onTag: (String?) -> Unit, onToggleArchived: () -> Unit, onToggleFavorites: () -> Unit) {
     val chipColors = FilterChipDefaults.filterChipColors(
         selectedContainerColor = MaterialTheme.colorScheme.secondary,
         selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
     )
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
-            FilterChip(state.tag == null && !state.showArchived, { onTag(null); if (state.showArchived) onToggleArchived() },
-                label = { Text(stringResource(R.string.filter_all)) }, colors = chipColors, shape = RoundedCornerShape(50))
+            FilterChip(
+                state.tag == null && !state.showArchived && !state.favoritesOnly,
+                { onTag(null); if (state.showArchived) onToggleArchived(); if (state.favoritesOnly) onToggleFavorites() },
+                label = { Text(stringResource(R.string.filter_all)) }, colors = chipColors, shape = RoundedCornerShape(50),
+            )
+        }
+        item {
+            FilterChip(
+                state.favoritesOnly, onToggleFavorites,
+                label = { Text(stringResource(R.string.filter_favorites)) },
+                leadingIcon = { Icon(Icons.Default.Favorite, null, Modifier.size(16.dp)) },
+                colors = chipColors, shape = RoundedCornerShape(50),
+            )
         }
         items(state.tags) { t ->
             FilterChip(state.tag == t, { onTag(t) }, label = { Text(t) }, colors = chipColors, shape = RoundedCornerShape(50))

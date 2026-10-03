@@ -1,5 +1,6 @@
 package de.foody.app.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -30,7 +31,7 @@ data class IngredientEntity(
     val version: Int = 1,
 )
 
-@Entity(tableName = "recipe", indices = [Index("name")])
+@Entity(tableName = "recipe", indices = [Index("name"), Index("sourceUrl")])
 data class RecipeEntity(
     @PrimaryKey val id: String,
     val name: String,
@@ -44,6 +45,10 @@ data class RecipeEntity(
     val createdAt: Long,
     val updatedAt: Long,
     val version: Int = 1,
+    /** Seit DB v2. */
+    @ColumnInfo(defaultValue = "0") val favorite: Boolean = false,
+    /** Quell-URL eines importierten Rezepts; erkennt doppelte Importe. Seit DB v2. */
+    val sourceUrl: String? = null,
 )
 
 @Entity(

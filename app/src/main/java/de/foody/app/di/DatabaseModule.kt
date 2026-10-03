@@ -7,6 +7,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import de.foody.app.data.db.ALL_MIGRATIONS
 import de.foody.app.data.db.FoodyDatabase
 import javax.inject.Singleton
 
@@ -16,7 +17,7 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun database(@ApplicationContext context: Context): FoodyDatabase =
-        Room.databaseBuilder(context, FoodyDatabase::class.java, FoodyDatabase.NAME).build()
+        Room.databaseBuilder(context, FoodyDatabase::class.java, FoodyDatabase.NAME).addMigrations(*ALL_MIGRATIONS).build()
 
     @Provides fun ingredientDao(db: FoodyDatabase) = db.ingredientDao()
     @Provides fun recipeDao(db: FoodyDatabase) = db.recipeDao()
