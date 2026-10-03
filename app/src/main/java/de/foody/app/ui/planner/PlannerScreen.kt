@@ -1,6 +1,23 @@
 package de.foody.app.ui.planner
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Today
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import de.foody.app.ui.common.HeaderAction
+import de.foody.app.ui.common.MetaPill
+import de.foody.app.ui.common.ScreenHeader
+import de.foody.app.ui.theme.EyebrowStyle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
@@ -29,8 +46,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,7 +54,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,7 +76,9 @@ import de.foody.app.data.repo.PlanRepository
 import de.foody.app.data.repo.RecipeRepository
 import de.foody.app.ui.common.FormColumn
 import de.foody.app.ui.common.ServingsStepper
+import de.foody.app.ui.common.compactRange
 import de.foody.app.ui.common.pretty
+import androidx.compose.ui.res.pluralStringResource
 import de.foody.domain.DateRange
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
@@ -118,55 +134,50 @@ class PlannerViewModel @Inject constructor(
     fun cooked(slot: MealSlotEntity) = viewModelScope.launch { plan.markCooked(slot.id) }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlannerScreen(onOpenRecipe: (String) -> Unit, vm: PlannerViewModel = hiltViewModel()) {
     val s by vm.state.collectAsStateWithLifecycle()
     var addForEpochDay by rememberSaveable { mutableStateOf<Long?>(null) }
     var customDays by rememberSaveable { mutableStateOf(false) }
 
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_planner)) }) }) { padding ->
-        LazyColumn(Modifier.padding(padding).padding(horizontal = 16.dp)) {
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton({ vm.shift(-s.days.toLong()) }) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.planner_previous))
-                    }
-                    Text(
-                        "${s.range.start.pretty()} – ${s.range.endInclusive.pretty()}",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.weight(1f).clickable { vm.today() },
-                    )
-                    IconButton({ vm.shift(s.days.toLong()) }) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.planner_next))
-                    }
-                }
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(1, 2, 3, 7).forEach { d ->
-                        FilterChip(s.days == d && !customDays, { customDays = false; vm.setDays(d) },
-                            label = { Text(stringResource(R.string.days_n, d)) })
-                    }
-                    FilterChip(customDays, { customDays = true }, label = { Text(stringResource(R.string.days_custom)) })
-                }
-                if (customDays) {
-                    OutlinedTextField(
-                        s.days.toString(), { v -> v.toIntOrNull()?.let(vm::setDays) },
-                        label = { Text(stringResource(R.string.days_count)) }, singleLine = true,
-                    )
-                }
+    Scaffold(contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)) { padding ->
+        Column(Modifier.padding(padding)) {
+            // Kopf bleibt stehen, damit Vor/Zurück beim Scrollen durch die Woche erreichbar ist
+            ScreenHeader(stringResource(R.string.planner_eyebrow), compactRange(s.range.start, s.range.endInclusive)) {
+                HeaderAction(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.planner_previous)) { vm.shift(-s.days.toLong()) }
+                HeaderAction(Icons.Outlined.Today, stringResource(R.string.planner_today)) { vm.today() }
+                HeaderAction(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.planner_next)) { vm.shift(s.days.toLong()) }
             }
-            items(s.range.days, key = { it.toEpochDay() }) { day ->
-                Column(Modifier.padding(vertical = 8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(day.pretty(), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f),
-                            color = if (day == LocalDate.now()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                        IconButton({ addForEpochDay = day.toEpochDay() }) {
-                            Icon(Icons.Default.Add, stringResource(R.string.planner_add_for, day.pretty()))
+            LazyColumn(
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                item {
+                    val chipColors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+                    )
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(1, 2, 3, 7).forEach { d ->
+                            FilterChip(s.days == d && !customDays, { customDays = false; vm.setDays(d) },
+                                label = { Text(pluralStringResource(R.plurals.days_n, d, d)) }, shape = RoundedCornerShape(50), colors = chipColors)
                         }
+                        FilterChip(customDays, { customDays = true }, label = { Text(stringResource(R.string.days_custom)) },
+                            shape = RoundedCornerShape(50), colors = chipColors)
                     }
-                    s.slotsByDay[day].orEmpty().forEach { slot ->
-                        SlotCard(slot, s.recipes[slot.recipeId], vm, onOpenRecipe)
+                    if (customDays) {
+                        OutlinedTextField(
+                            s.days.toString(), { v -> v.toIntOrNull()?.let(vm::setDays) },
+                            label = { Text(stringResource(R.string.days_count)) }, singleLine = true,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
                     }
+                }
+                items(s.range.days, key = { it.toEpochDay() }) { day ->
+                    DaySection(
+                        day, s.slotsByDay[day].orEmpty(), s.recipes, vm, onOpenRecipe,
+                        onAdd = { addForEpochDay = day.toEpochDay() },
+                    )
                 }
             }
         }
@@ -181,26 +192,83 @@ fun PlannerScreen(onOpenRecipe: (String) -> Unit, vm: PlannerViewModel = hiltVie
 }
 
 @Composable
-private fun SlotCard(slot: MealSlotEntity, recipe: RecipeEntity?, vm: PlannerViewModel, onOpen: (String) -> Unit) {
-    Card(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Column(Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f).clickable { onOpen(slot.recipeId) }) {
-                    Text(slot.slotType, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                    Text(recipe?.name.orEmpty(), style = MaterialTheme.typography.titleMedium)
-                }
-                if (slot.cookedAt != null) {
-                    Icon(Icons.Default.CheckCircle, stringResource(R.string.planner_cooked), tint = MaterialTheme.colorScheme.primary)
+private fun DaySection(
+    day: LocalDate,
+    slots: List<MealSlotEntity>,
+    recipes: Map<String, RecipeEntity>,
+    vm: PlannerViewModel,
+    onOpen: (String) -> Unit,
+    onAdd: () -> Unit,
+) {
+    val today = day == LocalDate.now()
+    Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(day.pretty(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f),
+                color = if (today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+            if (today) MetaPill(stringResource(R.string.planner_today))
+            if (slots.isNotEmpty()) {
+                IconButton(onAdd) { Icon(Icons.Default.Add, stringResource(R.string.planner_add_for, day.pretty())) }
+            }
+        }
+        slots.forEach { slot -> SlotCard(slot, recipes[slot.recipeId], vm, onOpen) }
+        if (slots.isEmpty()) {
+            // Gestrichelte Fläche lädt zum Planen ein, statt nur ein kleines Plus zu zeigen
+            val outline = MaterialTheme.colorScheme.outline
+            Box(
+                Modifier.fillMaxWidth().height(56.dp).clip(MaterialTheme.shapes.medium)
+                    .drawBehind {
+                        drawRoundRect(
+                            outline, style = Stroke(width = 1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(14f, 10f))),
+                            cornerRadius = CornerRadius(20.dp.toPx()),
+                        )
+                    }
+                    .clickable(onClick = onAdd),
+                contentAlignment = Alignment.Center,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Icon(Icons.Default.Add, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.planner_add_short), color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelLarge)
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                ServingsStepper(slot.servings, { vm.setServings(slot, it) }, Modifier.weight(1f))
-                IconButton({ vm.move(slot, -1) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.planner_move_earlier)) }
-                IconButton({ vm.move(slot, 1) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.planner_move_later)) }
-                if (slot.cookedAt == null) {
-                    IconButton({ vm.cooked(slot) }) { Icon(Icons.Default.Restaurant, stringResource(R.string.planner_mark_cooked)) }
+        }
+    }
+}
+
+@Composable
+private fun SlotCard(slot: MealSlotEntity, recipe: RecipeEntity?, vm: PlannerViewModel, onOpen: (String) -> Unit) {
+    var menu by remember { mutableStateOf(false) }
+    Surface(
+        onClick = { onOpen(slot.recipeId) },
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        shadowElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            RecipeImage(recipe?.imageUri, recipe?.name.orEmpty(), Modifier.size(72.dp).clip(MaterialTheme.shapes.small), emojiSize = 32.sp)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(slot.slotType.uppercase(), style = EyebrowStyle, color = MaterialTheme.colorScheme.primary)
+                Text(recipe?.name.orEmpty(), style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ServingsStepper(slot.servings, { vm.setServings(slot, it) })
+                    if (slot.cookedAt != null) MetaPill(stringResource(R.string.planner_cooked), icon = Icons.Default.CheckCircle)
                 }
-                IconButton({ vm.delete(slot) }) { Icon(Icons.Default.Delete, stringResource(R.string.action_delete)) }
+            }
+            Box {
+                IconButton({ menu = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.more_actions)) }
+                DropdownMenu(menu, { menu = false }) {
+                    if (slot.cookedAt == null) {
+                        DropdownMenuItem({ Text(stringResource(R.string.planner_mark_cooked)) }, { menu = false; vm.cooked(slot) },
+                            leadingIcon = { Icon(Icons.Default.Restaurant, null) })
+                    }
+                    DropdownMenuItem({ Text(stringResource(R.string.planner_move_earlier)) }, { menu = false; vm.move(slot, -1) },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null) })
+                    DropdownMenuItem({ Text(stringResource(R.string.planner_move_later)) }, { menu = false; vm.move(slot, 1) },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) })
+                    DropdownMenuItem({ Text(stringResource(R.string.action_delete)) }, { menu = false; vm.delete(slot) },
+                        leadingIcon = { Icon(Icons.Default.Delete, null) })
+                }
             }
         }
     }

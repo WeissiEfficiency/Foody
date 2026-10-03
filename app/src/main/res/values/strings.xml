@@ -151,10 +151,12 @@
     <string name="planner_add_for">Gericht für %1$s planen</string>
     <string name="planner_no_recipes">Lege zuerst ein Rezept an.</string>
     <string name="planner_cooked">Gekocht</string>
+    <string name="planner_eyebrow">Wochenplan</string>
+    <string name="planner_today">Heute</string>
+    <string name="planner_add_short">Gericht planen</string>
     <string name="planner_mark_cooked">Als gekocht markieren und Vorrat abbuchen</string>
     <string name="planner_move_earlier">Einen Tag früher</string>
     <string name="planner_move_later">Einen Tag später</string>
-    <string name="days_n">%1$d Tage</string>
     <string name="days_custom">Beliebig</string>
     <string name="days_count">Anzahl Tage (1–31)</string>
     <string name="slot_breakfast">Frühstück</string>
@@ -169,6 +171,10 @@
     <string name="shopping_default_name">Einkaufsliste</string>
     <string name="shopping_empty">Noch keine Einkaufsliste. Plane Gerichte und erzeuge daraus eine Liste.</string>
     <string name="shopping_add_manual">Artikel hinzufügen</string>
+    <string name="shopping_title_empty">Deine Liste</string>
+    <string name="shopping_progress">%1$d von %2$d erledigt</string>
+    <string name="shopping_category_other">Sonstiges</string>
+    <string name="shopping_done_section">Im Wagen (%1$d)</string>
     <string name="recipe_add_to_shopping">Auf die Einkaufsliste</string>
     <string name="shopping_added">%1$d Zutat(en) auf „%2$s“ gesetzt</string>
     <string name="shopping_added_none">Nichts einzukaufen – alle Zutaten sind „nach Bedarf“ oder optional.</string>
@@ -199,6 +205,10 @@
     <string name="pantry_edit">Vorrat bearbeiten</string>
     <string name="pantry_empty">Kein Vorrat erfasst. Vorräte werden beim Erzeugen einer Einkaufsliste abgezogen.</string>
     <string name="pantry_best_before">MHD %1$s</string>
+    <string name="pantry_title">Was ist da?</string>
+    <string name="pantry_expired">abgelaufen</string>
+    <string name="pantry_expires_today">läuft heute ab</string>
+    <string name="pantry_expires_in">noch %1$d Tag(e)</string>
     <string name="pantry_pick_best_before">MHD wählen (optional)</string>
     <string name="pantry_clear_best_before">MHD entfernen</string>
 
@@ -217,4 +227,9 @@
     <string name="data_delete_warning">Alle Rezepte, Zutaten, Pläne, Vorräte und Einkaufslisten werden unwiderruflich gelöscht.</string>
     <string name="data_deleted">Alle Daten gelöscht</string>
     <string name="about_title">Hinweis</string>
+
+    <plurals name="days_n">
+        <item quantity="one">%1$d Tag</item>
+        <item quantity="other">%1$d Tage</item>
+    </plurals>
 </resources>

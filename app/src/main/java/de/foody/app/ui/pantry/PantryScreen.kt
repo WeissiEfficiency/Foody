@@ -1,6 +1,15 @@
 package de.foody.app.ui.pantry
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Surface
+import androidx.compose.ui.draw.clip
+import de.foody.app.ui.common.ScreenHeader
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -19,16 +28,12 @@ import androidx.compose.ui.Alignment
 import de.foody.app.ui.common.AutocompleteField
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -81,37 +86,36 @@ class PantryViewModel @Inject constructor(
     fun delete(id: String) = viewModelScope.launch { pantry.delete(id) }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantryScreen(vm: PantryViewModel = hiltViewModel()) {
     val s by vm.state.collectAsStateWithLifecycle()
     var editingId by rememberSaveable { mutableStateOf<String?>(null) }
     var creating by rememberSaveable { mutableStateOf(false) }
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_pantry)) }) },
-        floatingActionButton = { FloatingActionButton({ creating = true }) { Icon(Icons.Default.Add, stringResource(R.string.pantry_add)) } },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = { creating = true },
+                icon = { Icon(Icons.Default.Add, null) },
+                text = { Text(stringResource(R.string.pantry_add)) },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            )
+        },
     ) { padding ->
-        if (s.rows.isEmpty()) {
-            EmptyState(stringResource(R.string.pantry_empty), Modifier.padding(padding))
-        } else {
-            LazyColumn(Modifier.padding(padding)) {
-                items(s.rows, key = { it.item.id }) { row ->
-                    val expired = row.item.bestBeforeDate?.isBefore(LocalDate.now()) == true
-                    ListItem(
-                        headlineContent = { Text(row.name) },
-                        supportingContent = {
-                            Text(
-                                formatAmount(row.item.amount, row.item.unit) +
-                                    (row.item.bestBeforeDate?.let { " · " + stringResource(R.string.pantry_best_before, it.medium()) } ?: ""),
-                                color = if (expired) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        },
-                        trailingContent = {
-                            IconButton({ vm.delete(row.item.id) }) { Icon(Icons.Default.Delete, stringResource(R.string.action_delete)) }
-                        },
-                        modifier = Modifier.clickable { editingId = row.item.id },
-                    )
-                    HorizontalDivider()
+        Column(Modifier.padding(padding)) {
+            ScreenHeader(stringResource(R.string.nav_pantry), stringResource(R.string.pantry_title))
+            if (s.rows.isEmpty()) {
+                EmptyState(stringResource(R.string.pantry_empty))
+            } else {
+                val today = LocalDate.now()
+                // Was bald abläuft, zuerst – danach alphabetisch
+                val rows = s.rows.sortedWith(compareBy({ it.item.bestBeforeDate ?: LocalDate.MAX }, { it.name.lowercase() }))
+                LazyColumn(
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 104.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(rows, key = { it.item.id }) { row -> PantryCard(row, today, { editingId = row.item.id }, { vm.delete(row.item.id) }) }
                 }
             }
         }
@@ -126,6 +130,48 @@ fun PantryScreen(vm: PantryViewModel = hiltViewModel()) {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PantryCard(row: PantryRow, today: LocalDate, onEdit: () -> Unit, onDelete: () -> Unit) {
+    Surface(
+        onClick = onEdit,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        shadowElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(Modifier.padding(start = 16.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(row.name, style = MaterialTheme.typography.titleSmall)
+                Text(formatAmount(row.item.amount, row.item.unit), style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary)
+            }
+            row.item.bestBeforeDate?.let { BestBeforePill(it, today) }
+            IconButton(onDelete) { Icon(Icons.Outlined.Delete, stringResource(R.string.action_delete)) }
+        }
+    }
+}
+
+/** MHD als Pille: rot = abgelaufen, koralle = höchstens 3 Tage, sonst neutral. */
+@Composable
+private fun BestBeforePill(date: LocalDate, today: LocalDate) {
+    val days = java.time.temporal.ChronoUnit.DAYS.between(today, date)
+    val (bg, fg) = when {
+        days < 0 -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
+        days <= 3 -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh to MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val text = when {
+        days < 0 -> stringResource(R.string.pantry_expired)
+        days == 0L -> stringResource(R.string.pantry_expires_today)
+        days <= 3 -> stringResource(R.string.pantry_expires_in, days.toInt())
+        else -> stringResource(R.string.pantry_best_before, date.medium())
+    }
+    Text(
+        text, style = MaterialTheme.typography.labelMedium, color = fg,
+        modifier = Modifier.clip(RoundedCornerShape(50)).background(bg).padding(horizontal = 10.dp, vertical = 4.dp),
+    )
+}
+
 @Composable
 private fun PantryDialog(
     initial: PantryItemEntity?,

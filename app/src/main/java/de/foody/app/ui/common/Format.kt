@@ -27,6 +27,15 @@ fun formatQuantity(q: Quantity): String = QuantityFormatter.format(q)
 
 private val dateFmt = DateTimeFormatter.ofPattern("EEE, d. MMM", Locale.GERMAN)
 fun LocalDate.pretty(): String = format(dateFmt)
+
+private val dayMonthFmt = DateTimeFormatter.ofPattern("d. MMM", Locale.GERMAN)
+
+/** Kurzer Zeitraum für Überschriften: „3.–9. Okt.“, über Monatsgrenzen „28. Sep. – 4. Okt.“. */
+fun compactRange(start: LocalDate, end: LocalDate): String = when {
+    start == end -> start.format(dayMonthFmt)
+    start.year == end.year && start.month == end.month -> "${start.dayOfMonth}.–${end.format(dayMonthFmt)}"
+    else -> "${start.format(dayMonthFmt)} – ${end.format(dayMonthFmt)}"
+}
 fun LocalDate.medium(): String = format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
 
 @Composable
