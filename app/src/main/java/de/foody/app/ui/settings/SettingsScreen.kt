@@ -3,6 +3,7 @@ package de.foody.app.ui.settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.core.net.toUri
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -119,7 +120,7 @@ fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hilt
             onDismissRequest = { confirmImport = null },
             title = { Text(stringResource(R.string.backup_import)) },
             text = { Text(stringResource(R.string.backup_import_warning)) },
-            confirmButton = { TextButton({ vm.import(android.net.Uri.parse(uri)); confirmImport = null }) { Text(stringResource(R.string.action_import)) } },
+            confirmButton = { TextButton({ vm.import(uri.toUri()); confirmImport = null }) { Text(stringResource(R.string.action_import)) } },
             dismissButton = { TextButton({ confirmImport = null }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }

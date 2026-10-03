@@ -43,7 +43,6 @@
     <string name="field_optional">optional</string>
     <string name="field_piece_weight">Stückgewicht (g)</string>
     <string name="field_prep">Vorbereitung (Min.)</string>
-    <string name="field_recipe">Rezept</string>
     <string name="field_servings">Portionen</string>
     <string name="field_slot">Mahlzeit</string>
     <string name="field_source">Quelle</string>

@@ -31,7 +31,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import de.foody.app.data.repo.AddRecipeResult
 import de.foody.app.data.repo.ShoppingRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,6 +60,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -200,14 +201,14 @@ fun RecipeDetailScreen(
     var cooking by rememberSaveable { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val added by vm.added.collectAsStateWithLifecycle()
-    val context = LocalContext.current
+    val resources = LocalResources.current
     val defaultListName = stringResource(R.string.shopping_default_name)
     LaunchedEffect(added) {
         val a = added ?: return@LaunchedEffect
         vm.addedShown()
         snackbar.showSnackbar(
-            if (a.added == 0) context.getString(R.string.shopping_added_none)
-            else context.getString(R.string.shopping_added, a.added, a.listName),
+            if (a.added == 0) resources.getString(R.string.shopping_added_none)
+            else resources.getString(R.string.shopping_added, a.added, a.listName),
         )
     }
     val listState = rememberLazyListState()
@@ -286,8 +287,10 @@ fun RecipeDetailScreen(
             }
             item { Spacer(Modifier.height(32.dp)) }
         }
-        // Scrim erst einblenden, wenn das Hero-Bild aus dem Bild gescrollt ist
-        if (listState.firstVisibleItemIndex > 0) {
+        // Scrim erst einblenden, wenn das Hero-Bild aus dem Bild gescrollt ist. derivedStateOf: nur der Wechsel
+        // „oben / gescrollt“ löst eine Recomposition aus, nicht jede Scroll-Bewegung.
+        val scrolledPastHero by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
+        if (scrolledPastHero) {
             Box(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(MaterialTheme.colorScheme.background))
         }
     }
