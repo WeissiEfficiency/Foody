@@ -41,6 +41,7 @@ object MarkdownRecipeImporter {
         "ml" to MeasureUnit.MILLILITER, "cl" to MeasureUnit.CENTILITER, "l" to MeasureUnit.LITER, "liter" to MeasureUnit.LITER,
         "tl" to MeasureUnit.TEASPOON, "el" to MeasureUnit.TABLESPOON,
         "dose" to MeasureUnit.CAN, "dose/n" to MeasureUnit.CAN, "dosen" to MeasureUnit.CAN,
+        "stück" to MeasureUnit.PIECE, "stück(e)" to MeasureUnit.PIECE, "stk." to MeasureUnit.PIECE, "stk" to MeasureUnit.PIECE,
         "pck." to MeasureUnit.PACKAGE, "päckchen" to MeasureUnit.PACKAGE, "packung" to MeasureUnit.PACKAGE, "pkt." to MeasureUnit.PACKAGE,
     )
 
@@ -74,21 +75,26 @@ object MarkdownRecipeImporter {
         // „Titel von Autor“ → „Titel“ (Autor steht am Ende, genau ein Wort)
         t.replace(Regex("""\s+von\s+\S+$"""), "").trim()
 
-    private fun isAmountLine(line: String): Boolean =
-        numberRegex.matches(line) || line.lowercase() in vagueAmounts
+    /**
+     * Mengenzeile: Zahl, bekannte vage Menge – oder ein kleingeschriebenes Einzelwort („viel“, „reichlich“),
+     * auf das eine großgeschriebene Zeile folgt. Zutatennamen sind Substantive und beginnen groß.
+     */
+    private fun isAmountLine(line: String, next: String?): Boolean =
+        numberRegex.matches(line) || line.lowercase() in vagueAmounts ||
+            (line.first().isLowerCase() && ' ' !in line && next?.firstOrNull()?.isUpperCase() == true)
 
     private fun parseIngredients(lines: List<String>): List<ImportedIngredient> {
         val out = mutableListOf<ImportedIngredient>()
         var group: String? = null
         var pendingAmount: String? = null
-        for (line in lines) {
-            if (line.isBlank()) continue
+        val content = lines.filter { it.isNotBlank() }
+        for ((i, line) in content.withIndex()) {
             if (line.startsWith("###")) {
                 group = line.trimStart('#').trim().trimEnd(':').trim()
                 pendingAmount = null
                 continue
             }
-            if (pendingAmount == null && isAmountLine(line)) {
+            if (pendingAmount == null && isAmountLine(line, content.getOrNull(i + 1))) {
                 pendingAmount = line
                 continue
             }

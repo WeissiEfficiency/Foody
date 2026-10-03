@@ -1,6 +1,12 @@
 package de.foody.app.ui.common
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,12 +51,29 @@ fun EmptyState(text: String, modifier: Modifier = Modifier) {
 @Composable
 fun ServingsStepper(value: Int, onChange: (Int) -> Unit, modifier: Modifier = Modifier) {
     val desc = stringResource(R.string.servings_count, value)
-    Row(modifier.semantics { contentDescription = desc }, verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = { if (value > 1) onChange(value - 1) }) {
+    // Pillenform mit runden Plus/Minus-Knöpfen
+    Row(
+        modifier.semantics { contentDescription = desc }
+            .clip(RoundedCornerShape(50))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .padding(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        FilledIconButton(
+            onClick = { if (value > 1) onChange(value - 1) },
+            enabled = value > 1,
+            modifier = Modifier.size(36.dp),
+            colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                contentColor = MaterialTheme.colorScheme.onSurface),
+        ) {
             Icon(Icons.Default.Remove, stringResource(R.string.action_less_servings))
         }
-        Text(stringResource(R.string.servings_count, value), style = MaterialTheme.typography.titleMedium)
-        IconButton(onClick = { onChange(value + 1) }) {
+        Text(
+            stringResource(R.string.servings_count, value),
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(horizontal = 12.dp),
+        )
+        FilledIconButton(onClick = { onChange(value + 1) }, modifier = Modifier.size(36.dp)) {
             Icon(Icons.Default.Add, stringResource(R.string.action_more_servings))
         }
     }

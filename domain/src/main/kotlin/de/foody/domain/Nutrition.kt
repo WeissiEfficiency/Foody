@@ -72,7 +72,8 @@ object NutritionCalculator {
                     anyMissing = true
                     continue
                 }
-                val contribution = per100 * used.baseAmount / HUNDRED
+                // Explizite Skala: Kotlins `/` behielte die Skala des Dividenden (bei 5E+1 → −1) und rundete auf Zehner.
+                val contribution = (per100 * used.baseAmount).divide(HUNDRED, MATH_SCALE, RoundingMode.HALF_UP)
                 totals[n] = (totals[n] ?: BigDecimal.ZERO) + contribution
                 known[n] = (known[n] ?: 0) + 1
             }

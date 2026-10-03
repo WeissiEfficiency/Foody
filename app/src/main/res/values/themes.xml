@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Foody" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Foody" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Gleiche Fläche wie das Compose-Theme, damit beim Start kein weißer Blitz entsteht -->
+        <item name="android:windowBackground">@color/foody_background</item>
+    </style>
 </resources>

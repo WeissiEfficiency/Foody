@@ -120,3 +120,37 @@ class MarkdownImportTest {
         assertEquals(9, r.ingredients.size)
     }
 }
+
+class MarkdownImportCorpusTest {
+    @Test fun pieceUnitWordsBecomePiecesWithoutNote() {
+        val r = MarkdownRecipeImporter.parse("# X\n\n## Zutaten\n\n1 Stück(e)\n\nIngwerwurzel ca. 2 cm\n\n2 Stk.\n\nEi(er)\n\n## Zubereitung\n\nA")
+        assertEquals(MeasureUnit.PIECE, r.ingredients[0].unit)
+        assertEquals("ca. 2 cm", r.ingredients[0].note)
+        assertEquals(MeasureUnit.PIECE, r.ingredients[1].unit)
+        assertNull(r.ingredients[1].note)
+    }
+
+    @Test fun vagueAmountWordsStayAmounts() {
+        val r = MarkdownRecipeImporter.parse(
+            "# X\n\n## Zutaten\n\nviel\n\nKümmel\n\nreichlich\n\nSalz, grobes\n\netwas\n\nPfeffer\n\n## Zubereitung\n\nA",
+        )
+        assertEquals(listOf("Kümmel", "Salz", "Pfeffer"), r.ingredients.map { it.name })
+        assertEquals(listOf<BigDecimal?>(null, null, null), r.ingredients.map { it.amount })
+        assertEquals("viel", r.ingredients[0].note)
+    }
+
+    @Test fun stepsStopBeforeSiteActions() {
+        val r = MarkdownRecipeImporter.parse(
+            "# X\n\n## Zutaten\n\n1\n\nEi\n\n## Zubereitung\n\nEi kochen.\n\n- copy Zu einer Sammlung hinzufügen\n\n## Kommentare\n\nToll!",
+        )
+        assertEquals(listOf("Ei kochen."), r.steps)
+    }
+}
+
+class StepIngredientMatcherTest {
+    @Test fun findsIngredientsMentionedInStepIncludingPlurals() {
+        val names = mapOf("k" to "Kartoffel", "z" to "Zwiebel", "s" to "Salz und Pfeffer", "m" to "Milch")
+        val hits = StepIngredientMatcher.match("Die Kartoffeln schälen, Zwiebeln würfeln und mit Pfeffer würzen.", names)
+        assertEquals(listOf("k", "z", "s"), hits)
+    }
+}
