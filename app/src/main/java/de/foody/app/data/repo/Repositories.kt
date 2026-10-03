@@ -1,6 +1,7 @@
 package de.foody.app.data.repo
 
 import android.content.Context
+import androidx.core.content.edit
 import androidx.room.withTransaction
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.foody.app.data.db.FoodyDatabase
@@ -123,7 +124,7 @@ class IngredientRepository @Inject constructor(
                 }
             }
         }
-        prefs.edit().putInt("seedVersion", SeedData.VERSION).apply()
+        prefs.edit { putInt("seedVersion", SeedData.VERSION) }
     }
 }
 

@@ -61,7 +61,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -196,13 +196,13 @@ fun RecipeListScreen(onOpen: (String) -> Unit, onCreate: () -> Unit, vm: RecipeL
     val importMessage by vm.importMessage.collectAsStateWithLifecycle()
     val importProgress by vm.importProgress.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
-    val context = LocalContext.current
+    val resources = LocalResources.current
     val importTag = stringResource(R.string.import_tag)
     val ideasTag = stringResource(R.string.import_tag_ideas)
     val notes: (String?) -> String = { source ->
         listOfNotNull(
-            source?.let { context.getString(R.string.import_source, it) },
-            context.getString(R.string.import_check_servings, RecipeListViewModel.DEFAULT_IMPORT_SERVINGS),
+            source?.let { resources.getString(R.string.import_source, it) },
+            resources.getString(R.string.import_check_servings, RecipeListViewModel.DEFAULT_IMPORT_SERVINGS),
         ).joinToString("\n")
     }
     val filesLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
@@ -216,9 +216,9 @@ fun RecipeListScreen(onOpen: (String) -> Unit, onCreate: () -> Unit, vm: RecipeL
         vm.importMessageShown()
         m.openId?.let(onOpen)
         val text = buildList {
-            add(context.getString(R.string.import_done, m.imported))
-            if (m.skipped > 0) add(context.getString(R.string.import_skipped, m.skipped))
-            if (m.failed > 0) add(context.getString(R.string.import_failed, m.failed))
+            add(resources.getString(R.string.import_done, m.imported))
+            if (m.skipped > 0) add(resources.getString(R.string.import_skipped, m.skipped))
+            if (m.failed > 0) add(resources.getString(R.string.import_failed, m.failed))
         }.joinToString(", ")
         snackbar.showSnackbar(text)
     }
