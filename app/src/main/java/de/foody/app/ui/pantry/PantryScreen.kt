@@ -120,7 +120,9 @@ fun PantryScreen(vm: PantryViewModel = hiltViewModel()) {
                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 104.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    items(rows, key = { it.item.id }) { row -> PantryCard(row, today, { editingId = row.item.id }, { vm.delete(row.item.id) }) }
+                    items(rows, key = { it.item.id }) { row ->
+                        PantryCard(row, today, { editingId = row.item.id }, { vm.delete(row.item.id) }, Modifier.animateItem())
+                    }
                 }
             }
         }
@@ -136,13 +138,13 @@ fun PantryScreen(vm: PantryViewModel = hiltViewModel()) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PantryCard(row: PantryRow, today: LocalDate, onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun PantryCard(row: PantryRow, today: LocalDate, onEdit: () -> Unit, onDelete: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         onClick = onEdit,
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
         shadowElevation = 1.dp,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Row(Modifier.padding(start = 16.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {

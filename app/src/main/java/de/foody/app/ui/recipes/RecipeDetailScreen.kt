@@ -1,5 +1,8 @@
 package de.foody.app.ui.recipes
 
+import de.foody.app.ui.common.sharedRecipeImage
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import de.foody.app.data.RecipePhotoStore
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.FilledTonalButton
@@ -224,6 +227,7 @@ fun RecipeDetailScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     var confirmDelete by remember { mutableStateOf(false) }
     var cooking by rememberSaveable { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
     var pendingPhoto by rememberSaveable { mutableStateOf<String?>(null) }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
         pendingPhoto?.let { vm.onPhotoTaken(it, ok) }
@@ -255,7 +259,10 @@ fun RecipeDetailScreen(
             item {
                 Hero(
                     recipe, onBack, onEdit,
-                    onFavorite = vm::toggleFavorite,
+                    onFavorite = {
+                        haptic.performHapticFeedback(if (recipe.favorite) HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn)
+                        vm.toggleFavorite()
+                    },
                     onTakePhoto = takePhoto,
                     onDuplicate = { vm.duplicate(copySuffix, onOpenOther) },
                     onArchive = { vm.archive(recipe.archivedAt == null) },
@@ -368,7 +375,7 @@ private fun Hero(
     // Ohne Foto trägt das Emoji keine 360 dp – kompakter Kopf, damit die Zutaten früher sichtbar sind
     val heroHeight = if (recipe.imageUri != null) 360.dp else 240.dp
     Box(Modifier.fillMaxWidth().height(heroHeight)) {
-        RecipeImage(recipe.imageUri, recipe.name, Modifier.fillMaxSize(), emojiSize = if (recipe.imageUri != null) 120.sp else 88.sp)
+        RecipeImage(recipe.imageUri, recipe.name, Modifier.sharedRecipeImage(recipe.id).fillMaxSize(), emojiSize = if (recipe.imageUri != null) 120.sp else 88.sp)
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Black.copy(alpha = 0.35f), 0.35f to Color.Transparent)))
         if (recipe.imageUri == null) {
             FilledTonalButton(

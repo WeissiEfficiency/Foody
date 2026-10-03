@@ -1,5 +1,7 @@
 package de.foody.app.ui.recipes
 
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import android.media.AudioManager
 import android.media.ToneGenerator
 import androidx.compose.foundation.background
@@ -89,6 +91,7 @@ fun RunningTimersBar(timers: SnapshotStateList<RunningTimer>) {
         }
     }
     val beeped = remember { mutableSetOf<RunningTimer>() }
+    val haptic = LocalHapticFeedback.current
     val tone = remember { runCatching { ToneGenerator(AudioManager.STREAM_ALARM, 90) }.getOrNull() }
     androidx.compose.runtime.DisposableEffect(Unit) { onDispose { tone?.release() } }
 
@@ -96,7 +99,10 @@ fun RunningTimersBar(timers: SnapshotStateList<RunningTimer>) {
         timers.forEach { t ->
             val left = t.endAt - now
             val done = left <= 0
-            if (done && beeped.add(t)) tone?.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 1500)
+            if (done && beeped.add(t)) {
+                tone?.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 1500)
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
             Row(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(50))
                     .background(if (done) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary)

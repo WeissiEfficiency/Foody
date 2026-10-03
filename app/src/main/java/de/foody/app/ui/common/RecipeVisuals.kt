@@ -119,7 +119,7 @@ fun RecipeGridCard(recipe: RecipeEntity, onClick: () -> Unit, modifier: Modifier
         Box {
             RecipeImage(
                 recipe.imageUri, recipe.name,
-                Modifier.fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.medium),
+                Modifier.sharedRecipeImage(recipe.id).fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.medium),
             )
             if (recipe.favorite) {
                 Icon(

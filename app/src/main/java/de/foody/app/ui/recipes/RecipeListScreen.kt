@@ -279,7 +279,7 @@ fun RecipeListScreen(onOpen: (String) -> Unit, onCreate: () -> Unit, vm: RecipeL
                     )
                 }
             }
-            items(state.recipes, key = { it.id }) { r -> RecipeGridCard(r, onClick = { onOpen(r.id) }) }
+            items(state.recipes, key = { it.id }) { r -> RecipeGridCard(r, onClick = { onOpen(r.id) }, modifier = Modifier.animateItem()) }
         }
         // Scrim hinter der Statusleiste, damit gescrollte Inhalte nicht mit der Uhrzeit kollidieren
         Box(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(MaterialTheme.colorScheme.background.copy(alpha = 0.94f)))
