@@ -33,6 +33,7 @@ data class ImportedIngredient(
 object MarkdownRecipeImporter {
 
     private val numberRegex = Regex("""^(${GermanAmounts.NUMBER})\s*(.*)$""")
+    private val rangeUpper = Regex("""^(?:[-–]|bis\s)\s*(${GermanAmounts.NUMBER})(?!\S)""")
     private val vagueAmounts = setOf("n. b.", "n.b.", "evtl.", "etwas", "nach belieben", "etwas mehr", "prise", "1 prise")
 
     fun parse(markdown: String): ImportedRecipe {
@@ -103,7 +104,12 @@ object MarkdownRecipeImporter {
             val m = numberRegex.matchEntire(amountText)
             if (m != null) {
                 amount = GermanAmounts.parseNumber(m.groupValues[1])
-                val rest = m.groupValues[2].trim()
+                var rest = m.groupValues[2].trim()
+                // Spanne „2 - 3 EL“: untere Grenze rechnen (wie beim Timer), obere als Hinweis behalten
+                rangeUpper.find(rest)?.let { r ->
+                    notes += "bis ${r.groupValues[1]}"
+                    rest = rest.substring(r.range.last + 1).trim()
+                }
                 val firstToken = rest.substringBefore(' ').substringBefore(',').lowercase()
                 val mapped = GermanAmounts.unitOf(firstToken)
                 if (firstToken.startsWith("prise")) {

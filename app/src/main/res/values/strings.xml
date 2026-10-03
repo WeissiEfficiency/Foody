@@ -63,6 +63,9 @@
     <string name="appearance_system">System</string>
     <string name="appearance_light">Hell</string>
     <string name="appearance_dark">Dunkel</string>
+    <string name="kcal_amount" tools:ignore="PluralsCandidate">%1$d kcal</string>
+    <string name="kcal_gap_values">ohne Werte</string>
+    <string name="kcal_gap_weight">ohne Gewicht</string>
     <string name="recipe_select_hint">Wähle links ein Rezept aus.</string>
     <string name="recipe_empty">Noch keine Rezepte. Lege dein erstes Rezept an.</string>
     <string name="recipe_no_match">Keine passenden Rezepte gefunden.</string>
@@ -122,6 +125,7 @@
     <string name="import_files">Markdown-Dateien wählen</string>
     <string name="import_folder">Ganzen Ordner importieren (Ideen)</string>
     <string name="import_source">Quelle: %1$s</string>
+    <string name="import_estimated_servings" tools:ignore="PluralsCandidate">Portionenzahl war in der Datei nicht angegeben – aus den Mengen auf %1$d geschätzt, bitte prüfen.</string>
     <string name="import_check_servings" tools:ignore="PluralsCandidate">Portionenzahl war in der Datei nicht angegeben – auf %1$d gesetzt, bitte prüfen.</string>
     <string name="import_running">Dateien werden gesucht …</string>
     <string name="import_progress" tools:ignore="PluralsCandidate">Importiere %1$d von %2$d …</string>

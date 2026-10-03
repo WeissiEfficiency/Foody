@@ -1,6 +1,7 @@
 package de.foody.app.ui.recipes
 
 import de.foody.app.ui.theme.FoodyGlass
+import de.foody.domain.LineGap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -366,6 +367,18 @@ private fun IngredientRow(l: DisplayLine) {
         Column(Modifier.weight(0.68f)) {
             Text(l.name + if (l.optional) " " + stringResource(R.string.optional_suffix) else "", style = MaterialTheme.typography.bodyLarge)
             l.note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
+        // Energie dieser Zeile – so ist nachvollziehbar, woraus die Summe besteht und wo Werte fehlen
+        when {
+            l.kcal != null -> Text(
+                stringResource(R.string.kcal_amount, l.kcal), style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp),
+            )
+            l.gap != null -> Text(
+                stringResource(if (l.gap == LineGap.NO_WEIGHT) R.string.kcal_gap_weight else R.string.kcal_gap_values),
+                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.padding(start = 8.dp),
+            )
         }
     }
 }

@@ -1,5 +1,6 @@
 package de.foody.app.ui.recipes
 
+import de.foody.domain.LineGap
 import de.foody.app.timer.CookTimerRepository
 import de.foody.app.timer.RunningTimer
 import de.foody.domain.StepTimer
@@ -31,7 +32,16 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-data class DisplayLine(val ingredientId: String, val name: String, val amountText: String?, val note: String?, val optional: Boolean)
+data class DisplayLine(
+    val ingredientId: String,
+    val name: String,
+    val amountText: String?,
+    val note: String?,
+    val optional: Boolean,
+    /** Energie dieser Zeile für die gewählten Portionen (Menge × kcal je 100 g); null = nicht berechenbar. */
+    val kcal: Int? = null,
+    val gap: LineGap? = null,
+)
 
 /** Zutat im Kochmodus; [stepAmountText] ist die im Schritt genannte Teilmenge, falls sie von der Gesamtmenge abweicht. */
 data class StepLine(val line: DisplayLine, val stepAmountText: String?)
@@ -64,11 +74,14 @@ class RecipeDetailViewModel @Inject constructor(
         if (recipe == null) return@combine RecipeDetailUiState()
         val servings = override ?: recipe.defaultServings
         val ingMap = allIngredients.associate { it.id to it.toDomain() }
+        val nutrition = NutritionCalculator.calculate(recipe.toDomain(lines), ingMap, servings)
         val display = lines.map { l ->
             val scaled = RecipeScaler.scale(l.amount, recipe.defaultServings, servings)
             DisplayLine(
                 l.ingredientId, ingMap[l.ingredientId]?.name.orEmpty(),
                 if (scaled.signum() == 0) null else formatAmount(scaled, l.unit), l.preparationNote, l.optional,
+                kcal = nutrition.lineEnergyKj[l.id]?.let { NutritionResult.kjToKcal(it).toInt() },
+                gap = nutrition.lineGaps[l.id],
             )
         }
         val names = display.associate { it.ingredientId to it.name }
@@ -92,7 +105,7 @@ class RecipeDetailViewModel @Inject constructor(
                     StepLine(line, stepAmount?.takeIf { it != line.amountText })
                 }
             },
-            nutrition = NutritionCalculator.calculate(recipe.toDomain(lines), ingMap, servings),
+            nutrition = nutrition,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RecipeDetailUiState())
 

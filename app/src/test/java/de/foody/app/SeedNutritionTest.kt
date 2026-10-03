@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
  */
 class SeedNutritionTest {
     // Alkohol (29 kJ/g) steht nicht in den Makros – Wein liegt deshalb bewusst darüber
-    private val withAlcohol = setOf("Rotwein", "Weißwein")
+    private val withAlcohol = setOf("Rotwein", "Weißwein", "Bier", "Glühwein", "Amaretto")
 
     @Test fun energyMatchesMacros() {
         val problems = SeedData.ingredients(0).filter { it.energyKj != null && it.canonicalName !in withAlcohol }.mapNotNull { i ->

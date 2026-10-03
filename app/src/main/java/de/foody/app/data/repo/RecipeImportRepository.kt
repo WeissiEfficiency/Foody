@@ -1,5 +1,15 @@
 package de.foody.app.data.repo
 
+import de.foody.domain.NutritionCalculator
+import de.foody.domain.NutritionResult
+import de.foody.domain.Nutrient
+import de.foody.domain.Recipe
+import de.foody.domain.RecipeIngredient
+import de.foody.domain.Ingredient
+import de.foody.domain.Quantity
+import de.foody.domain.Dimension
+import de.foody.domain.UnitConverter
+import de.foody.domain.ServingsEstimator
 import java.io.InputStream
 import java.io.ByteArrayOutputStream
 import de.foody.app.util.runSuspendCatching
@@ -34,13 +44,13 @@ class RecipeImportRepository @Inject constructor(
         uris: List<Uri>,
         defaultServings: Int,
         tag: String,
-        notesTemplate: (String?) -> String,
+        notesTemplate: (source: String?, servings: Int, estimated: Boolean) -> String,
         onProgress: (done: Int, total: Int) -> Unit = { _, _ -> },
     ): ImportResult {
         val ids = mutableListOf<String>()
         var failed = 0
         var skipped = 0
-        val ingredientIds = mutableMapOf<String, String>()
+        val ingredientIds = mutableMapOf<String, Ingredient>()
         // Blöcke statt einer Transaktion pro Rezept: Room benachrichtigt beobachtende Abfragen (Rezeptliste)
         // nach jeder Transaktion – so lädt die Liste wenige Male statt einmal pro Rezept neu.
         for (chunk in uris.chunked(CHUNK_SIZE)) {
@@ -76,7 +86,7 @@ class RecipeImportRepository @Inject constructor(
         treeUri: Uri,
         defaultServings: Int,
         tag: String,
-        notesTemplate: (String?) -> String,
+        notesTemplate: (source: String?, servings: Int, estimated: Boolean) -> String,
         onProgress: (done: Int, total: Int) -> Unit = { _, _ -> },
     ): ImportResult {
         val files = withContext(Dispatchers.IO) { markdownFilesIn(treeUri) }
@@ -105,7 +115,12 @@ class RecipeImportRepository @Inject constructor(
     }
 
     /** ID des neuen Rezepts; null, wenn der Text kein Rezept enthält oder die Quelle schon importiert wurde. */
-    suspend fun importText(text: String, defaultServings: Int, tag: String, notesTemplate: (String?) -> String): String? =
+    suspend fun importText(
+        text: String,
+        defaultServings: Int,
+        tag: String,
+        notesTemplate: (source: String?, servings: Int, estimated: Boolean) -> String,
+    ): String? =
         (importParsed(MarkdownRecipeImporter.parse(text), defaultServings, tag, notesTemplate, mutableMapOf()) as? Outcome.Imported)?.id
 
     /** [ingredientIds]: Zwischenspeicher kanonischer Name → Zutaten-ID für die Dauer eines Imports. */
@@ -113,18 +128,39 @@ class RecipeImportRepository @Inject constructor(
         parsed: ImportedRecipe,
         defaultServings: Int,
         tag: String,
-        notesTemplate: (String?) -> String,
-        ingredientIds: MutableMap<String, String>,
+        notesTemplate: (source: String?, servings: Int, estimated: Boolean) -> String,
+        ingredientIds: MutableMap<String, Ingredient>,
     ): Outcome {
         if (parsed.name.isBlank() || parsed.ingredients.isEmpty()) return Outcome.NotRecognized
         // Gleiche Quelle schon vorhanden (auch archiviert) → nicht doppelt anlegen
         val sourceUrl = parsed.sourceUrl
         if (sourceUrl != null && recipes.findBySourceUrl(sourceUrl) != null) return Outcome.AlreadyImported
-        val lines = parsed.ingredients.map { ing ->
+        val resolved = parsed.ingredients.map { ing ->
+            ing to ingredientIds.getOrPut(IngredientCatalog.canonicalName(ing.name).lowercase()) {
+                ingredients.getOrCreate(ing.name).toDomain()
+            }
+        }
+        // Gewicht der festen Pflichtzutaten (ohne Flüssigkeiten) für die Portionen-Schätzung
+        val solidGrams = resolved.filter { (ing, _) -> !ing.optional && (ing.amount?.signum() ?: 0) > 0 }.sumOf { (ing, known) ->
+            val q = Quantity.of(ing.amount!!, ing.unit ?: MeasureUnit.PIECE)
+            if (q.dimension == Dimension.VOLUME) 0.0
+            else UnitConverter.convert(q, Dimension.MASS, known.conversion)?.baseAmount?.toDouble() ?: 0.0
+        }
+        val kcal = NutritionCalculator.calculate(
+            Recipe("import", parsed.name, 1, resolved.mapIndexed { i, (ing, known) ->
+                RecipeIngredient("l$i", known.id, ing.amount ?: BigDecimal.ZERO, ing.unit ?: MeasureUnit.PIECE, ing.optional)
+            }),
+            resolved.associate { (_, known) -> known.id to known },
+        ).totals[Nutrient.ENERGY_KJ]?.let(NutritionResult::kjToKcal)?.toDouble() ?: 0.0
+        // Fleisch oder Fisch in Stück (größte Anzahl), z. B. „4 Rindersteaks“ → 4 Portionen
+        val meatPieces = resolved.filter { (ing, known) ->
+            known.category == MEAT_CATEGORY && (ing.unit ?: MeasureUnit.PIECE) == MeasureUnit.PIECE && ing.amount != null
+        }.maxOfOrNull { (ing, _) -> ing.amount!!.toInt() }
+        val estimate = ServingsEstimator.estimate(parsed.name, solidGrams, kcal, meatPieces)
+        val servings = estimate ?: defaultServings
+        val lines = resolved.map { (ing, known) ->
             RecipeDraft.Line(
-                ingredientId = ingredientIds.getOrPut(IngredientCatalog.canonicalName(ing.name).lowercase()) {
-                    ingredients.getOrCreate(ing.name).id
-                },
+                ingredientId = known.id,
                 // Ohne Zahl → 0 = „nach Bedarf“
                 amount = ing.amount ?: BigDecimal.ZERO,
                 unit = ing.unit ?: MeasureUnit.PIECE,
@@ -136,11 +172,11 @@ class RecipeImportRepository @Inject constructor(
             RecipeDraft(
                 id = null,
                 name = parsed.name,
-                defaultServings = defaultServings,
+                defaultServings = servings,
                 prepMinutes = null,
                 cookMinutes = null,
                 imageUri = null,
-                notes = notesTemplate(parsed.sourceUrl),
+                notes = notesTemplate(parsed.sourceUrl, servings, estimate != null),
                 tags = tag,
                 ingredients = lines,
                 steps = parsed.steps,
@@ -152,6 +188,7 @@ class RecipeImportRepository @Inject constructor(
     private companion object {
         /** Rezepte pro Transaktion – groß genug für wenige Listen-Aktualisierungen, klein genug für flüssigen Fortschritt. */
         const val CHUNK_SIZE = 25
+        const val MEAT_CATEGORY = "Fleisch & Fisch"
         /** Rezepttexte sind wenige KB groß; größere Dateien (versehentlich gewählt) zählen als fehlgeschlagen statt den Speicher zu füllen. */
         const val MAX_FILE_BYTES = 1 shl 20
     }

@@ -49,7 +49,7 @@ class FavoritesAndDedupTest {
 
     @After fun tearDown() = db.close()
 
-    private suspend fun import() = importer.importText(markdown, 4, "Ideen") { "Quelle: $it" }
+    private suspend fun import() = importer.importText(markdown, 4, "Ideen") { source, _, _ -> "Quelle: $source" }
 
     @Test fun importingTheSameSourceTwiceIsSkipped() = runTest {
         val first = assertNotNull(import())
@@ -64,7 +64,7 @@ class FavoritesAndDedupTest {
         val dir = java.io.File(context.cacheDir, "dedup").apply { deleteRecursively(); mkdirs() }
         val uris = listOf("a.md", "b.md").map { java.io.File(dir, it).apply { writeText(markdown) }.let(android.net.Uri::fromFile) }
 
-        val result = importer.import(uris, 4, "Ideen", { "Quelle: $it" })
+        val result = importer.import(uris, 4, "Ideen", { source, _, _ -> "Quelle: $source" })
 
         assertEquals(1, result.importedIds.size)
         assertEquals(1, result.skipped)

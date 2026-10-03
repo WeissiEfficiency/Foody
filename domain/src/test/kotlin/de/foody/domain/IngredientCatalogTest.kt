@@ -22,8 +22,8 @@ class IngredientCatalogTest {
         assertEquals("Weizenmehl", IngredientCatalog.canonicalName("Weizenmehl"))
         // Unbekannt → unverändert (nur getrimmt)
         assertEquals("Drachenfrucht", IngredientCatalog.canonicalName(" Drachenfrucht"))
-        // Kein Freitext-Fuzzy-Matching: saure Sahne ist nicht Sahne
-        assertEquals("saure Sahne", IngredientCatalog.canonicalName("saure Sahne"))
+        // Kein Freitext-Fuzzy-Matching: saure Sahne ist nicht Sahne (sondern eine eigene Startzutat)
+        assertEquals("Saure Sahne", IngredientCatalog.canonicalName("saure Sahne"))
     }
 
     @Test fun waterIsNeverBought() {

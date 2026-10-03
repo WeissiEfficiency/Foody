@@ -93,10 +93,10 @@ fun RecipeListScreen(
     val resources = LocalResources.current
     val importTag = stringResource(R.string.import_tag)
     val ideasTag = stringResource(R.string.import_tag_ideas)
-    val notes: (String?) -> String = { source ->
+    val notes: (String?, Int, Boolean) -> String = { source, servings, estimated ->
         listOfNotNull(
             source?.let { resources.getString(R.string.import_source, it) },
-            resources.getString(R.string.import_check_servings, RecipeListViewModel.DEFAULT_IMPORT_SERVINGS),
+            resources.getString(if (estimated) R.string.import_estimated_servings else R.string.import_check_servings, servings),
         ).joinToString("\n")
     }
     val filesLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
