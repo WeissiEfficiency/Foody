@@ -1,5 +1,6 @@
 package de.foody.app.ui.shopping
 
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -158,12 +159,10 @@ fun ShoppingScreen(vm: ShoppingViewModel = hiltViewModel()) {
             }
             val selected = s.selected
             if (selected == null) {
-                EmptyState(stringResource(R.string.shopping_empty), Modifier.weight(1f))
-                OutlinedButton(
-                    { vm.createEmpty(defaultEmptyName) },
-                    Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(50),
-                ) { Text(stringResource(R.string.shopping_create_empty)) }
+                EmptyState(
+                    stringResource(R.string.shopping_empty), Modifier.weight(1f), icon = Icons.Outlined.ShoppingCart,
+                    actionLabel = stringResource(R.string.shopping_create_empty), onAction = { vm.createEmpty(defaultEmptyName) },
+                )
                 Spacer(Modifier.height(88.dp))
                 return@Column
             }

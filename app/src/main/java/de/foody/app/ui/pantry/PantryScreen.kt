@@ -1,5 +1,6 @@
 package de.foody.app.ui.pantry
 
+import androidx.compose.material.icons.outlined.Kitchen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -95,7 +96,7 @@ fun PantryScreen(vm: PantryViewModel = hiltViewModel()) {
     Scaffold(
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
         floatingActionButton = {
-            ExtendedFloatingActionButton(
+            if (s.rows.isNotEmpty()) ExtendedFloatingActionButton(
                 onClick = { creating = true },
                 icon = { Icon(Icons.Default.Add, null) },
                 text = { Text(stringResource(R.string.pantry_add)) },
@@ -107,7 +108,10 @@ fun PantryScreen(vm: PantryViewModel = hiltViewModel()) {
         Column(Modifier.padding(padding)) {
             ScreenHeader(stringResource(R.string.nav_pantry), stringResource(R.string.pantry_title))
             if (s.rows.isEmpty()) {
-                EmptyState(stringResource(R.string.pantry_empty))
+                EmptyState(
+                    stringResource(R.string.pantry_empty), icon = Icons.Outlined.Kitchen,
+                    actionLabel = stringResource(R.string.pantry_add), onAction = { creating = true },
+                )
             } else {
                 val today = LocalDate.now()
                 // Was bald abläuft, zuerst – danach alphabetisch

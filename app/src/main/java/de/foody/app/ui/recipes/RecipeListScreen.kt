@@ -1,5 +1,8 @@
 package de.foody.app.ui.recipes
 
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.material.icons.outlined.MenuBook
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -222,6 +225,8 @@ fun RecipeListScreen(onOpen: (String) -> Unit, onCreate: () -> Unit, vm: RecipeL
         }.joinToString(", ")
         snackbar.showSnackbar(text)
     }
+    val gridState = rememberLazyGridState()
+    val fabExpanded by remember { derivedStateOf { gridState.firstVisibleItemIndex == 0 } }
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
@@ -229,6 +234,8 @@ fun RecipeListScreen(onOpen: (String) -> Unit, onCreate: () -> Unit, vm: RecipeL
                 onClick = onCreate,
                 icon = { Icon(Icons.Default.Add, null) },
                 text = { Text(stringResource(R.string.recipe_new)) },
+                // Eingeklappt, sobald gescrollt wird – verdeckt dann keine Kartentitel
+                expanded = fabExpanded,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
             )
@@ -236,6 +243,7 @@ fun RecipeListScreen(onOpen: (String) -> Unit, onCreate: () -> Unit, vm: RecipeL
     ) { padding ->
         val browsing = state.query.isBlank() && state.tag == null && !state.showArchived
         LazyVerticalGrid(
+            state = gridState,
             columns = GridCells.Adaptive(minSize = 156.dp),
             contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 12.dp, bottom = 104.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -264,7 +272,10 @@ fun RecipeListScreen(onOpen: (String) -> Unit, onCreate: () -> Unit, vm: RecipeL
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     EmptyState(
                         stringResource(if (browsing) R.string.recipe_empty else R.string.recipe_no_match),
-                        Modifier.height(200.dp),
+                        Modifier.height(320.dp),
+                        icon = if (browsing) Icons.Outlined.MenuBook else Icons.Default.Search,
+                        actionLabel = if (browsing) stringResource(R.string.import_folder) else null,
+                        onAction = if (browsing) ({ folderLauncher.launch(null) }) else null,
                     )
                 }
             }
@@ -310,7 +321,7 @@ private fun DailyPicksPager(picks: List<RecipeEntity>, onOpen: (String) -> Unit)
             state = pager,
             pageSpacing = 12.dp,
             contentPadding = PaddingValues(end = 28.dp),
-            modifier = Modifier.fillMaxWidth().height(380.dp),
+            modifier = Modifier.fillMaxWidth().height(300.dp),
         ) { page ->
             val r = picks[page]
             RecipeHeroCard(r, "$eyebrow · ${page + 1}/${picks.size}", onClick = { onOpen(r.id) }, modifier = Modifier.fillMaxSize())

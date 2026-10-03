@@ -1,5 +1,6 @@
 package de.foody.app.ui.settings
 
+import androidx.compose.foundation.BorderStroke
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -83,9 +84,12 @@ fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hilt
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
-        Column(Modifier.padding(padding).verticalScroll(rememberScrollState())) {
+        Column(Modifier.padding(padding)) {
             ScreenHeader(stringResource(R.string.nav_more), stringResource(R.string.nav_settings))
-            Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 SettingsCard(stringResource(R.string.ingredients_title)) {
                     OutlinedButton(onManageIngredients, Modifier.fillMaxWidth(), shape = RoundedCornerShape(50)) {
                         Text(stringResource(R.string.ingredients_manage))
@@ -100,15 +104,20 @@ fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hilt
                 }
                 SettingsCard(stringResource(R.string.privacy_title)) {
                     Text(stringResource(R.string.privacy_text), style = MaterialTheme.typography.bodyMedium)
-                    Button(
-                        { confirmDelete = true },
-                        Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(50),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    ) { Text(stringResource(R.string.data_delete_all)) }
                 }
                 SettingsCard(stringResource(R.string.about_title)) {
                     Text(stringResource(R.string.nutrition_disclaimer), style = MaterialTheme.typography.bodySmall)
+                }
+                // Destruktive Aktion zurückhaltend und zuletzt – nicht der auffälligste Knopf der Seite
+                SettingsCard(stringResource(R.string.danger_zone)) {
+                    Text(stringResource(R.string.data_delete_warning), style = MaterialTheme.typography.bodySmall)
+                    OutlinedButton(
+                        { confirmDelete = true },
+                        Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+                    ) { Text(stringResource(R.string.data_delete_all)) }
                 }
                 Spacer(Modifier.height(24.dp))
             }

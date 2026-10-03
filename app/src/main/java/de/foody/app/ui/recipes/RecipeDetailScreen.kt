@@ -1,5 +1,6 @@
 package de.foody.app.ui.recipes
 
+import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -230,7 +231,12 @@ fun RecipeDetailScreen(
             item {
                 // Inhaltsblatt überlappt das Bild mit großen Rundungen
                 Surface(
-                    Modifier.fillMaxWidth().offset(y = (-28).dp),
+                    // Nach oben ziehen UND die Höhe entsprechend kürzen, damit darunter keine Lücke bleibt
+                    Modifier.fillMaxWidth().layout { measurable, constraints ->
+                        val overlap = 28.dp.roundToPx()
+                        val placeable = measurable.measure(constraints)
+                        layout(placeable.width, placeable.height - overlap) { placeable.place(0, -overlap) }
+                    },
                     shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
                     color = MaterialTheme.colorScheme.background,
                 ) {
@@ -260,7 +266,7 @@ fun RecipeDetailScreen(
                     }
                 }
             }
-            item { SectionHeader(stringResource(R.string.recipe_ingredients), pluralStringResource(R.plurals.servings_count, state.servings, state.servings)) }
+            item { SectionHeader(stringResource(R.string.recipe_ingredients), null) }
             item {
                 Surface(
                     Modifier.fillMaxWidth().padding(horizontal = 20.dp),
@@ -324,8 +330,10 @@ private fun Hero(
     val roundButton = IconButtonDefaults.filledIconButtonColors(
         containerColor = Color.White.copy(alpha = 0.92f), contentColor = Color(0xFF1C2321),
     )
-    Box(Modifier.fillMaxWidth().height(360.dp)) {
-        RecipeImage(recipe.imageUri, recipe.name, Modifier.fillMaxSize(), emojiSize = 120.sp)
+    // Ohne Foto trägt das Emoji keine 360 dp – kompakter Kopf, damit die Zutaten früher sichtbar sind
+    val heroHeight = if (recipe.imageUri != null) 360.dp else 240.dp
+    Box(Modifier.fillMaxWidth().height(heroHeight)) {
+        RecipeImage(recipe.imageUri, recipe.name, Modifier.fillMaxSize(), emojiSize = if (recipe.imageUri != null) 120.sp else 88.sp)
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Black.copy(alpha = 0.35f), 0.35f to Color.Transparent)))
         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
             androidx.compose.material3.FilledIconButton(onBack, colors = roundButton) {
