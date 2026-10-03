@@ -1,5 +1,9 @@
 package de.foody.app.ui.planner
 
+import de.foody.domain.DayNutrition
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import de.foody.app.ui.theme.FoodyGlass
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material.icons.outlined.AutoAwesome
@@ -132,9 +136,19 @@ fun PlannerScreen(onOpenRecipe: (String) -> Unit, vm: PlannerViewModel = hiltVie
                         Text(stringResource(R.string.planner_suggest))
                     }
                 }
+                if (s.dayNutrition.isNotEmpty()) {
+                    item(key = "average") {
+                        val avg = s.dayNutrition.values.map { it.kcal }.average().toInt()
+                        Text(
+                            pluralStringResource(R.plurals.planner_average, s.dayNutrition.size, avg, s.dayNutrition.size),
+                            style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
                 items(s.range.days, key = { it.toEpochDay() }) { day ->
                     DaySection(
                         day, s.slotsByDay[day].orEmpty(), s.recipes, vm, onOpenRecipe,
+                        nutrition = s.dayNutrition[day], goal = s.dailyGoalKcal,
                         onAdd = { addForEpochDay = day.toEpochDay() },
                     )
                 }
@@ -162,6 +176,8 @@ private fun DaySection(
     recipes: Map<String, RecipeEntity>,
     vm: PlannerViewModel,
     onOpen: (String) -> Unit,
+    nutrition: DayNutrition?,
+    goal: Int?,
     onAdd: () -> Unit,
 ) {
     val today = day == LocalDate.now()
@@ -174,6 +190,7 @@ private fun DaySection(
                 IconButton(onAdd) { Icon(Icons.Default.Add, stringResource(R.string.planner_add_for, day.pretty())) }
             }
         }
+        nutrition?.let { DayNutritionRow(it, goal) }
         slots.forEach { slot -> SlotCard(slot, recipes[slot.recipeId], vm, onOpen) }
         if (slots.isEmpty()) {
             // Gestrichelte Fläche lädt zum Planen ein, statt nur ein kleines Plus zu zeigen
@@ -351,4 +368,30 @@ private fun ProposalDialog(p: PlannerViewModel.Proposal, onAccept: () -> Unit, o
         },
         dismissButton = if (p.entries.isNotEmpty()) ({ TextButton(onDismiss) { Text(stringResource(R.string.action_cancel)) } }) else null,
     )
+}
+
+/**
+ * Nährwerte des Tages pro Person; mit Tagesziel als Fortschrittsbalken. Über dem Ziel wird der Balken
+ * korallenrot – als Hinweis, nicht als Warnung. „≥“, wenn Rezepten Werte fehlen.
+ */
+@Composable
+private fun DayNutritionRow(n: DayNutrition, goal: Int?) {
+    val approx = if (n.complete) "" else "≥ "
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            stringResource(R.string.planner_day_nutrition, approx + n.kcal, n.protein, n.carbs, n.fat),
+            style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (goal != null) {
+            val over = n.kcal > goal
+            LinearProgressIndicator(
+                progress = { (n.kcal.toFloat() / goal).coerceAtMost(1f) },
+                color = if (over) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                drawStopIndicator = {},
+                modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(50))
+                    .semantics { contentDescription = "${n.kcal} / $goal kcal" },
+            )
+        }
+    }
 }

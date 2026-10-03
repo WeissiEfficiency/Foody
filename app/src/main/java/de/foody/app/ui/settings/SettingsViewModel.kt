@@ -1,5 +1,6 @@
 package de.foody.app.ui.settings
 
+import de.foody.app.data.GoalPreferences
 import de.foody.app.data.ThemePreferences
 import de.foody.app.ui.theme.ThemeMode
 import androidx.lifecycle.ViewModel
@@ -17,7 +18,11 @@ import kotlinx.coroutines.launch
 class SettingsViewModel @Inject constructor(
     private val backup: BackupRepository,
     private val themePreferences: ThemePreferences,
+    private val goals: GoalPreferences,
 ) : ViewModel() {
+    val dailyKcalGoal = goals.dailyKcal
+    fun setDailyKcalGoal(text: String) = goals.setDailyKcal(text.trim().toIntOrNull())
+
     val themeMode = themePreferences.mode
     fun setThemeMode(mode: ThemeMode) = themePreferences.set(mode)
 

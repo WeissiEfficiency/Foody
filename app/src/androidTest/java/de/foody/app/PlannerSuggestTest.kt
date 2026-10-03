@@ -1,5 +1,7 @@
 package de.foody.app
 
+import de.foody.app.data.repo.IngredientRepository
+import de.foody.app.data.GoalPreferences
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.room.Room
@@ -53,7 +55,7 @@ class PlannerSuggestTest {
         plan = PlanRepository(db, db.mealPlanDao(), db.recipeDao(), db.pantryDao(), db.ingredientDao())
         // Morgen ist schon belegt – dieser Tag bleibt, und sein Rezept wird nicht noch einmal vorgeschlagen
         plan.add(today.plusDays(1), "Abendessen", ids.first(), 2)
-        vm = PlannerViewModel(plan, recipes, PantryRepository(db.pantryDao()), SavedStateHandle(mapOf("start" to today.toEpochDay(), "days" to 3)))
+        vm = PlannerViewModel(plan, recipes, PantryRepository(db.pantryDao()), IngredientRepository(db, db.ingredientDao(), context), GoalPreferences(context), SavedStateHandle(mapOf("start" to today.toEpochDay(), "days" to 3)))
         collector.launch { vm.state.collect {} } // stateIn(WhileSubscribed) braucht einen Abonnenten
         withTimeout(5_000) { vm.state.first { it.activeRecipes.size == 10 && it.slotsByDay.isNotEmpty() } }
         Unit
