@@ -25,5 +25,7 @@
     Die Einträge gelten als manuell, damit eine Neuberechnung (Regel 10) sie nicht als „entfällt“ entfernt.
 18. Import: Eine Quelle (URL), die schon als Rezept existiert – auch archiviert –, wird nicht erneut angelegt.
     Eine Kopie eines Rezepts übernimmt die Quelle nicht.
-19. Kochmodus: Bei Zeitspannen („10 - 15 Minuten“) startet der Timer mit der unteren Grenze. Eine Menge im Schritt
+19. Kochmodus: Bei Zeitspannen („10 - 15 Minuten“, „10 bis 15 Minuten“) startet der Timer mit der unteren Grenze. Eine Menge im Schritt
     gehört zu einer Zutat nur, wenn sie direkt davor steht (höchstens zwei kleingeschriebene Wörter dazwischen).
+20. Import: Mengenspannen („2 - 3 EL“) rechnen mit der unteren Grenze; die obere bleibt als Hinweis („bis 3“).
+    Brüche und gemischte Zahlen („1/2“, „1 1/2“, „1½“) werden als Zahl gelesen, nie nur der Zähler.
