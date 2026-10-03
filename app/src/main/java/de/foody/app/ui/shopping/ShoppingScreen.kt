@@ -1,29 +1,6 @@
 package de.foody.app.ui.shopping
 
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import de.foody.app.ui.common.HeaderAction
-import de.foody.app.ui.common.RoundCheck
-import de.foody.app.ui.common.ScreenHeader
-import de.foody.app.ui.theme.EyebrowStyle
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,9 +8,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
@@ -45,8 +24,8 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -66,18 +45,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.foundation.layout.size
-import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.app.R
 import de.foody.app.data.db.ShoppingItemEntity
-import de.foody.app.ui.common.EmptyState
+import de.foody.app.ui.common.HeaderAction
+import de.foody.app.ui.common.ScreenHeader
 import de.foody.app.ui.common.formatAmount
 import de.foody.app.ui.common.formatQuantity
 import de.foody.app.ui.common.pretty
@@ -142,52 +118,32 @@ fun ShoppingScreen(vm: ShoppingViewModel = hiltViewModel()) {
                     HeaderAction(Icons.Default.DeleteSweep, stringResource(R.string.shopping_delete_list)) { confirmDeleteList = true }
                 }
             }
-            if (s.lists.size > 1) {
-                Row(
-                    Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    s.lists.forEach { l ->
-                        FilterChip(
-                            l.id == s.selected?.id, { vm.select(l.id) }, label = { Text(l.name) },
-                            shape = RoundedCornerShape(50),
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.secondary,
-                                selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
-                            ),
-                        )
+            ShoppingTiles(
+                items = s.items,
+                onTapCatalog = { name, section -> vm.tapCatalog(name, section, defaultEmptyName) },
+                onBuy = { vm.toggle(it) },
+                onPutBack = { vm.toggle(it) },
+                onDetails = { vm.showSources(it) },
+                onAddFromSearch = { vm.addFromSearch(it, defaultEmptyName) },
+                header = {
+                    if (s.lists.size > 1) {
+                        item(key = "lists", span = { GridItemSpan(maxLineSpan) }) {
+                            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                s.lists.forEach { l ->
+                                    FilterChip(
+                                        l.id == s.selected?.id, { vm.select(l.id) }, label = { Text(l.name) },
+                                        shape = RoundedCornerShape(50),
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+                                        ),
+                                    )
+                                }
+                            }
+                        }
                     }
-                }
-            }
-            val selected = s.selected
-            if (selected == null) {
-                EmptyState(
-                    stringResource(R.string.shopping_empty), Modifier.weight(1f), icon = Icons.Outlined.ShoppingCart,
-                    actionLabel = stringResource(R.string.shopping_create_empty), onAction = { vm.createEmpty(defaultEmptyName) },
-                )
-                Spacer(Modifier.height(88.dp))
-                return@Column
-            }
-            val open = s.items.filter { !it.checked }
-            val done = s.items.filter { it.checked }
-            LazyColumn(
-                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 104.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                item { ShoppingProgress(done.size, s.items.size) }
-                item {
-                    AddItemField(manualText, { manualText = it }) { vm.addManual(manualText); manualText = "" }
-                }
-                // Offene Artikel nach Abteilung gruppiert – so läuft man den Supermarkt einmal ab
-                open.groupBy { it.category }.toSortedMap(compareBy(nullsLast()) { it }).forEach { (category, items) ->
-                    item(key = "cat-$category") { GroupTitle(category ?: stringResource(R.string.shopping_category_other)) }
-                    items(items, key = { it.id }) { item -> ShoppingRow(item, vm, Modifier.animateItem()) }
-                }
-                if (done.isNotEmpty()) {
-                    item(key = "done") { GroupTitle(stringResource(R.string.shopping_done_section, done.size)) }
-                    items(done, key = { it.id }) { item -> ShoppingRow(item, vm, Modifier.animateItem()) }
-                }
-            }
+                },
+            )
         }
     }
 
@@ -276,6 +232,7 @@ fun ShoppingScreen(vm: ShoppingViewModel = hiltViewModel()) {
                 }
             },
             confirmButton = { TextButton(vm::hideSources) { Text(stringResource(R.string.action_close)) } },
+            dismissButton = { TextButton({ vm.hideSources(); vm.delete(item) }) { Text(stringResource(R.string.action_remove)) } },
         )
     }
 
@@ -293,91 +250,3 @@ fun ShoppingScreen(vm: ShoppingViewModel = hiltViewModel()) {
 private fun oldText(i: ShoppingItemEntity): String =
     if (i.amount != null && i.unit != null) formatQuantity(Quantity.of(i.amount, i.unit)) else ""
 
-@Composable
-private fun ShoppingProgress(done: Int, total: Int) {
-    if (total == 0) return
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
-            stringResource(R.string.shopping_progress, done, total),
-            style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        LinearProgressIndicator(
-            progress = { done.toFloat() / total },
-            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)),
-            trackColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            drawStopIndicator = {},
-        )
-    }
-}
-
-@Composable
-private fun AddItemField(text: String, onText: (String) -> Unit, onAdd: () -> Unit) {
-    TextField(
-        text, onText,
-        placeholder = { Text(stringResource(R.string.shopping_add_manual)) },
-        singleLine = true,
-        shape = RoundedCornerShape(50),
-        colors = TextFieldDefaults.colors(
-            focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        ),
-        trailingIcon = {
-            FilledIconButton(onAdd, enabled = text.isNotBlank()) { Icon(Icons.Default.Add, stringResource(R.string.action_add)) }
-        },
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-    )
-}
-
-@Composable
-private fun GroupTitle(text: String) {
-    Text(
-        text.uppercase(), style = EyebrowStyle, color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = 12.dp, bottom = 2.dp),
-    )
-}
-
-@Composable
-private fun ShoppingRow(item: ShoppingItemEntity, vm: ShoppingViewModel, modifier: Modifier = Modifier) {
-    val stateDesc = stringResource(if (item.checked) R.string.state_checked else R.string.state_open)
-    val haptic = LocalHapticFeedback.current
-    val toggle: () -> Unit = {
-        haptic.performHapticFeedback(if (item.checked) HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn)
-        vm.toggle(item)
-    }
-    Surface(
-        onClick = toggle,
-        shape = MaterialTheme.shapes.medium,
-        color = if (item.checked) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerLowest,
-        shadowElevation = if (item.checked) 0.dp else 1.dp,
-        modifier = modifier.fillMaxWidth().semantics { stateDescription = stateDesc },
-    ) {
-        Row(Modifier.padding(start = 14.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            RoundCheck(item.checked, item.name, toggle)
-            Text(
-                item.name,
-                style = MaterialTheme.typography.bodyLarge,
-                textDecoration = if (item.checked) TextDecoration.LineThrough else null,
-                color = if (item.checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f).padding(horizontal = 14.dp),
-            )
-            item.amount?.let { a -> item.unit?.let { u ->
-                Text(
-                    formatQuantity(Quantity.of(a, u)),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = if (item.checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
-                )
-            } }
-            // Nebenaktionen dezent, damit Name und Menge im Vordergrund stehen
-            val muted = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            if (!item.manual) {
-                IconButton({ vm.showSources(item) }) {
-                    Icon(Icons.Outlined.Info, stringResource(R.string.sources_title), Modifier.size(20.dp), tint = muted)
-                }
-            }
-            IconButton({ vm.delete(item) }) {
-                Icon(Icons.Outlined.Delete, stringResource(R.string.action_delete), Modifier.size(20.dp), tint = muted)
-            }
-        }
-    }
-}
