@@ -200,9 +200,21 @@ class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
         AddRecipeResult(list.id, list.name, needs.size)
     }
 
-    suspend fun addManual(listId: String, name: String) {
-        val order = dao.getItems(listId).maxOfOrNull { it.sortOrder + 1 } ?: 0
-        dao.upsertItem(ShoppingItemEntity(id = newId(), listId = listId, name = name.trim(), manual = true, sortOrder = order))
+    suspend fun addManual(listId: String, name: String, category: String? = null) {
+        val order = nextOrder(listId)
+        dao.upsertItem(
+            ShoppingItemEntity(id = newId(), listId = listId, name = name.trim(), manual = true, category = category, sortOrder = order),
+        )
+    }
+
+    private suspend fun nextOrder(listId: String) = dao.getItems(listId).maxOfOrNull { it.sortOrder + 1 } ?: 0
+
+    /**
+     * Abhaken („gekauft“) oder zurück auf die Liste. Die Position wandert dabei ans Ende – so ergibt die
+     * Reihenfolge der abgehakten Einträge „Zuletzt verwendet“ (neueste zuerst), ohne eigenes Zeitstempel-Feld.
+     */
+    suspend fun setChecked(item: ShoppingItemEntity, checked: Boolean) = db.withTransaction {
+        dao.upsertItem(item.copy(checked = checked, sortOrder = nextOrder(item.listId)))
     }
 
     suspend fun createEmptyList(name: String): String {

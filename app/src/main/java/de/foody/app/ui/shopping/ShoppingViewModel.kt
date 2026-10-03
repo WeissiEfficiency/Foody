@@ -1,5 +1,6 @@
 package de.foody.app.ui.shopping
 
+import de.foody.domain.ShoppingCatalog
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -129,8 +130,37 @@ class ShoppingViewModel @Inject constructor(
     }
     fun dismissDiff() { _diff.value = null }
 
-    fun toggle(item: ShoppingItemEntity) = viewModelScope.launch { repo.setChecked(item.id, !item.checked) }
-    fun addManual(name: String) { state.value.selected?.id?.let { viewModelScope.launch { repo.addManual(it, name) } } }
+    fun toggle(item: ShoppingItemEntity) = viewModelScope.launch { repo.setChecked(item, !item.checked) }
+
+    /** Liste, in die Kacheln eintragen; ohne Liste wird beim ersten Antippen eine leere angelegt. */
+    private suspend fun ensureList(defaultName: String): String =
+        state.value.selected?.id ?: repo.createEmptyList(defaultName).also { saved["listId"] = it }
+
+    /**
+     * Antippen einer Katalog-Kachel: Nicht auf der Liste → hinzufügen; auf der Liste → gekauft;
+     * zuletzt gekauft → wieder auf die Liste. Verglichen wird über den Artikel, nicht den genauen Namen.
+     */
+    fun tapCatalog(name: String, section: String, defaultListName: String) = viewModelScope.launch {
+        val existing = state.value.items.filter { ShoppingCatalog.sameItem(it.name, name) }
+        val open = existing.firstOrNull { !it.checked }
+        val bought = existing.firstOrNull { it.checked }
+        when {
+            open != null -> repo.setChecked(open, true)
+            bought != null -> repo.setChecked(bought, false)
+            else -> repo.addManual(ensureList(defaultListName), name, section)
+        }
+    }
+
+    /** Freitext aus „Was willst du einkaufen?“: bekannter Artikel wie seine Kachel, sonst als eigener Artikel. */
+    fun addFromSearch(text: String, defaultListName: String) {
+        val name = text.trim().takeIf { it.isNotEmpty() } ?: return
+        val known = ShoppingCatalog.find(name)
+        if (known != null) {
+            tapCatalog(known.name, ShoppingCatalog.sectionFor(null, known.name), defaultListName)
+        } else {
+            viewModelScope.launch { repo.addManual(ensureList(defaultListName), name, ShoppingCatalog.OWN_ITEMS) }
+        }
+    }
     fun delete(item: ShoppingItemEntity) = viewModelScope.launch {
         val sources = repo.getSources(item.id)
         repo.deleteItem(item.id)

@@ -186,14 +186,16 @@
     <!-- Einkauf -->
     <string name="shopping_generate">Liste erzeugen</string>
     <string name="shopping_create">Erzeugen</string>
-    <string name="shopping_create_empty">Leere Liste anlegen</string>
     <string name="shopping_default_name">Einkaufsliste</string>
-    <string name="shopping_empty">Noch keine Einkaufsliste. Plane Gerichte und erzeuge daraus eine Liste.</string>
-    <string name="shopping_add_manual">Artikel hinzufügen</string>
+    <string name="shopping_search">Was willst du einkaufen?</string>
+    <string name="shopping_add_custom">„%1$s“ hinzufügen</string>
+    <string name="shopping_recent">Zuletzt verwendet</string>
+    <string name="shopping_nothing_title">Nichts einzukaufen!</string>
+    <string name="shopping_nothing_hint">Suche oben oder tippe unten im Katalog auf einen Artikel. Gekauftes antippen.</string>
+    <string name="shopping_state_on_list">auf der Liste</string>
+    <string name="shopping_state_not_on_list">nicht auf der Liste</string>
+    <string name="action_clear">Leeren</string>
     <string name="shopping_title_empty">Deine Liste</string>
-    <string name="shopping_progress" tools:ignore="PluralsCandidate">%1$d von %2$d erledigt</string>
-    <string name="shopping_category_other">Sonstiges</string>
-    <string name="shopping_done_section">Im Wagen (%1$d)</string>
     <string name="recipe_add_to_shopping">Auf die Einkaufsliste</string>
     <string name="shopping_added_none">Nichts einzukaufen – alle Zutaten sind „nach Bedarf“ oder optional.</string>
     <string name="shopping_from">ab %1$s</string>
@@ -213,8 +215,6 @@
     <string name="sources_title">Herkunft anzeigen</string>
     <string name="sources_none">Keine Herkunftsdaten.</string>
     <string name="item_deleted">Eintrag gelöscht</string>
-    <string name="state_checked">erledigt</string>
-    <string name="state_open">offen</string>
     <string name="share_title">Einkaufsliste teilen</string>
     <string name="share_error">Keine App zum Teilen gefunden.</string>
 
