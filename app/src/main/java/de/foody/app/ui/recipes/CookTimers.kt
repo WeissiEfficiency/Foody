@@ -1,5 +1,8 @@
 package de.foody.app.ui.recipes
 
+import de.foody.app.timer.RunningTimer
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.NotificationManagerCompat
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import android.media.AudioManager
@@ -27,11 +30,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.listSaver
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,19 +39,6 @@ import androidx.compose.ui.unit.dp
 import de.foody.app.R
 import de.foody.domain.StepTimer
 import kotlinx.coroutines.delay
-
-/** Ein laufender Timer; [endAt] als Uhrzeit, damit er Konfigurationswechsel (Drehen) übersteht. */
-data class RunningTimer(val label: String, val endAt: Long)
-
-@Composable
-fun rememberRunningTimers(): SnapshotStateList<RunningTimer> = rememberSaveable(
-    saver = listSaver(
-        save = { list -> list.flatMap { listOf(it.label, it.endAt.toString()) } },
-        restore = { flat -> flat.chunked(2).map { (l, e) -> RunningTimer(l, e.toLong()) }.toMutableStateList() },
-    ),
-) { mutableStateListOf() }
-
-private fun List<RunningTimer>.toMutableStateList() = mutableStateListOf<RunningTimer>().also { it.addAll(this) }
 
 /** Chips für die im Schritt erkannten Zeiten; Tippen startet einen Timer. */
 @Composable
@@ -77,11 +63,12 @@ fun StepTimerChips(timers: List<StepTimer>, onStart: (StepTimer) -> Unit) {
 }
 
 /**
- * Leiste mit allen laufenden Timern, unabhängig von der aktuellen Seite.
- * Abgelaufene Timer piepen einmal (ToneGenerator – ohne zusätzliche Berechtigung) und bleiben sichtbar, bis man sie schließt.
+ * Leiste mit allen laufenden Timern, unabhängig von der aktuellen Seite. Abgelaufene bleiben sichtbar, bis man sie schließt.
+ * Das Ende meldet der [de.foody.app.timer.CookTimerService] als Benachrichtigung; ohne Benachrichtigungs-Freigabe
+ * piept die App selbst (ToneGenerator), solange sie offen ist.
  */
 @Composable
-fun RunningTimersBar(timers: SnapshotStateList<RunningTimer>) {
+fun RunningTimersBar(timers: List<RunningTimer>, onDismiss: (RunningTimer) -> Unit) {
     if (timers.isEmpty()) return
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(timers.size) {
@@ -92,6 +79,7 @@ fun RunningTimersBar(timers: SnapshotStateList<RunningTimer>) {
     }
     val beeped = remember { mutableSetOf<RunningTimer>() }
     val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     val tone = remember { runCatching { ToneGenerator(AudioManager.STREAM_ALARM, 90) }.getOrNull() }
     androidx.compose.runtime.DisposableEffect(Unit) { onDispose { tone?.release() } }
 
@@ -100,7 +88,9 @@ fun RunningTimersBar(timers: SnapshotStateList<RunningTimer>) {
             val left = t.endAt - now
             val done = left <= 0
             if (done && beeped.add(t)) {
-                tone?.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 1500)
+                if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+                    tone?.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 1500)
+                }
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             }
             Row(
@@ -116,7 +106,7 @@ fun RunningTimersBar(timers: SnapshotStateList<RunningTimer>) {
                     style = MaterialTheme.typography.titleSmall, color = fg,
                     modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                 )
-                IconButton({ timers.remove(t) }) { Icon(Icons.Default.Close, stringResource(R.string.timer_cancel), tint = fg) }
+                IconButton({ onDismiss(t) }) { Icon(Icons.Default.Close, stringResource(R.string.timer_cancel), tint = fg) }
             }
         }
     }

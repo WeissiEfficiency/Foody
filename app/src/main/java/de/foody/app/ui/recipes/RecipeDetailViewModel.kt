@@ -1,5 +1,8 @@
 package de.foody.app.ui.recipes
 
+import de.foody.app.timer.CookTimerRepository
+import de.foody.app.timer.RunningTimer
+import de.foody.domain.StepTimer
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -50,6 +53,7 @@ class RecipeDetailViewModel @Inject constructor(
     ingredients: IngredientRepository,
     private val shopping: ShoppingRepository,
     private val photos: RecipePhotoStore,
+    private val cookTimers: CookTimerRepository,
     private val saved: SavedStateHandle,
 ) : ViewModel() {
     val id = saved.toRoute<RecipeDetailRoute>().id
@@ -104,6 +108,14 @@ class RecipeDetailViewModel @Inject constructor(
     }
 
     fun newPhotoTarget() = photos.newPhotoTarget()
+
+    /** Alle laufenden Kochtimer – auch die anderer Rezepte, damit keiner im Hintergrund vergessen wird. */
+    val timers = cookTimers.timers
+
+    fun startTimer(timer: StepTimer) =
+        cookTimers.start(timer.label, state.value.recipe?.name.orEmpty(), timer.duration)
+
+    fun dismissTimer(timer: RunningTimer) = cookTimers.dismiss(timer.id)
 
     /** Kamerafoto übernehmen; ein ersetztes eigenes Foto wird aufgeräumt, ein abgebrochenes verworfen. */
     fun onPhotoTaken(path: String, success: Boolean) = viewModelScope.launch {

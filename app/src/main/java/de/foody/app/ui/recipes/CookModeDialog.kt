@@ -1,5 +1,14 @@
 package de.foody.app.ui.recipes
 
+import de.foody.app.timer.RunningTimer
+import de.foody.domain.StepTimer
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -62,6 +71,9 @@ fun CookModeDialog(
     recipeName: String,
     steps: List<InstructionStepEntity>,
     stepLines: List<List<StepLine>>,
+    timers: List<RunningTimer>,
+    onStartTimer: (StepTimer) -> Unit,
+    onDismissTimer: (RunningTimer) -> Unit,
     onClose: () -> Unit,
     /** Letzter Schritt bestätigt – anders als Schließen heißt das: Das Gericht ist fertig. */
     onFinish: () -> Unit = onClose,
@@ -74,7 +86,18 @@ fun CookModeDialog(
         }
         val pager = rememberPagerState { steps.size }
         val scope = rememberCoroutineScope()
-        val running = rememberRunningTimers()
+        // Ab Android 13 braucht die „Timer abgelaufen“-Meldung eine Freigabe – gefragt wird beim ersten Timer.
+        // Abgelehnt läuft der Timer trotzdem; dann piept die App selbst, solange sie offen ist.
+        val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+        val context = LocalContext.current
+        val startTimer: (StepTimer) -> Unit = { t ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ) {
+                askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            onStartTimer(t)
+        }
         val stepTimers = remember(steps) { steps.map { StepTimerParser.find(it.text) } }
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
@@ -103,9 +126,7 @@ fun CookModeDialog(
                             steps[page].text,
                             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal, lineHeight = 36.sp),
                         )
-                        StepTimerChips(stepTimers.getOrNull(page).orEmpty()) { t ->
-                            running += RunningTimer(t.label, System.currentTimeMillis() + t.duration.toMillis())
-                        }
+                        StepTimerChips(stepTimers.getOrNull(page).orEmpty(), startTimer)
                         val lines = stepLines.getOrNull(page).orEmpty()
                         if (lines.isNotEmpty()) {
                             Column(
@@ -136,7 +157,7 @@ fun CookModeDialog(
                         }
                     }
                 }
-                RunningTimersBar(running)
+                RunningTimersBar(timers, onDismissTimer)
                 Row(Modifier.fillMaxWidth().padding(20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     val first = pager.currentPage == 0
                     val last = pager.currentPage == steps.lastIndex

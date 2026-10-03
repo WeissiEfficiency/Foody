@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Keine Berechtigungen nötig: Bilder über Photo Picker, Dateien über SAF. -->
+    <!-- Bilder über Photo Picker, Dateien über SAF, Fotos über die Kamera-App – dafür keine Berechtigungen.
+         Nur für Kochtimer im Hintergrund: Vordergrunddienst, Wakelock bis zum Timer-Ende und die Meldung
+         „Timer abgelaufen“ (ab Android 13 vom Nutzer freizugeben; abgelehnt piept die App nur, solange sie offen ist). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:name=".FoodyApp"
@@ -24,6 +30,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".timer.CookTimerService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Kochtimer: zählt gestartete Timer herunter und meldet das Ende auch bei ausgeschaltetem Bildschirm" />
+        </service>
         <!-- Kamera-App schreibt Rezeptfotos hierüber in den privaten Speicher (keine Kamera-Berechtigung nötig) -->
         <provider
             android:name="androidx.core.content.FileProvider"

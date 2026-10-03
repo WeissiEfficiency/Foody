@@ -12,7 +12,8 @@ konsolidierte Einkaufslisten.
   Menge/Einheit/Hinweis/optional, Arbeitsschritte, Notizen.
 - **Startseite:** drei „Rezepte des Tages“, Bildraster, Filter nach Tags und Favoriten.
 - **Kochmodus:** ein Schritt pro Seite, Display bleibt an; „Du brauchst“ zeigt die im Schritt genannte Teilmenge
-  („0,25 l von 0,5 l Bier“); erkannte Zeitangaben („20 Minuten“) als **Timer** mit Signalton.
+  („0,25 l von 0,5 l Bier“); erkannte Zeitangaben („20 Minuten“) als **Timer**, die auch bei ausgeschaltetem
+  Bildschirm oder im Hintergrund weiterlaufen und das Ende als Benachrichtigung melden.
 - **Portionen skalieren** in der Detailansicht und im Planer.
 - **Nährwerte:** Energie (kJ/kcal), Eiweiß, Kohlenhydrate, Fett, Ballaststoffe, Zucker, Salz – pro Rezept und pro
   Portion, mit Vollständigkeitsanzeige („zu 82 % vollständig“) statt stiller Nullen.
@@ -53,5 +54,6 @@ Voraussetzungen: JDK 17+ (z. B. das JBR von Android Studio), Android SDK (compil
 
 ## Datenschutz
 
-Kein Konto, kein Server, keine Berechtigungen. Alle Daten liegen lokal in Room; kein automatisches Cloud-Backup.
+Kein Konto, kein Server, kein Internetzugriff. Berechtigungen nur für Kochtimer im Hintergrund
+(Benachrichtigungen – ab Android 13 abfragbar und ablehnbar –, Vordergrunddienst, Wakelock bis zum Timer-Ende). Alle Daten liegen lokal in Room; kein automatisches Cloud-Backup.
 Cleartext-Traffic ist per Network Security Config verboten.

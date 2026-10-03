@@ -8,8 +8,9 @@ werden und welche Restrisiken bewusst bleiben. Bei Änderungen an Import, Sicher
 | Bereich | Stand |
 |---|---|
 | Netzwerk | Keine `INTERNET`-Berechtigung, kein Coil-Netzwerkmodul; Klartext zusätzlich per `network_security_config` verboten |
-| Berechtigungen | Keine. Bilder über Photo Picker, Dateien über SAF, Fotos über die System-Kamera (`TakePicture`) |
-| Exportierte Komponenten | Nur `MainActivity` (Launcher). Keine Intent-Filter für fremde Daten, keine PendingIntents, keine WebView |
+| Berechtigungen | Nur für Kochtimer: `POST_NOTIFICATIONS` (ab Android 13 abgefragt, ablehnbar), `FOREGROUND_SERVICE(_SPECIAL_USE)`, `WAKE_LOCK`. Bilder über Photo Picker, Dateien über SAF, Fotos über die System-Kamera (`TakePicture`) – ohne Berechtigung |
+| Dienst | `CookTimerService`: nicht exportiert, läuft nur solange ein Timer läuft; Wakelock mit Zeitlimit (nächstes Timer-Ende + 1 min) |
+| Exportierte Komponenten | Nur `MainActivity` (Launcher). Keine Intent-Filter für fremde Daten, keine WebView. Einziger PendingIntent: Öffnen der App aus der Timer-Meldung (`FLAG_IMMUTABLE`, explizit) |
 | FileProvider | Nicht exportiert, gibt nur `files/recipe_images/` frei, Schreibrecht nur befristet an die Kamera-App |
 | Datenbank | Room mit gebundenen Parametern; `LIKE`-Suche maskiert `%`/`_`; rohes SQL nur in Migrationen |
 | Backup | Kein Cloud-Backup. Gerät-zu-Gerät-Umzug (Android 12+) nimmt Datenbank und eigene Fotos mit |
