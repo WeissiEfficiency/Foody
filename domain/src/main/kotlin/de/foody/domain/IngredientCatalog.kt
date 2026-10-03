@@ -56,6 +56,16 @@ object IngredientCatalog {
         return name.trim().replace(Regex("""\s+"""), " ")
     }
 
+    /**
+     * Alle bekannten Schreibweisen (klein) einer Zutat einschließlich des Namens selbst, z. B. für „Weizenmehl“
+     * auch „mehl“ – damit Schritttexte („Mehl einrühren“) die vereinheitlichte Zutat finden.
+     */
+    fun synonymsOf(name: String): List<String> {
+        val canonical = canonicalName(name)
+        val own = key(name).replace(Regex("""\s*\([^)]*\)"""), "").trim() // „reis (roh)“ → „reis“
+        return (listOf(key(name), own) + aliases.filterValues { it == canonical }.keys).distinct().filter { it.isNotBlank() }
+    }
+
     /** Zutaten, die nie auf die Einkaufsliste gehören (z. B. Leitungswasser). */
     fun neverBuy(name: String): Boolean = key(name) in neverBuyKeys
 

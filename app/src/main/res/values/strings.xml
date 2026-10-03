@@ -93,6 +93,7 @@
     <string name="recipe_section_archive">Archiv (%1$d)</string>
     <string name="cook_mode_start">Jetzt kochen</string>
     <string name="cook_mode_you_need">Du brauchst</string>
+    <string name="cook_mode_of_total">von %1$s</string>
     <string name="cook_mode_next">Weiter</string>
     <string name="cook_mode_previous">Zurück</string>
     <string name="cook_mode_done">Fertig – guten Appetit!</string>
