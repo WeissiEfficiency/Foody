@@ -60,7 +60,7 @@ import kotlinx.coroutines.launch
 fun CookModeDialog(
     recipeName: String,
     steps: List<InstructionStepEntity>,
-    stepLines: List<List<DisplayLine>>,
+    stepLines: List<List<StepLine>>,
     onClose: () -> Unit,
 ) {
     Dialog(onClose, DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
@@ -108,11 +108,19 @@ fun CookModeDialog(
                             ) {
                                 Text(stringResource(R.string.cook_mode_you_need).uppercase(), style = EyebrowStyle,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer)
-                                lines.forEach { l ->
+                                lines.forEach { (l, stepAmount) ->
                                     Row {
-                                        Text(l.amountText ?: stringResource(R.string.amount_as_needed),
-                                            style = MaterialTheme.typography.titleMedium,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.weight(0.4f))
+                                        Column(Modifier.weight(0.4f)) {
+                                            // Im Schritt genannte Teilmenge zuerst, Gesamtmenge als Orientierung darunter
+                                            Text(stepAmount ?: l.amountText ?: stringResource(R.string.amount_as_needed),
+                                                style = MaterialTheme.typography.titleMedium,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                            if (stepAmount != null && l.amountText != null) {
+                                                Text(stringResource(R.string.cook_mode_of_total, l.amountText),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
+                                            }
+                                        }
                                         Text(l.name, style = MaterialTheme.typography.bodyLarge,
                                             color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.weight(0.6f))
                                     }

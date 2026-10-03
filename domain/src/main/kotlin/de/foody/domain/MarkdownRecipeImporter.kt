@@ -32,18 +32,8 @@ data class ImportedIngredient(
  */
 object MarkdownRecipeImporter {
 
-    private val numberRegex = Regex("""^(\d+(?:[.,]\d+)?|\d+/\d+|[½¼¾⅓⅔])\s*(.*)$""")
+    private val numberRegex = Regex("""^(${GermanAmounts.NUMBER})\s*(.*)$""")
     private val vagueAmounts = setOf("n. b.", "n.b.", "evtl.", "etwas", "nach belieben", "etwas mehr", "prise", "1 prise")
-
-    private val unitWords: Map<String, MeasureUnit> = mapOf(
-        "mg" to MeasureUnit.MILLIGRAM, "g" to MeasureUnit.GRAM, "gr" to MeasureUnit.GRAM, "gramm" to MeasureUnit.GRAM,
-        "kg" to MeasureUnit.KILOGRAM,
-        "ml" to MeasureUnit.MILLILITER, "cl" to MeasureUnit.CENTILITER, "l" to MeasureUnit.LITER, "liter" to MeasureUnit.LITER,
-        "tl" to MeasureUnit.TEASPOON, "el" to MeasureUnit.TABLESPOON,
-        "dose" to MeasureUnit.CAN, "dose/n" to MeasureUnit.CAN, "dosen" to MeasureUnit.CAN,
-        "stück" to MeasureUnit.PIECE, "stück(e)" to MeasureUnit.PIECE, "stk." to MeasureUnit.PIECE, "stk" to MeasureUnit.PIECE,
-        "pck." to MeasureUnit.PACKAGE, "päckchen" to MeasureUnit.PACKAGE, "packung" to MeasureUnit.PACKAGE, "pkt." to MeasureUnit.PACKAGE,
-    )
 
     fun parse(markdown: String): ImportedRecipe {
         val lines = markdown.lines().map { it.trim() }
@@ -112,10 +102,10 @@ object MarkdownRecipeImporter {
         if (amountText != null) {
             val m = numberRegex.matchEntire(amountText)
             if (m != null) {
-                amount = parseNumber(m.groupValues[1])
+                amount = GermanAmounts.parseNumber(m.groupValues[1])
                 val rest = m.groupValues[2].trim()
                 val firstToken = rest.substringBefore(' ').substringBefore(',').lowercase()
-                val mapped = unitWords[firstToken]
+                val mapped = GermanAmounts.unitOf(firstToken)
                 if (mapped != null) {
                     unit = mapped
                     rest.removePrefix(rest.substringBefore(' ').substringBefore(',')).trim(',', ' ')
@@ -167,19 +157,5 @@ object MarkdownRecipeImporter {
             afterComma.ifBlank { null },
         )
         return name to notes
-    }
-
-    private fun parseNumber(s: String): BigDecimal? = when (s) {
-        "½" -> BigDecimal("0.5")
-        "¼" -> BigDecimal("0.25")
-        "¾" -> BigDecimal("0.75")
-        "⅓" -> BigDecimal("0.333")
-        "⅔" -> BigDecimal("0.667")
-        else -> if ('/' in s) {
-            val (a, b) = s.split('/')
-            BigDecimal(a).divide(BigDecimal(b), 3, java.math.RoundingMode.HALF_UP)
-        } else {
-            s.replace(',', '.').toBigDecimalOrNull()
-        }
     }
 }

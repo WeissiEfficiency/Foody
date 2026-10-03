@@ -100,6 +100,7 @@ import de.foody.domain.Nutrient
 import de.foody.domain.NutritionCalculator
 import de.foody.domain.NutritionResult
 import de.foody.domain.RecipeScaler
+import de.foody.domain.Dimension
 import de.foody.domain.StepIngredientMatcher
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -110,13 +111,16 @@ import kotlin.math.roundToInt
 
 data class DisplayLine(val ingredientId: String, val name: String, val amountText: String?, val note: String?, val optional: Boolean)
 
+/** Zutat im Kochmodus; [stepAmountText] ist die im Schritt genannte Teilmenge, falls sie von der Gesamtmenge abweicht. */
+data class StepLine(val line: DisplayLine, val stepAmountText: String?)
+
 data class RecipeDetailUiState(
     val recipe: RecipeEntity? = null,
     val servings: Int = 1,
     val lines: List<DisplayLine> = emptyList(),
     val steps: List<InstructionStepEntity> = emptyList(),
     /** Je Schritt die darin erwähnten Zutaten mit skalierter Menge (Kochmodus). */
-    val stepLines: List<List<DisplayLine>> = emptyList(),
+    val stepLines: List<List<StepLine>> = emptyList(),
     val nutrition: NutritionResult? = null,
 )
 
@@ -145,12 +149,25 @@ class RecipeDetailViewModel @Inject constructor(
         }
         val names = display.associate { it.ingredientId to it.name }
         val byId = display.associateBy { it.ingredientId }
+        val unitById = lines.associate { it.ingredientId to it.unit }
         RecipeDetailUiState(
             recipe = recipe,
             servings = servings,
             lines = display,
             steps = steps,
-            stepLines = steps.map { s -> StepIngredientMatcher.match(s.text, names).mapNotNull(byId::get) },
+            stepLines = steps.map { s ->
+                StepIngredientMatcher.mentions(s.text, names).mapNotNull { m ->
+                    val line = byId[m.ingredientId] ?: return@mapNotNull null
+                    // „2 Eier“ hat kein Einheitswort: dann gilt die Stück-Einheit der Rezeptzeile
+                    val unit = m.unit ?: unitById[m.ingredientId]?.takeIf { it.dimension == Dimension.COUNT }
+                    val stepAmount = if (m.amount != null && unit != null) {
+                        formatAmount(RecipeScaler.scale(m.amount!!, recipe.defaultServings, servings), unit)
+                    } else {
+                        null
+                    }
+                    StepLine(line, stepAmount?.takeIf { it != line.amountText })
+                }
+            },
             nutrition = NutritionCalculator.calculate(recipe.toDomain(lines), ingMap, servings),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RecipeDetailUiState())
