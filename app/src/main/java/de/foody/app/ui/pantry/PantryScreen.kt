@@ -40,6 +40,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -163,7 +164,7 @@ private fun BestBeforePill(date: LocalDate, today: LocalDate) {
     val text = when {
         days < 0 -> stringResource(R.string.pantry_expired)
         days == 0L -> stringResource(R.string.pantry_expires_today)
-        days <= 3 -> stringResource(R.string.pantry_expires_in, days.toInt())
+        days <= 3 -> pluralStringResource(R.plurals.pantry_expires_in, days.toInt(), days.toInt())
         else -> stringResource(R.string.pantry_best_before, date.medium())
     }
     Text(

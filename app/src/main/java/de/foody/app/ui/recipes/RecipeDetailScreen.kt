@@ -39,7 +39,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import de.foody.app.ui.theme.Coral
+import de.foody.app.ui.theme.FavoriteRed
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
@@ -71,6 +71,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -208,7 +209,7 @@ fun RecipeDetailScreen(
         vm.addedShown()
         snackbar.showSnackbar(
             if (a.added == 0) resources.getString(R.string.shopping_added_none)
-            else resources.getString(R.string.shopping_added, a.added, a.listName),
+            else resources.getQuantityString(R.plurals.shopping_added, a.added, a.added, a.listName),
         )
     }
     val listState = rememberLazyListState()
@@ -259,7 +260,7 @@ fun RecipeDetailScreen(
                     }
                 }
             }
-            item { SectionHeader(stringResource(R.string.recipe_ingredients), stringResource(R.string.servings_count, state.servings)) }
+            item { SectionHeader(stringResource(R.string.recipe_ingredients), pluralStringResource(R.plurals.servings_count, state.servings, state.servings)) }
             item {
                 Surface(
                     Modifier.fillMaxWidth().padding(horizontal = 20.dp),
@@ -335,7 +336,7 @@ private fun Hero(
                 Icon(
                     if (recipe.favorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     stringResource(if (recipe.favorite) R.string.favorite_remove else R.string.favorite_add),
-                    tint = if (recipe.favorite) Coral else Color(0xFF1C2321),
+                    tint = if (recipe.favorite) FavoriteRed else Color(0xFF1C2321),
                 )
             }
             Spacer(Modifier.size(8.dp))

@@ -216,9 +216,9 @@ fun RecipeListScreen(onOpen: (String) -> Unit, onCreate: () -> Unit, vm: RecipeL
         vm.importMessageShown()
         m.openId?.let(onOpen)
         val text = buildList {
-            add(resources.getString(R.string.import_done, m.imported))
+            add(resources.getQuantityString(R.plurals.import_done, m.imported, m.imported))
             if (m.skipped > 0) add(resources.getString(R.string.import_skipped, m.skipped))
-            if (m.failed > 0) add(resources.getString(R.string.import_failed, m.failed))
+            if (m.failed > 0) add(resources.getQuantityString(R.plurals.import_failed, m.failed, m.failed))
         }.joinToString(", ")
         snackbar.showSnackbar(text)
     }

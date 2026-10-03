@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Foody</string>
 
     <!-- Navigation -->
@@ -71,13 +71,12 @@
     <string name="recipe_copy_suffix">(Kopie)</string>
     <string name="recipe_delete_title">Rezept löschen?</string>
     <string name="recipe_delete_text">Das Rezept und alle Planpositionen damit werden endgültig gelöscht. Bestehende Einkaufslisten bleiben erhalten.</string>
-    <string name="servings_count">%1$d Portionen</string>
-    <string name="minutes_total">%1$d Min.</string>
-    <string name="prep_minutes">Vorbereitung %1$d Min.</string>
-    <string name="cook_minutes">Kochen %1$d Min.</string>
+    <string name="minutes_total" tools:ignore="PluralsCandidate">%1$d Min.</string>
+    <string name="prep_minutes" tools:ignore="PluralsCandidate">Vorbereitung %1$d Min.</string>
+    <string name="cook_minutes" tools:ignore="PluralsCandidate">Kochen %1$d Min.</string>
     <string name="optional_suffix">(optional)</string>
     <string name="step_n">Schritt %1$d</string>
-    <string name="step_of">Schritt %1$d von %2$d</string>
+    <string name="step_of" tools:ignore="PluralsCandidate">Schritt %1$d von %2$d</string>
     <string name="kcal_per_serving">%1$s kcal/Port.</string>
     <string name="more_actions">Weitere Aktionen</string>
     <string name="home_eyebrow">Heute</string>
@@ -107,12 +106,10 @@
     <string name="import_files">Markdown-Dateien wählen</string>
     <string name="import_folder">Ganzen Ordner importieren (Ideen)</string>
     <string name="import_source">Quelle: %1$s</string>
-    <string name="import_check_servings">Portionenzahl war in der Datei nicht angegeben – auf %1$d gesetzt, bitte prüfen.</string>
-    <string name="import_done">%1$d Rezept(e) importiert</string>
+    <string name="import_check_servings" tools:ignore="PluralsCandidate">Portionenzahl war in der Datei nicht angegeben – auf %1$d gesetzt, bitte prüfen.</string>
     <string name="import_running">Dateien werden gesucht …</string>
-    <string name="import_progress">Importiere %1$d von %2$d …</string>
-    <string name="import_skipped">%1$d bereits vorhanden</string>
-    <string name="import_failed">%1$d Datei(en) nicht erkannt</string>
+    <string name="import_progress" tools:ignore="PluralsCandidate">Importiere %1$d von %2$d …</string>
+    <string name="import_skipped" tools:ignore="PluralsCandidate">%1$d bereits vorhanden</string>
 
     <!-- Zutaten -->
     <string name="ingredients_title">Zutaten</string>
@@ -128,7 +125,6 @@
     <string name="ingredient_merge_hint">Alle Rezepte, Vorräte und Listeneinträge zeigen danach auf die gewählte Zutat. Fehlende Nährwerte werden übernommen.</string>
     <string name="ingredient_merged">Zutaten zusammengeführt</string>
     <string name="ingredients_harmonize">Namen vereinheitlichen (z. B. Mehl → Weizenmehl)</string>
-    <string name="ingredients_harmonized">%1$d Zutat(en) vereinheitlicht</string>
     <string name="kj_per_100g">%1$s kJ je 100 g</string>
     <string name="kj_per_100ml">%1$s kJ je 100 ml</string>
     <string name="basis_100g">je 100 g</string>
@@ -177,11 +173,10 @@
     <string name="shopping_empty">Noch keine Einkaufsliste. Plane Gerichte und erzeuge daraus eine Liste.</string>
     <string name="shopping_add_manual">Artikel hinzufügen</string>
     <string name="shopping_title_empty">Deine Liste</string>
-    <string name="shopping_progress">%1$d von %2$d erledigt</string>
+    <string name="shopping_progress" tools:ignore="PluralsCandidate">%1$d von %2$d erledigt</string>
     <string name="shopping_category_other">Sonstiges</string>
     <string name="shopping_done_section">Im Wagen (%1$d)</string>
     <string name="recipe_add_to_shopping">Auf die Einkaufsliste</string>
-    <string name="shopping_added">%1$d Zutat(en) auf „%2$s“ gesetzt</string>
     <string name="shopping_added_none">Nichts einzukaufen – alle Zutaten sind „nach Bedarf“ oder optional.</string>
     <string name="shopping_from">ab %1$s</string>
     <string name="shopping_name_for">Einkauf %1$s – %2$s</string>
@@ -213,7 +208,6 @@
     <string name="pantry_title">Was ist da?</string>
     <string name="pantry_expired">abgelaufen</string>
     <string name="pantry_expires_today">läuft heute ab</string>
-    <string name="pantry_expires_in">noch %1$d Tag(e)</string>
     <string name="pantry_pick_best_before">MHD wählen (optional)</string>
     <string name="pantry_clear_best_before">MHD entfernen</string>
 
@@ -236,5 +230,29 @@
     <plurals name="days_n">
         <item quantity="one">%1$d Tag</item>
         <item quantity="other">%1$d Tage</item>
+    </plurals>
+    <plurals name="servings_count">
+        <item quantity="one">%1$d Portion</item>
+        <item quantity="other">%1$d Portionen</item>
+    </plurals>
+    <plurals name="import_done">
+        <item quantity="one">%1$d Rezept importiert</item>
+        <item quantity="other">%1$d Rezepte importiert</item>
+    </plurals>
+    <plurals name="import_failed">
+        <item quantity="one">%1$d Datei nicht erkannt</item>
+        <item quantity="other">%1$d Dateien nicht erkannt</item>
+    </plurals>
+    <plurals name="ingredients_harmonized">
+        <item quantity="one">%1$d Zutat vereinheitlicht</item>
+        <item quantity="other">%1$d Zutaten vereinheitlicht</item>
+    </plurals>
+    <plurals name="shopping_added">
+        <item quantity="one">%1$d Zutat auf „%2$s“ gesetzt</item>
+        <item quantity="other">%1$d Zutaten auf „%2$s“ gesetzt</item>
+    </plurals>
+    <plurals name="pantry_expires_in">
+        <item quantity="one">noch %1$d Tag</item>
+        <item quantity="other">noch %1$d Tage</item>
     </plurals>
 </resources>

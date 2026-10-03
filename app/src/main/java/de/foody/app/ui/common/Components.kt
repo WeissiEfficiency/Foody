@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -50,7 +51,7 @@ fun EmptyState(text: String, modifier: Modifier = Modifier) {
 
 @Composable
 fun ServingsStepper(value: Int, onChange: (Int) -> Unit, modifier: Modifier = Modifier) {
-    val desc = stringResource(R.string.servings_count, value)
+    val desc = pluralStringResource(R.plurals.servings_count, value, value)
     // Pillenform mit runden Plus/Minus-Knöpfen
     Row(
         modifier.semantics { contentDescription = desc }
@@ -69,7 +70,7 @@ fun ServingsStepper(value: Int, onChange: (Int) -> Unit, modifier: Modifier = Mo
             Icon(Icons.Default.Remove, stringResource(R.string.action_less_servings))
         }
         Text(
-            stringResource(R.string.servings_count, value),
+            pluralStringResource(R.plurals.servings_count, value, value),
             style = MaterialTheme.typography.titleSmall,
             modifier = Modifier.padding(horizontal = 12.dp),
         )
