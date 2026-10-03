@@ -227,6 +227,8 @@ class RecipeRepository @Inject constructor(private val dao: RecipeDao) {
         return save(d.copy(id = null, name = "${d.name} $copySuffix", sourceUrl = null))
     }
 
+    suspend fun setImage(id: String, uri: String?) = dao.setImage(id, uri, System.currentTimeMillis())
+
     suspend fun setFavorite(id: String, favorite: Boolean) = dao.setFavorite(id, favorite, System.currentTimeMillis())
 
     suspend fun findBySourceUrl(url: String) = dao.findBySourceUrl(url)

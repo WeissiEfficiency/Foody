@@ -63,6 +63,8 @@
     <string name="recipe_no_match">Keine passenden Rezepte gefunden.</string>
     <string name="recipe_image">Rezeptbild</string>
     <string name="recipe_pick_image">Bild wählen</string>
+    <string name="photo_take">Foto aufnehmen</string>
+    <string name="photo_replace">Foto ersetzen</string>
     <string name="recipe_ingredients">Zutaten</string>
     <string name="recipe_steps">Zubereitung</string>
     <string name="recipe_notes">Notizen</string>
