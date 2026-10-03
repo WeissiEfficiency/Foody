@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 rootProject.name = "Foody"
 include(":app")
 include(":domain")
+include(":baselineprofile")

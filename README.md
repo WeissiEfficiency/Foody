@@ -53,6 +53,22 @@ Voraussetzungen: JDK 17+ (z. B. das JBR von Android Studio), Android SDK (compil
 ./gradlew :app:connectedCheck     # Room-, Migrations- und End-to-End-Tests auf Gerät/Emulator
 ```
 
+**Baseline-Profil** (schnellerer App-Start): liegt erzeugt unter
+`app/src/release/generated/baselineProfiles/baseline-prof.txt` und kommt automatisch in jeden Release-Build.
+Nach größeren UI-Änderungen neu erzeugen (Emulator/Gerät mit Android 13+ verbunden):
+
+```powershell
+.\gradlew :app:generateReleaseBaselineProfile
+```
+
+Unter Windows scheitert dabei mitunter das Kopieren vom Gerät (Pfad mit „(AVD)“). Dann die Datei
+`baselineprofile\build\outputs\connected_android_test_additional_output\nonMinifiedRelease\connected\*\BaselineProfileGenerator_generate-startup-prof.txt`
+als `baseline-prof.txt` an die obige Stelle kopieren. Startzeit messen (am aussagekräftigsten auf dem Handy):
+
+```powershell
+.\gradlew :baselineprofile:connectedBenchmarkReleaseAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=de.foody.baselineprofile.StartupBenchmark"
+```
+
 Debug-Builds heißen auf dem Gerät „Foody Debug“ (App-ID `de.foody.app.debug`) und laufen neben der
 Alltagsversion, ohne deren Daten zu berühren.
 
