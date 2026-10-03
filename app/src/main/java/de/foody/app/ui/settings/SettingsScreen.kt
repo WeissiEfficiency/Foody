@@ -1,5 +1,6 @@
 package de.foody.app.ui.settings
 
+import de.foody.app.util.runSuspendCatching
 import androidx.compose.foundation.BorderStroke
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -56,7 +57,7 @@ class SettingsViewModel @Inject constructor(private val backup: BackupRepository
     fun messageShown() { _message.value = null }
 
     private fun run(ok: Int, block: suspend () -> Unit) = viewModelScope.launch {
-        _message.value = runCatching { block() }.fold({ ok }, { R.string.backup_error })
+        _message.value = runSuspendCatching { block() }.fold({ ok }, { R.string.backup_error })
     }
 
     fun export(uri: android.net.Uri) = run(R.string.backup_exported) { backup.export(uri) }

@@ -1,5 +1,6 @@
 package de.foody.app.ui.ingredients
 
+import de.foody.app.util.runSuspendCatching
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -70,7 +71,7 @@ class IngredientsViewModel @Inject constructor(private val repo: IngredientRepos
 
     fun save(e: IngredientEntity) = viewModelScope.launch {
         // Eindeutiger Name (Unique-Index) – Kollision als Meldung statt Absturz.
-        runCatching { repo.save(e) }.onFailure { _message.value = R.string.ingredient_name_taken to 0 }
+        runSuspendCatching { repo.save(e) }.onFailure { _message.value = R.string.ingredient_name_taken to 0 }
     }
     fun delete(id: String) = viewModelScope.launch {
         if (!repo.delete(id)) _message.value = R.string.ingredient_in_use to 0

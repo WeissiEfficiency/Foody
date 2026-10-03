@@ -1,0 +1,23 @@
+# Wöchentliche Update-PRs für Bibliotheken und CI-Actions. Gruppiert, damit zusammengehörige Versionen
+# (Compose-BOM, AndroidX, Kotlin/KSP) in einem PR landen, statt ein Dutzend Einzel-PRs zu erzeugen.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      androidx:
+        patterns: ["androidx.*"]
+      kotlin:
+        patterns: ["org.jetbrains.kotlin*", "com.google.devtools.ksp*", "org.jetbrains.kotlinx*"]
+      hilt:
+        patterns: ["com.google.dagger*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
