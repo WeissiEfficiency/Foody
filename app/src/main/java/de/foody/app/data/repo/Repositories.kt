@@ -30,7 +30,7 @@ import javax.inject.Singleton
 class IngredientRepository @Inject constructor(
     private val db: FoodyDatabase,
     private val dao: IngredientDao,
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) {
     fun observeAll(): Flow<List<IngredientEntity>> = dao.observeAll()
 

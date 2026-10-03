@@ -80,7 +80,7 @@ data class BackupDto(
 @Singleton
 class BackupRepository @Inject constructor(
     private val db: FoodyDatabase,
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) {
     private val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
 
