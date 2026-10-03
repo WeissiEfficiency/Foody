@@ -60,12 +60,15 @@ interface RecipeDao {
     @Query("SELECT * FROM recipe WHERE id = :id") fun observe(id: String): Flow<RecipeEntity?>
     @Query("SELECT * FROM recipe WHERE id = :id") suspend fun get(id: String): RecipeEntity?
     @Query("SELECT * FROM recipe") suspend fun getAll(): List<RecipeEntity>
+    @Query("SELECT * FROM recipe WHERE id IN (:ids)") suspend fun getByIds(ids: Collection<String>): List<RecipeEntity>
 
     @Query("SELECT * FROM recipe_ingredient WHERE recipeId = :id ORDER BY sortOrder")
     fun observeIngredients(id: String): Flow<List<RecipeIngredientEntity>>
     @Query("SELECT * FROM recipe_ingredient WHERE recipeId = :id ORDER BY sortOrder")
     suspend fun getIngredients(id: String): List<RecipeIngredientEntity>
     @Query("SELECT * FROM recipe_ingredient") suspend fun getAllIngredients(): List<RecipeIngredientEntity>
+    @Query("SELECT * FROM recipe_ingredient WHERE recipeId IN (:recipeIds) ORDER BY sortOrder")
+    suspend fun getIngredientsFor(recipeIds: Collection<String>): List<RecipeIngredientEntity>
 
     @Query("SELECT * FROM instruction_step WHERE recipeId = :id ORDER BY position")
     fun observeSteps(id: String): Flow<List<InstructionStepEntity>>
@@ -110,6 +113,7 @@ interface MealPlanDao {
 
     @Query("SELECT * FROM meal_slot") suspend fun getAll(): List<MealSlotEntity>
     @Query("SELECT * FROM meal_slot WHERE id = :id") suspend fun get(id: String): MealSlotEntity?
+    @Query("SELECT * FROM meal_slot WHERE id IN (:ids)") suspend fun getByIds(ids: Collection<String>): List<MealSlotEntity>
 
     @Upsert suspend fun upsert(s: MealSlotEntity)
     @Query("DELETE FROM meal_slot WHERE id = :id") suspend fun delete(id: String)

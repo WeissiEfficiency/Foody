@@ -43,8 +43,11 @@ class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
     suspend fun preview(range: DateRange, usePantry: Boolean, excluded: Set<String> = emptySet()): List<NeedPreview> {
         val slots = db.mealPlanDao().getRange(range.start, range.endInclusive)
         val recipeDao = db.recipeDao()
-        val recipeEntities = slots.map { it.recipeId }.distinct().mapNotNull { recipeDao.get(it) }
-        val recipes = recipeEntities.associate { it.id to it.toDomain(recipeDao.getIngredients(it.id)) }
+        // Sammelabfragen statt je Rezept zwei Einzelabfragen
+        val recipeIds = slots.map { it.recipeId }.distinct()
+        val recipeEntities = recipeDao.getByIds(recipeIds).associateBy { it.id }
+        val linesByRecipe = recipeDao.getIngredientsFor(recipeIds).groupBy { it.recipeId }
+        val recipes = recipeEntities.mapValues { (id, r) -> r.toDomain(linesByRecipe[id].orEmpty()) }
         val ingredientEntities = db.ingredientDao().getAll().associateBy { it.id }
         val ingredients = ingredientEntities.mapValues { it.value.toDomain() }
         val pantry = if (usePantry) db.pantryDao().getAll().map { it.toDomain() } else emptyList()
@@ -59,7 +62,7 @@ class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
                 ingredientName = ing?.canonicalName ?: n.ingredientId,
                 category = ing?.category,
                 sourceLabels = n.sources.map { s ->
-                    val name = recipeEntities.firstOrNull { it.id == s.recipeId }?.name.orEmpty()
+                    val name = recipeEntities[s.recipeId]?.name.orEmpty()
                     "$name (${slotById[s.mealSlotId]?.date})" to s.contributed
                 },
             )
@@ -79,18 +82,19 @@ class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
         Pair<List<ShoppingItemEntity>, List<ShoppingItemSourceEntity>> {
         val items = mutableListOf<ShoppingItemEntity>()
         val sources = mutableListOf<ShoppingItemSourceEntity>()
-        val recipeDao = db.recipeDao()
-        val slotCache = mutableMapOf<String, de.foody.app.data.db.MealSlotEntity?>()
+        // Rezeptnamen und Plandaten einmal vorab laden statt pro Herkunftseintrag abzufragen
+        val allSources = previews.flatMap { it.need.sources }
+        val recipeNames = db.recipeDao().getByIds(allSources.map { it.recipeId }.distinct()).associate { it.id to it.name }
+        val slotDates = db.mealPlanDao().getByIds(allSources.map { it.mealSlotId }.distinct()).associate { it.id to it.date }
         previews.forEachIndexed { i, p ->
             val item = itemFor(listId, p, startOrder + i)
             items += item
             p.need.sources.forEach { s ->
-                val slot = slotCache.getOrPut(s.mealSlotId) { db.mealPlanDao().get(s.mealSlotId) }
                 val base = MeasureUnit.baseOf(s.contributed.dimension)
                 sources += ShoppingItemSourceEntity(
                     newId(), item.id, s.mealSlotId, s.recipeIngredientId,
-                    recipeDao.get(s.recipeId)?.name.orEmpty(),
-                    slot?.date ?: java.time.LocalDate.now(),
+                    recipeNames[s.recipeId].orEmpty(),
+                    slotDates[s.mealSlotId] ?: java.time.LocalDate.now(),
                     s.contributed.amountIn(base), base,
                 )
             }

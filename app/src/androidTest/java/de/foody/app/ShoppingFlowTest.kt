@@ -55,7 +55,10 @@ class ShoppingFlowTest {
         val items = db.shoppingDao().getItems(listId)
         assertEquals(1, items.size)
         assertEquals(0, BigDecimal("450").compareTo(items.single().amount))
-        assertEquals(2, db.shoppingDao().getSources(items.single().id).size)
+        val sources = db.shoppingDao().getSources(items.single().id).sortedBy { it.date }
+        assertEquals(2, sources.size)
+        // Herkunft mit Rezeptname und Plandatum (aus den vorab geladenen Rezepten/Planpositionen)
+        assertEquals(listOf("Curry" to today, "Reispfanne" to today.plusDays(1)), sources.map { it.recipeName to it.date })
 
         // Rezeptänderung verändert den Snapshot nicht stillschweigend
         recipes.save(RecipeDraft(curry, "Curry", 4, null, null, null, null, "",
