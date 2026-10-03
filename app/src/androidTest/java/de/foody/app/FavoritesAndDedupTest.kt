@@ -44,7 +44,7 @@ class FavoritesAndDedupTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         db = Room.inMemoryDatabaseBuilder(context, FoodyDatabase::class.java).build()
         recipes = RecipeRepository(db.recipeDao())
-        importer = RecipeImportRepository(recipes, IngredientRepository(db, db.ingredientDao(), context), context)
+        importer = RecipeImportRepository(db, recipes, IngredientRepository(db, db.ingredientDao(), context), context)
     }
 
     @After fun tearDown() = db.close()
@@ -55,6 +55,19 @@ class FavoritesAndDedupTest {
         val first = assertNotNull(import())
         assertEquals("https://example.org/rezepte/1/Kartoffelsuppe.html", recipes.get(first)?.sourceUrl)
         assertNull(import()) // bereits vorhanden → übersprungen
+        assertEquals(1, db.recipeDao().getAll().size)
+    }
+
+    @Test fun duplicateSourceWithinOneImportBatchIsSkipped() = runTest {
+        // Beide Dateien landen im selben Transaktionsblock; die zweite muss die erste schon sehen
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val dir = java.io.File(context.cacheDir, "dedup").apply { deleteRecursively(); mkdirs() }
+        val uris = listOf("a.md", "b.md").map { java.io.File(dir, it).apply { writeText(markdown) }.let(android.net.Uri::fromFile) }
+
+        val result = importer.import(uris, 4, "Ideen", { "Quelle: $it" })
+
+        assertEquals(1, result.importedIds.size)
+        assertEquals(1, result.skipped)
         assertEquals(1, db.recipeDao().getAll().size)
     }
 
