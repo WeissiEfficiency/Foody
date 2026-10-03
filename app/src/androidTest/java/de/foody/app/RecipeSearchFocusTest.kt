@@ -53,7 +53,7 @@ class RecipeSearchFocusTest {
             )
         }
         val importer = RecipeImportRepository(db, recipes, IngredientRepository(db, db.ingredientDao(), context), context)
-        vm = RecipeListViewModel(recipes, PantryRepository(db.pantryDao()), importer, SavedStateHandle())
+        vm = RecipeListViewModel(recipes, PantryRepository(db.pantryDao()), IngredientRepository(db, db.ingredientDao(), context), importer, SavedStateHandle())
     }
 
     @After fun tearDown() = db.close()

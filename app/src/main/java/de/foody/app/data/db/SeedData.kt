@@ -47,6 +47,9 @@ object SeedData {
         Row("seed-pflanzenoel", "Pflanzenöl", "Öle & Gewürze", "3700", "0", "0", "100", "0", "0", "0", density = "0.92"),
         Row("seed-wasser", "Wasser", "Getränke", "0", "0", "0", "0", "0", "0", "0", NutrientBasis.PER_100_ML, density = "1.0"),
         Row("seed-gemuesebruehe", "Gemüsebrühe", "Öle & Gewürze", "25", "0.2", "0.6", "0.2", "0", "0.3", "0.9", NutrientBasis.PER_100_ML, density = "1.0"),
+        // v6: Fleischbrühen getrennt von Gemüsebrühe – gleiche Werte, aber nicht vegetarisch
+        Row("seed-fleischbruehe", "Fleischbrühe", "Öle & Gewürze", "25", "0.2", "0.6", "0.2", "0", "0.3", "0.9", NutrientBasis.PER_100_ML, density = "1.0"),
+        Row("seed-fleischbruehpulver", "Fleischbrühepulver", "Öle & Gewürze", "930", "8", "25", "10", "0", "10", "50", density = "0.8"),
         // v4: Stück = Becher (200 g)
         Row("seed-sahne", "Sahne", "Kühlregal", "1210", "2.4", "3.2", "30", "0", "3.2", "0.1", density = "1.0", piece = "200"),
         Row("seed-hack-gemischt", "Hackfleisch, gemischt", "Fleisch & Fisch", "1090", "18", "0", "21", "0", "0", "0.2"),
@@ -206,7 +209,7 @@ object SeedData {
     )
 
     /** Bei Erweiterung erhöhen: neue Zeilen werden dann auch in bestehende Installationen übernommen. */
-    const val VERSION = 5
+    const val VERSION = 6
 
     /** Kanonische Namen aller Startzutaten (für Tests und Abgleich). */
     val names: List<String> get() = rows.map { it.name }
