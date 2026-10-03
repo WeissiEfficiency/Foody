@@ -1,5 +1,6 @@
 package de.foody.app.ui.recipes
 
+import kotlinx.coroutines.flow.map
 import de.foody.domain.LineGap
 import de.foody.app.timer.CookTimerRepository
 import de.foody.app.timer.RunningTimer
@@ -33,6 +34,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 data class DisplayLine(
+    /** ID der Rezeptzeile – dieselbe Zutat kann zweimal vorkommen (Teig und Streusel). */
+    val lineId: String,
     val ingredientId: String,
     val name: String,
     val amountText: String?,
@@ -78,7 +81,7 @@ class RecipeDetailViewModel @Inject constructor(
         val display = lines.map { l ->
             val scaled = RecipeScaler.scale(l.amount, recipe.defaultServings, servings)
             DisplayLine(
-                l.ingredientId, ingMap[l.ingredientId]?.name.orEmpty(),
+                l.id, l.ingredientId, ingMap[l.ingredientId]?.name.orEmpty(),
                 if (scaled.signum() == 0) null else formatAmount(scaled, l.unit), l.preparationNote, l.optional,
                 kcal = nutrition.lineEnergyKj[l.id]?.let { NutritionResult.kjToKcal(it).toInt() },
                 gap = nutrition.lineGaps[l.id],
@@ -110,6 +113,21 @@ class RecipeDetailViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RecipeDetailUiState())
 
     fun setServings(n: Int) { saved["servings"] = n }
+
+    /**
+     * Abgehakte Zutaten („schon bereitgestellt“) – nur für diesen Besuch der Seite, übersteht Drehen und
+     * Prozessende über den SavedStateHandle. Gespeichert als Text, damit kein eigener Saver nötig ist.
+     */
+    val checkedLines = saved.getStateFlow("checkedLines", "")
+        .map { raw -> raw.split(',').filter { it.isNotEmpty() }.toSet() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    fun toggleChecked(lineId: String) {
+        val now = saved.get<String>("checkedLines").orEmpty().split(',').filter { it.isNotEmpty() }.toSet()
+        saved["checkedLines"] = (if (lineId in now) now - lineId else now + lineId).joinToString(",")
+    }
+
+    fun clearChecked() { saved["checkedLines"] = "" }
     fun archive(archived: Boolean) = viewModelScope.launch { repo.setArchived(id, archived) }
     fun toggleFavorite() = viewModelScope.launch { state.value.recipe?.let { repo.setFavorite(id, !it.favorite) } }
     fun delete(onDone: () -> Unit) = viewModelScope.launch {

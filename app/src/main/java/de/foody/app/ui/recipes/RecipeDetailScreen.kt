@@ -1,5 +1,10 @@
 package de.foody.app.ui.recipes
 
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.ui.text.style.TextDecoration
 import de.foody.app.ui.theme.FoodyGlass
 import de.foody.domain.LineGap
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -104,6 +109,7 @@ fun RecipeDetailScreen(
     vm: RecipeDetailViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val checked by vm.checkedLines.collectAsStateWithLifecycle()
     var confirmDelete by remember { mutableStateOf(false) }
     var cooking by rememberSaveable { mutableStateOf(false) }
     var askPhoto by rememberSaveable { mutableStateOf(false) }
@@ -188,7 +194,23 @@ fun RecipeDetailScreen(
                     }
                 }
             }
-            item { SectionHeader(stringResource(R.string.recipe_ingredients), null) }
+            item {
+                val ready = state.lines.count { it.lineId in checked }
+                Row(
+                    Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(stringResource(R.string.recipe_ingredients), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    if (ready > 0) {
+                        Text(stringResource(R.string.ingredients_ready, ready, state.lines.size),
+                            style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        TextButton(vm::clearChecked) { Text(stringResource(R.string.ingredients_reset)) }
+                    } else {
+                        Text(stringResource(R.string.ingredients_tap_hint), style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(end = 12.dp))
+                    }
+                }
+            }
             item {
                 Surface(
                     Modifier.fillMaxWidth().padding(horizontal = 20.dp),
@@ -199,7 +221,7 @@ fun RecipeDetailScreen(
                     Column(Modifier.padding(vertical = 4.dp)) {
                         state.lines.forEachIndexed { i, l ->
                             if (i > 0) HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                            IngredientRow(l)
+                            IngredientRow(l, l.lineId in checked) { vm.toggleChecked(l.lineId) }
                         }
                     }
                 }
@@ -356,16 +378,33 @@ private fun SectionHeader(title: String, trailing: String?) {
 }
 
 @Composable
-private fun IngredientRow(l: DisplayLine) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun IngredientRow(l: DisplayLine, checked: Boolean, onToggle: () -> Unit) {
+    // Abgehakt = bereitgestellt: blasser und durchgestrichen, damit der Blick beim Kochen auf dem Rest bleibt
+    val alpha = if (checked) 0.45f else 1f
+    Row(
+        Modifier.fillMaxWidth()
+            .toggleable(value = checked, role = Role.Checkbox, onValueChange = { onToggle() })
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            if (checked) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked, null,
+            tint = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+            modifier = Modifier.padding(end = 10.dp).size(20.dp),
+        )
         Text(
             l.amountText ?: stringResource(R.string.amount_as_needed),
             style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.weight(0.32f),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = alpha),
+            modifier = Modifier.weight(0.30f),
         )
-        Column(Modifier.weight(0.68f)) {
-            Text(l.name + if (l.optional) " " + stringResource(R.string.optional_suffix) else "", style = MaterialTheme.typography.bodyLarge)
+        Column(Modifier.weight(0.70f)) {
+            Text(
+                l.name + if (l.optional) " " + stringResource(R.string.optional_suffix) else "",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
+                textDecoration = if (checked) TextDecoration.LineThrough else null,
+            )
             l.note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
         // Energie dieser Zeile – so ist nachvollziehbar, woraus die Summe besteht und wo Werte fehlen

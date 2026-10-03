@@ -66,6 +66,9 @@
     <string name="kcal_amount" tools:ignore="PluralsCandidate">%1$d kcal</string>
     <string name="kcal_gap_values">ohne Werte</string>
     <string name="kcal_gap_weight">ohne Gewicht</string>
+    <string name="ingredients_ready" tools:ignore="PluralsCandidate">%1$d von %2$d bereit</string>
+    <string name="ingredients_reset">Zurücksetzen</string>
+    <string name="ingredients_tap_hint">Antippen zum Abhaken</string>
     <string name="filter_button">Filter</string>
     <string name="filter_button_count" tools:ignore="PluralsCandidate">Filter · %1$d</string>
     <string name="filter_diet_title">Ernährung</string>
