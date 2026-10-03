@@ -229,6 +229,7 @@ class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
 
     suspend fun setChecked(id: String, checked: Boolean) = dao.setChecked(id, checked)
     suspend fun deleteItem(id: String) = dao.deleteItem(id)
+    suspend fun setNote(id: String, note: String?) = dao.setNote(id, note?.trim()?.ifBlank { null })
     suspend fun restoreItem(item: ShoppingItemEntity, sources: List<ShoppingItemSourceEntity>) = db.withTransaction {
         dao.upsertItem(item)
         dao.insertSources(sources)

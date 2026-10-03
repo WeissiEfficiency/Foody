@@ -169,8 +169,9 @@ fun ShoppingTiles(
     }
 }
 
+/** Untertitel der Kachel: eigene Angabe, sonst die Menge aus dem Planer. */
 private fun ShoppingItemEntity.detail(): String? =
-    if (amount != null && unit != null && amount.signum() > 0) formatAmount(amount, unit) else null
+    note ?: if (amount != null && unit != null && amount.signum() > 0) formatAmount(amount, unit) else null
 
 private fun LazyGridScope.sectionHeader(key: String, title: String, expanded: Boolean, onToggle: (String) -> Unit) {
     item(key = "header-$key", span = { GridItemSpan(maxLineSpan) }) {
