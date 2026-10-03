@@ -1,5 +1,6 @@
 package de.foody.app.ui.common
 
+import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.foundation.border
 import androidx.compose.foundation.selection.selectable
@@ -124,6 +125,8 @@ fun RecipeGridCard(
     selected: Boolean = false,
     /** Kurzer Hinweis oben links im Bild, z. B. „Alles da“ beim Vorratsfilter. */
     badge: String? = null,
+    /** kcal je Portion – nur bei verlässlichen Nährwerten, sonst null. */
+    kcal: Int? = null,
 ) {
     Column(
         modifier.clip(MaterialTheme.shapes.medium)
@@ -145,6 +148,12 @@ fun RecipeGridCard(
             }
             if (badge != null) {
                 MetaPill(badge, Modifier.align(Alignment.TopStart).padding(8.dp), icon = Icons.Outlined.Inventory2, onImage = true)
+            }
+            if (kcal != null) {
+                MetaPill(
+                    stringResource(R.string.kcal_amount, kcal), Modifier.align(Alignment.BottomEnd).padding(8.dp),
+                    icon = Icons.Outlined.LocalFireDepartment, onImage = true,
+                )
             }
             if (recipe.totalMinutes > 0) {
                 MetaPill(

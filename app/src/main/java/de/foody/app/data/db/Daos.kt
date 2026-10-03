@@ -74,6 +74,7 @@ interface RecipeDao {
     @Query("SELECT * FROM recipe_ingredient WHERE recipeId = :id ORDER BY sortOrder")
     suspend fun getIngredients(id: String): List<RecipeIngredientEntity>
     @Query("SELECT * FROM recipe_ingredient") suspend fun getAllIngredients(): List<RecipeIngredientEntity>
+    @Query("SELECT * FROM recipe_ingredient") fun observeAllIngredients(): Flow<List<RecipeIngredientEntity>>
 
     /** Pflichtzutaten aller Rezepte mit Namen – für „Aus dem Vorrat kochbar“. */
     @Query(

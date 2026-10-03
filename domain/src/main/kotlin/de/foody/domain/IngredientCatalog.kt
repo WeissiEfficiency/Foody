@@ -36,7 +36,9 @@ object IngredientCatalog {
         alias("Zucker", "weißer Zucker", "Kristallzucker")
         alias("Wasser", "Leitungswasser")
         // Fertige Brühen liegen nährwertlich alle bei wenigen kcal je 100 ml – eine Stammzutat genügt
-        alias("Gemüsebrühe", "Gemüsefond", "Brühe", "Fleischbrühe", "Rinderbrühe", "Geflügelbrühe", "Hühnerbrühe", "Rinderfond")
+        alias("Gemüsebrühe", "Gemüsefond", "Brühe")
+        // Eigene Stammzutat trotz gleicher Nährwerte: Fleischbrühe macht ein Rezept nicht-vegetarisch
+        alias("Fleischbrühe", "Rinderbrühe", "Geflügelbrühe", "Hühnerbrühe", "Rinderfond", "Kalbsfond", "Wildfond", "Entenfond", "Lammfond")
         alias("Kokosmilch", "Kokosmilch, ungesüßt")
         alias("Eigelb", "Eigelbe")
         // Version 4: häufigste Zutaten der importierten Rezepte ohne Nährwerte
@@ -143,7 +145,7 @@ object IngredientCatalog {
         alias("Muskat", "Muskatnuss")
         alias("Zimt", "Zimtstange")
         alias("Wacholderbeere", "Wacholderbeeren")
-        alias("Gemüsebrühepulver", "Hühnerbrühepulver", "Fleischbrühe Instant")
+        alias("Fleischbrühepulver", "Hühnerbrühepulver", "Fleischbrühe Instant", "Rinderbrühepulver")
         alias("Brot", "Bauernbrot", "Mischbrot", "Roggenbrot", "Weißbrot")
         alias("Gewürzgurke", "Gewürzgurken", "Essiggurke", "Essiggurken")
     }
