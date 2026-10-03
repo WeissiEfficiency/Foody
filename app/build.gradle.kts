@@ -106,6 +106,8 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
+    // Drehung aus den Kamera-Metadaten, bevor Fotos verkleinert neu gespeichert werden
+    implementation(libs.androidx.exifinterface)
     // Installiert das mitgelieferte Baseline-Profil auch bei APKs, die nicht über Google Play kommen
     implementation(libs.androidx.profileinstaller)
     baselineProfile(project(":baselineprofile"))
