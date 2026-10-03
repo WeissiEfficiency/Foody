@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Kein automatisches Cloud-Backup; Nutzer sichert explizit per JSON-Export. -->
+<!--
+  Ab Android 12. Kein automatisches Cloud-Backup – gesichert wird explizit per ZIP in den Einstellungen.
+  Beim direkten Umzug auf ein neues Gerät (Kabel/WLAN) kommen Datenbank und eigene Rezeptfotos mit.
+  Android 8–11: allowBackup="false" – dort gibt es gar kein Backup (backup_rules.xml schließt zusätzlich alles aus).
+-->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="root" />
@@ -9,5 +13,6 @@
     </cloud-backup>
     <device-transfer>
         <include domain="database" />
+        <include domain="file" path="recipe_images/" />
     </device-transfer>
 </data-extraction-rules>
