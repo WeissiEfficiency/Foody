@@ -18,3 +18,12 @@
     auf der Einkaufsliste und beeinflusst die Nährwert-Vollständigkeit nicht.
 14. Import: Der Zutatenname besteht aus den führenden Substantiven; Adjektive und Zusätze („rote“, „geschälte“,
     „à ca. 400 g“) werden Hinweis. So laufen z. B. rote, grüne und gelbe Paprika zu einer Einkaufsposition zusammen.
+15. Zutatennamen werden nur über eine feste Synonymliste und einfache Pluralformen vereinheitlicht
+    (`IngredientCatalog`), nie über Ähnlichkeit: „saure Sahne“ bleibt eine eigene Zutat (vgl. Regel 7).
+16. Zutaten aus der Liste „nie einkaufen“ (Wasser, Leitungswasser) erscheinen nicht auf der Einkaufsliste.
+17. Ein Rezept direkt auf die Einkaufsliste zu setzen folgt den Regeln 9, 13 und 16, zieht aber keinen Vorrat ab.
+    Die Einträge gelten als manuell, damit eine Neuberechnung (Regel 10) sie nicht als „entfällt“ entfernt.
+18. Import: Eine Quelle (URL), die schon als Rezept existiert – auch archiviert –, wird nicht erneut angelegt.
+    Eine Kopie eines Rezepts übernimmt die Quelle nicht.
+19. Kochmodus: Bei Zeitspannen („10 - 15 Minuten“) startet der Timer mit der unteren Grenze. Eine Menge im Schritt
+    gehört zu einer Zutat nur, wenn sie direkt davor steht (höchstens zwei kleingeschriebene Wörter dazwischen).
