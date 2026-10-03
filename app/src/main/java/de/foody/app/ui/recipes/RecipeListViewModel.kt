@@ -122,12 +122,12 @@ class RecipeListViewModel @Inject constructor(
     private val _importProgress = MutableStateFlow<Pair<Int, Int>?>(null)
     val importProgress = _importProgress.asStateFlow()
 
-    fun import(uris: List<Uri>, tag: String, notes: (String?) -> String) = launchImport {
+    fun import(uris: List<Uri>, tag: String, notes: (String?, Int, Boolean) -> String) = launchImport {
         // Rezept-Exporte enthalten keine Portionenzahl → 4 als Vorgabe, im Hinweis zur Prüfung markiert
         importer.import(uris, DEFAULT_IMPORT_SERVINGS, tag, notes, ::onProgress)
     }
 
-    fun importFolder(tree: Uri, tag: String, notes: (String?) -> String) = launchImport {
+    fun importFolder(tree: Uri, tag: String, notes: (String?, Int, Boolean) -> String) = launchImport {
         importer.importFolder(tree, DEFAULT_IMPORT_SERVINGS, tag, notes, ::onProgress)
     }
 
