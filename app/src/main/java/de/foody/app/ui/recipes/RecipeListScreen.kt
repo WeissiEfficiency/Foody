@@ -1,8 +1,13 @@
 package de.foody.app.ui.recipes
 
+import de.foody.app.data.repo.PantryRepository
+import de.foody.domain.PantryCoverage
+import kotlinx.coroutines.flow.flowOf
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.material.icons.outlined.MenuBook
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -102,7 +107,11 @@ data class RecipeListUiState(
     val showArchived: Boolean = false,
     val tag: String? = null,
     val favoritesOnly: Boolean = false,
+    /** Nur Rezepte, für die im Vorrat höchstens eine Pflichtzutat fehlt. */
+    val pantryOnly: Boolean = false,
     val recipes: List<RecipeEntity> = emptyList(),
+    /** Fehlende Pflichtzutaten je Rezept-ID – nur bei [pantryOnly] gefüllt, für das Abzeichen auf der Karte. */
+    val missing: Map<String, Int> = emptyMap(),
     /** Tags aller aktiven Rezepte, häufigste zuerst – für die Filter-Chips. */
     val tags: List<String> = emptyList(),
     /** Tagesauswahl aus allen aktiven Rezepten, unabhängig von Suche und Filter. */
@@ -116,6 +125,7 @@ private fun RecipeEntity.tagList() = tags.split(',').map { it.trim() }.filter { 
 @HiltViewModel
 class RecipeListViewModel @Inject constructor(
     repo: RecipeRepository,
+    pantry: PantryRepository,
     private val importer: RecipeImportRepository,
     private val saved: SavedStateHandle,
 ) : ViewModel() {
@@ -123,10 +133,16 @@ class RecipeListViewModel @Inject constructor(
     private val archived = saved.getStateFlow("archived", false)
     private val tag = saved.getStateFlow<String?>("tag", null)
     private val favoritesOnly = saved.getStateFlow("favorites", false)
+    private val pantryOnly = saved.getStateFlow("pantry", false)
 
-    /** Tag- und Favoritenfilter wirken im Speicher auf das Suchergebnis. */
-    private data class LocalFilter(val tag: String?, val favoritesOnly: Boolean)
-    private val localFilter = combine(tag, favoritesOnly, ::LocalFilter)
+    /** Tag-, Favoriten- und Vorratsfilter wirken im Speicher auf das Suchergebnis. */
+    private data class LocalFilter(val tag: String?, val favoritesOnly: Boolean, val pantryOnly: Boolean)
+    private val localFilter = combine(tag, favoritesOnly, pantryOnly, ::LocalFilter)
+
+    /** Fehlende Pflichtzutaten je Rezept; nur Vorratseinträge mit Menge zählen als vorhanden. */
+    private val missing = combine(repo.observeRequired(), pantry.observeAll()) { required, items ->
+        PantryCoverage.missingByRecipe(required, items.filter { it.amount.signum() > 0 }.map { it.ingredientId }.toSet())
+    }
 
     /** Aktive Rezepte – Grundlage für Tagesauswahl und Tags, beim Stöbern auch für das Raster. */
     private val active = repo.observeActive().shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
@@ -137,13 +153,23 @@ class RecipeListViewModel @Inject constructor(
         .distinctUntilChanged()
         .flatMapLatest { (q, a) -> if (q.isEmpty() && !a) active else repo.observe(q, a) }
 
-    val state = combine(query, archived, localFilter, filtered, active) { q, a, f, list, active ->
+    // Vorratsabgleich nur berechnen, solange der Filter an ist
+    private val missingIfNeeded = pantryOnly.flatMapLatest { on -> if (on) missing else flowOf(emptyMap()) }
+
+    val state = combine(query, archived, localFilter, combine(filtered, missingIfNeeded, ::Pair), active) { q, a, f, (list, missing), active ->
+        val matching = list.filter { r ->
+            (f.tag == null || f.tag in r.tagList()) && (!f.favoritesOnly || r.favorite) &&
+                (!f.pantryOnly || (missing[r.id] ?: Int.MAX_VALUE) <= MAX_MISSING)
+        }
         RecipeListUiState(
             query = q,
             showArchived = a,
             tag = f.tag,
             favoritesOnly = f.favoritesOnly,
-            recipes = list.filter { r -> (f.tag == null || f.tag in r.tagList()) && (!f.favoritesOnly || r.favorite) },
+            pantryOnly = f.pantryOnly,
+            // Stabil sortiert: erst „Alles da“, dann „1 fehlt“ – innerhalb jeweils die gewohnte Reihenfolge
+            recipes = if (f.pantryOnly) matching.sortedBy { missing[it.id] } else matching,
+            missing = if (f.pantryOnly) missing else emptyMap(),
             tags = active.flatMap { it.tagList() }.groupingBy { it }.eachCount()
                 .entries.sortedByDescending { it.value }.map { it.key }.take(8),
             dailyPicks = DailyPicks.pick(active, LocalDate.now()) { it.id },
@@ -155,6 +181,7 @@ class RecipeListViewModel @Inject constructor(
     fun onToggleArchived() { saved["archived"] = !archived.value }
     fun onTag(t: String?) { saved["tag"] = if (tag.value == t) null else t }
     fun onToggleFavorites() { saved["favorites"] = !favoritesOnly.value }
+    fun onTogglePantry() { saved["pantry"] = !pantryOnly.value }
 
     /** Einmaliges Import-Ergebnis; die UI quittiert es nach Anzeige. */
     data class ImportMessage(val imported: Int, val failed: Int, val skipped: Int, val openId: String?)
@@ -190,6 +217,8 @@ class RecipeListViewModel @Inject constructor(
 
     companion object {
         const val DEFAULT_IMPORT_SERVINGS = 4
+        /** Eine fehlende Zutat ist meist schnell besorgt; strenger bliebe die Liste fast immer leer. */
+        const val MAX_MISSING = 1
     }
 }
 
@@ -246,7 +275,7 @@ fun RecipeListScreen(
             )
         },
     ) { padding ->
-        val browsing = state.query.isBlank() && state.tag == null && !state.showArchived
+        val browsing = state.query.isBlank() && state.tag == null && !state.showArchived && !state.pantryOnly
         LazyVerticalGrid(
             state = gridState,
             columns = GridCells.Adaptive(minSize = 156.dp),
@@ -265,7 +294,7 @@ fun RecipeListScreen(
                 item(span = { GridItemSpan(maxLineSpan) }) { DailyPicksPager(state.dailyPicks, onOpen) }
             }
             item(span = { GridItemSpan(maxLineSpan) }) { SearchBar(state.query, vm::onQuery) }
-            item(span = { GridItemSpan(maxLineSpan) }) { TagRow(state, vm::onTag, vm::onToggleArchived, vm::onToggleFavorites) }
+            item(span = { GridItemSpan(maxLineSpan) }) { TagRow(state, vm::onTag, vm::onToggleArchived, vm::onToggleFavorites, vm::onTogglePantry) }
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Text(
                     stringResource(if (state.showArchived) R.string.recipe_section_archive else R.string.recipe_section_all, state.recipes.size),
@@ -276,15 +305,30 @@ fun RecipeListScreen(
             if (!state.loading && state.recipes.isEmpty()) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     EmptyState(
-                        stringResource(if (browsing) R.string.recipe_empty else R.string.recipe_no_match),
+                        stringResource(
+                            when {
+                                browsing -> R.string.recipe_empty
+                                state.pantryOnly -> R.string.recipe_pantry_none
+                                else -> R.string.recipe_no_match
+                            },
+                        ),
                         Modifier.height(320.dp),
-                        icon = if (browsing) Icons.Outlined.MenuBook else Icons.Default.Search,
+                        icon = when {
+                            browsing -> Icons.AutoMirrored.Outlined.MenuBook
+                            state.pantryOnly -> Icons.Outlined.Inventory2
+                            else -> Icons.Default.Search
+                        },
                         actionLabel = if (browsing) stringResource(R.string.import_folder) else null,
                         onAction = if (browsing) ({ folderLauncher.launch(null) }) else null,
                     )
                 }
             }
-            items(state.recipes, key = { it.id }) { r -> RecipeGridCard(r, onClick = { onOpen(r.id) }, modifier = Modifier.animateItem(), selected = r.id == selectedId) }
+            items(state.recipes, key = { it.id }) { r ->
+                val badge = state.missing[r.id]?.let { n ->
+                    if (n == 0) stringResource(R.string.pantry_all_there) else pluralStringResource(R.plurals.pantry_missing, n, n)
+                }
+                RecipeGridCard(r, onClick = { onOpen(r.id) }, modifier = Modifier.animateItem(), selected = r.id == selectedId, badge = badge)
+            }
         }
         // Scrim hinter der Statusleiste, damit gescrollte Inhalte nicht mit der Uhrzeit kollidieren
         Box(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(MaterialTheme.colorScheme.background.copy(alpha = 0.94f)))
@@ -363,16 +407,28 @@ private fun SearchBar(query: String, onQuery: (String) -> Unit) {
 }
 
 @Composable
-private fun TagRow(state: RecipeListUiState, onTag: (String?) -> Unit, onToggleArchived: () -> Unit, onToggleFavorites: () -> Unit) {
+private fun TagRow(
+    state: RecipeListUiState,
+    onTag: (String?) -> Unit,
+    onToggleArchived: () -> Unit,
+    onToggleFavorites: () -> Unit,
+    onTogglePantry: () -> Unit,
+) {
     val chipColors = FilterChipDefaults.filterChipColors(
         selectedContainerColor = MaterialTheme.colorScheme.secondary,
         selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+        selectedLeadingIconColor = MaterialTheme.colorScheme.onSecondary,
     )
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
             FilterChip(
-                state.tag == null && !state.showArchived && !state.favoritesOnly,
-                { onTag(null); if (state.showArchived) onToggleArchived(); if (state.favoritesOnly) onToggleFavorites() },
+                state.tag == null && !state.showArchived && !state.favoritesOnly && !state.pantryOnly,
+                {
+                    onTag(null)
+                    if (state.showArchived) onToggleArchived()
+                    if (state.favoritesOnly) onToggleFavorites()
+                    if (state.pantryOnly) onTogglePantry()
+                },
                 label = { Text(stringResource(R.string.filter_all)) }, colors = chipColors, shape = RoundedCornerShape(50),
             )
         }
@@ -381,6 +437,14 @@ private fun TagRow(state: RecipeListUiState, onTag: (String?) -> Unit, onToggleA
                 state.favoritesOnly, onToggleFavorites,
                 label = { Text(stringResource(R.string.filter_favorites)) },
                 leadingIcon = { Icon(Icons.Default.Favorite, null, Modifier.size(16.dp)) },
+                colors = chipColors, shape = RoundedCornerShape(50),
+            )
+        }
+        item {
+            FilterChip(
+                state.pantryOnly, onTogglePantry,
+                label = { Text(stringResource(R.string.filter_pantry)) },
+                leadingIcon = { Icon(Icons.Outlined.Inventory2, null, Modifier.size(16.dp)) },
                 colors = chipColors, shape = RoundedCornerShape(50),
             )
         }

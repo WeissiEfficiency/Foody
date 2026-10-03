@@ -1,5 +1,7 @@
 package de.foody.app.data.repo
 
+import de.foody.domain.PantryCoverage
+import kotlinx.coroutines.flow.map
 import android.content.Context
 import androidx.core.content.edit
 import androidx.room.withTransaction
@@ -175,6 +177,9 @@ class RecipeRepository @Inject constructor(private val dao: RecipeDao) {
     fun observeActive() = dao.observeActive()
     fun observeAll() = dao.observeAll()
     fun observeRecipe(id: String) = dao.observe(id)
+    fun observeRequired() = dao.observeRequired().map { rows ->
+        rows.map { PantryCoverage.Requirement(it.recipeId, it.ingredientId, it.ingredientName) }
+    }
     fun observeIngredients(id: String) = dao.observeIngredients(id)
     fun observeSteps(id: String) = dao.observeSteps(id)
     suspend fun get(id: String) = dao.get(id)

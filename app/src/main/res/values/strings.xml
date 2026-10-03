@@ -231,6 +231,13 @@
     <string name="data_deleted">Alle Daten gelöscht</string>
     <string name="about_title">Hinweis</string>
 
+    <string name="filter_pantry">Aus dem Vorrat</string>
+    <string name="pantry_all_there">Alles da</string>
+    <plurals name="pantry_missing">
+        <item quantity="one">%1$d fehlt</item>
+        <item quantity="other">%1$d fehlen</item>
+    </plurals>
+    <string name="recipe_pantry_none">Für kein Rezept fehlt höchstens eine Zutat. Trag im Vorrat ein, was du zu Hause hast – Salz, Pfeffer, Zucker und Öl setzt Foody voraus.</string>
     <plurals name="days_n">
         <item quantity="one">%1$d Tag</item>
         <item quantity="other">%1$d Tage</item>
