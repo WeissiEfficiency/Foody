@@ -85,6 +85,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -123,10 +125,16 @@ class RecipeListViewModel @Inject constructor(
     private data class LocalFilter(val tag: String?, val favoritesOnly: Boolean)
     private val localFilter = combine(tag, favoritesOnly, ::LocalFilter)
 
-    private val filtered = combine(query, archived) { q, a -> q to a }
-        .flatMapLatest { (q, a) -> repo.observe(q.trim(), a) }
+    /** Aktive Rezepte – Grundlage für Tagesauswahl und Tags, beim Stöbern auch für das Raster. */
+    private val active = repo.observeActive().shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
 
-    val state = combine(query, archived, localFilter, filtered, repo.observeActive()) { q, a, f, list, active ->
+    // Ohne Suchbegriff und ohne Archiv ist das Suchergebnis gleich den aktiven Rezepten:
+    // dann dieselbe Abfrage teilen statt eine zweite (mit Zutaten-Unterabfrage) zu beobachten.
+    private val filtered = combine(query, archived) { q, a -> q.trim() to a }
+        .distinctUntilChanged()
+        .flatMapLatest { (q, a) -> if (q.isEmpty() && !a) active else repo.observe(q, a) }
+
+    val state = combine(query, archived, localFilter, filtered, active) { q, a, f, list, active ->
         RecipeListUiState(
             query = q,
             showArchived = a,

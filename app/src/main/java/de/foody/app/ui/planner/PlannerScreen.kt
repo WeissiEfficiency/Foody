@@ -110,16 +110,13 @@ class PlannerViewModel @Inject constructor(
 
     private val rangeFlow = combine(start, days) { s, d -> DateRange.ofDays(LocalDate.ofEpochDay(s), d) }
 
-    // Alle Rezepte (inkl. archivierte) für Anzeige bestehender Planpositionen.
-    private val allRecipes = recipes.observe("", archived = false).combine(recipes.observe("", archived = true)) { a, b -> a + b }
-
     val state = combine(
         rangeFlow,
         rangeFlow.flatMapLatest { r -> plan.observeRange(r.start, r.endInclusive) },
-        allRecipes,
-        recipes.observeActive(),
-    ) { range, slots, all, active ->
-        PlannerUiState(range, range.days.size, slots.groupBy { it.date }, all.associateBy { it.id }, active)
+        // Eine Abfrage für alle Rezepte (archivierte für bestehende Planpositionen), aktive daraus im Speicher
+        recipes.observeAll(),
+    ) { range, slots, all ->
+        PlannerUiState(range, range.days.size, slots.groupBy { it.date }, all.associateBy { it.id }, all.filter { it.archivedAt == null })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlannerUiState())
 
     fun shift(daysDelta: Long) { saved["start"] = start.value + daysDelta }
