@@ -194,7 +194,12 @@ class RecipeListViewModel @Inject constructor(
 }
 
 @Composable
-fun RecipeListScreen(onOpen: (String) -> Unit, onCreate: () -> Unit, vm: RecipeListViewModel = hiltViewModel()) {
+fun RecipeListScreen(
+    onOpen: (String) -> Unit,
+    onCreate: () -> Unit,
+    selectedId: String? = null,
+    vm: RecipeListViewModel = hiltViewModel(),
+) {
     val state by vm.state.collectAsStateWithLifecycle()
     val importMessage by vm.importMessage.collectAsStateWithLifecycle()
     val importProgress by vm.importProgress.collectAsStateWithLifecycle()
@@ -279,7 +284,7 @@ fun RecipeListScreen(onOpen: (String) -> Unit, onCreate: () -> Unit, vm: RecipeL
                     )
                 }
             }
-            items(state.recipes, key = { it.id }) { r -> RecipeGridCard(r, onClick = { onOpen(r.id) }, modifier = Modifier.animateItem()) }
+            items(state.recipes, key = { it.id }) { r -> RecipeGridCard(r, onClick = { onOpen(r.id) }, modifier = Modifier.animateItem(), selected = r.id == selectedId) }
         }
         // Scrim hinter der Statusleiste, damit gescrollte Inhalte nicht mit der Uhrzeit kollidieren
         Box(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(MaterialTheme.colorScheme.background.copy(alpha = 0.94f)))

@@ -90,6 +90,7 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
     implementation(libs.compose.material3.adaptive.navigation.suite)
+    implementation(libs.compose.material3.adaptive)
     debugImplementation(libs.compose.ui.tooling)
 
     implementation(libs.room.runtime)

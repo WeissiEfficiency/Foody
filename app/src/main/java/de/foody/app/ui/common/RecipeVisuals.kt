@@ -1,9 +1,11 @@
 package de.foody.app.ui.common
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -114,12 +116,16 @@ val RecipeEntity.totalMinutes: Int get() = (prepMinutes ?: 0) + (cookMinutes ?: 
 
 /** Rasterkarte: großes quadratisches Bild, darunter Titel und Zeit – wie in Rezept-Feeds. */
 @Composable
-fun RecipeGridCard(recipe: RecipeEntity, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = onClick)) {
+fun RecipeGridCard(recipe: RecipeEntity, onClick: () -> Unit, modifier: Modifier = Modifier, selected: Boolean = false) {
+    Column(
+        modifier.clip(MaterialTheme.shapes.medium)
+            .selectable(selected = selected, onClick = onClick, role = Role.Button),
+    ) {
         Box {
             RecipeImage(
                 recipe.imageUri, recipe.name,
-                Modifier.sharedRecipeImage(recipe.id).fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.medium),
+                Modifier.sharedRecipeImage(recipe.id).fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.medium)
+                    .then(if (selected) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium) else Modifier),
             )
             if (recipe.favorite) {
                 Icon(
