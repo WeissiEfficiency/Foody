@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -43,6 +44,7 @@ import de.foody.app.R
 import de.foody.app.data.db.IngredientEntity
 import de.foody.app.data.repo.IngredientRepository
 import de.foody.app.data.repo.newId
+import de.foody.app.ui.common.AutocompleteField
 import de.foody.app.ui.common.DecimalField
 import de.foody.app.ui.common.DropdownField
 import de.foody.app.ui.common.FormColumn
@@ -60,17 +62,24 @@ import javax.inject.Inject
 class IngredientsViewModel @Inject constructor(private val repo: IngredientRepository) : ViewModel() {
     val ingredients = repo.observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /** Einmalige Meldung; wird von der UI nach Anzeige quittiert. */
-    private val _message = MutableStateFlow<Int?>(null)
+    /** Einmalige Meldung (Text-Ressource + Zahl für Platzhalter); wird von der UI nach Anzeige quittiert. */
+    private val _message = MutableStateFlow<Pair<Int, Int>?>(null)
     val message = _message.asStateFlow()
     fun messageShown() { _message.value = null }
 
     fun save(e: IngredientEntity) = viewModelScope.launch {
         // Eindeutiger Name (Unique-Index) – Kollision als Meldung statt Absturz.
-        runCatching { repo.save(e) }.onFailure { _message.value = R.string.ingredient_name_taken }
+        runCatching { repo.save(e) }.onFailure { _message.value = R.string.ingredient_name_taken to 0 }
     }
     fun delete(id: String) = viewModelScope.launch {
-        if (!repo.delete(id)) _message.value = R.string.ingredient_in_use
+        if (!repo.delete(id)) _message.value = R.string.ingredient_in_use to 0
+    }
+    fun merge(fromId: String, intoId: String) = viewModelScope.launch {
+        repo.merge(fromId, intoId)
+        _message.value = R.string.ingredient_merged to 1
+    }
+    fun harmonize() = viewModelScope.launch {
+        _message.value = R.string.ingredients_harmonized to repo.harmonizeNames()
     }
 }
 
@@ -81,9 +90,10 @@ fun IngredientsScreen(onBack: () -> Unit, vm: IngredientsViewModel = hiltViewMod
     val message by vm.message.collectAsStateWithLifecycle()
     var editingId by rememberSaveable { mutableStateOf<String?>(null) }
     var creating by rememberSaveable { mutableStateOf(false) }
+    var mergingId by rememberSaveable { mutableStateOf<String?>(null) }
     var filter by rememberSaveable { mutableStateOf("") }
     val snackbar = remember { SnackbarHostState() }
-    val msgText = message?.let { stringResource(it) }
+    val msgText = message?.let { (res, n) -> messageText(res, n) }
     LaunchedEffect(msgText) { if (msgText != null) { snackbar.showSnackbar(msgText); vm.messageShown() } }
 
     Scaffold(
@@ -91,6 +101,9 @@ fun IngredientsScreen(onBack: () -> Unit, vm: IngredientsViewModel = hiltViewMod
             TopAppBar(
                 title = { Text(stringResource(R.string.ingredients_title)) },
                 navigationIcon = { IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back)) } },
+                actions = {
+                    IconButton(vm::harmonize) { Icon(Icons.Default.AutoFixHigh, stringResource(R.string.ingredients_harmonize)) }
+                },
             )
         },
         floatingActionButton = { FloatingActionButton({ creating = true }) { Icon(Icons.Default.Add, stringResource(R.string.ingredient_new)) } },
@@ -127,7 +140,15 @@ fun IngredientsScreen(onBack: () -> Unit, vm: IngredientsViewModel = hiltViewMod
             onDismiss = { editingId = null; creating = false },
             onSave = { vm.save(it); editingId = null; creating = false },
             onDelete = editing?.let { e -> { vm.delete(e.id); editingId = null } },
+            onMerge = editing?.let { e -> { mergingId = e.id; editingId = null } },
         )
+    }
+    val merging = list.firstOrNull { it.id == mergingId }
+    if (merging != null) {
+        MergeDialog(merging, list.filter { it.id != merging.id }, onDismiss = { mergingId = null }) { target ->
+            vm.merge(merging.id, target.id)
+            mergingId = null
+        }
     }
 }
 
@@ -138,6 +159,7 @@ private fun IngredientDialog(
     onDismiss: () -> Unit,
     onSave: (IngredientEntity) -> Unit,
     onDelete: (() -> Unit)?,
+    onMerge: (() -> Unit)?,
 ) {
     fun java.math.BigDecimal?.t() = this?.display(3).orEmpty()
     var name by rememberSaveable { mutableStateOf(initial?.canonicalName.orEmpty()) }
@@ -208,8 +230,43 @@ private fun IngredientDialog(
             ) { Text(stringResource(R.string.action_save)) }
         },
         dismissButton = {
+            if (onMerge != null) TextButton(onMerge) { Text(stringResource(R.string.ingredient_merge)) }
             if (onDelete != null) TextButton(onDelete) { Text(stringResource(R.string.action_delete)) }
             TextButton(onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
+    )
+}
+
+@Composable
+private fun messageText(res: Int, n: Int): String =
+    if (res == R.string.ingredients_harmonized) stringResource(res, n) else stringResource(res)
+
+/** Auswahl der Zielzutat; danach zeigen alle Rezepte, Vorräte und Listeneinträge auf das Ziel. */
+@Composable
+private fun MergeDialog(
+    source: IngredientEntity,
+    candidates: List<IngredientEntity>,
+    onDismiss: () -> Unit,
+    onMerge: (IngredientEntity) -> Unit,
+) {
+    var text by rememberSaveable { mutableStateOf("") }
+    var targetId by rememberSaveable { mutableStateOf<String?>(null) }
+    val target = candidates.firstOrNull { it.id == targetId }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.ingredient_merge_title, source.canonicalName)) },
+        text = {
+            FormColumn {
+                Text(stringResource(R.string.ingredient_merge_hint))
+                AutocompleteField(
+                    stringResource(R.string.field_ingredient), text, { text = it; targetId = null },
+                    candidates, { it.canonicalName }, { text = it.canonicalName; targetId = it.id },
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = target != null, onClick = { target?.let(onMerge) }) { Text(stringResource(R.string.ingredient_merge)) }
+        },
+        dismissButton = { TextButton(onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
 }

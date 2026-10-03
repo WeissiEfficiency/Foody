@@ -114,6 +114,12 @@
     <string name="ingredient_name_taken">Eine Zutat mit diesem Namen existiert bereits.</string>
     <string name="ingredient_no_nutrients">Keine Nährwerte hinterlegt</string>
     <string name="ingredient_will_be_created">„%1$s“ wird als neue Zutat angelegt.</string>
+    <string name="ingredient_merge">Zusammenführen</string>
+    <string name="ingredient_merge_title">„%1$s“ zusammenführen</string>
+    <string name="ingredient_merge_hint">Alle Rezepte, Vorräte und Listeneinträge zeigen danach auf die gewählte Zutat. Fehlende Nährwerte werden übernommen.</string>
+    <string name="ingredient_merged">Zutaten zusammengeführt</string>
+    <string name="ingredients_harmonize">Namen vereinheitlichen (z. B. Mehl → Weizenmehl)</string>
+    <string name="ingredients_harmonized">%1$d Zutat(en) vereinheitlicht</string>
     <string name="kj_per_100g">%1$s kJ je 100 g</string>
     <string name="kj_per_100ml">%1$s kJ je 100 ml</string>
     <string name="basis_100g">je 100 g</string>

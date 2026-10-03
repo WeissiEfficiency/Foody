@@ -41,7 +41,24 @@ object SeedData {
         Row("seed-kokosmilch", "Kokosmilch", "Konserven", "800", "2", "3", "19", "0", "2", "0", NutrientBasis.PER_100_ML, density = "1.0"),
         Row("seed-currypaste", "Currypaste", "Öle & Gewürze", null, null, null, null, null, null, null),
         Row("seed-kaese", "Gouda", "Kühlregal", "1500", "25", "0", "29", "0", "0", "2"),
+        // Version 2: häufige Zutaten aus importierten Rezepten (Zielnamen von IngredientCatalog)
+        Row("seed-pflanzenoel", "Pflanzenöl", "Öle & Gewürze", "3700", "0", "0", "100", "0", "0", "0", density = "0.92"),
+        Row("seed-wasser", "Wasser", "Getränke", "0", "0", "0", "0", "0", "0", "0", NutrientBasis.PER_100_ML, density = "1.0"),
+        Row("seed-gemuesebruehe", "Gemüsebrühe", "Öle & Gewürze", "25", "0.2", "0.6", "0.2", "0", "0.3", "0.9", NutrientBasis.PER_100_ML, density = "1.0"),
+        Row("seed-sahne", "Sahne", "Kühlregal", "1210", "2.4", "3.2", "30", "0", "3.2", "0.1", density = "1.0"),
+        Row("seed-hack-gemischt", "Hackfleisch, gemischt", "Fleisch & Fisch", "1090", "18", "0", "21", "0", "0", "0.2"),
+        Row("seed-eigelb", "Eigelb", "Kühlregal", "1450", "16", "0.3", "32", "0", "0.3", "0.1", piece = "18"),
+        Row("seed-petersilie", "Petersilie", "Obst & Gemüse", "210", "4", "6", "0.4", "4", "1", "0.1"),
+        Row("seed-senf", "Senf", "Öle & Gewürze", "370", "6", "5", "4.5", "2", "3", "2.7", density = "1.1"),
+        Row("seed-vanillezucker", "Vanillezucker", "Trockenwaren", "1680", "0", "99", "0", "0", "99", "0", piece = "8"),
+        Row("seed-paprikapulver", "Paprikapulver", "Öle & Gewürze", "1200", "14", "19", "13", "35", "10", "0.1", density = "0.45"),
     )
+
+    /** Bei Erweiterung erhöhen: neue Zeilen werden dann auch in bestehende Installationen übernommen. */
+    const val VERSION = 2
+
+    /** Kanonische Namen aller Startzutaten (für Tests und Abgleich). */
+    val names: List<String> get() = rows.map { it.name }
 
     fun ingredients(now: Long): List<IngredientEntity> = rows.map { r ->
         val hasNutrients = r.kj != null

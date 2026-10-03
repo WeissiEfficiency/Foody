@@ -8,6 +8,7 @@ import de.foody.app.data.db.ShoppingListEntity
 import de.foody.domain.DateRange
 import de.foody.domain.DiffType
 import de.foody.domain.GenerateShoppingListUseCase
+import de.foody.domain.IngredientCatalog
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Quantity
 import de.foody.domain.ShoppingDiff
@@ -43,7 +44,9 @@ class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
         val ingredientEntities = db.ingredientDao().getAll().associateBy { it.id }
         val ingredients = ingredientEntities.mapValues { it.value.toDomain() }
         val pantry = if (usePantry) db.pantryDao().getAll().map { it.toDomain() } else emptyList()
-        val needs = generate(range, slots.map { it.toDomain() }, recipes, ingredients, pantry, excludedIngredientIds = excluded)
+        // Leitungswasser & Co. nie einkaufen
+        val neverBuy = ingredientEntities.values.filter { IngredientCatalog.neverBuy(it.canonicalName) }.map { it.id }
+        val needs = generate(range, slots.map { it.toDomain() }, recipes, ingredients, pantry, excludedIngredientIds = excluded + neverBuy)
         val slotById = slots.associateBy { it.id }
         return needs.map { n ->
             val ing = ingredientEntities[n.ingredientId]
