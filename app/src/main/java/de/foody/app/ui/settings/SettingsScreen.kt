@@ -1,5 +1,8 @@
 package de.foody.app.ui.settings
 
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import de.foody.app.ui.theme.ThemeMode
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -90,6 +93,18 @@ fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hilt
                             ) { Text(stringResource(label)) }
                         }
                     }
+                }
+                SettingsCard(stringResource(R.string.goal_title)) {
+                    val goal by vm.dailyKcalGoal.collectAsStateWithLifecycle()
+                    // Nicht an das gespeicherte Ziel koppeln: Zwischenstände wie „200“ (ungültig) sollen die Eingabe nicht leeren
+                    var text by rememberSaveable { mutableStateOf(goal?.toString().orEmpty()) }
+                    Text(stringResource(R.string.goal_hint), style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(
+                        text, { v -> text = v.filter(Char::isDigit).take(4); vm.setDailyKcalGoal(text) },
+                        label = { Text(stringResource(R.string.goal_label)) }, suffix = { Text("kcal") },
+                        singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
                 SettingsCard(stringResource(R.string.ingredients_title)) {
                     OutlinedButton(onManageIngredients, Modifier.fillMaxWidth(), shape = RoundedCornerShape(50)) {
