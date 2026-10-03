@@ -1,5 +1,7 @@
 package de.foody.app.ui.shopping
 
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.clickable
@@ -68,6 +70,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ShoppingScreen(vm: ShoppingViewModel = hiltViewModel()) {
     val s by vm.state.collectAsStateWithLifecycle()
+    val listView by vm.listView.collectAsStateWithLifecycle()
     val generate by vm.generate.collectAsStateWithLifecycle()
     val diff by vm.diff.collectAsStateWithLifecycle()
     val sources by vm.sources.collectAsStateWithLifecycle()
@@ -107,6 +110,10 @@ fun ShoppingScreen(vm: ShoppingViewModel = hiltViewModel()) {
     ) { padding ->
         Column(Modifier.padding(padding)) {
             ScreenHeader(stringResource(R.string.nav_shopping), s.selected?.name ?: stringResource(R.string.shopping_title_empty)) {
+                HeaderAction(
+                    if (listView) Icons.Default.GridView else Icons.AutoMirrored.Filled.ViewList,
+                    stringResource(if (listView) R.string.shopping_view_tiles else R.string.shopping_view_list),
+                ) { vm.toggleListView() }
                 if (s.selected != null) {
                     if (s.selected?.rangeStart != null) {
                         HeaderAction(Icons.Default.Refresh, stringResource(R.string.shopping_recalculate)) { vm.recalculate() }
@@ -128,6 +135,7 @@ fun ShoppingScreen(vm: ShoppingViewModel = hiltViewModel()) {
                 onPutBack = { vm.toggle(it) },
                 onDetails = { vm.showSources(it) },
                 onAddFromSearch = { vm.addFromSearch(it, defaultEmptyName) },
+                asList = listView,
                 header = {
                     if (s.lists.size > 1) {
                         item(key = "lists", span = { GridItemSpan(maxLineSpan) }) {

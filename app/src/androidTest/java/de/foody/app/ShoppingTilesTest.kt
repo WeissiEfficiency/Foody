@@ -1,5 +1,6 @@
 package de.foody.app
 
+import de.foody.app.data.ShoppingPreferences
 import android.content.Context
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -38,7 +39,7 @@ class ShoppingTilesTest {
     @Before fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         db = Room.inMemoryDatabaseBuilder(context, FoodyDatabase::class.java).build()
-        vm = ShoppingViewModel(ShoppingRepository(db), SavedStateHandle())
+        vm = ShoppingViewModel(ShoppingRepository(db), ShoppingPreferences(context), SavedStateHandle())
         compose.setContent { FoodyTheme { ShoppingScreen(vm) } }
     }
 

@@ -236,6 +236,7 @@ class RecipeRepository @Inject constructor(private val dao: RecipeDao) {
     suspend fun setImage(id: String, uri: String?) = dao.setImage(id, uri, System.currentTimeMillis())
 
     suspend fun setFavorite(id: String, favorite: Boolean) = dao.setFavorite(id, favorite, System.currentTimeMillis())
+    suspend fun setRating(id: String, rating: Int?) = dao.setRating(id, rating?.coerceIn(1, 5), System.currentTimeMillis())
 
     suspend fun findBySourceUrl(url: String) = dao.findBySourceUrl(url)
 
@@ -256,6 +257,7 @@ class PlanRepository @Inject constructor(
     private val ingredientDao: IngredientDao,
 ) {
     fun observeRange(start: LocalDate, end: LocalDate) = dao.observeRange(start, end)
+    fun observeCookedCounts() = dao.observeCookedCounts().map { rows -> rows.associate { it.recipeId to it.count } }
 
     /** Spätestes Plandatum je Rezept im Zeitraum – für Vorschläge ohne Wiederholung. */
     suspend fun lastPlannedByRecipe(start: LocalDate, end: LocalDate): Map<String, LocalDate> =

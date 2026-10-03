@@ -1,5 +1,10 @@
 package de.foody.app.ui.recipes
 
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.material3.IconButton
 import de.foody.app.ui.theme.FoodyGlass
 import de.foody.domain.LineGap
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -104,6 +109,7 @@ fun RecipeDetailScreen(
     vm: RecipeDetailViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val cookedCount by vm.cookedCount.collectAsStateWithLifecycle()
     var confirmDelete by remember { mutableStateOf(false) }
     var cooking by rememberSaveable { mutableStateOf(false) }
     var askPhoto by rememberSaveable { mutableStateOf(false) }
@@ -165,6 +171,7 @@ fun RecipeDetailScreen(
                     Column(Modifier.padding(horizontal = 20.dp, vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Text(recipe.name, style = MaterialTheme.typography.headlineMedium)
                         MetaRow(recipe, state.nutrition)
+                        RatingRow(recipe.rating, cookedCount, vm::rate)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(stringResource(R.string.field_servings), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                             ServingsStepper(state.servings, vm::setServings)
@@ -455,5 +462,26 @@ fun NutritionCard(n: NutritionResult) {
         }
         Text(stringResource(R.string.nutrition_disclaimer), style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Eigene Bewertung (1–5 Sterne) und wie oft schon gekocht – wie in Rezept-Apps mit eigener Sammlung. */
+@Composable
+private fun RatingRow(rating: Int?, cookedCount: Int, onRate: (Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        (1..5).forEach { n ->
+            val filled = rating != null && n <= rating
+            IconButton({ onRate(n) }, Modifier.size(40.dp)) {
+                Icon(
+                    if (filled) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                    pluralStringResource(R.plurals.rating_stars, n, n),
+                    tint = if (filled) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline,
+                )
+            }
+        }
+        Spacer(Modifier.weight(1f))
+        if (cookedCount > 0) {
+            MetaPill(pluralStringResource(R.plurals.cooked_count, cookedCount, cookedCount), icon = Icons.Outlined.Restaurant)
+        }
     }
 }

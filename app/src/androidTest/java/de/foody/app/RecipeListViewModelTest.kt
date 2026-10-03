@@ -1,5 +1,6 @@
 package de.foody.app
 
+import de.foody.app.data.repo.PlanRepository
 import de.foody.app.data.repo.PantryRepository
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
@@ -48,7 +49,8 @@ class RecipeListViewModelTest {
         recipe("Gemüsepfanne", "z")
         recipe("Risotto", "r")
         recipes.setArchived(recipe("Altes Curry", "r"), archived = true)
-        vm = RecipeListViewModel(recipes, PantryRepository(db.pantryDao()), IngredientRepository(db, db.ingredientDao(), context), importer, SavedStateHandle())
+        vm = RecipeListViewModel(recipes, PantryRepository(db.pantryDao()), IngredientRepository(db, db.ingredientDao(), context),
+            PlanRepository(db, db.mealPlanDao(), db.recipeDao(), db.pantryDao(), db.ingredientDao()), importer, SavedStateHandle())
     }
 
     @After fun tearDown() = db.close()
@@ -119,5 +121,18 @@ class RecipeListViewModelTest {
         vm.onSort(RecipeSort.NEWEST)
         val newest = runBlocking { withTimeout(5_000) { vm.state.first { it.sort == RecipeSort.NEWEST && it.recipes.size == 3 } } }
         assertEquals("Hähnchen-Curry", newest.names().first())
+    }
+
+    @Test fun bestRatedComesFirstUnratedLast() = runBlocking {
+        awaitNames(listOf("Gemüsepfanne", "Risotto"))
+        val ids = db.recipeDao().getAll().associate { it.name to it.id }
+        recipes.setRating(ids.getValue("Risotto"), 5)
+        vm.onSort(RecipeSort.BEST_RATED)
+        awaitNames(listOf("Risotto", "Gemüsepfanne")) { it.sort == RecipeSort.BEST_RATED }
+
+        // Bewertung zurücknehmen → wieder Namensreihenfolge (stabil sortiert)
+        recipes.setRating(ids.getValue("Risotto"), null)
+        awaitNames(listOf("Gemüsepfanne", "Risotto")) { it.sort == RecipeSort.BEST_RATED }
+        Unit
     }
 }

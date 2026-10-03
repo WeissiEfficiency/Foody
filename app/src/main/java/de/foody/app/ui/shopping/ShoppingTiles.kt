@@ -1,5 +1,7 @@
 package de.foody.app.ui.shopping
 
+import de.foody.app.ui.theme.FoodyGlass
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
@@ -75,6 +77,8 @@ fun ShoppingTiles(
     onAddFromSearch: (String) -> Unit,
     header: LazyGridScope.() -> Unit,
     modifier: Modifier = Modifier,
+    /** Offene Artikel als Zeilen statt Kacheln – besser lesbar bei langen Listen mit Angaben. */
+    asList: Boolean = false,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     // Als Text gespeichert: überlebt Drehen und Prozessende ohne eigenen Saver
@@ -130,11 +134,20 @@ fun ShoppingTiles(
                 }
             }
         } else {
-            items(open, key = { "open-${it.id}" }) { item ->
-                Tile(
-                    ShoppingCatalog.emojiFor(item.name, item.category), item.name, item.detail(), true,
-                    onClick = { onBuy(item) }, onLongClick = { onDetails(item) }, modifier = Modifier.animateItem(),
-                )
+            if (asList) {
+                items(open, key = { "open-${it.id}" }, span = { GridItemSpan(maxLineSpan) }) { item ->
+                    ListRow(
+                        ShoppingCatalog.emojiFor(item.name, item.category), item.name, item.detail(),
+                        onClick = { onBuy(item) }, onLongClick = { onDetails(item) }, modifier = Modifier.animateItem(),
+                    )
+                }
+            } else {
+                items(open, key = { "open-${it.id}" }) { item ->
+                    Tile(
+                        ShoppingCatalog.emojiFor(item.name, item.category), item.name, item.detail(), true,
+                        onClick = { onBuy(item) }, onLongClick = { onDetails(item) }, modifier = Modifier.animateItem(),
+                    )
+                }
             }
         }
 
@@ -254,6 +267,45 @@ private fun Tile(
             if (detail != null) {
                 Text(detail, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, maxLines = 1)
             }
+        }
+    }
+}
+
+/** Zeile der Listenansicht: Emoji, Name, Angabe; Antippen = gekauft, Langdruck = Details. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ListRow(
+    emoji: String,
+    name: String,
+    detail: String?,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val haptic = LocalHapticFeedback.current
+    val stateText = stringResource(R.string.shopping_state_on_list)
+    Surface(
+        color = FoodyGlass.fill,
+        border = FoodyGlass.border,
+        shape = RoundedCornerShape(14.dp),
+        modifier = modifier.fillMaxWidth()
+            .combinedClickable(
+                role = Role.Button,
+                onLongClickLabel = stringResource(R.string.sources_title),
+                onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onLongClick() },
+            ) {
+                haptic.performHapticFeedback(HapticFeedbackType.ToggleOff)
+                onClick()
+            }
+            .semantics { stateDescription = stateText },
+    ) {
+        Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(emoji, fontSize = 24.sp, modifier = Modifier.padding(end = 12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(name, style = MaterialTheme.typography.bodyLarge)
+                if (detail != null) Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Icon(Icons.Outlined.RadioButtonUnchecked, null, tint = MaterialTheme.colorScheme.tertiary)
         }
     }
 }

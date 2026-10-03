@@ -400,6 +400,7 @@ private fun DiscoverSheet(
                 listOf(
                     RecipeSort.NAME to R.string.sort_name, RecipeSort.NEWEST to R.string.sort_newest,
                     RecipeSort.KCAL_ASC to R.string.sort_kcal, RecipeSort.PROTEIN_DESC to R.string.sort_protein,
+                    RecipeSort.BEST_RATED to R.string.sort_rating, RecipeSort.MOST_COOKED to R.string.sort_cooked,
                 ).forEach { (s, label) ->
                     FilterChip(state.sort == s, { onSort(s) }, label = { Text(stringResource(label)) }, shape = RoundedCornerShape(50), colors = chipColors)
                 }

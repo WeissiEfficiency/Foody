@@ -1,5 +1,7 @@
 package de.foody.app.ui.recipes
 
+import de.foody.app.data.repo.PlanRepository
+import kotlinx.coroutines.flow.map
 import de.foody.domain.LineGap
 import de.foody.app.timer.CookTimerRepository
 import de.foody.app.timer.RunningTimer
@@ -63,6 +65,7 @@ class RecipeDetailViewModel @Inject constructor(
     private val shopping: ShoppingRepository,
     private val photos: RecipePhotoStore,
     private val cookTimers: CookTimerRepository,
+    plan: PlanRepository,
     private val saved: SavedStateHandle,
 ) : ViewModel() {
     val id = saved.toRoute<RecipeDetailRoute>().id
@@ -111,6 +114,15 @@ class RecipeDetailViewModel @Inject constructor(
 
     fun setServings(n: Int) { saved["servings"] = n }
     fun archive(archived: Boolean) = viewModelScope.launch { repo.setArchived(id, archived) }
+    /** Eigene Bewertung; dieselbe Zahl erneut antippen nimmt die Bewertung zurück. */
+    fun rate(stars: Int) = viewModelScope.launch {
+        repo.setRating(id, if (state.value.recipe?.rating == stars) null else stars)
+    }
+
+    /** Wie oft im Planer als „gekocht“ bestätigt. */
+    val cookedCount = plan.observeCookedCounts().map { it[id] ?: 0 }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
     fun toggleFavorite() = viewModelScope.launch { state.value.recipe?.let { repo.setFavorite(id, !it.favorite) } }
     fun delete(onDone: () -> Unit) = viewModelScope.launch {
         val image = state.value.recipe?.imageUri
