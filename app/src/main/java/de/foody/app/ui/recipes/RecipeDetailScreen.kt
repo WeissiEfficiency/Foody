@@ -1,5 +1,6 @@
 package de.foody.app.ui.recipes
 
+import de.foody.app.ui.theme.FoodyGlass
 import de.foody.domain.LineGap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -133,7 +134,8 @@ fun RecipeDetailScreen(
     val copySuffix = stringResource(R.string.recipe_copy_suffix)
     val recipe = state.recipe ?: return
 
-    Scaffold(contentWindowInsets = WindowInsets(0), snackbarHost = { SnackbarHost(snackbar) }) { padding ->
+    Scaffold(
+        containerColor = Color.Transparent,contentWindowInsets = WindowInsets(0), snackbarHost = { SnackbarHost(snackbar) }) { padding ->
         LazyColumn(Modifier.padding(padding).fillMaxSize(), state = listState) {
             item {
                 Hero(
@@ -191,8 +193,8 @@ fun RecipeDetailScreen(
                 Surface(
                     Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                     shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    shadowElevation = 1.dp,
+                    color = FoodyGlass.fill,
+                    border = FoodyGlass.border,
                 ) {
                     Column(Modifier.padding(vertical = 4.dp)) {
                         state.lines.forEachIndexed { i, l ->
@@ -425,7 +427,7 @@ fun NutritionCard(n: NutritionResult) {
             Text(stringResource(R.string.nutrition_completeness, pct), color = MaterialTheme.colorScheme.tertiary,
                 style = MaterialTheme.typography.bodySmall)
         }
-        Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerLowest, shadowElevation = 1.dp) {
+        Surface(shape = MaterialTheme.shapes.medium, color = FoodyGlass.fill, border = FoodyGlass.border) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row {
                     Text("", Modifier.weight(1.1f))

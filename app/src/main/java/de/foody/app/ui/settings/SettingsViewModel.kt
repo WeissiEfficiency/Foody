@@ -1,5 +1,7 @@
 package de.foody.app.ui.settings
 
+import de.foody.app.data.ThemePreferences
+import de.foody.app.ui.theme.ThemeMode
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,7 +14,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor(private val backup: BackupRepository) : ViewModel() {
+class SettingsViewModel @Inject constructor(
+    private val backup: BackupRepository,
+    private val themePreferences: ThemePreferences,
+) : ViewModel() {
+    val themeMode = themePreferences.mode
+    fun setThemeMode(mode: ThemeMode) = themePreferences.set(mode)
+
     private val _message = MutableStateFlow<Int?>(null)
     val message = _message.asStateFlow()
     fun messageShown() { _message.value = null }

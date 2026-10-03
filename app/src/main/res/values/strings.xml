@@ -59,6 +59,10 @@
     <string name="recipe_edit">Rezept bearbeiten</string>
     <string name="recipe_search">Rezepte oder Tags suchen</string>
     <string name="recipe_show_archived">Archiv</string>
+    <string name="appearance_title">Darstellung</string>
+    <string name="appearance_system">System</string>
+    <string name="appearance_light">Hell</string>
+    <string name="appearance_dark">Dunkel</string>
     <string name="kcal_amount" tools:ignore="PluralsCandidate">%1$d kcal</string>
     <string name="kcal_gap_values">ohne Werte</string>
     <string name="kcal_gap_weight">ohne Gewicht</string>

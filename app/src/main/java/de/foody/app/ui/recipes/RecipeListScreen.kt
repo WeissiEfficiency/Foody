@@ -1,5 +1,6 @@
 package de.foody.app.ui.recipes
 
+import de.foody.app.ui.theme.FoodyGlass
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -118,6 +119,7 @@ fun RecipeListScreen(
     val gridState = rememberLazyGridState()
     val fabExpanded by remember { derivedStateOf { gridState.firstVisibleItemIndex == 0 } }
     Scaffold(
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -189,7 +191,7 @@ fun RecipeListScreen(
             }
         }
         // Scrim hinter der Statusleiste, damit gescrollte Inhalte nicht mit der Uhrzeit kollidieren
-        Box(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(MaterialTheme.colorScheme.background.copy(alpha = 0.94f)))
+        Box(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(FoodyGlass.fill))
     }
 }
 
