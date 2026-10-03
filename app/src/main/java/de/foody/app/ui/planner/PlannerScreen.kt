@@ -56,6 +56,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -284,7 +285,7 @@ private fun AddSlotDialog(
     )
     var slotType by rememberSaveable { mutableStateOf(presets[2]) }
     var recipeId by rememberSaveable { mutableStateOf<String?>(null) }
-    var servings by rememberSaveable { mutableStateOf(2) }
+    var servings by rememberSaveable { mutableIntStateOf(2) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.planner_add_for, date.pretty())) },
