@@ -100,7 +100,7 @@ class BackupRepository @Inject constructor(
         val out = context.contentResolver.openOutputStream(uri, "wt") ?: error("Datei nicht beschreibbar")
         ZipOutputStream(out.buffered()).use { zip ->
             val packed = mutableMapOf<String, String>()
-            dto.recipes.mapNotNull { it.imageUri }.distinct().forEach { image ->
+            dto.recipes.mapNotNull { it.imageUri }.distinct().filter(photos::isAllowedImage).forEach { image ->
                 val input = runCatching { context.contentResolver.openInputStream(image.toUri()) }.getOrNull() ?: return@forEach
                 val name = "${packed.size + 1}.jpg"
                 input.use { zip.putNextEntry(ZipEntry(PHOTO_DIR + name)); it.copyTo(zip); zip.closeEntry() }
@@ -170,7 +170,7 @@ class BackupRepository @Inject constructor(
     }
 
     private fun resolvePhoto(image: String, staged: Map<String, File>): String? {
-        if (!image.startsWith(PHOTO_SCHEME)) return image
+        if (!image.startsWith(PHOTO_SCHEME)) return image.takeIf(photos::isAllowedImage)
         return staged[image.removePrefix(PHOTO_SCHEME)]?.let(photos::storedUri)
     }
 
@@ -212,7 +212,7 @@ class BackupRepository @Inject constructor(
     }
 
     private suspend fun restore(d: BackupDto) {
-        fun String?.bd() = this?.let(::BigDecimal)
+        fun String?.bd() = this?.let(::decimal)
         d.ingredients.forEach {
             db.ingredientDao().upsert(
                 IngredientEntity(
@@ -234,7 +234,7 @@ class BackupRepository @Inject constructor(
             )
         }
         db.recipeDao().insertIngredients(d.recipeIngredients.map {
-            RecipeIngredientEntity(it.id, it.recipeId, it.ingredientId, BigDecimal(it.amount), MeasureUnit.valueOf(it.unit), it.sortOrder, it.note, it.optional)
+            RecipeIngredientEntity(it.id, it.recipeId, it.ingredientId, decimal(it.amount), MeasureUnit.valueOf(it.unit), it.sortOrder, it.note, it.optional)
         })
         db.recipeDao().insertSteps(d.steps.map { InstructionStepEntity(it.id, it.recipeId, it.position, it.text) })
         d.mealSlots.forEach {
@@ -246,7 +246,7 @@ class BackupRepository @Inject constructor(
             )
         }
         d.pantry.forEach {
-            db.pantryDao().upsert(PantryItemEntity(it.id, it.ingredientId, BigDecimal(it.amount), MeasureUnit.valueOf(it.unit), it.bestBefore?.let(LocalDate::parse), it.updatedAt))
+            db.pantryDao().upsert(PantryItemEntity(it.id, it.ingredientId, decimal(it.amount), MeasureUnit.valueOf(it.unit), it.bestBefore?.let(LocalDate::parse), it.updatedAt))
         }
         d.shoppingLists.forEach {
             db.shoppingDao().upsertList(
@@ -263,7 +263,7 @@ class BackupRepository @Inject constructor(
             )
         })
         db.shoppingDao().insertSources(d.shoppingSources.map {
-            ShoppingItemSourceEntity(it.id, it.itemId, it.mealSlotId, it.recipeIngredientId, it.recipeName, LocalDate.parse(it.date), BigDecimal(it.amount), MeasureUnit.valueOf(it.unit))
+            ShoppingItemSourceEntity(it.id, it.itemId, it.mealSlotId, it.recipeIngredientId, it.recipeName, LocalDate.parse(it.date), decimal(it.amount), MeasureUnit.valueOf(it.unit))
         })
     }
 }
@@ -285,4 +285,13 @@ private fun InputStream.copyCapped(out: java.io.OutputStream, limit: Long): Long
         check(copied <= limit) { "Eintrag zu groß" }
         out.write(buffer, 0, n)
     }
+}
+
+/**
+ * Zahl aus einer Sicherung. Begrenzt Länge und Exponent: „1E999999999“ wäre ein gültiges BigDecimal,
+ * würde beim Formatieren oder Umrechnen aber Speicher und Zeit fressen.
+ */
+internal fun decimal(text: String): BigDecimal {
+    require(text.length <= 40) { "Zahl zu lang" }
+    return BigDecimal(text).also { require(it.scale() in -6..20 && it.precision() <= 30) { "Zahl außerhalb des Bereichs" } }
 }

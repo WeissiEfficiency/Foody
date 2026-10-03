@@ -38,7 +38,7 @@ konsolidierte Einkaufslisten.
 | `:domain` | Reines Kotlin (keine Android-Abhängigkeiten): Einheiten, Skalierung, Nährwerte, Einkaufsaggregation, Diff, Export-Schnittstelle |
 | `:app` | Compose-UI, ViewModels, Room, Hilt, Repositories, Backup |
 
-Details: [`docs/architecture.md`](docs/architecture.md), fachliche Invarianten: [`docs/domain-rules.md`](docs/domain-rules.md).
+Details: [`docs/architecture.md`](docs/architecture.md), fachliche Invarianten: [`docs/domain-rules.md`](docs/domain-rules.md), Sicherheit: [`docs/security.md`](docs/security.md).
 
 ## Bauen & Testen
 

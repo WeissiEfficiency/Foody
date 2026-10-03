@@ -1,5 +1,7 @@
 package de.foody.app.data.repo
 
+import java.io.InputStream
+import java.io.ByteArrayOutputStream
 import de.foody.app.util.runSuspendCatching
 import android.content.Context
 import android.net.Uri
@@ -45,7 +47,7 @@ class RecipeImportRepository @Inject constructor(
             // Lesen und Parsen außerhalb der Transaktion: Eine unlesbare oder kaputte Datei zählt als fehlgeschlagen.
             val parsed = withContext(Dispatchers.IO) {
                 chunk.map { uri ->
-                    runSuspendCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() } }
+                    runSuspendCatching { context.contentResolver.openInputStream(uri)?.use { it.readTextCapped(MAX_FILE_BYTES) } }
                         .getOrNull()
                         ?.let { text -> runCatching { MarkdownRecipeImporter.parse(text) }.getOrNull() }
                 }
@@ -150,5 +152,20 @@ class RecipeImportRepository @Inject constructor(
     private companion object {
         /** Rezepte pro Transaktion – groß genug für wenige Listen-Aktualisierungen, klein genug für flüssigen Fortschritt. */
         const val CHUNK_SIZE = 25
+        /** Rezepttexte sind wenige KB groß; größere Dateien (versehentlich gewählt) zählen als fehlgeschlagen statt den Speicher zu füllen. */
+        const val MAX_FILE_BYTES = 1 shl 20
+    }
+}
+
+/** Liest höchstens [limit] Bytes als Text; mehr gilt als Fehler. */
+private fun InputStream.readTextCapped(limit: Int): String {
+    // Eigene Schleife statt readNBytes (erst ab Android 13)
+    val out = ByteArrayOutputStream()
+    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+    while (true) {
+        val n = read(buffer)
+        if (n < 0) return out.toByteArray().decodeToString()
+        check(out.size() + n <= limit) { "Datei zu groß" }
+        out.write(buffer, 0, n)
     }
 }

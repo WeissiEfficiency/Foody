@@ -116,4 +116,24 @@ class BackupZipTest {
         assertEquals("Bleibt", recipes.observeRecipe(id).first()?.name)
         assertEquals(before, photoDir.list().orEmpty().toSet(), "Vorgemerkte Fotos wieder entfernt")
     }
+
+    @Test fun importedImageMayNotPointIntoPrivateStorage() = runTest {
+        val own = recipes.save(RecipeDraft(id = null, name = "Ausspähen", defaultServings = 1, imageUri = null, ingredients = emptyList()))
+        val gallery = recipes.save(RecipeDraft(id = null, name = "Galerie", defaultServings = 1, imageUri = null, ingredients = emptyList()))
+        val zip = File(work, "s.zip")
+        backup.export(zip.toUri())
+        val dbPath = context.getDatabasePath("foody.db").toUri().toString()
+        val json = File(work, "manipuliert.json")
+        val text = java.util.zip.ZipFile(zip).use { z -> z.getInputStream(z.getEntry("backup.json")).readBytes().decodeToString() }
+        // Erstes Rezept zeigt auf die eigene Datenbank, zweites auf ein Galeriebild
+        json.writeText(
+            text.replaceFirst("\"imageUri\": null", "\"imageUri\": \"$dbPath\"")
+                .replaceFirst("\"imageUri\": null", "\"imageUri\": \"content://media/external/images/media/7\""),
+        )
+
+        backup.import(json.toUri())
+        val images = listOf(recipeImage(own), recipeImage(gallery))
+        assertTrue(dbPath !in images, "Pfad in den privaten Speicher wird verworfen: $images")
+        assertTrue("content://media/external/images/media/7" in images, "Galerielinks bleiben erhalten")
+    }
 }
