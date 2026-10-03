@@ -1,5 +1,9 @@
 package de.foody.app.ui.planner
 
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -79,6 +83,7 @@ import java.time.LocalDate
 @Composable
 fun PlannerScreen(onOpenRecipe: (String) -> Unit, vm: PlannerViewModel = hiltViewModel()) {
     val s by vm.state.collectAsStateWithLifecycle()
+    val proposal by vm.proposal.collectAsStateWithLifecycle()
     var addForEpochDay by rememberSaveable { mutableStateOf<Long?>(null) }
     var customDays by rememberSaveable { mutableStateOf(false) }
 
@@ -114,6 +119,16 @@ fun PlannerScreen(onOpenRecipe: (String) -> Unit, vm: PlannerViewModel = hiltVie
                             modifier = Modifier.padding(top = 8.dp),
                         )
                     }
+                    FilledTonalButton(
+                        { vm.suggest() },
+                        Modifier.fillMaxWidth().padding(top = 12.dp),
+                        enabled = s.activeRecipes.isNotEmpty(),
+                        shape = RoundedCornerShape(50),
+                    ) {
+                        Icon(Icons.Outlined.AutoAwesome, null, Modifier.size(18.dp))
+                        Spacer(Modifier.size(8.dp))
+                        Text(stringResource(R.string.planner_suggest))
+                    }
                 }
                 items(s.range.days, key = { it.toEpochDay() }) { day ->
                     DaySection(
@@ -123,6 +138,11 @@ fun PlannerScreen(onOpenRecipe: (String) -> Unit, vm: PlannerViewModel = hiltVie
                 }
             }
         }
+    }
+
+    proposal?.let { p ->
+        val dinner = stringResource(R.string.slot_dinner)
+        ProposalDialog(p, onAccept = { vm.acceptProposal(dinner) }, onReshuffle = vm::reshuffle, onDismiss = vm::dismissProposal)
     }
 
     addForEpochDay?.let { epoch ->
@@ -292,4 +312,41 @@ private fun RecipePicker(recipes: List<RecipeEntity>, selectedId: String?, onSel
             }
         }
     }
+}
+
+/** Vorschau der Vorschläge: erst übernehmen, wenn es passt – oder neu mischen. */
+@Composable
+private fun ProposalDialog(p: PlannerViewModel.Proposal, onAccept: () -> Unit, onReshuffle: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Outlined.AutoAwesome, null) },
+        title = { Text(stringResource(R.string.planner_suggest_title)) },
+        text = {
+            if (p.entries.isEmpty()) {
+                Text(stringResource(R.string.planner_suggest_nothing))
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(stringResource(R.string.planner_suggest_hint), style = MaterialTheme.typography.bodySmall)
+                    p.entries.forEach { (day, recipe) ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(day.pretty(), style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary, modifier = Modifier.width(96.dp))
+                            Text(recipe.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Row {
+                if (p.entries.isNotEmpty()) {
+                    TextButton(onReshuffle) { Text(stringResource(R.string.planner_suggest_reshuffle)) }
+                    TextButton(onAccept) { Text(stringResource(R.string.planner_suggest_accept)) }
+                } else {
+                    TextButton(onDismiss) { Text(stringResource(R.string.action_close)) }
+                }
+            }
+        },
+        dismissButton = if (p.entries.isNotEmpty()) ({ TextButton(onDismiss) { Text(stringResource(R.string.action_cancel)) } }) else null,
+    )
 }
