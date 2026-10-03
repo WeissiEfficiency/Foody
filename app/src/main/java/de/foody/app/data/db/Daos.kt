@@ -30,6 +30,14 @@ interface IngredientDao {
     suspend fun usageCount(id: String): Int
 
     @Query("DELETE FROM ingredient WHERE id = :id") suspend fun delete(id: String)
+
+    // Zusammenführen: alle Verweise auf [from] auf [to] umhängen (innerhalb einer Transaktion aufrufen)
+    @Query("UPDATE recipe_ingredient SET ingredientId = :to WHERE ingredientId = :from")
+    suspend fun repointRecipeLines(from: String, to: String)
+    @Query("UPDATE pantry_item SET ingredientId = :to WHERE ingredientId = :from")
+    suspend fun repointPantry(from: String, to: String)
+    @Query("UPDATE shopping_item SET ingredientId = :to WHERE ingredientId = :from")
+    suspend fun repointShoppingItems(from: String, to: String)
 }
 
 @Dao

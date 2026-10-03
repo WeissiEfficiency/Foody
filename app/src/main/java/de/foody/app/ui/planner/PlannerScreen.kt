@@ -1,6 +1,17 @@
 package de.foody.app.ui.planner
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
+import de.foody.app.ui.common.RecipeImage
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -49,7 +60,6 @@ import de.foody.app.data.db.MealSlotEntity
 import de.foody.app.data.db.RecipeEntity
 import de.foody.app.data.repo.PlanRepository
 import de.foody.app.data.repo.RecipeRepository
-import de.foody.app.ui.common.DropdownField
 import de.foody.app.ui.common.FormColumn
 import de.foody.app.ui.common.ServingsStepper
 import de.foody.app.ui.common.pretty
@@ -222,8 +232,7 @@ private fun AddSlotDialog(
                 if (recipes.isEmpty()) {
                     Text(stringResource(R.string.planner_no_recipes))
                 } else {
-                    DropdownField(stringResource(R.string.field_recipe), recipes.firstOrNull { it.id == recipeId }, recipes, { it.name },
-                        { recipeId = it.id; servings = it.defaultServings })
+                    RecipePicker(recipes, recipeId) { recipeId = it.id; servings = it.defaultServings }
                 }
                 ServingsStepper(servings, { servings = it })
             }
@@ -235,4 +244,42 @@ private fun AddSlotDialog(
         },
         dismissButton = { TextButton(onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
+}
+
+/** Suchbare Rezeptauswahl mit Vorschaubild – bei großen Sammlungen statt eines langen Dropdowns. */
+@Composable
+private fun RecipePicker(recipes: List<RecipeEntity>, selectedId: String?, onSelect: (RecipeEntity) -> Unit) {
+    var query by rememberSaveable { mutableStateOf("") }
+    val matches = remember(query, recipes) {
+        val q = query.trim()
+        recipes.filter { q.isEmpty() || it.name.contains(q, ignoreCase = true) || it.tags.contains(q, ignoreCase = true) }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            query, { query = it },
+            placeholder = { Text(stringResource(R.string.recipe_search)) },
+            leadingIcon = { Icon(Icons.Default.Search, null) },
+            singleLine = true,
+            shape = RoundedCornerShape(50),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 260.dp)) {
+            items(matches, key = { it.id }) { r ->
+                val selected = r.id == selectedId
+                Row(
+                    Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
+                        .background(if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                        .clickable { onSelect(r) }
+                        .padding(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    RecipeImage(r.imageUri, r.name, Modifier.size(44.dp).clip(MaterialTheme.shapes.small), emojiSize = 22.sp)
+                    Text(r.name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f))
+                    if (selected) Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+    }
 }

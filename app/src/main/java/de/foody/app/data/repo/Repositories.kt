@@ -16,6 +16,7 @@ import de.foody.app.data.db.RecipeEntity
 import de.foody.app.data.db.RecipeIngredientEntity
 import de.foody.app.data.db.SeedData
 import de.foody.domain.Dimension
+import de.foody.domain.IngredientCatalog
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Quantity
 import de.foody.domain.RecipeScaler
@@ -27,6 +28,7 @@ import javax.inject.Singleton
 
 @Singleton
 class IngredientRepository @Inject constructor(
+    private val db: FoodyDatabase,
     private val dao: IngredientDao,
     @ApplicationContext private val context: Context,
 ) {
@@ -36,13 +38,17 @@ class IngredientRepository @Inject constructor(
 
     suspend fun save(e: IngredientEntity) = dao.upsert(e.copy(updatedAt = System.currentTimeMillis(), version = e.version + 1))
 
-    /** Legt eine neue Zutat an oder liefert die vorhandene mit gleichem Namen. */
+    /**
+     * Liefert die Zutat zum (über [IngredientCatalog] vereinheitlichten) Namen oder legt sie an.
+     * So zeigen „Mehl“ und „Weizenmehl“ aus verschiedenen Importen auf dieselbe Stammzutat.
+     */
     suspend fun getOrCreate(name: String): IngredientEntity {
-        val trimmed = name.trim()
-        dao.findByName(trimmed)?.let { return it }
+        val canonical = IngredientCatalog.canonicalName(name)
+        dao.findByName(canonical)?.let { return it }
         val now = System.currentTimeMillis()
         val e = IngredientEntity(
-            newId(), trimmed, null, null, null, null, null, null, null, null, null, null, null, null, now, now,
+            newId(), canonical, IngredientCatalog.guessCategory(canonical),
+            null, null, null, null, null, null, null, null, null, null, null, now, now,
         )
         dao.upsert(e)
         return e
@@ -55,12 +61,81 @@ class IngredientRepository @Inject constructor(
         return true
     }
 
+    /**
+     * Führt [fromId] in [intoId] zusammen: Rezeptzeilen, Vorrat und Einkaufseinträge zeigen danach auf [intoId].
+     * Fehlende Nährwerte/Umrechnungsdaten des Ziels werden aus der Quelle übernommen.
+     */
+    suspend fun merge(fromId: String, intoId: String) = db.withTransaction {
+        if (fromId == intoId) return@withTransaction
+        val from = dao.get(fromId) ?: return@withTransaction
+        val into = dao.get(intoId) ?: return@withTransaction
+        mergeInto(from, into)
+    }
+
+    /**
+     * Vereinheitlicht alle Zutatennamen nach [IngredientCatalog] (z. B. „Mehl“ → „Weizenmehl“) und führt
+     * dabei entstehende Dubletten zusammen. Liefert die Zahl der geänderten Zutaten.
+     */
+    suspend fun harmonizeNames(): Int = db.withTransaction {
+        var changed = 0
+        for (e in dao.getAll()) {
+            val current = dao.get(e.id) ?: continue // evtl. schon zusammengeführt
+            val target = IngredientCatalog.canonicalName(current.canonicalName)
+            val existing = dao.findByName(target)
+            when {
+                existing != null && existing.id != current.id -> mergeInto(current, existing)
+                target != current.canonicalName ->
+                    dao.upsert(current.copy(canonicalName = target, category = current.category ?: IngredientCatalog.guessCategory(target)))
+                current.category == null && IngredientCatalog.guessCategory(target) != null ->
+                    dao.upsert(current.copy(category = IngredientCatalog.guessCategory(target)))
+                else -> continue
+            }
+            changed++
+        }
+        changed
+    }
+
+    private suspend fun mergeInto(from: IngredientEntity, into: IngredientEntity) {
+        dao.repointRecipeLines(from.id, into.id)
+        dao.repointPantry(from.id, into.id)
+        dao.repointShoppingItems(from.id, into.id)
+        dao.delete(from.id)
+        dao.upsert(into.fillFrom(from).copy(updatedAt = System.currentTimeMillis()))
+    }
+
+    /**
+     * Legt fehlende Startzutaten an und ergänzt Nährwerte bei gleichnamigen Zutaten ohne Daten
+     * (z. B. „Wasser“, das ein Import schon angelegt hat). Läuft je [SeedData.VERSION] einmal.
+     */
     suspend fun seedIfNeeded() {
         val prefs = context.getSharedPreferences("foody", Context.MODE_PRIVATE)
-        if (prefs.getBoolean("seeded", false)) return
-        dao.insertAll(SeedData.ingredients(System.currentTimeMillis()))
-        prefs.edit().putBoolean("seeded", true).apply()
+        val done = prefs.getInt("seedVersion", if (prefs.getBoolean("seeded", false)) 1 else 0)
+        if (done >= SeedData.VERSION) return
+        db.withTransaction {
+            for (seed in SeedData.ingredients(System.currentTimeMillis())) {
+                val existing = dao.findByName(seed.canonicalName)
+                if (existing == null) dao.insertAll(listOf(seed)) else dao.upsert(existing.fillFrom(seed))
+            }
+        }
+        prefs.edit().putInt("seedVersion", SeedData.VERSION).apply()
     }
+}
+
+/** Übernimmt Nährwerte und Umrechnungsdaten aus [other], wo dieser Eintrag keine hat. */
+private fun IngredientEntity.fillFrom(other: IngredientEntity): IngredientEntity {
+    val withNutrients = if (nutrientBasis == null && other.nutrientBasis != null) {
+        copy(
+            nutrientBasis = other.nutrientBasis, energyKj = other.energyKj, protein = other.protein, carbs = other.carbs,
+            fat = other.fat, fiber = other.fiber, sugar = other.sugar, salt = other.salt, nutrientSource = other.nutrientSource,
+        )
+    } else {
+        this
+    }
+    return withNutrients.copy(
+        category = category ?: other.category,
+        densityGPerMl = densityGPerMl ?: other.densityGPerMl,
+        pieceWeightG = pieceWeightG ?: other.pieceWeightG,
+    )
 }
 
 data class RecipeDraft(
