@@ -3,7 +3,10 @@ package de.foody.app.data.repo
 import android.content.Context
 import android.net.Uri
 import android.provider.DocumentsContract
+import androidx.room.withTransaction
 import dagger.hilt.android.qualifiers.ApplicationContext
+import de.foody.app.data.db.FoodyDatabase
+import de.foody.domain.IngredientCatalog
 import de.foody.domain.MarkdownRecipeImporter
 import de.foody.domain.MeasureUnit
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +21,7 @@ data class ImportResult(val importedIds: List<String>, val failed: Int, val skip
 /** Importiert Rezepte aus Markdown-Dateien (z. B. Web-Clipper-Export von Rezeptseiten). */
 @Singleton
 class RecipeImportRepository @Inject constructor(
+    private val db: FoodyDatabase,
     private val recipes: RecipeRepository,
     private val ingredients: IngredientRepository,
     @param:ApplicationContext private val context: Context,
@@ -32,20 +36,30 @@ class RecipeImportRepository @Inject constructor(
         val ids = mutableListOf<String>()
         var failed = 0
         var skipped = 0
-        for (uri in uris) {
-            runCatching {
-                val text = withContext(Dispatchers.IO) {
-                    context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
-                } ?: error("Datei nicht lesbar")
-                importOne(text, defaultServings, tag, notesTemplate)
-            }.onSuccess { outcome ->
-                when (outcome) {
-                    is Outcome.Imported -> ids += outcome.id
-                    Outcome.AlreadyImported -> skipped++
-                    Outcome.NotRecognized -> failed++
+        val ingredientIds = mutableMapOf<String, String>()
+        // Blöcke statt einer Transaktion pro Rezept: Room benachrichtigt beobachtende Abfragen (Rezeptliste)
+        // nach jeder Transaktion – so lädt die Liste wenige Male statt einmal pro Rezept neu.
+        for (chunk in uris.chunked(CHUNK_SIZE)) {
+            val texts = withContext(Dispatchers.IO) {
+                chunk.map { uri -> runCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() } }.getOrNull() }
+            }
+            db.withTransaction {
+                for (text in texts) {
+                    if (text == null) {
+                        failed++
+                    } else {
+                        runCatching { importOne(text, defaultServings, tag, notesTemplate, ingredientIds) }
+                            .onSuccess { outcome ->
+                                when (outcome) {
+                                    is Outcome.Imported -> ids += outcome.id
+                                    Outcome.AlreadyImported -> skipped++
+                                    Outcome.NotRecognized -> failed++
+                                }
+                            }.onFailure { failed++ }
+                    }
+                    onProgress(ids.size + failed + skipped, uris.size)
                 }
-            }.onFailure { failed++ }
-            onProgress(ids.size + failed + skipped, uris.size)
+            }
         }
         return ImportResult(ids, failed, skipped)
     }
@@ -88,16 +102,25 @@ class RecipeImportRepository @Inject constructor(
 
     /** ID des neuen Rezepts; null, wenn der Text kein Rezept enthält oder die Quelle schon importiert wurde. */
     suspend fun importText(text: String, defaultServings: Int, tag: String, notesTemplate: (String?) -> String): String? =
-        (importOne(text, defaultServings, tag, notesTemplate) as? Outcome.Imported)?.id
+        (importOne(text, defaultServings, tag, notesTemplate, mutableMapOf()) as? Outcome.Imported)?.id
 
-    private suspend fun importOne(text: String, defaultServings: Int, tag: String, notesTemplate: (String?) -> String): Outcome {
+    /** [ingredientIds]: Zwischenspeicher kanonischer Name → Zutaten-ID für die Dauer eines Imports. */
+    private suspend fun importOne(
+        text: String,
+        defaultServings: Int,
+        tag: String,
+        notesTemplate: (String?) -> String,
+        ingredientIds: MutableMap<String, String>,
+    ): Outcome {
         val parsed = MarkdownRecipeImporter.parse(text)
         if (parsed.name.isBlank() || parsed.ingredients.isEmpty()) return Outcome.NotRecognized
         // Gleiche Quelle schon vorhanden (auch archiviert) → nicht doppelt anlegen
         if (parsed.sourceUrl != null && recipes.findBySourceUrl(parsed.sourceUrl!!) != null) return Outcome.AlreadyImported
         val lines = parsed.ingredients.map { ing ->
             RecipeDraft.Line(
-                ingredientId = ingredients.getOrCreate(ing.name).id,
+                ingredientId = ingredientIds.getOrPut(IngredientCatalog.canonicalName(ing.name).lowercase()) {
+                    ingredients.getOrCreate(ing.name).id
+                },
                 // Ohne Zahl → 0 = „nach Bedarf“
                 amount = ing.amount ?: BigDecimal.ZERO,
                 unit = ing.unit ?: MeasureUnit.PIECE,
@@ -120,5 +143,10 @@ class RecipeImportRepository @Inject constructor(
                 sourceUrl = parsed.sourceUrl,
             ),
         ).let(Outcome::Imported)
+    }
+
+    private companion object {
+        /** Rezepte pro Transaktion – groß genug für wenige Listen-Aktualisierungen, klein genug für flüssigen Fortschritt. */
+        const val CHUNK_SIZE = 25
     }
 }
