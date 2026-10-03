@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -115,6 +117,14 @@ fun RecipeGridCard(recipe: RecipeEntity, onClick: () -> Unit, modifier: Modifier
                 recipe.imageUri, recipe.name,
                 Modifier.fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.medium),
             )
+            if (recipe.favorite) {
+                Icon(
+                    Icons.Filled.Favorite, stringResource(R.string.favorite),
+                    tint = de.foody.app.ui.theme.Coral,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(28.dp)
+                        .background(Color.White.copy(alpha = 0.9f), CircleShape).padding(5.dp),
+                )
+            }
             if (recipe.totalMinutes > 0) {
                 MetaPill(
                     stringResource(R.string.minutes_total, recipe.totalMinutes),

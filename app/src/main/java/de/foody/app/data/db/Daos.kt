@@ -88,6 +88,12 @@ interface RecipeDao {
         insertSteps(steps)
     }
 
+    @Query("SELECT * FROM recipe WHERE sourceUrl = :url LIMIT 1")
+    suspend fun findBySourceUrl(url: String): RecipeEntity?
+
+    @Query("UPDATE recipe SET favorite = :favorite, updatedAt = :now WHERE id = :id")
+    suspend fun setFavorite(id: String, favorite: Boolean, now: Long)
+
     @Query("UPDATE recipe SET archivedAt = :at, updatedAt = :now WHERE id = :id")
     suspend fun setArchived(id: String, at: Long?, now: Long)
 
