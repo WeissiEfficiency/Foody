@@ -280,9 +280,12 @@ class PlanRepository @Inject constructor(
         if (slot.cookedAt != null) return@withTransaction
         val recipe = recipeDao.get(slot.recipeId) ?: return@withTransaction
         val pantry = pantryDao.getAll().toMutableList()
-        for (line in recipeDao.getIngredients(recipe.id)) {
+        val lines = recipeDao.getIngredients(recipe.id)
+        // Eine Abfrage für alle Zutaten statt einer je Rezeptzeile
+        val infoById = ingredientDao.getByIds(lines.map { it.ingredientId }.distinct()).associate { it.id to it.toDomain().conversion }
+        for (line in lines) {
             if (line.optional) continue
-            val info = ingredientDao.get(line.ingredientId)?.toDomain()?.conversion ?: continue
+            val info = infoById[line.ingredientId] ?: continue
             var need = Quantity.of(RecipeScaler.scale(line.amount, recipe.defaultServings, slot.servings), line.unit)
             for ((idx, p) in pantry.withIndex()) {
                 if (p.ingredientId != line.ingredientId || need.isZero()) continue

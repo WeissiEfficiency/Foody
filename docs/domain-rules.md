@@ -11,7 +11,8 @@
    erst „gekocht“ bucht Verbrauch ab.
 9. Optionale Zutaten werden standardmäßig nicht eingekauft.
 10. Eine erzeugte Einkaufsliste ist ein Snapshot und ändert sich nur nach expliziter Neuberechnung;
-    diese zeigt hinzugefügt/geändert/entfällt. Abgehakte Einträge werden dabei nie gelöscht.
+    diese zeigt hinzugefügt/geändert/entfällt. Abgehakte Einträge werden dabei nie gelöscht; sie kommen nur zurück
+    auf die Liste, wenn jetzt mehr gebraucht wird als zuvor.
 11. Jeder generierte Listeneintrag speichert seine Herkunft (Planposition, Rezeptzeile, Beitrag).
 12. Kalendertage sind `LocalDate`; Sommer-/Winterzeit hat keinen Einfluss auf die Tageszuordnung.
 13. Import: Eine Zutat ohne Zahl (z. B. „Salz und Pfeffer“) erhält die Menge 0 = „nach Bedarf“. Sie erscheint nicht
@@ -29,3 +30,5 @@
     gehört zu einer Zutat nur, wenn sie direkt davor steht (höchstens zwei kleingeschriebene Wörter dazwischen).
 20. Import: Mengenspannen („2 - 3 EL“) rechnen mit der unteren Grenze; die obere bleibt als Hinweis („bis 3“).
     Brüche und gemischte Zahlen („1/2“, „1 1/2“, „1½“) werden als Zahl gelesen, nie nur der Zähler.
+21. Stück, Packungen und Dosen werden auf der Einkaufsliste auf ganze Einheiten aufgerundet (nach Vorratsabzug);
+    Gramm und Milliliter bleiben exakt. Rechenrauschen unter 0,005 löst kein zusätzliches Stück aus.

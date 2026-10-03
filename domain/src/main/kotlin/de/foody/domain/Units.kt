@@ -55,6 +55,13 @@ data class Quantity(val baseAmount: BigDecimal, val dimension: Dimension) {
 
     fun isZero(): Boolean = baseAmount.signum() == 0
 
+    /**
+     * Auf ganze Basiseinheiten aufgerundet. Vorher auf zwei Stellen gerundet, damit Rechenrauschen aus der
+     * Skalierung (2,000001 Stk.) kein zusätzliches Stück auslöst.
+     */
+    fun roundedUpToWhole(): Quantity =
+        copy(baseAmount = baseAmount.setScale(2, RoundingMode.HALF_UP).setScale(0, RoundingMode.CEILING))
+
     fun amountIn(unit: MeasureUnit): BigDecimal {
         require(unit.dimension == dimension)
         return baseAmount.divide(unit.factorToBase, MATH_SCALE, RoundingMode.HALF_UP).stripTrailingZeros()

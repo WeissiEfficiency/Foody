@@ -16,7 +16,8 @@ data class ShoppingNeed(
     val fromPantry: Quantity,
     val sources: List<NeedSource>,
 ) {
-    val toBuy: Quantity get() = required.minusClamped(fromPantry)
+    /** Was noch zu kaufen ist; Stück, Packungen und Dosen ganzzahlig aufgerundet (niemand kauft 0,3 Zwiebeln). */
+    val toBuy: Quantity get() = required.minusClamped(fromPantry).let { if (it.dimension.countable) it.roundedUpToWhole() else it }
     val key: String get() = "$ingredientId|${required.dimension}"
 }
 

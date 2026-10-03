@@ -20,6 +20,9 @@ interface IngredientDao {
     @Query("SELECT * FROM ingredient WHERE id = :id")
     suspend fun get(id: String): IngredientEntity?
 
+    @Query("SELECT * FROM ingredient WHERE id IN (:ids)")
+    suspend fun getByIds(ids: Collection<String>): List<IngredientEntity>
+
     @Query("SELECT * FROM ingredient WHERE canonicalName = :name COLLATE NOCASE LIMIT 1")
     suspend fun findByName(name: String): IngredientEntity?
 
