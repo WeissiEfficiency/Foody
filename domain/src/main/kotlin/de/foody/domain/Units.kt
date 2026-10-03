@@ -95,7 +95,8 @@ object UnitConverter {
         if (q.dimension == target) return q
         val grams: BigDecimal = when (q.dimension) {
             Dimension.MASS -> q.baseAmount
-            Dimension.VOLUME -> info.densityGPerMl?.let { q.baseAmount * it } ?: return null
+            // Dichte 0 wie unbekannt: sonst ginge ml → g, aber nicht zurück (markCooked rechnet hin und her)
+            Dimension.VOLUME -> info.densityGPerMl?.takeIf { it.signum() > 0 }?.let { q.baseAmount * it } ?: return null
             Dimension.COUNT, Dimension.PACKAGE, Dimension.CAN ->
                 info.gramsPerUnit(q.dimension)?.let { q.baseAmount * it } ?: return null
         }

@@ -17,9 +17,10 @@ object StepTimerParser {
     private const val MINUTES = """(?:Minuten|Minute|Min\.?)(?!\p{L})"""
     private const val SECONDS = """(?:Sekunden|Sekunde|Sek\.?)(?!\p{L})"""
 
-    // Zahl oder Spanne („10 - 15“, „4–5“), dann Einheit; optional „1 Stunde 30 Minuten“ als Kombination
+    // Zahl oder Spanne („10 - 15“, „4–5“, „10 bis 15“), dann Einheit;
+    // optional „1 Stunde (und) 30 Minuten“ als Kombination
     private val pattern = Regex(
-        """($NUM)(?:\s*[-–]\s*$NUM)?\s*($HOURS|$MINUTES|$SECONDS)(?:\s+($NUM)\s*($MINUTES))?""",
+        """($NUM)(?:\s*[-–]\s*$NUM|\s+bis\s+$NUM)?\s*($HOURS|$MINUTES|$SECONDS)(?:\s+(?:und\s+)?($NUM)\s*($MINUTES))?""",
         RegexOption.IGNORE_CASE,
     )
 
