@@ -1,5 +1,7 @@
 package de.foody.app
 
+import kotlin.test.assertTrue
+import de.foody.app.data.db.MIGRATION_2_3
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -43,6 +45,28 @@ class MigrationTest {
                 assertEquals(0 to "https://example.org/r/2.html", rows["single-line"])
             }
             db.query("SELECT COUNT(*) FROM recipe WHERE favorite IS NULL").use { c -> c.moveToFirst(); assertEquals(0, c.getInt(0)) }
+        }
+    }
+
+    @Test fun migrate2To3AddsItemNoteAndRecipeRatingWithoutTouchingData() {
+        helper.createDatabase(dbName, 2).use { db ->
+            db.execSQL(
+                "INSERT INTO recipe (id, name, defaultServings, prepMinutes, cookMinutes, imageUri, notes, tags, archivedAt, createdAt, updatedAt, version, favorite, sourceUrl) " +
+                    "VALUES ('r', 'Suppe', 4, NULL, NULL, NULL, NULL, '', NULL, 0, 0, 1, 1, NULL)",
+            )
+            db.execSQL("INSERT INTO shopping_list (id, name, rangeStart, rangeEnd, generationVersion, createdAt, updatedAt) VALUES ('l', 'Liste', NULL, NULL, 1, 0, 0)")
+            db.execSQL(
+                "INSERT INTO shopping_item (id, listId, ingredientId, name, amount, unit, checked, manual, category, sortOrder) " +
+                    "VALUES ('i', 'l', NULL, 'Milch', NULL, NULL, 0, 1, NULL, 0)",
+            )
+        }
+        helper.runMigrationsAndValidate(dbName, 3, true, MIGRATION_2_3).use { db ->
+            db.query("SELECT favorite, rating FROM recipe WHERE id = 'r'").use { c ->
+                c.moveToFirst(); assertEquals(1, c.getInt(0)); assertTrue(c.isNull(1))
+            }
+            db.query("SELECT name, note FROM shopping_item WHERE id = 'i'").use { c ->
+                c.moveToFirst(); assertEquals("Milch", c.getString(0)); assertTrue(c.isNull(1))
+            }
         }
     }
 }

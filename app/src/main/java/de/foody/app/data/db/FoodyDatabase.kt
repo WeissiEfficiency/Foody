@@ -23,7 +23,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ShoppingItemEntity::class,
         ShoppingItemSourceEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -58,5 +58,17 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
     }
 }
 
+/**
+ * v2 → v3: Angaben zu Einkaufsartikeln und eigene Rezeptbewertung. Beide Spalten sind optional (NULL),
+ * bestehende Daten bleiben unverändert. In einer Migration gebündelt, damit nicht kurz hintereinander zwei
+ * Schemaversionen entstehen.
+ */
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE shopping_item ADD COLUMN note TEXT")
+        db.execSQL("ALTER TABLE recipe ADD COLUMN rating INTEGER")
+    }
+}
+
 /** Alle Migrationen in Reihenfolge – nie fallbackToDestructiveMigration (docs/architecture.md). */
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2)
+val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3)

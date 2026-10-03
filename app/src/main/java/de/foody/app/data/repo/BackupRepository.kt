@@ -60,6 +60,8 @@ data class BackupDto(
         val notes: String?, val tags: String, val archivedAt: Long?, val createdAt: Long, val updatedAt: Long,
         // Seit DB v2; Standardwerte halten ältere Sicherungen lesbar
         val favorite: Boolean = false, val sourceUrl: String? = null,
+        // Seit DB v3
+        val rating: Int? = null,
     )
     @Serializable data class RecipeIngredient(
         val id: String, val recipeId: String, val ingredientId: String, val amount: String, val unit: String,
@@ -79,6 +81,8 @@ data class BackupDto(
     @Serializable data class ShopItem(
         val id: String, val listId: String, val ingredientId: String?, val name: String, val amount: String?, val unit: String?,
         val checked: Boolean, val manual: Boolean, val category: String?, val sortOrder: Int,
+        // Seit DB v3
+        val note: String? = null,
     )
     @Serializable data class ShopSource(
         val id: String, val itemId: String, val mealSlotId: String, val recipeIngredientId: String, val recipeName: String,
@@ -193,7 +197,7 @@ class BackupRepository @Inject constructor(
                     it.energyKj.s(), it.protein.s(), it.carbs.s(), it.fat.s(), it.fiber.s(), it.sugar.s(), it.salt.s(), it.nutrientSource, it.createdAt, it.updatedAt)
             },
             recipes = r.getAll().map {
-                BackupDto.Recipe(it.id, it.name, it.defaultServings, it.prepMinutes, it.cookMinutes, it.imageUri, it.notes, it.tags, it.archivedAt, it.createdAt, it.updatedAt, it.favorite, it.sourceUrl)
+                BackupDto.Recipe(it.id, it.name, it.defaultServings, it.prepMinutes, it.cookMinutes, it.imageUri, it.notes, it.tags, it.archivedAt, it.createdAt, it.updatedAt, it.favorite, it.sourceUrl, it.rating)
             },
             recipeIngredients = r.getAllIngredients().map {
                 BackupDto.RecipeIngredient(it.id, it.recipeId, it.ingredientId, it.amount.toPlainString(), it.unit.name, it.sortOrder, it.preparationNote, it.optional)
@@ -203,7 +207,7 @@ class BackupRepository @Inject constructor(
             pantry = p.getAll().map { BackupDto.Pantry(it.id, it.ingredientId, it.amount.toPlainString(), it.unit.name, it.bestBeforeDate?.toString(), it.updatedAt) },
             shoppingLists = s.getLists().map { BackupDto.ShopList(it.id, it.name, it.rangeStart?.toString(), it.rangeEnd?.toString(), it.generationVersion, it.createdAt, it.updatedAt) },
             shoppingItems = s.getAllItems().map {
-                BackupDto.ShopItem(it.id, it.listId, it.ingredientId, it.name, it.amount.s(), it.unit?.name, it.checked, it.manual, it.category, it.sortOrder)
+                BackupDto.ShopItem(it.id, it.listId, it.ingredientId, it.name, it.amount.s(), it.unit?.name, it.checked, it.manual, it.category, it.sortOrder, it.note)
             },
             shoppingSources = s.getAllSources().map {
                 BackupDto.ShopSource(it.id, it.shoppingItemId, it.mealSlotId, it.recipeIngredientId, it.recipeName, it.date.toString(), it.contributedAmount.toPlainString(), it.unit.name)
@@ -230,6 +234,7 @@ class BackupRepository @Inject constructor(
                     id = it.id, name = it.name, defaultServings = it.servings, prepMinutes = it.prep, cookMinutes = it.cook,
                     imageUri = it.imageUri, notes = it.notes, tags = it.tags, archivedAt = it.archivedAt,
                     createdAt = it.createdAt, updatedAt = it.updatedAt, favorite = it.favorite, sourceUrl = it.sourceUrl,
+                    rating = it.rating,
                 ),
             )
         }
@@ -260,6 +265,7 @@ class BackupRepository @Inject constructor(
             ShoppingItemEntity(
                 id = it.id, listId = it.listId, ingredientId = it.ingredientId, name = it.name, amount = it.amount.bd(),
                 unit = it.unit?.let(MeasureUnit::valueOf), checked = it.checked, manual = it.manual, category = it.category, sortOrder = it.sortOrder,
+                note = it.note,
             )
         })
         db.shoppingDao().insertSources(d.shoppingSources.map {

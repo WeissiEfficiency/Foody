@@ -49,6 +49,8 @@ data class RecipeEntity(
     @ColumnInfo(defaultValue = "0") val favorite: Boolean = false,
     /** Quell-URL eines importierten Rezepts; erkennt doppelte Importe. Seit DB v2. */
     val sourceUrl: String? = null,
+    /** Eigene Bewertung 1–5, null = unbewertet. Seit DB v3. */
+    val rating: Int? = null,
 )
 
 @Entity(
@@ -142,6 +144,8 @@ data class ShoppingItemEntity(
     val manual: Boolean = false,
     val category: String? = null,
     val sortOrder: Int,
+    /** Eigene Angabe zum Artikel („500 g“, „Bio“, „reif“) – wie die Spezifikation in Einkaufs-Apps. Seit DB v3. */
+    val note: String? = null,
 )
 
 @Entity(

@@ -169,6 +169,7 @@ interface ShoppingDao {
     @Insert suspend fun insertSources(s: List<ShoppingItemSourceEntity>)
     @Query("DELETE FROM shopping_item_source WHERE shoppingItemId = :itemId") suspend fun deleteSources(itemId: String)
     @Query("UPDATE shopping_item SET checked = :checked WHERE id = :id") suspend fun setChecked(id: String, checked: Boolean)
+    @Query("UPDATE shopping_item SET note = :note WHERE id = :id") suspend fun setNote(id: String, note: String?)
     @Query("DELETE FROM shopping_item WHERE id = :id") suspend fun deleteItem(id: String)
     @Query("DELETE FROM shopping_list WHERE id = :id") suspend fun deleteList(id: String)
 

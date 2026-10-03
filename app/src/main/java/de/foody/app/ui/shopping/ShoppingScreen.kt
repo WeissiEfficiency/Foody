@@ -1,5 +1,6 @@
 package de.foody.app.ui.shopping
 
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -222,18 +223,30 @@ fun ShoppingScreen(vm: ShoppingViewModel = hiltViewModel()) {
     }
 
     sources?.let { (item, list) ->
+        // Langdruck auf eine Kachel: Angabe ergänzen („500 g“, „Bio“), Herkunft sehen, Artikel entfernen
+        var note by rememberSaveable(item.id) { mutableStateOf(item.note.orEmpty()) }
         AlertDialog(
             onDismissRequest = vm::hideSources,
             title = { Text(item.name) },
             text = {
-                Column {
-                    if (list.isEmpty()) Text(stringResource(R.string.sources_none))
-                    list.forEach { src ->
-                        Text("${formatAmount(src.contributedAmount, src.unit)} · ${src.recipeName} (${src.date.pretty()})")
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        note, { note = it }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(R.string.shopping_item_note)) },
+                        placeholder = { Text(stringResource(R.string.shopping_item_note_hint)) },
+                    )
+                    if (list.isNotEmpty()) {
+                        Text(stringResource(R.string.sources_title), style = MaterialTheme.typography.labelLarge)
+                        list.forEach { src ->
+                            Text("${formatAmount(src.contributedAmount, src.unit)} · ${src.recipeName} (${src.date.pretty()})",
+                                style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
             },
-            confirmButton = { TextButton(vm::hideSources) { Text(stringResource(R.string.action_close)) } },
+            confirmButton = {
+                TextButton({ vm.setNote(item, note); vm.hideSources() }) { Text(stringResource(R.string.action_save)) }
+            },
             dismissButton = { TextButton({ vm.hideSources(); vm.delete(item) }) { Text(stringResource(R.string.action_remove)) } },
         )
     }

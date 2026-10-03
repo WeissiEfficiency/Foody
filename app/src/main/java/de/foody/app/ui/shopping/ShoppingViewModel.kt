@@ -172,6 +172,7 @@ class ShoppingViewModel @Inject constructor(
 
     fun showSources(item: ShoppingItemEntity) = viewModelScope.launch { _sources.value = item to repo.getSources(item.id) }
     fun hideSources() { _sources.value = null }
+    fun setNote(item: ShoppingItemEntity, note: String) = viewModelScope.launch { repo.setNote(item.id, note) }
 
     suspend fun snapshot(): ShoppingListSnapshot? = state.value.selected?.id?.let { repo.snapshot(it) }
 }

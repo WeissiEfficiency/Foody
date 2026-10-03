@@ -221,6 +221,8 @@
     <string name="shopping_nothing_hint">Suche oben oder tippe unten im Katalog auf einen Artikel. Gekauftes antippen.</string>
     <string name="shopping_state_on_list">auf der Liste</string>
     <string name="shopping_state_not_on_list">nicht auf der Liste</string>
+    <string name="shopping_item_note">Angabe</string>
+    <string name="shopping_item_note_hint">z. B. 500 g, Bio, reif</string>
     <string name="action_clear">Leeren</string>
     <string name="shopping_title_empty">Deine Liste</string>
     <string name="recipe_add_to_shopping">Auf die Einkaufsliste</string>
