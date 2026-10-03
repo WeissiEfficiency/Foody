@@ -3,6 +3,12 @@ package de.foody.app.ui.settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import de.foody.app.ui.common.ScreenHeader
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,7 +17,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -19,7 +24,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,7 +41,6 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.foody.app.R
 import de.foody.app.data.repo.BackupRepository
-import de.foody.app.ui.common.SectionTitle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -59,7 +62,6 @@ class SettingsViewModel @Inject constructor(private val backup: BackupRepository
     fun deleteAll() = run(R.string.data_deleted) { backup.deleteAll() }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hiltViewModel()) {
     val message by vm.message.collectAsStateWithLifecycle()
@@ -77,35 +79,38 @@ fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hilt
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_settings)) }) },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
-        Column(
-            Modifier.padding(padding).padding(16.dp).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SectionTitle(stringResource(R.string.ingredients_title))
-            OutlinedButton(onManageIngredients, Modifier.fillMaxWidth()) { Text(stringResource(R.string.ingredients_manage)) }
-
-            SectionTitle(stringResource(R.string.backup_title))
-            Text(stringResource(R.string.backup_hint), style = MaterialTheme.typography.bodySmall)
-            OutlinedButton({ exportLauncher.launch("foody-backup-${LocalDate.now()}.json") }, Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.backup_export))
+        Column(Modifier.padding(padding).verticalScroll(rememberScrollState())) {
+            ScreenHeader(stringResource(R.string.nav_more), stringResource(R.string.nav_settings))
+            Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SettingsCard(stringResource(R.string.ingredients_title)) {
+                    OutlinedButton(onManageIngredients, Modifier.fillMaxWidth(), shape = RoundedCornerShape(50)) {
+                        Text(stringResource(R.string.ingredients_manage))
+                    }
+                }
+                SettingsCard(stringResource(R.string.backup_title)) {
+                    Text(stringResource(R.string.backup_hint), style = MaterialTheme.typography.bodySmall)
+                    OutlinedButton({ exportLauncher.launch("foody-backup-${LocalDate.now()}.json") }, Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(50)) { Text(stringResource(R.string.backup_export)) }
+                    OutlinedButton({ importLauncher.launch(arrayOf("application/json")) }, Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(50)) { Text(stringResource(R.string.backup_import)) }
+                }
+                SettingsCard(stringResource(R.string.privacy_title)) {
+                    Text(stringResource(R.string.privacy_text), style = MaterialTheme.typography.bodyMedium)
+                    Button(
+                        { confirmDelete = true },
+                        Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    ) { Text(stringResource(R.string.data_delete_all)) }
+                }
+                SettingsCard(stringResource(R.string.about_title)) {
+                    Text(stringResource(R.string.nutrition_disclaimer), style = MaterialTheme.typography.bodySmall)
+                }
+                Spacer(Modifier.height(24.dp))
             }
-            OutlinedButton({ importLauncher.launch(arrayOf("application/json")) }, Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.backup_import))
-            }
-
-            SectionTitle(stringResource(R.string.privacy_title))
-            Text(stringResource(R.string.privacy_text), style = MaterialTheme.typography.bodyMedium)
-            Button(
-                { confirmDelete = true },
-                Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-            ) { Text(stringResource(R.string.data_delete_all)) }
-
-            SectionTitle(stringResource(R.string.about_title))
-            Text(stringResource(R.string.nutrition_disclaimer), style = MaterialTheme.typography.bodySmall)
         }
     }
 
@@ -126,5 +131,20 @@ fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hilt
             confirmButton = { TextButton({ vm.deleteAll(); confirmDelete = false }) { Text(stringResource(R.string.action_delete)) } },
             dismissButton = { TextButton({ confirmDelete = false }) { Text(stringResource(R.string.action_cancel)) } },
         )
+    }
+}
+
+@Composable
+private fun SettingsCard(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        shadowElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            content()
+        }
     }
 }
