@@ -172,6 +172,7 @@ class RecipeRepository @Inject constructor(private val dao: RecipeDao) {
     /** Suche in Name, Tags und Zutaten; % und _ werden wörtlich genommen. */
     fun observe(query: String, archived: Boolean) = dao.observe(escapeLike(query), archived)
     fun observeActive() = dao.observeActive()
+    fun observeAll() = dao.observeAll()
     fun observeRecipe(id: String) = dao.observe(id)
     fun observeIngredients(id: String) = dao.observeIngredients(id)
     fun observeSteps(id: String) = dao.observeSteps(id)

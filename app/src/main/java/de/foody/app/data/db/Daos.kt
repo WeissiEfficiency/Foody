@@ -57,6 +57,10 @@ interface RecipeDao {
     @Query("SELECT * FROM recipe WHERE archivedAt IS NULL ORDER BY name COLLATE NOCASE")
     fun observeActive(): Flow<List<RecipeEntity>>
 
+    /** Alle Rezepte inkl. archivierter – ohne die Such-Unterabfrage über Zutaten. */
+    @Query("SELECT * FROM recipe ORDER BY name COLLATE NOCASE")
+    fun observeAll(): Flow<List<RecipeEntity>>
+
     @Query("SELECT * FROM recipe WHERE id = :id") fun observe(id: String): Flow<RecipeEntity?>
     @Query("SELECT * FROM recipe WHERE id = :id") suspend fun get(id: String): RecipeEntity?
     @Query("SELECT * FROM recipe") suspend fun getAll(): List<RecipeEntity>
