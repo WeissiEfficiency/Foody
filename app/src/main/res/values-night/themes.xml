@@ -3,4 +3,11 @@
     <style name="Theme.Foody" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/foody_background</item>
     </style>
+
+    <style name="Theme.Foody.Starting" parent="Theme.SplashScreen.IconBackground">
+        <item name="windowSplashScreenBackground">@color/foody_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
+        <item name="postSplashScreenTheme">@style/Theme.Foody</item>
+    </style>
 </resources>
