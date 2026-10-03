@@ -33,6 +33,21 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    testOptions {
+        // Gradle Managed Device: Gradle lädt das Systemabbild und startet den Emulator selbst –
+        // so laufen die Room-/Migrationstests auch in der CI (./gradlew ciDeviceDebugAndroidTest).
+        // ATD = schlankes, auf automatisierte Tests optimiertes Abbild.
+        managedDevices {
+            localDevices {
+                create("ciDevice") {
+                    device = "Pixel 6"
+                    apiLevel = 34
+                    systemImageSource = "aosp-atd"
+                }
+            }
+        }
+    }
+
     buildFeatures {
         compose = true
     }
