@@ -8,11 +8,13 @@ konsolidierte Einkaufslisten.
 ## Funktionen
 
 - **Rezepte:** anlegen, bearbeiten, duplizieren, archivieren, **Favoriten**; suchen nach Name, Tags und
-  **Zutaten** („Zucchini“); Bild über den System-Photo-Picker, Portionen, Zeiten, Zutaten mit
+  **Zutaten** („Zucchini“); Bild über den System-Photo-Picker oder **eigenes Foto mit der Kamera**, Portionen, Zeiten, Zutaten mit
   Menge/Einheit/Hinweis/optional, Arbeitsschritte, Notizen.
-- **Startseite:** drei „Rezepte des Tages“, Bildraster, Filter nach Tags und Favoriten.
+- **Startseite:** drei „Rezepte des Tages“, Bildraster, Filter nach Tags und Favoriten; **„Aus dem Vorrat“** zeigt,
+  was sich mit dem Vorrat kochen lässt (höchstens eine fehlende Zutat). Auf Tablets Liste und Rezept nebeneinander.
 - **Kochmodus:** ein Schritt pro Seite, Display bleibt an; „Du brauchst“ zeigt die im Schritt genannte Teilmenge
-  („0,25 l von 0,5 l Bier“); erkannte Zeitangaben („20 Minuten“) als **Timer** mit Signalton.
+  („0,25 l von 0,5 l Bier“); erkannte Zeitangaben („20 Minuten“) als **Timer** mit Signalton; nach dem letzten
+  Schritt die Einladung zum ersten eigenen Foto.
 - **Portionen skalieren** in der Detailansicht und im Planer.
 - **Nährwerte:** Energie (kJ/kcal), Eiweiß, Kohlenhydrate, Fett, Ballaststoffe, Zucker, Salz – pro Rezept und pro
   Portion, mit Vollständigkeitsanzeige („zu 82 % vollständig“) statt stiller Nullen.
@@ -29,7 +31,7 @@ konsolidierte Einkaufslisten.
 - **Rezept-Import aus Markdown** (z. B. Web-Clipper-Export von Chefkoch): Titel, Quelle, Zutaten inkl. Gruppen,
   Mengen/Einheiten, Zubereitung; mehrere Dateien oder ein **ganzer Ordner** auf einmal. Mengen ohne Zahl werden
   „nach Bedarf“ (n. B.). Bereits importierte Quellen werden übersprungen.
-- **JSON-Export/-Import** und vollständige lokale Löschung.
+- **Sicherung als ZIP** (Daten und Fotos) und Wiederherstellung; vollständige lokale Löschung.
 
 ## Projektstruktur
 
@@ -42,7 +44,7 @@ Details: [`docs/architecture.md`](docs/architecture.md), fachliche Invarianten: 
 
 ## Bauen & Testen
 
-Voraussetzungen: JDK 17+ (z. B. das JBR von Android Studio), Android SDK (compileSdk 36). AGP 9, Gradle 9.
+Voraussetzungen: JDK 17+ (z. B. das JBR von Android Studio), Android SDK (compileSdk 37). AGP 9, Gradle 9.
 
 ```bash
 ./gradlew :domain:test            # schnelle JVM-Tests des Rechenkerns
@@ -50,6 +52,29 @@ Voraussetzungen: JDK 17+ (z. B. das JBR von Android Studio), Android SDK (compil
 ./gradlew :app:assembleDebug
 ./gradlew :app:connectedCheck     # Room-, Migrations- und End-to-End-Tests auf Gerät/Emulator
 ```
+
+Debug-Builds heißen auf dem Gerät „Foody Debug“ (App-ID `de.foody.app.debug`) und laufen neben der
+Alltagsversion, ohne deren Daten zu berühren.
+
+## Auf dem eigenen Handy installieren (signierter Release-Build)
+
+Einmalig einen Signaturschlüssel erzeugen (PowerShell; `keytool` fragt nach Passwort und Namen):
+
+```powershell
+& "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -genkeypair -keystore "$env:USERPROFILE\.android\foody-release.jks" -alias foody -keyalg RSA -keysize 4096 -validity 10000
+```
+
+Dann `keystore.properties.example` als `keystore.properties` kopieren und Pfad sowie Passwörter eintragen.
+Die Datei ist in `.gitignore` und landet nie im Repository. **Schlüssel und Passwort sichern** (z. B. im
+Passwortmanager): Ohne sie lassen sich Updates nicht mehr installieren, ohne die App samt Daten zu entfernen.
+
+```powershell
+.\gradlew :app:assembleRelease   # → app\build\outputs\apk\release\app-release.apk
+```
+
+Die APK aufs Handy kopieren und öffnen (einmalig „Installation aus dieser Quelle zulassen“) oder per Kabel:
+`adb install -r app\build\outputs\apk\release\app-release.apk`. Ohne `keystore.properties` entsteht
+`app-release-unsigned.apk`, die sich nicht installieren lässt – so baut auch die CI.
 
 ## Datenschutz
 
