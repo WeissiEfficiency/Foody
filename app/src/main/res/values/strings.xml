@@ -66,6 +66,9 @@
     <string name="kcal_amount" tools:ignore="PluralsCandidate">%1$d kcal</string>
     <string name="kcal_gap_values">ohne Werte</string>
     <string name="kcal_gap_weight">ohne Gewicht</string>
+    <string name="ingredients_ready" tools:ignore="PluralsCandidate">%1$d von %2$d bereit</string>
+    <string name="ingredients_reset">Zurücksetzen</string>
+    <string name="ingredients_tap_hint">Antippen zum Abhaken</string>
     <string name="recipe_select_hint">Wähle links ein Rezept aus.</string>
     <string name="recipe_empty">Noch keine Rezepte. Lege dein erstes Rezept an.</string>
     <string name="recipe_no_match">Keine passenden Rezepte gefunden.</string>
