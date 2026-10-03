@@ -1,5 +1,8 @@
 package de.foody.app.ui.shopping
 
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -158,12 +161,10 @@ fun ShoppingScreen(vm: ShoppingViewModel = hiltViewModel()) {
             }
             val selected = s.selected
             if (selected == null) {
-                EmptyState(stringResource(R.string.shopping_empty), Modifier.weight(1f))
-                OutlinedButton(
-                    { vm.createEmpty(defaultEmptyName) },
-                    Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(50),
-                ) { Text(stringResource(R.string.shopping_create_empty)) }
+                EmptyState(
+                    stringResource(R.string.shopping_empty), Modifier.weight(1f), icon = Icons.Outlined.ShoppingCart,
+                    actionLabel = stringResource(R.string.shopping_create_empty), onAction = { vm.createEmpty(defaultEmptyName) },
+                )
                 Spacer(Modifier.height(88.dp))
                 return@Column
             }
@@ -180,11 +181,11 @@ fun ShoppingScreen(vm: ShoppingViewModel = hiltViewModel()) {
                 // Offene Artikel nach Abteilung gruppiert – so läuft man den Supermarkt einmal ab
                 open.groupBy { it.category }.toSortedMap(compareBy(nullsLast()) { it }).forEach { (category, items) ->
                     item(key = "cat-$category") { GroupTitle(category ?: stringResource(R.string.shopping_category_other)) }
-                    items(items, key = { it.id }) { item -> ShoppingRow(item, vm) }
+                    items(items, key = { it.id }) { item -> ShoppingRow(item, vm, Modifier.animateItem()) }
                 }
                 if (done.isNotEmpty()) {
                     item(key = "done") { GroupTitle(stringResource(R.string.shopping_done_section, done.size)) }
-                    items(done, key = { it.id }) { item -> ShoppingRow(item, vm) }
+                    items(done, key = { it.id }) { item -> ShoppingRow(item, vm, Modifier.animateItem()) }
                 }
             }
         }
@@ -337,17 +338,22 @@ private fun GroupTitle(text: String) {
 }
 
 @Composable
-private fun ShoppingRow(item: ShoppingItemEntity, vm: ShoppingViewModel) {
+private fun ShoppingRow(item: ShoppingItemEntity, vm: ShoppingViewModel, modifier: Modifier = Modifier) {
     val stateDesc = stringResource(if (item.checked) R.string.state_checked else R.string.state_open)
+    val haptic = LocalHapticFeedback.current
+    val toggle: () -> Unit = {
+        haptic.performHapticFeedback(if (item.checked) HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn)
+        vm.toggle(item)
+    }
     Surface(
-        onClick = { vm.toggle(item) },
+        onClick = toggle,
         shape = MaterialTheme.shapes.medium,
         color = if (item.checked) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerLowest,
         shadowElevation = if (item.checked) 0.dp else 1.dp,
-        modifier = Modifier.fillMaxWidth().semantics { stateDescription = stateDesc },
+        modifier = modifier.fillMaxWidth().semantics { stateDescription = stateDesc },
     ) {
         Row(Modifier.padding(start = 14.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            RoundCheck(item.checked, item.name, { vm.toggle(item) })
+            RoundCheck(item.checked, item.name, toggle)
             Text(
                 item.name,
                 style = MaterialTheme.typography.bodyLarge,

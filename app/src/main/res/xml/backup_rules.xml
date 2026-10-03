@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 8–11 (Auto Backup). Wirkt nur, falls allowBackup je aktiviert wird: Dann geht nichts ungefragt in die
+  Cloud. Gesichert wird explizit per ZIP in den Einstellungen. Ab Android 12 gilt data_extraction_rules.xml.
+-->
+<full-backup-content>
+    <exclude domain="root" path="." />
+    <exclude domain="file" path="." />
+    <exclude domain="database" path="." />
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="external" path="." />
+</full-backup-content>

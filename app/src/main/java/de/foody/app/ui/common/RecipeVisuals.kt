@@ -1,7 +1,12 @@
 package de.foody.app.ui.common
 
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.foundation.border
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,9 +78,11 @@ fun recipeEmoji(name: String): String {
         .minByOrNull { it.first }?.second ?: "🍽️"
 }
 
-private fun gradientFor(name: String): Brush {
+private fun gradientFor(name: String, dark: Boolean): Brush {
     val (a, b) = placeholderGradients[Math.floorMod(name.hashCode(), placeholderGradients.size)]
-    return Brush.linearGradient(listOf(a, b))
+    // Im Dark Mode abgedunkelt, damit helle Pastelltöne nicht blenden
+    return if (dark) Brush.linearGradient(listOf(lerp(a, Color.Black, 0.45f), lerp(b, Color.Black, 0.45f)))
+    else Brush.linearGradient(listOf(a, b))
 }
 
 /** Foto des Rezepts oder ein farbiger Platzhalter mit passendem Emoji. Füllt den Modifier. */
@@ -84,7 +91,7 @@ fun RecipeImage(imageUri: String?, name: String, modifier: Modifier = Modifier, 
     if (imageUri != null) {
         AsyncImage(imageUri, stringResource(R.string.recipe_image), contentScale = ContentScale.Crop, modifier = modifier)
     } else {
-        Box(modifier.background(gradientFor(name)), contentAlignment = Alignment.Center) {
+        Box(modifier.background(gradientFor(name, MaterialTheme.colorScheme.background.luminance() < 0.5f)), contentAlignment = Alignment.Center) {
             // Rein dekorativ: TalkBack soll nicht das Emoji vorlesen
             Text(recipeEmoji(name), fontSize = emojiSize, modifier = Modifier.clearAndSetSemantics {})
         }
@@ -110,20 +117,34 @@ val RecipeEntity.totalMinutes: Int get() = (prepMinutes ?: 0) + (cookMinutes ?: 
 
 /** Rasterkarte: großes quadratisches Bild, darunter Titel und Zeit – wie in Rezept-Feeds. */
 @Composable
-fun RecipeGridCard(recipe: RecipeEntity, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = onClick)) {
+fun RecipeGridCard(
+    recipe: RecipeEntity,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    selected: Boolean = false,
+    /** Kurzer Hinweis oben links im Bild, z. B. „Alles da“ beim Vorratsfilter. */
+    badge: String? = null,
+) {
+    Column(
+        modifier.clip(MaterialTheme.shapes.medium)
+            .selectable(selected = selected, onClick = onClick, role = Role.Button),
+    ) {
         Box {
             RecipeImage(
                 recipe.imageUri, recipe.name,
-                Modifier.fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.medium),
+                Modifier.sharedRecipeImage(recipe.id).fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.medium)
+                    .then(if (selected) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium) else Modifier),
             )
             if (recipe.favorite) {
                 Icon(
                     Icons.Filled.Favorite, stringResource(R.string.favorite),
-                    tint = de.foody.app.ui.theme.Coral,
+                    tint = de.foody.app.ui.theme.FavoriteRed,
                     modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(28.dp)
                         .background(Color.White.copy(alpha = 0.9f), CircleShape).padding(5.dp),
                 )
+            }
+            if (badge != null) {
+                MetaPill(badge, Modifier.align(Alignment.TopStart).padding(8.dp), icon = Icons.Outlined.Inventory2, onImage = true)
             }
             if (recipe.totalMinutes > 0) {
                 MetaPill(

@@ -1,5 +1,6 @@
 package de.foody.app
 
+import de.foody.app.data.repo.PantryRepository
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.room.Room
@@ -45,7 +46,7 @@ class RecipeListViewModelTest {
         recipe("Gemüsepfanne", "z")
         recipe("Risotto", "r")
         recipes.setArchived(recipe("Altes Curry", "r"), archived = true)
-        vm = RecipeListViewModel(recipes, importer, SavedStateHandle())
+        vm = RecipeListViewModel(recipes, PantryRepository(db.pantryDao()), importer, SavedStateHandle())
     }
 
     @After fun tearDown() = db.close()
@@ -74,5 +75,27 @@ class RecipeListViewModelTest {
         val browsing = awaitNames(listOf("Gemüsepfanne", "Risotto")) { !it.showArchived && it.query.isEmpty() }
         // Tagesauswahl und Tags kommen immer aus den aktiven Rezepten
         assertEquals(setOf("Gemüsepfanne", "Risotto"), browsing.dailyPicks.map { it.name }.toSet())
+    }
+
+    @Test fun pantryFilterShowsCookableFirstAndHidesTooMuchMissing() = runBlocking {
+        db.ingredientDao().upsert(IngredientEntity(id = "p", canonicalName = "Paprika", createdAt = 0, updatedAt = 0))
+        db.ingredientDao().upsert(IngredientEntity(id = "s", canonicalName = "Salz", createdAt = 0, updatedAt = 0))
+        recipes.save(
+            RecipeDraft(id = null, name = "Paprikapfanne", defaultServings = 2, ingredients = listOf(
+                RecipeDraft.Line("z", BigDecimal.ONE, MeasureUnit.PIECE, null, false),
+                RecipeDraft.Line("p", BigDecimal.ONE, MeasureUnit.PIECE, null, false),
+                RecipeDraft.Line("s", BigDecimal.ONE, MeasureUnit.PIECE, null, false), // Salz setzt Foody voraus
+            )),
+        )
+        PantryRepository(db.pantryDao()).save(null, "r", BigDecimal.ONE, MeasureUnit.PIECE, null)
+
+        vm.onTogglePantry()
+        // Risotto: alles da; Gemüsepfanne: 1 fehlt; Paprikapfanne: 2 fehlen → ausgeblendet
+        val state = awaitNames(listOf("Risotto", "Gemüsepfanne")) { it.pantryOnly }
+        assertEquals(mapOf("Risotto" to 0, "Gemüsepfanne" to 1), state.recipes.associate { it.name to state.missing.getValue(it.id) })
+
+        vm.onTogglePantry()
+        awaitNames(listOf("Gemüsepfanne", "Paprikapfanne", "Risotto")) { !it.pantryOnly && it.missing.isEmpty() }
+        Unit
     }
 }

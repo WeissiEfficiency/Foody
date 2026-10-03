@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dampfende Schüssel. Liegt komplett in der Sicherheitszone adaptiver Icons (Kreis r=33 um 54,54),
+     damit nichts abgeschnitten wird – egal ob Launcher rund, eckig oder als Tropfen maskiert. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Schüssel -->
+    <path android:fillColor="#FFFFFF" android:pathData="M30,53h48a24,22 0,0 1,-48 0z" />
+    <!-- Fuß -->
+    <path android:fillColor="#FFFFFF" android:pathData="M45,76.5h18a2,2 0,0 1,2 2v1a2,2 0,0 1,-2 2h-18a2,2 0,0 1,-2 -2v-1a2,2 0,0 1,2 -2z" />
+    <!-- Dampf -->
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="3.5" android:strokeLineCap="round" android:fillColor="#00000000"
+        android:pathData="M44,46c-3,-3.5 3,-6.5 0,-10.5" />
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="3.5" android:strokeLineCap="round" android:fillColor="#00000000"
+        android:pathData="M54,46c-3,-4 3,-8 0,-13" />
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="3.5" android:strokeLineCap="round" android:fillColor="#00000000"
+        android:pathData="M64,46c-3,-3.5 3,-6.5 0,-10.5" />
+</vector>

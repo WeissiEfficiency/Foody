@@ -1,5 +1,6 @@
 package de.foody.app.ui.recipes
 
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -62,6 +63,8 @@ fun CookModeDialog(
     steps: List<InstructionStepEntity>,
     stepLines: List<List<StepLine>>,
     onClose: () -> Unit,
+    /** Letzter Schritt bestätigt – anders als Schließen heißt das: Das Gericht ist fertig. */
+    onFinish: () -> Unit = onClose,
 ) {
     Dialog(onClose, DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         val view = LocalView.current
@@ -95,7 +98,11 @@ fun CookModeDialog(
                             stringResource(R.string.step_of, page + 1, steps.size).uppercase(),
                             style = EyebrowStyle, color = MaterialTheme.colorScheme.primary,
                         )
-                        Text(steps[page].text, style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 34.sp))
+                        // Groß für Armlänge, aber normal gewichtet: lange fette Absätze lesen sich schlechter
+                        Text(
+                            steps[page].text,
+                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal, lineHeight = 36.sp),
+                        )
                         StepTimerChips(stepTimers.getOrNull(page).orEmpty()) { t ->
                             running += RunningTimer(t.label, System.currentTimeMillis() + t.duration.toMillis())
                         }
@@ -138,7 +145,7 @@ fun CookModeDialog(
                         enabled = !first, modifier = Modifier.weight(1f).height(56.dp), shape = RoundedCornerShape(50),
                     ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cook_mode_previous)) }
                     Button(
-                        { if (last) onClose() else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) } },
+                        { if (last) onFinish() else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) } },
                         modifier = Modifier.weight(2f).height(56.dp), shape = RoundedCornerShape(50),
                     ) {
                         Text(stringResource(if (last) R.string.cook_mode_done else R.string.cook_mode_next), style = MaterialTheme.typography.titleMedium)

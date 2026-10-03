@@ -61,6 +61,8 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        // Der Code ist warnungsfrei – so bleibt er es (z. B. neue Deprecations nach Bibliotheks-Updates).
+        allWarningsAsErrors.set(true)
     }
 }
 
@@ -77,6 +79,7 @@ dependencies {
     implementation(project(":domain"))
 
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -89,6 +92,7 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
     implementation(libs.compose.material3.adaptive.navigation.suite)
+    implementation(libs.compose.material3.adaptive)
     debugImplementation(libs.compose.ui.tooling)
 
     implementation(libs.room.runtime)

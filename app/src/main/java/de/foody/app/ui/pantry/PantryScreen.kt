@@ -1,90 +1,64 @@
 package de.foody.app.ui.pantry
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Surface
-import androidx.compose.ui.draw.clip
-import de.foody.app.ui.common.ScreenHeader
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.Kitchen
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.ui.Alignment
-import de.foody.app.ui.common.AutocompleteField
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
 import de.foody.app.R
 import de.foody.app.data.db.IngredientEntity
 import de.foody.app.data.db.PantryItemEntity
-import de.foody.app.data.repo.IngredientRepository
-import de.foody.app.data.repo.PantryRepository
+import de.foody.app.ui.common.AutocompleteField
 import de.foody.app.ui.common.DecimalField
 import de.foody.app.ui.common.DropdownField
 import de.foody.app.ui.common.EmptyState
 import de.foody.app.ui.common.FormColumn
+import de.foody.app.ui.common.ScreenHeader
 import de.foody.app.ui.common.display
 import de.foody.app.ui.common.formatAmount
 import de.foody.app.ui.common.medium
 import de.foody.app.ui.common.parseDecimal
 import de.foody.domain.MeasureUnit
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import java.time.LocalDate
-import javax.inject.Inject
-
-data class PantryRow(val item: PantryItemEntity, val name: String)
-data class PantryUiState(val rows: List<PantryRow> = emptyList(), val ingredients: List<IngredientEntity> = emptyList())
-
-@HiltViewModel
-class PantryViewModel @Inject constructor(
-    private val pantry: PantryRepository,
-    ingredients: IngredientRepository,
-) : ViewModel() {
-    val state = combine(pantry.observeAll(), ingredients.observeAll()) { items, ings ->
-        val names = ings.associate { it.id to it.canonicalName }
-        PantryUiState(items.map { PantryRow(it, names[it.ingredientId].orEmpty()) }.sortedBy { it.name.lowercase() }, ings)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PantryUiState())
-
-    fun save(id: String?, ingredientId: String, amount: java.math.BigDecimal, unit: MeasureUnit, bestBefore: LocalDate?) =
-        viewModelScope.launch { pantry.save(id, ingredientId, amount, unit, bestBefore) }
-    fun delete(id: String) = viewModelScope.launch { pantry.delete(id) }
-}
 
 @Composable
 fun PantryScreen(vm: PantryViewModel = hiltViewModel()) {
@@ -94,7 +68,7 @@ fun PantryScreen(vm: PantryViewModel = hiltViewModel()) {
     Scaffold(
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
         floatingActionButton = {
-            ExtendedFloatingActionButton(
+            if (s.rows.isNotEmpty()) ExtendedFloatingActionButton(
                 onClick = { creating = true },
                 icon = { Icon(Icons.Default.Add, null) },
                 text = { Text(stringResource(R.string.pantry_add)) },
@@ -106,7 +80,10 @@ fun PantryScreen(vm: PantryViewModel = hiltViewModel()) {
         Column(Modifier.padding(padding)) {
             ScreenHeader(stringResource(R.string.nav_pantry), stringResource(R.string.pantry_title))
             if (s.rows.isEmpty()) {
-                EmptyState(stringResource(R.string.pantry_empty))
+                EmptyState(
+                    stringResource(R.string.pantry_empty), icon = Icons.Outlined.Kitchen,
+                    actionLabel = stringResource(R.string.pantry_add), onAction = { creating = true },
+                )
             } else {
                 val today = LocalDate.now()
                 // Was bald abläuft, zuerst – danach alphabetisch
@@ -115,7 +92,9 @@ fun PantryScreen(vm: PantryViewModel = hiltViewModel()) {
                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 104.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    items(rows, key = { it.item.id }) { row -> PantryCard(row, today, { editingId = row.item.id }, { vm.delete(row.item.id) }) }
+                    items(rows, key = { it.item.id }) { row ->
+                        PantryCard(row, today, { editingId = row.item.id }, { vm.delete(row.item.id) }, Modifier.animateItem())
+                    }
                 }
             }
         }
@@ -131,13 +110,13 @@ fun PantryScreen(vm: PantryViewModel = hiltViewModel()) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PantryCard(row: PantryRow, today: LocalDate, onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun PantryCard(row: PantryRow, today: LocalDate, onEdit: () -> Unit, onDelete: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         onClick = onEdit,
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
         shadowElevation = 1.dp,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Row(Modifier.padding(start = 16.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -163,7 +142,7 @@ private fun BestBeforePill(date: LocalDate, today: LocalDate) {
     val text = when {
         days < 0 -> stringResource(R.string.pantry_expired)
         days == 0L -> stringResource(R.string.pantry_expires_today)
-        days <= 3 -> stringResource(R.string.pantry_expires_in, days.toInt())
+        days <= 3 -> pluralStringResource(R.plurals.pantry_expires_in, days.toInt(), days.toInt())
         else -> stringResource(R.string.pantry_best_before, date.medium())
     }
     Text(

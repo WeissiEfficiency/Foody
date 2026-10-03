@@ -1,5 +1,9 @@
 package de.foody.app.ui.common
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.size
@@ -34,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -41,16 +46,39 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import de.foody.app.R
 
+/** Leerzustand: Symbol im getönten Kreis, kurzer Text und – wenn sinnvoll – genau eine Aktion. */
 @Composable
-fun EmptyState(text: String, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-        Text(text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+fun EmptyState(
+    text: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+) {
+    Column(
+        modifier.fillMaxSize().padding(32.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        if (icon != null) {
+            Box(
+                Modifier.size(96.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center,
+            ) { Icon(icon, null, Modifier.size(44.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer) }
+        }
+        Text(
+            text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        if (actionLabel != null && onAction != null) {
+            FilledTonalButton(onAction, shape = RoundedCornerShape(50)) { Text(actionLabel) }
+        }
     }
 }
 
 @Composable
 fun ServingsStepper(value: Int, onChange: (Int) -> Unit, modifier: Modifier = Modifier) {
-    val desc = stringResource(R.string.servings_count, value)
+    val desc = pluralStringResource(R.plurals.servings_count, value, value)
     // Pillenform mit runden Plus/Minus-Knöpfen
     Row(
         modifier.semantics { contentDescription = desc }
@@ -69,7 +97,7 @@ fun ServingsStepper(value: Int, onChange: (Int) -> Unit, modifier: Modifier = Mo
             Icon(Icons.Default.Remove, stringResource(R.string.action_less_servings))
         }
         Text(
-            stringResource(R.string.servings_count, value),
+            pluralStringResource(R.plurals.servings_count, value, value),
             style = MaterialTheme.typography.titleSmall,
             modifier = Modifier.padding(horizontal = 12.dp),
         )

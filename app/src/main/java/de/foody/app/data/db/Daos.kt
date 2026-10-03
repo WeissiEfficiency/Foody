@@ -71,6 +71,13 @@ interface RecipeDao {
     @Query("SELECT * FROM recipe_ingredient WHERE recipeId = :id ORDER BY sortOrder")
     suspend fun getIngredients(id: String): List<RecipeIngredientEntity>
     @Query("SELECT * FROM recipe_ingredient") suspend fun getAllIngredients(): List<RecipeIngredientEntity>
+
+    /** Pflichtzutaten aller Rezepte mit Namen – für „Aus dem Vorrat kochbar“. */
+    @Query(
+        "SELECT ri.recipeId, ri.ingredientId, i.canonicalName AS ingredientName FROM recipe_ingredient ri " +
+            "JOIN ingredient i ON i.id = ri.ingredientId WHERE ri.optional = 0",
+    )
+    fun observeRequired(): Flow<List<RequiredIngredientRow>>
     @Query("SELECT * FROM recipe_ingredient WHERE recipeId IN (:recipeIds) ORDER BY sortOrder")
     suspend fun getIngredientsFor(recipeIds: Collection<String>): List<RecipeIngredientEntity>
 
@@ -94,6 +101,12 @@ interface RecipeDao {
         insertIngredients(ingredients)
         insertSteps(steps)
     }
+
+    @Query("SELECT COUNT(*) FROM recipe WHERE imageUri = :uri")
+    suspend fun countByImage(uri: String): Int
+
+    @Query("UPDATE recipe SET imageUri = :uri, updatedAt = :now WHERE id = :id")
+    suspend fun setImage(id: String, uri: String?, now: Long)
 
     @Query("SELECT * FROM recipe WHERE sourceUrl = :url LIMIT 1")
     suspend fun findBySourceUrl(url: String): RecipeEntity?
@@ -181,3 +194,5 @@ interface MaintenanceDao {
         clearSteps(); clearRecipeIngredients(); clearRecipes(); clearIngredients()
     }
 }
+
+data class RequiredIngredientRow(val recipeId: String, val ingredientId: String, val ingredientName: String)

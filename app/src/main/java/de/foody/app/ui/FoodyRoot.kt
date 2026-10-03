@@ -1,5 +1,13 @@
 package de.foody.app.ui
 
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
+import androidx.window.core.layout.WindowSizeClass
+import de.foody.app.ui.recipes.RecipesTwoPane
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.runtime.CompositionLocalProvider
+import de.foody.app.ui.common.LocalNavAnimatedScope
+import de.foody.app.ui.common.LocalSharedTransitionScope
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -53,11 +61,14 @@ private enum class TopLevel(val route: Any, @param:StringRes val label: Int, val
     SETTINGS(SettingsRoute, R.string.nav_more, Icons.Default.Settings),
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun FoodyRoot() {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val dest = backStack?.destination
+    // Ab „expanded“ (≥ 840 dp) passen Raster und Rezept nebeneinander; darunter bleibt die Ein-Spalten-Navigation.
+    val twoPane = currentWindowAdaptiveInfoV2().windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)
 
     // NavigationSuiteScaffold wechselt automatisch zwischen Bottom Bar (Telefon) und Rail (Tablet).
     val colors = MaterialTheme.colorScheme
@@ -99,20 +110,29 @@ fun FoodyRoot() {
             }
         },
     ) {
+        SharedTransitionLayout {
         NavHost(nav, startDestination = RecipesRoute) {
             composable<RecipesRoute> {
-                RecipeListScreen(
-                    onOpen = { nav.navigate(RecipeDetailRoute(it)) },
-                    onCreate = { nav.navigate(RecipeEditorRoute()) },
-                )
+                if (twoPane) {
+                    RecipesTwoPane(onEdit = { id -> nav.navigate(RecipeEditorRoute(id)) }, onCreate = { nav.navigate(RecipeEditorRoute()) })
+                } else {
+                    CompositionLocalProvider(LocalSharedTransitionScope provides this@SharedTransitionLayout, LocalNavAnimatedScope provides this) {
+                        RecipeListScreen(
+                            onOpen = { nav.navigate(RecipeDetailRoute(it)) },
+                            onCreate = { nav.navigate(RecipeEditorRoute()) },
+                        )
+                    }
+                }
             }
             composable<RecipeDetailRoute> {
                 val id = it.toRoute<RecipeDetailRoute>().id
-                RecipeDetailScreen(
-                    onBack = { nav.popBackStack() },
-                    onEdit = { nav.navigate(RecipeEditorRoute(id)) },
-                    onOpenOther = { other -> nav.navigate(RecipeDetailRoute(other)) },
-                )
+                CompositionLocalProvider(LocalSharedTransitionScope provides this@SharedTransitionLayout, LocalNavAnimatedScope provides this) {
+                    RecipeDetailScreen(
+                        onBack = { nav.popBackStack() },
+                        onEdit = { nav.navigate(RecipeEditorRoute(id)) },
+                        onOpenOther = { other -> nav.navigate(RecipeDetailRoute(other)) },
+                    )
+                }
             }
             composable<RecipeEditorRoute> {
                 RecipeEditorScreen(
@@ -125,6 +145,7 @@ fun FoodyRoot() {
             composable<PantryRoute> { PantryScreen() }
             composable<SettingsRoute> { SettingsScreen(onManageIngredients = { nav.navigate(IngredientsRoute) }) }
             composable<IngredientsRoute> { IngredientsScreen(onBack = { nav.popBackStack() }) }
+        }
         }
     }
 }

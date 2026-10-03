@@ -1,5 +1,12 @@
 package de.foody.app.data.repo
 
+import de.foody.app.data.RecipePhotoStore
+import androidx.core.net.toUri
+import java.io.File
+import java.io.InputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 import android.content.Context
 import android.net.Uri
 import androidx.room.withTransaction
@@ -26,7 +33,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * JSON-Sicherung aller lokalen Daten. Zahlen als Strings (verlustfrei), Datumswerte als ISO-8601.
+ * Sicherung aller lokalen Daten. Zahlen als Strings (verlustfrei), Datumswerte als ISO-8601.
+ * Seit Fotos gesichert werden, ist die Datei ein ZIP mit `backup.json` und `photos/<n>.jpg`; ein Rezeptbild
+ * zeigt darin auf [PHOTO_SCHEME]`<n>.jpg`. Reine JSON-Dateien älterer Versionen lassen sich weiter einlesen.
  */
 @Serializable
 data class BackupDto(
@@ -81,27 +90,99 @@ data class BackupDto(
 class BackupRepository @Inject constructor(
     private val db: FoodyDatabase,
     @param:ApplicationContext private val context: Context,
+    private val photos: RecipePhotoStore,
 ) {
     private val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
 
+    /** Schreibt Daten und alle lesbaren Rezeptbilder (eigene Fotos wie Galeriebilder) in ein ZIP. */
     suspend fun export(uri: Uri) = withContext(Dispatchers.IO) {
         val dto = buildDto()
-        context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(json.encodeToString(BackupDto.serializer(), dto).toByteArray()) }
-            ?: error("Datei nicht beschreibbar")
-    }
-
-    /** Ersetzt alle lokalen Daten atomar durch den Inhalt der Datei. */
-    suspend fun import(uri: Uri) = withContext(Dispatchers.IO) {
-        val text = context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() } ?: error("Datei nicht lesbar")
-        val dto = json.decodeFromString(BackupDto.serializer(), text)
-        require(dto.formatVersion == 1) { "Unbekanntes Format ${dto.formatVersion}" }
-        db.withTransaction {
-            db.maintenanceDao().clearAll()
-            restore(dto)
+        val out = context.contentResolver.openOutputStream(uri, "wt") ?: error("Datei nicht beschreibbar")
+        ZipOutputStream(out.buffered()).use { zip ->
+            val packed = mutableMapOf<String, String>()
+            dto.recipes.mapNotNull { it.imageUri }.distinct().filter(photos::isAllowedImage).forEach { image ->
+                val input = runCatching { context.contentResolver.openInputStream(image.toUri()) }.getOrNull() ?: return@forEach
+                val name = "${packed.size + 1}.jpg"
+                input.use { zip.putNextEntry(ZipEntry(PHOTO_DIR + name)); it.copyTo(zip); zip.closeEntry() }
+                packed[image] = PHOTO_SCHEME + name
+            }
+            val withPhotos = dto.copy(recipes = dto.recipes.map { r -> r.copy(imageUri = r.imageUri?.let { packed[it] ?: it }) })
+            zip.putNextEntry(ZipEntry(DATA_ENTRY))
+            zip.write(json.encodeToString(BackupDto.serializer(), withPhotos).toByteArray())
+            zip.closeEntry()
         }
     }
 
-    suspend fun deleteAll() = db.withTransaction { db.maintenanceDao().clearAll() }
+    /**
+     * Ersetzt alle lokalen Daten atomar durch den Inhalt der Datei (ZIP oder ältere reine JSON-Sicherung).
+     * Fotos landen erst im App-Speicher, dann folgt die Datenbank; scheitert sie, werden die Fotos wieder entfernt.
+     */
+    suspend fun import(uri: Uri) = withContext(Dispatchers.IO) {
+        val staged = mutableMapOf<String, File>()
+        try {
+            val text = context.contentResolver.openInputStream(uri)?.buffered()?.use { input ->
+                input.mark(4)
+                val zipped = input.read() == 'P'.code && input.read() == 'K'.code
+                input.reset()
+                if (zipped) readZip(input, staged) else input.readCapped(MAX_JSON_BYTES).decodeToString()
+            } ?: error("Datei nicht lesbar")
+            val dto = json.decodeFromString(BackupDto.serializer(), text)
+            require(dto.formatVersion == 1) { "Unbekanntes Format ${dto.formatVersion}" }
+            val resolved = dto.copy(recipes = dto.recipes.map { r -> r.copy(imageUri = r.imageUri?.let { resolvePhoto(it, staged) }) })
+            db.withTransaction {
+                db.maintenanceDao().clearAll()
+                restore(resolved)
+            }
+        } catch (e: Exception) {
+            staged.values.forEach { it.delete() }
+            throw e
+        }
+        photos.pruneUnused()
+    }
+
+    suspend fun deleteAll() {
+        db.withTransaction { db.maintenanceDao().clearAll() }
+        photos.pruneUnused()
+    }
+
+    /**
+     * Liest `backup.json` und legt Fotos als neue Dateien im Fotoordner ab. Nur flache Namen unter `photos/`
+     * werden angenommen (kein „../“ – Zip-Slip), Größen sind begrenzt (keine Zip-Bombe).
+     */
+    private fun readZip(input: InputStream, staged: MutableMap<String, File>): String {
+        var text: String? = null
+        var total = 0L
+        ZipInputStream(input).use { zip ->
+            generateSequence { zip.nextEntry }.forEach { entry ->
+                val name = entry.name
+                when {
+                    name == DATA_ENTRY -> text = zip.readCapped(MAX_JSON_BYTES).decodeToString()
+                    name.startsWith(PHOTO_DIR) && PHOTO_NAME.matches(name.removePrefix(PHOTO_DIR)) && name.removePrefix(PHOTO_DIR) !in staged -> {
+                        val file = photos.newPhotoFile()
+                        staged[name.removePrefix(PHOTO_DIR)] = file
+                        file.outputStream().use { out -> total += zip.copyCapped(out, MAX_PHOTO_BYTES) }
+                        check(total <= MAX_TOTAL_BYTES) { "Sicherung zu groß" }
+                    }
+                }
+            }
+        }
+        return text ?: error("Keine backup.json in der Sicherung")
+    }
+
+    private fun resolvePhoto(image: String, staged: Map<String, File>): String? {
+        if (!image.startsWith(PHOTO_SCHEME)) return image.takeIf(photos::isAllowedImage)
+        return staged[image.removePrefix(PHOTO_SCHEME)]?.let(photos::storedUri)
+    }
+
+    private companion object {
+        const val DATA_ENTRY = "backup.json"
+        const val PHOTO_DIR = "photos/"
+        const val PHOTO_SCHEME = "foody-backup-photo:"
+        val PHOTO_NAME = Regex("[0-9]{1,6}\\.jpg")
+        const val MAX_JSON_BYTES = 64L shl 20
+        const val MAX_PHOTO_BYTES = 32L shl 20
+        const val MAX_TOTAL_BYTES = 2L shl 30
+    }
 
     private suspend fun buildDto(): BackupDto {
         val i = db.ingredientDao(); val r = db.recipeDao(); val m = db.mealPlanDao(); val p = db.pantryDao(); val s = db.shoppingDao()
@@ -131,7 +212,7 @@ class BackupRepository @Inject constructor(
     }
 
     private suspend fun restore(d: BackupDto) {
-        fun String?.bd() = this?.let(::BigDecimal)
+        fun String?.bd() = this?.let(::decimal)
         d.ingredients.forEach {
             db.ingredientDao().upsert(
                 IngredientEntity(
@@ -153,7 +234,7 @@ class BackupRepository @Inject constructor(
             )
         }
         db.recipeDao().insertIngredients(d.recipeIngredients.map {
-            RecipeIngredientEntity(it.id, it.recipeId, it.ingredientId, BigDecimal(it.amount), MeasureUnit.valueOf(it.unit), it.sortOrder, it.note, it.optional)
+            RecipeIngredientEntity(it.id, it.recipeId, it.ingredientId, decimal(it.amount), MeasureUnit.valueOf(it.unit), it.sortOrder, it.note, it.optional)
         })
         db.recipeDao().insertSteps(d.steps.map { InstructionStepEntity(it.id, it.recipeId, it.position, it.text) })
         d.mealSlots.forEach {
@@ -165,7 +246,7 @@ class BackupRepository @Inject constructor(
             )
         }
         d.pantry.forEach {
-            db.pantryDao().upsert(PantryItemEntity(it.id, it.ingredientId, BigDecimal(it.amount), MeasureUnit.valueOf(it.unit), it.bestBefore?.let(LocalDate::parse), it.updatedAt))
+            db.pantryDao().upsert(PantryItemEntity(it.id, it.ingredientId, decimal(it.amount), MeasureUnit.valueOf(it.unit), it.bestBefore?.let(LocalDate::parse), it.updatedAt))
         }
         d.shoppingLists.forEach {
             db.shoppingDao().upsertList(
@@ -182,7 +263,35 @@ class BackupRepository @Inject constructor(
             )
         })
         db.shoppingDao().insertSources(d.shoppingSources.map {
-            ShoppingItemSourceEntity(it.id, it.itemId, it.mealSlotId, it.recipeIngredientId, it.recipeName, LocalDate.parse(it.date), BigDecimal(it.amount), MeasureUnit.valueOf(it.unit))
+            ShoppingItemSourceEntity(it.id, it.itemId, it.mealSlotId, it.recipeIngredientId, it.recipeName, LocalDate.parse(it.date), decimal(it.amount), MeasureUnit.valueOf(it.unit))
         })
     }
+}
+
+/** Liest höchstens [limit] Bytes; mehr gilt als beschädigte oder bösartige Datei. */
+private fun InputStream.readCapped(limit: Long): ByteArray {
+    val out = java.io.ByteArrayOutputStream()
+    copyCapped(out, limit)
+    return out.toByteArray()
+}
+
+private fun InputStream.copyCapped(out: java.io.OutputStream, limit: Long): Long {
+    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+    var copied = 0L
+    while (true) {
+        val n = read(buffer)
+        if (n < 0) return copied
+        copied += n
+        check(copied <= limit) { "Eintrag zu groß" }
+        out.write(buffer, 0, n)
+    }
+}
+
+/**
+ * Zahl aus einer Sicherung. Begrenzt Länge und Exponent: „1E999999999“ wäre ein gültiges BigDecimal,
+ * würde beim Formatieren oder Umrechnen aber Speicher und Zeit fressen.
+ */
+internal fun decimal(text: String): BigDecimal {
+    require(text.length <= 40) { "Zahl zu lang" }
+    return BigDecimal(text).also { require(it.scale() in -6..20 && it.precision() <= 30) { "Zahl außerhalb des Bereichs" } }
 }

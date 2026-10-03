@@ -69,6 +69,11 @@ object IngredientCatalog {
     /** Zutaten, die nie auf die Einkaufsliste gehören (z. B. Leitungswasser). */
     fun neverBuy(name: String): Boolean = key(name) in neverBuyKeys
 
+    private val basicKeys = setOf("salz", "pfeffer", "salz und pfeffer", "zucker", "olivenöl", "pflanzenöl")
+
+    /** Grundzutaten, die man zu Hause voraussetzen darf (Wasser, Salz, Pfeffer, Zucker, Speiseöl) – auch ohne Vorratseintrag. */
+    fun assumedAtHome(name: String): Boolean = neverBuy(name) || key(canonicalName(name)) in basicKeys
+
     // Reihenfolge zählt: spezifischere Abteilungen zuerst („Kokosmilch“ ist Konserve, nicht Kühlregal)
     private val categoryRules = listOf(
         "Konserven" to listOf("dose", "mais", "kokosmilch", "tomatenmark", "passierte"),
