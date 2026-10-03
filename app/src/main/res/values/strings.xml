@@ -216,9 +216,9 @@
 
     <!-- Einstellungen -->
     <string name="backup_title">Datensicherung</string>
-    <string name="backup_hint">Alle Daten bleiben auf diesem Gerät. Sichere sie bei Bedarf als JSON-Datei.</string>
-    <string name="backup_export">Als JSON exportieren</string>
-    <string name="backup_import">JSON importieren</string>
+    <string name="backup_hint">Alle Daten bleiben auf diesem Gerät. Die Sicherung enthält Rezepte, Planer, Vorrat, Einkaufsliste und Fotos.</string>
+    <string name="backup_export">Sicherung erstellen</string>
+    <string name="backup_import">Sicherung wiederherstellen</string>
     <string name="backup_import_warning">Beim Import werden alle vorhandenen Daten durch den Inhalt der Datei ersetzt.</string>
     <string name="backup_exported">Sicherung gespeichert</string>
     <string name="backup_imported">Sicherung importiert</string>

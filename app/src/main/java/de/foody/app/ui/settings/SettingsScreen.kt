@@ -73,7 +73,7 @@ fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hilt
     val text = message?.let { stringResource(it) }
     LaunchedEffect(text) { if (text != null) { snackbar.showSnackbar(text); vm.messageShown() } }
 
-    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         uri?.let(vm::export)
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -97,9 +97,9 @@ fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hilt
                 }
                 SettingsCard(stringResource(R.string.backup_title)) {
                     Text(stringResource(R.string.backup_hint), style = MaterialTheme.typography.bodySmall)
-                    OutlinedButton({ exportLauncher.launch("foody-backup-${LocalDate.now()}.json") }, Modifier.fillMaxWidth(),
+                    OutlinedButton({ exportLauncher.launch("foody-backup-${LocalDate.now()}.zip") }, Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(50)) { Text(stringResource(R.string.backup_export)) }
-                    OutlinedButton({ importLauncher.launch(arrayOf("application/json")) }, Modifier.fillMaxWidth(),
+                    OutlinedButton({ importLauncher.launch(arrayOf("application/zip", "application/json", "application/octet-stream")) }, Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(50)) { Text(stringResource(R.string.backup_import)) }
                 }
                 SettingsCard(stringResource(R.string.privacy_title)) {
