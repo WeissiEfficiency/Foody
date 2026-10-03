@@ -1,5 +1,10 @@
 package de.foody.app.ui
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.runtime.CompositionLocalProvider
+import de.foody.app.ui.common.LocalNavAnimatedScope
+import de.foody.app.ui.common.LocalSharedTransitionScope
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -53,6 +58,7 @@ private enum class TopLevel(val route: Any, @param:StringRes val label: Int, val
     SETTINGS(SettingsRoute, R.string.nav_more, Icons.Default.Settings),
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun FoodyRoot() {
     val nav = rememberNavController()
@@ -99,20 +105,25 @@ fun FoodyRoot() {
             }
         },
     ) {
+        SharedTransitionLayout {
         NavHost(nav, startDestination = RecipesRoute) {
             composable<RecipesRoute> {
-                RecipeListScreen(
-                    onOpen = { nav.navigate(RecipeDetailRoute(it)) },
-                    onCreate = { nav.navigate(RecipeEditorRoute()) },
-                )
+                CompositionLocalProvider(LocalSharedTransitionScope provides this@SharedTransitionLayout, LocalNavAnimatedScope provides this) {
+                    RecipeListScreen(
+                        onOpen = { nav.navigate(RecipeDetailRoute(it)) },
+                        onCreate = { nav.navigate(RecipeEditorRoute()) },
+                    )
+                }
             }
             composable<RecipeDetailRoute> {
                 val id = it.toRoute<RecipeDetailRoute>().id
-                RecipeDetailScreen(
-                    onBack = { nav.popBackStack() },
-                    onEdit = { nav.navigate(RecipeEditorRoute(id)) },
-                    onOpenOther = { other -> nav.navigate(RecipeDetailRoute(other)) },
-                )
+                CompositionLocalProvider(LocalSharedTransitionScope provides this@SharedTransitionLayout, LocalNavAnimatedScope provides this) {
+                    RecipeDetailScreen(
+                        onBack = { nav.popBackStack() },
+                        onEdit = { nav.navigate(RecipeEditorRoute(id)) },
+                        onOpenOther = { other -> nav.navigate(RecipeDetailRoute(other)) },
+                    )
+                }
             }
             composable<RecipeEditorRoute> {
                 RecipeEditorScreen(
@@ -125,6 +136,7 @@ fun FoodyRoot() {
             composable<PantryRoute> { PantryScreen() }
             composable<SettingsRoute> { SettingsScreen(onManageIngredients = { nav.navigate(IngredientsRoute) }) }
             composable<IngredientsRoute> { IngredientsScreen(onBack = { nav.popBackStack() }) }
+        }
         }
     }
 }
