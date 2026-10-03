@@ -1,30 +1,26 @@
 package de.foody.app.ui.settings
 
-import de.foody.app.util.runSuspendCatching
-import androidx.compose.foundation.BorderStroke
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.core.net.toUri
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
-import de.foody.app.ui.common.ScreenHeader
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -37,33 +33,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
 import de.foody.app.R
-import de.foody.app.data.repo.BackupRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import de.foody.app.ui.common.ScreenHeader
 import java.time.LocalDate
-import javax.inject.Inject
-
-@HiltViewModel
-class SettingsViewModel @Inject constructor(private val backup: BackupRepository) : ViewModel() {
-    private val _message = MutableStateFlow<Int?>(null)
-    val message = _message.asStateFlow()
-    fun messageShown() { _message.value = null }
-
-    private fun run(ok: Int, block: suspend () -> Unit) = viewModelScope.launch {
-        _message.value = runSuspendCatching { block() }.fold({ ok }, { R.string.backup_error })
-    }
-
-    fun export(uri: android.net.Uri) = run(R.string.backup_exported) { backup.export(uri) }
-    fun import(uri: android.net.Uri) = run(R.string.backup_imported) { backup.import(uri) }
-    fun deleteAll() = run(R.string.data_deleted) { backup.deleteAll() }
-}
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hiltViewModel()) {

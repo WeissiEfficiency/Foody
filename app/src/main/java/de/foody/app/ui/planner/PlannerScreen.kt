@@ -1,136 +1,80 @@
 package de.foody.app.ui.planner
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.height
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.Today
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
-import de.foody.app.ui.common.HeaderAction
-import de.foody.app.ui.common.MetaPill
-import de.foody.app.ui.common.ScreenHeader
-import de.foody.app.ui.theme.EyebrowStyle
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.runtime.remember
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.sp
-import de.foody.app.ui.common.RecipeImage
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
 import de.foody.app.R
 import de.foody.app.data.db.MealSlotEntity
 import de.foody.app.data.db.RecipeEntity
-import de.foody.app.data.repo.PlanRepository
-import de.foody.app.data.repo.RecipeRepository
 import de.foody.app.ui.common.FormColumn
+import de.foody.app.ui.common.HeaderAction
+import de.foody.app.ui.common.MetaPill
+import de.foody.app.ui.common.RecipeImage
+import de.foody.app.ui.common.ScreenHeader
 import de.foody.app.ui.common.ServingsStepper
 import de.foody.app.ui.common.compactRange
 import de.foody.app.ui.common.pretty
-import androidx.compose.ui.res.pluralStringResource
-import de.foody.domain.DateRange
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
+import de.foody.app.ui.theme.EyebrowStyle
 import java.time.LocalDate
-import javax.inject.Inject
-
-data class PlannerUiState(
-    val range: DateRange = DateRange.ofDays(LocalDate.now(), 7),
-    val days: Int = 7,
-    val slotsByDay: Map<LocalDate, List<MealSlotEntity>> = emptyMap(),
-    val recipes: Map<String, RecipeEntity> = emptyMap(),
-    val activeRecipes: List<RecipeEntity> = emptyList(),
-)
-
-@OptIn(ExperimentalCoroutinesApi::class)
-@HiltViewModel
-class PlannerViewModel @Inject constructor(
-    private val plan: PlanRepository,
-    recipes: RecipeRepository,
-    private val saved: SavedStateHandle,
-) : ViewModel() {
-    private val start = saved.getStateFlow("start", LocalDate.now().toEpochDay())
-    private val days = saved.getStateFlow("days", 7)
-
-    private val rangeFlow = combine(start, days) { s, d -> DateRange.ofDays(LocalDate.ofEpochDay(s), d) }
-
-    val state = combine(
-        rangeFlow,
-        rangeFlow.flatMapLatest { r -> plan.observeRange(r.start, r.endInclusive) },
-        // Eine Abfrage für alle Rezepte (archivierte für bestehende Planpositionen), aktive daraus im Speicher
-        recipes.observeAll(),
-    ) { range, slots, all ->
-        PlannerUiState(range, range.days.size, slots.groupBy { it.date }, all.associateBy { it.id }, all.filter { it.archivedAt == null })
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlannerUiState())
-
-    fun shift(daysDelta: Long) { saved["start"] = start.value + daysDelta }
-    fun today() { saved["start"] = LocalDate.now().toEpochDay() }
-    fun setDays(d: Int) { saved["days"] = d.coerceIn(1, 31) }
-
-    fun add(date: LocalDate, slotType: String, recipeId: String, servings: Int) =
-        viewModelScope.launch { plan.add(date, slotType, recipeId, servings) }
-    fun setServings(slot: MealSlotEntity, n: Int) = viewModelScope.launch { plan.update(slot.copy(servings = n)) }
-    fun move(slot: MealSlotEntity, delta: Long) = viewModelScope.launch { plan.update(slot.copy(date = slot.date.plusDays(delta))) }
-    fun delete(slot: MealSlotEntity) = viewModelScope.launch { plan.delete(slot.id) }
-    fun cooked(slot: MealSlotEntity) = viewModelScope.launch { plan.markCooked(slot.id) }
-}
 
 @Composable
 fun PlannerScreen(onOpenRecipe: (String) -> Unit, vm: PlannerViewModel = hiltViewModel()) {
