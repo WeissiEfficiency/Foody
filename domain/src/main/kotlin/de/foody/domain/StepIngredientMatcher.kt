@@ -1,6 +1,7 @@
 package de.foody.domain
 
 import java.math.BigDecimal
+import java.util.concurrent.ConcurrentHashMap
 
 /** Eine im Arbeitsschritt erwähnte Zutat; [amount]/[unit] nur, wenn die Menge direkt davor steht („0,25 l Bier“). */
 data class StepMention(val ingredientId: String, val amount: BigDecimal?, val unit: MeasureUnit?)
@@ -31,7 +32,7 @@ object StepIngredientMatcher {
     fun mentions(step: String, names: Map<String, String>): List<StepMention> {
         val text = step.lowercase()
         return names.mapNotNull { (id, name) ->
-            val hit = terms(name).mapNotNull { termRegex(it).find(text) }.minByOrNull { it.range.first } ?: return@mapNotNull null
+            val hit = termRegexes(name).mapNotNull { it.find(text) }.minByOrNull { it.range.first } ?: return@mapNotNull null
             // Nur innerhalb des Satzteils vor der Zutat suchen; Satzzeichen nur mit folgendem Leerraum,
             // sonst würde das Dezimalkomma in „0,25 l“ den Satz teilen
             val clause = step.substring(0, hit.range.first).split(Regex("""[,.;:!?]\s""")).last()
@@ -39,6 +40,11 @@ object StepIngredientMatcher {
             StepMention(id, m?.groupValues?.get(1)?.let(GermanAmounts::parseNumber), m?.groupValues?.get(2)?.takeIf { it.isNotEmpty() }?.let(GermanAmounts::unitOf))
         }
     }
+
+    /** Suchmuster je Zutatenname; die Detailseite fragt dieselben Namen für jeden Schritt und jedes Rendern ab. */
+    private val regexCache = ConcurrentHashMap<String, List<Regex>>()
+
+    private fun termRegexes(name: String): List<Regex> = regexCache.getOrPut(name) { terms(name).map(::termRegex) }
 
     private fun terms(name: String): List<String> =
         (name.lowercase().split(" und ") + IngredientCatalog.synonymsOf(name)).map { it.trim() }.filter { it.length >= 2 }.distinct()

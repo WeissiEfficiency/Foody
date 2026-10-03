@@ -1,5 +1,6 @@
 package de.foody.app.ui.planner
 
+import de.foody.app.ui.theme.FoodyGlass
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.foundation.layout.Spacer
@@ -87,7 +88,8 @@ fun PlannerScreen(onOpenRecipe: (String) -> Unit, vm: PlannerViewModel = hiltVie
     var addForEpochDay by rememberSaveable { mutableStateOf<Long?>(null) }
     var customDays by rememberSaveable { mutableStateOf(false) }
 
-    Scaffold(contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)) { padding ->
+    Scaffold(
+        containerColor = Color.Transparent,contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)) { padding ->
         Column(Modifier.padding(padding)) {
             // Kopf bleibt stehen, damit Vor/Zurück beim Scrollen durch die Woche erreichbar ist
             ScreenHeader(stringResource(R.string.planner_eyebrow), compactRange(s.range.start, s.range.endInclusive)) {
@@ -203,8 +205,8 @@ private fun SlotCard(slot: MealSlotEntity, recipe: RecipeEntity?, vm: PlannerVie
     Surface(
         onClick = { onOpen(slot.recipeId) },
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        shadowElevation = 1.dp,
+        color = FoodyGlass.fill,
+        border = FoodyGlass.border,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {

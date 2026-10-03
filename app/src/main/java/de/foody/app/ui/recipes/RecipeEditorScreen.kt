@@ -1,5 +1,6 @@
 package de.foody.app.ui.recipes
 
+import androidx.compose.ui.graphics.Color
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -75,6 +76,7 @@ fun RecipeEditorScreen(onDone: () -> Unit, onManageIngredients: () -> Unit, vm: 
         pendingPhoto = null
     }
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(if (s.name.isBlank()) R.string.recipe_new else R.string.recipe_edit)) },

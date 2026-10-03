@@ -95,6 +95,8 @@ object NutritionCalculator {
                 if (n == Nutrient.ENERGY_KJ) lineEnergy[line.id] = contribution
             }
             if (anyMissing) missing += line.ingredientId
+            // Ohne Energiewert fehlt die Zeile in den kcal je Zutat – dann mit Grund statt stillschweigend
+            if (profile.values[Nutrient.ENERGY_KJ] == null) gaps[line.id] = LineGap.NO_VALUES
         }
         val completeness = Nutrient.entries.associateWith { n ->
             if (lines.isEmpty()) 0.0 else (known[n] ?: 0).toDouble() / lines.size

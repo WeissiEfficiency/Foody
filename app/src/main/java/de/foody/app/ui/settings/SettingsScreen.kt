@@ -1,5 +1,11 @@
 package de.foody.app.ui.settings
 
+import de.foody.app.ui.theme.ThemeMode
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.ui.graphics.Color
+import de.foody.app.ui.theme.FoodyGlass
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -58,6 +64,7 @@ fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hilt
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
@@ -67,6 +74,23 @@ fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hilt
                 Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                SettingsCard(stringResource(R.string.appearance_title)) {
+                    val mode by vm.themeMode.collectAsStateWithLifecycle()
+                    val options = listOf(
+                        ThemeMode.SYSTEM to R.string.appearance_system,
+                        ThemeMode.LIGHT to R.string.appearance_light,
+                        ThemeMode.DARK to R.string.appearance_dark,
+                    )
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        options.forEachIndexed { i, (m, label) ->
+                            SegmentedButton(
+                                selected = mode == m,
+                                onClick = { vm.setThemeMode(m) },
+                                shape = SegmentedButtonDefaults.itemShape(i, options.size),
+                            ) { Text(stringResource(label)) }
+                        }
+                    }
+                }
                 SettingsCard(stringResource(R.string.ingredients_title)) {
                     OutlinedButton(onManageIngredients, Modifier.fillMaxWidth(), shape = RoundedCornerShape(50)) {
                         Text(stringResource(R.string.ingredients_manage))
@@ -125,8 +149,8 @@ fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hilt
 private fun SettingsCard(title: String, content: @Composable ColumnScope.() -> Unit) {
     Surface(
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        shadowElevation = 1.dp,
+        color = FoodyGlass.fill,
+        border = FoodyGlass.border,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
