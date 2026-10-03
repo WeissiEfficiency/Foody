@@ -28,6 +28,14 @@ class RecipePhotoStore @Inject constructor(
         return file to FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
     }
 
+    /** Neue, leere Fotodatei – etwa für ein Foto aus einer Sicherung. */
+    fun newPhotoFile(): File = File(dir, "${UUID.randomUUID()}.jpg")
+
+    /** Löscht alle eigenen Fotos, auf die kein Rezept mehr zeigt (nach Wiederherstellen oder „Alles löschen“). */
+    suspend fun pruneUnused() {
+        dir.listFiles()?.forEach { if (recipeDao.countByImage(storedUri(it)) == 0) it.delete() }
+    }
+
     /** Link, der am Rezept gespeichert wird. */
     fun storedUri(file: File): String = file.toUri().toString()
 
