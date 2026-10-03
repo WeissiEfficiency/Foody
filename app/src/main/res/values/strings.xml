@@ -8,6 +8,7 @@
     <string name="nav_shopping">Einkauf</string>
     <string name="nav_pantry">Vorrat</string>
     <string name="nav_settings">Einstellungen</string>
+    <string name="nav_more">Mehr</string>
 
     <!-- Aktionen -->
     <string name="action_add">Hinzufügen</string>
@@ -78,10 +79,27 @@
     <string name="cook_minutes">Kochen %1$d Min.</string>
     <string name="optional_suffix">(optional)</string>
     <string name="step_n">Schritt %1$d</string>
+    <string name="step_of">Schritt %1$d von %2$d</string>
+    <string name="kcal_per_serving">%1$s kcal/Port.</string>
+    <string name="more_actions">Weitere Aktionen</string>
+    <string name="home_eyebrow">Heute</string>
+    <string name="home_title">Was kochen wir?</string>
+    <string name="daily_picks">Rezept des Tages</string>
+    <string name="filter_all">Alle</string>
+    <string name="recipe_section_all">Deine Rezepte (%1$d)</string>
+    <string name="recipe_section_archive">Archiv (%1$d)</string>
+    <string name="cook_mode_start">Jetzt kochen</string>
+    <string name="cook_mode_you_need">Du brauchst</string>
+    <string name="cook_mode_next">Weiter</string>
+    <string name="cook_mode_previous">Zurück</string>
+    <string name="cook_mode_done">Fertig – guten Appetit!</string>
 
     <!-- Import -->
     <string name="import_action">Rezepte aus Markdown importieren</string>
     <string name="import_tag">Import</string>
+    <string name="import_tag_ideas">Ideen</string>
+    <string name="import_files">Markdown-Dateien wählen</string>
+    <string name="import_folder">Ganzen Ordner importieren (Ideen)</string>
     <string name="import_source">Quelle: %1$s</string>
     <string name="import_check_servings">Portionenzahl war in der Datei nicht angegeben – auf %1$d gesetzt, bitte prüfen.</string>
     <string name="import_done">%1$d Rezept(e) importiert</string>

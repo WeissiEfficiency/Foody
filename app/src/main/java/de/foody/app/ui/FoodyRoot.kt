@@ -8,6 +8,10 @@ import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRailItemDefaults
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
@@ -46,7 +50,7 @@ private enum class TopLevel(val route: Any, @StringRes val label: Int, val icon:
     PLANNER(PlannerRoute, R.string.nav_planner, Icons.Default.CalendarMonth),
     SHOPPING(ShoppingRoute, R.string.nav_shopping, Icons.AutoMirrored.Filled.List),
     PANTRY(PantryRoute, R.string.nav_pantry, Icons.Default.Inventory2),
-    SETTINGS(SettingsRoute, R.string.nav_settings, Icons.Default.Settings),
+    SETTINGS(SettingsRoute, R.string.nav_more, Icons.Default.Settings),
 }
 
 @Composable
@@ -56,7 +60,27 @@ fun FoodyRoot() {
     val dest = backStack?.destination
 
     // NavigationSuiteScaffold wechselt automatisch zwischen Bottom Bar (Telefon) und Rail (Tablet).
+    val colors = MaterialTheme.colorScheme
+    val itemColors = NavigationSuiteDefaults.itemColors(
+        navigationBarItemColors = NavigationBarItemDefaults.colors(
+            selectedIconColor = colors.onPrimary,
+            indicatorColor = colors.primary,
+            selectedTextColor = colors.primary,
+            unselectedIconColor = colors.onSurfaceVariant,
+            unselectedTextColor = colors.onSurfaceVariant,
+        ),
+        navigationRailItemColors = NavigationRailItemDefaults.colors(
+            selectedIconColor = colors.onPrimary,
+            indicatorColor = colors.primary,
+            selectedTextColor = colors.primary,
+        ),
+    )
     NavigationSuiteScaffold(
+        navigationSuiteColors = NavigationSuiteDefaults.colors(
+            navigationBarContainerColor = colors.surfaceContainerLowest,
+            navigationRailContainerColor = colors.surfaceContainerLowest,
+        ),
+        containerColor = colors.background,
         navigationSuiteItems = {
             TopLevel.entries.forEach { item ->
                 item(
@@ -70,6 +94,7 @@ fun FoodyRoot() {
                     },
                     icon = { Icon(item.icon, contentDescription = null) },
                     label = { Text(stringResource(item.label)) },
+                    colors = itemColors,
                 )
             }
         },

@@ -2,6 +2,7 @@ package de.foody.app.data.repo
 
 import android.content.Context
 import android.net.Uri
+import android.provider.DocumentsContract
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.foody.domain.MarkdownRecipeImporter
 import de.foody.domain.MeasureUnit
@@ -32,6 +33,29 @@ class RecipeImportRepository @Inject constructor(
             }.onSuccess { it?.let(ids::add) ?: failed++ }.onFailure { failed++ }
         }
         return ImportResult(ids, failed)
+    }
+
+    /**
+     * Importiert alle Markdown-Dateien eines per Ordnerauswahl freigegebenen Verzeichnisses
+     * (z. B. eine Sammlung von Rezeptideen). Unterordner werden nicht durchsucht.
+     */
+    suspend fun importFolder(treeUri: Uri, defaultServings: Int, tag: String, notesTemplate: (String?) -> String): ImportResult {
+        val files = withContext(Dispatchers.IO) { markdownFilesIn(treeUri) }
+        return import(files, defaultServings, tag, notesTemplate)
+    }
+
+    private fun markdownFilesIn(treeUri: Uri): List<Uri> {
+        val children = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri))
+        val projection = arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+        val out = mutableListOf<Pair<String, Uri>>()
+        context.contentResolver.query(children, projection, null, null, null)?.use { c ->
+            while (c.moveToNext()) {
+                val name = c.getString(1) ?: continue
+                if (name.substringAfterLast('.').lowercase() !in setOf("md", "markdown", "txt")) continue
+                out += name to DocumentsContract.buildDocumentUriUsingTree(treeUri, c.getString(0))
+            }
+        }
+        return out.sortedBy { it.first }.map { it.second }
     }
 
     /** null, wenn der Text kein erkennbares Rezept enthält. */

@@ -45,6 +45,8 @@ class GenerateShoppingListUseCase {
             for (line in recipe.ingredients) {
                 if (line.optional && !includeOptional) continue
                 if (line.ingredientId in excludedIngredientIds) continue
+                // Menge 0 = „nach Bedarf“ (z. B. Salz) wird nie eingekauft
+                if (line.amount.signum() == 0) continue
                 val scaledAmount = RecipeScaler.scale(line.amount, recipe.defaultServings, slot.servings)
                 val q = Quantity.of(scaledAmount, line.unit)
                 val info = ingredients[line.ingredientId]?.conversion ?: ConversionInfo()

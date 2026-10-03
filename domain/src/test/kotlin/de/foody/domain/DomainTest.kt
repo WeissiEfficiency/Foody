@@ -68,6 +68,23 @@ class NutritionTest {
         assertTrue(r.isComplete(Nutrient.PROTEIN_G))
     }
 
+    @Test fun keepsFractionalContributions() {
+        // Regression: skalierte Mengen wie 50 g haben nach stripTrailingZeros() die Skala −1 (5E+1);
+        // eine Division ohne explizite Skala rundete Beiträge dadurch auf Zehner.
+        val butter = Ingredient(
+            "butter", "Butter",
+            nutrients = NutrientProfile(
+                NutrientBasis.PER_100_G,
+                mapOf(Nutrient.FAT_G to bd("83"), Nutrient.PROTEIN_G to bd("0.7"), Nutrient.SALT_G to bd("0.03")),
+            ),
+        )
+        val recipe = Recipe("r", "Butterbrot", 4, listOf(RecipeIngredient("l", "butter", bd("50"), MeasureUnit.GRAM)))
+        val r = NutritionCalculator.calculate(recipe, mapOf("butter" to butter))
+        assertAmount("41.5", r.totals.getValue(Nutrient.FAT_G))
+        assertAmount("0.35", r.totals.getValue(Nutrient.PROTEIN_G))
+        assertAmount("0.015", r.totals.getValue(Nutrient.SALT_G))
+    }
+
     @Test fun missingNutrientsAreIncompleteNotZero() {
         val recipe = Recipe(
             "r", "Mix", 2,
@@ -189,5 +206,35 @@ class ShoppingTest {
         ))
         assertEquals("Einkauf\n- Reis (450 g)", ShoppingListTextFormatter.format(s))
         assertNotNull(s)
+    }
+}
+
+class AsNeededTest {
+    @Test fun asNeededLinesNeverReachShoppingList() {
+        val today = LocalDate.of(2026, 3, 28)
+        val r = Recipe("x", "x", 2, listOf(
+            RecipeIngredient("l1", "salt", BigDecimal.ZERO, MeasureUnit.PIECE),
+            RecipeIngredient("l2", "rice", bd("100"), MeasureUnit.GRAM),
+        ))
+        val out = GenerateShoppingListUseCase()(
+            DateRange.ofDays(today, 1), listOf(MealSlot("s", today, "F", "x", 2)), mapOf("x" to r), emptyMap(),
+        )
+        assertEquals(listOf("rice"), out.map { it.ingredientId })
+    }
+}
+
+class DailyPicksTest {
+    private val ids = (1..20).map { "r$it" }
+
+    @Test fun stableWithinDayAndIndependentOfOrder() {
+        val day = LocalDate.of(2026, 10, 3)
+        val a = DailyPicks.pick(ids, day) { it }
+        assertEquals(3, a.size)
+        assertEquals(a, DailyPicks.pick(ids.reversed(), day) { it })
+        assertTrue((1..10).any { DailyPicks.pick(ids, day.plusDays(it.toLong())) { s -> s } != a })
+    }
+
+    @Test fun fewItemsReturnedAsIs() {
+        assertEquals(listOf("a", "b"), DailyPicks.pick(listOf("a", "b"), LocalDate.of(2026, 1, 1)) { it })
     }
 }

@@ -1,26 +1,117 @@
 package de.foody.app.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
-private val Light = lightColorScheme(primary = Color(0xFF2E7D32), secondary = Color(0xFF6D8B3A), tertiary = Color(0xFFBF6A2B))
-private val Dark = darkColorScheme(primary = Color(0xFF8BD68F), secondary = Color(0xFFB9D08C), tertiary = Color(0xFFFFB783))
+/*
+ * Bildlastiger Kochapp-Look: ruhige, fast weiße Flächen, damit Rezeptbilder wirken;
+ * ein frisches Minzgrün als Aktionsfarbe, Koralle als warmer Akzent (Highlights, Badges).
+ * Bewusst ohne Dynamic Color – die Markenfarben sollen auf jedem Gerät gleich aussehen.
+ */
+val Mint = Color(0xFF14B88F)
+val Coral = Color(0xFFFF6F59)
+val Ink = Color(0xFF1C2321)
+
+private val Light = lightColorScheme(
+    primary = Mint,
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFD4F5EA),
+    onPrimaryContainer = Color(0xFF00382A),
+    secondary = Ink,
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFEDEFEC),
+    onSecondaryContainer = Ink,
+    tertiary = Coral,
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFFFE2DC),
+    onTertiaryContainer = Color(0xFF5C1408),
+    background = Color(0xFFFAFAF7),
+    onBackground = Ink,
+    surface = Color(0xFFFAFAF7),
+    onSurface = Ink,
+    surfaceVariant = Color(0xFFEDEFEC),
+    onSurfaceVariant = Color(0xFF5E6663),
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = Color(0xFFF4F5F2),
+    surfaceContainer = Color(0xFFF0F2EF),
+    surfaceContainerHigh = Color(0xFFEAECE9),
+    surfaceContainerHighest = Color(0xFFE4E7E3),
+    outline = Color(0xFFC9CECB),
+    outlineVariant = Color(0xFFE1E4E1),
+)
+
+private val Dark = darkColorScheme(
+    primary = Color(0xFF4FDDB4),
+    onPrimary = Color(0xFF003828),
+    primaryContainer = Color(0xFF00513C),
+    onPrimaryContainer = Color(0xFFB5F2DD),
+    secondary = Color(0xFFE6E9E6),
+    onSecondary = Ink,
+    secondaryContainer = Color(0xFF2E3532),
+    onSecondaryContainer = Color(0xFFE6E9E6),
+    tertiary = Color(0xFFFF8C7A),
+    onTertiary = Color(0xFF5C1408),
+    tertiaryContainer = Color(0xFF7A2A1C),
+    onTertiaryContainer = Color(0xFFFFDAD3),
+    background = Color(0xFF121614),
+    onBackground = Color(0xFFE6E9E6),
+    surface = Color(0xFF121614),
+    onSurface = Color(0xFFE6E9E6),
+    surfaceVariant = Color(0xFF2B312E),
+    onSurfaceVariant = Color(0xFFBFC6C2),
+    surfaceContainerLowest = Color(0xFF0D100F),
+    surfaceContainerLow = Color(0xFF1A1E1C),
+    surfaceContainer = Color(0xFF1E2320),
+    surfaceContainerHigh = Color(0xFF282D2A),
+    surfaceContainerHighest = Color(0xFF333835),
+    outline = Color(0xFF59615D),
+    outlineVariant = Color(0xFF3A403D),
+)
+
+private val base = Typography()
+
+/** Kräftige, kompakte Überschriften wie in Rezept-Feeds; Fließtext bleibt ruhig. */
+private val FoodyTypography = Typography(
+    displaySmall = base.displaySmall.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp),
+    headlineLarge = base.headlineLarge.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp),
+    headlineMedium = base.headlineMedium.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.25).sp),
+    headlineSmall = base.headlineSmall.copy(fontWeight = FontWeight.Bold),
+    titleLarge = base.titleLarge.copy(fontWeight = FontWeight.Bold),
+    titleMedium = base.titleMedium.copy(fontWeight = FontWeight.Bold),
+    titleSmall = base.titleSmall.copy(fontWeight = FontWeight.Bold),
+    labelLarge = base.labelLarge.copy(fontWeight = FontWeight.Bold),
+    labelMedium = base.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+    bodyLarge = base.bodyLarge.copy(lineHeight = 26.sp),
+)
+
+/** Eyebrow-Label über Überschriften („REZEPTE DES TAGES“). */
+val EyebrowStyle = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
+
+private val FoodyShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(20.dp),
+    large = RoundedCornerShape(28.dp),
+    extraLarge = RoundedCornerShape(36.dp),
+)
 
 @Composable
 fun FoodyTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    val colors = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
-            if (dark) dynamicDarkColorScheme(LocalContext.current) else dynamicLightColorScheme(LocalContext.current)
-        dark -> Dark
-        else -> Light
-    }
-    MaterialTheme(colorScheme = colors, content = content)
+    MaterialTheme(
+        colorScheme = if (dark) Dark else Light,
+        typography = FoodyTypography,
+        shapes = FoodyShapes,
+        content = content,
+    )
 }
