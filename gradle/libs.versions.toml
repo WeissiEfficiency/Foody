@@ -2,8 +2,8 @@
 # Geprüft gegen Maven Central / Google Maven (2026-10).
 # AGP 9: eingebautes Kotlin (kein org.jetbrains.kotlin.android mehr) und neue DSL.
 agp = "9.4.1"
-# Kotlin 2.3.x: Hilt 2.57 liest Kotlin-Metadaten nur bis 2.3.
-kotlin = "2.3.21"
+# Hilt liest die Kotlin-Metadaten: Kotlin 2.4 läuft mit Hilt 2.60.
+kotlin = "2.4.20"
 ksp = "2.3.12"
 # Hilt >= 2.59 ist für AGP 9 nötig.
 hilt = "2.60.1"
