@@ -30,13 +30,13 @@ class RecipeSearchTest {
     @After fun tearDown() = db.close()
 
     private suspend fun recipe(name: String, ingredientId: String) = recipes.save(
-        RecipeDraft(null, name, 2, null, null, null, null, "",
-            listOf(RecipeDraft.Line(ingredientId, BigDecimal("1"), MeasureUnit.PIECE, null, false)), emptyList()),
+        RecipeDraft(id = null, name = name, defaultServings = 2, ingredients =
+            listOf(RecipeDraft.Line(ingredientId, BigDecimal("1"), MeasureUnit.PIECE, null, false))),
     )
 
     @Test fun findsRecipesByIngredientAndTreatsWildcardsLiterally() = runTest {
-        db.ingredientDao().upsert(IngredientEntity("z", "Zucchini", null, null, null, null, null, null, null, null, null, null, null, null, 0, 0))
-        db.ingredientDao().upsert(IngredientEntity("k", "Kakao 100%", null, null, null, null, null, null, null, null, null, null, null, null, 0, 0))
+        db.ingredientDao().upsert(IngredientEntity(id = "z", canonicalName = "Zucchini", createdAt = 0, updatedAt = 0))
+        db.ingredientDao().upsert(IngredientEntity(id = "k", canonicalName = "Kakao 100%", createdAt = 0, updatedAt = 0))
         recipe("Gemüsepfanne", "z")
         recipe("Schokokuchen", "k")
         recipe("Pfannkuchen", "k")

@@ -47,8 +47,8 @@ class IngredientRepository @Inject constructor(
         dao.findByName(canonical)?.let { return it }
         val now = System.currentTimeMillis()
         val e = IngredientEntity(
-            newId(), canonical, IngredientCatalog.guessCategory(canonical),
-            null, null, null, null, null, null, null, null, null, null, null, now, now,
+            id = newId(), canonicalName = canonical, category = IngredientCatalog.guessCategory(canonical),
+            createdAt = now, updatedAt = now,
         )
         dao.upsert(e)
         return e
@@ -148,13 +148,13 @@ data class RecipeDraft(
     val id: String?,
     val name: String,
     val defaultServings: Int,
-    val prepMinutes: Int?,
-    val cookMinutes: Int?,
-    val imageUri: String?,
-    val notes: String?,
-    val tags: String,
+    val prepMinutes: Int? = null,
+    val cookMinutes: Int? = null,
+    val imageUri: String? = null,
+    val notes: String? = null,
+    val tags: String = "",
     val ingredients: List<Line>,
-    val steps: List<String>,
+    val steps: List<String> = emptyList(),
     /** Quell-URL bei Importen; null übernimmt beim Bearbeiten die gespeicherte. */
     val sourceUrl: String? = null,
 ) {
@@ -172,6 +172,7 @@ class RecipeRepository @Inject constructor(private val dao: RecipeDao) {
     /** Suche in Name, Tags und Zutaten; % und _ werden wörtlich genommen. */
     fun observe(query: String, archived: Boolean) = dao.observe(escapeLike(query), archived)
     fun observeActive() = dao.observeActive()
+    fun observeAll() = dao.observeAll()
     fun observeRecipe(id: String) = dao.observe(id)
     fun observeIngredients(id: String) = dao.observeIngredients(id)
     fun observeSteps(id: String) = dao.observeSteps(id)
@@ -249,7 +250,9 @@ class PlanRepository @Inject constructor(
 
     suspend fun add(date: LocalDate, slotType: String, recipeId: String, servings: Int) {
         val now = System.currentTimeMillis()
-        dao.upsert(MealSlotEntity(newId(), date, slotType, recipeId, servings, null, now, now))
+        dao.upsert(
+            MealSlotEntity(id = newId(), date = date, slotType = slotType, recipeId = recipeId, servings = servings, createdAt = now, updatedAt = now),
+        )
     }
 
     suspend fun update(slot: MealSlotEntity) = dao.upsert(slot.copy(updatedAt = System.currentTimeMillis()))

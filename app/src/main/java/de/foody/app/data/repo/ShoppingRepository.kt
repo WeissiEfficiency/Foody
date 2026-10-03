@@ -72,7 +72,9 @@ class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
     /** Erzeugt einen Snapshot. Liste + Einträge + Herkunft in einer Transaktion. */
     suspend fun createSnapshot(name: String, range: DateRange, previews: List<NeedPreview>): String {
         val now = System.currentTimeMillis()
-        val list = ShoppingListEntity(newId(), name, range.start, range.endInclusive, 1, now, now)
+        val list = ShoppingListEntity(
+            id = newId(), name = name, rangeStart = range.start, rangeEnd = range.endInclusive, createdAt = now, updatedAt = now,
+        )
         val (items, sources) = buildItems(list.id, previews.filter { !it.need.toBuy.isZero() })
         dao.insertSnapshot(list, items, sources)
         return list.id
@@ -173,7 +175,7 @@ class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
 
         val now = System.currentTimeMillis()
         val list = dao.getLists().maxByOrNull { it.createdAt }
-            ?: ShoppingListEntity(newId(), defaultListName, null, null, 1, now, now).also { dao.upsertList(it) }
+            ?: ShoppingListEntity(id = newId(), name = defaultListName, createdAt = now, updatedAt = now).also { dao.upsertList(it) }
         val existing = dao.getItems(list.id)
         var order = existing.maxOfOrNull { it.sortOrder + 1 } ?: 0
         for (n in needs) {
@@ -200,12 +202,12 @@ class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
 
     suspend fun addManual(listId: String, name: String) {
         val order = dao.getItems(listId).maxOfOrNull { it.sortOrder + 1 } ?: 0
-        dao.upsertItem(ShoppingItemEntity(newId(), listId, null, name.trim(), null, null, false, true, null, order))
+        dao.upsertItem(ShoppingItemEntity(id = newId(), listId = listId, name = name.trim(), manual = true, sortOrder = order))
     }
 
     suspend fun createEmptyList(name: String): String {
         val now = System.currentTimeMillis()
-        val l = ShoppingListEntity(newId(), name, null, null, 1, now, now)
+        val l = ShoppingListEntity(id = newId(), name = name, createdAt = now, updatedAt = now)
         dao.upsertList(l)
         return l.id
     }

@@ -32,7 +32,7 @@ class ShoppingFlowTest {
     @After fun tearDown() = db.close()
 
     private fun ingredient(id: String, name: String) =
-        IngredientEntity(id, name, null, null, null, null, null, null, null, null, null, null, null, null, 0, 0)
+        IngredientEntity(id = id, canonicalName = name, createdAt = 0, updatedAt = 0)
 
     @Test fun recipeToPlanToShoppingSnapshot() = runTest {
         db.ingredientDao().upsert(ingredient("rice", "Reis"))
@@ -40,10 +40,10 @@ class ShoppingFlowTest {
         val plan = PlanRepository(db, db.mealPlanDao(), db.recipeDao(), db.pantryDao(), db.ingredientDao())
         val shopping = ShoppingRepository(db)
 
-        val curry = recipes.save(RecipeDraft(null, "Curry", 4, null, null, null, null, "",
-            listOf(RecipeDraft.Line("rice", BigDecimal("300"), MeasureUnit.GRAM, null, false)), emptyList()))
-        val pan = recipes.save(RecipeDraft(null, "Reispfanne", 2, null, null, null, null, "",
-            listOf(RecipeDraft.Line("rice", BigDecimal("150"), MeasureUnit.GRAM, null, false)), emptyList()))
+        val curry = recipes.save(RecipeDraft(id = null, name = "Curry", defaultServings = 4, ingredients =
+            listOf(RecipeDraft.Line("rice", BigDecimal("300"), MeasureUnit.GRAM, null, false))))
+        val pan = recipes.save(RecipeDraft(id = null, name = "Reispfanne", defaultServings = 2, ingredients =
+            listOf(RecipeDraft.Line("rice", BigDecimal("150"), MeasureUnit.GRAM, null, false))))
 
         val today = LocalDate.of(2026, 10, 1)
         plan.add(today, "Abend", curry, 4)
@@ -61,8 +61,8 @@ class ShoppingFlowTest {
         assertEquals(listOf("Curry" to today, "Reispfanne" to today.plusDays(1)), sources.map { it.recipeName to it.date })
 
         // Rezeptänderung verändert den Snapshot nicht stillschweigend
-        recipes.save(RecipeDraft(curry, "Curry", 4, null, null, null, null, "",
-            listOf(RecipeDraft.Line("rice", BigDecimal("400"), MeasureUnit.GRAM, null, false)), emptyList()))
+        recipes.save(RecipeDraft(id = curry, name = "Curry", defaultServings = 4, ingredients =
+            listOf(RecipeDraft.Line("rice", BigDecimal("400"), MeasureUnit.GRAM, null, false))))
         assertEquals(0, BigDecimal("450").compareTo(db.shoppingDao().getItems(listId).single().amount))
     }
 }
