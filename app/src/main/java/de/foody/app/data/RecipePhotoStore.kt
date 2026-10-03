@@ -1,5 +1,11 @@
 package de.foody.app.data
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import androidx.exifinterface.media.ExifInterface
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
@@ -36,6 +42,42 @@ class RecipePhotoStore @Inject constructor(
         dir.listFiles()?.forEach { if (recipeDao.countByImage(storedUri(it)) == 0) it.delete() }
     }
 
+    /**
+     * Verkleinert ein Foto auf höchstens [MAX_EDGE] Pixel an der längeren Seite und speichert es als JPEG neu.
+     * Kamera-Apps liefern 12–50 Megapixel (3–8 MB); für Rezeptkarten und Detailkopf reichen 1600 px (≈ 200–400 KB).
+     * Die Drehung aus den EXIF-Daten wird dabei angewendet, sonst lägen Hochformat-Fotos danach quer.
+     * Ersetzt die Datei atomar (Umbenennen), der gespeicherte Link bleibt gleich. Kleine Fotos bleiben unberührt.
+     */
+    suspend fun shrink(file: File): Boolean = withContext(Dispatchers.IO) {
+        runCatching {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(file.path, bounds)
+            val longest = maxOf(bounds.outWidth, bounds.outHeight)
+            if (longest <= 0 || (longest <= MAX_EDGE && file.length() <= MAX_BYTES)) return@runCatching false
+
+            // Erst grob per Zweierpotenz beim Dekodieren (spart Speicher), dann exakt skalieren
+            var sample = 1
+            while (longest / (sample * 2) >= MAX_EDGE) sample *= 2
+            val decoded = BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample })
+                ?: return@runCatching false
+            val scale = MAX_EDGE.toFloat() / maxOf(decoded.width, decoded.height)
+            val matrix = Matrix().apply {
+                if (scale < 1f) postScale(scale, scale)
+                val degrees = ExifInterface(file.path).rotationDegrees
+                if (degrees != 0) postRotate(degrees.toFloat())
+            }
+            val result = Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true)
+            val tmp = File(file.parentFile, file.name + ".tmp")
+            tmp.outputStream().use { result.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }
+            if (result !== decoded) result.recycle()
+            decoded.recycle()
+            tmp.renameTo(file) || run { tmp.delete(); false }
+        }.getOrDefault(false)
+    }
+
+    /** Einmalig beim Start: früher gespeicherte, zu große Fotos verkleinern. Gibt die Zahl verkleinerter Fotos zurück. */
+    suspend fun shrinkAll(): Int = dir.listFiles { f -> f.isFile && f.name.endsWith(".jpg") }.orEmpty().count { shrink(it) }
+
     /** Link, der am Rezept gespeichert wird. */
     fun storedUri(file: File): String = file.toUri().toString()
 
@@ -64,5 +106,8 @@ class RecipePhotoStore @Inject constructor(
 
     private companion object {
         const val DIR = "recipe_images"
+        const val MAX_EDGE = 1600
+        const val MAX_BYTES = 600L * 1024
+        const val JPEG_QUALITY = 85
     }
 }

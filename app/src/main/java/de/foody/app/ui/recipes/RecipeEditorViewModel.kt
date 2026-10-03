@@ -114,7 +114,11 @@ class RecipeEditorViewModel @Inject constructor(
 
     fun onPhotoTaken(path: String, success: Boolean) {
         val file = java.io.File(path)
-        if (success) set { it.copy(imageUri = photos.storedUri(file)) } else file.delete()
+        if (!success) { file.delete(); return }
+        viewModelScope.launch {
+            photos.shrink(file)
+            set { it.copy(imageUri = photos.storedUri(file)) }
+        }
     }
 
     fun updateLine(key: String, f: (EditorLine) -> EditorLine) = set { s -> s.copy(lines = s.lines.map { if (it.key == key) f(it) else it }) }

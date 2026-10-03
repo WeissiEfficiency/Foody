@@ -151,6 +151,7 @@ class RecipeDetailViewModel @Inject constructor(
     fun onPhotoTaken(path: String, success: Boolean) = viewModelScope.launch {
         val file = java.io.File(path)
         if (!success) { file.delete(); return@launch }
+        photos.shrink(file)
         val old = state.value.recipe?.imageUri
         repo.setImage(id, photos.storedUri(file))
         photos.deleteIfUnused(old)
