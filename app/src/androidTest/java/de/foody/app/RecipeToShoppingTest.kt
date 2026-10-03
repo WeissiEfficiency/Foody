@@ -34,18 +34,18 @@ class RecipeToShoppingTest {
     @After fun tearDown() = db.close()
 
     private fun ingredient(id: String, name: String) =
-        IngredientEntity(id, name, null, null, null, null, null, null, null, null, null, null, null, null, 0, 0)
+        IngredientEntity(id = id, canonicalName = name, createdAt = 0, updatedAt = 0)
 
     private suspend fun soup(): String {
         listOf(ingredient("kart", "Kartoffel"), ingredient("salz", "Salz"), ingredient("wasser", "Wasser"), ingredient("speck", "Speck"))
             .forEach { db.ingredientDao().upsert(it) }
         return recipes.save(
-            RecipeDraft(null, "Suppe", 4, null, null, null, null, "", listOf(
+            RecipeDraft(id = null, name = "Suppe", defaultServings = 4, ingredients = listOf(
                 RecipeDraft.Line("kart", BigDecimal("1"), MeasureUnit.KILOGRAM, null, false),
                 RecipeDraft.Line("salz", BigDecimal.ZERO, MeasureUnit.PIECE, null, false), // nach Bedarf
                 RecipeDraft.Line("wasser", BigDecimal("1"), MeasureUnit.LITER, null, false), // nie einkaufen
                 RecipeDraft.Line("speck", BigDecimal("100"), MeasureUnit.GRAM, null, true), // optional
-            ), emptyList()),
+            )),
         )
     }
 

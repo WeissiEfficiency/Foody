@@ -39,8 +39,8 @@ class IngredientHarmonizeTest {
     @After fun tearDown() = db.close()
 
     private fun ingredient(id: String, name: String, kj: String? = null) = IngredientEntity(
-        id, name, null, null, null, if (kj != null) NutrientBasis.PER_100_G else null,
-        kj?.let(::BigDecimal), null, null, null, null, null, null, null, 0, 0,
+        id = id, canonicalName = name, nutrientBasis = if (kj != null) NutrientBasis.PER_100_G else null,
+        energyKj = kj?.let(::BigDecimal), createdAt = 0, updatedAt = 0,
     )
 
     @Test fun importUsesCanonicalNames() = runTest {
@@ -54,8 +54,9 @@ class IngredientHarmonizeTest {
         db.ingredientDao().upsert(ingredient("mehl", "Mehl"))
         db.ingredientDao().upsert(ingredient("zw", "Zwiebeln"))
         val cake = recipes.save(
-            RecipeDraft(null, "Kuchen", 4, null, null, null, null, "",
-                listOf(RecipeDraft.Line("mehl", BigDecimal("250"), MeasureUnit.GRAM, null, false)), emptyList()),
+            RecipeDraft(id = null, name = "Kuchen", defaultServings = 4,
+                ingredients = listOf(RecipeDraft.Line("mehl", BigDecimal("250"), MeasureUnit.GRAM, null, false)),
+            ),
         )
         db.pantryDao().upsert(PantryItemEntity("p", "mehl", BigDecimal("1000"), MeasureUnit.GRAM, null, 0))
 

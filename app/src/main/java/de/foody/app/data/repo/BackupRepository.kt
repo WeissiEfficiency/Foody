@@ -134,28 +134,52 @@ class BackupRepository @Inject constructor(
         fun String?.bd() = this?.let(::BigDecimal)
         d.ingredients.forEach {
             db.ingredientDao().upsert(
-                IngredientEntity(it.id, it.name, it.category, it.density.bd(), it.pieceWeight.bd(), it.basis?.let(NutrientBasis::valueOf),
-                    it.energyKj.bd(), it.protein.bd(), it.carbs.bd(), it.fat.bd(), it.fiber.bd(), it.sugar.bd(), it.salt.bd(), it.source, it.createdAt, it.updatedAt),
+                IngredientEntity(
+                    id = it.id, canonicalName = it.name, category = it.category,
+                    densityGPerMl = it.density.bd(), pieceWeightG = it.pieceWeight.bd(), nutrientBasis = it.basis?.let(NutrientBasis::valueOf),
+                    energyKj = it.energyKj.bd(), protein = it.protein.bd(), carbs = it.carbs.bd(), fat = it.fat.bd(),
+                    fiber = it.fiber.bd(), sugar = it.sugar.bd(), salt = it.salt.bd(), nutrientSource = it.source,
+                    createdAt = it.createdAt, updatedAt = it.updatedAt,
+                ),
             )
         }
         d.recipes.forEach {
-            db.recipeDao().upsert(RecipeEntity(it.id, it.name, it.servings, it.prep, it.cook, it.imageUri, it.notes, it.tags, it.archivedAt, it.createdAt, it.updatedAt, favorite = it.favorite, sourceUrl = it.sourceUrl))
+            db.recipeDao().upsert(
+                RecipeEntity(
+                    id = it.id, name = it.name, defaultServings = it.servings, prepMinutes = it.prep, cookMinutes = it.cook,
+                    imageUri = it.imageUri, notes = it.notes, tags = it.tags, archivedAt = it.archivedAt,
+                    createdAt = it.createdAt, updatedAt = it.updatedAt, favorite = it.favorite, sourceUrl = it.sourceUrl,
+                ),
+            )
         }
         db.recipeDao().insertIngredients(d.recipeIngredients.map {
             RecipeIngredientEntity(it.id, it.recipeId, it.ingredientId, BigDecimal(it.amount), MeasureUnit.valueOf(it.unit), it.sortOrder, it.note, it.optional)
         })
         db.recipeDao().insertSteps(d.steps.map { InstructionStepEntity(it.id, it.recipeId, it.position, it.text) })
         d.mealSlots.forEach {
-            db.mealPlanDao().upsert(MealSlotEntity(it.id, LocalDate.parse(it.date), it.slotType, it.recipeId, it.servings, it.cookedAt, it.createdAt, it.updatedAt))
+            db.mealPlanDao().upsert(
+                MealSlotEntity(
+                    id = it.id, date = LocalDate.parse(it.date), slotType = it.slotType, recipeId = it.recipeId, servings = it.servings,
+                    cookedAt = it.cookedAt, createdAt = it.createdAt, updatedAt = it.updatedAt,
+                ),
+            )
         }
         d.pantry.forEach {
             db.pantryDao().upsert(PantryItemEntity(it.id, it.ingredientId, BigDecimal(it.amount), MeasureUnit.valueOf(it.unit), it.bestBefore?.let(LocalDate::parse), it.updatedAt))
         }
         d.shoppingLists.forEach {
-            db.shoppingDao().upsertList(ShoppingListEntity(it.id, it.name, it.start?.let(LocalDate::parse), it.end?.let(LocalDate::parse), it.version, it.createdAt, it.updatedAt))
+            db.shoppingDao().upsertList(
+                ShoppingListEntity(
+                    id = it.id, name = it.name, rangeStart = it.start?.let(LocalDate::parse), rangeEnd = it.end?.let(LocalDate::parse),
+                    generationVersion = it.version, createdAt = it.createdAt, updatedAt = it.updatedAt,
+                ),
+            )
         }
         db.shoppingDao().insertItems(d.shoppingItems.map {
-            ShoppingItemEntity(it.id, it.listId, it.ingredientId, it.name, it.amount.bd(), it.unit?.let(MeasureUnit::valueOf), it.checked, it.manual, it.category, it.sortOrder)
+            ShoppingItemEntity(
+                id = it.id, listId = it.listId, ingredientId = it.ingredientId, name = it.name, amount = it.amount.bd(),
+                unit = it.unit?.let(MeasureUnit::valueOf), checked = it.checked, manual = it.manual, category = it.category, sortOrder = it.sortOrder,
+            )
         })
         db.shoppingDao().insertSources(d.shoppingSources.map {
             ShoppingItemSourceEntity(it.id, it.itemId, it.mealSlotId, it.recipeIngredientId, it.recipeName, LocalDate.parse(it.date), BigDecimal(it.amount), MeasureUnit.valueOf(it.unit))
