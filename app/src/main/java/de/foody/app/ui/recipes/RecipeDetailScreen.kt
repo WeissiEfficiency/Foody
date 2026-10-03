@@ -1,5 +1,11 @@
 package de.foody.app.ui.recipes
 
+import de.foody.app.data.RecipePhotoStore
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.ButtonDefaults
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -132,6 +138,7 @@ class RecipeDetailViewModel @Inject constructor(
     private val repo: RecipeRepository,
     ingredients: IngredientRepository,
     private val shopping: ShoppingRepository,
+    private val photos: RecipePhotoStore,
     private val saved: SavedStateHandle,
 ) : ViewModel() {
     val id = saved.toRoute<RecipeDetailRoute>().id
@@ -178,7 +185,23 @@ class RecipeDetailViewModel @Inject constructor(
     fun setServings(n: Int) { saved["servings"] = n }
     fun archive(archived: Boolean) = viewModelScope.launch { repo.setArchived(id, archived) }
     fun toggleFavorite() = viewModelScope.launch { state.value.recipe?.let { repo.setFavorite(id, !it.favorite) } }
-    fun delete(onDone: () -> Unit) = viewModelScope.launch { repo.delete(id); onDone() }
+    fun delete(onDone: () -> Unit) = viewModelScope.launch {
+        val image = state.value.recipe?.imageUri
+        repo.delete(id)
+        photos.deleteIfUnused(image)
+        onDone()
+    }
+
+    fun newPhotoTarget() = photos.newPhotoTarget()
+
+    /** Kamerafoto übernehmen; ein ersetztes eigenes Foto wird aufgeräumt, ein abgebrochenes verworfen. */
+    fun onPhotoTaken(path: String, success: Boolean) = viewModelScope.launch {
+        val file = java.io.File(path)
+        if (!success) { file.delete(); return@launch }
+        val old = state.value.recipe?.imageUri
+        repo.setImage(id, photos.storedUri(file))
+        photos.deleteIfUnused(old)
+    }
     fun duplicate(suffix: String, onDone: (String) -> Unit) = viewModelScope.launch { repo.duplicate(id, suffix)?.let(onDone) }
 
     /** Einmaliges Ergebnis von „Auf die Einkaufsliste“; die UI quittiert es nach Anzeige. */
@@ -201,6 +224,16 @@ fun RecipeDetailScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     var confirmDelete by remember { mutableStateOf(false) }
     var cooking by rememberSaveable { mutableStateOf(false) }
+    var pendingPhoto by rememberSaveable { mutableStateOf<String?>(null) }
+    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+        pendingPhoto?.let { vm.onPhotoTaken(it, ok) }
+        pendingPhoto = null
+    }
+    val takePhoto = {
+        val (file, uri) = vm.newPhotoTarget()
+        pendingPhoto = file.path
+        camera.launch(uri)
+    }
     val snackbar = remember { SnackbarHostState() }
     val added by vm.added.collectAsStateWithLifecycle()
     val resources = LocalResources.current
@@ -223,6 +256,7 @@ fun RecipeDetailScreen(
                 Hero(
                     recipe, onBack, onEdit,
                     onFavorite = vm::toggleFavorite,
+                    onTakePhoto = takePhoto,
                     onDuplicate = { vm.duplicate(copySuffix, onOpenOther) },
                     onArchive = { vm.archive(recipe.archivedAt == null) },
                     onDelete = { confirmDelete = true },
@@ -322,6 +356,7 @@ private fun Hero(
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onFavorite: () -> Unit,
+    onTakePhoto: () -> Unit,
     onDuplicate: () -> Unit,
     onArchive: () -> Unit,
     onDelete: () -> Unit,
@@ -335,6 +370,17 @@ private fun Hero(
     Box(Modifier.fillMaxWidth().height(heroHeight)) {
         RecipeImage(recipe.imageUri, recipe.name, Modifier.fillMaxSize(), emojiSize = if (recipe.imageUri != null) 120.sp else 88.sp)
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Black.copy(alpha = 0.35f), 0.35f to Color.Transparent)))
+        if (recipe.imageUri == null) {
+            FilledTonalButton(
+                onTakePhoto,
+                Modifier.align(Alignment.BottomCenter).padding(bottom = 44.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color.White.copy(alpha = 0.92f), contentColor = Color(0xFF1C2321)),
+            ) {
+                Icon(Icons.Outlined.PhotoCamera, null)
+                Spacer(Modifier.size(8.dp))
+                Text(stringResource(R.string.photo_take))
+            }
+        }
         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
             androidx.compose.material3.FilledIconButton(onBack, colors = roundButton) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back))
@@ -357,6 +403,11 @@ private fun Hero(
                     Icon(Icons.Default.MoreVert, stringResource(R.string.more_actions))
                 }
                 DropdownMenu(menu, { menu = false }) {
+                    DropdownMenuItem(
+                        { Text(stringResource(if (recipe.imageUri == null) R.string.photo_take else R.string.photo_replace)) },
+                        { menu = false; onTakePhoto() },
+                        leadingIcon = { Icon(Icons.Outlined.PhotoCamera, null) },
+                    )
                     DropdownMenuItem({ Text(stringResource(R.string.action_duplicate)) }, { menu = false; onDuplicate() },
                         leadingIcon = { Icon(Icons.Outlined.ContentCopy, null) })
                     val archived = recipe.archivedAt != null
