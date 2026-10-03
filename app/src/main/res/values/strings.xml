@@ -233,6 +233,18 @@
     <string name="shopping_state_on_list">auf der Liste</string>
     <string name="shopping_state_not_on_list">nicht auf der Liste</string>
     <string name="shopping_item_note">Angabe</string>
+    <string name="shopping_view_list">Als Liste anzeigen</string>
+    <string name="shopping_view_tiles">Als Kacheln anzeigen</string>
+    <string name="sort_rating">Beste Bewertung</string>
+    <string name="sort_cooked">Oft gekocht</string>
+    <plurals name="rating_stars">
+        <item quantity="one">%1$d Stern</item>
+        <item quantity="other">%1$d Sterne</item>
+    </plurals>
+    <plurals name="cooked_count">
+        <item quantity="one">%1$d× gekocht</item>
+        <item quantity="other">%1$d× gekocht</item>
+    </plurals>
     <string name="shopping_item_note_hint">z. B. 500 g, Bio, reif</string>
     <string name="action_clear">Leeren</string>
     <string name="shopping_title_empty">Deine Liste</string>

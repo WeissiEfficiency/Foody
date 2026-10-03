@@ -118,6 +118,9 @@ interface RecipeDao {
     @Query("UPDATE recipe SET favorite = :favorite, updatedAt = :now WHERE id = :id")
     suspend fun setFavorite(id: String, favorite: Boolean, now: Long)
 
+    @Query("UPDATE recipe SET rating = :rating, updatedAt = :now WHERE id = :id")
+    suspend fun setRating(id: String, rating: Int?, now: Long)
+
     @Query("UPDATE recipe SET archivedAt = :at, updatedAt = :now WHERE id = :id")
     suspend fun setArchived(id: String, at: Long?, now: Long)
 
@@ -126,6 +129,10 @@ interface RecipeDao {
 
 @Dao
 interface MealPlanDao {
+    /** Wie oft ein Rezept im Planer als „gekocht“ bestätigt wurde. */
+    @Query("SELECT recipeId, COUNT(*) AS count FROM meal_slot WHERE cookedAt IS NOT NULL GROUP BY recipeId")
+    fun observeCookedCounts(): Flow<List<CookedCount>>
+
     @Query("SELECT * FROM meal_slot WHERE date BETWEEN :start AND :end ORDER BY date, slotType")
     fun observeRange(start: LocalDate, end: LocalDate): Flow<List<MealSlotEntity>>
 
@@ -201,3 +208,5 @@ interface MaintenanceDao {
 }
 
 data class RequiredIngredientRow(val recipeId: String, val ingredientId: String, val ingredientName: String)
+
+data class CookedCount(val recipeId: String, val count: Int)

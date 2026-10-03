@@ -93,4 +93,4 @@ object DietRules {
 }
 
 /** Sortierung der Rezeptliste. */
-enum class RecipeSort { NAME, NEWEST, KCAL_ASC, PROTEIN_DESC }
+enum class RecipeSort { NAME, NEWEST, KCAL_ASC, PROTEIN_DESC, BEST_RATED, MOST_COOKED }

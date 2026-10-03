@@ -1,5 +1,6 @@
 package de.foody.app
 
+import de.foody.app.data.repo.PlanRepository
 import android.content.Context
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertTextContains
@@ -53,7 +54,8 @@ class RecipeSearchFocusTest {
             )
         }
         val importer = RecipeImportRepository(db, recipes, IngredientRepository(db, db.ingredientDao(), context), context)
-        vm = RecipeListViewModel(recipes, PantryRepository(db.pantryDao()), IngredientRepository(db, db.ingredientDao(), context), importer, SavedStateHandle())
+        vm = RecipeListViewModel(recipes, PantryRepository(db.pantryDao()), IngredientRepository(db, db.ingredientDao(), context),
+            PlanRepository(db, db.mealPlanDao(), db.recipeDao(), db.pantryDao(), db.ingredientDao()), importer, SavedStateHandle())
     }
 
     @After fun tearDown() = db.close()

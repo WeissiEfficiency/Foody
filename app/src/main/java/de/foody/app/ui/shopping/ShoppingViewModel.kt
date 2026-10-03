@@ -1,5 +1,6 @@
 package de.foody.app.ui.shopping
 
+import de.foody.app.data.ShoppingPreferences
 import de.foody.domain.ShoppingCatalog
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -49,6 +50,7 @@ data class ShoppingUiState(
 @HiltViewModel
 class ShoppingViewModel @Inject constructor(
     private val repo: ShoppingRepository,
+    private val viewPreferences: ShoppingPreferences,
     private val saved: SavedStateHandle,
 ) : ViewModel() {
     private val selectedId = saved.getStateFlow<String?>("listId", null)
@@ -85,6 +87,10 @@ class ShoppingViewModel @Inject constructor(
     val undo = _undo.asStateFlow()
 
     fun select(id: String) { saved["listId"] = id }
+
+    /** Kacheln oder Liste für die Artikel, die noch gekauft werden müssen. */
+    val listView = viewPreferences.listView
+    fun toggleListView() = viewPreferences.setListView(!listView.value)
 
     fun openGenerate() { _generate.value = GenerateState(); refreshPreview() }
     fun closeGenerate() { _generate.value = null }

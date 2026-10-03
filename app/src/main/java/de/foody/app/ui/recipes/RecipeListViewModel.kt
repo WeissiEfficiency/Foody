@@ -1,5 +1,6 @@
 package de.foody.app.ui.recipes
 
+import de.foody.app.data.repo.PlanRepository
 import de.foody.app.data.repo.IngredientRepository
 import de.foody.app.data.repo.toDomain
 import de.foody.domain.Diet
@@ -69,6 +70,7 @@ class RecipeListViewModel @Inject constructor(
     repo: RecipeRepository,
     pantry: PantryRepository,
     ingredients: IngredientRepository,
+    plan: PlanRepository,
     private val importer: RecipeImportRepository,
     private val saved: SavedStateHandle,
 ) : ViewModel() {
@@ -117,14 +119,19 @@ class RecipeListViewModel @Inject constructor(
     // Vorratsabgleich nur berechnen, solange der Filter an ist
     private val missingIfNeeded = pantryOnly.flatMapLatest { on -> if (on) missing else flowOf(emptyMap()) }
 
+    private data class ListInputs(
+        val list: List<RecipeEntity>, val missing: Map<String, Int>, val profiles: Map<String, RecipeProfile>, val cooked: Map<String, Int>,
+    )
+
     val state = combine(
-        query, archived, localFilter, combine(filtered, missingIfNeeded, profiles.onStart { emit(emptyMap()) }, ::Triple), active,
-    ) { q, a, f, (list, missing, profiles), active ->
+        query, archived, localFilter,
+        combine(filtered, missingIfNeeded, profiles.onStart { emit(emptyMap()) }, plan.observeCookedCounts(), ::ListInputs), active,
+    ) { q, a, f, (list, missing, profiles, cooked), active ->
         val matching = list.filter { r ->
             (f.tag == null || f.tag in r.tagList()) && (!f.favoritesOnly || r.favorite) &&
                 (!f.pantryOnly || (missing[r.id] ?: Int.MAX_VALUE) <= MAX_MISSING) &&
                 (f.diets.isEmpty() || profiles[r.id]?.diets?.containsAll(f.diets) == true)
-        }.let { sortRecipes(it, f.sort, profiles) }
+        }.let { sortRecipes(it, f.sort, profiles, cooked) }
         RecipeListUiState(
             query = q,
             showArchived = a,
@@ -196,10 +203,18 @@ class RecipeListViewModel @Inject constructor(
 }
 
 /** Sortierung; Rezepte ohne verlässliche Nährwerte stehen bei Nährwert-Sortierungen hinten. */
-private fun sortRecipes(list: List<RecipeEntity>, sort: RecipeSort, profiles: Map<String, RecipeProfile>): List<RecipeEntity> =
+private fun sortRecipes(
+    list: List<RecipeEntity>,
+    sort: RecipeSort,
+    profiles: Map<String, RecipeProfile>,
+    cooked: Map<String, Int>,
+): List<RecipeEntity> =
     when (sort) {
         RecipeSort.NAME -> list
         RecipeSort.NEWEST -> list.sortedByDescending { it.createdAt }
         RecipeSort.KCAL_ASC -> list.sortedBy { r -> profiles[r.id]?.takeIf { it.reliable }?.kcalPerServing ?: Int.MAX_VALUE }
         RecipeSort.PROTEIN_DESC -> list.sortedByDescending { r -> profiles[r.id]?.takeIf { it.reliable }?.proteinPerServing ?: -1 }
+        // Unbewertete hinten; bei gleicher Bewertung bleibt die Namensreihenfolge (stabile Sortierung)
+        RecipeSort.BEST_RATED -> list.sortedByDescending { it.rating ?: 0 }
+        RecipeSort.MOST_COOKED -> list.sortedByDescending { cooked[it.id] ?: 0 }
     }

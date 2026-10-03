@@ -19,10 +19,10 @@ kein Server, keine Internet-Berechtigung.
 | # | Funktion | Vorbild | Status |
 |---|---|---|---|
 | 1 | Ernährungsfilter (vegetarisch, vegan, eiweißreich, Low Carb, leicht), Sortierung, kcal auf den Karten | KptnCook, Chefkoch | umgesetzt |
-| 2 | Nährwerte je Tag im Planer, optionales Tagesziel | KptnCook, Samsung Food | geplant |
-| 3 | Zutaten beim Kochen abhaken (Mise en place) | Paprika, KptnCook | geplant |
-| 4 | Artikeldetails bearbeiten, Listenansicht statt Kacheln | Bring!, AnyList | geplant |
-| 5 | Eigene Bewertung (Sterne), „Oft gekocht“ | Chefkoch, Paprika | geplant (Datenbank-Migration) |
+| 2 | Nährwerte je Tag im Planer, optionales Tagesziel | KptnCook, Samsung Food | umgesetzt |
+| 3 | Zutaten beim Kochen abhaken (Mise en place) | Paprika, KptnCook | umgesetzt |
+| 4 | Artikeldetails bearbeiten, Listenansicht statt Kacheln | Bring!, AnyList | umgesetzt |
+| 5 | Eigene Bewertung (Sterne), „Oft gekocht“ | Chefkoch, Paprika | umgesetzt |
 
 ## Bewusst nicht geplant (Entscheidung nötig)
 

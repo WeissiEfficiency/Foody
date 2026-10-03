@@ -20,8 +20,9 @@ object SeedData {
     private val rows = listOf(
         Row("seed-reis", "Reis (roh)", "Trockenwaren", "1500", "7", "78", "0.6", "1.3", "0.1", "0"),
         Row("seed-nudeln", "Nudeln (roh)", "Trockenwaren", "1500", "12", "72", "1.5", "3", "3", "0"),
-        Row("seed-mehl", "Weizenmehl", "Trockenwaren", "1450", "10", "72", "1", "4", "0.7", "0"),
-        Row("seed-zucker", "Zucker", "Trockenwaren", "1700", "0", "100", "0", "0", "100", "0"),
+        // v7: Dichten für Löffelmaße (1 EL Mehl ≈ 8 g, 1 TL Zucker ≈ 4 g, 1 TL Salz ≈ 6 g)
+        Row("seed-mehl", "Weizenmehl", "Trockenwaren", "1450", "10", "72", "1", "4", "0.7", "0", density = "0.55"),
+        Row("seed-zucker", "Zucker", "Trockenwaren", "1700", "0", "100", "0", "0", "100", "0", density = "0.85"),
         Row("seed-milch", "Milch 3,5 %", "Kühlregal", "270", "3.4", "4.8", "3.5", "0", "4.8", "0.1", NutrientBasis.PER_100_ML, density = "1.03"),
         Row("seed-butter", "Butter", "Kühlregal", "3050", "0.7", "0.6", "83", "0", "0.6", "0"),
         Row("seed-ei", "Ei", "Kühlregal", "580", "13", "0.7", "10", "0", "0.7", "0.3", piece = "60"),
@@ -37,7 +38,7 @@ object SeedData {
         Row("seed-hackfleisch", "Rinderhack", "Fleisch & Fisch", "1000", "20", "0", "17", "0", "0", "0.2"),
         // v3: 3.700 kJ gelten je 100 g (nicht je 100 ml) – Basis korrigiert, die Dichte rechnet ml um
         Row("seed-olivenoel", "Olivenöl", "Öle & Gewürze", "3700", "0", "0", "100", "0", "0", "0", density = "0.91"),
-        Row("seed-salz", "Salz", "Öle & Gewürze", "0", "0", "0", "0", "0", "0", "100"),
+        Row("seed-salz", "Salz", "Öle & Gewürze", "0", "0", "0", "0", "0", "0", "100", density = "1.2"),
         // v4: Werte ergänzt (schwarzer Pfeffer); 1 TL gemahlen ≈ 2,3 g
         Row("seed-pfeffer", "Pfeffer", "Öle & Gewürze", "1150", "10", "39", "3.3", "25", "0.6", "0", density = "0.46"),
         Row("seed-kokosmilch", "Kokosmilch", "Konserven", "800", "2", "3", "19", "0", "2", "0", NutrientBasis.PER_100_ML, density = "1.0"),
@@ -209,7 +210,7 @@ object SeedData {
     )
 
     /** Bei Erweiterung erhöhen: neue Zeilen werden dann auch in bestehende Installationen übernommen. */
-    const val VERSION = 6
+    const val VERSION = 7
 
     /** Kanonische Namen aller Startzutaten (für Tests und Abgleich). */
     val names: List<String> get() = rows.map { it.name }
