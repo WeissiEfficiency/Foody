@@ -19,8 +19,14 @@ import androidx.compose.ui.unit.sp
  * ein frisches Minzgrün als Aktionsfarbe, Koralle als warmer Akzent (Highlights, Badges).
  * Bewusst ohne Dynamic Color – die Markenfarben sollen auf jedem Gerät gleich aussehen.
  */
-val Mint = Color(0xFF14B88F)
-val Coral = Color(0xFFFF6F59)
+/*
+ * Kontraste nach WCAG 2.2 AA (gegen #FAFAF7 bzw. Weiß gemessen):
+ * Mint #0A7A5D als Text 5,1:1, Weiß auf Mint 5,3:1 – das hellere #14B88F erreichte nur 2,4:1.
+ * Koralle #C8422E als Text 4,7:1. Das Herz (#D64A36) ist Grafik und braucht 3:1 (4,3:1).
+ */
+val Mint = Color(0xFF0A7A5D)
+val Coral = Color(0xFFC8422E)
+val FavoriteRed = Color(0xFFD64A36)
 val Ink = Color(0xFF1C2321)
 
 private val Light = lightColorScheme(

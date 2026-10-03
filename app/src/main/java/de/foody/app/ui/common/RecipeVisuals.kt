@@ -120,7 +120,7 @@ fun RecipeGridCard(recipe: RecipeEntity, onClick: () -> Unit, modifier: Modifier
             if (recipe.favorite) {
                 Icon(
                     Icons.Filled.Favorite, stringResource(R.string.favorite),
-                    tint = de.foody.app.ui.theme.Coral,
+                    tint = de.foody.app.ui.theme.FavoriteRed,
                     modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(28.dp)
                         .background(Color.White.copy(alpha = 0.9f), CircleShape).padding(5.dp),
                 )

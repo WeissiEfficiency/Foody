@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -79,7 +80,7 @@ class IngredientsViewModel @Inject constructor(private val repo: IngredientRepos
         _message.value = R.string.ingredient_merged to 1
     }
     fun harmonize() = viewModelScope.launch {
-        _message.value = R.string.ingredients_harmonized to repo.harmonizeNames()
+        _message.value = R.plurals.ingredients_harmonized to repo.harmonizeNames()
     }
 }
 
@@ -239,7 +240,7 @@ private fun IngredientDialog(
 
 @Composable
 private fun messageText(res: Int, n: Int): String =
-    if (res == R.string.ingredients_harmonized) stringResource(res, n) else stringResource(res)
+    if (res == R.plurals.ingredients_harmonized) pluralStringResource(res, n, n) else stringResource(res)
 
 /** Auswahl der Zielzutat; danach zeigen alle Rezepte, Vorräte und Listeneinträge auf das Ziel. */
 @Composable
