@@ -147,6 +147,17 @@ class SyncWorkerTest {
     }
 
     @Test
+    fun activeWithoutTokenMarksUnauthorizedAndSucceeds() = runTest {
+        activate()
+        val noToken = object : TokenStore(context) {
+            override fun load(): String? = null
+        }
+        val real = SyncEngineFactory(db, SyncLocalStore(db), SyncApplier(db), noToken)
+        assertEquals(ListenableWorker.Result.success(), worker(real).doWork())
+        assertEquals("unauthorized", db.syncDao().getState()!!.lastError)
+    }
+
+    @Test
     fun inactiveSyncSucceeds() = runTest {
         assertEquals(ListenableWorker.Result.success(), worker(factory(null)).doWork())
     }

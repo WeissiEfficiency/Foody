@@ -28,6 +28,9 @@ sealed interface SyncOutcome {
     data class Failed(val transient: Boolean, val message: String) : SyncOutcome
 }
 
+/** Der Server liefert `hasMore`, aber einen Cursor, der nicht vorrückt. */
+private class CursorStuckException : Exception("cursor_stuck")
+
 /**
  * Ein vollständiger Sync-Lauf: Push (Outbox → Server), Ergebnisse verarbeiten, Pull (Server → lokal) und anwenden;
  * bei `410` (Cursor abgelaufen) ein Voll-Abgleich. Schreibt `lastSyncAt`/`lastError` in `sync_state`.
@@ -68,6 +71,8 @@ class SyncEngine(
             failed(true, e.message)
         } catch (e: SyncApiException.Throttled) {
             failed(true, e.message)
+        } catch (_: CursorStuckException) {
+            failed(true, "cursor_stuck")
         } catch (e: SyncApiException) {
             failed(false, e.message)
         } catch (e: Exception) {
@@ -101,13 +106,37 @@ class SyncEngine(
         repeat(MAX_PUSH_BATCHES) {
             val batch = store.pendingBatch(Protocol.MAX_PUSH_RECORDS, sent)
             if (batch.isEmpty()) return pushed
-            val response = api.push(batch.map { it.record })
             sent += batch.map { it.key }
-            val byKey = batch.associateBy { it.record.type to it.record.id }
-            for (result in response.results) {
-                val pending = byKey[result.type to result.id] ?: continue
-                if (handleResult(pending, result)) pushed++
+            pushed += pushBatch(batch)
+        }
+        return pushed
+    }
+
+    /**
+     * Sendet [batch]; antwortet der Server mit `413`, wird er halbiert und beide Hälften nacheinander gesendet
+     * (Reihenfolge Eltern vor Kindern bleibt erhalten). Wird ein einzelner Datensatz abgelehnt, bekommt er das
+     * Problem `too_large` und verlässt die Outbox. Liefert die Zahl der angenommenen Datensätze.
+     */
+    private suspend fun pushBatch(batch: List<PendingRecord>): Int {
+        val response = try {
+            api.push(batch.map { it.record })
+        } catch (_: SyncApiException.TooLarge) {
+            if (batch.size > 1) {
+                val half = batch.size / 2
+                return pushBatch(batch.subList(0, half)) + pushBatch(batch.subList(half, batch.size))
             }
+            val pending = batch.single()
+            db.withTransaction {
+                dao.addProblem(SyncProblemEntity(pending.record.type.wire, pending.record.id, "too_large", clock.millis()))
+                dequeueIfUnchanged(pending)
+            }
+            return 0
+        }
+        val byKey = batch.associateBy { it.record.type to it.record.id }
+        var pushed = 0
+        for (result in response.results) {
+            val pending = byKey[result.type to result.id] ?: continue
+            if (handleResult(pending, result)) pushed++
         }
         return pushed
     }
@@ -181,6 +210,8 @@ class SyncEngine(
         while (true) {
             val page = api.pull(since, PULL_LIMIT)
             all += page.records
+            // Ein Cursor, der trotz weiterer Seiten nicht vorrückt, würde endlos laufen.
+            if (page.hasMore && page.nextCursor <= since) throw CursorStuckException()
             since = page.nextCursor
             if (!page.hasMore) return all to since
         }
@@ -231,6 +262,8 @@ class SyncEngine(
     private suspend fun deleteStale(type: RecordType, id: String, remoteRefs: Set<Pair<RecordType, String>>) {
         db.withTransaction {
             if (dao.isQueued(type.wire, id)) return@withTransaction
+            // Vom Server abgelehnt (Problem vermerkt): der lokale Stand ist die einzige Kopie, nicht löschen.
+            if (dao.hasProblem(type.wire, id)) return@withTransaction
             if ((type to id) in remoteRefs || isStillNeeded(type, id)) {
                 // Bleibt stehen, der Server kennt ihn aber nicht: erneut senden, damit beide Seiten konvergieren.
                 dao.enqueue(SyncOutboxEntity(type.wire, id, deleted = false, queuedAt = clock.millis()))

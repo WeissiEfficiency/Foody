@@ -395,4 +395,61 @@ class SyncEngineTest {
         assertEquals(3, db.ingredientDao().getAll().size)
         assertEquals(30L, db.syncDao().getState()!!.cursor)
     }
+
+    @Test
+    fun tooLargeBatchIsSplitAndEverythingIsPushed() = runTest {
+        activate(cursor = 3)
+        for (i in 1..5) db.ingredientDao().upsert(ingredient("i$i"))
+        api.onPush = { records ->
+            if (records.size > 2) throw SyncApiException.TooLarge(413, ErrorCode.TOO_LARGE)
+            PushResponse(records.map { accepted(it, 1) })
+        }
+        val outcome = engine.run()
+        assertEquals(SyncOutcome.Success(5, 0, 0), outcome)
+        assertEquals(emptyList(), db.syncDao().outbox())
+        assertEquals(listOf(3L), api.pulls)
+        assertNull(db.syncDao().getState()!!.lastError)
+    }
+
+    @Test
+    fun singleTooLargeRecordBecomesProblemAndOthersArePushed() = runTest {
+        activate(cursor = 3)
+        for (i in 1..4) db.ingredientDao().upsert(ingredient("i$i"))
+        api.onPush = { records ->
+            if (records.any { it.id == "i3" }) throw SyncApiException.TooLarge(413, ErrorCode.TOO_LARGE)
+            PushResponse(records.map { accepted(it, 1) })
+        }
+        val outcome = engine.run()
+        assertEquals(SyncOutcome.Success(3, 0, 1), outcome)
+        val problem = db.syncDao().problems().single()
+        assertEquals("too_large", problem.code)
+        assertEquals("i3", problem.recordId)
+        assertEquals(emptyList(), db.syncDao().outbox())
+        // Der Pull läuft trotzdem.
+        assertEquals(listOf(3L), api.pulls)
+    }
+
+    @Test
+    fun fullResyncKeepsRejectedLocalRecordAndItsProblem() = runTest {
+        activate(cursor = 5)
+        db.ingredientDao().upsert(ingredient("R"))
+        api.onPush = { PushResponse(it.map { r -> PushResult(r.id, r.type, PushStatus.REJECTED, code = ErrorCode.INVALID_PAYLOAD) }) }
+        api.onPull = { since ->
+            if (since != 0L) throw SyncApiException.CursorExpired(410, ErrorCode.CURSOR_EXPIRED)
+            PullResponse(emptyList(), 9, false)
+        }
+        assertTrue(engine.run() is SyncOutcome.Success)
+        assertNotNull(db.ingredientDao().get("R"))
+        assertEquals("invalid_payload", db.syncDao().problems().single().code)
+        assertEquals(9L, db.syncDao().getState()!!.cursor)
+    }
+
+    @Test
+    fun stuckCursorFailsTransiently() = runTest {
+        activate()
+        api.onPull = { since -> PullResponse(emptyList(), since, true) }
+        assertEquals(SyncOutcome.Failed(true, "cursor_stuck"), engine.run())
+        assertEquals(1, api.pulls.size)
+        assertEquals("transient: cursor_stuck", db.syncDao().getState()!!.lastError)
+    }
 }

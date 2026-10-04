@@ -38,7 +38,7 @@ open class SyncEngineFactory @Inject constructor(
     open val isSyncRunning: Boolean get() = cached?.second?.isRunning == true
 
     private val httpClient: HttpClient by lazy { defaultHttpClient() }
-    private var cached: Pair<String, SyncEngine>? = null
+    @Volatile private var cached: Pair<String, SyncEngine>? = null
 
     @Synchronized
     private fun engineFor(url: String): SyncEngine {
@@ -51,7 +51,11 @@ open class SyncEngineFactory @Inject constructor(
         val state = db.syncDao().getState()
         val url = state?.serverUrl
         if (state == null || !state.active || url == null) return null
-        if (tokenStore.load() == null) return null
+        if (tokenStore.load() == null) {
+            // Aktiv, aber ohne Token (nicht entschlüsselbar, Gerätewechsel): sichtbar als abgemeldet markieren.
+            if (state.lastError != "unauthorized") db.syncDao().upsertState(state.copy(lastError = "unauthorized"))
+            return null
+        }
         return engineFor(url)
     }
 }

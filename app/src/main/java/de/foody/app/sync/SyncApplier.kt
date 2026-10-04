@@ -103,8 +103,8 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
      * und dessen `queuedAt` unverändert ist; eine spätere Nutzeränderung hebt die Ausnahme auf.
      */
     internal suspend fun shouldSkipPending(type: String, id: String, selfQueued: Map<Pair<String, String>, Long>): Boolean {
-        val entry = dao.outbox().firstOrNull { it.type == type && it.recordId == id } ?: return false
-        return selfQueued[type to id] != entry.queuedAt
+        val queuedAt = dao.queuedAtOf(type, id) ?: return false
+        return selfQueued[type to id] != queuedAt
     }
 
     private suspend fun applyOne(

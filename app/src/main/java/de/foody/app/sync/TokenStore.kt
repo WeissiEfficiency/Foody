@@ -5,7 +5,10 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.security.InvalidAlgorithmParameterException
 import java.security.KeyStore
+import java.security.UnrecoverableKeyException
+import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -13,14 +16,18 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** Der Schlüssel zum Entschlüsseln fehlt im Keystore (endgültig verloren). */
+private class MissingKeyException : Exception()
+
 /**
  * Speichert das Gerätetoken des Sync-Servers verschlüsselt: AES-256/GCM, der Schlüssel liegt nicht auslesbar im
  * `AndroidKeyStore` (Alias `foody_sync_token`), `iv:Chiffrat` (Base64) in den SharedPreferences `foody_sync`.
- * Ist der Eintrag nicht entschlüsselbar (beschädigt, Schlüssel weg), liefert [load] `null` und löscht ihn.
+ * Ist der Eintrag nicht entschlüsselbar, liefert [load] `null`; gelöscht wird er nur, wenn er endgültig
+ * unbrauchbar ist (falsches Format, Prüfsumme, Schlüssel weg), nicht bei vorübergehenden Keystore-Fehlern.
  * Das Token wird nie geloggt.
  */
 @Singleton
-class TokenStore @Inject constructor(@ApplicationContext context: Context) {
+open class TokenStore @Inject constructor(@ApplicationContext context: Context) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     @Synchronized
@@ -37,15 +44,19 @@ class TokenStore @Inject constructor(@ApplicationContext context: Context) {
     }
 
     @Synchronized
-    fun load(): String? {
+    open fun load(): String? {
         val stored = prefs.getString(KEY_TOKEN, null) ?: return null
         return try {
             decrypt(stored)
-        } catch (_: Exception) {
-            prefs.edit().remove(KEY_TOKEN).commit()
+        } catch (e: Exception) {
+            // Nur bei endgültig unbrauchbarem Eintrag löschen; vorübergehende Keystore-Fehler lassen ihn stehen.
+            if (isPermanent(e)) prefs.edit().remove(KEY_TOKEN).commit()
             null
         }
     }
+
+    private fun isPermanent(e: Exception): Boolean =
+        e is AEADBadTagException || e is IllegalArgumentException || e is InvalidAlgorithmParameterException || e is UnrecoverableKeyException || e is MissingKeyException
 
     @Synchronized
     fun clear() {
@@ -63,7 +74,7 @@ class TokenStore @Inject constructor(@ApplicationContext context: Context) {
         val parts = stored.split(':')
         require(parts.size == 2) { "Format" }
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(TAG_BITS, Base64.decode(parts[0], Base64.NO_WRAP)))
+        cipher.init(Cipher.DECRYPT_MODE, key(create = false), GCMParameterSpec(TAG_BITS, Base64.decode(parts[0], Base64.NO_WRAP)))
         return String(cipher.doFinal(Base64.decode(parts[1], Base64.NO_WRAP)), Charsets.UTF_8)
     }
 
@@ -71,8 +82,9 @@ class TokenStore @Inject constructor(@ApplicationContext context: Context) {
 
     private fun keyStore() = KeyStore.getInstance(ANDROID_KEY_STORE).apply { load(null) }
 
-    private fun key(): SecretKey {
+    private fun key(create: Boolean = true): SecretKey {
         (keyStore().getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
+        if (!create) throw MissingKeyException()
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEY_STORE)
         generator.init(
             KeyGenParameterSpec.Builder(KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)

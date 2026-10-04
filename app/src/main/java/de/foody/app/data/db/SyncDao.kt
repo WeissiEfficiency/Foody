@@ -41,6 +41,8 @@ interface SyncDao {
 
     @Upsert suspend fun addProblem(p: SyncProblemEntity)
     @Query("SELECT * FROM sync_problem") suspend fun problems(): List<SyncProblemEntity>
+    @Query("SELECT EXISTS(SELECT 1 FROM sync_problem WHERE type = :type AND recordId = :id)")
+    suspend fun hasProblem(type: String, id: String): Boolean
     @Query("DELETE FROM sync_problem") suspend fun clearProblems()
     @Query("DELETE FROM sync_problem WHERE type = :type AND recordId = :id") suspend fun clearProblem(type: String, id: String)
 
