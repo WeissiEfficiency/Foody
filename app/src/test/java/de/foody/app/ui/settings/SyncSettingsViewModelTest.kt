@@ -71,7 +71,9 @@ private class FakeAccounts(private val db: FoodyDatabase) : SyncAccounts {
         deviceList = deviceList.filterNot { it.id == id }
     }
 
-    override suspend fun disconnect() {
+    override suspend fun discardToken() = Unit
+
+    override suspend fun disconnect(serverUrl: String?) {
         disconnects++
         db.syncDao().upsertState(SyncStateEntity())
     }

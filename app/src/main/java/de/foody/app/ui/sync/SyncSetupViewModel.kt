@@ -71,8 +71,9 @@ data class SyncSetupState(
  * [SavedStateHandle]; Passwörter nicht.
  *
  * Aktiv wird der Sync erst am Ende (`activate`). Verlässt der Nutzer den Assistenten nach dem Anmelden, aber vor
- * dem Aktivieren, meldet [cancel] das gerade angelegte Gerät wieder ab. Das gilt nicht beim erneuten Verbinden
- * (dort darf `disconnect` weder Outbox noch Haushalt verwerfen; das neue Token bleibt dann ungenutzt gültig).
+ * dem Aktivieren, meldet [cancel] das gerade angelegte Gerät beim Server (mit der Adresse des Assistenten) und lokal
+ * wieder ab. Beim erneuten Verbinden verwirft [cancel] (und jeder Fehler vor dem Aktivieren) nur das Token: Outbox,
+ * Haushalt und der Status „Abgemeldet“ bleiben, `disconnect` würde sie verwerfen.
  * Restrisiko: Wird der Prozess mitten im Verbinden beendet, bleibt ein angemeldetes, aber nie aktiviertes Gerät
  * in der Geräteliste des Servers, bis es dort abgemeldet wird.
  */
@@ -170,7 +171,18 @@ class SyncSetupViewModel @Inject constructor(
         }
         savedState[KEY_LOGGED_IN] = true
         update { it.copy(password = "", inviteCode = "") }
-        runAfterLogin(result.householdId)
+        try {
+            runAfterLogin(result.householdId)
+        } catch (e: Throwable) {
+            // Erneut verbinden: Scheitert etwas vor dem Aktivieren, bleibt kein Token zurück (Sync-Zustand und Outbox bleiben).
+            if (reconnect) discardReconnectToken()
+            throw e
+        }
+    }
+
+    private suspend fun discardReconnectToken() {
+        savedState[KEY_LOGGED_IN] = false
+        kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) { repo.discardToken() }
     }
 
     private suspend fun runAfterLogin(householdId: String?) {
@@ -242,6 +254,7 @@ class SyncSetupViewModel @Inject constructor(
      */
     fun onBackupChosen(uri: Uri) {
         _offerBackup.value = false
+        if (_state.value.busy) return
         val householdId = savedState.get<String>(KEY_HOUSEHOLD) ?: return
         viewModelScope.launch {
             update { it.copy(busy = true, error = null) }
@@ -271,10 +284,14 @@ class SyncSetupViewModel @Inject constructor(
      * angelegte Gerät abgemeldet (Token weg, Gerät beim Server widerrufen). Beim erneuten Verbinden nie.
      */
     fun cancel() {
-        if (reconnect || savedState.get<Boolean>(KEY_LOGGED_IN) != true || _state.value.step == SetupStep.DONE) return
+        if (savedState.get<Boolean>(KEY_LOGGED_IN) != true || _state.value.step == SetupStep.DONE) return
         savedState[KEY_LOGGED_IN] = false
+        val url = _state.value.url
         // App-Scope: Der ViewModel-Scope endet gleich mit dem Verlassen des Bildschirms.
-        appScope.launch { runSuspendCatching { repo.disconnect() } }
+        appScope.launch {
+            // Erneut verbinden: nur das Token verwerfen, damit Outbox, Haushalt und „Abgemeldet“-Status bleiben.
+            runSuspendCatching { if (reconnect) repo.discardToken() else repo.disconnect(url) }
+        }
     }
 
     private fun launchBusy(context: ErrorContext, block: suspend () -> Unit) {

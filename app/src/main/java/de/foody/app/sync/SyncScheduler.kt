@@ -55,6 +55,9 @@ open class SyncEngineFactory @Inject constructor(
         val state = db.syncDao().getState()
         val url = state?.serverUrl
         if (state == null || !state.active || url == null) return null
+        // Abgemeldet: nicht mit einem Token weitermachen, das beim erneuten Verbinden schon gespeichert ist, bevor
+        // der Haushalt gewählt wurde (`activate` löscht den Fehler und gibt den Sync wieder frei).
+        if (state.lastError == "unauthorized") return null
         if (tokenStore.load() == null) {
             // Aktiv, aber ohne Token (nicht entschlüsselbar, Gerätewechsel): sichtbar als abgemeldet markieren.
             if (state.lastError != "unauthorized") db.syncDao().upsertState(state.copy(lastError = "unauthorized"))

@@ -71,6 +71,7 @@ fun SyncSetupScreen(onBack: () -> Unit, onDone: () -> Unit, vm: SyncSetupViewMod
         onBack()
     }
     BackHandler {
+        if (state.busy) return@BackHandler // während einer Anfrage ignorieren
         // Auf dem Konto-Schritt zuerst zur Adresse zurück; sonst Assistent verlassen.
         if (!(state.step == SetupStep.ACCOUNT && vm.backToUrl())) leave()
     }

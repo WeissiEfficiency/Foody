@@ -27,6 +27,8 @@ import de.foody.sync.protocol.RegisterRequest
 import de.foody.sync.protocol.SyncRecord
 import java.time.Clock
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import java.util.concurrent.TimeUnit
@@ -105,6 +107,19 @@ class SyncWorkerTest {
                     SyncWorker(appContext, workerParameters, factory, SyncScheduler(context, db, factory))
             })
             .build()
+
+    @Test
+    fun factoryReturnsNoEngineWhileUnauthorized() = runTest {
+        val tokens = object : TokenStore(context) { override fun load() = "token" }
+        val real = SyncEngineFactory(db, SyncLocalStore(db, photoIndex()), SyncApplier(db, photoIndex()), tokens, photoIndex(), photoStore())
+        activate()
+        val dao = db.syncDao()
+        assertNotNull(real.create())
+        dao.upsertState(dao.getState()!!.copy(lastError = "unauthorized"))
+        assertNull(real.create(), "abgemeldet: auch mit gespeichertem Token kein Sync bis zum Aktivieren")
+        dao.upsertState(dao.getState()!!.copy(lastError = null))
+        assertNotNull(real.create())
+    }
 
     @Test
     fun transientFailureRetries() = runTest {

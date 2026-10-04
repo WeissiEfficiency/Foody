@@ -42,7 +42,10 @@ interface SyncAccounts {
     suspend fun createInvite(): InviteDto
     suspend fun devices(): List<DeviceDto>
     suspend fun revokeDevice(id: String)
-    suspend fun disconnect()
+    suspend fun disconnect(serverUrl: String? = null)
+
+    /** Verwirft nur das Token (Sync-Zustand, Outbox und Fehlerstatus bleiben); für abgebrochenes „Erneut verbinden“. */
+    suspend fun discardToken()
 }
 
 /**
@@ -114,11 +117,11 @@ class SyncAccountRepository @Inject constructor(
 
     /**
      * Trennt dieses Gerät: Meldet es best effort beim Server ab (Fehler und Zeitüberschreitung werden ignoriert,
-     * auch offline), löscht das Token, schaltet den Sync lokal aus und beendet die Planung. Lokale Daten bleiben.
+     * auch offline; vor dem Aktivieren muss die Adresse als [serverUrl] mitkommen), löscht das Token, schaltet den Sync lokal aus und beendet die Planung. Lokale Daten bleiben.
      */
-    override suspend fun disconnect() {
+    override suspend fun disconnect(serverUrl: String?) {
         try {
-            val api = db.syncDao().getState()?.serverUrl?.let { api(it) }
+            val api = (serverUrl ?: db.syncDao().getState()?.serverUrl)?.let { api(it) }
             if (api != null && tokenStore.load() != null) {
                 try {
                     withTimeout(REVOKE_TIMEOUT_MS) {
@@ -138,6 +141,8 @@ class SyncAccountRepository @Inject constructor(
             scheduler.cancelAll()
         }
     }
+
+    override suspend fun discardToken() = tokenStore.clear()
 
     companion object {
         private const val REVOKE_TIMEOUT_MS = 8_000L

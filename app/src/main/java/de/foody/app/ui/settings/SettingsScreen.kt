@@ -64,9 +64,9 @@ fun SettingsScreen(
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     val text = message?.let { stringResource(it) }
     LaunchedEffect(text) { if (text != null) { snackbar.showSnackbar(text); vm.messageShown() } }
-    // Meldung von außen (z. B. nach dem Verbinden); erst nach dem Anzeigen zurücksetzen
+    // Meldung von außen (z. B. nach dem Verbinden); erst zurücksetzen, wenn der Snackbar durch ist (sonst bricht der Schlüsselwechsel ihn ab)
     val noticeText = notice?.let { stringResource(it) }
-    LaunchedEffect(noticeText) { if (noticeText != null) { onNoticeShown(); snackbar.showSnackbar(noticeText) } }
+    LaunchedEffect(noticeText) { if (noticeText != null) { snackbar.showSnackbar(noticeText); onNoticeShown() } }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         uri?.let(vm::export)

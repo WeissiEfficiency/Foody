@@ -36,7 +36,10 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
-private class FakeAccounts : SyncAccounts {
+private class FakeAccounts(private val log: MutableList<String> = mutableListOf()) : SyncAccounts {
+    var disconnectedUrl: String? = null
+    var discards = 0
+    var activateError: Throwable? = null
     var loginResult = LoginResult(null)
     var households = listOf(HouseholdDto("h1", "Zuhause", "owner"))
     var localData = false
@@ -62,23 +65,27 @@ private class FakeAccounts : SyncAccounts {
     override suspend fun selectHousehold(url: String, id: String) { calls += "select:$id" }
     override suspend fun hasLocalData() = localData
     override suspend fun activate(url: String, householdId: String, mode: FirstSync) {
+        activateError?.let { throw it }
         calls += "activate"
+        log += "activate(${mode.name})"
         activated = Triple(url, householdId, mode)
     }
     override suspend fun createInvite(): InviteDto = TODO()
     override suspend fun devices(): List<DeviceDto> = TODO()
     override suspend fun revokeDevice(id: String) = TODO()
-    override suspend fun disconnect() { disconnects++ }
+    override suspend fun disconnect(serverUrl: String?) { disconnects++; disconnectedUrl = serverUrl }
+    override suspend fun discardToken() { discards++ }
 }
 
-private class FakeBackup : SetupBackup {
+private class FakeBackup(private val log: MutableList<String>) : SetupBackup {
     var exportError: Throwable? = null
     val events = mutableListOf<String>()
     override suspend fun export(uri: Uri) {
         events += "export"
+        log += "export"
         exportError?.let { throw it }
     }
-    override suspend fun deleteAll() { events += "deleteAll" }
+    override suspend fun deleteAll() { events += "deleteAll"; log += "deleteAll" }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -89,14 +96,15 @@ class SyncSetupViewModelTest {
     private lateinit var db: FoodyDatabase
     private lateinit var fake: FakeAccounts
     private lateinit var backup: FakeBackup
+    private val log = mutableListOf<String>()
 
     @Before
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         db = Room.inMemoryDatabaseBuilder(app, FoodyDatabase::class.java)
             .addCallback(FoodyDatabase.SYNC_CALLBACK).allowMainThreadQueries().build()
-        fake = FakeAccounts()
-        backup = FakeBackup()
+        fake = FakeAccounts(log)
+        backup = FakeBackup(log)
     }
 
     @After
@@ -210,7 +218,7 @@ class SyncSetupViewModelTest {
         fake.loginResult = LoginResult("h1"); fake.localData = true
         val vm = vm(); vm.toAccount(); vm.submitAccount()
         vm.onBackupChosen(Uri.parse("content://x/backup.zip"))
-        assertEquals(listOf("export", "deleteAll"), backup.events)
+        assertEquals(listOf("export", "deleteAll", "activate(DOWNLOAD_ONLY)"), log)
         assertEquals(FirstSync.DOWNLOAD_ONLY, fake.activated?.third)
         assertEquals(SetupStep.DONE, vm.state.value.step)
     }
@@ -270,15 +278,45 @@ class SyncSetupViewModelTest {
         assertEquals(0, backup.events.size)
     }
 
-    @Test
-    fun reconnectCancelNeverDisconnects() = runBlocking {
-        db.syncDao().upsertState(SyncStateEntity(active = true, serverUrl = "https://x.org", householdId = "h9", lastError = "unauthorized"))
+    private suspend fun reconnectVm(householdId: String?): SyncSetupViewModel {
+        db.syncDao().upsertState(
+            SyncStateEntity(active = true, serverUrl = "https://x.org", householdId = householdId, lastError = "unauthorized"),
+        )
         val vm = vm(SavedStateHandle(mapOf("reconnect" to true)))
         withTimeout(10_000) { vm.state.first { it.url.isNotEmpty() } }
-        vm.submitUrl(); vm.setUsername("anna"); vm.setPassword("pw-geheim-12345"); vm.submitAccount()
+        vm.submitUrl(); vm.setUsername("anna"); vm.setPassword("pw-geheim-12345")
+        return vm
+    }
+
+    @Test
+    fun reconnectCancelAfterDoneChangesNothing() = runBlocking {
+        val vm = reconnectVm("h9"); vm.submitAccount()
         withTimeout(10_000) { vm.state.first { it.step == SetupStep.DONE } }
         vm.cancel()
         assertEquals(0, fake.disconnects)
+        assertEquals(0, fake.discards)
+    }
+
+    @Test
+    fun reconnectFailureBeforeActivationDiscardsOnlyTheToken() = runBlocking {
+        fake.activateError = RuntimeException("x")
+        val vm = reconnectVm("h9"); vm.submitAccount()
+        withTimeout(10_000) { vm.state.first { !it.busy && it.error != null } }
+        assertEquals(0, fake.disconnects)
+        assertEquals(1, fake.discards)
+        val state = db.syncDao().getState()!!
+        assertTrue(state.active); assertEquals("unauthorized", state.lastError); assertEquals("h9", state.householdId)
+    }
+
+    @Test
+    fun reconnectBackAfterLoginDiscardsOnlyTheToken() = runBlocking {
+        val vm = reconnectVm(null); vm.submitAccount() // ohne bisherigen Haushalt: Haushaltsschritt, Token gespeichert
+        withTimeout(10_000) { vm.state.first { it.step == SetupStep.HOUSEHOLD } }
+        vm.cancel()
+        assertEquals(0, fake.disconnects)
+        assertEquals(1, fake.discards)
+        val state = db.syncDao().getState()!!
+        assertTrue(state.active); assertEquals("unauthorized", state.lastError); assertEquals("https://x.org", state.serverUrl)
     }
 
     @Test
@@ -286,6 +324,7 @@ class SyncSetupViewModelTest {
         val vm = vm(); vm.toAccount(); vm.submitAccount() // HOUSEHOLD-Schritt, Token gespeichert
         vm.cancel()
         assertEquals(1, fake.disconnects)
+        assertEquals("https://foody.example.org", fake.disconnectedUrl)
     }
 
     @Test
