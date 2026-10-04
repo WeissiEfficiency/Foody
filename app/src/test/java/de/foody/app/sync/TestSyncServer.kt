@@ -35,6 +35,9 @@ fun syncServerTest(
     clock: TestClock = TestClock(),
     block: suspend ApplicationTestBuilder.(ServerDeps, TestClock) -> Unit,
 ) {
+    // Der Treiber muss im ClassLoader dieses Tests registriert sein: Läuft zuvor ein Robolectric-Test (eigener
+    // ClassLoader) in derselben JVM, hat nur dessen Kopie sich bei DriverManager angemeldet.
+    Class.forName("org.sqlite.JDBC")
     val config = ServerConfig(dbPath = ":memory:", port = 0, adminUser = null, adminPassword = null)
     Database("jdbc:sqlite::memory:").use { db ->
         val deps = ServerDeps.create(config, db, clock)
