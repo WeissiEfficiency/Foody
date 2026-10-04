@@ -114,6 +114,9 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `sync_photo_local` (`uri` TEXT NOT NULL, `sha256` TEXT NOT NULL, `size` INTEGER NOT NULL, `modifiedAt` INTEGER NOT NULL, PRIMARY KEY(`uri`))")
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_sync_photo_local_sha256` ON `sync_photo_local` (`sha256`)")
         db.execSQL("CREATE TABLE IF NOT EXISTS `sync_photo_wanted` (`recipeId` TEXT NOT NULL, `sha256` TEXT NOT NULL, PRIMARY KEY(`recipeId`))")
+        // Neuer Trigger `sync_recipe_image_wish`: Trigger neu anlegen
+        SyncTriggers.drop(db)
+        SyncTriggers.create(db)
     }
 }
 

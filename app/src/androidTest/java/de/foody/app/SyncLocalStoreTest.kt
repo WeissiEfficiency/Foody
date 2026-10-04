@@ -68,6 +68,51 @@ class SyncLocalStoreTest {
         }
     }
 
+    private suspend fun recipeWithImage(uri: String?): String {
+        db.ingredientDao().upsert(ingredient("i1"))
+        val rid = RecipeRepository(db.recipeDao()).save(draft("i1"))
+        db.recipeDao().upsert(db.recipeDao().get(rid)!!.copy(imageUri = uri))
+        return rid
+    }
+
+    @Test fun pendingRecipeWithWishSendsWantedHash() = runTest {
+        val rid = recipeWithImage(null)
+        db.syncDao().upsertPhotoWanted(de.foody.app.data.db.SyncPhotoWantedEntity(rid, "e".repeat(64)))
+        assertEquals("e".repeat(64), pendingPhoto(rid))
+    }
+
+    @Test fun localPhotoChangeDropsWish() = runTest {
+        val rid = recipeWithImage(null)
+        db.syncDao().upsertPhotoWanted(de.foody.app.data.db.SyncPhotoWantedEntity(rid, "e".repeat(64)))
+        val file = photos.newPhotoFile().also { it.writeBytes(byteArrayOf(4, 4)) }
+        try {
+            db.recipeDao().upsert(db.recipeDao().get(rid)!!.copy(imageUri = photos.storedUri(file)))
+            assertTrue(db.syncDao().photosWanted().isEmpty())
+            val expected = java.security.MessageDigest.getInstance("SHA-256").digest(byteArrayOf(4, 4))
+                .joinToString("") { "%02x".format(it) }
+            assertEquals(expected, pendingPhoto(rid))
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test fun remoteImageChangeKeepsWish() = runTest {
+        val rid = recipeWithImage(null)
+        db.syncDao().upsertPhotoWanted(de.foody.app.data.db.SyncPhotoWantedEntity(rid, "e".repeat(64)))
+        db.syncDao().setApplyingRemote(true)
+        db.recipeDao().upsert(db.recipeDao().get(rid)!!.copy(imageUri = "content://x/1"))
+        db.syncDao().setApplyingRemote(false)
+        assertEquals(1, db.syncDao().photosWanted().size)
+    }
+
+    @Test fun ownPhotoWithoutFileIsDeferred() = runTest {
+        val file = photos.newPhotoFile() // existiert nicht
+        val rid = recipeWithImage(photos.storedUri(file))
+        queue(RecordType.RECIPE, rid)
+        assertTrue(store.pendingBatch().none { it.record.id == rid })
+        assertTrue(db.syncDao().isQueued("recipe", rid))
+    }
+
     @Test fun galleryLinkSendsNoPhoto() = runTest {
         db.ingredientDao().upsert(ingredient("i1"))
         val rid = RecipeRepository(db.recipeDao()).save(draft("i1"))

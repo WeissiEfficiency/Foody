@@ -88,6 +88,7 @@ interface SyncDao {
     @Query("DELETE FROM sync_photo_local WHERE uri = :uri") suspend fun deletePhotoLocal(uri: String)
 
     @Query("SELECT * FROM sync_photo_wanted ORDER BY recipeId") suspend fun photosWanted(): List<SyncPhotoWantedEntity>
+    @Query("SELECT * FROM sync_photo_wanted WHERE recipeId = :recipeId") suspend fun photoWanted(recipeId: String): SyncPhotoWantedEntity?
     @Upsert suspend fun upsertPhotoWanted(e: SyncPhotoWantedEntity)
     @Query("DELETE FROM sync_photo_wanted WHERE recipeId = :recipeId") suspend fun deletePhotoWanted(recipeId: String)
 }

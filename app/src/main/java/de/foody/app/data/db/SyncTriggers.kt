@@ -70,6 +70,14 @@ object SyncTriggers {
                 "UPDATE shopping_item SET updatedAt = $NOW WHERE id = NEW.id;",
             ),
         )
+        // Eine lokale Änderung des Rezeptfotos erledigt den Foto-Wunsch (der Nutzer hat ein neues Foto gewählt).
+        add(
+            trigger(
+                "sync_recipe_image_wish", "AFTER UPDATE OF imageUri ON recipe",
+                "$NOT_APPLYING AND OLD.imageUri IS NOT NEW.imageUri",
+                "DELETE FROM sync_photo_wanted WHERE recipeId = NEW.id;",
+            ),
+        )
     }
 
     /**

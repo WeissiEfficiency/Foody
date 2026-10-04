@@ -26,7 +26,7 @@ class SyncTriggersSqliteCompatTest {
 
     private val tables = listOf(
         "ingredient", "recipe", "recipe_ingredient", "instruction_step", "meal_slot", "pantry_item",
-        "shopping_list", "shopping_item", "shopping_item_source", "sync_outbox", "sync_record_rev", "sync_state", "sync_problem",
+        "shopping_list", "shopping_item", "shopping_item_source", "sync_outbox", "sync_record_rev", "sync_state", "sync_problem", "sync_photo_wanted",
     )
 
     @Before fun setUp() {
@@ -35,7 +35,7 @@ class SyncTriggersSqliteCompatTest {
         val driver = loader.loadClass("org.sqlite.JDBC").getDeclaredConstructor().newInstance() as Driver
         conn = driver.connect("jdbc:sqlite::memory:", Properties())
         val schema = Json.parseToJsonElement(
-            File("schemas/de.foody.app.data.db.FoodyDatabase/5.json").readText(),
+            File("schemas/de.foody.app.data.db.FoodyDatabase/6.json").readText(),
         ).jsonObject["database"]!!.jsonObject["entities"]!!.jsonArray.map { it.jsonObject }
         exec("PRAGMA foreign_keys = ON")
         exec("PRAGMA recursive_triggers = 1")
@@ -104,6 +104,23 @@ class SyncTriggersSqliteCompatTest {
         exec("UPDATE sync_outbox SET queuedAt = 5 WHERE type = 'ingredient' AND recordId = 'i'")
         exec("UPDATE ingredient SET canonicalName = 'Salz4' WHERE id = 'i'")
         assertTrue(queuedAt("i") > 1_000_000_000_000L, "Uhrzeit gewinnt: ${queuedAt("i")}")
+    }
+
+    @Test fun localImageChangeDropsWishRemoteDoesNot() {
+        exec("INSERT OR ABORT INTO recipe(id, name, defaultServings, tags, createdAt, updatedAt, version, favorite) VALUES ('r', 'R', 1, '', 0, 0, 1, 0)")
+        exec("INSERT INTO sync_photo_wanted(recipeId, sha256) VALUES ('r', 'h')")
+        exec("UPDATE sync_state SET applyingRemote = 1")
+        exec("UPDATE recipe SET imageUri = 'file:/a.jpg' WHERE id = 'r'")
+        assertEquals(1, wishes())
+        exec("UPDATE sync_state SET applyingRemote = 0")
+        exec("UPDATE recipe SET name = 'X' WHERE id = 'r'") // anderes Feld: Wunsch bleibt
+        assertEquals(1, wishes())
+        exec("UPDATE recipe SET imageUri = 'file:/b.jpg' WHERE id = 'r'")
+        assertEquals(0, wishes())
+    }
+
+    private fun wishes(): Int = conn.createStatement().use { st ->
+        st.executeQuery("SELECT count(*) FROM sync_photo_wanted").use { rs -> rs.next(); rs.getInt(1) }
     }
 
     private fun queuedAt(id: String): Long = conn.createStatement().use { st ->

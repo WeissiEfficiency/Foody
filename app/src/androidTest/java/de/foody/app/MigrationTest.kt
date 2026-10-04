@@ -130,6 +130,11 @@ class MigrationTest {
             db.query("SELECT count(*) FROM sqlite_master WHERE type='index' AND name = 'index_sync_photo_local_sha256'").use { c ->
                 c.moveToFirst(); assertEquals(1, c.getInt(0))
             }
+            db.query("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'sync_%'").use { c ->
+                val names = buildSet { while (c.moveToNext()) add(c.getString(0)) }
+                assertEquals(SyncTriggers.names.toSet(), names)
+                assertTrue("sync_recipe_image_wish" in names)
+            }
         }
     }
 }

@@ -2,11 +2,13 @@ package de.foody.app.sync
 
 import androidx.room.withTransaction
 import de.foody.app.data.db.FoodyDatabase
+import de.foody.app.data.db.RecipeEntity
 import de.foody.app.data.db.SyncOutboxEntity
 import de.foody.app.data.db.SyncStateEntity
 import de.foody.sync.protocol.Protocol
 import de.foody.sync.protocol.RecordType
 import de.foody.sync.protocol.SyncRecord
+import java.util.Optional
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -79,7 +81,33 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
     suspend fun pendingBatch(
         limit: Int = Protocol.MAX_PUSH_RECORDS,
         exclude: Set<Triple<RecordType, String, Long>> = emptySet(),
-    ): List<PendingRecord> = db.withTransaction {
+    ): List<PendingRecord> {
+        // Foto-Hashes vor der Lese-Transaktion bilden (Datei-I/O bis 10 MB je Foto darf keine Transaktion halten).
+        val hashes = hashRecipePhotos(exclude)
+        return db.withTransaction { buildBatch(limit, exclude, hashes) }
+    }
+
+    /** Foto eines Rezepts zum Zeitpunkt des Hashens: Link und Hash (`null`, wenn nicht bestimmbar). */
+    private class HashedPhoto(val uri: String, val hash: String?)
+
+    /** Hash je eigenem Foto der vorgemerkten, lebenden Rezepte (Schlüssel: Rezept-ID). Läuft ohne Transaktion. */
+    private suspend fun hashRecipePhotos(exclude: Set<Triple<RecordType, String, Long>>): Map<String, HashedPhoto> {
+        val result = HashMap<String, HashedPhoto>()
+        for (e in dao.outbox()) {
+            if (e.type != RecordType.RECIPE.wire || e.deleted) continue
+            if (exclude.isNotEmpty() && Triple(RecordType.RECIPE, e.recordId, e.queuedAt) in exclude) continue
+            val uri = db.recipeDao().get(e.recordId)?.imageUri ?: continue
+            if (!photoIndex.isOwnPhoto(uri)) continue
+            result[e.recordId] = HashedPhoto(uri, photoIndex.hashOf(uri))
+        }
+        return result
+    }
+
+    private suspend fun buildBatch(
+        limit: Int,
+        exclude: Set<Triple<RecordType, String, Long>>,
+        hashes: Map<String, HashedPhoto>,
+    ): List<PendingRecord> {
         val types = RecordType.entries
         // Innerhalb eines Typs bleibt die Outbox-Reihenfolge (queuedAt) erhalten.
         val outbox = dao.outbox().filter { e ->
@@ -93,8 +121,12 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
         val vanished = ArrayList<Pair<RecordType, SyncOutboxEntity>>()
         for ((type, entry) in live) {
             if (records.size >= limit) break
-            val built = build(type, entry)
-            if (built != null) records += PendingRecord(built, entry.queuedAt) else vanished += type to entry
+            when (val built = build(type, entry, hashes)) {
+                is Built.Record -> records += PendingRecord(built.record, entry.queuedAt)
+                Built.Gone -> vanished += type to entry
+                // Foto nicht bestimmbar: dieses Mal nicht senden, der Eintrag bleibt in der Outbox
+                Built.Deferred -> Unit
+            }
         }
         val allDeletions = (deletions + vanished).sortedWith(
             compareByDescending<Pair<RecordType, SyncOutboxEntity>> { it.first.ordinal }.thenBy { it.second.queuedAt },
@@ -112,18 +144,39 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
                 entry.queuedAt,
             )
         }
-        records
+        return records
     }
 
-    /** Baut den lebenden Datensatz oder `null`, wenn die Zeile nicht mehr existiert. */
-    private suspend fun build(type: RecordType, e: SyncOutboxEntity): SyncRecord? {
+    private sealed interface Built {
+        data class Record(val record: SyncRecord) : Built
+        data object Gone : Built
+        data object Deferred : Built
+    }
+
+    /**
+     * Foto-Hash eines Rezepts, oder `null` = zurückstellen. Ein offener Foto-Wunsch geht vor (das Gerät hat das Foto
+     * noch nicht geladen und darf es nicht als „kein Foto“ überschreiben); sonst der Hash des eigenen Fotos, `Optional.empty()`
+     * ohne Foto oder bei fremdem Link. Ist ein eigenes Foto nicht hashbar (Datei fehlt kurz, Link seit dem Hashen
+     * geändert), wird zurückgestellt – nie `photo = null` für ein eigenes Foto senden.
+     */
+    private suspend fun photoFor(recipe: RecipeEntity, hashes: Map<String, HashedPhoto>): Optional<String>? {
+        dao.photoWanted(recipe.id)?.let { return Optional.of(it.sha256) }
+        val uri = recipe.imageUri ?: return Optional.empty<String>()
+        if (!photoIndex.isOwnPhoto(uri)) return Optional.empty<String>()
+        val hash = hashes[recipe.id]?.takeIf { it.uri == uri }?.hash ?: return null
+        return Optional.of(hash)
+    }
+
+    /** Baut den lebenden Datensatz; [Built.Gone], wenn die Zeile nicht mehr existiert. */
+    private suspend fun build(type: RecordType, e: SyncOutboxEntity, hashes: Map<String, HashedPhoto>): Built {
         val id = e.recordId
         val (updatedAt, payload) = when (type) {
             RecordType.INGREDIENT -> db.ingredientDao().get(id)?.let { it.updatedAt to SyncMapper.ingredient(it) }
             RecordType.RECIPE -> db.recipeDao().get(id)?.let {
-                // Hashen (Datei-I/O) läuft beim ersten Mal innerhalb der Batch-Transaktion; danach trifft der Cache.
-                val photo = photoIndex.hashOf(it.imageUri)
-                it.updatedAt to SyncMapper.recipe(it, db.recipeDao().getIngredients(id), db.recipeDao().getSteps(id), photo)
+                val photo = photoFor(it, hashes) ?: return Built.Deferred
+                it.updatedAt to SyncMapper.recipe(
+                    it, db.recipeDao().getIngredients(id), db.recipeDao().getSteps(id), photo.orElse(null),
+                )
             }
             RecordType.MEAL_SLOT -> db.mealPlanDao().get(id)?.let { it.updatedAt to SyncMapper.mealSlot(it) }
             RecordType.PANTRY_ITEM -> db.pantryDao().get(id)?.let { it.updatedAt to SyncMapper.pantryItem(it) }
@@ -131,14 +184,16 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
             RecordType.SHOPPING_ITEM -> db.shoppingDao().getItem(id)?.let {
                 it.updatedAt to SyncMapper.shoppingItem(it, db.shoppingDao().getSources(id))
             }
-        } ?: return null
-        return SyncRecord(
-            id = id,
-            type = type,
-            deleted = false,
-            updatedAt = updatedAt,
-            baseRev = dao.revOf(type.wire, id),
-            payload = SyncMapper.toJson(payload),
+        } ?: return Built.Gone
+        return Built.Record(
+            SyncRecord(
+                id = id,
+                type = type,
+                deleted = false,
+                updatedAt = updatedAt,
+                baseRev = dao.revOf(type.wire, id),
+                payload = SyncMapper.toJson(payload),
+            ),
         )
     }
 }
