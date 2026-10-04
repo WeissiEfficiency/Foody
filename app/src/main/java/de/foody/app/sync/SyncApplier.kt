@@ -87,7 +87,7 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
         val live = records.filter { !it.deleted }.sortedWith(compareBy({ it.type.ordinal }, { it.rev ?: 0L }))
         val deletions = records.filter { it.deleted }.sortedWith(compareBy({ -it.type.ordinal }, { it.rev ?: 0L }))
         // Durch eine Zutaten-Zusammenführung selbst vorgemerkte Datensätze sind keine fremden lokalen Änderungen
-        val selfQueued = mutableSetOf<Pair<String, String>>()
+        val selfQueued = mutableMapOf<Pair<String, String>, Long>()
         for (r in live) applyOne(r, now, c, selfQueued) { applyLive(r, now, c, selfQueued) }
         for (r in deletions) applyOne(r, now, c, selfQueued) { applyDeletion(r, c) }
         db.withTransaction {
@@ -98,18 +98,27 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
         return ApplyResult(c.applied, c.skippedPending, c.revived, c.merged, c.problems)
     }
 
+    /**
+     * Offene lokale Änderung? Ausgenommen ist nur ein Eintrag, den die Zutaten-Zusammenführung selbst vorgemerkt hat
+     * und dessen `queuedAt` unverändert ist; eine spätere Nutzeränderung hebt die Ausnahme auf.
+     */
+    internal suspend fun shouldSkipPending(type: String, id: String, selfQueued: Map<Pair<String, String>, Long>): Boolean {
+        val entry = dao.outbox().firstOrNull { it.type == type && it.recordId == id } ?: return false
+        return selfQueued[type to id] != entry.queuedAt
+    }
+
     private suspend fun applyOne(
         r: SyncRecord,
         now: Long,
         c: Counters,
-        selfQueued: MutableSet<Pair<String, String>>,
+        selfQueued: MutableMap<Pair<String, String>, Long>,
         block: suspend () -> Unit,
     ) {
         val before = c.copy()
-        val queuedBefore = selfQueued.toSet()
+        val queuedBefore = selfQueued.toMap()
         try {
             db.withTransaction {
-                if (dao.isQueued(r.type.wire, r.id) && (r.type.wire to r.id) !in selfQueued) {
+                if (shouldSkipPending(r.type.wire, r.id, selfQueued)) {
                     c.skippedPending++
                     return@withTransaction
                 }
@@ -122,7 +131,8 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
             }
         } catch (_: SQLException) {
             c.restore(before)
-            selfQueued.retainAll(queuedBefore)
+            selfQueued.clear()
+            selfQueued.putAll(queuedBefore)
             db.withTransaction { problem(r, "apply_failed", now, c) }
         }
     }
@@ -168,7 +178,7 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
         RecordType.SHOPPING_ITEM -> db.shoppingDao().getItem(id) != null
     }
 
-    private suspend fun applyLive(r: SyncRecord, now: Long, c: Counters, selfQueued: MutableSet<Pair<String, String>>) {
+    private suspend fun applyLive(r: SyncRecord, now: Long, c: Counters, selfQueued: MutableMap<Pair<String, String>, Long>) {
         val (mapped, refs) = map(r) ?: return problem(r, "invalid_payload", now, c)
         if (refs.any { (type, id) -> !exists(type, id) }) return problem(r, "missing_reference", now, c)
         when (mapped) {
@@ -200,7 +210,7 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
      * Schreibt eine Server-Zutat. Gibt es lokal eine andere Zutat mit gleichem Namen (ohne Groß-/Kleinschreibung),
      * wird sie in die Server-Zutat zusammengeführt (Server-ID gewinnt).
      */
-    private suspend fun writeIngredient(remote: IngredientEntity, c: Counters, selfQueued: MutableSet<Pair<String, String>>) {
+    private suspend fun writeIngredient(remote: IngredientEntity, c: Counters, selfQueued: MutableMap<Pair<String, String>, Long>) {
         val ing = db.ingredientDao()
         // Erst exakt (passt zum eindeutigen Index), sonst ohne Beachtung der Groß-/Kleinschreibung
         val local = ing.findByNameExact(remote.canonicalName)?.takeIf { it.id != remote.id }
@@ -214,11 +224,14 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
         ing.upsert(renamed)
         ing.upsert(remote)
         // Mit aktiven Triggern zusammenführen, damit umgehängte Rezepte/Vorräte/Einträge in die Outbox kommen
-        val queuedBefore = dao.outbox().map { it.type to it.recordId }.toSet()
+        val queuedBefore = dao.outbox().associate { (it.type to it.recordId) to it.queuedAt }
         dao.setApplyingRemote(false)
         mergeIngredient(ing, renamed, remote, System.currentTimeMillis())
         dao.setApplyingRemote(true)
-        selfQueued += dao.outbox().map { it.type to it.recordId }.filter { it !in queuedBefore }
+        for (e in dao.outbox()) {
+            val key = e.type to e.recordId
+            if (queuedBefore[key] != e.queuedAt) selfQueued[key] = e.queuedAt
+        }
         dao.dequeue(RecordType.INGREDIENT.wire, local.id)
         // Hat die Zusammenführung die Server-Zutat nicht ergänzt, muss sie nicht zurückgesendet werden
         if (remote.fillFrom(renamed) == remote) dao.dequeue(RecordType.INGREDIENT.wire, remote.id)
@@ -238,6 +251,7 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
         val rev = SyncRecordRevEntity(r.type.wire, r.id, r.rev ?: 0L)
         if (!exists(r.type, r.id)) {
             dao.setRev(rev)
+            dao.clearProblem(r.type.wire, r.id)
             return
         }
         if (isStillNeeded(r)) {

@@ -323,4 +323,43 @@ class SyncApplierTest {
     }
 
     private fun recipeRec() = rec(RecordType.RECIPE, "r", recipePayload("Suppe", emptyList()))
+
+    @Test fun mergeQueuedRecipeIsStillOverwrittenByServerRecordInSamePull() = runTest {
+        db.ingredientDao().upsert(localIngredient("L", "zwiebel"))
+        val rid = RecipeRepository(db.recipeDao()).save(draft("L"))
+        db.syncDao().clearOutbox()
+        val result = applier.apply(
+            listOf(
+                ingredientRec("R", "Zwiebel", rev = 2),
+                rec(RecordType.RECIPE, rid, recipePayload("Vom Server", listOf(line("srv", "R"))), rev = 3),
+            ),
+            nextCursor = 5,
+        )
+        assertEquals(0, result.skippedPending)
+        assertEquals("Vom Server", db.recipeDao().get(rid)?.name)
+    }
+
+    @Test fun selfQueuedExemptionEndsWhenQueuedAtChanged() = runTest {
+        db.recipeDao().upsert(
+            de.foody.app.data.db.RecipeEntity(
+                id = "A", name = "Lokal", defaultServings = 2, prepMinutes = null, cookMinutes = null, imageUri = null,
+                notes = null, tags = "", archivedAt = null, createdAt = 0, updatedAt = 0,
+            ),
+        )
+        val queuedAt = db.syncDao().outbox().single { it.recordId == "A" }.queuedAt
+        val key = "recipe" to "A"
+        assertFalse(applier.shouldSkipPending("recipe", "A", mapOf(key to queuedAt)))
+        // Nutzeränderung nach der Selbst-Vormerkung: anderer Zeitstempel -> echte lokale Änderung
+        assertTrue(applier.shouldSkipPending("recipe", "A", mapOf(key to queuedAt - 1)))
+        assertTrue(applier.shouldSkipPending("recipe", "A", emptyMap()))
+        assertFalse(applier.shouldSkipPending("recipe", "none", emptyMap()))
+    }
+
+    @Test fun deletionOfAbsentRecordClearsProblem() = runTest {
+        val slot = rec(RecordType.MEAL_SLOT, "s", MealSlotPayload(date = "2026-01-01", slotType = "DINNER", recipeId = "r", servings = 2))
+        applier.apply(listOf(slot), 1)
+        assertEquals(1, db.syncDao().problems().size)
+        applier.apply(listOf(gone(RecordType.MEAL_SLOT, "s", rev = 4)), 2)
+        assertEquals(emptyList(), db.syncDao().problems())
+    }
 }
