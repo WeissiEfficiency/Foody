@@ -43,6 +43,9 @@ class SyncEngine(
     private val dao get() = db.syncDao()
     private val mutex = Mutex()
 
+    /** `true`, solange [run] läuft (Mutex gehalten); billig, ohne Suspend. */
+    val isRunning: Boolean get() = mutex.isLocked
+
     suspend fun run(): SyncOutcome = mutex.withLock {
         val state = dao.getState()
         if (state == null || !state.active) return@withLock SyncOutcome.Success(0, 0, 0)

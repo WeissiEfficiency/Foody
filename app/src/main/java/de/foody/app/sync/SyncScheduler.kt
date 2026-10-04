@@ -1,6 +1,7 @@
 package de.foody.app.sync
 
 import android.content.Context
+import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
@@ -16,6 +17,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
@@ -32,6 +34,9 @@ open class SyncEngineFactory @Inject constructor(
     private val applier: SyncApplier,
     private val tokenStore: TokenStore,
 ) {
+    /** Läuft gerade ein Sync-Lauf der aktuellen Engine? */
+    open val isSyncRunning: Boolean get() = cached?.second?.isRunning == true
+
     private val httpClient: HttpClient by lazy { defaultHttpClient() }
     private var cached: Pair<String, SyncEngine>? = null
 
@@ -56,28 +61,42 @@ open class SyncEngineFactory @Inject constructor(
 class SyncScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
     private val db: FoodyDatabase,
+    private val engineFactory: SyncEngineFactory,
 ) {
+    private var observeJob: Job? = null
     private val workManager get() = WorkManager.getInstance(context)
     private val constraints = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
     /** Regelmäßiger Abgleich; ein bereits geplanter Auftrag bleibt unverändert. */
     fun schedulePeriodic() {
-        val request = PeriodicWorkRequestBuilder<SyncWorker>(PERIOD_HOURS, TimeUnit.HOURS)
+        val request = PeriodicWorkRequestBuilder<SyncWorker>(PERIOD_MINUTES, TimeUnit.MINUTES)
             .setConstraints(constraints)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_SECONDS, TimeUnit.SECONDS)
             .build()
         workManager.enqueueUniquePeriodicWork(PERIODIC_WORK, ExistingPeriodicWorkPolicy.KEEP, request)
     }
 
     /**
      * Gleich (nach kurzer Verzögerung) abgleichen. Weitere Anfragen ersetzen den wartenden Auftrag und
-     * verschieben ihn damit (Entprellen vieler Änderungen hintereinander).
+     * verschieben ihn damit (Entprellen vieler Änderungen hintereinander). Mit [afterRun] (aus dem laufenden
+     * Worker heraus) wird stattdessen hinter den laufenden Auftrag gehängt, damit er sich nicht selbst abbricht.
      */
-    fun requestSoon() {
+    fun requestSoon(afterRun: Boolean = false) {
         val request = OneTimeWorkRequestBuilder<SyncWorker>()
             .setConstraints(constraints)
             .setInitialDelay(DELAY_SECONDS, TimeUnit.SECONDS)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_SECONDS, TimeUnit.SECONDS)
             .build()
-        workManager.enqueueUniqueWork(NOW_WORK, ExistingWorkPolicy.REPLACE, request)
+        val policy = if (afterRun) ExistingWorkPolicy.APPEND_OR_REPLACE else ExistingWorkPolicy.REPLACE
+        workManager.enqueueUniqueWork(NOW_WORK, policy, request)
+    }
+
+    /**
+     * Nach einem Lauf: Wurde während des Laufs (ab [runStart], ms) etwas vorgemerkt, gleich noch einmal abgleichen.
+     * Einträge, die nur stehengeblieben sind (älter als der Lauf), lösen nichts aus.
+     */
+    suspend fun requestSoonIfQueuedSince(runStart: Long) {
+        if (db.syncDao().hasQueuedSince(runStart)) requestSoon(afterRun = true)
     }
 
     fun cancelAll() {
@@ -87,16 +106,19 @@ class SyncScheduler @Inject constructor(
 
     /**
      * Beobachtet die Outbox und fordert bei Zuwachs einen Abgleich an (nur bei aktivem Sync). Ein Rückgang
-     * (Entfernen nach dem Push) löst nichts aus, sonst gäbe es eine Schleife. Der erste Wert zählt als Zuwachs
+     * (Entfernen nach dem Push) löst nichts aus, sonst gäbe es eine Schleife. Ein zweiter Aufruf bei aktivem Collector tut nichts. Der erste Wert zählt als Zuwachs
      * gegenüber 0: Was beim Start noch offen ist, wird zeitnah gesendet.
      */
+    @Synchronized
     fun startObservingOutbox(scope: CoroutineScope) {
-        scope.launch {
+        if (observeJob?.isActive == true) return
+        observeJob = scope.launch {
             var previous = 0
             db.syncDao().observeOutboxCount().distinctUntilChanged().collect { count ->
                 val increased = count > previous
                 previous = count
-                if (increased && db.syncDao().getState()?.active == true) requestSoon()
+                // Während eines Laufs vermerkt der Worker Änderungen selbst (requestSoonIfQueuedSince).
+                if (increased && !engineFactory.isSyncRunning && db.syncDao().getState()?.active == true) requestSoon()
             }
         }
     }
@@ -104,7 +126,8 @@ class SyncScheduler @Inject constructor(
     companion object {
         const val PERIODIC_WORK = "foody-sync-periodic"
         const val NOW_WORK = "foody-sync-now"
-        private const val PERIOD_HOURS = 1L
+        private const val PERIOD_MINUTES = 15L
+        private const val BACKOFF_SECONDS = 30L
         private const val DELAY_SECONDS = 5L
     }
 }

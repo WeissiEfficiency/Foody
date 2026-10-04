@@ -17,10 +17,15 @@ class SyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val engineFactory: SyncEngineFactory,
+    private val scheduler: SyncScheduler,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val engine = engineFactory.create() ?: return Result.success()
-        return when (val outcome = engine.run()) {
+        val start = System.currentTimeMillis()
+        val outcome = engine.run()
+        // Änderungen während des Laufs (z. B. Voll-Abgleich) gleich nachziehen, ohne den eigenen Auftrag abzubrechen.
+        scheduler.requestSoonIfQueuedSince(start)
+        return when (outcome) {
             is SyncOutcome.Success, SyncOutcome.Unauthorized, is SyncOutcome.ProtocolMismatch,
             SyncOutcome.NoHousehold,
             -> Result.success()

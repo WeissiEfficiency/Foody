@@ -2,6 +2,7 @@ package de.foody.app.sync
 
 import android.content.Context
 import androidx.room.Room
+import androidx.work.BackoffPolicy
 import androidx.work.Configuration
 import androidx.work.ListenableWorker
 import androidx.work.WorkInfo
@@ -10,6 +11,7 @@ import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import androidx.work.testing.TestListenableWorkerBuilder
 import androidx.work.testing.WorkManagerTestInitHelper
+import androidx.work.impl.WorkManagerImpl
 import de.foody.app.data.db.FoodyDatabase
 import de.foody.app.data.db.SYNC_CALLBACK
 import de.foody.app.data.db.SyncOutboxEntity
@@ -26,7 +28,9 @@ import java.time.Clock
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -67,6 +71,7 @@ class SyncWorkerTest {
     @Before
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
+        WorkManagerTestInitHelper.initializeTestWorkManager(context, Configuration.Builder().build())
         db = Room.inMemoryDatabaseBuilder(context, FoodyDatabase::class.java)
             .addCallback(FoodyDatabase.SYNC_CALLBACK).allowMainThreadQueries().build()
     }
@@ -90,7 +95,7 @@ class SyncWorkerTest {
         TestListenableWorkerBuilder<SyncWorker>(context)
             .setWorkerFactory(object : WorkerFactory() {
                 override fun createWorker(appContext: Context, workerClassName: String, workerParameters: WorkerParameters): ListenableWorker =
-                    SyncWorker(appContext, workerParameters, factory)
+                    SyncWorker(appContext, workerParameters, factory, SyncScheduler(context, db, factory))
             })
             .build()
 
@@ -121,6 +126,26 @@ class SyncWorkerTest {
         assertEquals(ListenableWorker.Result.success(), worker(factory(ThrowingApi(null))).doWork())
     }
 
+    private fun nowWork() = WorkManager.getInstance(context).getWorkInfosForUniqueWork(SyncScheduler.NOW_WORK).get()
+
+    @Test
+    fun workerRequestsAnotherRunOnlyForEntriesQueuedDuringTheRun() = runTest {
+        activate()
+        // Stehengebliebener älterer Eintrag (z. B. missing_reference): darf nicht erneut auslösen.
+        db.syncDao().enqueue(SyncOutboxEntity("ingredient", "old", deleted = false, queuedAt = 1))
+        assertEquals(ListenableWorker.Result.success(), worker(factory(ThrowingApi(null))).doWork())
+        assertEquals(0, nowWork().size)
+        // Während des Laufs (Pull) vorgemerkt: genau ein weiterer Lauf wird angefordert.
+        val api = object : SyncApi by ThrowingApi(null) {
+            override suspend fun pull(since: Long, limit: Int): PullResponse {
+                db.syncDao().enqueue(SyncOutboxEntity("ingredient", "new", deleted = false, queuedAt = System.currentTimeMillis() + 1))
+                return PullResponse(emptyList(), since, false)
+            }
+        }
+        assertEquals(ListenableWorker.Result.success(), worker(factory(api)).doWork())
+        assertEquals(1, nowWork().count { it.state == WorkInfo.State.ENQUEUED })
+    }
+
     @Test
     fun inactiveSyncSucceeds() = runTest {
         assertEquals(ListenableWorker.Result.success(), worker(factory(null)).doWork())
@@ -142,8 +167,17 @@ class SyncSchedulerTest {
         workManager = WorkManager.getInstance(context)
         db = Room.inMemoryDatabaseBuilder(context, FoodyDatabase::class.java)
             .addCallback(FoodyDatabase.SYNC_CALLBACK).allowMainThreadQueries().build()
-        scheduler = SyncScheduler(context, db)
+        scheduler = newScheduler()
     }
+
+    private var running = false
+
+    private fun newScheduler() = SyncScheduler(
+        context, db,
+        object : SyncEngineFactory(db, SyncLocalStore(db), SyncApplier(db), TokenStore(context)) {
+            override val isSyncRunning: Boolean get() = running
+        },
+    )
 
     @After
     fun tearDown() = db.close()
@@ -175,6 +209,53 @@ class SyncSchedulerTest {
         scheduler.cancelAll()
         assertTrue(infos(SyncScheduler.PERIODIC_WORK).all { it.state == WorkInfo.State.CANCELLED })
         assertTrue(infos(SyncScheduler.NOW_WORK).all { it.state == WorkInfo.State.CANCELLED })
+    }
+
+    @Test
+    fun periodicUsesFifteenMinutesAndExponentialBackoff() {
+        scheduler.schedulePeriodic()
+        val info = infos(SyncScheduler.PERIODIC_WORK).single()
+        assertEquals(TimeUnit.MINUTES.toMillis(15), info.periodicityInfo?.repeatIntervalMillis)
+        val spec = (workManager as WorkManagerImpl).workDatabase.workSpecDao().getWorkSpec(info.id.toString())!!
+        assertEquals(BackoffPolicy.EXPONENTIAL, spec.backoffPolicy)
+        assertEquals(TimeUnit.SECONDS.toMillis(30), spec.backoffDelayDuration)
+    }
+
+    @Test
+    fun requestSoonUsesExponentialBackoff() {
+        scheduler.requestSoon()
+        val info = infos(SyncScheduler.NOW_WORK).single()
+        val spec = (workManager as WorkManagerImpl).workDatabase.workSpecDao().getWorkSpec(info.id.toString())!!
+        assertEquals(BackoffPolicy.EXPONENTIAL, spec.backoffPolicy)
+        assertEquals(TimeUnit.SECONDS.toMillis(30), spec.backoffDelayDuration)
+    }
+
+    @Test
+    fun observerIgnoresIncreasesWhileEngineIsRunning() = runBlocking {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            val dao = db.syncDao()
+            dao.upsertState((dao.getState() ?: error("sync_state fehlt")).copy(active = true))
+            running = true
+            scheduler.startObservingOutbox(scope)
+            dao.enqueue(SyncOutboxEntity("ingredient", "a", deleted = false, queuedAt = 1))
+            Thread.sleep(500)
+            assertEquals(0, infos(SyncScheduler.NOW_WORK).size)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun startObservingIsIdempotent() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            scheduler.startObservingOutbox(scope)
+            scheduler.startObservingOutbox(scope)
+            assertEquals(1, scope.coroutineContext[Job]!!.children.count())
+        } finally {
+            scope.cancel()
+        }
     }
 
     private fun waitForNowWork(timeoutMs: Long = 5_000): Boolean {
