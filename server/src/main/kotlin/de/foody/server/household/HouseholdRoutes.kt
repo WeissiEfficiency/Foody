@@ -24,7 +24,7 @@ fun Route.householdRoutes(deps: ServerDeps) {
     post("/households") {
         val device = call.principal<DevicePrincipal>()!!
         val request = call.receiveJson(CreateHouseholdRequest.serializer())
-        call.respond(deps.accounts.createHousehold(device.userId, device.deviceId, request.name))
+        call.respond(HttpStatusCode.Created, deps.accounts.createHousehold(device.userId, device.deviceId, request.name))
     }
     post("/device/household") {
         val device = call.principal<DevicePrincipal>()!!
@@ -35,7 +35,7 @@ fun Route.householdRoutes(deps: ServerDeps) {
     post("/invites") {
         val device = call.principal<DevicePrincipal>()!!
         val householdId = device.householdId ?: throw ApiException(HttpStatusCode.Conflict, ErrorCode.NO_HOUSEHOLD)
-        call.respond(deps.accounts.createInvite(device.userId, householdId))
+        call.respond(HttpStatusCode.Created, deps.accounts.createInvite(device.userId, householdId))
     }
     get("/devices") {
         val device = call.principal<DevicePrincipal>()!!
