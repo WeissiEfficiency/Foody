@@ -4,6 +4,15 @@ import de.foody.server.db.Database
 import de.foody.server.db.Migrations
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.post as routePost
+import io.ktor.server.routing.routing
+import de.foody.sync.protocol.ErrorDto
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import kotlin.test.Test
@@ -69,5 +78,29 @@ class DatabaseTest {
         assertEquals(8080, config.port)
         assertNull(config.adminUser)
         assertNull(config.adminPassword)
+    }
+
+    @Test
+    fun clientBodyErrorsAreNot500() = testServer(extraSetup = {
+        routing {
+            routePost("/test/echo") {
+                call.receive<ErrorDto>()
+                call.respond(HttpStatusCode.NoContent)
+            }
+        }
+    }) {
+        val malformed = client.post("/test/echo") {
+            contentType(ContentType.Application.Json)
+            setBody("{kaputt")
+        }
+        assertEquals(HttpStatusCode.BadRequest, malformed.status)
+        assertEquals("""{"code":"invalid_input"}""", malformed.bodyAsText())
+
+        val wrongType = client.post("/test/echo") {
+            contentType(ContentType.Text.Plain)
+            setBody("x")
+        }
+        assertEquals(HttpStatusCode.UnsupportedMediaType, wrongType.status)
+        assertEquals("""{"code":"invalid_input"}""", wrongType.bodyAsText())
     }
 }

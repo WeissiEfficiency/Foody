@@ -4,6 +4,7 @@ import de.foody.server.db.Database
 import de.foody.sync.protocol.Protocol
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
+import io.ktor.server.application.Application
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import java.time.Clock
@@ -29,13 +30,17 @@ class TestEnv(val deps: ServerDeps, val clock: MutableClock)
 /** Startet das Server-Modul mit `:memory:`-Datenbank und führt [block] aus. */
 fun testServer(
     clock: MutableClock = MutableClock(),
+    extraSetup: Application.() -> Unit = {},
     block: suspend ApplicationTestBuilder.(TestEnv) -> Unit,
 ) {
     val config = ServerConfig(dbPath = ":memory:", port = 0, adminUser = null, adminPassword = null)
     Database("jdbc:sqlite::memory:").use { db ->
         val deps = ServerDeps.create(config, db, clock)
         testApplication {
-            application { foodyModule(deps) }
+            application {
+                foodyModule(deps)
+                extraSetup()
+            }
             block(TestEnv(deps, clock))
         }
     }

@@ -8,6 +8,9 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.createRouteScopedPlugin
 import io.ktor.server.application.install
+import io.ktor.server.plugins.BadRequestException
+import io.ktor.server.plugins.CannotTransformContentToTypeException
+import io.ktor.server.plugins.UnsupportedMediaTypeException
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.forwardedheaders.XForwardedHeaders
 import io.ktor.server.plugins.statuspages.StatusPages
@@ -15,6 +18,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
 
@@ -46,7 +50,19 @@ fun Application.foodyModule(deps: ServerDeps) {
     install(XForwardedHeaders)
     install(StatusPages) {
         exception<ApiException> { call, e -> call.respond(e.status, ErrorDto(e.code)) }
+        // Client-Fehler beim Lesen des Bodys sind keine Serverfehler.
+        exception<BadRequestException> { call, _ ->
+            call.respond(HttpStatusCode.BadRequest, ErrorDto(ErrorCode.INVALID_INPUT))
+        }
+        exception<CannotTransformContentToTypeException> { call, _ ->
+            call.respond(HttpStatusCode.UnsupportedMediaType, ErrorDto(ErrorCode.INVALID_INPUT))
+        }
+        exception<UnsupportedMediaTypeException> { call, _ ->
+            call.respond(HttpStatusCode.UnsupportedMediaType, ErrorDto(ErrorCode.INVALID_INPUT))
+        }
         exception<Throwable> { call, e ->
+            // Abbruch durch den Client (Verbindung weg) ist kein Fehler.
+            if (e is CancellationException) throw e
             log.error("Unbehandelte Ausnahme", e)
             call.respond(HttpStatusCode.InternalServerError)
         }
