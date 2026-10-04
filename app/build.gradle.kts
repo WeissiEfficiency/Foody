@@ -147,6 +147,10 @@ dependencies {
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    // Hintergrund-Sync: WorkManager mit Hilt-Worker-Factory
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
 
     implementation(libs.coroutines.android)
     implementation(libs.serialization.json)
@@ -159,6 +163,7 @@ dependencies {
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.work.testing)
     // Echter Server im Test (testApplication) für Client- und Ende-zu-Ende-Tests
     testImplementation(project(":server"))
     testImplementation(libs.ktor.server.test.host)

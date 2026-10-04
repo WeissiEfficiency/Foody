@@ -3,6 +3,7 @@ package de.foody.app.data.db
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SyncDao {
@@ -13,6 +14,8 @@ interface SyncDao {
     @Query("SELECT * FROM sync_outbox ORDER BY queuedAt, type, recordId") suspend fun outbox(): List<SyncOutboxEntity>
     @Query("SELECT EXISTS(SELECT 1 FROM sync_outbox WHERE type = :type AND recordId = :id)")
     suspend fun isQueued(type: String, id: String): Boolean
+    /** Anzahl offener Outbox-Einträge; meldet sich bei jeder Änderung der Tabelle (für den Sync-Auslöser). */
+    @Query("SELECT COUNT(*) FROM sync_outbox") fun observeOutboxCount(): Flow<Int>
     @Upsert suspend fun enqueue(e: SyncOutboxEntity)
     @Query("SELECT queuedAt FROM sync_outbox WHERE type = :type AND recordId = :id") suspend fun queuedAtOf(type: String, id: String): Long?
     @Query("DELETE FROM sync_outbox WHERE type = :type AND recordId = :id") suspend fun dequeue(type: String, id: String)
