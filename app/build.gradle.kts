@@ -101,7 +101,21 @@ ksp {
     arg("room.generateKotlin", "true")
 }
 
+// SQLite 3.18 (Android API 26) für den Trigger-Kompatibilitätstest. Liegt bewusst nicht im Test-Klassenpfad:
+// :server bringt eine neuere sqlite-jdbc mit, und beide Versionen sind dasselbe Artefakt. Der Test lädt die
+// alte Version aus dieser Konfiguration in einem eigenen ClassLoader.
+val legacySqlite by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
+tasks.withType<Test>().configureEach {
+    systemProperty("foody.legacySqliteJar", legacySqlite.singleFile.absolutePath)
+}
+
 dependencies {
+    legacySqlite(libs.sqlite.jdbc.legacy)
+
     implementation(project(":domain"))
     implementation(project(":sync-protocol"))
 
@@ -137,11 +151,17 @@ dependencies {
     implementation(libs.coroutines.android)
     implementation(libs.serialization.json)
     implementation(libs.coil.compose)
+    // Sync-Client (optional, nur HTTPS); Bodies werden selbst mit kotlinx.serialization verarbeitet
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
 
     testImplementation(libs.junit4)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.coroutines.test)
-    testImplementation(libs.sqlite.jdbc.legacy)
+    testImplementation(libs.robolectric)
+    // Echter Server im Test (testApplication) für Client- und Ende-zu-Ende-Tests
+    testImplementation(project(":server"))
+    testImplementation(libs.ktor.server.test.host)
 
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.androidx.test.ext.junit)

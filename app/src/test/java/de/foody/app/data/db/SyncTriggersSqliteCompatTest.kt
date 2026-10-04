@@ -10,7 +10,9 @@ import org.junit.Before
 import org.junit.Test
 import java.io.File
 import java.sql.Connection
-import java.sql.DriverManager
+import java.net.URLClassLoader
+import java.sql.Driver
+import java.util.Properties
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -20,6 +22,7 @@ import kotlin.test.assertTrue
  */
 class SyncTriggersSqliteCompatTest {
     private lateinit var conn: Connection
+    private lateinit var loader: URLClassLoader
 
     private val tables = listOf(
         "ingredient", "recipe", "recipe_ingredient", "instruction_step", "meal_slot", "pantry_item",
@@ -27,7 +30,10 @@ class SyncTriggersSqliteCompatTest {
     )
 
     @Before fun setUp() {
-        conn = DriverManager.getConnection("jdbc:sqlite::memory:")
+        // Eigener ClassLoader (Eltern: nur Plattform), damit die neuere sqlite-jdbc aus :server nicht dazwischenfunkt.
+        loader = URLClassLoader(arrayOf(File(checkNotNull(System.getProperty("foody.legacySqliteJar"))).toURI().toURL()), Driver::class.java.classLoader)
+        val driver = loader.loadClass("org.sqlite.JDBC").getDeclaredConstructor().newInstance() as Driver
+        conn = driver.connect("jdbc:sqlite::memory:", Properties())
         val schema = Json.parseToJsonElement(
             File("schemas/de.foody.app.data.db.FoodyDatabase/5.json").readText(),
         ).jsonObject["database"]!!.jsonObject["entities"]!!.jsonArray.map { it.jsonObject }
@@ -43,7 +49,10 @@ class SyncTriggersSqliteCompatTest {
         exec("UPDATE sync_state SET active = 1")
     }
 
-    @After fun tearDown() = conn.close()
+    @After fun tearDown() {
+        conn.close()
+        loader.close()
+    }
 
     private fun JsonObject.str(key: String) = getValue(key).jsonPrimitive.content
 
