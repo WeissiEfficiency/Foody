@@ -141,7 +141,8 @@ class KtorSyncApi(
             status == 410 -> SyncApiException.CursorExpired(status, code)
             status == 413 -> SyncApiException.TooLarge(status, code)
             status == 429 -> SyncApiException.Throttled(status, code)
-            status in 400..499 -> SyncApiException.ClientError(status, code)
+            // 3xx: Weiterleitungen werden nicht verfolgt; eine falsche Basis-URL ist dauerhaft, nicht vorübergehend.
+            status in 300..499 -> SyncApiException.ClientError(status, code)
             else -> SyncApiException.Transient(status, code)
         }
     }

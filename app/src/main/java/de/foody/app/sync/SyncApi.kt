@@ -47,7 +47,7 @@ sealed class SyncApiException(val status: Int, val code: ErrorCode?, cause: Thro
     /** 429: zu viele Versuche. */
     class Throttled(status: Int, code: ErrorCode?) : SyncApiException(status, code)
 
-    /** Übrige 4xx-Antworten (Eingabe abgelehnt, falsche Zugangsdaten, …). */
+    /** Übrige 4xx-Antworten (Eingabe abgelehnt, falsche Zugangsdaten, …) sowie 3xx (nicht verfolgte Weiterleitung, z. B. falsche Basis-URL). */
     class ClientError(status: Int, code: ErrorCode?) : SyncApiException(status, code)
 
     /** 5xx, Netzwerkfehler, Zeitüberschreitung oder unlesbare Antwort: später erneut versuchen. */

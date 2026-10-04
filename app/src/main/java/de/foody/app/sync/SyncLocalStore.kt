@@ -11,6 +11,15 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
+ * Ein zu sendender Datensatz mit dem `queuedAt` des Outbox-Eintrags zum Zeitpunkt des Bauens. Nur wenn der Eintrag
+ * nach dem Push noch dasselbe `queuedAt` hat, wurde nichts nachträglich geändert und er darf entfernt werden.
+ */
+data class PendingRecord(val record: SyncRecord, val queuedAt: Long) {
+    /** Identität dieser Fassung des Eintrags: ein erneutes Vormerken ergibt ein anderes `queuedAt`. */
+    val key: Triple<RecordType, String, Long> get() = Triple(record.type, record.id, queuedAt)
+}
+
+/**
  * Lokale Seite des Syncs: schaltet ihn ein/aus und baut aus der Outbox die Datensätze für den Push.
  * Die Outbox selbst füllen die Trigger (siehe `SyncTriggers`); das Entfernen nach erfolgreichem Push
  * ist Sache des späteren Sync-Ablaufs, [pendingRecords] verändert die Outbox nicht.
@@ -60,31 +69,47 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase) {
      * Löschungen in umgekehrter Reihenfolge; höchstens [limit]. Eine lebend vorgemerkte Zeile, die inzwischen
      * fehlt, geht als Löschung hinaus.
      */
-    suspend fun pendingRecords(limit: Int = Protocol.MAX_PUSH_RECORDS): List<SyncRecord> = db.withTransaction {
+    suspend fun pendingRecords(limit: Int = Protocol.MAX_PUSH_RECORDS): List<SyncRecord> =
+        pendingBatch(limit).map { it.record }
+
+    /**
+     * Wie [pendingRecords], mit dem zugehörigen `queuedAt` je Datensatz. Fassungen aus [exclude] (bereits in diesem
+     * Lauf gesendet) werden übersprungen, damit dauerhaft vorgemerkte Einträge den Batch nicht blockieren.
+     */
+    suspend fun pendingBatch(
+        limit: Int = Protocol.MAX_PUSH_RECORDS,
+        exclude: Set<Triple<RecordType, String, Long>> = emptySet(),
+    ): List<PendingRecord> = db.withTransaction {
         val types = RecordType.entries
         // Innerhalb eines Typs bleibt die Outbox-Reihenfolge (queuedAt) erhalten.
-        val byType = dao.outbox().groupBy { e -> types.first { it.wire == e.type } }
+        val outbox = dao.outbox().filter { e ->
+            exclude.isEmpty() || Triple(types.first { it.wire == e.type }, e.recordId, e.queuedAt) !in exclude
+        }
+        val byType = outbox.groupBy { e -> types.first { it.wire == e.type } }
         val live = types.flatMap { t -> byType[t].orEmpty().filter { !it.deleted }.map { t to it } }
         val deletions = types.flatMap { t -> byType[t].orEmpty().filter { it.deleted }.map { t to it } }
 
-        val records = ArrayList<SyncRecord>()
+        val records = ArrayList<PendingRecord>()
         val vanished = ArrayList<Pair<RecordType, SyncOutboxEntity>>()
         for ((type, entry) in live) {
             if (records.size >= limit) break
             val built = build(type, entry)
-            if (built != null) records += built else vanished += type to entry
+            if (built != null) records += PendingRecord(built, entry.queuedAt) else vanished += type to entry
         }
         val allDeletions = (deletions + vanished).sortedWith(
             compareByDescending<Pair<RecordType, SyncOutboxEntity>> { it.first.ordinal }.thenBy { it.second.queuedAt },
         )
         for ((type, entry) in allDeletions) {
             if (records.size >= limit) break
-            records += SyncRecord(
-                id = entry.recordId,
-                type = type,
-                deleted = true,
-                updatedAt = entry.queuedAt,
-                baseRev = dao.revOf(type.wire, entry.recordId),
+            records += PendingRecord(
+                SyncRecord(
+                    id = entry.recordId,
+                    type = type,
+                    deleted = true,
+                    updatedAt = entry.queuedAt,
+                    baseRev = dao.revOf(type.wire, entry.recordId),
+                ),
+                entry.queuedAt,
             )
         }
         records

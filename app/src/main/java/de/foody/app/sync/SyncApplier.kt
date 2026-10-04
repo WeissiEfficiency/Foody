@@ -78,10 +78,10 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
      * wird nur dieser Datensatz zurückgerollt und als `apply_failed` vermerkt, die übrigen werden trotzdem übernommen.
      * (Ein SAVEPOINT innerhalb einer gemeinsamen Transaktion hilft auf Android nicht: Schon die Room-eigene,
      * verschachtelte DAO-Transaktion des fehlgeschlagenen Zugriffs markiert die äußere als gescheitert.)
-     * Der Cursor rückt erst in einer letzten Transaktion vor; bricht der Lauf vorher ab, wird dieselbe Seite erneut
+     * Der Cursor rückt (nur mit [updateCursor]) erst in einer letzten Transaktion vor; bricht der Lauf vorher ab, wird dieselbe Seite erneut
      * geholt, und das Anwenden ist idempotent.
      */
-    suspend fun apply(records: List<SyncRecord>, nextCursor: Long): ApplyResult {
+    suspend fun apply(records: List<SyncRecord>, nextCursor: Long, updateCursor: Boolean = true): ApplyResult {
         val c = Counters()
         val now = System.currentTimeMillis()
         val live = records.filter { !it.deleted }.sortedWith(compareBy({ it.type.ordinal }, { it.rev ?: 0L }))
@@ -91,9 +91,9 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
         for (r in live) applyOne(r, now, c, selfQueued) { applyLive(r, now, c, selfQueued) }
         for (r in deletions) applyOne(r, now, c, selfQueued) { applyDeletion(r, c) }
         db.withTransaction {
-            dao.upsertState(
-                (dao.getState() ?: SyncStateEntity()).copy(applyingRemote = false, cursor = nextCursor, lastSyncAt = now),
-            )
+            val state = (dao.getState() ?: SyncStateEntity()).copy(applyingRemote = false)
+            // Einzelne `current`-Datensätze aus einem Push-Ergebnis dürfen den Pull-Cursor nicht verschieben.
+            dao.upsertState(if (updateCursor) state.copy(cursor = nextCursor, lastSyncAt = now) else state)
         }
         return ApplyResult(c.applied, c.skippedPending, c.revived, c.merged, c.problems)
     }

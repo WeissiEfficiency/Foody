@@ -14,6 +14,8 @@ import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.plugin
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
@@ -185,5 +187,14 @@ class KtorSyncApiTest {
             assertTrue(!t.toString().contains(secret) && t.message?.contains(secret) != true, "Token in $t")
             t = t.cause
         }
+    }
+
+    @Test
+    fun redirectIsClientErrorNotTransient() = testApplication {
+        routing {
+            post("/api/v1/auth/login") { call.respond(HttpStatusCode.Found) }
+        }
+        val e = assertFailsWith<SyncApiException.ClientError> { api(client, "https://localhost").adminLogin() }
+        assertEquals(302, e.status)
     }
 }
