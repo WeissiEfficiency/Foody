@@ -48,6 +48,10 @@ class SyncLocalStoreTest {
 
     @After fun tearDown() = db.close()
 
+    /** Gültige JPEG-Signatur (FF D8 FF) plus [tail]: nur solche Fotos überträgt der Sync. */
+    private fun jpegBytes(vararg tail: Int) =
+        byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte()) + ByteArray(tail.size) { tail[it].toByte() }
+
     private suspend fun pendingPhoto(rid: String): String? {
         queue(RecordType.RECIPE, rid)
         val payload = store.pendingRecords().single { it.id == rid }.payload!!
@@ -57,10 +61,10 @@ class SyncLocalStoreTest {
     @Test fun pendingRecipeCarriesPhotoHash() = runTest {
         db.ingredientDao().upsert(ingredient("i1"))
         val rid = RecipeRepository(db.recipeDao()).save(draft("i1"))
-        val file = photos.newPhotoFile().also { it.writeBytes(byteArrayOf(1, 2, 3)) }
+        val file = photos.newPhotoFile().also { it.writeBytes(jpegBytes(1, 2, 3)) }
         try {
             db.recipeDao().upsert(db.recipeDao().get(rid)!!.copy(imageUri = photos.storedUri(file)))
-            val expected = java.security.MessageDigest.getInstance("SHA-256").digest(byteArrayOf(1, 2, 3))
+            val expected = java.security.MessageDigest.getInstance("SHA-256").digest(jpegBytes(1, 2, 3))
                 .joinToString("") { "%02x".format(it) }
             assertEquals(expected, pendingPhoto(rid))
         } finally {
@@ -84,11 +88,11 @@ class SyncLocalStoreTest {
     @Test fun localPhotoChangeDropsWish() = runTest {
         val rid = recipeWithImage(null)
         db.syncDao().upsertPhotoWanted(de.foody.app.data.db.SyncPhotoWantedEntity(rid, "e".repeat(64)))
-        val file = photos.newPhotoFile().also { it.writeBytes(byteArrayOf(4, 4)) }
+        val file = photos.newPhotoFile().also { it.writeBytes(jpegBytes(4, 4)) }
         try {
             db.recipeDao().upsert(db.recipeDao().get(rid)!!.copy(imageUri = photos.storedUri(file)))
             assertTrue(db.syncDao().photosWanted().isEmpty())
-            val expected = java.security.MessageDigest.getInstance("SHA-256").digest(byteArrayOf(4, 4))
+            val expected = java.security.MessageDigest.getInstance("SHA-256").digest(jpegBytes(4, 4))
                 .joinToString("") { "%02x".format(it) }
             assertEquals(expected, pendingPhoto(rid))
         } finally {
@@ -112,7 +116,7 @@ class SyncLocalStoreTest {
     }
 
     @Test fun unreadableOwnFileIsDeferred() = runTest {
-        val file = photos.newPhotoFile().also { it.writeBytes(byteArrayOf(1)) }
+        val file = photos.newPhotoFile().also { it.writeBytes(jpegBytes(1)) }
         try {
             val rid = recipeWithImage(photos.storedUri(file))
             file.setReadable(false, false)
@@ -129,14 +133,14 @@ class SyncLocalStoreTest {
     @Test fun restoreDropsStaleWish() = runTest {
         val rid = recipeWithImage(null)
         db.syncDao().upsertPhotoWanted(de.foody.app.data.db.SyncPhotoWantedEntity(rid, "e".repeat(64)))
-        val file = photos.newPhotoFile().also { it.writeBytes(byteArrayOf(7, 7)) }
+        val file = photos.newPhotoFile().also { it.writeBytes(jpegBytes(7, 7)) }
         try {
             // Wiederherstellen aus einer Sicherung: Rezept löschen, mit eigenem Foto neu einfügen
             val old = db.recipeDao().get(rid)!!
             db.recipeDao().delete(rid)
             db.recipeDao().upsert(old.copy(imageUri = photos.storedUri(file)))
             assertTrue(db.syncDao().photosWanted().isEmpty())
-            val expected = java.security.MessageDigest.getInstance("SHA-256").digest(byteArrayOf(7, 7))
+            val expected = java.security.MessageDigest.getInstance("SHA-256").digest(jpegBytes(7, 7))
                 .joinToString("") { "%02x".format(it) }
             assertEquals(expected, pendingPhoto(rid))
         } finally {

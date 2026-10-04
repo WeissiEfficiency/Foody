@@ -16,7 +16,7 @@ import javax.inject.Singleton
  * Ein zu sendender Datensatz mit dem `queuedAt` des Outbox-Eintrags zum Zeitpunkt des Bauens. Nur wenn der Eintrag
  * nach dem Push noch dasselbe `queuedAt` hat, wurde nichts nachträglich geändert und er darf entfernt werden.
  */
-data class PendingRecord(val record: SyncRecord, val queuedAt: Long) {
+data class PendingRecord(val record: SyncRecord, val queuedAt: Long, val photoProblem: String? = null) {
     /** Identität dieser Fassung des Eintrags: ein erneutes Vormerken ergibt ein anderes `queuedAt`. */
     val key: Triple<RecordType, String, Long> get() = Triple(record.type, record.id, queuedAt)
 }
@@ -91,7 +91,7 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
      * Foto eines Rezepts zum Zeitpunkt des Hashens: Link und Zustand. [absent] = die Datei gibt es nicht (das Gerät hat
      * kein Foto); sonst [hash], oder `null` bei einem Lesefehler.
      */
-    private class HashedPhoto(val uri: String, val hash: String?, val absent: Boolean)
+    private class HashedPhoto(val uri: String, val hash: String?, val absent: Boolean, val unsyncable: Boolean = false)
 
     /** Hash je eigenem Foto der vorgemerkten, lebenden Rezepte (Schlüssel: Rezept-ID). Läuft ohne Transaktion. */
     private suspend fun hashRecipePhotos(exclude: Set<Triple<RecordType, String, Long>>): Map<String, HashedPhoto> {
@@ -101,10 +101,37 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
             if (exclude.isNotEmpty() && Triple(RecordType.RECIPE, e.recordId, e.queuedAt) in exclude) continue
             val uri = db.recipeDao().get(e.recordId)?.imageUri ?: continue
             if (!photoIndex.isOwnPhoto(uri)) continue
-            val absent = photoIndex.fileOf(uri)?.isFile != true
-            result[e.recordId] = HashedPhoto(uri, if (absent) null else photoIndex.hashOf(uri), absent)
+            val file = photoIndex.fileOf(uri)?.takeIf { it.isFile }
+            if (file == null) {
+                result[e.recordId] = HashedPhoto(uri, null, absent = true)
+                continue
+            }
+            // Was der Server dauerhaft ablehnt (zu groß, kein JPEG), erst verkleinern; hilft das nicht, geht das Rezept
+            // ohne Foto raus (Problem `photo_unsyncable`), statt den Abgleich zu blockieren.
+            var syncable = isSyncable(file)
+            if (syncable == false && photoIndex.shrink(file)) syncable = isSyncable(file)
+            if (syncable == null) { // unlesbar: zurückstellen
+                result[e.recordId] = HashedPhoto(uri, null, absent = false)
+                continue
+            }
+            if (!syncable) {
+                result[e.recordId] = HashedPhoto(uri, null, absent = false, unsyncable = true)
+                continue
+            }
+            result[e.recordId] = HashedPhoto(uri, photoIndex.hashOf(uri), absent = false)
         }
         return result
+    }
+
+    /** Höchstens 10 MB, nicht leer und mit JPEG-Signatur `FF D8 FF` – sonst lehnt der Server das Foto ab; `null` = unlesbar. */
+    private fun isSyncable(file: java.io.File): Boolean? = try {
+        val size = file.length()
+        size in 1..Protocol.MAX_PHOTO_BYTES && file.inputStream().use { input ->
+            val head = ByteArray(3)
+            input.read(head) == 3 && head[0] == 0xFF.toByte() && head[1] == 0xD8.toByte() && head[2] == 0xFF.toByte()
+        }
+    } catch (_: java.io.IOException) {
+        null // unlesbar (kein Dauerzustand): zurückstellen
     }
 
     private suspend fun buildBatch(
@@ -126,7 +153,7 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
         for ((type, entry) in live) {
             if (records.size >= limit) break
             when (val built = build(type, entry, hashes)) {
-                is Built.Record -> records += PendingRecord(built.record, entry.queuedAt)
+                is Built.Record -> records += PendingRecord(built.record, entry.queuedAt, built.photoProblem)
                 Built.Gone -> vanished += type to entry
                 // Foto nicht bestimmbar: dieses Mal nicht senden, der Eintrag bleibt in der Outbox
                 Built.Deferred -> Unit
@@ -152,7 +179,7 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
     }
 
     private sealed interface Built {
-        data class Record(val record: SyncRecord) : Built
+        data class Record(val record: SyncRecord, val photoProblem: String? = null) : Built
         data object Gone : Built
         data object Deferred : Built
     }
@@ -168,17 +195,21 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
         val uri = recipe.imageUri ?: return Optional.empty<String>()
         if (!photoIndex.isOwnPhoto(uri)) return Optional.empty<String>()
         val hashed = hashes[recipe.id]?.takeIf { it.uri == uri } ?: return null
-        if (hashed.absent) return Optional.empty<String>() // Datei fehlt: das Gerät hat kein Foto
+        if (hashed.absent || hashed.unsyncable) return Optional.empty<String>() // Datei fehlt / nicht übertragbar
         return Optional.of(hashed.hash ?: return null)
     }
 
     /** Baut den lebenden Datensatz; [Built.Gone], wenn die Zeile nicht mehr existiert. */
     private suspend fun build(type: RecordType, e: SyncOutboxEntity, hashes: Map<String, HashedPhoto>): Built {
         val id = e.recordId
+        var photoProblem: String? = null
         val (updatedAt, payload) = when (type) {
             RecordType.INGREDIENT -> db.ingredientDao().get(id)?.let { it.updatedAt to SyncMapper.ingredient(it) }
             RecordType.RECIPE -> db.recipeDao().get(id)?.let {
                 val photo = photoFor(it, hashes) ?: return Built.Deferred
+                if (hashes[id]?.unsyncable == true && it.imageUri == hashes[id]?.uri && dao.photoWanted(id) == null) {
+                    photoProblem = PHOTO_UNSYNCABLE
+                }
                 it.updatedAt to SyncMapper.recipe(
                     it, db.recipeDao().getIngredients(id), db.recipeDao().getSteps(id), photo.orElse(null),
                 )
@@ -199,6 +230,12 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
                 baseRev = dao.revOf(type.wire, id),
                 payload = SyncMapper.toJson(payload),
             ),
+            photoProblem,
         )
+    }
+
+    companion object {
+        /** Problem-Code: das eigene Foto ist dauerhaft nicht übertragbar, das Rezept geht ohne Foto raus. */
+        const val PHOTO_UNSYNCABLE = "photo_unsyncable"
     }
 }

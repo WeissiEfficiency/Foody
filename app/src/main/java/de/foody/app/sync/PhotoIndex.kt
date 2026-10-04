@@ -39,6 +39,9 @@ class PhotoIndex @Inject constructor(
     /** Ist [uri] ein eigenes Foto (`file:`-Link im Fotoordner)? */
     fun isOwnPhoto(uri: String): Boolean = photoStore.isOwnPhoto(uri)
 
+    /** Verkleinert die Datei (siehe [RecipePhotoStore.shrink]); `true`, wenn sie ersetzt wurde. */
+    suspend fun shrink(file: File): Boolean = photoStore.shrink(file)
+
     /** Die Datei hinter einem eigenen Foto-Link, sonst `null`. */
     fun fileOf(uri: String): File? = photoStore.fileOf(uri)
 

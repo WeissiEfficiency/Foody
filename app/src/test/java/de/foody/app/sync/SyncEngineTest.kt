@@ -21,6 +21,7 @@ import de.foody.sync.protocol.IngredientPayload
 import de.foody.sync.protocol.InviteDto
 import de.foody.sync.protocol.LoginRequest
 import de.foody.sync.protocol.PhotoHash
+import de.foody.sync.protocol.Protocol
 import de.foody.sync.protocol.PullResponse
 import de.foody.sync.protocol.PushResponse
 import de.foody.sync.protocol.PushResult
@@ -239,11 +240,69 @@ class SyncEngineTest {
         api.onPull = { PullResponse(listOf(photoRecord("r1", hash)), 9, false) }
         assertTrue(engine.run() is SyncOutcome.Success)
         assertNull(db.recipeDao().get("r1")!!.imageUri)
-        assertTrue(db.syncDao().photosWanted().isEmpty())
+        assertEquals(listOf(hash), db.syncDao().photosWanted().map { it.sha256 }) // Wunsch bleibt
         assertEquals(listOf("photo_mismatch"), db.syncDao().problems().map { it.code })
         api.onPull = { PullResponse(emptyList(), it, false) }
         engine.run()
-        assertEquals(1, api.downloads) // keine Endlosschleife
+        assertEquals(1, api.downloads) // kein erneuter Abruf, solange das Problem besteht
+        assertEquals(listOf(hash), db.syncDao().photosWanted().map { it.sha256 })
+    }
+
+    private fun recipePhoto(pushed: List<SyncRecord>, id: String) =
+        (RecordType.RECIPE.decode(pushed.first { it.id == id }.payload!!) as RecipePayload).photo
+
+    @Test
+    fun oversizedOwnPhotoIsSentWithoutPhotoAndProblem() = runTest {
+        activate()
+        val big = jpeg() + ByteArray(Protocol.MAX_PHOTO_BYTES.toInt()) // 10 MB + 3
+        val rid = recipe("r1", ownPhoto(big))
+        api.onPush = { PushResponse(it.map { r -> accepted(r, 3) }) }
+        val outcome = engine.run()
+        assertTrue(outcome is SyncOutcome.Success, outcome.toString())
+        assertNull(recipePhoto(api.pushes.flatten(), rid))
+        assertTrue(api.uploads.isEmpty())
+        assertEquals(listOf(rid to "photo_unsyncable"), db.syncDao().problems().map { it.recordId to it.code })
+        assertTrue(db.syncDao().outbox().none { it.type == "recipe" })
+    }
+
+    @Test
+    fun nonJpegOwnPhotoIsSentWithoutPhotoAndProblem() = runTest {
+        activate()
+        val rid = recipe("r1", ownPhoto(byteArrayOf(1, 2, 3, 4)))
+        api.onPush = { PushResponse(it.map { r -> accepted(r, 3) }) }
+        assertTrue(engine.run() is SyncOutcome.Success)
+        assertNull(recipePhoto(api.pushes.flatten(), rid))
+        assertEquals(listOf(rid to "photo_unsyncable"), db.syncDao().problems().map { it.recordId to it.code })
+    }
+
+    @Test
+    fun uploadClientErrorDefersOnlyThatRecipe() = runTest {
+        activate()
+        val badBytes = jpeg(6, 6)
+        val bad = recipe("r1", ownPhoto(badBytes))
+        val good = RecipeRepository(db.recipeDao()).save(
+            RecipeDraft(
+                id = null, name = "G", defaultServings = 2,
+                ingredients = listOf(RecipeDraft.Line("i", BigDecimal.ONE, MeasureUnit.GRAM, null, false)),
+            ),
+        )
+        val goodBytes = jpeg(8, 8)
+        db.recipeDao().upsert(db.recipeDao().get(good)!!.copy(imageUri = ownPhoto(goodBytes)))
+        val refusing = object : SyncApi by api {
+            override suspend fun uploadPhoto(sha256: String, bytes: ByteArray) {
+                if (sha256 == PhotoHash.of(badBytes)) throw SyncApiException.ClientError(400, null)
+                api.uploadPhoto(sha256, bytes)
+            }
+        }
+        api.onPush = { PushResponse(it.map { r -> accepted(r, 3) }) }
+        val photoIndex = PhotoIndex(db, photoStore)
+        val e = SyncEngine(db, SyncLocalStore(db, photoIndex), SyncApplier(db, photoIndex), refusing, Clock.systemUTC(), photoIndex, photoStore)
+        val outcome = e.run()
+        assertTrue(outcome is SyncOutcome.Success, outcome.toString())
+        assertEquals(listOf(good), api.pushes.flatten().filter { it.type == RecordType.RECIPE }.map { it.id })
+        assertTrue(api.pulls.isNotEmpty(), "Pull läuft trotzdem")
+        assertTrue(db.syncDao().outbox().any { it.recordId == bad })
+        assertEquals(listOf(bad to "photo_unsyncable"), db.syncDao().problems().map { it.recordId to it.code })
     }
 
     @Test
