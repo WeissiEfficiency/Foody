@@ -215,4 +215,53 @@ class SyncApplierTest {
         assertFalse(state.applyingRemote)
         assertEquals(5L, state.cursor)
     }
+
+    @Test fun pendingMealSlotKeepsRecipeAlive() = runTest {
+        db.ingredientDao().upsert(localIngredient("i", "Salz"))
+        val rid = RecipeRepository(db.recipeDao()).save(draft("i"))
+        db.syncDao().clearOutbox()
+        db.mealPlanDao().upsert(
+            de.foody.app.data.db.MealSlotEntity("s", java.time.LocalDate.of(2026, 1, 1), "DINNER", rid, 2, createdAt = 0, updatedAt = 0),
+        ) // offene lokale Änderung
+        val result = applier.apply(listOf(gone(RecordType.RECIPE, rid, rev = 6)), 1)
+        assertEquals(1, result.revived)
+        assertNotNull(db.recipeDao().get(rid))
+        assertNotNull(db.mealPlanDao().get("s"))
+        assertEquals(6L, db.syncDao().revOf("recipe", rid))
+        assertTrue(db.syncDao().outbox().any { it.type == "recipe" && it.recordId == rid && !it.deleted })
+    }
+
+    @Test fun pendingPantryItemKeepsIngredientAlive() = runTest {
+        db.ingredientDao().upsert(localIngredient("i", "Salz"))
+        db.syncDao().clearOutbox()
+        db.pantryDao().upsert(de.foody.app.data.db.PantryItemEntity("p", "i", BigDecimal.ONE, MeasureUnit.GRAM, null, 0))
+        val result = applier.apply(listOf(gone(RecordType.INGREDIENT, "i", rev = 8)), 1)
+        assertEquals(1, result.revived)
+        assertNotNull(db.ingredientDao().get("i"))
+        assertNotNull(db.pantryDao().get("p"))
+        assertEquals(8L, db.syncDao().revOf("ingredient", "i"))
+        assertTrue(db.syncDao().outbox().any { it.type == "ingredient" && it.recordId == "i" && !it.deleted })
+    }
+
+    @Test fun pendingShoppingItemKeepsListAlive() = runTest {
+        db.shoppingDao().upsertList(de.foody.app.data.db.ShoppingListEntity("l", "Liste", createdAt = 0, updatedAt = 0))
+        db.syncDao().clearOutbox()
+        db.shoppingDao().upsertItem(de.foody.app.data.db.ShoppingItemEntity(id = "it", listId = "l", name = "Milch", sortOrder = 0))
+        val result = applier.apply(listOf(gone(RecordType.SHOPPING_LIST, "l", rev = 5)), 1)
+        assertEquals(1, result.revived)
+        assertNotNull(db.shoppingDao().getList("l"))
+        assertNotNull(db.shoppingDao().getItem("it"))
+        assertTrue(db.syncDao().outbox().any { it.type == "shopping_list" && it.recordId == "l" && !it.deleted })
+    }
+
+    @Test fun exactNameMatchIsPreferredOverCaseInsensitive() = runTest {
+        db.ingredientDao().upsert(localIngredient("X", "zwiebel"))
+        db.ingredientDao().upsert(localIngredient("Y", "Zwiebel"))
+        val result = applier.apply(listOf(ingredientRec("R", "Zwiebel")), 1)
+        assertEquals(1, result.merged)
+        assertNull(db.ingredientDao().get("Y"))
+        assertNotNull(db.ingredientDao().get("X"))
+        assertEquals("Zwiebel", db.ingredientDao().get("R")?.canonicalName)
+        assertEquals(0, result.problems)
+    }
 }

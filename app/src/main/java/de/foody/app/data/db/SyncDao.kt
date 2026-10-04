@@ -36,4 +36,25 @@ interface SyncDao {
     @Upsert suspend fun addProblem(p: SyncProblemEntity)
     @Query("SELECT * FROM sync_problem") suspend fun problems(): List<SyncProblemEntity>
     @Query("DELETE FROM sync_problem") suspend fun clearProblems()
+
+    /** Gibt es einen Vorratseintrag zur Zutat [ingredientId] mit offener lokaler Änderung? (Kaskade beim Löschen der Zutat) */
+    @Query(
+        "SELECT EXISTS(SELECT 1 FROM pantry_item p JOIN sync_outbox o ON o.type = 'pantry_item' AND o.recordId = p.id " +
+            "WHERE p.ingredientId = :ingredientId)",
+    )
+    suspend fun hasQueuedPantryFor(ingredientId: String): Boolean
+
+    /** Gibt es eine Planposition zum Rezept [recipeId] mit offener lokaler Änderung? */
+    @Query(
+        "SELECT EXISTS(SELECT 1 FROM meal_slot m JOIN sync_outbox o ON o.type = 'meal_slot' AND o.recordId = m.id " +
+            "WHERE m.recipeId = :recipeId)",
+    )
+    suspend fun hasQueuedSlotsFor(recipeId: String): Boolean
+
+    /** Gibt es einen Einkaufseintrag der Liste [listId] mit offener lokaler Änderung? */
+    @Query(
+        "SELECT EXISTS(SELECT 1 FROM shopping_item i JOIN sync_outbox o ON o.type = 'shopping_item' AND o.recordId = i.id " +
+            "WHERE i.listId = :listId)",
+    )
+    suspend fun hasQueuedItemsFor(listId: String): Boolean
 }

@@ -26,6 +26,10 @@ interface IngredientDao {
     @Query("SELECT * FROM ingredient WHERE canonicalName = :name COLLATE NOCASE LIMIT 1")
     suspend fun findByName(name: String): IngredientEntity?
 
+    /** Exakter (binärer) Namenstreffer – passt zum eindeutigen Index auf `canonicalName`. */
+    @Query("SELECT * FROM ingredient WHERE canonicalName = :name LIMIT 1")
+    suspend fun findByNameExact(name: String): IngredientEntity?
+
     @Upsert suspend fun upsert(e: IngredientEntity)
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertAll(e: List<IngredientEntity>)
 

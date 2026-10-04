@@ -161,7 +161,9 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
      */
     private suspend fun writeIngredient(remote: IngredientEntity, c: Counters) {
         val ing = db.ingredientDao()
-        val local = ing.findByName(remote.canonicalName)
+        // Erst exakt (passt zum eindeutigen Index), sonst ohne Beachtung der Groß-/Kleinschreibung
+        val local = ing.findByNameExact(remote.canonicalName)?.takeIf { it.id != remote.id }
+            ?: ing.findByName(remote.canonicalName)
         if (local == null || local.id == remote.id) {
             ing.upsert(remote)
             return
@@ -180,14 +182,23 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
         c.merged++
     }
 
+    /** Würde die Löschung lokal noch gebrauchte Daten reißen (FK RESTRICT oder Kaskade über offene Änderungen)? */
+    private suspend fun isStillNeeded(r: SyncRecord): Boolean = when (r.type) {
+        RecordType.INGREDIENT -> db.ingredientDao().usageCount(r.id) > 0 || dao.hasQueuedPantryFor(r.id)
+        RecordType.RECIPE -> dao.hasQueuedSlotsFor(r.id)
+        RecordType.SHOPPING_LIST -> dao.hasQueuedItemsFor(r.id)
+        else -> false
+    }
+
     private suspend fun applyDeletion(r: SyncRecord, c: Counters) {
         val rev = SyncRecordRevEntity(r.type.wire, r.id, r.rev ?: 0L)
         if (!exists(r.type, r.id)) {
             dao.setRev(rev)
             return
         }
-        if (r.type == RecordType.INGREDIENT && db.ingredientDao().usageCount(r.id) > 0) {
-            // Noch von Rezeptzeilen verwendet: nicht löschen, beim nächsten Push wiederbeleben (baseRev = rev)
+        if (isStillNeeded(r)) {
+            // Noch von Rezeptzeilen verwendet oder von Kaskade mit offener lokaler Änderung betroffen (Vorrat,
+            // Planposition, Einkaufseintrag): nicht löschen, beim nächsten Push wiederbeleben (baseRev = rev)
             dao.setRev(rev)
             dao.enqueue(SyncOutboxEntity(r.type.wire, r.id, deleted = false, queuedAt = System.currentTimeMillis()))
             c.revived++
