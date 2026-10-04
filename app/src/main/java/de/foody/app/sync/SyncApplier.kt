@@ -184,7 +184,8 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
 
     /** Würde die Löschung lokal noch gebrauchte Daten reißen (FK RESTRICT oder Kaskade über offene Änderungen)? */
     private suspend fun isStillNeeded(r: SyncRecord): Boolean = when (r.type) {
-        RecordType.INGREDIENT -> db.ingredientDao().usageCount(r.id) > 0 || dao.hasQueuedPantryFor(r.id)
+        RecordType.INGREDIENT -> db.ingredientDao().usageCount(r.id) > 0 || dao.hasQueuedPantryFor(r.id) ||
+            dao.hasQueuedShoppingItemsFor(r.id)
         RecordType.RECIPE -> dao.hasQueuedSlotsFor(r.id)
         RecordType.SHOPPING_LIST -> dao.hasQueuedItemsFor(r.id)
         else -> false

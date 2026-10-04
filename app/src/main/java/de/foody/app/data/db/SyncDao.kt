@@ -57,4 +57,11 @@ interface SyncDao {
             "WHERE i.listId = :listId)",
     )
     suspend fun hasQueuedItemsFor(listId: String): Boolean
+
+    /** Gibt es einen Einkaufseintrag zur Zutat [ingredientId] mit offener lokaler Änderung? (`ingredientId` hat keinen FK) */
+    @Query(
+        "SELECT EXISTS(SELECT 1 FROM shopping_item i JOIN sync_outbox o ON o.type = 'shopping_item' AND o.recordId = i.id " +
+            "WHERE i.ingredientId = :ingredientId)",
+    )
+    suspend fun hasQueuedShoppingItemsFor(ingredientId: String): Boolean
 }

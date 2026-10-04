@@ -251,7 +251,22 @@ class SyncApplierTest {
         assertEquals(1, result.revived)
         assertNotNull(db.shoppingDao().getList("l"))
         assertNotNull(db.shoppingDao().getItem("it"))
+        assertEquals(5L, db.syncDao().revOf("shopping_list", "l"))
         assertTrue(db.syncDao().outbox().any { it.type == "shopping_list" && it.recordId == "l" && !it.deleted })
+    }
+
+    @Test fun pendingShoppingItemKeepsIngredientAlive() = runTest {
+        db.ingredientDao().upsert(localIngredient("i", "Salz"))
+        db.shoppingDao().upsertList(de.foody.app.data.db.ShoppingListEntity("l", "Liste", createdAt = 0, updatedAt = 0))
+        db.syncDao().clearOutbox()
+        db.shoppingDao().upsertItem(
+            de.foody.app.data.db.ShoppingItemEntity(id = "it", listId = "l", ingredientId = "i", name = "Salz", sortOrder = 0),
+        )
+        val result = applier.apply(listOf(gone(RecordType.INGREDIENT, "i", rev = 8)), 1)
+        assertEquals(1, result.revived)
+        assertNotNull(db.ingredientDao().get("i"))
+        assertEquals(8L, db.syncDao().revOf("ingredient", "i"))
+        assertTrue(db.syncDao().outbox().any { it.type == "ingredient" && it.recordId == "i" && !it.deleted })
     }
 
     @Test fun exactNameMatchIsPreferredOverCaseInsensitive() = runTest {

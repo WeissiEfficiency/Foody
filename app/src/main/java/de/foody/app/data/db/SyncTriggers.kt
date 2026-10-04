@@ -6,7 +6,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 /**
  * SQLite-Trigger, die jede lokale Änderung in `sync_outbox` vormerken – in derselben Transaktion wie die Änderung,
  * sodass keine Schreibstelle sie vergessen kann. Die Outbox-Trigger sind nur wirksam, wenn `sync_state.active = 1`
- *
  * und `applyingRemote = 0` gilt; ohne Zeile in `sync_state` (oder ohne `activate`) bleibt der Sync inaktiv.
  * Rekursion: Room setzt `PRAGMA recursive_triggers = 1` (InvalidationTracker, auf jeder Schreibverbindung), Trigger
  * dürfen sich also selbst auslösen. Jeder Trigger-Rumpf muss deshalb seine eigene WHEN-Bedingung falsch machen
@@ -83,7 +82,7 @@ object SyncTriggers {
     private fun enqueue(type: String, id: String, deleted: Int, guard: String? = null): String {
         val and = if (guard == null) "" else " AND $guard"
         return "UPDATE sync_outbox SET deleted = $deleted, queuedAt = $NOW WHERE type = $type AND recordId = $id$and;" + "\n" +
-            "INSERT INTO sync_outbox SELECT $type, $id, $deleted, $NOW " +
+            "INSERT INTO sync_outbox(type, recordId, deleted, queuedAt) SELECT $type, $id, $deleted, $NOW " +
             "WHERE NOT EXISTS (SELECT 1 FROM sync_outbox WHERE type = $type AND recordId = $id)$and;"
     }
 

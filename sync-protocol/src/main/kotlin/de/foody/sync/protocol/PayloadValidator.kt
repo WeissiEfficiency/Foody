@@ -92,6 +92,8 @@ object PayloadValidator {
                     ensure(line.unit in UNITS)
                     optText(line.note, MAX_TEXT)
                 }
+                ensure(payload.lines.map { it.id }.toSet().size == payload.lines.size)
+                ensure(payload.steps.map { it.id }.toSet().size == payload.steps.size)
                 payload.steps.forEach { step ->
                     ensure(isValidId(step.id))
                     ensure(step.text.length <= MAX_TEXT)
@@ -122,6 +124,7 @@ object PayloadValidator {
                 ensure(payload.unit == null || payload.unit in UNITS)
                 optText(payload.category, MAX_NAME)
                 optText(payload.note, MAX_TEXT)
+                ensure(payload.sources.map { it.id }.toSet().size == payload.sources.size)
                 payload.sources.forEach { source ->
                     ensure(isValidId(source.id) && isValidId(source.mealSlotId) && isValidId(source.recipeIngredientId))
                     ensure(source.recipeName.length <= MAX_NAME)
