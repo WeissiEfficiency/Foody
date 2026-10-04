@@ -36,14 +36,13 @@ object SyncTriggers {
 
     val statements: List<String> = buildList {
         for (t in roots) {
-            add(trigger("sync_${t}_ai", "AFTER INSERT ON $t", ACTIVE, "INSERT OR REPLACE INTO sync_outbox VALUES('$t', NEW.id, 0, $NOW);"))
-            add(trigger("sync_${t}_au", "AFTER UPDATE ON $t", ACTIVE, "INSERT OR REPLACE INTO sync_outbox VALUES('$t', NEW.id, 0, $NOW);"))
-            add(trigger("sync_${t}_ad", "AFTER DELETE ON $t", ACTIVE, "INSERT OR REPLACE INTO sync_outbox VALUES('$t', OLD.id, 1, $NOW);"))
+            add(trigger("sync_${t}_ai", "AFTER INSERT ON $t", ACTIVE, enqueue("'$t'", "NEW.id", 0)))
+            add(trigger("sync_${t}_au", "AFTER UPDATE ON $t", ACTIVE, enqueue("'$t'", "NEW.id", 0)))
+            add(trigger("sync_${t}_ad", "AFTER DELETE ON $t", ACTIVE, enqueue("'$t'", "OLD.id", 1)))
         }
         for ((table, parent, fk) in children) {
             fun queue(row: String) =
-                "INSERT OR REPLACE INTO sync_outbox SELECT '$parent', $row.$fk, 0, $NOW " +
-                    "WHERE EXISTS (SELECT 1 FROM $parent WHERE id = $row.$fk);"
+                enqueue("'$parent'", "$row.$fk", 0, "WHERE EXISTS (SELECT 1 FROM $parent WHERE id = $row.$fk)")
             add(trigger("sync_${table}_ai", "AFTER INSERT ON $table", ACTIVE, queue("NEW")))
             // Beim Umhängen auf einen anderen Elterndatensatz sind beide betroffen.
             add(trigger("sync_${table}_au", "AFTER UPDATE ON $table", ACTIVE, queue("NEW") + "\n" + queue("OLD")))
@@ -73,6 +72,15 @@ object SyncTriggers {
             ),
         )
     }
+
+    /**
+     * Outbox-Eintrag als UPSERT. `INSERT OR REPLACE` taugt hier nicht: Die Konfliktstrategie der auslösenden
+     * Anweisung (z. B. Rooms `@Insert` = ABORT) überschreibt die des Trigger-Rumpfs, ein zweiter Eintrag für denselben
+     * Datensatz (Rezept + Zeilen) bräche die Transaktion ab. `ON CONFLICT DO UPDATE` bleibt davon unberührt.
+     */
+    private fun enqueue(type: String, id: String, deleted: Int, where: String = "WHERE true") =
+        "INSERT INTO sync_outbox SELECT $type, $id, $deleted, $NOW $where " +
+            "ON CONFLICT(type, recordId) DO UPDATE SET deleted = excluded.deleted, queuedAt = excluded.queuedAt;"
 
     private fun trigger(name: String, event: String, condition: String, body: String) =
         "CREATE TRIGGER IF NOT EXISTS $name $event WHEN $condition BEGIN\n$body\nEND"

@@ -56,6 +56,14 @@ class SyncTriggersTest {
         items.forEach { db.shoppingDao().upsertItem(it) }
     }
 
+    @Test fun savingRecipeWhileActiveQueuesItOnce() = runTest {
+        // Regression: Rezept- und Zeilen-Trigger melden denselben Datensatz; INSERT OR REPLACE im Trigger brach unter @Insert (ABORT) ab
+        db.ingredientDao().upsert(ingredient("i1"))
+        db.activateSyncForTest()
+        val rid = RecipeRepository(db.recipeDao()).save(draft("i1"))
+        assertEquals(listOf("recipe" to rid), db.syncDao().outbox().map { it.type to it.recordId })
+    }
+
     @Test fun inactiveSyncWritesNoOutbox() = runTest {
         db.ingredientDao().upsert(ingredient("i1"))
         db.ingredientDao().upsert(ingredient("i1").copy(category = "Obst"))
