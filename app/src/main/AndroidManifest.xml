@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Bilder über Photo Picker, Dateien über SAF, Fotos über die Kamera-App – dafür keine Berechtigungen.
          Nur für Kochtimer im Hintergrund: Vordergrunddienst, Wakelock bis zum Timer-Ende und die Meldung
@@ -8,6 +9,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Nur für die optionale Synchronisation mit dem selbst gehosteten Server (ausschließlich HTTPS, siehe network_security_config). -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:name=".FoodyApp"
@@ -47,6 +50,18 @@
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
+        </provider>
+        <!-- WorkManager wird in FoodyApp (Configuration.Provider, Hilt-Worker-Factory) selbst konfiguriert:
+             nur dessen Standard-Initializer entfällt, andere Startup-Initializer (z. B. ProfileInstaller) bleiben. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
         </provider>
     </application>
 </manifest>

@@ -27,7 +27,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SyncStateEntity::class,
         SyncProblemEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -92,5 +92,16 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
     }
 }
 
+/**
+ * v4 → v5: nur die Sync-Trigger werden neu angelegt – erneutes Vormerken setzt `queuedAt` jetzt streng steigend
+ * (`MAX(jetzt, alt + 1)`). Tabellen und Daten bleiben unverändert.
+ */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        SyncTriggers.drop(db)
+        SyncTriggers.create(db)
+    }
+}
+
 /** Alle Migrationen in Reihenfolge – nie fallbackToDestructiveMigration (docs/architecture.md). */
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)

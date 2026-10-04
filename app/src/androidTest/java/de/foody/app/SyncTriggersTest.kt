@@ -89,6 +89,18 @@ class SyncTriggersTest {
         assertEquals(setOf(Triple("ingredient", "i1", true)), queued())
     }
 
+    @Test fun requeueAlwaysAdvancesQueuedAt() = runTest {
+        db.activateSyncForTest()
+        db.ingredientDao().upsert(ingredient("i1"))
+        // Zeitstempel weit in die Zukunft: die Uhr kann ihn nicht überholen, nur „alt + 1“ bleibt streng steigend
+        val future = System.currentTimeMillis() + 1_000_000_000L
+        db.openHelper.writableDatabase.execSQL("UPDATE sync_outbox SET queuedAt = $future WHERE type = 'ingredient' AND recordId = 'i1'")
+        db.ingredientDao().upsert(ingredient("i1").copy(category = "Obst"))
+        assertEquals(future + 1, db.syncDao().outbox().single().queuedAt)
+        db.ingredientDao().upsert(ingredient("i1").copy(category = "Gemüse"))
+        assertEquals(future + 2, db.syncDao().outbox().single().queuedAt)
+    }
+
     @Test fun childWritesQueueTheParent() = runTest {
         db.ingredientDao().upsert(ingredient("i1"))
         db.ingredientDao().upsert(ingredient("i2"))

@@ -3,6 +3,7 @@ package de.foody.app.data.db
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SyncDao {
@@ -13,7 +14,12 @@ interface SyncDao {
     @Query("SELECT * FROM sync_outbox ORDER BY queuedAt, type, recordId") suspend fun outbox(): List<SyncOutboxEntity>
     @Query("SELECT EXISTS(SELECT 1 FROM sync_outbox WHERE type = :type AND recordId = :id)")
     suspend fun isQueued(type: String, id: String): Boolean
+    /** Anzahl offener Outbox-Einträge; meldet sich bei jeder Änderung der Tabelle (für den Sync-Auslöser). */
+    @Query("SELECT COUNT(*) FROM sync_outbox") fun observeOutboxCount(): Flow<Int>
+    /** Wurde seit [since] (ms) ein Eintrag vorgemerkt oder erneut vorgemerkt? Ältere, nur stehengebliebene zählen nicht. */
+    @Query("SELECT EXISTS(SELECT 1 FROM sync_outbox WHERE queuedAt >= :since)") suspend fun hasQueuedSince(since: Long): Boolean
     @Upsert suspend fun enqueue(e: SyncOutboxEntity)
+    @Query("SELECT queuedAt FROM sync_outbox WHERE type = :type AND recordId = :id") suspend fun queuedAtOf(type: String, id: String): Long?
     @Query("DELETE FROM sync_outbox WHERE type = :type AND recordId = :id") suspend fun dequeue(type: String, id: String)
     @Query("DELETE FROM sync_outbox") suspend fun clearOutbox()
 
@@ -35,7 +41,10 @@ interface SyncDao {
 
     @Upsert suspend fun addProblem(p: SyncProblemEntity)
     @Query("SELECT * FROM sync_problem") suspend fun problems(): List<SyncProblemEntity>
+    @Query("SELECT EXISTS(SELECT 1 FROM sync_problem WHERE type = :type AND recordId = :id)")
+    suspend fun hasProblem(type: String, id: String): Boolean
     @Query("DELETE FROM sync_problem") suspend fun clearProblems()
+    @Query("DELETE FROM sync_problem WHERE type = :type AND recordId = :id") suspend fun clearProblem(type: String, id: String)
 
     /** Gibt es einen Vorratseintrag zur Zutat [ingredientId] mit offener lokaler Änderung? (Kaskade beim Löschen der Zutat) */
     @Query(
@@ -64,4 +73,12 @@ interface SyncDao {
             "WHERE i.ingredientId = :ingredientId)",
     )
     suspend fun hasQueuedShoppingItemsFor(ingredientId: String): Boolean
+
+    /** Ids aller lokalen Wurzeldatensätze je Typ (für den Voll-Abgleich). */
+    @Query("SELECT id FROM ingredient") suspend fun ingredientIds(): List<String>
+    @Query("SELECT id FROM recipe") suspend fun recipeIds(): List<String>
+    @Query("SELECT id FROM meal_slot") suspend fun mealSlotIds(): List<String>
+    @Query("SELECT id FROM pantry_item") suspend fun pantryItemIds(): List<String>
+    @Query("SELECT id FROM shopping_list") suspend fun shoppingListIds(): List<String>
+    @Query("SELECT id FROM shopping_item") suspend fun shoppingItemIds(): List<String>
 }

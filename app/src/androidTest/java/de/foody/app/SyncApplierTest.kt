@@ -279,4 +279,87 @@ class SyncApplierTest {
         assertEquals("Zwiebel", db.ingredientDao().get("R")?.canonicalName)
         assertEquals(0, result.problems)
     }
+
+    @Test fun writeConstraintErrorOnlySkipsThatRecord() = runTest {
+        db.ingredientDao().upsert(localIngredient("i", "Salz"))
+        db.recipeDao().upsert(
+            de.foody.app.data.db.RecipeEntity(
+                id = "A", name = "Lokal", defaultServings = 2, prepMinutes = null, cookMinutes = null, imageUri = null,
+                notes = null, tags = "", archivedAt = null, createdAt = 0, updatedAt = 0,
+            ),
+        )
+        db.recipeDao().insertIngredients(
+            listOf(de.foody.app.data.db.RecipeIngredientEntity("x", "A", "i", BigDecimal.ONE, MeasureUnit.GRAM, 0, null, false)),
+        )
+        db.syncDao().clearOutbox()
+        // Rezept B kollidiert beim Schreiben der Zeile "x" mit dem Primaerschluessel von Rezept A
+        val records = listOf(
+            ingredientRec("C", "Pfeffer"),
+            rec(RecordType.RECIPE, "B", recipePayload("Remote", listOf(line("x", "i")))),
+        )
+        val result = applier.apply(records, nextCursor = 9)
+        assertNotNull(db.ingredientDao().get("C"))
+        assertNull(db.recipeDao().get("B"))
+        assertNull(db.syncDao().revOf("recipe", "B"))
+        assertEquals(1, result.problems)
+        assertEquals(1, result.applied)
+        assertEquals(listOf(Triple("recipe", "B", "apply_failed")), db.syncDao().problems().map { Triple(it.type, it.recordId, it.code) })
+        val state = db.syncDao().getState()!!
+        assertEquals(9L, state.cursor)
+        assertFalse(state.applyingRemote)
+        assertEquals("Lokal", db.recipeDao().get("A")?.name)
+        assertEquals(listOf("x"), db.recipeDao().getIngredients("A").map { it.id })
+        assertEquals(emptyList(), db.syncDao().outbox())
+    }
+
+    @Test fun problemIsClearedAfterLaterSuccess() = runTest {
+        val slot = rec(RecordType.MEAL_SLOT, "s", MealSlotPayload(date = "2026-01-01", slotType = "DINNER", recipeId = "r", servings = 2))
+        applier.apply(listOf(slot), 1)
+        assertEquals(1, db.syncDao().problems().size)
+        val result = applier.apply(listOf(recipeRec(), slot), 2)
+        assertEquals(0, result.problems)
+        assertNotNull(db.mealPlanDao().get("s"))
+        assertEquals(emptyList(), db.syncDao().problems())
+    }
+
+    private fun recipeRec() = rec(RecordType.RECIPE, "r", recipePayload("Suppe", emptyList()))
+
+    @Test fun mergeQueuedRecipeIsStillOverwrittenByServerRecordInSamePull() = runTest {
+        db.ingredientDao().upsert(localIngredient("L", "zwiebel"))
+        val rid = RecipeRepository(db.recipeDao()).save(draft("L"))
+        db.syncDao().clearOutbox()
+        val result = applier.apply(
+            listOf(
+                ingredientRec("R", "Zwiebel", rev = 2),
+                rec(RecordType.RECIPE, rid, recipePayload("Vom Server", listOf(line("srv", "R"))), rev = 3),
+            ),
+            nextCursor = 5,
+        )
+        assertEquals(0, result.skippedPending)
+        assertEquals("Vom Server", db.recipeDao().get(rid)?.name)
+    }
+
+    @Test fun selfQueuedExemptionEndsWhenQueuedAtChanged() = runTest {
+        db.recipeDao().upsert(
+            de.foody.app.data.db.RecipeEntity(
+                id = "A", name = "Lokal", defaultServings = 2, prepMinutes = null, cookMinutes = null, imageUri = null,
+                notes = null, tags = "", archivedAt = null, createdAt = 0, updatedAt = 0,
+            ),
+        )
+        val queuedAt = db.syncDao().outbox().single { it.recordId == "A" }.queuedAt
+        val key = "recipe" to "A"
+        assertFalse(applier.shouldSkipPending("recipe", "A", mapOf(key to queuedAt)))
+        // Nutzeränderung nach der Selbst-Vormerkung: anderer Zeitstempel -> echte lokale Änderung
+        assertTrue(applier.shouldSkipPending("recipe", "A", mapOf(key to queuedAt - 1)))
+        assertTrue(applier.shouldSkipPending("recipe", "A", emptyMap()))
+        assertFalse(applier.shouldSkipPending("recipe", "none", emptyMap()))
+    }
+
+    @Test fun deletionOfAbsentRecordClearsProblem() = runTest {
+        val slot = rec(RecordType.MEAL_SLOT, "s", MealSlotPayload(date = "2026-01-01", slotType = "DINNER", recipeId = "r", servings = 2))
+        applier.apply(listOf(slot), 1)
+        assertEquals(1, db.syncDao().problems().size)
+        applier.apply(listOf(gone(RecordType.MEAL_SLOT, "s", rev = 4)), 2)
+        assertEquals(emptyList(), db.syncDao().problems())
+    }
 }

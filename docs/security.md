@@ -1,13 +1,14 @@
 # Sicherheit
 
-Foody ist eine reine Offline-App. Dieses Dokument hält fest, wo fremde Daten hereinkommen, wie sie geprüft
+Foody ist eine Offline-App; die Synchronisation mit einem selbst gehosteten Server ist optional. Dieses Dokument hält fest, wo fremde Daten hereinkommen, wie sie geprüft
 werden und welche Restrisiken bewusst bleiben. Bei Änderungen an Import, Sicherung oder Manifest bitte mitpflegen.
 
 ## Angriffsfläche
 
 | Bereich | Stand |
 |---|---|
-| Netzwerk | Keine `INTERNET`-Berechtigung, kein Coil-Netzwerkmodul; Klartext zusätzlich per `network_security_config` verboten |
+| Netzwerk | `INTERNET` nur für die optionale Synchronisation: ausschließlich HTTPS zum selbst gehosteten Sync-Server (Klartext per `network_security_config` verboten, nur System-CAs, keine Nutzer-Zertifikate), kein Coil-Netzwerkmodul. Ohne eingerichtetes Konto baut die App keine Verbindung auf |
+| Sync-Token | Gerätetoken: AES-256/GCM-Schlüssel im Android Keystore (Alias `foody_sync_token`, nicht auslesbar), nur das Chiffrat (`IV:Chiffrat`, Base64) liegt in den SharedPreferences `foody_sync`; nicht in Backups (Preferences sind ausgeschlossen), nie im Log. Nicht entschlüsselbar (z. B. Gerätewechsel) → Token gilt als nicht vorhanden, neue Anmeldung nötig |
 | Berechtigungen | Nur für Kochtimer: `POST_NOTIFICATIONS` (ab Android 13 abgefragt, ablehnbar), `FOREGROUND_SERVICE(_SPECIAL_USE)`, `WAKE_LOCK`. Bilder über Photo Picker, Dateien über SAF, Fotos über die System-Kamera (`TakePicture`) – ohne Berechtigung |
 | Dienst | `CookTimerService`: nicht exportiert, läuft nur solange ein Timer läuft; Wakelock mit Zeitlimit (nächstes Timer-Ende + 1 min) |
 | Exportierte Komponenten | Nur `MainActivity` (Launcher). Keine Intent-Filter für fremde Daten, keine WebView. Einziger PendingIntent: Öffnen der App aus der Timer-Meldung (`FLAG_IMMUTABLE`, explizit) |
