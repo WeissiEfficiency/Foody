@@ -143,6 +143,14 @@ class SyncTriggersTest {
         assertTrue(noted.updatedAt > 1000)
     }
 
+    @Test fun updatedStampTerminatesAndAdvancesWhenClockIsBehind() = runTest {
+        shoppingListWith(item("it1"))
+        val future = System.currentTimeMillis() + 1_000_000_000L
+        db.openHelper.writableDatabase.execSQL("UPDATE shopping_item SET updatedAt = $future WHERE id = 'it1'")
+        db.shoppingDao().setNote("it1", "Bio")
+        assertEquals(future + 1, db.shoppingDao().getItems("l").single().updatedAt)
+    }
+
     @Test fun remoteAppliedCheckedKeepsSuppliedTimestamps() = runTest {
         shoppingListWith(item("it1"))
         db.activateSyncForTest()

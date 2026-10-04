@@ -6,10 +6,14 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 /**
  * SQLite-Trigger, die jede lokale Änderung in `sync_outbox` vormerken – in derselben Transaktion wie die Änderung,
  * sodass keine Schreibstelle sie vergessen kann. Die Outbox-Trigger sind nur wirksam, wenn `sync_state.active = 1`
- * und `applyingRemote = 0` gilt; ohne Zeile in `sync_state` (oder ohne `activate`) bleibt der Sync inaktiv.
  *
- * Rekursion: `recursive_triggers` bleibt aus (SQLite-Standard). Die Outbox-Trigger schreiben nur in `sync_outbox`;
- * die Pflege-Trigger von `shopping_item` setzen Zeitstempel, die ihre eigene Bedingung wieder ausschließen.
+ * und `applyingRemote = 0` gilt; ohne Zeile in `sync_state` (oder ohne `activate`) bleibt der Sync inaktiv.
+ * Rekursion: Room setzt `PRAGMA recursive_triggers = 1` (InvalidationTracker, auf jeder Schreibverbindung), Trigger
+ * dürfen sich also selbst auslösen. Jeder Trigger-Rumpf muss deshalb seine eigene WHEN-Bedingung falsch machen
+ * (Pflege-Trigger von `shopping_item`: Zeitstempel ändert sich garantiert, z. B. `MAX(jetzt, alt + 1)`); die
+ * Outbox-Trigger schreiben nur in `sync_outbox`, das keine `sync_*`-Trigger hat.
+ * Achtung: `OnConflictStrategy.REPLACE` auf einer Wurzeltabelle löscht die alte Zeile und löst `sync_*_ad` aus
+ * (Löschung wird vorgemerkt) – dort `@Upsert` verwenden.
  */
 object SyncTriggers {
     /** Aktuelle Zeit als Epoch-Millisekunden. */

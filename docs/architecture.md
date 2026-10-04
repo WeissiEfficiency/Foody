@@ -45,6 +45,10 @@ SQLite-Trigger (`SyncTriggers`, Namen `sync_*`) schreiben jede lokale Änderung 
 der Sync vollständig inaktiv. Die Zeile `sync_state(id = 1)` und die Trigger legen `SYNC_CALLBACK` (frische
 Installation) bzw. `MIGRATION_3_4` an.
 
+Hinweis: Room setzt `recursive_triggers = 1`; jeder Trigger-Rumpf muss seine eigene WHEN-Bedingung falsch machen
+(`MAX(jetzt, alt + 1)`). `OnConflictStrategy.REPLACE` auf Wurzeltabellen würde `sync_*_ad` auslösen und eine Löschung
+vormerken – stattdessen `@Upsert`.
+
 ## Startdaten
 
 `SeedData` enthält generische Zutaten mit gerundeten Nährwerten. Der Zähler `SeedData.VERSION` (in
