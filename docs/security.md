@@ -31,6 +31,14 @@ geschehen außerhalb der Datenbanktransaktion; kaputte Dateien zählen als „fe
 - Alles oder nichts: Fotos werden vorgemerkt, die Datenbank in einer Transaktion ersetzt; bei Fehlern bleiben
   Daten und Fotoordner unverändert.
 
+**Foto-Upload (Sync-Server, `PUT /api/v1/photos/{sha256}`):**
+- Pfadsegment muss `^[0-9a-f]{64}$` sein, bevor irgendein Dateizugriff stattfindet; der Dateipfad entsteht nur aus
+  diesem Hash und der Haushalts-ID des Geräts (kein Path-Traversal, keine Fremdzugriffe zwischen Haushalten).
+- Größe ≤ 10 MB, beim Lesen gezählt (nicht aus dem Header übernommen); Content-Type wird nicht vertraut.
+- Inhalt muss mit der JPEG-Signatur `FF D8 FF` beginnen und seinen SHA-256 dem Pfad entsprechen (Inhaltsadressierung).
+- Schreiben über temporäre Datei im selben Ordner und atomares Umbenennen; unreferenzierte Fotos entfernt die
+  Kompaktierung nach 30 Tagen.
+
 ## Build und Lieferkette
 
 - CI mit `permissions: contents: read`; Actions auf Commit-SHAs festgenagelt.

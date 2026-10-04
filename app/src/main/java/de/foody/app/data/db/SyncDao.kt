@@ -81,4 +81,17 @@ interface SyncDao {
     @Query("SELECT id FROM pantry_item") suspend fun pantryItemIds(): List<String>
     @Query("SELECT id FROM shopping_list") suspend fun shoppingListIds(): List<String>
     @Query("SELECT id FROM shopping_item") suspend fun shoppingItemIds(): List<String>
+
+    @Query("SELECT * FROM sync_photo_local WHERE uri = :uri") suspend fun photoLocal(uri: String): SyncPhotoLocalEntity?
+    @Query("SELECT * FROM sync_photo_local WHERE sha256 = :sha256") suspend fun photoLocalsByHash(sha256: String): List<SyncPhotoLocalEntity>
+    @Upsert suspend fun upsertPhotoLocal(e: SyncPhotoLocalEntity)
+    @Query("DELETE FROM sync_photo_local WHERE uri = :uri") suspend fun deletePhotoLocal(uri: String)
+
+    @Query("SELECT * FROM sync_photo_wanted ORDER BY recipeId") suspend fun photosWanted(): List<SyncPhotoWantedEntity>
+    @Query("SELECT * FROM sync_photo_wanted WHERE recipeId = :recipeId") suspend fun photoWanted(recipeId: String): SyncPhotoWantedEntity?
+    @Upsert suspend fun upsertPhotoWanted(e: SyncPhotoWantedEntity)
+    @Query("DELETE FROM sync_photo_wanted WHERE recipeId = :recipeId") suspend fun deletePhotoWanted(recipeId: String)
+
+    /** Setzt das Foto eines Rezepts, ohne `updatedAt` zu ändern (nur mit `applyingRemote = 1` aufrufen). */
+    @Query("UPDATE recipe SET imageUri = :uri WHERE id = :id") suspend fun setRecipeImage(id: String, uri: String)
 }

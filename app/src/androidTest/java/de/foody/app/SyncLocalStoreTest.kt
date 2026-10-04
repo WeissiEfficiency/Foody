@@ -10,11 +10,16 @@ import de.foody.app.data.db.ShoppingListEntity
 import de.foody.app.data.db.SyncOutboxEntity
 import de.foody.app.data.db.SyncProblemEntity
 import de.foody.app.data.db.SyncRecordRevEntity
+import de.foody.app.data.RecipePhotoStore
 import de.foody.app.data.repo.RecipeDraft
 import de.foody.app.data.repo.RecipeRepository
+import androidx.test.core.app.ApplicationProvider
+import de.foody.app.sync.PhotoIndex
 import de.foody.app.sync.SyncLocalStore
 import de.foody.domain.MeasureUnit
 import de.foody.sync.protocol.PayloadValidator
+import de.foody.sync.protocol.RecipePayload
+import de.foody.sync.protocol.decode
 import de.foody.sync.protocol.RecordType
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -33,13 +38,122 @@ import kotlin.test.assertTrue
 class SyncLocalStoreTest {
     private lateinit var db: FoodyDatabase
     private lateinit var store: SyncLocalStore
+    private lateinit var photos: RecipePhotoStore
 
     @Before fun setUp() {
         db = syncTestDb()
-        store = SyncLocalStore(db)
+        photos = RecipePhotoStore(ApplicationProvider.getApplicationContext(), db.recipeDao())
+        store = SyncLocalStore(db, PhotoIndex(db, photos))
     }
 
     @After fun tearDown() = db.close()
+
+    /** Gültige JPEG-Signatur (FF D8 FF) plus [tail]: nur solche Fotos überträgt der Sync. */
+    private fun jpegBytes(vararg tail: Int) =
+        byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte()) + ByteArray(tail.size) { tail[it].toByte() }
+
+    private suspend fun pendingPhoto(rid: String): String? {
+        queue(RecordType.RECIPE, rid)
+        val payload = store.pendingRecords().single { it.id == rid }.payload!!
+        return (RecordType.RECIPE.decode(payload) as RecipePayload).photo
+    }
+
+    @Test fun pendingRecipeCarriesPhotoHash() = runTest {
+        db.ingredientDao().upsert(ingredient("i1"))
+        val rid = RecipeRepository(db.recipeDao()).save(draft("i1"))
+        val file = photos.newPhotoFile().also { it.writeBytes(jpegBytes(1, 2, 3)) }
+        try {
+            db.recipeDao().upsert(db.recipeDao().get(rid)!!.copy(imageUri = photos.storedUri(file)))
+            val expected = java.security.MessageDigest.getInstance("SHA-256").digest(jpegBytes(1, 2, 3))
+                .joinToString("") { "%02x".format(it) }
+            assertEquals(expected, pendingPhoto(rid))
+        } finally {
+            file.delete()
+        }
+    }
+
+    private suspend fun recipeWithImage(uri: String?): String {
+        db.ingredientDao().upsert(ingredient("i1"))
+        val rid = RecipeRepository(db.recipeDao()).save(draft("i1"))
+        db.recipeDao().upsert(db.recipeDao().get(rid)!!.copy(imageUri = uri))
+        return rid
+    }
+
+    @Test fun pendingRecipeWithWishSendsWantedHash() = runTest {
+        val rid = recipeWithImage(null)
+        db.syncDao().upsertPhotoWanted(de.foody.app.data.db.SyncPhotoWantedEntity(rid, "e".repeat(64)))
+        assertEquals("e".repeat(64), pendingPhoto(rid))
+    }
+
+    @Test fun localPhotoChangeDropsWish() = runTest {
+        val rid = recipeWithImage(null)
+        db.syncDao().upsertPhotoWanted(de.foody.app.data.db.SyncPhotoWantedEntity(rid, "e".repeat(64)))
+        val file = photos.newPhotoFile().also { it.writeBytes(jpegBytes(4, 4)) }
+        try {
+            db.recipeDao().upsert(db.recipeDao().get(rid)!!.copy(imageUri = photos.storedUri(file)))
+            assertTrue(db.syncDao().photosWanted().isEmpty())
+            val expected = java.security.MessageDigest.getInstance("SHA-256").digest(jpegBytes(4, 4))
+                .joinToString("") { "%02x".format(it) }
+            assertEquals(expected, pendingPhoto(rid))
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test fun remoteImageChangeKeepsWish() = runTest {
+        val rid = recipeWithImage(null)
+        db.syncDao().upsertPhotoWanted(de.foody.app.data.db.SyncPhotoWantedEntity(rid, "e".repeat(64)))
+        db.syncDao().setApplyingRemote(true)
+        db.recipeDao().upsert(db.recipeDao().get(rid)!!.copy(imageUri = "content://x/1"))
+        db.syncDao().setApplyingRemote(false)
+        assertEquals(1, db.syncDao().photosWanted().size)
+    }
+
+    @Test fun missingOwnFileSendsNoPhoto() = runTest {
+        val file = photos.newPhotoFile() // existiert nicht
+        val rid = recipeWithImage(photos.storedUri(file))
+        assertNull(pendingPhoto(rid))
+    }
+
+    @Test fun unreadableOwnFileIsDeferred() = runTest {
+        val file = photos.newPhotoFile().also { it.writeBytes(jpegBytes(1)) }
+        try {
+            val rid = recipeWithImage(photos.storedUri(file))
+            file.setReadable(false, false)
+            org.junit.Assume.assumeFalse("Datei trotzdem lesbar", file.canRead())
+            queue(RecordType.RECIPE, rid)
+            assertTrue(store.pendingBatch().none { it.record.id == rid })
+            assertTrue(db.syncDao().isQueued("recipe", rid))
+        } finally {
+            file.setReadable(true, false)
+            file.delete()
+        }
+    }
+
+    @Test fun restoreDropsStaleWish() = runTest {
+        val rid = recipeWithImage(null)
+        db.syncDao().upsertPhotoWanted(de.foody.app.data.db.SyncPhotoWantedEntity(rid, "e".repeat(64)))
+        val file = photos.newPhotoFile().also { it.writeBytes(jpegBytes(7, 7)) }
+        try {
+            // Wiederherstellen aus einer Sicherung: Rezept löschen, mit eigenem Foto neu einfügen
+            val old = db.recipeDao().get(rid)!!
+            db.recipeDao().delete(rid)
+            db.recipeDao().upsert(old.copy(imageUri = photos.storedUri(file)))
+            assertTrue(db.syncDao().photosWanted().isEmpty())
+            val expected = java.security.MessageDigest.getInstance("SHA-256").digest(jpegBytes(7, 7))
+                .joinToString("") { "%02x".format(it) }
+            assertEquals(expected, pendingPhoto(rid))
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test fun galleryLinkSendsNoPhoto() = runTest {
+        db.ingredientDao().upsert(ingredient("i1"))
+        val rid = RecipeRepository(db.recipeDao()).save(draft("i1"))
+        db.recipeDao().upsert(db.recipeDao().get(rid)!!.copy(imageUri = "content://media/external/images/1"))
+        assertNull(pendingPhoto(rid))
+    }
 
     private fun ingredient(id: String) = IngredientEntity(id = id, canonicalName = "Zutat $id", createdAt = 0, updatedAt = 0)
 

@@ -57,7 +57,7 @@ class AdminCli(
     }
 
     private fun compact(): Int {
-        out.println(Compactor(deps.db, deps.clock).run())
+        out.println(Compactor(deps.db, deps.clock, deps.photos).run())
         return 0
     }
 

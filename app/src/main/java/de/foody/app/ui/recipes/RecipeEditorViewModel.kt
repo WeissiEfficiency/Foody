@@ -136,6 +136,7 @@ class RecipeEditorViewModel @Inject constructor(
                 RecipeDraft(
                     recipeId, s.name, s.servings.toInt(), s.prep.toIntOrNull(), s.cook.toIntOrNull(), s.imageUri,
                     s.notes, s.tags, lines, s.steps,
+                    originalImageUri = s.originalImageUri, trackOriginalImage = recipeId != null,
                 ),
             )
             if (s.originalImageUri != s.imageUri) photos.deleteIfUnused(s.originalImageUri)

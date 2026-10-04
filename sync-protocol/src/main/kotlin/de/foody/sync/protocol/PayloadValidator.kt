@@ -81,7 +81,7 @@ object PayloadValidator {
                 name(payload.name)
                 ensure(payload.servings >= 1)
                 ensure((payload.prep ?: 0) >= 0 && (payload.cook ?: 0) >= 0)
-                optText(payload.photo, MAX_NAME)
+                ensure(payload.photo == null || PhotoHash.isValid(payload.photo))
                 optText(payload.notes, MAX_TEXT)
                 optText(payload.sourceUrl, MAX_TEXT)
                 ensure(payload.tags.length <= MAX_TAGS)
