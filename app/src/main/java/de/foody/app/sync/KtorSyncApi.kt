@@ -116,10 +116,11 @@ class KtorSyncApi(
 
     private fun <T> String.decode(serializer: KSerializer<T>): T = try {
         Protocol.json.decodeFromString(serializer, this)
-    } catch (e: SerializationException) {
-        throw SyncApiException.Transient(200, null, e)
-    } catch (e: IllegalArgumentException) {
-        throw SyncApiException.Transient(200, null, e)
+    } catch (_: SerializationException) {
+        // Bewusst ohne Ursache: Decoder-Meldungen enthalten Ausschnitte des Bodys (bei Login das Token).
+        throw SyncApiException.Transient(200, null)
+    } catch (_: IllegalArgumentException) {
+        throw SyncApiException.Transient(200, null)
     }
 
     private fun HttpResponse.toException(text: String): SyncApiException {
@@ -149,8 +150,12 @@ class KtorSyncApi(
 /** OkHttp-Client mit den Timeouts des Sync (Verbindung 15 s, Anfrage 60 s); Statuscodes wertet [KtorSyncApi] selbst aus. */
 fun defaultHttpClient(): HttpClient = HttpClient(OkHttp) {
     expectSuccess = false
+    // Das Token darf nur an die konfigurierte Basis-URL gehen, nie an ein Weiterleitungsziel.
+    followRedirects = false
     install(HttpTimeout) {
         connectTimeoutMillis = 15_000
         requestTimeoutMillis = 60_000
+        // Ohne diesen Wert gelten die OkHttp-Standards (10 s lesen/schreiben) – zu knapp für große Pushes.
+        socketTimeoutMillis = 60_000
     }
 }
