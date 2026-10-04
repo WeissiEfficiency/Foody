@@ -4,6 +4,7 @@ import kotlin.test.assertTrue
 import de.foody.app.data.db.MIGRATION_2_3
 import de.foody.app.data.db.MIGRATION_3_4
 import de.foody.app.data.db.MIGRATION_4_5
+import de.foody.app.data.db.MIGRATION_5_6
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -114,6 +115,20 @@ class MigrationTest {
             }
             db.query("SELECT sql FROM sqlite_master WHERE type='trigger' AND name = 'sync_ingredient_au'").use { c ->
                 c.moveToFirst(); assertTrue(c.getString(0).contains("queuedAt + 1"))
+            }
+        }
+    }
+
+    @Test fun migrate5To6AddsPhotoTables() {
+        helper.createDatabase(dbName, 5).use { db ->
+            db.execSQL("INSERT INTO sync_outbox (type, recordId, deleted, queuedAt) VALUES ('recipe', 'r', 0, 1234)")
+        }
+        helper.runMigrationsAndValidate(dbName, 6, true, MIGRATION_5_6).use { db ->
+            db.query("SELECT count(*) FROM sync_outbox").use { c -> c.moveToFirst(); assertEquals(1, c.getInt(0)) }
+            db.execSQL("INSERT INTO sync_photo_local (uri, sha256, size, modifiedAt) VALUES ('file:///a.jpg', 'abc', 3, 4)")
+            db.execSQL("INSERT INTO sync_photo_wanted (recipeId, sha256) VALUES ('r', 'abc')")
+            db.query("SELECT count(*) FROM sqlite_master WHERE type='index' AND name = 'index_sync_photo_local_sha256'").use { c ->
+                c.moveToFirst(); assertEquals(1, c.getInt(0))
             }
         }
     }

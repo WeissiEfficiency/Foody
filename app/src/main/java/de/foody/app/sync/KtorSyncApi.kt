@@ -8,6 +8,8 @@ import de.foody.sync.protocol.ErrorDto
 import de.foody.sync.protocol.HouseholdDto
 import de.foody.sync.protocol.InviteDto
 import de.foody.sync.protocol.LoginRequest
+import de.foody.sync.protocol.PhotosMissingRequest
+import de.foody.sync.protocol.PhotosMissingResponse
 import de.foody.sync.protocol.Protocol
 import de.foody.sync.protocol.PullResponse
 import de.foody.sync.protocol.PushRequest
@@ -20,14 +22,19 @@ import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.header
+import io.ktor.client.request.prepareRequest
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
+import io.ktor.http.contentLength
 import io.ktor.http.contentType
 import io.ktor.http.encodeURLPathPart
+import io.ktor.utils.io.readAvailable
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
@@ -83,6 +90,47 @@ class KtorSyncApi(
     override suspend fun pull(since: Long, limit: Int): PullResponse =
         call<Unit>(HttpMethod.Get, "/sync/pull?since=$since&limit=$limit").decode(PullResponse.serializer())
 
+    override suspend fun photosMissing(hashes: List<String>): List<String> =
+        // Der Server nimmt höchstens MAX_PUSH_RECORDS Hashes je Anfrage.
+        hashes.chunked(Protocol.MAX_PUSH_RECORDS).flatMap { chunk ->
+            call(HttpMethod.Post, "/photos/missing", PhotosMissingRequest.serializer(), PhotosMissingRequest(chunk))
+                .decode(PhotosMissingResponse.serializer()).missing
+        }
+
+    override suspend fun uploadPhoto(sha256: String, bytes: ByteArray) {
+        call<Unit>(HttpMethod.Put, "/photos/${sha256.encodeURLPathPart()}", rawBody = bytes)
+    }
+
+    override suspend fun downloadPhoto(sha256: String): ByteArray? {
+        try {
+            return client.prepareRequest(base + "/photos/${sha256.encodeURLPathPart()}") {
+                method = HttpMethod.Get
+                header(Protocol.HEADER, Protocol.VERSION.toString())
+                token()?.let { bearerAuth(it) }
+            }.execute { response ->
+                if (response.status.value == 404) return@execute null
+                if (response.status.value !in 200..299) throw response.toException(response.bodyAsText())
+                val declared = response.contentLength()
+                if (declared != null && declared > Protocol.MAX_PHOTO_BYTES) {
+                    throw SyncApiException.TooLarge(response.status.value, null)
+                }
+                // Gezähltes Lesen: nie mehr als MAX_PHOTO_BYTES puffern, auch wenn die Länge fehlt oder lügt.
+                val channel = response.bodyAsChannel()
+                val out = ByteArrayOutputStream()
+                val buffer = ByteArray(8 * 1024)
+                while (true) {
+                    val n = channel.readAvailable(buffer, 0, buffer.size)
+                    if (n < 0) break
+                    if (out.size() + n > Protocol.MAX_PHOTO_BYTES) throw SyncApiException.TooLarge(response.status.value, null)
+                    out.write(buffer, 0, n)
+                }
+                out.toByteArray()
+            }
+        } catch (e: IOException) {
+            throw SyncApiException.Transient(0, null, e)
+        }
+    }
+
     /** Führt die Anfrage aus und liefert den Body als Text; jeder Fehler wird zu einer [SyncApiException]. */
     private suspend fun <T> call(
         httpMethod: HttpMethod,
@@ -90,6 +138,7 @@ class KtorSyncApi(
         serializer: KSerializer<T>? = null,
         body: T? = null,
         authenticated: Boolean = true,
+        rawBody: ByteArray? = null,
     ): String {
         val response = try {
             client.request(base + path) {
@@ -99,6 +148,10 @@ class KtorSyncApi(
                 if (serializer != null && body != null) {
                     contentType(ContentType.Application.Json)
                     setBody(Protocol.json.encodeToString(serializer, body))
+                }
+                if (rawBody != null) {
+                    contentType(ContentType.Image.JPEG)
+                    setBody(rawBody)
                 }
             }
         // Verbindungsfehler und Zeitüberschreitungen (auch HttpRequestTimeoutException) sind IOExceptions;

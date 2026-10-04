@@ -98,6 +98,12 @@ class RecipePhotoStore @Inject constructor(
     fun isAllowedImage(uri: String?): Boolean =
         uri != null && (uri.startsWith("content://") || owned(uri) != null)
 
+    /** Ist [uri] ein eigenes Foto (file:-Link auf eine Datei im Fotoordner)? Die Datei muss nicht existieren. */
+    fun isOwnPhoto(uri: String): Boolean = owned(uri) != null
+
+    /** Die Datei hinter einem eigenen Foto-Link, sonst `null` (fremde Links, Pfade außerhalb des Fotoordners). */
+    fun fileOf(uri: String): File? = owned(uri)
+
     private fun owned(uri: String?): File? {
         if (uri == null || !uri.startsWith("file:")) return null
         val file = runCatching { File(uri.toUri().path!!).canonicalFile }.getOrNull() ?: return null

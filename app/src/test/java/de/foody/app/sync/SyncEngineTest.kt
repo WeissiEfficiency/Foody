@@ -67,6 +67,9 @@ private class FakeSyncApi : SyncApi {
     override suspend fun createInvite(): InviteDto = error("unused")
     override suspend fun devices(): List<DeviceDto> = error("unused")
     override suspend fun revokeDevice(id: String) = error("unused")
+    override suspend fun photosMissing(hashes: List<String>): List<String> = error("unused")
+    override suspend fun uploadPhoto(sha256: String, bytes: ByteArray) = error("unused")
+    override suspend fun downloadPhoto(sha256: String): ByteArray? = error("unused")
 }
 
 @RunWith(RobolectricTestRunner::class)

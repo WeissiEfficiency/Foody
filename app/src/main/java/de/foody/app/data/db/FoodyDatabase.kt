@@ -26,8 +26,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SyncRecordRevEntity::class,
         SyncStateEntity::class,
         SyncProblemEntity::class,
+        SyncPhotoLocalEntity::class,
+        SyncPhotoWantedEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -103,5 +105,17 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
     }
 }
 
+/**
+ * v5 → v6: nur zwei neue Tabellen für den Foto-Sync (Hash-Cache je Fotodatei, gewünschte Fotos je Rezept).
+ * Bestehende Tabellen und Daten bleiben unverändert.
+ */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `sync_photo_local` (`uri` TEXT NOT NULL, `sha256` TEXT NOT NULL, `size` INTEGER NOT NULL, `modifiedAt` INTEGER NOT NULL, PRIMARY KEY(`uri`))")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_sync_photo_local_sha256` ON `sync_photo_local` (`sha256`)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `sync_photo_wanted` (`recipeId` TEXT NOT NULL, `sha256` TEXT NOT NULL, PRIMARY KEY(`recipeId`))")
+    }
+}
+
 /** Alle Migrationen in Reihenfolge – nie fallbackToDestructiveMigration (docs/architecture.md). */
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
