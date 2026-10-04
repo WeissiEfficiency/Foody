@@ -76,6 +76,8 @@ android {
 
     buildFeatures {
         compose = true
+        // BuildConfig.DEBUG: lokale http-Adressen nur im Debug-Build zulassen (ServerUrl)
+        buildConfig = true
     }
 
     sourceSets {

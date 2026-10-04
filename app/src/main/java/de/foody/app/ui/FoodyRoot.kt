@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -45,7 +46,7 @@ import de.foody.app.ui.recipes.RecipeEditorScreen
 import de.foody.app.ui.recipes.RecipeListScreen
 import de.foody.app.ui.settings.SettingsScreen
 import de.foody.app.ui.shopping.ShoppingScreen
-import de.foody.app.ui.sync.SyncSetupPlaceholder
+import de.foody.app.ui.sync.SyncSetupScreen
 import kotlinx.serialization.Serializable
 
 @Serializable object RecipesRoute
@@ -57,6 +58,9 @@ import kotlinx.serialization.Serializable
 @Serializable object SettingsRoute
 @Serializable object IngredientsRoute
 @Serializable data class SyncSetupRoute(val reconnect: Boolean = false)
+
+/** Schlüssel im SavedStateHandle der Einstellungen für die Meldung nach dem Verbinden. */
+private const val SYNC_NOTICE = "syncNotice"
 
 private enum class TopLevel(val route: Any, @param:StringRes val label: Int, val icon: ImageVector) {
     RECIPES(RecipesRoute, R.string.nav_recipes, Icons.Default.RestaurantMenu),
@@ -149,12 +153,25 @@ fun FoodyRoot() {
             composable<PlannerRoute> { PlannerScreen(onOpenRecipe = { nav.navigate(RecipeDetailRoute(it)) }) }
             composable<ShoppingRoute> { ShoppingScreen() }
             composable<PantryRoute> { PantryScreen() }
-            composable<SettingsRoute> { SettingsScreen(
-                onManageIngredients = { nav.navigate(IngredientsRoute) },
-                onConnectSync = { reconnect -> nav.navigate(SyncSetupRoute(reconnect)) },
-            ) }
-            // Platzhalter, der Verbinden-Assistent (Task 3) ersetzt ihn
-            composable<SyncSetupRoute> { SyncSetupPlaceholder(onBack = { nav.popBackStack() }) }
+            composable<SettingsRoute> { entry ->
+                // Der Verbinden-Assistent hinterlässt seine Erfolgsmeldung im SavedStateHandle dieses Eintrags.
+                val notice by entry.savedStateHandle.getStateFlow<Int?>(SYNC_NOTICE, null).collectAsStateWithLifecycle()
+                SettingsScreen(
+                    onManageIngredients = { nav.navigate(IngredientsRoute) },
+                    onConnectSync = { reconnect -> nav.navigate(SyncSetupRoute(reconnect)) },
+                    notice = notice,
+                    onNoticeShown = { entry.savedStateHandle[SYNC_NOTICE] = null },
+                )
+            }
+            composable<SyncSetupRoute> {
+                SyncSetupScreen(
+                    onBack = { nav.popBackStack() },
+                    onDone = {
+                        nav.previousBackStackEntry?.savedStateHandle?.set(SYNC_NOTICE, R.string.sync_setup_connected)
+                        nav.popBackStack()
+                    },
+                )
+            }
             composable<IngredientsRoute> { IngredientsScreen(onBack = { nav.popBackStack() }) }
         }
         }

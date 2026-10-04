@@ -51,13 +51,22 @@ import java.time.LocalDate
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(onManageIngredients: () -> Unit, onConnectSync: (reconnect: Boolean) -> Unit, vm: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(
+    onManageIngredients: () -> Unit,
+    onConnectSync: (reconnect: Boolean) -> Unit,
+    notice: Int? = null,
+    onNoticeShown: () -> Unit = {},
+    vm: SettingsViewModel = hiltViewModel(),
+) {
     val message by vm.message.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     var confirmImport by rememberSaveable { mutableStateOf<String?>(null) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     val text = message?.let { stringResource(it) }
     LaunchedEffect(text) { if (text != null) { snackbar.showSnackbar(text); vm.messageShown() } }
+    // Meldung von außen (z. B. nach dem Verbinden); erst nach dem Anzeigen zurücksetzen
+    val noticeText = notice?.let { stringResource(it) }
+    LaunchedEffect(noticeText) { if (noticeText != null) { onNoticeShown(); snackbar.showSnackbar(noticeText) } }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         uri?.let(vm::export)

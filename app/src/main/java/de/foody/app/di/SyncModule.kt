@@ -7,6 +7,8 @@ import dagger.hilt.components.SingletonComponent
 import de.foody.app.sync.SyncAccountRepository
 import de.foody.app.sync.SyncAccounts
 import de.foody.app.sync.SyncEngineFactory
+import de.foody.app.ui.sync.BackupSetupAdapter
+import de.foody.app.ui.sync.SetupBackup
 import io.ktor.client.HttpClient
 import javax.inject.Qualifier
 import javax.inject.Singleton
@@ -30,6 +32,9 @@ object SyncModule {
     /** Oberflächen-ViewModels hängen von der Schnittstelle ab (austauschbar in Tests). */
     @Provides
     fun syncAccounts(repo: SyncAccountRepository): SyncAccounts = repo
+
+    @Provides
+    fun setupBackup(adapter: BackupSetupAdapter): SetupBackup = adapter
 
     @Provides
     @Singleton
