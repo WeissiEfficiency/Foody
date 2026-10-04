@@ -114,13 +114,16 @@ class IngredientRepository @Inject constructor(
         val prefs = context.getSharedPreferences("foody", Context.MODE_PRIVATE)
         val done = prefs.getInt("seedVersion", if (prefs.getBoolean("seeded", false)) 1 else 0)
         if (done >= SeedData.VERSION) return
+        // Neue Schreibweisen im Katalog (z. B. „Zitronenabrieb“ → „Zitronenschale“) zuerst übernehmen,
+        // damit die Startdaten die bereits importierten Zutaten unter ihrem Namen finden
+        if (done > 0) harmonizeNames()
         db.withTransaction {
             for (seed in SeedData.ingredients(System.currentTimeMillis())) {
                 val existing = dao.findByName(seed.canonicalName)
                 when {
                     existing == null -> dao.insertAll(listOf(seed))
-                    // Unveränderter Starteintrag (gleiche ID, Quelle noch „Startdaten“): Korrekturen übernehmen
-                    existing.id == seed.id && existing.nutrientSource == SeedData.SOURCE ->
+                    // Unveränderter Starteintrag (gleiche ID, Quelle unverändert): Korrekturen übernehmen
+                    existing.id == seed.id && existing.nutrientSource in setOf(SeedData.SOURCE, seed.nutrientSource) ->
                         dao.upsert(seed.copy(createdAt = existing.createdAt, version = existing.version))
                     else -> dao.upsert(existing.fillFrom(seed))
                 }

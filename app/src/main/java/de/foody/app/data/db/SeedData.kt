@@ -5,8 +5,8 @@ import java.math.BigDecimal
 
 /**
  * Kleiner kuratierter Startdatensatz generischer Lebensmittel.
- * Werte sind gerundete Näherungswerte je 100 g/100 ml; Quelle als „Näherung“ gekennzeichnet.
- * Vor einer Store-Veröffentlichung gegen eine lizenzierte Quelle prüfen.
+ * Ältere Zeilen sind gerundete Näherungswerte je 100 g/100 ml (Quelle „Näherung“); Zeilen ab v8 stammen aus
+ * amtlichen Datenbanken (BLS 4.0, USDA FoodData Central) und nennen ihre Quelle selbst.
  */
 object SeedData {
     const val SOURCE = "Näherungswert (Startdaten)"
@@ -15,6 +15,8 @@ object SeedData {
         val id: String, val name: String, val category: String,
         val kj: String?, val p: String?, val c: String?, val f: String?, val fib: String?, val sug: String?, val salt: String?,
         val basis: NutrientBasis = NutrientBasis.PER_100_G, val density: String? = null, val piece: String? = null,
+        /** Herkunft der Werte; ohne Angabe [SOURCE]. */
+        val src: String? = null,
     )
 
     private val rows = listOf(
@@ -207,10 +209,66 @@ object SeedData {
         Row("seed-rinderroulade", "Rinderroulade", "Fleisch & Fisch", "580", "21", "0", "6", "0", "0", "0.15", piece = "150"),
         Row("seed-brot", "Brot", "Brot & Backwaren", "975", "7", "45", "1.2", "6", "2", "1.2", piece = "50"),
         Row("seed-gewuerzgurke", "Gewürzgurke", "Konserven", "60", "0.5", "2", "0.2", "1", "2", "1.5", piece = "40"),
+        // v8: Zutaten der importierten Rezepte ohne Nährwerte, Werte aus amtlichen Datenbanken (Quelle je Zeile):
+        // BLS 4.0 des Max Rubner-Instituts (frei nutzbar, DOI 10.25826/Data20251217-134202-0), ergänzend USDA
+        // FoodData Central (gemeinfrei) für Gewürze, asiatische Saucen und Zitrusschale, die der BLS nicht führt.
+        // USDA-Kohlenhydrate sind auf „verfügbar“ (ohne Ballaststoffe) umgerechnet, die Energie nach EU-Faktoren.
+        Row("seed-salz-pfeffer", "Salz und Pfeffer", "Öle & Gewürze", "0", "0", "0", "0", "0", "0", "95.4", density = "1.2", src = "BLS 4.0 (MRI): Speisesalz"),
+        Row("seed-fett", "Fett", "Öle & Gewürze", "3700", "0", "0", "100", "0", "0", "0", density = "0.92", src = "BLS 4.0 (MRI): Pflanzenfett/Frittierfett"),
+        Row("seed-kokosoel", "Kokosöl", "Öle & Gewürze", "3700", "0", "0", "100", "0", "0", "0", density = "0.92", src = "BLS 4.0 (MRI): Kokosöl"),
+        Row("seed-maiskeimoel", "Maiskeimöl", "Öle & Gewürze", "3700", "0", "0", "100", "0", "0", "0", density = "0.92", src = "BLS 4.0 (MRI): Maiskeimöl"),
+        Row("seed-erdnussoel", "Erdnussöl", "Öle & Gewürze", "3696", "0", "0", "99.9", "0", "0", "0", density = "0.91", src = "BLS 4.0 (MRI): Erdnussöl"),
+        Row("seed-kraeutersalz", "Kräutersalz", "Öle & Gewürze", "157", "3", "3.3", "0.5", "3.6", "3.3", "81.1", density = "1.1", src = "BLS 4.0 (MRI): Gewürzsalz/Kräutersalz"),
+        Row("seed-wasabi", "Wasabipaste", "Öle & Gewürze", "394", "5.4", "10.2", "2.23", "4.1", "7.2", "4.8", density = "1.1", src = "BLS 4.0 (MRI): Wasabi-Paste"),
+        Row("seed-barbecuesauce", "Barbecuesauce", "Öle & Gewürze", "466", "1.15", "9.24", "7.27", "1.4", "9.11", "0.61", density = "1.1", src = "BLS 4.0 (MRI): Barbecuesauce/Grillsauce"),
+        Row("seed-backmalz", "Backmalz", "Backzutaten", "1515", "4.4", "73.8", "0", null, "50.6", "0.03", src = "BLS 4.0 (MRI): Gerstenmalzextrakt"),
+        Row("seed-mohn", "Mohn", "Backzutaten", "2181", "23.8", "2.99", "42.2", "20.5", "2.99", "0.05", density = "0.55", src = "BLS 4.0 (MRI): Mohn"),
+        Row("seed-gelatine", "Gelatine", "Backzutaten", "1450", "85.1", "0", "0.1", "0", "0", "0.41", piece = "1.7", src = "BLS 4.0 (MRI): Speisegelatine"),
+        Row("seed-schokostreusel", "Schokostreusel", "Backzutaten", "1992", "4.06", "68", "19.7", "4.73", "66.2", "0.14", src = "BLS 4.0 (MRI): Schokoladenstreusel"),
+        Row("seed-schokopudding", "Schokoladenpuddingpulver", "Backzutaten", "1437", "5.98", "68.8", "2.9", "7.34", "1.05", "0.95", src = "BLS 4.0 (MRI): Puddingpulver Schokolade, ungezuckert"),
+        Row("seed-kuchenglasur", "Kuchenglasur", "Backzutaten", "1782", "4.14", "35.4", "28.9", "5.26", "33.5", "0.02", src = "BLS 4.0 (MRI): Schokoladenfettglasur"),
+        Row("seed-keks", "Keks", "Brot & Backwaren", "2043", "6.48", "64", "22.2", "2.98", "37.8", "0.19", src = "BLS 4.0 (MRI): Cookies mit Schokoladenstückchen"),
+        Row("seed-croutons", "Croûtons", "Brot & Backwaren", "2049", "7.44", "40.8", "32.4", "3.21", "3.43", "1.15", src = "BLS 4.0 (MRI): Weißbrotwürfel geröstet (Croutons)"),
+        Row("seed-kartoffelpufferteig", "Kartoffelpufferteig", "Kühlregal", "631", "4", "28.5", "1.65", "2.2", "1.28", "0.95", src = "BLS 4.0 (MRI): Kartoffelpuffer tiefgefroren"),
+        Row("seed-eierspaetzle", "Eierspätzle", "Kühlregal", "929", "9.3", "35.5", "3.93", "2.62", "0.25", "0.8", src = "BLS 4.0 (MRI): Eier-Frischteigwaren Spätzle, roh"),
+        Row("seed-graukaese", "Graukäse", "Kühlregal", "543", "30", "0", "0.47", "0", "0", "2.64", src = "BLS 4.0 (MRI): Sauermilchkäse < 10 % Fett i. Tr."),
+        Row("seed-raesskaese", "Räßkäse", "Kühlregal", "1640", "28.9", "0", "30.8", "0", "0", "0.75", src = "BLS 4.0 (MRI): Bergkäse mind. 45 % Fett i. Tr."),
+        Row("seed-mangochutney", "Mangochutney", "Konserven", "1199", "0.6", "68", "0.33", "1.4", "66.4", "2.96", density = "1.3", src = "BLS 4.0 (MRI): Frucht-Chutney"),
+        Row("seed-entenfond", "Entenfond", "Konserven", "33", "1.48", "0", "0.22", "0", "0", "0.64", density = "1.0", src = "BLS 4.0 (MRI): Fleischfond Konserve"),
+        Row("seed-bambussprossen", "Bambussprossen", "Konserven", "46", "1.72", "0.56", "0.21", "0", "0.56", "0.49", src = "BLS 4.0 (MRI): Bambussprossen Konserve, abgetropft"),
+        Row("seed-maiskoelbchen", "Maiskölbchen", "Konserven", "281", "3.28", "9.4", "1.23", "2.8", "3.4", "0.01", piece = "10", src = "BLS 4.0 (MRI): Zuckermais roh"),
+        Row("seed-sardellenpaste", "Sardellenpaste", "Konserven", "1264", "17.1", "0", "26.3", "0", "0", "13.6", density = "1.1", src = "BLS 4.0 (MRI): Sardellenpaste"),
+        Row("seed-mixed-pickles", "Mixed Pickles", "Konserven", "183", "1.17", "7.5", "0.37", "1.5", "6.75", "1.13", src = "BLS 4.0 (MRI): Mixed Pickles, abgetropft"),
+        Row("seed-palmenherzen", "Palmenherzen", "Konserven", "99", "2.2", "2.74", "0.1", "1.3", "2.62", "0.54", piece = "40", src = "BLS 4.0 (MRI): Palmenherz Konserve, abgetropft"),
+        Row("seed-sojabohnen", "Sojabohnen", "Obst & Gemüse", "612", "13", "6.2", "6.8", "4.2", "1.3", "0.04", src = "BLS 4.0 (MRI): Sojabohne unreif (Edamame), roh"),
+        Row("seed-mungosprossen", "Mungobohnensprossen", "Obst & Gemüse", "80", "3.2", "0.3", "0.3", "1.24", "0.3", "0.01", src = "BLS 4.0 (MRI): Mungbohnensprossen, roh"),
+        Row("seed-weisse-ruebe", "Weiße Rübe", "Obst & Gemüse", "169", "0.99", "6.58", "0.22", "3.49", "5.67", "0.14", piece = "100", src = "BLS 4.0 (MRI): Weiße Rübe/Wasserrübe, roh"),
+        Row("seed-zuckerschote", "Zuckerschote", "Obst & Gemüse", "159", "3.6", "4.4", "0.2", "2", "3.16", "0.04", piece = "5", src = "BLS 4.0 (MRI): Zuckererbse roh"),
+        Row("seed-chicoree", "Chicorée", "Obst & Gemüse", "84", "2.39", "1.3", "0.18", "1.3", "0.92", "0.12", piece = "150", src = "BLS 4.0 (MRI): Chicoree roh"),
+        Row("seed-baerlauch", "Bärlauch", "Obst & Gemüse", "110", "1.9", "2.93", "0.19", "2.18", "2.89", "0.03", piece = "50", src = "BLS 4.0 (MRI): Bärlauch roh"),
+        Row("seed-okra", "Okraschote", "Obst & Gemüse", "134", "2.1", "3.05", "0.2", "4.9", "3.05", "0.01", piece = "10", src = "BLS 4.0 (MRI): Okra roh"),
+        Row("seed-blattsalat", "Blattsalat", "Obst & Gemüse", "76", "1.5", "1.7", "0.22", "1.4", "1.7", "0.08", piece = "300", src = "BLS 4.0 (MRI): Kopfsalat roh"),
+        Row("seed-kraeuter", "Kräuter", "Obst & Gemüse", "139", "4.09", "1.31", "0.36", "4.25", "0.85", "0.31", piece = "30", src = "BLS 4.0 (MRI): Petersilienblatt roh"),
+        Row("seed-johannisbeersaft", "Johannisbeersaft", "Getränke", "235", "1.24", "10", "0.18", "0.4", "10", "0", density = "1.05", src = "BLS 4.0 (MRI): Johannisbeersaft schwarz"),
+        Row("seed-wermut", "Wermut", "Getränke", "436", "0.1", "3", "0", "0", "3", "0.03", density = "1.0", src = "BLS 4.0 (MRI): Wermutwein trocken"),
+        Row("seed-mehlbutter", "Mehlbutter", "Kühlregal", "2274", "5.82", "36.2", "41.6", "2.65", "0.44", "0.02", src = "berechnet aus BLS 4.0 (MRI): Butter + Weizenmehl Type 405 (1:1)"),
+        Row("seed-sauerteig", "Sauerteig", "Backzutaten", "672", "4.42", "29.6", "0.61", "8.83", "0.89", "0", src = "berechnet aus BLS 4.0 (MRI): Roggenmehl Type 1370 + Wasser (1:1)"),
+        Row("seed-oregano", "Oregano", "Öle & Gewürze", "1100", "9", "26.4", "4.28", "42.5", "4.09", "0.06", density = "0.2", src = "USDA FoodData Central 171328: Oregano, getrocknet"),
+        Row("seed-anis", "Anis", "Öle & Gewürze", "1606", "17.6", "35.4", "15.9", "14.6", null, "0.04", density = "0.45", src = "USDA FoodData Central 171316: Anissamen"),
+        Row("seed-fenchelsamen", "Fenchelsamen", "Öle & Gewürze", "1351", "15.8", "12.5", "14.9", "39.8", null, "0.22", density = "0.4", src = "USDA FoodData Central 171323: Fenchelsamen"),
+        Row("seed-senfkoerner", "Senfkörner", "Öle & Gewürze", "2151", "26.1", "15.9", "36.2", "12.2", "6.79", "0.03", density = "0.65", src = "USDA FoodData Central 170929: Senfsaat"),
+        Row("seed-natron", "Natron", "Backzutaten", "0", "0", "0", "0", "0", "0", "68.5", density = "0.9", src = "USDA FoodData Central 175040: Natron (Backsoda)"),
+        Row("seed-fischsauce", "Fischsauce", "Öle & Gewürze", "148", "5.06", "3.64", "0.01", "0", "3.64", "19.6", density = "1.2", src = "USDA FoodData Central 174531: Fischsauce"),
+        Row("seed-austernsauce", "Austernsauce", "Öle & Gewürze", "215", "1.35", "10.6", "0.25", "0.3", "0", "6.83", density = "1.2", src = "USDA FoodData Central 174529: Austernsauce"),
+        Row("seed-teriyakisauce", "Teriyakisauce", "Öle & Gewürze", "366", "5.93", "15.5", "0.02", "0.1", "14.1", "9.57", density = "1.15", src = "USDA FoodData Central 171167: Teriyakisauce"),
+        Row("seed-zitronenschale", "Zitronenschale", "Obst & Gemüse", "213", "1.5", "5.4", "0.3", "10.6", "4.17", "0.01", density = "0.4", piece = "6", src = "USDA FoodData Central 167749: Zitronenschale, roh"),
+        Row("seed-orangenschale", "Orangenschale", "Obst & Gemüse", "362", "1.5", "14.4", "0.2", "10.6", null, "0.01", density = "0.4", piece = "10", src = "USDA FoodData Central 169103: Orangenschale, roh"),
+        Row("seed-koriandergruen", "Koriandergrün", "Obst & Gemüse", "92.6", "2.13", "0.87", "0.52", "2.8", "0.87", "0.12", piece = "30", src = "USDA FoodData Central 169997: Korianderblätter, roh"),
+        Row("seed-strudelteig", "Strudelteig", "Kühlregal", "1220", "7.1", "50.7", "6", "1.9", "0.18", "1.21", src = "USDA FoodData Central 172791: Filoteig"),
     )
 
     /** Bei Erweiterung erhöhen: neue Zeilen werden dann auch in bestehende Installationen übernommen. */
-    const val VERSION = 7
+    const val VERSION = 8
 
     /** Kanonische Namen aller Startzutaten (für Tests und Abgleich). */
     val names: List<String> get() = rows.map { it.name }
@@ -231,7 +289,7 @@ object SeedData {
             fiber = r.fib?.let(::BigDecimal),
             sugar = r.sug?.let(::BigDecimal),
             salt = r.salt?.let(::BigDecimal),
-            nutrientSource = if (hasNutrients) SOURCE else null,
+            nutrientSource = if (hasNutrients) r.src ?: SOURCE else null,
             createdAt = now,
             updatedAt = now,
         )
