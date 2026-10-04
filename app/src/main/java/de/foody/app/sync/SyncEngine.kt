@@ -190,7 +190,7 @@ class SyncEngine(
             }
         }
         // Der Cursor gehört dem Pull; `current` ist nur ein einzelner Datensatz.
-        current?.let { applier.apply(listOf(it), 0, updateCursor = false) }
+        current?.let { applier.apply(listOf(it), 0, updateCursor = false, skipKnown = false) }
         return result.status != PushStatus.REJECTED
     }
 

@@ -8,6 +8,8 @@ import de.foody.app.data.repo.RecipeRepository
 import androidx.test.core.app.ApplicationProvider
 import de.foody.app.data.RecipePhotoStore
 import de.foody.app.data.db.SyncPhotoWantedEntity
+import de.foody.app.data.db.SyncProblemEntity
+import de.foody.app.data.db.SyncRecordRevEntity
 import de.foody.app.sync.PhotoIndex
 import de.foody.app.sync.SyncApplier
 import de.foody.app.sync.SyncMapper
@@ -104,6 +106,32 @@ class SyncApplierTest {
         assertNull(db.recipeDao().get(rid)?.imageUri)
         assertTrue(db.syncDao().photosWanted().isEmpty())
         assertEquals(emptyList(), db.syncDao().outbox())
+    }
+
+    @Test fun knownRevIsSkipped() = runTest {
+        val rid = recipeWithImage("content://media/1")
+        db.syncDao().setRev(SyncRecordRevEntity("recipe", rid, 5))
+        db.syncDao().addProblem(SyncProblemEntity("recipe", rid, "photo_unsyncable", 1))
+        val result = applier.apply(listOf(photoRec(rid, null)), 1) // rev 5 = bekannt (eigenes Echo)
+        assertEquals(1, result.skippedPending)
+        assertEquals(0, result.applied)
+        assertEquals(listOf("photo_unsyncable"), db.syncDao().problems().map { it.code })
+        // Eine neuere Revision wird angewendet
+        val newer = applier.apply(listOf(rec(RecordType.RECIPE, rid, recipePayload("R2", listOf(line("l", "i"))), rev = 6)), 2)
+        assertEquals(1, newer.applied)
+        assertEquals("R2", db.recipeDao().get(rid)?.name)
+    }
+
+    @Test fun nullPhotoFromOthersKeepsUnsyncableOwnPhoto() = runTest {
+        val (uri, _) = ownPhoto(byteArrayOf(5, 5))
+        val rid = recipeWithImage(uri)
+        db.syncDao().addProblem(SyncProblemEntity("recipe", rid, "photo_unsyncable", 1))
+        applier.apply(listOf(photoRec(rid, null)), 1) // Bearbeitung eines anderen Geräts, rev 5 neu
+        assertEquals(uri, db.recipeDao().get(rid)?.imageUri)
+        assertEquals(listOf("photo_unsyncable"), db.syncDao().problems().map { it.code })
+        // Mit Foto vom Server: normale Übernahme, Problem weg
+        applier.apply(listOf(rec(RecordType.RECIPE, rid, recipePayload("R", listOf(line("l", "i"))).copy(photo = "d".repeat(64)), rev = 6)), 2)
+        assertEquals(emptyList(), db.syncDao().problems())
     }
 
     @Test fun deletedRecipeDropsWish() = runTest {

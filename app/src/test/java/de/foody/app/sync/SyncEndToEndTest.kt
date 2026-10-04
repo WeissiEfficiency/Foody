@@ -171,6 +171,27 @@ class SyncEndToEndTest {
     }
 
     @Test
+    fun unsyncableOwnPhotoSurvivesOwnEcho() = syncServerTest { _, clock ->
+        val (a, b) = pair(clock)
+        val rid = a.simpleRecipe()
+        // Kein JPEG: der Server würde es ablehnen, das Rezept geht ohne Foto raus
+        a.setPhoto(rid, byteArrayOf(1, 2, 3, 4))
+        val uri = a.db.recipeDao().get(rid)!!.imageUri
+        for (run in 1..3) { // jeder Lauf holt das Echo des eigenen Pushs
+            val outcome = a.run()
+            assertTrue(outcome is SyncOutcome.Success, "Sync auf A: $outcome")
+            assertEquals(uri, a.db.recipeDao().get(rid)?.imageUri, "A behält das Foto (Lauf $run)")
+            assertEquals(listOf("photo_unsyncable"), a.db.syncDao().problems().map { it.code }, "Problem auf A (Lauf $run)")
+        }
+        b.runOk()
+        assertNotNull(b.db.recipeDao().get(rid))
+        assertNull(b.db.recipeDao().get(rid)!!.imageUri)
+        assertEquals(emptyList(), a.db.syncDao().outbox().map { it.recordId })
+        assertEquals(emptyList(), a.db.syncDao().photosWanted())
+        b.assertClean()
+    }
+
+    @Test
     fun replacedPhotoReplacesOnOtherDevice() = syncServerTest { _, clock ->
         val (a, b) = pair(clock)
         val rid = a.simpleRecipe()

@@ -81,16 +81,26 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
      * verschachtelte DAO-Transaktion des fehlgeschlagenen Zugriffs markiert die äußere als gescheitert.)
      * Der Cursor rückt (nur mit [updateCursor]) erst in einer letzten Transaktion vor; bricht der Lauf vorher ab, wird dieselbe Seite erneut
      * geholt, und das Anwenden ist idempotent.
+     *
+     * Mit [skipKnown] werden lebende Datensätze übersprungen (gezählt wie `skippedPending`), deren Revision lokal schon
+     * bekannt ist und die lokal existieren – etwa das Echo des eigenen Pushs im Pull. Sonst würde das Echo lokale
+     * Besonderheiten überschreiben (z. B. ein nicht übertragbares eigenes Foto, das ohne Foto gesendet wurde).
+     * Ein `current` aus einem Push-Ergebnis (Merge) wird dagegen immer angewendet (`skipKnown = false`).
      */
-    suspend fun apply(records: List<SyncRecord>, nextCursor: Long, updateCursor: Boolean = true): ApplyResult {
+    suspend fun apply(
+        records: List<SyncRecord>,
+        nextCursor: Long,
+        updateCursor: Boolean = true,
+        skipKnown: Boolean = true,
+    ): ApplyResult {
         val c = Counters()
         val now = System.currentTimeMillis()
         val live = records.filter { !it.deleted }.sortedWith(compareBy({ it.type.ordinal }, { it.rev ?: 0L }))
         val deletions = records.filter { it.deleted }.sortedWith(compareBy({ -it.type.ordinal }, { it.rev ?: 0L }))
         // Durch eine Zutaten-Zusammenführung selbst vorgemerkte Datensätze sind keine fremden lokalen Änderungen
         val selfQueued = mutableMapOf<Pair<String, String>, Long>()
-        for (r in live) applyOne(r, now, c, selfQueued) { applyLive(r, now, c, selfQueued) }
-        for (r in deletions) applyOne(r, now, c, selfQueued) { applyDeletion(r, c) }
+        for (r in live) applyOne(r, now, c, selfQueued, skipKnown) { applyLive(r, now, c, selfQueued) }
+        for (r in deletions) applyOne(r, now, c, selfQueued, false) { applyDeletion(r, c) }
         db.withTransaction {
             val state = (dao.getState() ?: SyncStateEntity()).copy(applyingRemote = false)
             // Einzelne `current`-Datensätze aus einem Push-Ergebnis dürfen den Pull-Cursor nicht verschieben.
@@ -108,11 +118,19 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
         return selfQueued[type to id] != queuedAt
     }
 
+    /** Kennen wir diese Revision (oder eine neuere) schon, und gibt es den Datensatz lokal? */
+    private suspend fun isKnownRev(r: SyncRecord): Boolean {
+        val rev = r.rev ?: return false
+        val known = dao.revOf(r.type.wire, r.id) ?: return false
+        return rev <= known && exists(r.type, r.id)
+    }
+
     private suspend fun applyOne(
         r: SyncRecord,
         now: Long,
         c: Counters,
         selfQueued: MutableMap<Pair<String, String>, Long>,
+        skipKnown: Boolean,
         block: suspend () -> Unit,
     ) {
         val before = c.copy()
@@ -120,6 +138,10 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
         try {
             db.withTransaction {
                 if (shouldSkipPending(r.type.wire, r.id, selfQueued)) {
+                    c.skippedPending++
+                    return@withTransaction
+                }
+                if (skipKnown && !r.deleted && isKnownRev(r)) {
                     c.skippedPending++
                     return@withTransaction
                 }
@@ -153,7 +175,9 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
             is RecipePayload -> {
                 val existing = db.recipeDao().get(r.id)
                 val known = decoded.photo?.let { photoIndex.uriFor(it) }
-                val own = existing?.imageUri?.let { photoIndex.isOwnPhoto(it) } == true
+                // Von anderen Geräten ohne Foto bearbeitet, hier aber ein nicht übertragbares eigenes Foto: behalten
+                val keepUnsyncable = decoded.photo == null && hasUnsyncableProblem(r.id)
+                val own = !keepUnsyncable && existing?.imageUri?.let { photoIndex.isOwnPhoto(it) } == true
                 Mapped.Recipe(SyncMapper.recipe(r.id, decoded, updatedAt, existing, known, own))
             }
             is MealSlotPayload ->
@@ -212,9 +236,15 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
             }
         }
         dao.setRev(SyncRecordRevEntity(r.type.wire, r.id, r.rev ?: 0L))
-        dao.clearProblem(r.type.wire, r.id)
+        // Das Problem „Foto nicht übertragbar“ bleibt, solange der Server-Stand kein Foto hat
+        val keepProblem = mapped is Mapped.Recipe && (r.type.decode(r.payload!!) as RecipePayload).photo == null &&
+            mapped.parts.recipe.imageUri != null && hasUnsyncableProblem(r.id)
+        if (!keepProblem) dao.clearProblem(r.type.wire, r.id)
         c.applied++
     }
+
+    private suspend fun hasUnsyncableProblem(recipeId: String): Boolean =
+        dao.problems().any { it.type == RecordType.RECIPE.wire && it.recordId == recipeId && it.code == SyncLocalStore.PHOTO_UNSYNCABLE }
 
     /**
      * Schreibt eine Server-Zutat. Gibt es lokal eine andere Zutat mit gleichem Namen (ohne Groß-/Kleinschreibung),
