@@ -10,8 +10,9 @@ import kotlin.test.assertTrue
  * Eiweiß 17, Kohlenhydrate 17, Fett 37, Ballaststoffe 8). Fängt Tippfehler wie 3700 statt 370 kJ ab.
  */
 class SeedNutritionTest {
-    // Alkohol (29 kJ/g) steht nicht in den Makros – Wein liegt deshalb bewusst darüber
-    private val withAlcohol = setOf("Rotwein", "Weißwein", "Bier", "Glühwein", "Amaretto")
+    // Alkohol (29 kJ/g) steht nicht in den Makros – Wein liegt deshalb bewusst darüber. Ebenso BLS-Werte mit
+    // Energie aus organischen Säuren (Saft) oder ohne Ballaststoffangabe (Malzextrakt)
+    private val withAlcohol = setOf("Rotwein", "Weißwein", "Bier", "Glühwein", "Amaretto", "Wermut", "Johannisbeersaft", "Backmalz")
 
     @Test fun energyMatchesMacros() {
         val problems = SeedData.ingredients(0).filter { it.energyKj != null && it.canonicalName !in withAlcohol }.mapNotNull { i ->

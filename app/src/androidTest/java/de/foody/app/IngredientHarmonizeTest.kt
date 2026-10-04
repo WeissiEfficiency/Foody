@@ -97,4 +97,24 @@ class IngredientHarmonizeTest {
         assertEquals(0, BigDecimal("3000").compareTo(db.ingredientDao().get("seed-butter")?.energyKj)) // Nutzerwert bleibt
         assertNotNull(db.ingredientDao().findByName("Pflanzenöl")) // neue Einträge aus v2 kommen dazu
     }
+
+    @Test fun seedUpgradeRenamesImportedSpellingsAndFillsOfficialValues() = runTest {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        context.getSharedPreferences("foody", android.content.Context.MODE_PRIVATE).edit().clear().putInt("seedVersion", 7).commit()
+        // So hat ein früherer Import die Zutat angelegt: eigener Name, keine Werte, in einem Rezept verwendet
+        db.ingredientDao().upsert(ingredient("imp", "Zitronenabrieb"))
+        val cake = recipes.save(
+            RecipeDraft(id = null, name = "Kuchen", defaultServings = 4,
+                ingredients = listOf(RecipeDraft.Line("imp", BigDecimal("1"), MeasureUnit.PIECE, null, false)),
+            ),
+        )
+
+        ingredients.seedIfNeeded()
+
+        val line = db.recipeDao().getIngredients(cake).single()
+        val peel = assertNotNull(db.ingredientDao().get(line.ingredientId))
+        assertEquals("Zitronenschale", peel.canonicalName)
+        assertNotNull(peel.energyKj)
+        assertEquals(true, peel.nutrientSource?.startsWith("USDA FoodData Central"))
+    }
 }
