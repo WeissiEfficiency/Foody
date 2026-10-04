@@ -1,5 +1,8 @@
 package de.foody.server
 
+import de.foody.server.auth.DevicePrincipal
+import de.foody.server.auth.deviceAuthRoutes
+import de.foody.server.auth.publicAuthRoutes
 import de.foody.sync.protocol.ErrorCode
 import de.foody.sync.protocol.ErrorDto
 import de.foody.sync.protocol.Protocol
@@ -8,6 +11,11 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.createRouteScopedPlugin
 import io.ktor.server.application.install
+import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.bearer
+import io.ktor.server.auth.parseAuthorizationHeader
+import io.ktor.http.auth.HttpAuthHeader
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.CannotTransformContentToTypeException
 import io.ktor.server.plugins.UnsupportedMediaTypeException
@@ -48,6 +56,22 @@ fun Application.foodyModule(deps: ServerDeps) {
     val log = LoggerFactory.getLogger("de.foody.server")
     install(ContentNegotiation) { json(Protocol.json) }
     install(XForwardedHeaders)
+    install(Authentication) {
+        bearer("device") {
+            // Fehlender, falscher oder widerrufener Token: einheitlich 401 mit ErrorDto (über StatusPages).
+            authHeader { call ->
+                val header = runCatching { call.request.parseAuthorizationHeader() }.getOrNull()
+                if (header !is HttpAuthHeader.Single || !header.authScheme.equals("Bearer", ignoreCase = true)) {
+                    throw ApiException(HttpStatusCode.Unauthorized, ErrorCode.UNAUTHORIZED)
+                }
+                header
+            }
+            authenticate { credential ->
+                deps.accounts.deviceForToken(credential.token)
+                    ?: throw ApiException(HttpStatusCode.Unauthorized, ErrorCode.UNAUTHORIZED)
+            }
+        }
+    }
     install(StatusPages) {
         exception<ApiException> { call, e -> call.respond(e.status, ErrorDto(e.code)) }
         // Client-Fehler beim Lesen des Bodys sind keine Serverfehler.
@@ -71,8 +95,12 @@ fun Application.foodyModule(deps: ServerDeps) {
         get("/health") { call.respond(HealthDto("ok")) }
         route("/api/v1") {
             install(ProtocolCheck)
-            // Platzhalter, den Task 4 mit den Haushalts-Routen füllt.
-            get("/households") { call.respond(HttpStatusCode.NotImplemented) }
+            publicAuthRoutes(deps)
+            authenticate("device") {
+                deviceAuthRoutes(deps)
+                // Platzhalter, den Task 4 mit den Haushalts-Routen füllt.
+                get("/households") { call.respond(HttpStatusCode.NotImplemented) }
+            }
         }
     }
 }

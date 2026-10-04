@@ -3,6 +3,7 @@ package de.foody.server
 import de.foody.server.db.Database
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -24,7 +25,20 @@ fun main(args: Array<String>) {
 
 private fun startServer(config: ServerConfig) {
     val deps = ServerDeps.create(config, Database("jdbc:sqlite:${config.dbPath}"))
+    bootstrapAdmin(config, deps)
     embeddedServer(Netty, port = config.port, host = "0.0.0.0") { foodyModule(deps) }.start(wait = true)
+}
+
+/** Legt beim ersten Start den Admin aus den Umgebungsvariablen an (nie wird das Passwort protokolliert). */
+private fun bootstrapAdmin(config: ServerConfig, deps: ServerDeps) {
+    val log = LoggerFactory.getLogger("de.foody.server")
+    if (deps.accounts.bootstrapAdmin(config.adminUser, config.adminPassword)) {
+        log.info("Admin-Benutzer '{}' angelegt", config.adminUser)
+    } else if (config.adminUser.isNullOrBlank() || config.adminPassword.isNullOrEmpty()) {
+        if (!deps.accounts.hasUsers()) {
+            log.warn("Keine Benutzer vorhanden und FOODY_ADMIN_USER/FOODY_ADMIN_PASSWORD nicht gesetzt: Anmeldung unmöglich")
+        }
+    }
 }
 
 /** Fragt `/health` des lokal laufenden Servers ab (für den Docker-Healthcheck). */

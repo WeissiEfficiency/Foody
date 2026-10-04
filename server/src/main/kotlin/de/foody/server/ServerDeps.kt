@@ -1,5 +1,8 @@
 package de.foody.server
 
+import de.foody.server.auth.AccountStore
+import de.foody.server.auth.LoginThrottle
+import de.foody.server.auth.PasswordHasher
 import de.foody.server.db.Database
 import java.time.Clock
 
@@ -8,10 +11,15 @@ class ServerDeps(
     val config: ServerConfig,
     val db: Database,
     val clock: Clock,
+    val hasher: PasswordHasher,
+    val accounts: AccountStore,
+    val throttle: LoginThrottle,
 ) {
     companion object {
         /** Einzige Konstruktionsstelle, genutzt von `main` und der Testhilfe. */
-        fun create(config: ServerConfig, db: Database, clock: Clock = Clock.systemUTC()): ServerDeps =
-            ServerDeps(config, db, clock)
+        fun create(config: ServerConfig, db: Database, clock: Clock = Clock.systemUTC()): ServerDeps {
+            val hasher = PasswordHasher()
+            return ServerDeps(config, db, clock, hasher, AccountStore(db, clock, hasher), LoginThrottle(clock))
+        }
     }
 }
