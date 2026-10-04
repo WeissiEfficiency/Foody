@@ -5,6 +5,7 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.nio.file.attribute.FileTime
 import java.time.Instant
 
 /**
@@ -26,6 +27,15 @@ class PhotoStore(private val root: Path) {
 
     /** Pfad der Datei oder `null`, wenn der Haushalt dieses Foto nicht hat. */
     fun read(household: String, sha: String): Path? = fileOf(household, sha).takeIf { Files.isRegularFile(it) }
+
+    /** Setzt die Änderungszeit auf [now]: Die Schonfrist der Aufräumung beginnt neu (Foto wird gerade gebraucht). */
+    fun touch(household: String, sha: String, now: Instant) {
+        try {
+            Files.setLastModifiedTime(fileOf(household, sha), FileTime.from(now))
+        } catch (_: IOException) {
+            // Datei zwischenzeitlich weg: nichts zu verlängern.
+        }
+    }
 
     /** Schreibt über eine temporäre Datei im selben Ordner und benennt atomar um. */
     fun write(household: String, sha: String, bytes: ByteArray) {

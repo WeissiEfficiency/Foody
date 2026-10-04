@@ -188,4 +188,27 @@ class PhotoTest {
         assertTrue(Files.exists(file(youngUnreferenced)))
         assertFalse(Files.exists(file(deletedRecipe)))
     }
+
+    @Test
+    fun missingAndRepeatedUploadRefreshModifiedTimeSoCompactorKeepsPhoto() = testServer { env ->
+        val (token, household) = env.setupHousehold()
+        val viaMissing = jpeg(2)
+        val viaPut = jpeg(3)
+        client.upload(token, PhotoHash.of(viaMissing), viaMissing)
+        client.upload(token, PhotoHash.of(viaPut), viaPut)
+        fun file(b: ByteArray) = env.photoDir.resolve(household).resolve("${PhotoHash.of(b)}.jpg")
+        val old = FileTime.from(env.clock.instant().minus(Duration.ofDays(31)))
+        Files.setLastModifiedTime(file(viaMissing), old)
+        Files.setLastModifiedTime(file(viaPut), old)
+
+        // Ein Gerät fragt nach dem Hash (es will ihn gleich referenzieren) bzw. lädt dieselbe Datei erneut hoch.
+        assertTrue(client.missing(token, listOf(PhotoHash.of(viaMissing))).bodyAsText().contains("[]"))
+        assertEquals(HttpStatusCode.NoContent, client.upload(token, PhotoHash.of(viaPut), viaPut).status)
+
+        assertEquals(env.clock.instant(), Files.getLastModifiedTime(file(viaMissing)).toInstant())
+        assertEquals(env.clock.instant(), Files.getLastModifiedTime(file(viaPut)).toInstant())
+        Compactor(env.deps.db, env.clock, env.deps.photos).run()
+        assertTrue(Files.exists(file(viaMissing)))
+        assertTrue(Files.exists(file(viaPut)))
+    }
 }

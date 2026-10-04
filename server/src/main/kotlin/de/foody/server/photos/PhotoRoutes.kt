@@ -39,7 +39,9 @@ fun Route.photoRoutes(deps: ServerDeps) {
         val request = call.receiveJson(PhotosMissingRequest.serializer())
         if (request.hashes.size > Protocol.MAX_PUSH_RECORDS) throw ApiException(HttpStatusCode.PayloadTooLarge, ErrorCode.TOO_LARGE)
         if (!request.hashes.all(PhotoHash::isValid)) throw invalidInput()
-        val missing = request.hashes.distinct().filterNot { deps.photos.exists(household, it) }
+        val (present, missing) = request.hashes.distinct().partition { deps.photos.exists(household, it) }
+        // Der Absender will diese Fotos gleich referenzieren: Schonfrist der Aufräumung neu starten.
+        present.forEach { deps.photos.touch(household, it, deps.clock.instant()) }
         call.respond(PhotosMissingResponse(missing))
     }
     put("/photos/{sha256}") {
@@ -49,7 +51,8 @@ fun Route.photoRoutes(deps: ServerDeps) {
         val bytes = call.readBoundedBytes(Protocol.MAX_PHOTO_BYTES)
         if (!isJpeg(bytes)) throw invalidInput()
         if (PhotoHash.of(bytes) != sha) throw invalidInput()
-        if (!deps.photos.exists(household, sha)) deps.photos.write(household, sha, bytes)
+        if (deps.photos.exists(household, sha)) deps.photos.touch(household, sha, deps.clock.instant())
+        else deps.photos.write(household, sha, bytes)
         call.respond(HttpStatusCode.NoContent)
     }
     get("/photos/{sha256}") {

@@ -306,6 +306,84 @@ class SyncEngineTest {
     }
 
     @Test
+    fun ownPhotoThatVanishesBeforeUploadHoldsBackOnlyThatRecipe() = runTest {
+        activate()
+        val bytes = jpeg(9, 9)
+        val vanishing = recipe("r1", ownPhoto(bytes))
+        val plain = RecipeRepository(db.recipeDao()).save(
+            RecipeDraft(
+                id = null, name = "P", defaultServings = 2,
+                ingredients = listOf(RecipeDraft.Line("i", BigDecimal.ONE, MeasureUnit.GRAM, null, false)),
+            ),
+        )
+        // Die Datei ändert sich zwischen Batch und Upload: der Hash ist dann keiner Datei mehr zuzuordnen.
+        val racing = object : SyncApi by api {
+            override suspend fun photosMissing(hashes: List<String>): List<String> {
+                photoStore.fileOf(db.recipeDao().get(vanishing)!!.imageUri!!)!!.delete()
+                return api.photosMissing(hashes)
+            }
+        }
+        api.onPush = { PushResponse(it.map { r -> accepted(r, 3) }) }
+        val photoIndex = PhotoIndex(db, photoStore)
+        val e = SyncEngine(db, SyncLocalStore(db, photoIndex), SyncApplier(db, photoIndex), racing, Clock.systemUTC(), photoIndex, photoStore)
+        val outcome = e.run()
+        assertTrue(outcome is SyncOutcome.Success, outcome.toString())
+        val pushedRecipes = api.pushes.flatten().filter { it.type == RecordType.RECIPE }.map { it.id }
+        assertEquals(listOf(plain), pushedRecipes, "nur das Rezept ohne fehlendes Foto geht raus")
+        assertTrue(db.syncDao().outbox().any { it.recordId == vanishing }, "bleibt in der Outbox")
+        assertTrue(db.syncDao().problems().isEmpty())
+    }
+
+    @Test
+    fun recipeWithWishHashIsStillPushedWhenFileIsNotLocal() = runTest {
+        activate()
+        val hash = PhotoHash.of(jpeg(5, 5))
+        db.ingredientDao().upsert(ingredient("i", "Salz"))
+        db.syncDao().clearOutbox()
+        api.onPull = { PullResponse(listOf(photoRecord("r1", hash)), 9, false) }
+        assertTrue(engine.run() is SyncOutcome.Success) // Wunsch bleibt (Server liefert das Foto nicht)
+        api.onPull = { PullResponse(emptyList(), it, false) }
+        RecipeRepository(db.recipeDao()).save(RecipeDraft(id = "r1", name = "Neu", defaultServings = 2, ingredients = emptyList()))
+        api.onPush = { PushResponse(it.map { r -> accepted(r, 6) }) }
+        api.pushes.clear()
+        assertTrue(engine.run() is SyncOutcome.Success)
+        assertEquals(hash, recipePhoto(api.pushes.flatten(), "r1"))
+        assertTrue(db.syncDao().outbox().none { it.type == "recipe" })
+    }
+
+    @Test
+    fun failingDownloadDoesNotBlockOtherWishesAndReportsTransient() = runTest {
+        activate()
+        db.ingredientDao().upsert(ingredient("i", "Salz"))
+        val badBytes = jpeg(1, 1)
+        val goodBytes = jpeg(2, 2)
+        val bad = recipe("r1", null)
+        val good = RecipeRepository(db.recipeDao()).save(
+            RecipeDraft(
+                id = "r2", name = "G", defaultServings = 2,
+                ingredients = listOf(RecipeDraft.Line("i", BigDecimal.ONE, MeasureUnit.GRAM, null, false)),
+            ),
+        )
+        db.syncDao().clearOutbox()
+        db.syncDao().upsertPhotoWanted(SyncPhotoWantedEntity(bad, PhotoHash.of(badBytes)))
+        db.syncDao().upsertPhotoWanted(SyncPhotoWantedEntity(good, PhotoHash.of(goodBytes)))
+        api.serverPhotos[PhotoHash.of(goodBytes)] = goodBytes
+        val flaky = object : SyncApi by api {
+            override suspend fun downloadPhoto(sha256: String): ByteArray? {
+                if (sha256 == PhotoHash.of(badBytes)) throw SyncApiException.Transient(503, null)
+                return api.downloadPhoto(sha256)
+            }
+        }
+        val photoIndex = PhotoIndex(db, photoStore)
+        val e = SyncEngine(db, SyncLocalStore(db, photoIndex), SyncApplier(db, photoIndex), flaky, Clock.systemUTC(), photoIndex, photoStore)
+        val outcome = e.run()
+        assertTrue(outcome is SyncOutcome.Failed && outcome.transient, outcome.toString())
+        assertNotNull(db.recipeDao().get(good)!!.imageUri, "zweiter Wunsch wurde trotzdem geladen")
+        assertNull(db.recipeDao().get(bad)!!.imageUri)
+        assertEquals(listOf(bad), db.syncDao().photosWanted().map { it.recipeId })
+    }
+
+    @Test
     fun orphanWishIsDropped() = runTest {
         activate()
         db.syncDao().upsertPhotoWanted(SyncPhotoWantedEntity("gone", PhotoHash.of(jpeg(3))))

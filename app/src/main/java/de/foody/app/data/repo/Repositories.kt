@@ -141,6 +141,12 @@ data class RecipeDraft(
     val steps: List<String> = emptyList(),
     /** Quell-URL bei Importen; null übernimmt beim Bearbeiten die gespeicherte. */
     val sourceUrl: String? = null,
+    /**
+     * Foto beim Öffnen des Editors. Nur wenn [trackOriginalImage] gesetzt ist und [imageUri] davon abweicht, schreibt
+     * Speichern das Foto; sonst bleibt das gespeicherte (ein Sync kann es zwischenzeitlich geändert haben).
+     */
+    val originalImageUri: String? = null,
+    val trackOriginalImage: Boolean = false,
 ) {
     data class Line(
         val ingredientId: String,
@@ -170,31 +176,32 @@ class RecipeRepository @Inject constructor(private val dao: RecipeDao) {
 
     suspend fun save(d: RecipeDraft): String {
         val now = System.currentTimeMillis()
-        val existing = d.id?.let { dao.get(it) }
-        val id = existing?.id ?: newId()
-        val entity = RecipeEntity(
-            id = id,
-            name = d.name.trim(),
-            defaultServings = d.defaultServings,
-            prepMinutes = d.prepMinutes,
-            cookMinutes = d.cookMinutes,
-            imageUri = d.imageUri,
-            notes = d.notes?.takeIf { it.isNotBlank() },
-            tags = d.tags.trim(),
-            archivedAt = existing?.archivedAt,
-            createdAt = existing?.createdAt ?: now,
-            updatedAt = now,
-            version = (existing?.version ?: 0) + 1,
-            // Favorit und Quelle gehören nicht zum Editor-Entwurf und bleiben beim Bearbeiten erhalten
-            favorite = existing?.favorite ?: false,
-            sourceUrl = d.sourceUrl ?: existing?.sourceUrl,
-        )
-        val lines = d.ingredients.mapIndexed { i, l ->
-            RecipeIngredientEntity(newId(), id, l.ingredientId, l.amount, l.unit, i, l.note, l.optional)
+        return dao.saveBuilt(d.id) { existing ->
+            val id = existing?.id ?: newId()
+            val imageUri = if (d.trackOriginalImage && d.imageUri == d.originalImageUri) existing?.imageUri else d.imageUri
+            val entity = RecipeEntity(
+                id = id,
+                name = d.name.trim(),
+                defaultServings = d.defaultServings,
+                prepMinutes = d.prepMinutes,
+                cookMinutes = d.cookMinutes,
+                imageUri = imageUri,
+                notes = d.notes?.takeIf { it.isNotBlank() },
+                tags = d.tags.trim(),
+                archivedAt = existing?.archivedAt,
+                createdAt = existing?.createdAt ?: now,
+                updatedAt = now,
+                version = (existing?.version ?: 0) + 1,
+                // Favorit und Quelle gehören nicht zum Editor-Entwurf und bleiben beim Bearbeiten erhalten
+                favorite = existing?.favorite ?: false,
+                sourceUrl = d.sourceUrl ?: existing?.sourceUrl,
+            )
+            val lines = d.ingredients.mapIndexed { i, l ->
+                RecipeIngredientEntity(newId(), id, l.ingredientId, l.amount, l.unit, i, l.note, l.optional)
+            }
+            val steps = d.steps.filter { it.isNotBlank() }.mapIndexed { i, s -> InstructionStepEntity(newId(), id, i, s.trim()) }
+            Triple(entity, lines, steps)
         }
-        val steps = d.steps.filter { it.isNotBlank() }.mapIndexed { i, s -> InstructionStepEntity(newId(), id, i, s.trim()) }
-        dao.save(entity, lines, steps)
-        return id
     }
 
     /** Gespeichertes Rezept als Entwurf (gleiche ID); null, wenn es nicht existiert. */

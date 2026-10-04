@@ -210,7 +210,8 @@ class SyncEngine(
 
     /**
      * Lädt die Fotos der Rezepte in [batch], die der Server noch nicht kennt, hoch. Ein Hash ohne lokale Datei
-     * (Foto-Wunsch, noch nicht geladen) wird übersprungen – den hat der Server, von dem er stammt. Lese- oder
+     * (Foto-Wunsch, noch nicht geladen) wird übersprungen – den hat der Server, von dem er stammt. Fehlt dagegen ein
+     * eigenes Foto (Datei weg, geändert, zu groß), wartet das Rezept in der Outbox, statt mit unbekanntem Hash zu gehen. Lese- oder
      * Upload-Fehler (IO, 5xx) brechen den Lauf als `Transient` ab (nichts aus dem Batch verlässt die Outbox). Lehnt der
      * Server ein einzelnes Foto dauerhaft ab (4xx, 413), bekommen nur die betroffenen Rezepte das Problem
      * `photo_unsyncable` und bleiben in der Outbox. Liefert die Datensätze, die gesendet werden dürfen.
@@ -219,11 +220,21 @@ class SyncEngine(
         val hashes = batch.mapNotNull { photoOf(it.record) }.distinct()
         if (hashes.isEmpty()) return batch
         val refused = HashSet<String>()
+        // Eigene Fotos, die jetzt nicht hochgeladen werden können: die betroffenen Rezepte warten (bleiben in der Outbox).
+        val deferred = HashSet<String>()
         for (hash in api.photosMissing(hashes)) {
-            val uri = photoIndex.uriFor(hash) ?: continue
-            val file = photoIndex.fileOf(uri) ?: continue
-            // Zu große Dateien lehnt der Server ab (413); sie dürfen den Abgleich nicht dauerhaft blockieren.
-            if (file.length() > Protocol.MAX_PHOTO_BYTES) continue
+            val uri = photoIndex.uriFor(hash)
+            val file = uri?.let { photoIndex.fileOf(it) }
+            if (uri == null || file == null || file.length() > Protocol.MAX_PHOTO_BYTES) {
+                // Foto-Wunsch (Hash vom Server, Datei noch nicht geladen): der Server hat ihn. Sonst ein eigenes Foto,
+                // das fehlt, geändert wurde oder zu groß ist (413): Rezept nicht mit einem unbekannten Hash senden.
+                for (pending in batch) {
+                    if (photoOf(pending.record) == hash && dao.photoWanted(pending.record.id)?.sha256 != hash) {
+                        deferred += pending.record.id
+                    }
+                }
+                continue
+            }
             val bytes = readFile(file)
             // Die Datei hat sich seit dem Hashen geändert: Cache-Eintrag verwerfen, im nächsten Lauf neu hashen.
             if (PhotoHash.of(bytes) != hash) {
@@ -238,12 +249,12 @@ class SyncEngine(
                 refused += hash
             }
         }
-        if (refused.isEmpty()) return batch
-        val (blocked, ready) = batch.partition { photoOf(it.record) in refused }
+        if (refused.isEmpty() && deferred.isEmpty()) return batch
+        val (blocked, rest) = batch.partition { photoOf(it.record) in refused }
         for (pending in blocked) {
             dao.addProblem(SyncProblemEntity(pending.record.type.wire, pending.record.id, SyncLocalStore.PHOTO_UNSYNCABLE, clock.millis()))
         }
-        return ready
+        return rest.filter { it.record.id !in deferred }
     }
 
     private fun photoOf(record: SyncRecord): String? {
@@ -275,13 +286,23 @@ class SyncEngine(
     private suspend fun downloadWantedPhotos() {
         val mismatched = dao.problems().filter { it.type == RecordType.RECIPE.wire && it.code == "photo_mismatch" }
             .map { it.recordId }.toSet()
+        var transient: SyncApiException.Transient? = null
         for (wish in dao.photosWanted()) {
             if (db.recipeDao().get(wish.recipeId) == null) {
                 dao.deletePhotoWanted(wish.recipeId) // Waise (etwa nach dem Voll-Abgleich)
                 continue
             }
             if (mismatched.contains(wish.recipeId)) continue
-            val uri = photoIndex.uriFor(wish.sha256) ?: downloadPhoto(wish.recipeId, wish.sha256) ?: continue
+            val uri = try {
+                photoIndex.uriFor(wish.sha256) ?: downloadPhoto(wish.recipeId, wish.sha256)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: SyncApiException.Transient) {
+                transient = e // später erneut versuchen, die übrigen Wünsche trotzdem laden
+                continue
+            } catch (_: SyncApiException.ClientError) {
+                continue // dieser Wunsch bleibt, blockiert aber die anderen nicht
+            } ?: continue
             db.withTransaction {
                 if (dao.photoWanted(wish.recipeId)?.sha256 != wish.sha256) return@withTransaction
                 dao.setApplyingRemote(true)
@@ -293,6 +314,8 @@ class SyncEngine(
                 dao.deletePhotoWanted(wish.recipeId)
             }
         }
+        // Nach dem Durchlauf melden, damit WorkManager es erneut versucht.
+        transient?.let { throw it }
     }
 
     /** Lädt ein Foto und legt es als eigene Datei ab; liefert den Link oder `null` (nicht auf dem Server / Hash falsch). */
