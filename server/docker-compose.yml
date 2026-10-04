@@ -1,0 +1,37 @@
+services:
+  foody-server:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    image: foody-server:local
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - foody-data:/data
+      - foody-photos:/data/photos
+    read_only: true
+    # sqlite-jdbc entpackt seine native Bibliothek nach /tmp; Dockers tmpfs ist sonst noexec
+    tmpfs:
+      - /tmp:exec,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK}
+      - traefik.http.routers.foody.rule=Host(`${FOODY_HOST}`)
+      - traefik.http.routers.foody.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.foody.tls.certresolver=${TRAEFIK_CERTRESOLVER}
+      - traefik.http.services.foody.loadbalancer.server.port=8080
+
+networks:
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK}
+
+volumes:
+  foody-data:
+  foody-photos:
