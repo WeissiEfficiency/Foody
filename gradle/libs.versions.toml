@@ -31,6 +31,8 @@ androidxTestRunner = "1.7.0"
 # Sync-Server (Modul :server)
 ktor = "3.5.0"
 sqliteJdbc = "3.53.1.0"
+# Alte SQLite-Version (Android API 26) für den Trigger-Kompatibilitätstest der App; unabhängig von :server
+sqliteJdbcLegacy = "3.18.0"
 bouncycastle = "1.86"
 logback = "1.5.37"
 
@@ -84,6 +86,7 @@ ktor-server-forwarded-header = { module = "io.ktor:ktor-server-forwarded-header"
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqliteJdbc" }
+sqlite-jdbc-legacy = { module = "org.xerial:sqlite-jdbc", version.ref = "sqliteJdbcLegacy" }
 bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 

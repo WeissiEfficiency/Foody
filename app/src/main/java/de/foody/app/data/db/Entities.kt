@@ -146,6 +146,10 @@ data class ShoppingItemEntity(
     val sortOrder: Int,
     /** Eigene Angabe zum Artikel („500 g“, „Bio“, „reif“) – wie die Spezifikation in Einkaufs-Apps. Seit DB v3. */
     val note: String? = null,
+    /** Zeitpunkt der letzten Änderung (Epoch-ms), von Triggern gepflegt; 0 = nie. Seit DB v4. */
+    @ColumnInfo(defaultValue = "0") val updatedAt: Long = 0,
+    /** Zeitpunkt der letzten Änderung von [checked] (Epoch-ms), von Triggern gepflegt. Seit DB v4. */
+    @ColumnInfo(defaultValue = "0") val checkedChangedAt: Long = 0,
 )
 
 @Entity(

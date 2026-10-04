@@ -22,8 +22,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ShoppingListEntity::class,
         ShoppingItemEntity::class,
         ShoppingItemSourceEntity::class,
+        SyncOutboxEntity::class,
+        SyncRecordRevEntity::class,
+        SyncStateEntity::class,
+        SyncProblemEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -34,6 +38,7 @@ abstract class FoodyDatabase : RoomDatabase() {
     abstract fun pantryDao(): PantryDao
     abstract fun shoppingDao(): ShoppingDao
     abstract fun maintenanceDao(): MaintenanceDao
+    abstract fun syncDao(): SyncDao
 
     companion object {
         const val NAME = "foody.db"
@@ -70,5 +75,22 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
+/**
+ * v3 → v4: Sync-Tabellen, Änderungszeitstempel für Einkaufseinträge und die Outbox-Trigger. Der Sync bleibt
+ * inaktiv (`sync_state.active = 0`), bestehende Daten ändern sich nicht.
+ */
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE shopping_item ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE shopping_item ADD COLUMN checkedChangedAt INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `sync_outbox` (`type` TEXT NOT NULL, `recordId` TEXT NOT NULL, `deleted` INTEGER NOT NULL, `queuedAt` INTEGER NOT NULL, PRIMARY KEY(`type`, `recordId`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `sync_record_rev` (`type` TEXT NOT NULL, `recordId` TEXT NOT NULL, `rev` INTEGER NOT NULL, PRIMARY KEY(`type`, `recordId`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `sync_state` (`id` INTEGER NOT NULL, `active` INTEGER NOT NULL DEFAULT 0, `applyingRemote` INTEGER NOT NULL DEFAULT 0, `serverUrl` TEXT, `householdId` TEXT, `cursor` INTEGER NOT NULL DEFAULT 0, `lastSyncAt` INTEGER, `lastError` TEXT, PRIMARY KEY(`id`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `sync_problem` (`type` TEXT NOT NULL, `recordId` TEXT NOT NULL, `code` TEXT NOT NULL, `at` INTEGER NOT NULL, PRIMARY KEY(`type`, `recordId`))")
+        db.execSQL("INSERT OR IGNORE INTO sync_state(id) VALUES (1)")
+        SyncTriggers.create(db)
+    }
+}
+
 /** Alle Migrationen in Reihenfolge – nie fallbackToDestructiveMigration (docs/architecture.md). */
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)

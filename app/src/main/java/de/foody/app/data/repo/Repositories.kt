@@ -98,13 +98,8 @@ class IngredientRepository @Inject constructor(
         changed
     }
 
-    private suspend fun mergeInto(from: IngredientEntity, into: IngredientEntity) {
-        dao.repointRecipeLines(from.id, into.id)
-        dao.repointPantry(from.id, into.id)
-        dao.repointShoppingItems(from.id, into.id)
-        dao.delete(from.id)
-        dao.upsert(into.fillFrom(from).copy(updatedAt = System.currentTimeMillis()))
-    }
+    private suspend fun mergeInto(from: IngredientEntity, into: IngredientEntity) =
+        mergeIngredient(dao, from, into, System.currentTimeMillis())
 
     /**
      * Legt fehlende Startzutaten an und ergänzt Nährwerte bei gleichnamigen Zutaten ohne Daten
@@ -131,23 +126,6 @@ class IngredientRepository @Inject constructor(
         }
         prefs.edit { putInt("seedVersion", SeedData.VERSION) }
     }
-}
-
-/** Übernimmt Nährwerte und Umrechnungsdaten aus [other], wo dieser Eintrag keine hat. */
-private fun IngredientEntity.fillFrom(other: IngredientEntity): IngredientEntity {
-    val withNutrients = if (nutrientBasis == null && other.nutrientBasis != null) {
-        copy(
-            nutrientBasis = other.nutrientBasis, energyKj = other.energyKj, protein = other.protein, carbs = other.carbs,
-            fat = other.fat, fiber = other.fiber, sugar = other.sugar, salt = other.salt, nutrientSource = other.nutrientSource,
-        )
-    } else {
-        this
-    }
-    return withNutrients.copy(
-        category = category ?: other.category,
-        densityGPerMl = densityGPerMl ?: other.densityGPerMl,
-        pieceWeightG = pieceWeightG ?: other.pieceWeightG,
-    )
 }
 
 data class RecipeDraft(

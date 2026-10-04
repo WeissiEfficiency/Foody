@@ -103,6 +103,7 @@ ksp {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":sync-protocol"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
@@ -140,6 +141,7 @@ dependencies {
     testImplementation(libs.junit4)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.coroutines.test)
+    testImplementation(libs.sqlite.jdbc.legacy)
 
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.androidx.test.ext.junit)

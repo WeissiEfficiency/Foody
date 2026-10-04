@@ -119,7 +119,7 @@ class HouseholdTest {
         assertEquals(household.id, auth.householdId)
         assertEquals(listOf(HouseholdDto(household.id, "Zuhause", "member")), client.households(auth.token))
         // Das neue Gerät ist am Haushalt gebunden: Einladen funktioniert ohne weitere Auswahl.
-        assertEquals(HttpStatusCode.OK, client.invite(auth.token).status)
+        assertEquals(HttpStatusCode.Created, client.invite(auth.token).status)
     }
 
     @Test
@@ -235,7 +235,17 @@ class HouseholdTest {
         val second = env.deps.accounts.createDevice(userId, null, "Zweit")
         assertEquals(HttpStatusCode.Conflict, client.invite(second).status)
         assertEquals(HttpStatusCode.NoContent, client.selectHousehold(second, h.id).status)
-        assertEquals(HttpStatusCode.OK, client.invite(second).status)
+        assertEquals(HttpStatusCode.Created, client.invite(second).status)
+    }
+
+    @Test
+    fun createHouseholdReturns201() = testServer { env ->
+        val (_, token) = env.user("anna")
+        val response = client.createHousehold(token, "Zuhause")
+        assertEquals(HttpStatusCode.Created, response.status)
+        val household = Protocol.json.decodeFromString<HouseholdDto>(response.bodyAsText())
+        assertEquals("Zuhause", household.name)
+        assertEquals("owner", household.role)
     }
 
     @Test
@@ -245,7 +255,17 @@ class HouseholdTest {
         val tooLong = client.createHousehold(token, "x".repeat(101))
         assertEquals(HttpStatusCode.BadRequest, tooLong.status)
         assertEquals("""{"code":"invalid_input"}""", tooLong.bodyAsText())
-        assertEquals(HttpStatusCode.OK, client.createHousehold(token, "x".repeat(100)).status)
+        assertEquals(HttpStatusCode.Created, client.createHousehold(token, "x".repeat(100)).status)
+    }
+
+    @Test
+    fun createInviteReturns201() = testServer { env ->
+        val (_, token) = env.user("anna")
+        client.createHousehold(token)
+        val response = client.invite(token)
+        assertEquals(HttpStatusCode.Created, response.status)
+        val invite = Protocol.json.decodeFromString<InviteDto>(response.bodyAsText())
+        assertTrue(Regex("^FOODY-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$").matches(invite.code))
     }
 
     @Test

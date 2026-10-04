@@ -3,6 +3,7 @@ package de.foody.server
 import de.foody.sync.protocol.ErrorCode
 import de.foody.sync.protocol.Protocol
 import de.foody.sync.protocol.PullResponse
+import de.foody.sync.protocol.RecipePayload
 import de.foody.sync.protocol.PushStatus
 import de.foody.sync.protocol.RecordType
 import de.foody.sync.protocol.SyncRecord
@@ -19,6 +20,8 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.encodeToJsonElement
 
 class SyncTest {
     @Test
@@ -97,6 +100,17 @@ class SyncTest {
         assertEquals(listOf(PushStatus.ACCEPTED, PushStatus.REJECTED, PushStatus.ACCEPTED), results.map { it.status })
         assertEquals(ErrorCode.INVALID_PAYLOAD, results[1].code)
         assertNull(results[1].rev)
+    }
+
+    @Test
+    fun duplicateChildIdsAreRejected() = testServer { env ->
+        val (token, _) = env.setupHousehold()
+        val dup = recipe("r1", listOf("i1", "i1"))
+        val payload = Protocol.json.decodeFromJsonElement<RecipePayload>(dup.payload!!)
+        val broken = dup.copy(payload = Protocol.json.encodeToJsonElement(payload.copy(lines = payload.lines.map { it.copy(id = "same") })) as JsonObject)
+        val results = client.pushOk(token, listOf(ingredient("i1"), broken)).results
+        assertEquals(PushStatus.REJECTED, results[1].status)
+        assertEquals(ErrorCode.INVALID_PAYLOAD, results[1].code)
     }
 
     @Test

@@ -24,7 +24,7 @@ class PayloadValidatorTest {
     ) = RecipePayload(
         name = name, servings = 4, prep = null, cook = null, photo = null, notes = null, tags = "", archivedAt = null,
         favorite = false, sourceUrl = null, rating = null,
-        lines = ingredientIds.mapIndexed { i, ing -> RecipePayload.Line(a, ing, amount, unit, i, null, false) },
+        lines = ingredientIds.mapIndexed { i, ing -> RecipePayload.Line("line-$i", ing, amount, unit, i, null, false) },
         steps = listOf(RecipePayload.Step(b, 0, stepText)),
     )
 
@@ -47,6 +47,23 @@ class PayloadValidatorTest {
             rec(RecordType.SHOPPING_ITEM, item(ingredientId = b)),
         )
         for (r in records) assertNull(PayloadValidator.validate(r), r.type.name)
+    }
+
+    @Test
+    fun duplicateChildIdsAreRejected() {
+        val base = recipe()
+        fun check(p: RecipePayload) = PayloadValidator.validate(rec(RecordType.RECIPE, p))
+        val line = base.lines.first()
+        assertEquals(ErrorCode.INVALID_PAYLOAD, check(base.copy(lines = listOf(line, line.copy(ingredientId = b)))))
+        val step = base.steps.single()
+        assertEquals(ErrorCode.INVALID_PAYLOAD, check(base.copy(steps = listOf(step, step.copy(position = 1)))))
+        assertNull(check(base.copy(steps = listOf(step, step.copy(id = c, position = 1)))))
+
+        val source = ShoppingItemPayload.Source(a, a, b, "Brot", "2026-10-04", "1", "GRAM")
+        val shopping = item(ingredientId = b)
+        fun checkItem(p: ShoppingItemPayload) = PayloadValidator.validate(rec(RecordType.SHOPPING_ITEM, p))
+        assertEquals(ErrorCode.INVALID_PAYLOAD, checkItem(shopping.copy(sources = listOf(source, source.copy(amount = "2")))))
+        assertNull(checkItem(shopping.copy(sources = listOf(source, source.copy(id = b)))))
     }
 
     @Test

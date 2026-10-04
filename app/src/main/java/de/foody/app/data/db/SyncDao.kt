@@ -1,0 +1,67 @@
+package de.foody.app.data.db
+
+import androidx.room.Dao
+import androidx.room.Query
+import androidx.room.Upsert
+
+@Dao
+interface SyncDao {
+    @Query("SELECT * FROM sync_state WHERE id = 1") suspend fun getState(): SyncStateEntity?
+    @Upsert suspend fun upsertState(s: SyncStateEntity)
+    @Query("UPDATE sync_state SET applyingRemote = :on WHERE id = 1") suspend fun setApplyingRemote(on: Boolean)
+
+    @Query("SELECT * FROM sync_outbox ORDER BY queuedAt, type, recordId") suspend fun outbox(): List<SyncOutboxEntity>
+    @Query("SELECT EXISTS(SELECT 1 FROM sync_outbox WHERE type = :type AND recordId = :id)")
+    suspend fun isQueued(type: String, id: String): Boolean
+    @Upsert suspend fun enqueue(e: SyncOutboxEntity)
+    @Query("DELETE FROM sync_outbox WHERE type = :type AND recordId = :id") suspend fun dequeue(type: String, id: String)
+    @Query("DELETE FROM sync_outbox") suspend fun clearOutbox()
+
+    /** Merkt alle Wurzeldatensätze (sechs Typen) als lebend vor; vorhandene Einträge werden ersetzt. */
+    @Query(
+        """INSERT OR REPLACE INTO sync_outbox (type, recordId, deleted, queuedAt)
+           SELECT 'ingredient', id, 0, :now FROM ingredient
+           UNION ALL SELECT 'recipe', id, 0, :now FROM recipe
+           UNION ALL SELECT 'meal_slot', id, 0, :now FROM meal_slot
+           UNION ALL SELECT 'pantry_item', id, 0, :now FROM pantry_item
+           UNION ALL SELECT 'shopping_list', id, 0, :now FROM shopping_list
+           UNION ALL SELECT 'shopping_item', id, 0, :now FROM shopping_item""",
+    )
+    suspend fun enqueueAllRoots(now: Long)
+
+    @Query("SELECT rev FROM sync_record_rev WHERE type = :type AND recordId = :id") suspend fun revOf(type: String, id: String): Long?
+    @Upsert suspend fun setRev(e: SyncRecordRevEntity)
+    @Query("DELETE FROM sync_record_rev") suspend fun clearRevs()
+
+    @Upsert suspend fun addProblem(p: SyncProblemEntity)
+    @Query("SELECT * FROM sync_problem") suspend fun problems(): List<SyncProblemEntity>
+    @Query("DELETE FROM sync_problem") suspend fun clearProblems()
+
+    /** Gibt es einen Vorratseintrag zur Zutat [ingredientId] mit offener lokaler Änderung? (Kaskade beim Löschen der Zutat) */
+    @Query(
+        "SELECT EXISTS(SELECT 1 FROM pantry_item p JOIN sync_outbox o ON o.type = 'pantry_item' AND o.recordId = p.id " +
+            "WHERE p.ingredientId = :ingredientId)",
+    )
+    suspend fun hasQueuedPantryFor(ingredientId: String): Boolean
+
+    /** Gibt es eine Planposition zum Rezept [recipeId] mit offener lokaler Änderung? */
+    @Query(
+        "SELECT EXISTS(SELECT 1 FROM meal_slot m JOIN sync_outbox o ON o.type = 'meal_slot' AND o.recordId = m.id " +
+            "WHERE m.recipeId = :recipeId)",
+    )
+    suspend fun hasQueuedSlotsFor(recipeId: String): Boolean
+
+    /** Gibt es einen Einkaufseintrag der Liste [listId] mit offener lokaler Änderung? */
+    @Query(
+        "SELECT EXISTS(SELECT 1 FROM shopping_item i JOIN sync_outbox o ON o.type = 'shopping_item' AND o.recordId = i.id " +
+            "WHERE i.listId = :listId)",
+    )
+    suspend fun hasQueuedItemsFor(listId: String): Boolean
+
+    /** Gibt es einen Einkaufseintrag zur Zutat [ingredientId] mit offener lokaler Änderung? (`ingredientId` hat keinen FK) */
+    @Query(
+        "SELECT EXISTS(SELECT 1 FROM shopping_item i JOIN sync_outbox o ON o.type = 'shopping_item' AND o.recordId = i.id " +
+            "WHERE i.ingredientId = :ingredientId)",
+    )
+    suspend fun hasQueuedShoppingItemsFor(ingredientId: String): Boolean
+}

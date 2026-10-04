@@ -26,6 +26,10 @@ interface IngredientDao {
     @Query("SELECT * FROM ingredient WHERE canonicalName = :name COLLATE NOCASE LIMIT 1")
     suspend fun findByName(name: String): IngredientEntity?
 
+    /** Exakter (binärer) Namenstreffer – passt zum eindeutigen Index auf `canonicalName`. */
+    @Query("SELECT * FROM ingredient WHERE canonicalName = :name LIMIT 1")
+    suspend fun findByNameExact(name: String): IngredientEntity?
+
     @Upsert suspend fun upsert(e: IngredientEntity)
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertAll(e: List<IngredientEntity>)
 
@@ -151,6 +155,7 @@ interface MealPlanDao {
 interface PantryDao {
     @Query("SELECT * FROM pantry_item") fun observeAll(): Flow<List<PantryItemEntity>>
     @Query("SELECT * FROM pantry_item") suspend fun getAll(): List<PantryItemEntity>
+    @Query("SELECT * FROM pantry_item WHERE id = :id") suspend fun get(id: String): PantryItemEntity?
     @Upsert suspend fun upsert(p: PantryItemEntity)
     @Query("DELETE FROM pantry_item WHERE id = :id") suspend fun delete(id: String)
 }
@@ -163,6 +168,7 @@ interface ShoppingDao {
 
     @Query("SELECT * FROM shopping_item WHERE listId = :listId ORDER BY checked, category, sortOrder")
     fun observeItems(listId: String): Flow<List<ShoppingItemEntity>>
+    @Query("SELECT * FROM shopping_item WHERE id = :id") suspend fun getItem(id: String): ShoppingItemEntity?
     @Query("SELECT * FROM shopping_item WHERE listId = :listId") suspend fun getItems(listId: String): List<ShoppingItemEntity>
     @Query("SELECT * FROM shopping_item") suspend fun getAllItems(): List<ShoppingItemEntity>
 
