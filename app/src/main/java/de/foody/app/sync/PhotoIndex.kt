@@ -39,6 +39,9 @@ class PhotoIndex @Inject constructor(
     /** Ist [uri] ein eigenes Foto (`file:`-Link im Fotoordner)? */
     fun isOwnPhoto(uri: String): Boolean = photoStore.isOwnPhoto(uri)
 
+    /** Die Datei hinter einem eigenen Foto-Link, sonst `null`. */
+    fun fileOf(uri: String): File? = photoStore.fileOf(uri)
+
     /** Link einer vorhandenen eigenen Fotodatei mit diesem Hash (Cache-Eintrag aktuell); sonst `null`. */
     suspend fun uriFor(sha256: String): String? = dao.photoLocalsByHash(sha256).firstOrNull { entry ->
         val file = photoStore.fileOf(entry.uri)

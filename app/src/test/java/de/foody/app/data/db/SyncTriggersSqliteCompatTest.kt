@@ -119,6 +119,20 @@ class SyncTriggersSqliteCompatTest {
         assertEquals(0, wishes())
     }
 
+    @Test fun recipeInsertAndDeleteDropWish() {
+        exec("INSERT INTO sync_photo_wanted(recipeId, sha256) VALUES ('r', 'h')")
+        exec("INSERT OR ABORT INTO recipe(id, name, defaultServings, tags, createdAt, updatedAt, version, favorite) VALUES ('r', 'R', 1, '', 0, 0, 1, 0)")
+        assertEquals(0, wishes())
+        exec("INSERT INTO sync_photo_wanted(recipeId, sha256) VALUES ('r', 'h')")
+        exec("DELETE FROM recipe WHERE id = 'r'")
+        assertEquals(0, wishes())
+        // Server-Anwendung: Wunsch wird nach dem Schreiben gesetzt und bleibt
+        exec("UPDATE sync_state SET applyingRemote = 1")
+        exec("INSERT INTO sync_photo_wanted(recipeId, sha256) VALUES ('r2', 'h')")
+        exec("INSERT OR ABORT INTO recipe(id, name, defaultServings, tags, createdAt, updatedAt, version, favorite) VALUES ('r2', 'R', 1, '', 0, 0, 1, 0)")
+        assertEquals(1, wishes())
+    }
+
     private fun wishes(): Int = conn.createStatement().use { st ->
         st.executeQuery("SELECT count(*) FROM sync_photo_wanted").use { rs -> rs.next(); rs.getInt(1) }
     }

@@ -133,7 +133,7 @@ class MigrationTest {
             db.query("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'sync_%'").use { c ->
                 val names = buildSet { while (c.moveToNext()) add(c.getString(0)) }
                 assertEquals(SyncTriggers.names.toSet(), names)
-                assertTrue("sync_recipe_image_wish" in names)
+                assertTrue("sync_recipe_image_wish" in names && "sync_recipe_wish_ai" in names && "sync_recipe_wish_ad" in names)
             }
         }
     }

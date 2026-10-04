@@ -105,12 +105,43 @@ class SyncLocalStoreTest {
         assertEquals(1, db.syncDao().photosWanted().size)
     }
 
-    @Test fun ownPhotoWithoutFileIsDeferred() = runTest {
+    @Test fun missingOwnFileSendsNoPhoto() = runTest {
         val file = photos.newPhotoFile() // existiert nicht
         val rid = recipeWithImage(photos.storedUri(file))
-        queue(RecordType.RECIPE, rid)
-        assertTrue(store.pendingBatch().none { it.record.id == rid })
-        assertTrue(db.syncDao().isQueued("recipe", rid))
+        assertNull(pendingPhoto(rid))
+    }
+
+    @Test fun unreadableOwnFileIsDeferred() = runTest {
+        val file = photos.newPhotoFile().also { it.writeBytes(byteArrayOf(1)) }
+        try {
+            val rid = recipeWithImage(photos.storedUri(file))
+            file.setReadable(false, false)
+            org.junit.Assume.assumeFalse("Datei trotzdem lesbar", file.canRead())
+            queue(RecordType.RECIPE, rid)
+            assertTrue(store.pendingBatch().none { it.record.id == rid })
+            assertTrue(db.syncDao().isQueued("recipe", rid))
+        } finally {
+            file.setReadable(true, false)
+            file.delete()
+        }
+    }
+
+    @Test fun restoreDropsStaleWish() = runTest {
+        val rid = recipeWithImage(null)
+        db.syncDao().upsertPhotoWanted(de.foody.app.data.db.SyncPhotoWantedEntity(rid, "e".repeat(64)))
+        val file = photos.newPhotoFile().also { it.writeBytes(byteArrayOf(7, 7)) }
+        try {
+            // Wiederherstellen aus einer Sicherung: Rezept löschen, mit eigenem Foto neu einfügen
+            val old = db.recipeDao().get(rid)!!
+            db.recipeDao().delete(rid)
+            db.recipeDao().upsert(old.copy(imageUri = photos.storedUri(file)))
+            assertTrue(db.syncDao().photosWanted().isEmpty())
+            val expected = java.security.MessageDigest.getInstance("SHA-256").digest(byteArrayOf(7, 7))
+                .joinToString("") { "%02x".format(it) }
+            assertEquals(expected, pendingPhoto(rid))
+        } finally {
+            file.delete()
+        }
     }
 
     @Test fun galleryLinkSendsNoPhoto() = runTest {

@@ -87,8 +87,11 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
         return db.withTransaction { buildBatch(limit, exclude, hashes) }
     }
 
-    /** Foto eines Rezepts zum Zeitpunkt des Hashens: Link und Hash (`null`, wenn nicht bestimmbar). */
-    private class HashedPhoto(val uri: String, val hash: String?)
+    /**
+     * Foto eines Rezepts zum Zeitpunkt des Hashens: Link und Zustand. [absent] = die Datei gibt es nicht (das Gerät hat
+     * kein Foto); sonst [hash], oder `null` bei einem Lesefehler.
+     */
+    private class HashedPhoto(val uri: String, val hash: String?, val absent: Boolean)
 
     /** Hash je eigenem Foto der vorgemerkten, lebenden Rezepte (Schlüssel: Rezept-ID). Läuft ohne Transaktion. */
     private suspend fun hashRecipePhotos(exclude: Set<Triple<RecordType, String, Long>>): Map<String, HashedPhoto> {
@@ -98,7 +101,8 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
             if (exclude.isNotEmpty() && Triple(RecordType.RECIPE, e.recordId, e.queuedAt) in exclude) continue
             val uri = db.recipeDao().get(e.recordId)?.imageUri ?: continue
             if (!photoIndex.isOwnPhoto(uri)) continue
-            result[e.recordId] = HashedPhoto(uri, photoIndex.hashOf(uri))
+            val absent = photoIndex.fileOf(uri)?.isFile != true
+            result[e.recordId] = HashedPhoto(uri, if (absent) null else photoIndex.hashOf(uri), absent)
         }
         return result
     }
@@ -163,8 +167,9 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
         dao.photoWanted(recipe.id)?.let { return Optional.of(it.sha256) }
         val uri = recipe.imageUri ?: return Optional.empty<String>()
         if (!photoIndex.isOwnPhoto(uri)) return Optional.empty<String>()
-        val hash = hashes[recipe.id]?.takeIf { it.uri == uri }?.hash ?: return null
-        return Optional.of(hash)
+        val hashed = hashes[recipe.id]?.takeIf { it.uri == uri } ?: return null
+        if (hashed.absent) return Optional.empty<String>() // Datei fehlt: das Gerät hat kein Foto
+        return Optional.of(hashed.hash ?: return null)
     }
 
     /** Baut den lebenden Datensatz; [Built.Gone], wenn die Zeile nicht mehr existiert. */
