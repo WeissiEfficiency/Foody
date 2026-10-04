@@ -14,6 +14,10 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Foody"
-include(":app")
 include(":domain")
-include(":baselineprofile")
+include(":sync-protocol")
+// Docker-Build des Servers läuft ohne Android-SDK: FOODY_SERVER_ONLY lässt die Android-Module weg.
+if (System.getenv("FOODY_SERVER_ONLY") == null) {
+    include(":app")
+    include(":baselineprofile")
+}
