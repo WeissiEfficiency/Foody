@@ -57,3 +57,40 @@ jobs:
           name: instrumented-test-reports
           path: app/build/reports/androidTests/managedDevice/
           if-no-files-found: ignore
+
+  # Sync-Server: Tests, Docker-Image (ohne Android-SDK) und ein Smoke-Test des laufenden Containers.
+  server:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Server- und Protokoll-Tests
+        run: ./gradlew :sync-protocol:test :server:test
+      - name: Docker-Image bauen
+        run: docker build -f server/Dockerfile -t foody-server:ci .
+      - name: Smoke-Test des Containers
+        run: |
+          # Gehärtete Laufzeit wie in der Compose-Datei; DB-Pfad bleibt der Standard (/data/foody.db).
+          docker run -d --name foody \
+            -e FOODY_ADMIN_USER=admin -e FOODY_ADMIN_PASSWORD=ci-passwort-123 \
+            --read-only --tmpfs /tmp:exec,mode=1777 --cap-drop ALL --security-opt no-new-privileges \
+            -v foody-ci-data:/data -v foody-ci-photos:/data/photos \
+            -p 8080:8080 foody-server:ci
+          for i in $(seq 1 30); do
+            curl -fsS localhost:8080/health && break
+            if [ "$i" = 30 ]; then docker logs foody; exit 1; fi
+            sleep 2
+          done
+          curl -fsS -H 'X-Foody-Protocol: 1' -H 'Content-Type: application/json' \
+            -d '{"username":"admin","password":"ci-passwort-123","deviceName":"ci"}' \
+            localhost:8080/api/v1/auth/login | grep -q token || { docker logs foody; exit 1; }
+          docker exec foody foody-admin invite | grep -q FOODY- || { docker logs foody; exit 1; }
+      - name: Compose-Datei prüfen
+        run: |
+          cp server/.env.example server/.env
+          docker compose -f server/docker-compose.yml --env-file server/.env.example config -q
