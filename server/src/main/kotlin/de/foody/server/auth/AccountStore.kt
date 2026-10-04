@@ -388,6 +388,32 @@ class AccountStore(
         }
     }
 
+    /**
+     * Setzt das Passwort des Benutzers (Name ohne Beachtung der Groß-/Kleinschreibung) neu und widerruft alle
+     * seine Geräte. `false`, wenn der Benutzer nicht existiert. Für die Admin-CLI.
+     */
+    fun resetPassword(username: String, newPassword: String): Boolean {
+        validatePassword(newPassword)
+        val hash = hasher.hash(newPassword)
+        return db.tx { c ->
+            val userId = c.prepareStatement("SELECT id FROM user WHERE username_lower = ?").use { st ->
+                st.setString(1, username.lowercase())
+                st.executeQuery().use { rs -> if (rs.next()) rs.getString(1) else null }
+            } ?: return@tx false
+            c.prepareStatement("UPDATE user SET password_hash = ? WHERE id = ?").use { st ->
+                st.setString(1, hash)
+                st.setString(2, userId)
+                st.executeUpdate()
+            }
+            c.prepareStatement("UPDATE device SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL").use { st ->
+                st.setLong(1, clock.millis())
+                st.setString(2, userId)
+                st.executeUpdate()
+            }
+            true
+        }
+    }
+
     private fun validateUsername(username: String) {
         if (!USERNAME.matches(username)) throw ApiException(HttpStatusCode.BadRequest, ErrorCode.INVALID_INPUT)
     }

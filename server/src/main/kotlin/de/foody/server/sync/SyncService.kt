@@ -1,5 +1,6 @@
 package de.foody.server.sync
 
+import de.foody.server.ApiException
 import de.foody.server.db.Database
 import de.foody.sync.protocol.ErrorCode
 import de.foody.sync.protocol.PayloadValidator
@@ -10,6 +11,7 @@ import de.foody.sync.protocol.PushResult
 import de.foody.sync.protocol.PushStatus
 import de.foody.sync.protocol.RecordType
 import de.foody.sync.protocol.SyncRecord
+import io.ktor.http.HttpStatusCode
 import java.sql.Connection
 import java.time.Clock
 import kotlinx.serialization.json.JsonObject
@@ -27,11 +29,23 @@ class SyncService(private val db: Database, private val store: RecordStore, priv
 
     /** Liefert bis zu [limit] Datensätze mit `rev > since`; `hasMore` zeigt weitere Seiten an. */
     fun pull(household: String, since: Long, limit: Int): PullResponse {
-        val fetched = db.tx { c -> store.page(c, household, since, limit + 1) }
+        val fetched = db.tx { c ->
+            // Ein Cursor vor der Kompaktierungsgrenze hat Löschmarkierungen verpasst: Client muss neu synchronisieren.
+            if (since != 0L && since < compactedBefore(c, household)) {
+                throw ApiException(HttpStatusCode.Gone, ErrorCode.CURSOR_EXPIRED)
+            }
+            store.page(c, household, since, limit + 1)
+        }
         val hasMore = fetched.size > limit
         val records = if (hasMore) fetched.take(limit) else fetched
         return PullResponse(records, records.lastOrNull()?.rev ?: since, hasMore)
     }
+
+    private fun compactedBefore(c: Connection, household: String): Long =
+        c.prepareStatement("SELECT compacted_before_rev FROM household WHERE id = ?").use { st ->
+            st.setString(1, household)
+            st.executeQuery().use { if (it.next()) it.getLong(1) else 0L }
+        }
 
     /**
      * Gesamte Logik für einen einzelnen Datensatz. Reihenfolge: Validierung, Zutaten-Merge, Löschen vs. Bearbeiten,

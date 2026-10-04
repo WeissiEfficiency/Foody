@@ -32,6 +32,9 @@ class Database(url: String) : AutoCloseable {
         }
     }
 
+    /** Führt [block] ohne Transaktion (Auto-Commit) aus, z. B. für `VACUUM INTO`, das in Transaktionen verboten ist. */
+    fun <T> outsideTx(block: (Connection) -> T): T = synchronized(connection) { block(connection) }
+
     override fun close() {
         synchronized(connection) { connection.close() }
     }
