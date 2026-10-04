@@ -25,7 +25,7 @@ Bottom Bar (Telefon) oder Navigation Rail (Tablet). Jeder Hauptbereich behält s
 
 ## Datenbank
 
-Version **4**, Schema-Export nach `app/schemas` (eingecheckt). Jede Schemaänderung benötigt eine `Migration`
+Version **5**, Schema-Export nach `app/schemas` (eingecheckt). Jede Schemaänderung benötigt eine `Migration`
 in `ALL_MIGRATIONS` (`FoodyDatabase.kt`) und einen Migrationstest (`MigrationTestHelper`, `MigrationTest`);
 `fallbackToDestructiveMigration()` ist verboten.
 
@@ -35,6 +35,7 @@ in `ALL_MIGRATIONS` (`FoodyDatabase.kt`) und einen Migrationstest (`MigrationTes
 | 2 | `recipe.favorite`, `recipe.sourceUrl` (+ Index); Quell-URL importierter Rezepte aus den Notizen übernommen |
 | 3 | `shopping_item.note`, `recipe.rating` |
 | 4 | Sync-Tabellen (`sync_outbox`, `sync_record_rev`, `sync_state`, `sync_problem`), `shopping_item.updatedAt`/`checkedChangedAt`, Outbox-Trigger |
+| 5 | Sync-Trigger neu angelegt: erneutes Vormerken setzt `sync_outbox.queuedAt` streng steigend (`MAX(jetzt, alt + 1)`); Tabellen unverändert |
 
 ## Sync (vorbereitet)
 
@@ -43,7 +44,8 @@ SQLite-Trigger (`SyncTriggers`, Namen `sync_*`) schreiben jede lokale Änderung 
 `sync_outbox` – in derselben Transaktion, sodass keine Schreibstelle sie vergessen kann. Die Trigger wirken nur, wenn
 `sync_state.active = 1` und nicht gerade Server-Daten angewendet werden (`applyingRemote = 0`); bis `activate` bleibt
 der Sync vollständig inaktiv. Die Zeile `sync_state(id = 1)` und die Trigger legen `SYNC_CALLBACK` (frische
-Installation) bzw. `MIGRATION_3_4` an.
+Installation) bzw. `MIGRATION_3_4` an. Ein erneut vorgemerkter Datensatz bekommt immer ein streng größeres
+`queuedAt` (auch in derselben Millisekunde), damit der Push Änderungen während eines Laufs sicher erkennt.
 
 Hinweis: Room setzt `recursive_triggers = 1`; jeder Trigger-Rumpf muss seine eigene WHEN-Bedingung falsch machen
 (`MAX(jetzt, alt + 1)`). `OnConflictStrategy.REPLACE` auf Wurzeltabellen würde `sync_*_ad` auslösen und eine Löschung

@@ -29,7 +29,7 @@ class SyncTriggersSqliteCompatTest {
     @Before fun setUp() {
         conn = DriverManager.getConnection("jdbc:sqlite::memory:")
         val schema = Json.parseToJsonElement(
-            File("schemas/de.foody.app.data.db.FoodyDatabase/4.json").readText(),
+            File("schemas/de.foody.app.data.db.FoodyDatabase/5.json").readText(),
         ).jsonObject["database"]!!.jsonObject["entities"]!!.jsonArray.map { it.jsonObject }
         exec("PRAGMA foreign_keys = ON")
         exec("PRAGMA recursive_triggers = 1")
@@ -81,5 +81,23 @@ class SyncTriggersSqliteCompatTest {
 
         exec("DELETE FROM recipe WHERE id = 'r'") // Kaskade auf recipe_ingredient: darf das Rezept nicht wiederbeleben
         assertEquals(1, outbox()[("recipe" to "r")])
+    }
+
+    @Test fun requeueAdvancesQueuedAtStrictly() {
+        exec("INSERT OR ABORT INTO ingredient(id, canonicalName, createdAt, updatedAt, version) VALUES ('i', 'Salz', 0, 0, 1)")
+        val future = System.currentTimeMillis() + 1_000_000_000L
+        exec("UPDATE sync_outbox SET queuedAt = $future WHERE type = 'ingredient' AND recordId = 'i'")
+        exec("UPDATE ingredient SET canonicalName = 'Salz2' WHERE id = 'i'")
+        assertEquals(future + 1, queuedAt("i"))
+        exec("UPDATE ingredient SET canonicalName = 'Salz3' WHERE id = 'i'")
+        assertEquals(future + 2, queuedAt("i"))
+        // Normalfall: liegt die Uhr vorn, gewinnt sie (kein Zurückfallen auf alt + 1)
+        exec("UPDATE sync_outbox SET queuedAt = 5 WHERE type = 'ingredient' AND recordId = 'i'")
+        exec("UPDATE ingredient SET canonicalName = 'Salz4' WHERE id = 'i'")
+        assertTrue(queuedAt("i") > 1_000_000_000_000L, "Uhrzeit gewinnt: ${queuedAt("i")}")
+    }
+
+    private fun queuedAt(id: String): Long = conn.createStatement().use { st ->
+        st.executeQuery("SELECT queuedAt FROM sync_outbox WHERE type = 'ingredient' AND recordId = '$id'").use { rs -> rs.next(); rs.getLong(1) }
     }
 }

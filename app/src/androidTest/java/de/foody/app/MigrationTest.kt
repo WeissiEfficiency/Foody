@@ -3,11 +3,13 @@ package de.foody.app
 import kotlin.test.assertTrue
 import de.foody.app.data.db.MIGRATION_2_3
 import de.foody.app.data.db.MIGRATION_3_4
+import de.foody.app.data.db.MIGRATION_4_5
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import de.foody.app.data.db.FoodyDatabase
 import de.foody.app.data.db.MIGRATION_1_2
+import de.foody.app.data.db.SyncTriggers
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -93,6 +95,25 @@ class MigrationTest {
             }
             db.query("SELECT count(*) FROM sqlite_master WHERE type='trigger' AND name LIKE 'sync_%'").use { c ->
                 c.moveToFirst(); assertTrue(c.getInt(0) > 0)
+            }
+        }
+    }
+
+    @Test fun migrate4To5RecreatesTriggers() {
+        helper.createDatabase(dbName, 4).use { db ->
+            db.execSQL("INSERT INTO sync_outbox (type, recordId, deleted, queuedAt) VALUES ('recipe', 'r', 0, 1234)")
+        }
+        helper.runMigrationsAndValidate(dbName, 5, true, MIGRATION_4_5).use { db ->
+            db.query("SELECT type, recordId, deleted, queuedAt FROM sync_outbox").use { c ->
+                assertEquals(1, c.count)
+                c.moveToFirst(); assertEquals("recipe", c.getString(0)); assertEquals("r", c.getString(1)); assertEquals(0, c.getInt(2)); assertEquals(1234L, c.getLong(3))
+            }
+            db.query("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'sync_%'").use { c ->
+                val names = buildSet { while (c.moveToNext()) add(c.getString(0)) }
+                assertEquals(SyncTriggers.names.toSet(), names)
+            }
+            db.query("SELECT sql FROM sqlite_master WHERE type='trigger' AND name = 'sync_ingredient_au'").use { c ->
+                c.moveToFirst(); assertTrue(c.getString(0).contains("queuedAt + 1"))
             }
         }
     }

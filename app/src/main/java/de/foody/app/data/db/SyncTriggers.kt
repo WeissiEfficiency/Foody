@@ -77,17 +77,30 @@ object SyncTriggers {
      * `INSERT OR REPLACE` (die Konfliktstrategie der auslösenden Anweisung, z. B. Rooms `@Insert` = ABORT,
      * überschreibt sie) noch UPSERT (`ON CONFLICT DO UPDATE` braucht SQLite 3.24, minSdk 26 liefert 3.18) sind
      * möglich; so kann keine Konfliktstrategie greifen. Auch `TRUE`/`FALSE` (ab 3.23) sind tabu.
+     * Beim erneuten Vormerken steigt `queuedAt` streng (`MAX(jetzt, alt + 1)`, zweistelliges MAX ist ab 3.18 da):
+     * Der Push erkennt so zuverlässig, dass ein Datensatz während des Laufs erneut geändert wurde – auch in
+     * derselben Millisekunde.
      * [guard] schränkt beide Anweisungen ein (Kindtabellen: Elterndatensatz muss existieren).
      */
     private fun enqueue(type: String, id: String, deleted: Int, guard: String? = null): String {
         val and = if (guard == null) "" else " AND $guard"
-        return "UPDATE sync_outbox SET deleted = $deleted, queuedAt = $NOW WHERE type = $type AND recordId = $id$and;" + "\n" +
+        return "UPDATE sync_outbox SET deleted = $deleted, queuedAt = MAX($NOW, queuedAt + 1) WHERE type = $type AND recordId = $id$and;" + "\n" +
             "INSERT INTO sync_outbox(type, recordId, deleted, queuedAt) SELECT $type, $id, $deleted, $NOW " +
             "WHERE NOT EXISTS (SELECT 1 FROM sync_outbox WHERE type = $type AND recordId = $id)$and;"
     }
 
     private fun trigger(name: String, event: String, condition: String, body: String) =
         "CREATE TRIGGER IF NOT EXISTS $name $event WHEN $condition BEGIN\n$body\nEND"
+
+    private val triggerName = Regex("""CREATE TRIGGER IF NOT EXISTS (\w+)""")
+
+    /** Namen aller Trigger aus [statements] (für `DROP TRIGGER` in Migrationen). */
+    val names: List<String> = statements.map { triggerName.find(it)!!.groupValues[1] }
+
+    /** Entfernt alle Sync-Trigger (vor dem erneuten Anlegen mit geänderter Definition). */
+    fun drop(db: SupportSQLiteDatabase) {
+        names.forEach { db.execSQL("DROP TRIGGER IF EXISTS $it") }
+    }
 
     /** Legt die Sync-Trigger an (idempotent). */
     fun create(db: SupportSQLiteDatabase) {
