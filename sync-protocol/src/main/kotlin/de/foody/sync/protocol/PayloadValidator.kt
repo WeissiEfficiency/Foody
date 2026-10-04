@@ -5,13 +5,13 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
-/** Serverseitige Prüfung von Datensätzen nach den Protokoll-Grenzen (Länge, Zahlen, Einheiten, Datum, UUID). */
+/** Serverseitige Prüfung von Datensätzen nach den Protokoll-Grenzen (Länge, Zahlen, Einheiten, Datum, sichere ID-Token). */
 object PayloadValidator {
     private const val MAX_NAME = 200
     private const val MAX_TEXT = 10_000
     private const val MAX_TAGS = 1_000
     private const val MAX_NUMBER_LENGTH = 40
-    private val UUID_REGEX = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+    private val ID_REGEX = Regex("^[A-Za-z0-9_-]{1,64}$")
     private val UNITS = setOf(
         "MILLIGRAM", "GRAM", "KILOGRAM", "MILLILITER", "CENTILITER", "LITER", "TEASPOON", "TABLESPOON", "PIECE", "PACKAGE", "CAN",
     )
@@ -27,7 +27,7 @@ object PayloadValidator {
 
     /** `null` = gültig, sonst [ErrorCode.INVALID_PAYLOAD]. */
     fun validate(record: SyncRecord): ErrorCode? {
-        if (!isUuid(record.id)) return ErrorCode.INVALID_PAYLOAD
+        if (!isValidId(record.id)) return ErrorCode.INVALID_PAYLOAD
         val payload = record.payload
         if (record.deleted) return if (payload == null) null else ErrorCode.INVALID_PAYLOAD
         if (payload == null) return ErrorCode.INVALID_PAYLOAD
@@ -63,7 +63,8 @@ object PayloadValidator {
         return (record.type.decode(payload) as IngredientPayload).name.trim().lowercase()
     }
 
-    private fun isUuid(text: String) = UUID_REGEX.matches(text)
+    /** IDs sind UUIDs oder feste Startdaten-IDs (z. B. `seed-rindersteak`): 1-64 Zeichen aus `[A-Za-z0-9_-]`. */
+    private fun isValidId(text: String) = ID_REGEX.matches(text)
 
     private fun check(payload: Any) {
         when (payload) {
@@ -86,24 +87,24 @@ object PayloadValidator {
                 ensure(payload.tags.length <= MAX_TAGS)
                 ensure(payload.rating == null || payload.rating in 1..5)
                 payload.lines.forEach { line ->
-                    ensure(isUuid(line.id) && isUuid(line.ingredientId))
+                    ensure(isValidId(line.id) && isValidId(line.ingredientId))
                     number(line.amount)
                     ensure(line.unit in UNITS)
                     optText(line.note, MAX_TEXT)
                 }
                 payload.steps.forEach { step ->
-                    ensure(isUuid(step.id))
+                    ensure(isValidId(step.id))
                     ensure(step.text.length <= MAX_TEXT)
                 }
             }
             is MealSlotPayload -> {
                 date(payload.date)
                 ensure(payload.slotType.isNotBlank() && payload.slotType.length <= MAX_NAME)
-                ensure(isUuid(payload.recipeId))
+                ensure(isValidId(payload.recipeId))
                 ensure(payload.servings >= 1)
             }
             is PantryItemPayload -> {
-                ensure(isUuid(payload.ingredientId))
+                ensure(isValidId(payload.ingredientId))
                 number(payload.amount)
                 ensure(payload.unit in UNITS)
                 payload.bestBefore?.let { date(it) }
@@ -114,15 +115,15 @@ object PayloadValidator {
                 payload.end?.let { date(it) }
             }
             is ShoppingItemPayload -> {
-                ensure(isUuid(payload.listId))
-                ensure(payload.ingredientId == null || isUuid(payload.ingredientId))
+                ensure(isValidId(payload.listId))
+                ensure(payload.ingredientId == null || isValidId(payload.ingredientId))
                 ensure(payload.name.length <= MAX_NAME)
                 optNumber(payload.amount)
                 ensure(payload.unit == null || payload.unit in UNITS)
                 optText(payload.category, MAX_NAME)
                 optText(payload.note, MAX_TEXT)
                 payload.sources.forEach { source ->
-                    ensure(isUuid(source.id) && isUuid(source.mealSlotId) && isUuid(source.recipeIngredientId))
+                    ensure(isValidId(source.id) && isValidId(source.mealSlotId) && isValidId(source.recipeIngredientId))
                     ensure(source.recipeName.length <= MAX_NAME)
                     date(source.date)
                     number(source.amount)

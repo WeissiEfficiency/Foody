@@ -62,8 +62,16 @@ class PayloadValidatorTest {
     }
 
     @Test
-    fun idMustBeUuid() {
-        assertEquals(ErrorCode.INVALID_PAYLOAD, PayloadValidator.validate(rec(RecordType.INGREDIENT, ingredient(), id = "../x")))
+    fun idMustBeSafeToken() {
+        fun envelope(id: String) = PayloadValidator.validate(rec(RecordType.INGREDIENT, ingredient(), id = id))
+        assertNull(envelope("seed-rindersteak"))
+        assertNull(envelope(a))
+        assertNull(envelope("a".repeat(64)))
+        for (bad in listOf("../x", "", "a".repeat(65), "a/b", "a.b", "a b", "a\nb")) {
+            assertEquals(ErrorCode.INVALID_PAYLOAD, envelope(bad), "id=" + bad)
+        }
+        assertNull(PayloadValidator.validate(rec(RecordType.RECIPE, recipe(ingredientIds = listOf("seed-rindersteak")))))
+        assertEquals(ErrorCode.INVALID_PAYLOAD, PayloadValidator.validate(rec(RecordType.RECIPE, recipe(ingredientIds = listOf("../x")))))
     }
 
     @Test
