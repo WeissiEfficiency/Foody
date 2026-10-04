@@ -16,6 +16,10 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import de.foody.sync.protocol.LoginRequest
@@ -158,5 +162,57 @@ class AuthTest {
         }
         assertNotEquals(token, stored)
         assertEquals(Tokens.sha256Hex(token), stored)
+    }
+
+    @Test
+    fun concurrentWrongLoginsStayWithinLimit() = testServer { env ->
+        env.deps.accounts.createUser("stefan", pw)
+        val statuses = coroutineScope {
+            (1..10).map { async(Dispatchers.Default) { client.login("stefan", "falschfalsch").status } }.awaitAll()
+        }
+        assertEquals(5, statuses.count { it == HttpStatusCode.Unauthorized })
+        assertEquals(5, statuses.count { it == HttpStatusCode.TooManyRequests })
+    }
+
+    private fun addMembership(env: TestEnv, userId: String, householdId: String) = env.deps.db.tx { c ->
+        c.prepareStatement("INSERT INTO membership (user_id, household_id, role, created_at) VALUES (?, ?, 'member', 0)")
+            .use { st ->
+                st.setString(1, userId)
+                st.setString(2, householdId)
+                st.executeUpdate()
+            }
+    }
+
+    @Test
+    fun loginBindsHouseholdOnlyWithSingleMembership() = testServer { env ->
+        val userId = env.deps.accounts.createUser("stefan", pw)
+        addMembership(env, userId, "h1")
+        val one = Protocol.json.decodeFromString<AuthResponse>(client.login("stefan", pw).bodyAsText())
+        assertEquals("h1", one.householdId)
+        val stored = env.deps.db.tx { c ->
+            c.prepareStatement("SELECT household_id FROM device WHERE token_hash = ?").use { st ->
+                st.setString(1, Tokens.sha256Hex(one.token))
+                st.executeQuery().use { it.next(); it.getString(1) }
+            }
+        }
+        assertEquals("h1", stored)
+
+        addMembership(env, userId, "h2")
+        val two = Protocol.json.decodeFromString<AuthResponse>(client.login("stefan", pw).bodyAsText())
+        assertNull(two.householdId)
+        val storedTwo = env.deps.db.tx { c ->
+            c.prepareStatement("SELECT household_id FROM device WHERE token_hash = ?").use { st ->
+                st.setString(1, Tokens.sha256Hex(two.token))
+                st.executeQuery().use { it.next(); it.getString(1) }
+            }
+        }
+        assertNull(storedTwo)
+    }
+
+    @Test
+    fun protocolCheckRunsBeforeAuthentication() = testServer {
+        val response = client.get("/api/v1/devices")
+        assertEquals(HttpStatusCode.Conflict, response.status)
+        assertEquals("""{"code":"protocol_too_old"}""", response.bodyAsText())
     }
 }

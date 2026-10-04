@@ -30,7 +30,7 @@ fun Route.publicAuthRoutes(deps: ServerDeps) {
             throw ApiException(HttpStatusCode.Unauthorized, ErrorCode.INVALID_CREDENTIALS)
         }
         deps.throttle.success(ip, request.username)
-        val householdId = deps.accounts.householdOf(userId)
+        val householdId = deps.accounts.soleHouseholdOf(userId)
         val token = deps.accounts.createDevice(userId, householdId, request.deviceName.take(MAX_DEVICE_NAME))
         call.respond(AuthResponse(token, userId, householdId))
     }

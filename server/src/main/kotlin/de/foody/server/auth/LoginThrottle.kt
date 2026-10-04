@@ -18,29 +18,28 @@ class LoginThrottle(private val clock: Clock) {
 
     private fun key(ip: String, username: String) = "$ip|${username.lowercase()}"
 
-    /** Wirft `429 throttled`, solange die Sperre für diese Kombination läuft. */
+    /**
+     * Reserviert atomar einen Versuch: Der Versuch wird sofort als Fehlversuch gezählt, damit parallele
+     * Anfragen das Limit nicht überschreiten. Wirft `429 throttled`, solange die Sperre läuft.
+     * Ein erfolgreicher Login macht die Reservierung über [success] rückgängig.
+     */
     @Synchronized
     fun check(ip: String, username: String) {
         val now = clock.instant()
         entries.values.removeIf { isExpired(it, now) }
-        val lock = entries[key(ip, username)]?.lockedUntil
+        val entry = entries.getOrPut(key(ip, username)) { Entry(0, now, null) }
+        val lock = entry.lockedUntil
         if (lock != null && now.isBefore(lock)) {
             throw ApiException(HttpStatusCode.TooManyRequests, ErrorCode.THROTTLED)
-        }
-    }
-
-    @Synchronized
-    fun failure(ip: String, username: String) {
-        val now = clock.instant()
-        val entry = entries.getOrPut(key(ip, username)) { Entry(0, now, null) }
-        if (isExpired(entry, now)) {
-            entry.failures = 0
-            entry.windowStart = now
-            entry.lockedUntil = null
         }
         entry.failures++
         if (entry.failures >= MAX_FAILURES) entry.lockedUntil = now.plus(LOCK)
     }
+
+    /** Der Fehlversuch ist bereits in [check] vorgemerkt; hier ist nichts mehr zu tun. */
+    @Synchronized
+    @Suppress("UNUSED_PARAMETER")
+    fun failure(ip: String, username: String) = Unit
 
     @Synchronized
     fun success(ip: String, username: String) {

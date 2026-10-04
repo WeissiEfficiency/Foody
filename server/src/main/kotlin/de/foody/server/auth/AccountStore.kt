@@ -77,13 +77,14 @@ class AccountStore(
         return if (hasher.verify(password, row.second)) row.first else null
     }
 
-    /** Haushalt, in dem der Benutzer Mitglied ist (der älteste), sonst `null`. */
-    fun householdOf(userId: String): String? = db.tx { c ->
-        c.prepareStatement(
-            "SELECT household_id FROM membership WHERE user_id = ? ORDER BY created_at, household_id LIMIT 1",
-        ).use { st ->
+    /** Haushalt des Benutzers, aber nur bei genau einer Mitgliedschaft; sonst `null` (Gerät bleibt ungebunden). */
+    fun soleHouseholdOf(userId: String): String? = db.tx { c ->
+        c.prepareStatement("SELECT household_id FROM membership WHERE user_id = ? LIMIT 2").use { st ->
             st.setString(1, userId)
-            st.executeQuery().use { rs -> if (rs.next()) rs.getString(1) else null }
+            st.executeQuery().use { rs ->
+                val first = if (rs.next()) rs.getString(1) else null
+                if (first != null && !rs.next()) first else null
+            }
         }
     }
 
