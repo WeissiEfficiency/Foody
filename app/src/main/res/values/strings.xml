@@ -378,6 +378,7 @@
     <string name="sync_problem_missing_reference">Ein verknüpfter Eintrag fehlt.</string>
     <string name="sync_problem_apply_failed">Konnte auf diesem Gerät nicht übernommen werden.</string>
     <string name="sync_problem_photo_mismatch">Das heruntergeladene Foto ist beschädigt.</string>
+    <string name="sync_problem_rejected">Der Server hat den Eintrag abgelehnt.</string>
     <string name="sync_problem_unknown">Unbekanntes Problem.</string>
     <string name="sync_setup_title">Server verbinden</string>
     <!-- Sync: Fehlermeldungen -->

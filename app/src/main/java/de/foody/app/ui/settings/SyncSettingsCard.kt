@@ -96,7 +96,7 @@ fun SyncSettingsCard(
     }
 
     state.invite?.let { invite -> InviteDialog(invite.code, invite.expiresAt, state.serverUrl, vm::dismissInvite) }
-    state.devices?.let { devices -> DevicesDialog(devices, vm::revokeDevice, vm::disconnect, vm::dismissDevices) }
+    state.devices?.let { devices -> DevicesDialog(devices, vm::revokeDevice, { vm.dismissDevices(); confirmDisconnect = true }, vm::dismissDevices) }
     state.problems?.let { problems ->
         AlertDialog(
             onDismissRequest = vm::dismissProblems,

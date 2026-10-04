@@ -177,6 +177,8 @@ class SyncSettingsViewModel @Inject constructor(
             "missing_reference" -> R.string.sync_problem_missing_reference
             "apply_failed" -> R.string.sync_problem_apply_failed
             "photo_mismatch" -> R.string.sync_problem_photo_mismatch
+            // Codes, die SyncEngine.rejectCode bei abgelehnten Datensätzen schreibt
+            "rejected", "forbidden", "invalid_input", "not_found" -> R.string.sync_problem_rejected
             else -> R.string.sync_problem_unknown
         }
     }

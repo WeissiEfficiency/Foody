@@ -176,8 +176,9 @@ class SyncSettingsViewModelTest {
         db.syncDao().addProblem(SyncProblemEntity("recipe", "r1", "too_large", 1L))
         db.syncDao().addProblem(SyncProblemEntity("pantry_item", "p1", "apply_failed", 2L))
         db.syncDao().addProblem(SyncProblemEntity("shopping_item", "s1", "weird", 3L))
+        db.syncDao().addProblem(SyncProblemEntity("shopping_list", "l1", "forbidden", 4L))
         val vm = vm()
-        assertEquals(3, vm.state.await { it.problemCount == 3 }.problemCount)
+        assertEquals(4, vm.state.await { it.problemCount == 4 }.problemCount)
         vm.loadProblems()
         val items = vm.state.await { it.problems != null }.problems!!
         val recipe = items.single { it.title == "Linsensuppe" }
@@ -187,6 +188,7 @@ class SyncSettingsViewModelTest {
         assertNull(pantry.title)
         assertEquals(R.string.sync_problem_apply_failed, pantry.reason)
         assertEquals(R.string.sync_problem_unknown, items.single { it.type == R.string.sync_type_shopping_item }.reason)
+        assertEquals(R.string.sync_problem_rejected, items.single { it.type == R.string.sync_type_shopping_list }.reason)
     }
 
     @Test
