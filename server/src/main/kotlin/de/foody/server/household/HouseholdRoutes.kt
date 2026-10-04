@@ -3,12 +3,12 @@ package de.foody.server.household
 import de.foody.server.ApiException
 import de.foody.server.ServerDeps
 import de.foody.server.auth.DevicePrincipal
+import de.foody.server.receiveJson
 import de.foody.sync.protocol.CreateHouseholdRequest
 import de.foody.sync.protocol.ErrorCode
 import de.foody.sync.protocol.SelectHouseholdRequest
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.principal
-import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
@@ -23,12 +23,12 @@ fun Route.householdRoutes(deps: ServerDeps) {
     }
     post("/households") {
         val device = call.principal<DevicePrincipal>()!!
-        val request = call.receive<CreateHouseholdRequest>()
+        val request = call.receiveJson(CreateHouseholdRequest.serializer())
         call.respond(deps.accounts.createHousehold(device.userId, device.deviceId, request.name))
     }
     post("/device/household") {
         val device = call.principal<DevicePrincipal>()!!
-        val request = call.receive<SelectHouseholdRequest>()
+        val request = call.receiveJson(SelectHouseholdRequest.serializer())
         deps.accounts.selectHousehold(device.deviceId, device.userId, request.householdId)
         call.respond(HttpStatusCode.NoContent)
     }

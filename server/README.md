@@ -21,7 +21,8 @@ Admin an. Danach beide Variablen leeren und mit `docker compose up -d` neu anwen
 
 ## Betrieb
 
-- Einladung für ein neues Mitglied: `docker compose exec foody-server foody-admin invite`
+- Einladung für ein neues **Konto ohne Haushalt**: `docker compose exec foody-server foody-admin invite`
+  (keine Haushalts-Einladung; die erzeugen Mitglieder in der App über `POST /api/v1/invites`)
 - Sicherung: `docker compose exec foody-server foody-admin backup /data/backup-$(date +%F).db`
 - Update: `git pull && docker compose up -d --build`
 

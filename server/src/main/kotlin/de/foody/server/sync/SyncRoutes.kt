@@ -3,19 +3,16 @@ package de.foody.server.sync
 import de.foody.server.ApiException
 import de.foody.server.ServerDeps
 import de.foody.server.auth.DevicePrincipal
+import de.foody.server.readBoundedBytes
 import de.foody.sync.protocol.ErrorCode
 import de.foody.sync.protocol.Protocol
 import de.foody.sync.protocol.PushRequest
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.principal
-import io.ktor.server.request.contentLength
-import io.ktor.server.request.receiveChannel
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
-import io.ktor.utils.io.readRemaining
-import kotlinx.io.readByteArray
 import kotlinx.serialization.SerializationException
 
 private fun invalidInput() = ApiException(HttpStatusCode.BadRequest, ErrorCode.INVALID_INPUT)
@@ -28,11 +25,8 @@ private fun householdOf(device: DevicePrincipal): String =
 fun Route.syncRoutes(deps: ServerDeps) {
     post("/sync/push") {
         val household = householdOf(call.principal<DevicePrincipal>()!!)
-        // Größe prüfen, bevor geparst wird: erst über Content-Length, dann beim gezählten Lesen (chunked hat keine).
-        val declared = call.request.contentLength()
-        if (declared != null && declared > Protocol.MAX_PUSH_BYTES) throw tooLarge()
-        val bytes = call.receiveChannel().readRemaining(Protocol.MAX_PUSH_BYTES + 1).readByteArray()
-        if (bytes.size > Protocol.MAX_PUSH_BYTES) throw tooLarge()
+        // Größe prüfen, bevor geparst wird (gezähltes Lesen, siehe BodyLimit.kt).
+        val bytes = call.readBoundedBytes(Protocol.MAX_PUSH_BYTES)
         val request = try {
             Protocol.json.decodeFromString(PushRequest.serializer(), bytes.decodeToString())
         } catch (_: SerializationException) {

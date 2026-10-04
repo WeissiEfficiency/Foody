@@ -31,6 +31,17 @@ class AdminCliTest {
         return code to buffer.toString(Charsets.UTF_8)
     }
 
+    /** Wie [cli], liefert aber die Fehlerausgabe (stderr) statt der normalen Ausgabe; stdout muss dabei leer bleiben. */
+    private fun cliErr(deps: ServerDeps, args: List<String>): Pair<Int, String> {
+        val out = ByteArrayOutputStream()
+        val err = ByteArrayOutputStream()
+        val code = PrintStream(out, true, Charsets.UTF_8).use { o ->
+            PrintStream(err, true, Charsets.UTF_8).use { e -> AdminCli(deps, o, e).run(args) }
+        }
+        assertEquals("", out.toString(Charsets.UTF_8))
+        return code to err.toString(Charsets.UTF_8)
+    }
+
     private suspend fun HttpClient.login(user: String, password: String): HttpResponse =
         post("/api/v1/auth/login") {
             protocol()
@@ -57,7 +68,7 @@ class AdminCliTest {
 
     @Test
     fun resetPasswordUnknownUserFails() = testServer { env ->
-        val (code, output) = cli(env.deps, listOf("reset-password", "niemand"))
+        val (code, output) = cliErr(env.deps, listOf("reset-password", "niemand"))
         assertEquals(1, code)
         assertEquals(1, output.trim().lines().size)
     }
@@ -94,7 +105,7 @@ class AdminCliTest {
                 }
 
                 val before = Files.readAllBytes(target)
-                val (code2, _) = cli(deps, listOf("backup", target.toString()))
+                val (code2, _) = cliErr(deps, listOf("backup", target.toString()))
                 assertEquals(1, code2)
                 assertTrue(before.contentEquals(Files.readAllBytes(target)))
             }
@@ -106,7 +117,7 @@ class AdminCliTest {
     @Test
     fun backupIntoMissingDirectoryReportsOneLineError() = testServer { env ->
         val target = Files.createTempDirectory("foody-missing").resolve("nope").resolve("x.db")
-        val (code, output) = cli(env.deps, listOf("backup", target.toString()))
+        val (code, output) = cliErr(env.deps, listOf("backup", target.toString()))
         assertEquals(1, code)
         assertEquals(1, output.trim().lines().size)
     }
@@ -120,7 +131,7 @@ class AdminCliTest {
 
     @Test
     fun unknownCommandShowsHelp() = testServer { env ->
-        val (code, output) = cli(env.deps, listOf("unsinn"))
+        val (code, output) = cliErr(env.deps, listOf("unsinn"))
         assertEquals(2, code)
         for (name in listOf("reset-password", "invite", "backup", "compact")) assertTrue(output.contains(name), name)
         assertEquals(2, cli(env.deps, emptyList()).first)

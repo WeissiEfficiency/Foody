@@ -15,7 +15,6 @@ import java.time.Duration
 import kotlin.system.exitProcess
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -35,7 +34,7 @@ fun main(args: Array<String>) {
 
 private fun startServer(config: ServerConfig) {
     val deps = ServerDeps.create(config, Database("jdbc:sqlite:${config.dbPath}"))
-    bootstrapAdmin(config, deps)
+    if (!bootstrapAdmin(config, deps)) exitProcess(1)
     embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
         foodyModule(deps)
         launchCompaction(deps)
@@ -50,7 +49,7 @@ private fun runAdmin(config: ServerConfig, args: List<String>): Int =
 private fun Application.launchCompaction(deps: ServerDeps) {
     val log = LoggerFactory.getLogger("de.foody.server.compaction")
     val compactor = Compactor(deps.db, deps.clock)
-    launch(SupervisorJob() + Dispatchers.IO) {
+    launch(Dispatchers.IO) {
         while (isActive) {
             try {
                 log.info("Kompaktierung: {} Löschmarkierungen entfernt", compactor.run())
@@ -67,15 +66,23 @@ private fun Application.launchCompaction(deps: ServerDeps) {
 private const val COMPACTION_INTERVAL_MS = 24L * 60 * 60 * 1000
 
 /** Legt beim ersten Start den Admin aus den Umgebungsvariablen an (nie wird das Passwort protokolliert). */
-private fun bootstrapAdmin(config: ServerConfig, deps: ServerDeps) {
+private fun bootstrapAdmin(config: ServerConfig, deps: ServerDeps): Boolean {
     val log = LoggerFactory.getLogger("de.foody.server")
-    if (deps.accounts.bootstrapAdmin(config.adminUser, config.adminPassword)) {
+    val created = try {
+        deps.accounts.bootstrapAdmin(config.adminUser, config.adminPassword)
+    } catch (_: ApiException) {
+        // Ungültige Vorgabe: eine klare Zeile ohne Wert statt Stacktrace (sonst Crash-Schleife unter der Restart-Policy).
+        log.error("FOODY_ADMIN_USER muss 3–32 Zeichen (A-Z a-z 0-9 . _ -) und FOODY_ADMIN_PASSWORD 10–200 Zeichen haben; Start abgebrochen")
+        return false
+    }
+    if (created) {
         log.info("Admin-Benutzer '{}' angelegt", config.adminUser)
     } else if (config.adminUser.isNullOrBlank() || config.adminPassword.isNullOrEmpty()) {
         if (!deps.accounts.hasUsers()) {
             log.warn("Keine Benutzer vorhanden und FOODY_ADMIN_USER/FOODY_ADMIN_PASSWORD nicht gesetzt: Anmeldung unmöglich")
         }
     }
+    return true
 }
 
 /** Fragt `/health` des lokal laufenden Servers ab (für den Docker-Healthcheck). */

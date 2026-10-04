@@ -7,10 +7,14 @@ import java.io.PrintStream
 import java.security.SecureRandom
 
 /**
- * Administrationsbefehle (`foody admin …`). Ausgaben gehen nur an [out]; Exit-Codes: 0 Erfolg,
+ * Administrationsbefehle (`foody admin …`). Erfolgsausgaben gehen an [out], Fehlerzeilen und Hilfe bei falschem Aufruf an [err]; Exit-Codes: 0 Erfolg,
  * 1 Laufzeitfehler (Einzeiler), 2 Aufruf falsch oder unbekannter Befehl (Hilfe).
  */
-class AdminCli(private val deps: ServerDeps, private val out: PrintStream) {
+class AdminCli(
+    private val deps: ServerDeps,
+    private val out: PrintStream,
+    private val err: PrintStream = System.err,
+) {
     private val random = SecureRandom()
 
     fun run(args: List<String>): Int = try {
@@ -58,16 +62,16 @@ class AdminCli(private val deps: ServerDeps, private val out: PrintStream) {
     }
 
     private fun fail(message: String): Int {
-        out.println(message)
+        err.println(message)
         return 1
     }
 
     private fun usage(): Int {
-        out.println(
+        err.println(
             """
             Verwendung: admin <Befehl>
               reset-password <benutzer>  Neues Zufallspasswort setzen und alle Geräte des Benutzers widerrufen
-              invite                     Einladungscode für ein neues Konto ohne Haushalt erzeugen
+              invite                     Einladungscode für ein neues Konto (ohne Haushalt) erzeugen
               backup <zieldatei>         Konsistente Kopie der Datenbank schreiben (Ziel darf nicht existieren)
               compact                    Alte Löschmarkierungen sofort kompaktieren
             """.trimIndent(),

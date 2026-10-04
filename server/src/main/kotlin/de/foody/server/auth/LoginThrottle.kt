@@ -36,15 +36,14 @@ class LoginThrottle(private val clock: Clock) {
         if (entry.failures >= MAX_FAILURES) entry.lockedUntil = now.plus(LOCK)
     }
 
-    /** Der Fehlversuch ist bereits in [check] vorgemerkt; hier ist nichts mehr zu tun. */
-    @Synchronized
-    @Suppress("UNUSED_PARAMETER")
-    fun failure(ip: String, username: String) = Unit
-
     @Synchronized
     fun success(ip: String, username: String) {
         entries.remove(key(ip, username))
     }
+
+    /** Anzahl gemerkter Schlüssel (für Tests). */
+    @Synchronized
+    fun size(): Int = entries.size
 
     /** Ein Eintrag ist erledigt, wenn weder Sperre noch Fehlerfenster laufen. */
     private fun isExpired(entry: Entry, now: Instant): Boolean {

@@ -57,7 +57,7 @@ private val ProtocolCheck = createRouteScopedPlugin("ProtocolCheck") {
 fun Application.foodyModule(deps: ServerDeps) {
     val log = LoggerFactory.getLogger("de.foody.server")
     install(ContentNegotiation) { json(Protocol.json) }
-    install(XForwardedHeaders)
+    install(XForwardedHeaders) { useLastProxy() }
     install(Authentication) {
         bearer("device") {
             // Fehlender, falscher oder widerrufener Token: einheitlich 401 mit ErrorDto (über StatusPages).

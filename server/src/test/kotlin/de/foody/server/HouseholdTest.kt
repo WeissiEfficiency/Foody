@@ -188,6 +188,36 @@ class HouseholdTest {
     }
 
     @Test
+    fun oversizedRegisterBodyIsRejected() = testServer {
+        val response = client.register("FOODY-0000-0000", "u".repeat(70 * 1024))
+        assertEquals(HttpStatusCode.PayloadTooLarge, response.status)
+    }
+
+    @Test
+    fun overlongRegisterFieldsAreRejectedBeforeThrottleAndInvite() = testServer { env ->
+        val (_, tokenA) = env.user("anna")
+        client.createHousehold(tokenA)
+        val code = client.newInviteCode(tokenA)
+        repeat(6) {
+            assertEquals(HttpStatusCode.BadRequest, client.register("FOODY-" + "0".repeat(40), "ben").status)
+            assertEquals(HttpStatusCode.BadRequest, client.register(code, "b".repeat(33)).status)
+            assertEquals(HttpStatusCode.BadRequest, client.register(code, "ben", "p".repeat(201)).status)
+        }
+        assertNull(inviteUsedAt(env))
+        assertEquals(HttpStatusCode.OK, client.register(code, "ben").status)
+    }
+
+    @Test
+    fun successfulRegistrationDoesNotResetIpCounter() = testServer { env ->
+        val (_, tokenA) = env.user("anna")
+        client.createHousehold(tokenA)
+        repeat(4) { i -> client.register("FOODY-0000-000$i", "x$i") }
+        client.register(client.newInviteCode(tokenA), "ben")
+        // 4 Fehlversuche + 1 gültige Einlösung = 5 Versuche: der nächste ist gesperrt.
+        assertEquals(HttpStatusCode.TooManyRequests, client.register("FOODY-0000-0009", "carl").status)
+    }
+
+    @Test
     fun cannotSelectForeignHousehold() = testServer { env ->
         val (_, tokenB) = env.user("ben")
         val (_, tokenC) = env.user("carl")

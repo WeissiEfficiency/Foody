@@ -215,4 +215,55 @@ class AuthTest {
         assertEquals(HttpStatusCode.Conflict, response.status)
         assertEquals("""{"code":"protocol_too_old"}""", response.bodyAsText())
     }
+
+    @Test
+    fun oversizedLoginBodyIsRejected() = testServer {
+        val response = client.post("/api/v1/auth/login") {
+            protocol()
+            contentType(ContentType.Application.Json)
+            setBody(Protocol.json.encodeToString(LoginRequest("x".repeat(70 * 1024), "p", "Handy")))
+        }
+        assertEquals(HttpStatusCode.PayloadTooLarge, response.status)
+        assertEquals("""{"code":"too_large"}""", response.bodyAsText())
+    }
+
+    @Test
+    fun overlongLoginCredentialsAre401WithoutThrottleEntry() = testServer { env ->
+        env.deps.accounts.createUser("stefan", pw)
+        repeat(6) { i ->
+            val r = client.login("u".repeat(33) + i, pw)
+            assertEquals(HttpStatusCode.Unauthorized, r.status)
+            assertEquals("""{"code":"invalid_credentials"}""", r.bodyAsText())
+        }
+        assertEquals(HttpStatusCode.Unauthorized, client.login("stefan", "p".repeat(201)).status)
+        assertEquals(0, env.deps.throttle.size())
+        assertEquals(HttpStatusCode.OK, client.login("stefan", pw).status)
+    }
+
+    private suspend fun HttpClient.changePassword(token: String, old: String): HttpResponse =
+        post("/api/v1/auth/password") {
+            protocol()
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(Protocol.json.encodeToString(PasswordChangeRequest(old, "neuesPasswort1")))
+        }
+
+    @Test
+    fun changePasswordWithWrongOldPasswordIs401() = testServer { env ->
+        val userId = env.deps.accounts.createUser("stefan", pw)
+        val token = env.deps.accounts.createDevice(userId, null, "Handy")
+        val r = client.changePassword(token, "falschfalsch")
+        assertEquals(HttpStatusCode.Unauthorized, r.status)
+        assertEquals("""{"code":"invalid_credentials"}""", r.bodyAsText())
+    }
+
+    @Test
+    fun changePasswordIsThrottled() = testServer { env ->
+        val userId = env.deps.accounts.createUser("stefan", pw)
+        val token = env.deps.accounts.createDevice(userId, null, "Handy")
+        repeat(5) { assertEquals(HttpStatusCode.Unauthorized, client.changePassword(token, "falschfalsch").status) }
+        val locked = client.changePassword(token, pw)
+        assertEquals(HttpStatusCode.TooManyRequests, locked.status)
+        assertEquals("""{"code":"throttled"}""", locked.bodyAsText())
+    }
 }
