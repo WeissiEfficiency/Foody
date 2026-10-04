@@ -52,6 +52,7 @@ class RecordStore {
         canonicalName: String?,
         deletedAt: Long? = null,
     ): Long {
+        require(!record.deleted || deletedAt != null) { "Löschung ohne Löschzeit würde nie kompaktiert" }
         c.prepareStatement("UPDATE household SET last_rev = last_rev + 1 WHERE id = ?").use { st ->
             st.setString(1, household)
             check(st.executeUpdate() == 1) { "Haushalt $household unbekannt" }
