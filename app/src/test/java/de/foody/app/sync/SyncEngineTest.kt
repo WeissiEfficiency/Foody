@@ -1,6 +1,7 @@
 package de.foody.app.sync
 
 import androidx.room.Room
+import de.foody.app.data.RecipePhotoStore
 import de.foody.app.data.db.FoodyDatabase
 import de.foody.app.data.db.IngredientEntity
 import de.foody.app.data.db.SYNC_CALLBACK
@@ -86,7 +87,8 @@ class SyncEngineTest {
             FoodyDatabase::class.java,
         ).addCallback(FoodyDatabase.SYNC_CALLBACK).allowMainThreadQueries().build()
         api = FakeSyncApi()
-        engine = SyncEngine(db, SyncLocalStore(db), SyncApplier(db), api, Clock.systemUTC())
+        val photoIndex = PhotoIndex(db, RecipePhotoStore(RuntimeEnvironment.getApplication(), db.recipeDao()))
+        engine = SyncEngine(db, SyncLocalStore(db, photoIndex), SyncApplier(db, photoIndex), api, Clock.systemUTC())
     }
 
     @After

@@ -25,7 +25,7 @@ data class PendingRecord(val record: SyncRecord, val queuedAt: Long) {
  * ist Sache des späteren Sync-Ablaufs, [pendingRecords] verändert die Outbox nicht.
  */
 @Singleton
-class SyncLocalStore @Inject constructor(private val db: FoodyDatabase) {
+class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private val photoIndex: PhotoIndex) {
     private val dao get() = db.syncDao()
 
     /**
@@ -121,7 +121,9 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase) {
         val (updatedAt, payload) = when (type) {
             RecordType.INGREDIENT -> db.ingredientDao().get(id)?.let { it.updatedAt to SyncMapper.ingredient(it) }
             RecordType.RECIPE -> db.recipeDao().get(id)?.let {
-                it.updatedAt to SyncMapper.recipe(it, db.recipeDao().getIngredients(id), db.recipeDao().getSteps(id))
+                // Hashen (Datei-I/O) läuft beim ersten Mal innerhalb der Batch-Transaktion; danach trifft der Cache.
+                val photo = photoIndex.hashOf(it.imageUri)
+                it.updatedAt to SyncMapper.recipe(it, db.recipeDao().getIngredients(id), db.recipeDao().getSteps(id), photo)
             }
             RecordType.MEAL_SLOT -> db.mealPlanDao().get(id)?.let { it.updatedAt to SyncMapper.mealSlot(it) }
             RecordType.PANTRY_ITEM -> db.pantryDao().get(id)?.let { it.updatedAt to SyncMapper.pantryItem(it) }

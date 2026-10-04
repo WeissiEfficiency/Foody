@@ -10,11 +10,16 @@ import de.foody.app.data.db.ShoppingListEntity
 import de.foody.app.data.db.SyncOutboxEntity
 import de.foody.app.data.db.SyncProblemEntity
 import de.foody.app.data.db.SyncRecordRevEntity
+import de.foody.app.data.RecipePhotoStore
 import de.foody.app.data.repo.RecipeDraft
 import de.foody.app.data.repo.RecipeRepository
+import androidx.test.core.app.ApplicationProvider
+import de.foody.app.sync.PhotoIndex
 import de.foody.app.sync.SyncLocalStore
 import de.foody.domain.MeasureUnit
 import de.foody.sync.protocol.PayloadValidator
+import de.foody.sync.protocol.RecipePayload
+import de.foody.sync.protocol.decode
 import de.foody.sync.protocol.RecordType
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -33,13 +38,42 @@ import kotlin.test.assertTrue
 class SyncLocalStoreTest {
     private lateinit var db: FoodyDatabase
     private lateinit var store: SyncLocalStore
+    private lateinit var photos: RecipePhotoStore
 
     @Before fun setUp() {
         db = syncTestDb()
-        store = SyncLocalStore(db)
+        photos = RecipePhotoStore(ApplicationProvider.getApplicationContext(), db.recipeDao())
+        store = SyncLocalStore(db, PhotoIndex(db, photos))
     }
 
     @After fun tearDown() = db.close()
+
+    private suspend fun pendingPhoto(rid: String): String? {
+        queue(RecordType.RECIPE, rid)
+        val payload = store.pendingRecords().single { it.id == rid }.payload!!
+        return (RecordType.RECIPE.decode(payload) as RecipePayload).photo
+    }
+
+    @Test fun pendingRecipeCarriesPhotoHash() = runTest {
+        db.ingredientDao().upsert(ingredient("i1"))
+        val rid = RecipeRepository(db.recipeDao()).save(draft("i1"))
+        val file = photos.newPhotoFile().also { it.writeBytes(byteArrayOf(1, 2, 3)) }
+        try {
+            db.recipeDao().upsert(db.recipeDao().get(rid)!!.copy(imageUri = photos.storedUri(file)))
+            val expected = java.security.MessageDigest.getInstance("SHA-256").digest(byteArrayOf(1, 2, 3))
+                .joinToString("") { "%02x".format(it) }
+            assertEquals(expected, pendingPhoto(rid))
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test fun galleryLinkSendsNoPhoto() = runTest {
+        db.ingredientDao().upsert(ingredient("i1"))
+        val rid = RecipeRepository(db.recipeDao()).save(draft("i1"))
+        db.recipeDao().upsert(db.recipeDao().get(rid)!!.copy(imageUri = "content://media/external/images/1"))
+        assertNull(pendingPhoto(rid))
+    }
 
     private fun ingredient(id: String) = IngredientEntity(id = id, canonicalName = "Zutat $id", createdAt = 0, updatedAt = 0)
 

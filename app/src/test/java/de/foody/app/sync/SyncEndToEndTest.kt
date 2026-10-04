@@ -2,6 +2,7 @@ package de.foody.app.sync
 
 import android.app.Application
 import androidx.room.Room
+import de.foody.app.data.RecipePhotoStore
 import de.foody.app.data.db.FoodyDatabase
 import de.foody.app.data.db.SYNC_CALLBACK
 import de.foody.app.data.repo.IngredientRepository
@@ -47,8 +48,9 @@ class SyncEndToEndTest {
             .addCallback(FoodyDatabase.SYNC_CALLBACK).allowMainThreadQueries().build().also { opened += it }
         var token: String? = null
         val api = KtorSyncApi("http://localhost", client) { token }
-        val store = SyncLocalStore(db)
-        val engine = SyncEngine(db, store, SyncApplier(db), api, clock)
+        val photoIndex = PhotoIndex(db, RecipePhotoStore(app, db.recipeDao()))
+        val store = SyncLocalStore(db, photoIndex)
+        val engine = SyncEngine(db, store, SyncApplier(db, photoIndex), api, clock)
         val recipes = RecipeRepository(db.recipeDao())
         val shopping = ShoppingRepository(db)
         val plan = PlanRepository(db, db.mealPlanDao(), db.recipeDao(), db.pantryDao(), db.ingredientDao())

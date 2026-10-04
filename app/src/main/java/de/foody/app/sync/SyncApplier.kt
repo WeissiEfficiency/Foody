@@ -10,6 +10,7 @@ import de.foody.app.data.db.ShoppingListEntity
 import de.foody.app.data.db.SyncOutboxEntity
 import de.foody.app.data.db.SyncProblemEntity
 import de.foody.app.data.db.SyncRecordRevEntity
+import de.foody.app.data.db.SyncPhotoWantedEntity
 import de.foody.app.data.db.SyncStateEntity
 import de.foody.app.data.repo.fillFrom
 import de.foody.app.data.repo.mergeIngredient
@@ -42,7 +43,7 @@ data class ApplyResult(val applied: Int, val skippedPending: Int, val revived: I
  * Outbox-Eintrag gewinnen (der Datensatz wird übersprungen); sie gehen mit dem nächsten Push hinaus.
  */
 @Singleton
-class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
+class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val photoIndex: PhotoIndex) {
     private val dao get() = db.syncDao()
 
     private class Counters {
@@ -149,7 +150,12 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
         val mapped: Mapped = when (val decoded = r.type.decode(payload)) {
             is IngredientPayload ->
                 Mapped.Ingredient(SyncMapper.ingredient(r.id, decoded, updatedAt, db.ingredientDao().get(r.id)))
-            is RecipePayload -> Mapped.Recipe(SyncMapper.recipe(r.id, decoded, updatedAt, db.recipeDao().get(r.id)))
+            is RecipePayload -> {
+                val existing = db.recipeDao().get(r.id)
+                val known = decoded.photo?.let { photoIndex.uriFor(it) }
+                val own = existing?.imageUri?.let { photoIndex.isOwnPhoto(it) } == true
+                Mapped.Recipe(SyncMapper.recipe(r.id, decoded, updatedAt, existing, known, own))
+            }
             is MealSlotPayload ->
                 Mapped.MealSlot(SyncMapper.mealSlot(r.id, decoded, updatedAt, db.mealPlanDao().get(r.id)))
             is PantryItemPayload ->
@@ -190,6 +196,10 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
                 rd.deleteSteps(r.id)
                 rd.insertIngredients(mapped.parts.lines)
                 rd.insertSteps(mapped.parts.steps)
+                // Fehlendes Foto vormerken (der Abruf folgt später), sonst einen alten Wunsch löschen
+                mapped.parts.wantedPhoto
+                    ?.let { dao.upsertPhotoWanted(SyncPhotoWantedEntity(r.id, it)) }
+                    ?: dao.deletePhotoWanted(r.id)
             }
             is Mapped.MealSlot -> db.mealPlanDao().upsert(mapped.entity)
             is Mapped.Pantry -> db.pantryDao().upsert(mapped.entity)
@@ -264,7 +274,10 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
         }
         when (r.type) {
             RecordType.INGREDIENT -> db.ingredientDao().delete(r.id)
-            RecordType.RECIPE -> db.recipeDao().delete(r.id)
+            RecordType.RECIPE -> {
+                db.recipeDao().delete(r.id)
+                dao.deletePhotoWanted(r.id)
+            }
             RecordType.MEAL_SLOT -> db.mealPlanDao().delete(r.id)
             RecordType.PANTRY_ITEM -> db.pantryDao().delete(r.id)
             RecordType.SHOPPING_LIST -> db.shoppingDao().deleteList(r.id)
