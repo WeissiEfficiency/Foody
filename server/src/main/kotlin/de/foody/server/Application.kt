@@ -4,6 +4,7 @@ import de.foody.server.auth.DevicePrincipal
 import de.foody.server.auth.deviceAuthRoutes
 import de.foody.server.auth.publicAuthRoutes
 import de.foody.server.household.householdRoutes
+import de.foody.server.sync.syncRoutes
 import de.foody.sync.protocol.ErrorCode
 import de.foody.sync.protocol.ErrorDto
 import de.foody.sync.protocol.Protocol
@@ -100,6 +101,7 @@ fun Application.foodyModule(deps: ServerDeps) {
             authenticate("device") {
                 deviceAuthRoutes(deps)
                 householdRoutes(deps)
+                syncRoutes(deps)
             }
         }
     }

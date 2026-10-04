@@ -46,6 +46,16 @@ fun testServer(
     }
 }
 
+private val userCounter = java.util.concurrent.atomic.AtomicInteger()
+
+/** Legt Benutzer, Gerät und Haushalt an; liefert (Gerätetoken, Haushalts-ID). */
+fun TestEnv.setupHousehold(name: String = "Zuhause"): Pair<String, String> {
+    val userId = deps.accounts.createUser("tester${userCounter.incrementAndGet()}", "geheimgeheim")
+    val token = deps.accounts.createDevice(userId, null, "Testgerät")
+    val deviceId = deps.accounts.deviceForToken(token)!!.deviceId
+    return token to deps.accounts.createHousehold(userId, deviceId, name).id
+}
+
 /** Setzt den Protokoll-Header der aktuellen Version. */
 fun HttpRequestBuilder.protocol(version: Int = Protocol.VERSION) {
     header(Protocol.HEADER, version.toString())
