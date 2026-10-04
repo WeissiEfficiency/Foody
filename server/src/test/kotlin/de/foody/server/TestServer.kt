@@ -25,7 +25,7 @@ class MutableClock(var now: Instant = Instant.parse("2026-10-04T10:00:00Z")) : C
 }
 
 /** Testumgebung: Abhängigkeiten (Datenbank, Uhr) für direkte Zugriffe aus Tests. */
-class TestEnv(val deps: ServerDeps, val clock: MutableClock)
+class TestEnv(val deps: ServerDeps, val clock: MutableClock, val photoDir: java.nio.file.Path)
 
 /** Startet das Server-Modul mit `:memory:`-Datenbank und führt [block] aus. */
 fun testServer(
@@ -33,16 +33,23 @@ fun testServer(
     extraSetup: Application.() -> Unit = {},
     block: suspend ApplicationTestBuilder.(TestEnv) -> Unit,
 ) {
-    val config = ServerConfig(dbPath = ":memory:", port = 0, adminUser = null, adminPassword = null)
-    Database("jdbc:sqlite::memory:").use { db ->
-        val deps = ServerDeps.create(config, db, clock)
-        testApplication {
-            application {
-                foodyModule(deps)
-                extraSetup()
+    // Eigener Wurzelordner, damit Tests auch Dateien neben dem Foto-Ordner erkennen können.
+    val tempRoot = java.nio.file.Files.createTempDirectory("foody-test")
+    val photoDir = tempRoot.resolve("photos")
+    val config = ServerConfig(dbPath = ":memory:", port = 0, adminUser = null, adminPassword = null, photoDir = photoDir.toString())
+    try {
+        Database("jdbc:sqlite::memory:").use { db ->
+            val deps = ServerDeps.create(config, db, clock)
+            testApplication {
+                application {
+                    foodyModule(deps)
+                    extraSetup()
+                }
+                block(TestEnv(deps, clock, photoDir))
             }
-            block(TestEnv(deps, clock))
         }
+    } finally {
+        tempRoot.toFile().deleteRecursively()
     }
 }
 
