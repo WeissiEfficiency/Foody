@@ -3,20 +3,20 @@ package de.foody.server.auth
 import de.foody.server.ApiException
 import de.foody.server.ServerDeps
 import de.foody.sync.protocol.AuthResponse
-import de.foody.sync.protocol.DeviceDto
 import de.foody.sync.protocol.ErrorCode
 import de.foody.sync.protocol.LoginRequest
 import de.foody.sync.protocol.PasswordChangeRequest
+import de.foody.sync.protocol.RegisterRequest
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.principal
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
-import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 
 private const val MAX_DEVICE_NAME = 64
+private const val REGISTER_THROTTLE_KEY = "invite:register"
 
 /** Öffentliche Auth-Routen (ohne Token); unterhalb von `/api/v1` einzuhängen. */
 fun Route.publicAuthRoutes(deps: ServerDeps) {
@@ -34,6 +34,22 @@ fun Route.publicAuthRoutes(deps: ServerDeps) {
         val token = deps.accounts.createDevice(userId, householdId, request.deviceName.take(MAX_DEVICE_NAME))
         call.respond(AuthResponse(token, userId, householdId))
     }
+
+    post("/auth/register") {
+        val request = call.receive<RegisterRequest>()
+        // Einladungscodes haben nur 40 Bit: Versuche je IP (nicht je Code) drosseln, sonst ließe sich
+        // durch wechselnde Codes raten. Der Schlüssel enthält ':' und kollidiert so nie mit einem Benutzernamen.
+        val ip = call.request.origin.remoteHost
+        deps.throttle.check(ip, REGISTER_THROTTLE_KEY)
+        val auth = deps.accounts.redeemInvite(
+            request.code,
+            request.username,
+            request.password,
+            request.deviceName.take(MAX_DEVICE_NAME),
+        )
+        deps.throttle.success(ip, REGISTER_THROTTLE_KEY)
+        call.respond(auth)
+    }
 }
 
 /** Auth-Routen mit Token; innerhalb von `authenticate("device")` einzuhängen. */
@@ -43,14 +59,5 @@ fun Route.deviceAuthRoutes(deps: ServerDeps) {
         val request = call.receive<PasswordChangeRequest>()
         deps.accounts.changePassword(device.userId, device.deviceId, request.oldPassword, request.newPassword)
         call.respond(HttpStatusCode.NoContent)
-    }
-    // Minimal; Task 4 ergänzt Widerruf usw. und kann diese Route verschieben.
-    get("/devices") {
-        val device = call.principal<DevicePrincipal>()!!
-        call.respond(
-            deps.accounts.devicesOf(device.userId).map {
-                DeviceDto(it.id, it.name, it.lastSeenAt, current = it.id == device.deviceId)
-            },
-        )
     }
 }

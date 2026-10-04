@@ -3,6 +3,7 @@ package de.foody.server
 import de.foody.server.auth.DevicePrincipal
 import de.foody.server.auth.deviceAuthRoutes
 import de.foody.server.auth.publicAuthRoutes
+import de.foody.server.household.householdRoutes
 import de.foody.sync.protocol.ErrorCode
 import de.foody.sync.protocol.ErrorDto
 import de.foody.sync.protocol.Protocol
@@ -98,8 +99,7 @@ fun Application.foodyModule(deps: ServerDeps) {
             publicAuthRoutes(deps)
             authenticate("device") {
                 deviceAuthRoutes(deps)
-                // Platzhalter, den Task 4 mit den Haushalts-Routen füllt.
-                get("/households") { call.respond(HttpStatusCode.NotImplemented) }
+                householdRoutes(deps)
             }
         }
     }
