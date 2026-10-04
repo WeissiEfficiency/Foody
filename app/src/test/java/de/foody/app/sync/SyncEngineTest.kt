@@ -6,6 +6,8 @@ import de.foody.app.data.db.IngredientEntity
 import de.foody.app.data.db.SYNC_CALLBACK
 import de.foody.app.data.db.ShoppingItemEntity
 import de.foody.app.data.db.ShoppingListEntity
+import de.foody.app.data.db.SyncRecordRevEntity
+import de.foody.sync.protocol.MealSlotPayload
 import de.foody.app.data.repo.RecipeDraft
 import de.foody.app.data.repo.RecipeRepository
 import de.foody.domain.MeasureUnit
@@ -138,7 +140,7 @@ class SyncEngineTest {
 
     @Test
     fun mergedAppliesCurrent() = runTest {
-        activate()
+        activate(cursor = 7)
         db.shoppingDao().upsertList(ShoppingListEntity("l", "Liste", createdAt = 0, updatedAt = 1))
         db.shoppingDao().upsertItem(ShoppingItemEntity("it", "l", name = "Milch", manual = true, sortOrder = 0, updatedAt = 1))
         val current = SyncRecord(
@@ -161,8 +163,9 @@ class SyncEngineTest {
         assertTrue(db.shoppingDao().getItem("it")!!.checked)
         assertEquals(emptyList(), db.syncDao().outbox())
         assertEquals(5L, db.syncDao().revOf("shopping_item", "it"))
-        // `current` darf den Pull-Cursor nicht verschieben (der Pull der Fake-API liefert Cursor 0)
-        assertEquals(0L, db.syncDao().getState()!!.cursor)
+        // `current` darf den Pull-Cursor nicht verschieben: der Pull startet weiter beim alten Cursor
+        assertEquals(listOf(7L), api.pulls)
+        assertEquals(7L, db.syncDao().getState()!!.cursor)
     }
 
     @Test
@@ -170,6 +173,7 @@ class SyncEngineTest {
         activate()
         db.shoppingDao().upsertList(ShoppingListEntity("l", "Liste", createdAt = 0, updatedAt = 1))
         db.shoppingDao().upsertItem(ShoppingItemEntity("it", "l", name = "Milch", manual = true, sortOrder = 0, updatedAt = 1))
+        db.syncDao().setRev(SyncRecordRevEntity("shopping_item", "it", 2))
         val current = SyncRecord(
             id = "it", type = RecordType.SHOPPING_ITEM, updatedAt = 99, rev = 5,
             payload = SyncMapper.toJson(
@@ -190,7 +194,9 @@ class SyncEngineTest {
         engine.run()
         assertEquals("Lokal", db.shoppingDao().getItem("it")!!.name)
         assertEquals(listOf("it"), db.syncDao().outbox().map { it.recordId })
-        assertEquals(5L, db.syncDao().revOf("shopping_item", "it"))
+        // Alte Revision bleibt, damit der nächste Push erneut einen Konflikt auslöst
+        assertEquals(2L, db.syncDao().revOf("shopping_item", "it"))
+        assertFalse(db.shoppingDao().getItem("it")!!.checked)
     }
 
     @Test
@@ -300,6 +306,50 @@ class SyncEngineTest {
         assertEquals(1, db.recipeDao().getAll().size)
         assertNotNull(db.ingredientDao().get("B"))
         assertNotNull(db.ingredientDao().get("A"))
+        // Stehen gelassen, aber dem Server unbekannt: wieder vorgemerkt, damit er konvergiert
+        assertTrue(db.syncDao().isQueued("ingredient", "B"))
+        assertEquals(7L, db.syncDao().getState()!!.cursor)
+    }
+
+    @Test
+    fun fullResyncKeepsRecipeReferencedByRemoteMealSlot() = runTest {
+        activate(cursor = 5)
+        db.ingredientDao().upsert(ingredient("I"))
+        val rid = RecipeRepository(db.recipeDao()).save(
+            RecipeDraft(
+                id = null, name = "R", defaultServings = 2,
+                ingredients = listOf(RecipeDraft.Line("I", BigDecimal.ONE, MeasureUnit.GRAM, null, false)),
+            ),
+        )
+        db.syncDao().clearOutbox()
+        val slot = SyncRecord(
+            id = "S", type = RecordType.MEAL_SLOT, updatedAt = 10, rev = 2,
+            payload = SyncMapper.toJson(MealSlotPayload(date = "2026-01-01", slotType = "DINNER", recipeId = rid, servings = 2)),
+        )
+        api.onPull = { since ->
+            if (since != 0L) throw SyncApiException.CursorExpired(410, ErrorCode.CURSOR_EXPIRED)
+            PullResponse(listOf(slot), 9, false)
+        }
+        assertTrue(engine.run() is SyncOutcome.Success)
+        assertNotNull(db.mealPlanDao().get("S"))
+        assertNotNull(db.recipeDao().get(rid))
+        assertTrue(db.syncDao().isQueued("recipe", rid))
+    }
+
+    @Test
+    fun fullResyncKeepsListWithQueuedItem() = runTest {
+        activate(cursor = 5)
+        db.shoppingDao().upsertList(ShoppingListEntity("l", "Liste", createdAt = 0, updatedAt = 1))
+        db.shoppingDao().upsertItem(ShoppingItemEntity("it", "l", name = "Milch", manual = true, sortOrder = 0, updatedAt = 1))
+        db.syncDao().dequeue("shopping_list", "l")
+        api.onPull = { since ->
+            if (since != 0L) throw SyncApiException.CursorExpired(410, ErrorCode.CURSOR_EXPIRED)
+            PullResponse(emptyList(), 9, false)
+        }
+        assertTrue(engine.run() is SyncOutcome.Success)
+        assertNotNull(db.shoppingDao().getList("l"))
+        assertNotNull(db.shoppingDao().getItem("it"))
+        assertTrue(db.syncDao().isQueued("shopping_list", "l"))
     }
 
     @Test

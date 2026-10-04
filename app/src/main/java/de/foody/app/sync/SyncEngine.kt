@@ -2,10 +2,12 @@ package de.foody.app.sync
 
 import androidx.room.withTransaction
 import de.foody.app.data.db.FoodyDatabase
+import de.foody.app.data.db.SyncOutboxEntity
 import de.foody.app.data.db.SyncProblemEntity
 import de.foody.app.data.db.SyncRecordRevEntity
 import de.foody.app.data.db.SyncStateEntity
 import de.foody.sync.protocol.ErrorCode
+import de.foody.sync.protocol.PayloadValidator
 import de.foody.sync.protocol.Protocol
 import de.foody.sync.protocol.PushResult
 import de.foody.sync.protocol.PushStatus
@@ -119,10 +121,17 @@ class SyncEngine(
                     dequeueIfUnchanged(pending)
                 }
                 PushStatus.MERGED -> {
-                    result.rev?.let { dao.setRev(SyncRecordRevEntity(type, id, it)) }
                     dao.clearProblem(type, id)
-                    // Wurde der Eintrag zwischenzeitlich bearbeitet, gewinnt die lokale Änderung (geht im nächsten Lauf raus).
-                    if (dequeueIfUnchanged(pending)) current = result.current
+                    // Wurde der Eintrag zwischenzeitlich bearbeitet, gewinnt die lokale Änderung (geht im nächsten Lauf
+                    // raus). Dann bleibt die alte Revision, damit der Server beim nächsten Push erneut zusammenführt
+                    // statt den Merge-Stand zu überschreiben.
+                    if (dequeueIfUnchanged(pending)) {
+                        // In einen anderen Datensatz zusammengeführt: die Revision gehört nicht zur lokalen ID.
+                        if (result.canonicalId == null || result.canonicalId == id) {
+                            result.rev?.let { dao.setRev(SyncRecordRevEntity(type, id, it)) }
+                        }
+                        current = result.current
+                    }
                 }
                 PushStatus.REJECTED -> {
                     dao.addProblem(SyncProblemEntity(type, id, rejectCode(result.code), clock.millis()))
@@ -181,8 +190,12 @@ class SyncEngine(
      */
     private suspend fun fullResync(): Int {
         val (records, next) = pullPages(0)
-        applier.apply(records, next)
-        val remote = records.filter { !it.deleted }.map { it.type to it.id }.toSet()
+        // Cursor erst nach dem Löschen setzen: Bricht es ab, wird der Voll-Abgleich wiederholt.
+        applier.apply(records, next, updateCursor = false)
+        val live = records.filter { !it.deleted }
+        val remote = live.map { it.type to it.id }.toSet()
+        // Vom Server gehaltene Datensätze, die auf andere verweisen: deren Ziele dürfen nicht weggeräumt werden.
+        val remoteRefs = live.flatMap { PayloadValidator.references(it) }.toSet()
         for (type in DELETE_ORDER) {
             val ids = when (type) {
                 RecordType.INGREDIENT -> dao.ingredientIds()
@@ -193,15 +206,23 @@ class SyncEngine(
                 RecordType.SHOPPING_ITEM -> dao.shoppingItemIds()
             }
             for (id in ids) {
-                if ((type to id) !in remote) deleteStale(type, id)
+                if ((type to id) !in remote) deleteStale(type, id, remoteRefs)
             }
+        }
+        db.withTransaction {
+            dao.upsertState((dao.getState() ?: SyncStateEntity()).copy(cursor = next, lastSyncAt = clock.millis()))
         }
         return records.size
     }
 
-    private suspend fun deleteStale(type: RecordType, id: String) {
+    private suspend fun deleteStale(type: RecordType, id: String, remoteRefs: Set<Pair<RecordType, String>>) {
         db.withTransaction {
-            if (dao.isQueued(type.wire, id) || isStillNeeded(type, id)) return@withTransaction
+            if (dao.isQueued(type.wire, id)) return@withTransaction
+            if ((type to id) in remoteRefs || isStillNeeded(type, id)) {
+                // Bleibt stehen, der Server kennt ihn aber nicht: erneut senden, damit beide Seiten konvergieren.
+                dao.enqueue(SyncOutboxEntity(type.wire, id, deleted = false, queuedAt = clock.millis()))
+                return@withTransaction
+            }
             dao.setApplyingRemote(true)
             try {
                 when (type) {
