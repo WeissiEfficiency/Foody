@@ -1,5 +1,6 @@
 package de.foody.app.sync
 
+import android.database.SQLException
 import androidx.room.withTransaction
 import de.foody.app.data.db.FoodyDatabase
 import de.foody.app.data.db.IngredientEntity
@@ -50,6 +51,16 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
         var revived = 0
         var merged = 0
         var problems = 0
+
+        fun copy() = Counters().also { it.restore(this) }
+
+        fun restore(o: Counters) {
+            applied = o.applied
+            skippedPending = o.skippedPending
+            revived = o.revived
+            merged = o.merged
+            problems = o.problems
+        }
     }
 
     /** Alles, was ein lebender Datensatz zum Schreiben braucht; entsteht vor dem ersten Schreibzugriff. */
@@ -62,29 +73,58 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
         data class ShoppingItem(val parts: ShoppingItemParts) : Mapped
     }
 
+    /**
+     * Jeder Datensatz läuft in einer eigenen Transaktion: Schlägt ein Schreibzugriff fehl (z. B. Constraint-Verletzung),
+     * wird nur dieser Datensatz zurückgerollt und als `apply_failed` vermerkt, die übrigen werden trotzdem übernommen.
+     * (Ein SAVEPOINT innerhalb einer gemeinsamen Transaktion hilft auf Android nicht: Schon die Room-eigene,
+     * verschachtelte DAO-Transaktion des fehlgeschlagenen Zugriffs markiert die äußere als gescheitert.)
+     * Der Cursor rückt erst in einer letzten Transaktion vor; bricht der Lauf vorher ab, wird dieselbe Seite erneut
+     * geholt, und das Anwenden ist idempotent.
+     */
     suspend fun apply(records: List<SyncRecord>, nextCursor: Long): ApplyResult {
         val c = Counters()
+        val now = System.currentTimeMillis()
+        val live = records.filter { !it.deleted }.sortedWith(compareBy({ it.type.ordinal }, { it.rev ?: 0L }))
+        val deletions = records.filter { it.deleted }.sortedWith(compareBy({ -it.type.ordinal }, { it.rev ?: 0L }))
+        // Durch eine Zutaten-Zusammenführung selbst vorgemerkte Datensätze sind keine fremden lokalen Änderungen
+        val selfQueued = mutableSetOf<Pair<String, String>>()
+        for (r in live) applyOne(r, now, c, selfQueued) { applyLive(r, now, c, selfQueued) }
+        for (r in deletions) applyOne(r, now, c, selfQueued) { applyDeletion(r, c) }
         db.withTransaction {
-            val now = System.currentTimeMillis()
-            dao.upsertState((dao.getState() ?: SyncStateEntity()).copy(applyingRemote = true))
-            try {
-                val open = records.filter { r ->
-                    val queued = dao.isQueued(r.type.wire, r.id)
-                    if (queued) c.skippedPending++
-                    !queued
-                }
-                val live = open.filter { !it.deleted }.sortedWith(compareBy({ it.type.ordinal }, { it.rev ?: 0L }))
-                val deletions = open.filter { it.deleted }.sortedWith(compareBy({ -it.type.ordinal }, { it.rev ?: 0L }))
-                for (r in live) applyLive(r, now, c)
-                for (r in deletions) applyDeletion(r, c)
-                dao.upsertState(
-                    (dao.getState() ?: SyncStateEntity()).copy(applyingRemote = false, cursor = nextCursor, lastSyncAt = now),
-                )
-            } finally {
-                dao.setApplyingRemote(false)
-            }
+            dao.upsertState(
+                (dao.getState() ?: SyncStateEntity()).copy(applyingRemote = false, cursor = nextCursor, lastSyncAt = now),
+            )
         }
         return ApplyResult(c.applied, c.skippedPending, c.revived, c.merged, c.problems)
+    }
+
+    private suspend fun applyOne(
+        r: SyncRecord,
+        now: Long,
+        c: Counters,
+        selfQueued: MutableSet<Pair<String, String>>,
+        block: suspend () -> Unit,
+    ) {
+        val before = c.copy()
+        val queuedBefore = selfQueued.toSet()
+        try {
+            db.withTransaction {
+                if (dao.isQueued(r.type.wire, r.id) && (r.type.wire to r.id) !in selfQueued) {
+                    c.skippedPending++
+                    return@withTransaction
+                }
+                dao.upsertState((dao.getState() ?: SyncStateEntity()).copy(applyingRemote = true))
+                try {
+                    block()
+                } finally {
+                    dao.setApplyingRemote(false)
+                }
+            }
+        } catch (_: SQLException) {
+            c.restore(before)
+            selfQueued.retainAll(queuedBefore)
+            db.withTransaction { problem(r, "apply_failed", now, c) }
+        }
     }
 
     private suspend fun problem(r: SyncRecord, code: String, now: Long, c: Counters) {
@@ -128,11 +168,11 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
         RecordType.SHOPPING_ITEM -> db.shoppingDao().getItem(id) != null
     }
 
-    private suspend fun applyLive(r: SyncRecord, now: Long, c: Counters) {
+    private suspend fun applyLive(r: SyncRecord, now: Long, c: Counters, selfQueued: MutableSet<Pair<String, String>>) {
         val (mapped, refs) = map(r) ?: return problem(r, "invalid_payload", now, c)
         if (refs.any { (type, id) -> !exists(type, id) }) return problem(r, "missing_reference", now, c)
         when (mapped) {
-            is Mapped.Ingredient -> writeIngredient(mapped.entity, c)
+            is Mapped.Ingredient -> writeIngredient(mapped.entity, c, selfQueued)
             is Mapped.Recipe -> {
                 val rd = db.recipeDao()
                 rd.upsert(mapped.parts.recipe)
@@ -152,6 +192,7 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
             }
         }
         dao.setRev(SyncRecordRevEntity(r.type.wire, r.id, r.rev ?: 0L))
+        dao.clearProblem(r.type.wire, r.id)
         c.applied++
     }
 
@@ -159,7 +200,7 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
      * Schreibt eine Server-Zutat. Gibt es lokal eine andere Zutat mit gleichem Namen (ohne Groß-/Kleinschreibung),
      * wird sie in die Server-Zutat zusammengeführt (Server-ID gewinnt).
      */
-    private suspend fun writeIngredient(remote: IngredientEntity, c: Counters) {
+    private suspend fun writeIngredient(remote: IngredientEntity, c: Counters, selfQueued: MutableSet<Pair<String, String>>) {
         val ing = db.ingredientDao()
         // Erst exakt (passt zum eindeutigen Index), sonst ohne Beachtung der Groß-/Kleinschreibung
         val local = ing.findByNameExact(remote.canonicalName)?.takeIf { it.id != remote.id }
@@ -173,9 +214,11 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
         ing.upsert(renamed)
         ing.upsert(remote)
         // Mit aktiven Triggern zusammenführen, damit umgehängte Rezepte/Vorräte/Einträge in die Outbox kommen
+        val queuedBefore = dao.outbox().map { it.type to it.recordId }.toSet()
         dao.setApplyingRemote(false)
         mergeIngredient(ing, renamed, remote, System.currentTimeMillis())
         dao.setApplyingRemote(true)
+        selfQueued += dao.outbox().map { it.type to it.recordId }.filter { it !in queuedBefore }
         dao.dequeue(RecordType.INGREDIENT.wire, local.id)
         // Hat die Zusammenführung die Server-Zutat nicht ergänzt, muss sie nicht zurückgesendet werden
         if (remote.fillFrom(renamed) == remote) dao.dequeue(RecordType.INGREDIENT.wire, remote.id)
@@ -214,6 +257,7 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase) {
             RecordType.SHOPPING_ITEM -> db.shoppingDao().deleteItem(r.id)
         }
         dao.setRev(rev)
+        dao.clearProblem(r.type.wire, r.id)
         c.applied++
     }
 }

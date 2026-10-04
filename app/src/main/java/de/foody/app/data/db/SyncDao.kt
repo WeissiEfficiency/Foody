@@ -36,6 +36,7 @@ interface SyncDao {
     @Upsert suspend fun addProblem(p: SyncProblemEntity)
     @Query("SELECT * FROM sync_problem") suspend fun problems(): List<SyncProblemEntity>
     @Query("DELETE FROM sync_problem") suspend fun clearProblems()
+    @Query("DELETE FROM sync_problem WHERE type = :type AND recordId = :id") suspend fun clearProblem(type: String, id: String)
 
     /** Gibt es einen Vorratseintrag zur Zutat [ingredientId] mit offener lokaler Änderung? (Kaskade beim Löschen der Zutat) */
     @Query(
