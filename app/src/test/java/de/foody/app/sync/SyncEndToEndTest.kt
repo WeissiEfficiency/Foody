@@ -42,13 +42,13 @@ class SyncEndToEndTest {
     fun tearDown() = opened.forEach { it.close() }
 
     /** Ein Gerät mit eigener Datenbank, eigenem Token und eigener Engine. */
-    private inner class Device(client: HttpClient, val name: String) {
+    private inner class Device(client: HttpClient, val name: String, clock: Clock) {
         val db: FoodyDatabase = Room.inMemoryDatabaseBuilder(app, FoodyDatabase::class.java)
             .addCallback(FoodyDatabase.SYNC_CALLBACK).allowMainThreadQueries().build().also { opened += it }
         var token: String? = null
         val api = KtorSyncApi("http://localhost", client) { token }
         val store = SyncLocalStore(db)
-        val engine = SyncEngine(db, store, SyncApplier(db), api, Clock.systemUTC())
+        val engine = SyncEngine(db, store, SyncApplier(db), api, clock)
         val recipes = RecipeRepository(db.recipeDao())
         val shopping = ShoppingRepository(db)
         val plan = PlanRepository(db, db.mealPlanDao(), db.recipeDao(), db.pantryDao(), db.ingredientDao())
@@ -59,6 +59,13 @@ class SyncEndToEndTest {
         suspend fun runOk() {
             val outcome = run()
             assertTrue(outcome is SyncOutcome.Success, "Sync auf $name: $outcome")
+            assertEquals(0, outcome.problems, "Probleme auf $name: ${db.syncDao().problems()}")
+        }
+
+        /** Nach einem Abgleich darf nichts mehr zum Senden vorgemerkt sein und kein Problem offen. */
+        suspend fun assertClean() {
+            assertEquals(emptyList(), db.syncDao().outbox().map { it.type to it.recordId }, "Outbox auf $name")
+            assertEquals(emptyList(), db.syncDao().problems(), "Probleme auf $name")
         }
     }
 
@@ -66,9 +73,9 @@ class SyncEndToEndTest {
      * A legt den Haushalt an (Admin-Login), B tritt per Einladung bei; beide aktiviert. Mit [sameUser] ist B stattdessen
      * ein zweites Gerät desselben Kontos (Geräte widerrufen kann nur der Kontoinhaber).
      */
-    private suspend fun ApplicationTestBuilder.pair(sameUser: Boolean = false): Pair<Device, Device> {
-        val a = Device(client, "A")
-        val b = Device(client, "B")
+    private suspend fun ApplicationTestBuilder.pair(clock: TestClock, sameUser: Boolean = false): Pair<Device, Device> {
+        val a = Device(client, "A", clock)
+        val b = Device(client, "B", clock)
         val login = a.api.login(LoginRequest(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD, "A"))
         a.token = login.token
         val household = a.api.createHousehold("Zuhause")
@@ -91,8 +98,8 @@ class SyncEndToEndTest {
         RecipeDraft.Line(ingredientId, BigDecimal(amount), MeasureUnit.GRAM, null, false)
 
     @Test
-    fun recipeTravelsBetweenDevices() = syncServerTest { _, _ ->
-        val (a, b) = pair()
+    fun recipeTravelsBetweenDevices() = syncServerTest { _, clock ->
+        val (a, b) = pair(clock)
         val mehl = a.ingredients.getOrCreate("Mehl")
         val zucker = a.ingredients.getOrCreate("Zucker")
         val rid = a.recipes.save(
@@ -107,18 +114,22 @@ class SyncEndToEndTest {
         val recipe = assertNotNull(b.db.recipeDao().get(rid))
         assertEquals("Kuchen", recipe.name)
         val lines = b.db.recipeDao().getIngredients(rid)
-        assertEquals(setOf(mehl.id, zucker.id), lines.map { it.ingredientId }.toSet())
-        assertEquals(setOf(200, 100), lines.map { it.amount.toInt() }.toSet())
+        assertEquals(
+            mapOf(mehl.id to 200, zucker.id to 100),
+            lines.associate { it.ingredientId to it.amount.toInt() },
+        )
         assertEquals(listOf("Mischen", "Backen"), b.db.recipeDao().getSteps(rid).map { it.text })
         assertEquals(
             setOf(mehl.canonicalName, zucker.canonicalName),
             b.db.ingredientDao().getAll().map { it.canonicalName }.toSet(),
         )
+        a.assertClean()
+        b.assertClean()
     }
 
     @Test
-    fun concurrentCheckAndAmountChangeMerge() = syncServerTest { _, _ ->
-        val (a, b) = pair()
+    fun concurrentCheckAndAmountChangeMerge() = syncServerTest { _, clock ->
+        val (a, b) = pair(clock)
         val listId = a.shopping.createEmptyList("Woche")
         a.shopping.addManual(listId, "Milch")
         val itemId = a.db.shoppingDao().getItems(listId).single().id
@@ -131,7 +142,6 @@ class SyncEndToEndTest {
 
         // beide offline: A hakt ab, B ändert die Menge
         a.shopping.setChecked(a.db.shoppingDao().getItem(itemId)!!, true)
-        Thread.sleep(5)
         b.db.shoppingDao().let { dao ->
             dao.upsertItem(dao.getItem(itemId)!!.copy(amount = BigDecimal(3)))
         }
@@ -144,11 +154,13 @@ class SyncEndToEndTest {
             assertTrue(item.checked, "abgehakt auf ${d.name}")
             assertEquals(0, BigDecimal(3).compareTo(item.amount), "Menge auf ${d.name}: ${item.amount}")
         }
+        a.assertClean()
+        b.assertClean()
     }
 
     @Test
-    fun sameIngredientOfflineOnBothDevicesBecomesOne() = syncServerTest { _, _ ->
-        val (a, b) = pair()
+    fun sameIngredientOfflineOnBothDevicesBecomesOne() = syncServerTest { _, clock ->
+        val (a, b) = pair(clock)
         val onionA = a.ingredients.getOrCreate("Zwiebel")
         val onionB = b.ingredients.getOrCreate("Zwiebel")
         assertTrue(onionA.id != onionB.id)
@@ -170,11 +182,13 @@ class SyncEndToEndTest {
             a.db.ingredientDao().getAll().map { it.id },
             b.db.ingredientDao().getAll().map { it.id },
         )
+        a.assertClean()
+        b.assertClean()
     }
 
     @Test
-    fun deleteOnOneDeviceRemovesOnOther() = syncServerTest { _, _ ->
-        val (a, b) = pair()
+    fun deleteOnOneDeviceRemovesOnOther() = syncServerTest { _, clock ->
+        val (a, b) = pair(clock)
         val mehl = a.ingredients.getOrCreate("Mehl")
         val rid = a.recipes.save(RecipeDraft(null, "Brot", 2, ingredients = listOf(line(mehl.id, 500))))
         a.plan.add(LocalDate.of(2026, 10, 5), "DINNER", rid, 2)
@@ -191,17 +205,20 @@ class SyncEndToEndTest {
         assertTrue(b.db.recipeDao().getIngredients(rid).isEmpty())
         assertTrue(b.db.mealPlanDao().getAll().isEmpty())
         assertTrue(a.db.mealPlanDao().getAll().isEmpty())
-        assertTrue(b.db.syncDao().outbox().isEmpty(), "Löschung darf bei B nichts zurücksenden")
+        a.assertClean()
+        b.assertClean() // insbesondere: die Löschung bei B stellt nichts in die Outbox
     }
 
     @Test
-    fun revokedDeviceStopsSyncing() = syncServerTest { _, _ ->
-        val (a, b) = pair(sameUser = true)
+    fun revokedDeviceStopsSyncing() = syncServerTest { _, clock ->
+        val (a, b) = pair(clock, sameUser = true)
         b.runOk()
         val bId = a.api.devices().single { !it.current }.id
         a.api.revokeDevice(bId)
         assertEquals(SyncOutcome.Unauthorized, b.run())
         assertEquals("unauthorized", b.db.syncDao().getState()!!.lastError)
         a.runOk()
+        // Ausnahme: B bleibt absichtlich unberührt (kein Aufräumen nötig, Outbox/Probleme dort ohne Aussage).
+        a.assertClean()
     }
 }
