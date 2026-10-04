@@ -104,6 +104,14 @@ class AdminCliTest {
     }
 
     @Test
+    fun backupIntoMissingDirectoryReportsOneLineError() = testServer { env ->
+        val target = Files.createTempDirectory("foody-missing").resolve("nope").resolve("x.db")
+        val (code, output) = cli(env.deps, listOf("backup", target.toString()))
+        assertEquals(1, code)
+        assertEquals(1, output.trim().lines().size)
+    }
+
+    @Test
     fun compactPrintsCount() = testServer { env ->
         val (code, output) = cli(env.deps, listOf("compact"))
         assertEquals(0, code)

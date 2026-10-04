@@ -13,7 +13,14 @@ import java.security.SecureRandom
 class AdminCli(private val deps: ServerDeps, private val out: PrintStream) {
     private val random = SecureRandom()
 
-    fun run(args: List<String>): Int = when (args.firstOrNull()) {
+    fun run(args: List<String>): Int = try {
+        dispatch(args)
+    } catch (e: Exception) {
+        // Einzeilig und ohne Stacktrace; das Passwort wird erst nach erfolgreichem Update ausgegeben.
+        fail("Fehler: ${e.message?.lineSequence()?.firstOrNull() ?: e.javaClass.simpleName}")
+    }
+
+    private fun dispatch(args: List<String>): Int = when (args.firstOrNull()) {
         "reset-password" -> if (args.size == 2) resetPassword(args[1]) else usage()
         "invite" -> if (args.size == 1) invite() else usage()
         "backup" -> if (args.size == 2) backup(args[1]) else usage()
