@@ -333,4 +333,17 @@
         <item quantity="one">noch %1$d Tag</item>
         <item quantity="other">noch %1$d Tage</item>
     </plurals>
+    <!-- Sync: Fehlermeldungen -->
+    <string name="sync_error_invalid_credentials">Benutzername oder Passwort falsch.</string>
+    <string name="sync_error_throttled">Zu viele Versuche. Bitte in 15 Minuten erneut versuchen.</string>
+    <string name="sync_error_invalid_invite">Einladungscode ungültig oder abgelaufen.</string>
+    <string name="sync_error_username_taken">Dieser Benutzername ist schon vergeben.</string>
+    <string name="sync_error_invalid_input_register">Passwort mindestens 10 Zeichen, Benutzername 3–32 Zeichen (Buchstaben, Ziffern, . _ -).</string>
+    <string name="sync_error_update_app">App und Server passen nicht zusammen – bitte App aktualisieren.</string>
+    <string name="sync_error_update_server">App und Server passen nicht zusammen – bitte Server aktualisieren.</string>
+    <string name="sync_error_certificate">Zertifikat des Servers wird nicht vertraut.</string>
+    <string name="sync_error_unreachable">Server nicht erreichbar – Adresse sowie WLAN/VPN prüfen.</string>
+    <string name="sync_error_invalid_url">Adresse muss mit https:// beginnen.</string>
+    <string name="sync_error_unauthorized">Abgemeldet – bitte erneut verbinden.</string>
+    <string name="sync_error_generic">Synchronisierung fehlgeschlagen.</string>
 </resources>

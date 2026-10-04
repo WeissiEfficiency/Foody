@@ -23,6 +23,13 @@ interface SyncDao {
     @Query("DELETE FROM sync_outbox WHERE type = :type AND recordId = :id") suspend fun dequeue(type: String, id: String)
     @Query("DELETE FROM sync_outbox") suspend fun clearOutbox()
 
+    /** Gibt es Nutzerdaten (Rezepte, Planpositionen, Vorrat, Einkaufslisten)? Startzutaten zählen nicht. */
+    @Query(
+        """SELECT EXISTS(SELECT 1 FROM recipe) OR EXISTS(SELECT 1 FROM meal_slot) OR EXISTS(SELECT 1 FROM pantry_item)
+           OR EXISTS(SELECT 1 FROM shopping_list) OR EXISTS(SELECT 1 FROM shopping_item)""",
+    )
+    suspend fun hasUserData(): Boolean
+
     /** Merkt alle Wurzeldatensätze (sechs Typen) als lebend vor; vorhandene Einträge werden ersetzt. */
     @Query(
         """INSERT OR REPLACE INTO sync_outbox (type, recordId, deleted, queuedAt)

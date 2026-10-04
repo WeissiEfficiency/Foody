@@ -40,7 +40,8 @@ open class SyncEngineFactory @Inject constructor(
     /** Läuft gerade ein Sync-Lauf der aktuellen Engine? */
     open val isSyncRunning: Boolean get() = cached?.second?.isRunning == true
 
-    private val httpClient: HttpClient by lazy { defaultHttpClient() }
+    /** Gemeinsamer Client (Verbindungspool) für Engine und [SyncAccountRepository]; wird bei erster Nutzung angelegt. */
+    val httpClient: HttpClient by lazy { defaultHttpClient() }
     @Volatile private var cached: Pair<String, SyncEngine>? = null
 
     @Synchronized
