@@ -54,6 +54,7 @@ Server und Protokoll (`:server`, `:sync-protocol`); Fremdeingaben sind hier alle
   nur im Speicher). Die IP stammt aus `X-Forwarded-For` des Reverse-Proxys (siehe `server/README.md`).
 - **Eingabeprüfung:** Request-Bodies werden gezählt gelesen und begrenzt (`413`), Payloads wie bei der Sicherung
   validiert (Zahlenformat, Textlängen, Enums, UUIDs); Fotos wie oben.
+- **Löschmarkierungen:** Gelöschte Datensätze bleiben als Löschmarkierung erhalten und werden nach 90 Tagen kompaktiert (Geräte mit älterem Cursor machen dann einen Voll-Abgleich).
 - **Kein Token im Log:** Token und Passwörter stehen weder in Logs noch in `sync_state.lastError` (nur feste Kennungen),
   Ausnahmen, `SavedStateHandle` oder Backups.
 - **Bewusst offen:** Server-Daten liegen unverschlüsselt im Volume des Betreibers; Transportschutz ist TLS am Proxy.

@@ -292,7 +292,7 @@
     <string name="backup_error">Vorgang fehlgeschlagen. Deine Daten wurden nicht verändert.</string>
     <string name="privacy_title">Datenschutz</string>
     <string name="danger_zone">Gefahrenzone</string>
-    <string name="privacy_text">Foody benötigt kein Konto und keinen Server. Rezepte, Planung, Vorräte und Einkaufslisten werden ausschließlich lokal gespeichert. Beim Teilen entscheidest du, an welche App Daten übergeben werden. Ohne verbundenen Server bleiben alle Daten auf dem Gerät.</string>
+    <string name="privacy_text">Foody benötigt kein Konto und keinen Server. Ohne verbundenen Server werden Rezepte, Planung, Vorräte und Einkaufslisten ausschließlich lokal auf dem Gerät gespeichert. Wenn du einen eigenen Sync-Server verbindest, werden sie zusätzlich dorthin übertragen und mit deinen anderen Geräten abgeglichen; Dritte erhalten keine Daten. Beim Teilen entscheidest du, an welche App Daten übergeben werden.</string>
     <string name="data_delete_all">Alle Daten löschen</string>
     <string name="data_delete_warning">Alle Rezepte, Zutaten, Pläne, Vorräte und Einkaufslisten werden unwiderruflich gelöscht.</string>
     <string name="data_deleted">Alle Daten gelöscht</string>
