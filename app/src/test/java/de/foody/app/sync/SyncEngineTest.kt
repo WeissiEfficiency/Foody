@@ -353,6 +353,26 @@ class SyncEngineTest {
     }
 
     @Test
+    fun fullResyncSurvivesMalformedServerRecord() = runTest {
+        activate(cursor = 5)
+        db.ingredientDao().upsert(ingredient("B"))
+        db.syncDao().dequeue("ingredient", "B")
+        val bad = SyncRecord(
+            id = "bad", type = RecordType.RECIPE, updatedAt = 10, rev = 3,
+            payload = kotlinx.serialization.json.buildJsonObject { put("unbekannt", kotlinx.serialization.json.JsonPrimitive(1)) },
+        )
+        api.onPull = { since ->
+            if (since != 0L) throw SyncApiException.CursorExpired(410, ErrorCode.CURSOR_EXPIRED)
+            PullResponse(listOf(bad), 11, false)
+        }
+        val outcome = engine.run()
+        assertTrue(outcome is SyncOutcome.Success, "$outcome")
+        assertEquals(11L, db.syncDao().getState()!!.cursor)
+        assertNull(db.ingredientDao().get("B"))
+        assertEquals("invalid_payload", db.syncDao().problems().single().code)
+    }
+
+    @Test
     fun pullIsAppliedOnceAfterAllPages() = runTest {
         activate()
         val cursorsSeen = ArrayList<Long>()

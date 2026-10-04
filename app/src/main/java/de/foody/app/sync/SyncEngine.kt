@@ -17,6 +17,7 @@ import java.time.Clock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.SerializationException
 
 /** Ergebnis eines Sync-Laufs. */
 sealed interface SyncOutcome {
@@ -195,7 +196,16 @@ class SyncEngine(
         val live = records.filter { !it.deleted }
         val remote = live.map { it.type to it.id }.toSet()
         // Vom Server gehaltene Datensätze, die auf andere verweisen: deren Ziele dürfen nicht weggeräumt werden.
-        val remoteRefs = live.flatMap { PayloadValidator.references(it) }.toSet()
+        // Unlesbare Datensätze (z. B. neueres Schema) hat der Applier schon als Problem vermerkt; hier überspringen.
+        val remoteRefs = live.flatMap {
+            try {
+                PayloadValidator.references(it)
+            } catch (_: SerializationException) {
+                emptyList()
+            } catch (_: IllegalArgumentException) {
+                emptyList()
+            }
+        }.toSet()
         for (type in DELETE_ORDER) {
             val ids = when (type) {
                 RecordType.INGREDIENT -> dao.ingredientIds()
