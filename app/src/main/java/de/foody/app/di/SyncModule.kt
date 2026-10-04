@@ -4,6 +4,8 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import de.foody.app.sync.SyncAccountRepository
+import de.foody.app.sync.SyncAccounts
 import de.foody.app.sync.SyncEngineFactory
 import io.ktor.client.HttpClient
 import javax.inject.Qualifier
@@ -24,6 +26,10 @@ object SyncModule {
     @Provides
     @Singleton
     fun syncHttpClient(factory: SyncEngineFactory): HttpClient = factory.httpClient
+
+    /** Oberflächen-ViewModels hängen von der Schnittstelle ab (austauschbar in Tests). */
+    @Provides
+    fun syncAccounts(repo: SyncAccountRepository): SyncAccounts = repo
 
     @Provides
     @Singleton

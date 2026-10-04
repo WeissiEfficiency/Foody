@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface SyncDao {
     @Query("SELECT * FROM sync_state WHERE id = 1") suspend fun getState(): SyncStateEntity?
+    @Query("SELECT * FROM sync_state WHERE id = 1") fun observeState(): Flow<SyncStateEntity?>
+    /** Anzahl der Sync-Probleme (für die Einstellungen-Karte). */
+    @Query("SELECT COUNT(*) FROM sync_problem") fun observeProblemCount(): Flow<Int>
     @Upsert suspend fun upsertState(s: SyncStateEntity)
     @Query("UPDATE sync_state SET applyingRemote = :on WHERE id = 1") suspend fun setApplyingRemote(on: Boolean)
 

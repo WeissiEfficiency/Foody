@@ -28,6 +28,24 @@ enum class FirstSync {
 }
 
 /**
+ * Konto-Funktionen für die Oberfläche als Schnittstelle, damit ViewModel-Tests ohne Server mit einem Fake
+ * arbeiten können (die einzige Implementierung ist [SyncAccountRepository]; Bindung in `SyncModule`).
+ */
+interface SyncAccounts {
+    suspend fun login(url: String, username: String, password: String, deviceName: String): LoginResult
+    suspend fun register(url: String, code: String, username: String, password: String, deviceName: String): LoginResult
+    suspend fun households(url: String): List<HouseholdDto>
+    suspend fun createHousehold(url: String, name: String): HouseholdDto
+    suspend fun selectHousehold(url: String, id: String)
+    suspend fun hasLocalData(): Boolean
+    suspend fun activate(url: String, householdId: String, mode: FirstSync)
+    suspend fun createInvite(): InviteDto
+    suspend fun devices(): List<DeviceDto>
+    suspend fun revokeDevice(id: String)
+    suspend fun disconnect()
+}
+
+/**
  * Alle Konto-Funktionen des Syncs für die Oberfläche: Anmelden/Registrieren, Haushalt, Einladen, Geräte,
  * Aktivieren und Trennen.
  *
@@ -46,7 +64,7 @@ class SyncAccountRepository @Inject constructor(
     private val scheduler: SyncScheduler,
     private val httpClient: HttpClient,
     @AppScope private val appScope: CoroutineScope,
-) {
+) : SyncAccounts {
     private fun api(url: String) = KtorSyncApi(url, httpClient) { tokenStore.load() }
 
     /** API für die gespeicherte Adresse (Sync eingerichtet). */
@@ -55,50 +73,50 @@ class SyncAccountRepository @Inject constructor(
         return api(url)
     }
 
-    suspend fun login(url: String, username: String, password: String, deviceName: String): LoginResult {
+    override suspend fun login(url: String, username: String, password: String, deviceName: String): LoginResult {
         val auth = api(url).login(LoginRequest(username, password, deviceName))
         tokenStore.save(auth.token)
         return LoginResult(auth.householdId)
     }
 
-    suspend fun register(url: String, code: String, username: String, password: String, deviceName: String): LoginResult {
+    override suspend fun register(url: String, code: String, username: String, password: String, deviceName: String): LoginResult {
         val auth = api(url).register(RegisterRequest(code, username, password, deviceName))
         tokenStore.save(auth.token)
         return LoginResult(auth.householdId)
     }
 
-    suspend fun households(url: String): List<HouseholdDto> = api(url).households()
+    override suspend fun households(url: String): List<HouseholdDto> = api(url).households()
 
-    suspend fun createHousehold(url: String, name: String): HouseholdDto = api(url).createHousehold(name)
+    override suspend fun createHousehold(url: String, name: String): HouseholdDto = api(url).createHousehold(name)
 
-    suspend fun selectHousehold(url: String, id: String) = api(url).selectHousehold(id)
+    override suspend fun selectHousehold(url: String, id: String) = api(url).selectHousehold(id)
 
     /** Gibt es Rezepte, Planpositionen, Vorrat oder Einkaufslisten? Mitgelieferte Startzutaten zählen nicht. */
-    suspend fun hasLocalData(): Boolean = db.syncDao().hasUserData()
+    override suspend fun hasLocalData(): Boolean = db.syncDao().hasUserData()
 
     /**
      * Schaltet den Sync ein und stößt den ersten Abgleich an. Auch für „Erneut verbinden“ nutzbar (dann sind
      * Adresse und Haushalt schon gespeichert): [FirstSync.UPLOAD_ALL] merkt erneut alles zum Senden vor, der
      * Server nimmt Bekanntes unverändert an bzw. führt es zusammen.
      */
-    suspend fun activate(url: String, householdId: String, mode: FirstSync) {
+    override suspend fun activate(url: String, householdId: String, mode: FirstSync) {
         localStore.activate(url, householdId, uploadExisting = mode == FirstSync.UPLOAD_ALL)
         scheduler.schedulePeriodic()
         scheduler.startObservingOutbox(appScope)
         scheduler.requestSoon()
     }
 
-    suspend fun createInvite(): InviteDto = storedApi().createInvite()
+    override suspend fun createInvite(): InviteDto = storedApi().createInvite()
 
-    suspend fun devices(): List<DeviceDto> = storedApi().devices()
+    override suspend fun devices(): List<DeviceDto> = storedApi().devices()
 
-    suspend fun revokeDevice(id: String) = storedApi().revokeDevice(id)
+    override suspend fun revokeDevice(id: String) = storedApi().revokeDevice(id)
 
     /**
      * Trennt dieses Gerät: Meldet es best effort beim Server ab (Fehler und Zeitüberschreitung werden ignoriert,
      * auch offline), löscht das Token, schaltet den Sync lokal aus und beendet die Planung. Lokale Daten bleiben.
      */
-    suspend fun disconnect() {
+    override suspend fun disconnect() {
         try {
             val api = db.syncDao().getState()?.serverUrl?.let { api(it) }
             if (api != null && tokenStore.load() != null) {

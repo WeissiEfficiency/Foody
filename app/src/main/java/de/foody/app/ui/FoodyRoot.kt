@@ -45,6 +45,7 @@ import de.foody.app.ui.recipes.RecipeEditorScreen
 import de.foody.app.ui.recipes.RecipeListScreen
 import de.foody.app.ui.settings.SettingsScreen
 import de.foody.app.ui.shopping.ShoppingScreen
+import de.foody.app.ui.sync.SyncSetupPlaceholder
 import kotlinx.serialization.Serializable
 
 @Serializable object RecipesRoute
@@ -55,6 +56,7 @@ import kotlinx.serialization.Serializable
 @Serializable object PantryRoute
 @Serializable object SettingsRoute
 @Serializable object IngredientsRoute
+@Serializable data class SyncSetupRoute(val reconnect: Boolean = false)
 
 private enum class TopLevel(val route: Any, @param:StringRes val label: Int, val icon: ImageVector) {
     RECIPES(RecipesRoute, R.string.nav_recipes, Icons.Default.RestaurantMenu),
@@ -147,7 +149,12 @@ fun FoodyRoot() {
             composable<PlannerRoute> { PlannerScreen(onOpenRecipe = { nav.navigate(RecipeDetailRoute(it)) }) }
             composable<ShoppingRoute> { ShoppingScreen() }
             composable<PantryRoute> { PantryScreen() }
-            composable<SettingsRoute> { SettingsScreen(onManageIngredients = { nav.navigate(IngredientsRoute) }) }
+            composable<SettingsRoute> { SettingsScreen(
+                onManageIngredients = { nav.navigate(IngredientsRoute) },
+                onConnectSync = { reconnect -> nav.navigate(SyncSetupRoute(reconnect)) },
+            ) }
+            // Platzhalter, der Verbinden-Assistent (Task 3) ersetzt ihn
+            composable<SyncSetupRoute> { SyncSetupPlaceholder(onBack = { nav.popBackStack() }) }
             composable<IngredientsRoute> { IngredientsScreen(onBack = { nav.popBackStack() }) }
         }
         }

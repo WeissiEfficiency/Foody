@@ -51,7 +51,7 @@ import java.time.LocalDate
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(onManageIngredients: () -> Unit, onConnectSync: (reconnect: Boolean) -> Unit, vm: SettingsViewModel = hiltViewModel()) {
     val message by vm.message.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     var confirmImport by rememberSaveable { mutableStateOf<String?>(null) }
@@ -118,6 +118,7 @@ fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hilt
                     OutlinedButton({ importLauncher.launch(arrayOf("application/zip", "application/json", "application/octet-stream")) }, Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(50)) { Text(stringResource(R.string.backup_import)) }
                 }
+                SyncSettingsCard(snackbar, onConnectSync)
                 SettingsCard(stringResource(R.string.privacy_title)) {
                     Text(stringResource(R.string.privacy_text), style = MaterialTheme.typography.bodyMedium)
                 }
@@ -161,7 +162,7 @@ fun SettingsScreen(onManageIngredients: () -> Unit, vm: SettingsViewModel = hilt
 }
 
 @Composable
-private fun SettingsCard(title: String, content: @Composable ColumnScope.() -> Unit) {
+internal fun SettingsCard(title: String, content: @Composable ColumnScope.() -> Unit) {
     Surface(
         shape = MaterialTheme.shapes.medium,
         color = FoodyGlass.fill,
