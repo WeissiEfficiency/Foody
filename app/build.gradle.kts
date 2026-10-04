@@ -103,6 +103,7 @@ ksp {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":sync-protocol"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)

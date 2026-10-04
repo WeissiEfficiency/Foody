@@ -2,6 +2,7 @@ package de.foody.app
 
 import kotlin.test.assertTrue
 import de.foody.app.data.db.MIGRATION_2_3
+import de.foody.app.data.db.MIGRATION_3_4
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -66,6 +67,32 @@ class MigrationTest {
             }
             db.query("SELECT name, note FROM shopping_item WHERE id = 'i'").use { c ->
                 c.moveToFirst(); assertEquals("Milch", c.getString(0)); assertTrue(c.isNull(1))
+            }
+        }
+    }
+
+    @Test fun migrate3To4KeepsShoppingItems() {
+        helper.createDatabase(dbName, 3).use { db ->
+            db.execSQL("INSERT INTO shopping_list (id, name, rangeStart, rangeEnd, generationVersion, createdAt, updatedAt) VALUES ('l', 'Liste', NULL, NULL, 1, 0, 0)")
+            for ((id, checked) in listOf("a" to 0, "b" to 1)) {
+                db.execSQL(
+                    "INSERT INTO shopping_item (id, listId, ingredientId, name, amount, unit, checked, manual, category, sortOrder, note) " +
+                        "VALUES ('$id', 'l', NULL, 'Artikel $id', NULL, NULL, $checked, 1, NULL, 0, NULL)",
+                )
+            }
+        }
+        helper.runMigrationsAndValidate(dbName, 4, true, MIGRATION_3_4).use { db ->
+            db.query("SELECT id, checked, updatedAt, checkedChangedAt FROM shopping_item ORDER BY id").use { c ->
+                assertEquals(2, c.count)
+                c.moveToFirst(); assertEquals("a", c.getString(0)); assertEquals(0, c.getInt(1)); assertEquals(0L, c.getLong(2)); assertEquals(0L, c.getLong(3))
+                c.moveToNext(); assertEquals("b", c.getString(0)); assertEquals(1, c.getInt(1)); assertEquals(0L, c.getLong(2)); assertEquals(0L, c.getLong(3))
+            }
+            db.query("SELECT id, active, applyingRemote FROM sync_state").use { c ->
+                assertEquals(1, c.count)
+                c.moveToFirst(); assertEquals(1, c.getInt(0)); assertEquals(0, c.getInt(1)); assertEquals(0, c.getInt(2))
+            }
+            db.query("SELECT count(*) FROM sqlite_master WHERE type='trigger' AND name LIKE 'sync_%'").use { c ->
+                c.moveToFirst(); assertTrue(c.getInt(0) > 0)
             }
         }
     }
