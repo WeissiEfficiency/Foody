@@ -277,6 +277,35 @@ class HouseholdTest {
     }
 
     @Test
+    fun removedMembersOpenInvitesAreInvalid() = testServer { env ->
+        val (_, tokenA) = env.user("anna")
+        val household = Protocol.json.decodeFromString<HouseholdDto>(client.createHousehold(tokenA).bodyAsText())
+        val joined = Protocol.json.decodeFromString<AuthResponse>(
+            client.register(client.newInviteCode(tokenA), "ben").bodyAsText(),
+        )
+        val code = client.newInviteCode(joined.token)
+        assertEquals(HttpStatusCode.NoContent, client.removeMember(tokenA, household.id, joined.userId).status)
+        val response = client.register(code, "carl")
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertEquals("""{"code":"invalid_invite"}""", response.bodyAsText())
+    }
+
+    @Test
+    fun inviteOfCreatorWhoLeftIsRejectedEvenIfRowSurvives() = testServer { env ->
+        val (userId, tokenA) = env.user("anna")
+        val household = Protocol.json.decodeFromString<HouseholdDto>(client.createHousehold(tokenA).bodyAsText())
+        val code = client.newInviteCode(tokenA)
+        env.deps.db.tx { c ->
+            c.prepareStatement("DELETE FROM membership WHERE user_id = ? AND household_id = ?").use { st ->
+                st.setString(1, userId)
+                st.setString(2, household.id)
+                st.executeUpdate()
+            }
+        }
+        assertEquals(HttpStatusCode.BadRequest, client.register(code, "carl").status)
+    }
+
+    @Test
     fun deviceTokenIsRejectedOnceMembershipIsGone() = testServer { env ->
         val (userId, token) = env.user("anna")
         val household = Protocol.json.decodeFromString<HouseholdDto>(client.createHousehold(token).bodyAsText())

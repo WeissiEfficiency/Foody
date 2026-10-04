@@ -267,15 +267,19 @@ class AccountStore(
         val now = clock.millis()
         return db.tx { c ->
             val invite = c.prepareStatement(
-                "SELECT id, household_id, expires_at, used_at FROM invite WHERE code_hash = ?",
+                "SELECT id, household_id, expires_at, used_at, created_by FROM invite WHERE code_hash = ?",
             ).use { st ->
                 st.setString(1, Tokens.sha256Hex(normalized))
                 st.executeQuery().use { rs ->
                     if (!rs.next()) return@use null
-                    InviteRow(rs.getString(1), rs.getString(2), rs.getLong(3), rs.getObject(4) != null)
+                    InviteRow(rs.getString(1), rs.getString(2), rs.getLong(3), rs.getObject(4) != null, rs.getString(5))
                 }
             }
             if (invite == null || invite.used || invite.expiresAt <= now) {
+                throw ApiException(HttpStatusCode.BadRequest, ErrorCode.INVALID_INVITE)
+            }
+            // Einladungen entfernter Mitglieder sind ungültig (Haushalts-lose Admin-Einladungen ausgenommen).
+            if (invite.householdId != null && roleOf(c, invite.createdBy, invite.householdId) == null) {
                 throw ApiException(HttpStatusCode.BadRequest, ErrorCode.INVALID_INVITE)
             }
             val userId = insertUser(c, username, hash, isAdmin = false)
@@ -307,6 +311,11 @@ class AccountStore(
                 st.executeUpdate()
             }
             if (removed == 0) throw ApiException(HttpStatusCode.NotFound, ErrorCode.NOT_FOUND)
+            c.prepareStatement("DELETE FROM invite WHERE created_by = ? AND household_id = ? AND used_at IS NULL").use { st ->
+                st.setString(1, memberId)
+                st.setString(2, householdId)
+                st.executeUpdate()
+            }
             c.prepareStatement(
                 "UPDATE device SET revoked_at = ? WHERE user_id = ? AND household_id = ? AND revoked_at IS NULL",
             ).use { st ->
@@ -387,7 +396,7 @@ class AccountStore(
         if (password.length !in 10..200) throw ApiException(HttpStatusCode.BadRequest, ErrorCode.INVALID_INPUT)
     }
 
-    private class InviteRow(val id: String, val householdId: String?, val expiresAt: Long, val used: Boolean)
+    private class InviteRow(val id: String, val householdId: String?, val expiresAt: Long, val used: Boolean, val createdBy: String)
 
     private companion object {
         val USERNAME = Regex("^[A-Za-z0-9._-]{3,32}$")
