@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
+import de.foody.app.data.RecipePhotoStore
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -33,6 +34,8 @@ open class SyncEngineFactory @Inject constructor(
     private val store: SyncLocalStore,
     private val applier: SyncApplier,
     private val tokenStore: TokenStore,
+    private val photoIndex: PhotoIndex,
+    private val photoStore: RecipePhotoStore,
 ) {
     /** Läuft gerade ein Sync-Lauf der aktuellen Engine? */
     open val isSyncRunning: Boolean get() = cached?.second?.isRunning == true
@@ -44,7 +47,7 @@ open class SyncEngineFactory @Inject constructor(
     private fun engineFor(url: String): SyncEngine {
         cached?.takeIf { it.first == url }?.let { return it.second }
         val api = KtorSyncApi(url, httpClient) { tokenStore.load() }
-        return SyncEngine(db, store, applier, api, Clock.systemUTC()).also { cached = url to it }
+        return SyncEngine(db, store, applier, api, Clock.systemUTC(), photoIndex, photoStore).also { cached = url to it }
     }
 
     open suspend fun create(): SyncEngine? {

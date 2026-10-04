@@ -7,6 +7,7 @@ import de.foody.app.data.db.IngredientEntity
 import de.foody.app.data.db.SYNC_CALLBACK
 import de.foody.app.data.db.ShoppingItemEntity
 import de.foody.app.data.db.ShoppingListEntity
+import de.foody.app.data.db.SyncPhotoWantedEntity
 import de.foody.app.data.db.SyncRecordRevEntity
 import de.foody.sync.protocol.MealSlotPayload
 import de.foody.app.data.repo.RecipeDraft
@@ -19,14 +20,17 @@ import de.foody.sync.protocol.HouseholdDto
 import de.foody.sync.protocol.IngredientPayload
 import de.foody.sync.protocol.InviteDto
 import de.foody.sync.protocol.LoginRequest
+import de.foody.sync.protocol.PhotoHash
 import de.foody.sync.protocol.PullResponse
 import de.foody.sync.protocol.PushResponse
 import de.foody.sync.protocol.PushResult
 import de.foody.sync.protocol.PushStatus
+import de.foody.sync.protocol.RecipePayload
 import de.foody.sync.protocol.RecordType
 import de.foody.sync.protocol.RegisterRequest
 import de.foody.sync.protocol.ShoppingItemPayload
 import de.foody.sync.protocol.SyncRecord
+import de.foody.sync.protocol.decode
 import java.math.BigDecimal
 import java.time.Clock
 import kotlin.test.assertEquals
@@ -68,9 +72,23 @@ private class FakeSyncApi : SyncApi {
     override suspend fun createInvite(): InviteDto = error("unused")
     override suspend fun devices(): List<DeviceDto> = error("unused")
     override suspend fun revokeDevice(id: String) = error("unused")
-    override suspend fun photosMissing(hashes: List<String>): List<String> = error("unused")
-    override suspend fun uploadPhoto(sha256: String, bytes: ByteArray) = error("unused")
-    override suspend fun downloadPhoto(sha256: String): ByteArray? = error("unused")
+    val uploads = ArrayList<Pair<String, ByteArray>>()
+    val order = ArrayList<String>()
+    var serverPhotos = HashMap<String, ByteArray>()
+    var downloads = 0
+
+    override suspend fun photosMissing(hashes: List<String>): List<String> =
+        hashes.filter { it !in serverPhotos && uploads.none { u -> u.first == it } }
+
+    override suspend fun uploadPhoto(sha256: String, bytes: ByteArray) {
+        order += "upload"
+        uploads += sha256 to bytes
+    }
+
+    override suspend fun downloadPhoto(sha256: String): ByteArray? {
+        downloads++
+        return serverPhotos[sha256]
+    }
 }
 
 @RunWith(RobolectricTestRunner::class)
@@ -79,6 +97,7 @@ class SyncEngineTest {
     private lateinit var db: FoodyDatabase
     private lateinit var api: FakeSyncApi
     private lateinit var engine: SyncEngine
+    private lateinit var photoStore: RecipePhotoStore
 
     @Before
     fun setUp() = runTest {
@@ -87,8 +106,9 @@ class SyncEngineTest {
             FoodyDatabase::class.java,
         ).addCallback(FoodyDatabase.SYNC_CALLBACK).allowMainThreadQueries().build()
         api = FakeSyncApi()
-        val photoIndex = PhotoIndex(db, RecipePhotoStore(RuntimeEnvironment.getApplication(), db.recipeDao()))
-        engine = SyncEngine(db, SyncLocalStore(db, photoIndex), SyncApplier(db, photoIndex), api, Clock.systemUTC())
+        photoStore = RecipePhotoStore(RuntimeEnvironment.getApplication(), db.recipeDao())
+        val photoIndex = PhotoIndex(db, photoStore)
+        engine = SyncEngine(db, SyncLocalStore(db, photoIndex), SyncApplier(db, photoIndex), api, Clock.systemUTC(), photoIndex, photoStore)
     }
 
     @After
@@ -108,6 +128,132 @@ class SyncEngineTest {
         id = id, type = RecordType.INGREDIENT, updatedAt = 10, rev = rev,
         payload = SyncMapper.toJson(IngredientPayload(name = name)),
     )
+
+    private fun jpeg(vararg tail: Int) =
+        byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte()) + ByteArray(tail.size) { tail[it].toByte() }
+
+    private fun ownPhoto(bytes: ByteArray): String {
+        val f = photoStore.newPhotoFile().also { it.writeBytes(bytes) }
+        return photoStore.storedUri(f)
+    }
+
+    /** Lokales Rezept mit Zutat und [imageUri]. */
+    private suspend fun recipe(id: String, imageUri: String?): String {
+        db.ingredientDao().upsert(ingredient("i", "Salz"))
+        val rid = RecipeRepository(db.recipeDao()).save(
+            RecipeDraft(
+                id = id, name = "R", defaultServings = 2,
+                ingredients = listOf(RecipeDraft.Line("i", BigDecimal.ONE, MeasureUnit.GRAM, null, false)),
+            ),
+        )
+        db.recipeDao().upsert(db.recipeDao().get(rid)!!.copy(imageUri = imageUri))
+        return rid
+    }
+
+    private fun photoRecord(id: String, photo: String?, rev: Long = 5) = SyncRecord(
+        id = id, type = RecordType.RECIPE, updatedAt = 50, rev = rev,
+        payload = SyncMapper.toJson(
+            RecipePayload(
+                name = "R", servings = 2, photo = photo, tags = "", favorite = false,
+                lines = listOf(RecipePayload.Line("l", "i", "1", "GRAM", 0, null, false)), steps = emptyList(),
+            ),
+        ),
+    )
+
+    @Test
+    fun missingPhotosAreUploadedBeforePush() = runTest {
+        activate()
+        val bytes = jpeg(1, 2, 3)
+        val rid = recipe("r1", ownPhoto(bytes))
+        api.onPush = { api.order += "push"; PushResponse(it.map { r -> accepted(r, 3) }) }
+        val outcome = engine.run()
+        assertTrue(outcome is SyncOutcome.Success, outcome.toString())
+        assertEquals(listOf(PhotoHash.of(bytes)), api.uploads.map { it.first })
+        assertTrue(bytes.contentEquals(api.uploads.single().second))
+        assertEquals(listOf("upload", "push"), api.order.take(2))
+        val sent = api.pushes.flatten().first { it.id == rid }
+        assertEquals(PhotoHash.of(bytes), (RecordType.RECIPE.decode(sent.payload!!) as RecipePayload).photo)
+    }
+
+    @Test
+    fun uploadFailureKeepsOutboxAndAbortsAsTransient() = runTest {
+        activate()
+        recipe("r1", ownPhoto(jpeg(4)))
+        val failing = object : SyncApi by api {
+            override suspend fun uploadPhoto(sha256: String, bytes: ByteArray) = throw SyncApiException.Transient(503, null)
+        }
+        val photoIndex = PhotoIndex(db, photoStore)
+        val e = SyncEngine(db, SyncLocalStore(db, photoIndex), SyncApplier(db, photoIndex), failing, Clock.systemUTC(), photoIndex, photoStore)
+        val outcome = e.run()
+        assertTrue(outcome is SyncOutcome.Failed && outcome.transient, outcome.toString())
+        assertTrue(db.syncDao().outbox().any { it.type == "recipe" })
+        assertTrue(api.pushes.isEmpty())
+    }
+
+    @Test
+    fun wantedPhotoIsDownloadedAndLinkedWithoutOutboxEcho() = runTest {
+        activate()
+        val bytes = jpeg(7, 7, 7)
+        val hash = PhotoHash.of(bytes)
+        api.serverPhotos[hash] = bytes
+        db.ingredientDao().upsert(ingredient("i", "Salz"))
+        db.syncDao().clearOutbox()
+        api.onPull = { PullResponse(listOf(photoRecord("r1", hash)), 9, false) }
+        val outcome = engine.run()
+        assertTrue(outcome is SyncOutcome.Success && outcome.problems == 0, outcome.toString())
+        val uri = assertNotNull(db.recipeDao().get("r1")?.imageUri)
+        assertTrue(bytes.contentEquals(photoStore.fileOf(uri)!!.readBytes()))
+        assertTrue(db.syncDao().photosWanted().isEmpty())
+        assertEquals(emptyList(), db.syncDao().outbox())
+        assertEquals(hash, PhotoIndex(db, photoStore).hashOf(uri))
+        assertEquals(uri, PhotoIndex(db, photoStore).uriFor(hash))
+        assertEquals(0, photoStore.fileOf(uri)!!.parentFile!!.listFiles { f -> f.name.endsWith(".tmp") }!!.size)
+    }
+
+    @Test
+    fun photoNotOnServerStaysWanted() = runTest {
+        activate()
+        val hash = PhotoHash.of(jpeg(5))
+        db.ingredientDao().upsert(ingredient("i", "Salz"))
+        db.syncDao().clearOutbox()
+        api.onPull = { PullResponse(listOf(photoRecord("r1", hash)), 9, false) }
+        assertTrue(engine.run() is SyncOutcome.Success)
+        assertNull(db.recipeDao().get("r1")!!.imageUri)
+        assertEquals(listOf(hash), db.syncDao().photosWanted().map { it.sha256 })
+        // Später ist es da: der nächste Lauf holt es nach
+        api.serverPhotos[hash] = jpeg(5)
+        api.onPull = { PullResponse(emptyList(), it, false) }
+        assertTrue(engine.run() is SyncOutcome.Success)
+        assertNotNull(db.recipeDao().get("r1")!!.imageUri)
+        assertTrue(db.syncDao().photosWanted().isEmpty())
+        assertEquals(emptyList(), db.syncDao().outbox())
+    }
+
+    @Test
+    fun corruptDownloadIsRejected() = runTest {
+        activate()
+        val hash = PhotoHash.of(jpeg(1))
+        api.serverPhotos[hash] = jpeg(2) // falscher Inhalt
+        db.ingredientDao().upsert(ingredient("i", "Salz"))
+        db.syncDao().clearOutbox()
+        api.onPull = { PullResponse(listOf(photoRecord("r1", hash)), 9, false) }
+        assertTrue(engine.run() is SyncOutcome.Success)
+        assertNull(db.recipeDao().get("r1")!!.imageUri)
+        assertTrue(db.syncDao().photosWanted().isEmpty())
+        assertEquals(listOf("photo_mismatch"), db.syncDao().problems().map { it.code })
+        api.onPull = { PullResponse(emptyList(), it, false) }
+        engine.run()
+        assertEquals(1, api.downloads) // keine Endlosschleife
+    }
+
+    @Test
+    fun orphanWishIsDropped() = runTest {
+        activate()
+        db.syncDao().upsertPhotoWanted(SyncPhotoWantedEntity("gone", PhotoHash.of(jpeg(3))))
+        assertTrue(engine.run() is SyncOutcome.Success)
+        assertTrue(db.syncDao().photosWanted().isEmpty())
+        assertEquals(0, api.downloads)
+    }
 
     @Test
     fun inactiveSyncDoesNothing() = runTest {

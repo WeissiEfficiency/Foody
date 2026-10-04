@@ -12,6 +12,7 @@ import de.foody.app.data.repo.RecipeRepository
 import de.foody.app.data.repo.ShoppingRepository
 import de.foody.domain.MeasureUnit
 import de.foody.sync.protocol.LoginRequest
+import de.foody.sync.protocol.PhotoHash
 import de.foody.sync.protocol.RegisterRequest
 import io.ktor.client.HttpClient
 import io.ktor.server.testing.ApplicationTestBuilder
@@ -48,9 +49,11 @@ class SyncEndToEndTest {
             .addCallback(FoodyDatabase.SYNC_CALLBACK).allowMainThreadQueries().build().also { opened += it }
         var token: String? = null
         val api = KtorSyncApi("http://localhost", client) { token }
-        val photoIndex = PhotoIndex(db, RecipePhotoStore(app, db.recipeDao()))
+        val photoStore = RecipePhotoStore(app, db.recipeDao())
+        val photoIndex = PhotoIndex(db, photoStore)
         val store = SyncLocalStore(db, photoIndex)
-        val engine = SyncEngine(db, store, SyncApplier(db, photoIndex), api, clock)
+        val engine = SyncEngine(db, store, SyncApplier(db, photoIndex), api, clock, photoIndex, photoStore)
+        private val clock = clock
         val recipes = RecipeRepository(db.recipeDao())
         val shopping = ShoppingRepository(db)
         val plan = PlanRepository(db, db.mealPlanDao(), db.recipeDao(), db.pantryDao(), db.ingredientDao())
@@ -68,7 +71,18 @@ class SyncEndToEndTest {
         suspend fun assertClean() {
             assertEquals(emptyList(), db.syncDao().outbox().map { it.type to it.recordId }, "Outbox auf $name")
             assertEquals(emptyList(), db.syncDao().problems(), "Probleme auf $name")
+            assertEquals(emptyList(), db.syncDao().photosWanted(), "Foto-Wünsche auf $name")
         }
+
+        /** Legt [bytes] als eigene Fotodatei an und setzt sie als Foto des Rezepts [recipeId] (wie eine Bearbeitung). */
+        suspend fun setPhoto(recipeId: String, bytes: ByteArray) {
+            val file = photoStore.newPhotoFile().also { it.writeBytes(bytes) }
+            db.recipeDao().setImage(recipeId, photoStore.storedUri(file), clock.millis())
+        }
+
+        /** Inhalt des Fotos von Rezept [recipeId] oder `null`. */
+        suspend fun photoBytes(recipeId: String): ByteArray? =
+            db.recipeDao().get(recipeId)?.imageUri?.let { photoStore.fileOf(it) }?.takeIf { it.isFile }?.readBytes()
     }
 
     /**
@@ -125,6 +139,57 @@ class SyncEndToEndTest {
             setOf(mehl.canonicalName, zucker.canonicalName),
             b.db.ingredientDao().getAll().map { it.canonicalName }.toSet(),
         )
+        a.assertClean()
+        b.assertClean()
+    }
+
+    private fun jpeg(vararg tail: Int) =
+        byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte()) + ByteArray(tail.size) { tail[it].toByte() }
+
+    private suspend fun Device.simpleRecipe(): String {
+        val salz = ingredients.getOrCreate("Salz")
+        return recipes.save(RecipeDraft(null, "Ei", 2, ingredients = listOf(line(salz.id, 1))))
+    }
+
+    @Test
+    fun photoTravelsBetweenDevices() = syncServerTest { _, clock ->
+        val (a, b) = pair(clock)
+        val rid = a.simpleRecipe()
+        val bytes = jpeg(1, 2, 3, 4)
+        a.setPhoto(rid, bytes)
+        a.runOk()
+        b.runOk()
+
+        val uri = assertNotNull(b.db.recipeDao().get(rid)?.imageUri, "Foto-Link auf B")
+        assertTrue(bytes.contentEquals(b.photoBytes(rid)), "Foto-Inhalt auf B")
+        assertEquals(PhotoHash.of(bytes), b.photoIndex.hashOf(uri))
+        // Rückweg: der Stand von A ändert sich nicht durch den eigenen Abgleich
+        a.runOk()
+        assertTrue(bytes.contentEquals(a.photoBytes(rid)))
+        a.assertClean()
+        b.assertClean()
+    }
+
+    @Test
+    fun replacedPhotoReplacesOnOtherDevice() = syncServerTest { _, clock ->
+        val (a, b) = pair(clock)
+        val rid = a.simpleRecipe()
+        val old = jpeg(1, 1, 1)
+        val new = jpeg(2, 2, 2, 2)
+        a.setPhoto(rid, old)
+        a.runOk()
+        b.runOk()
+        assertTrue(old.contentEquals(b.photoBytes(rid)))
+
+        a.setPhoto(rid, new)
+        a.runOk()
+        b.runOk()
+
+        assertTrue(new.contentEquals(b.photoBytes(rid)), "B zeigt das neue Foto")
+        assertTrue(new.contentEquals(a.photoBytes(rid)), "A behält das neue Foto")
+        a.runOk()
+        b.runOk()
+        assertTrue(new.contentEquals(b.photoBytes(rid)))
         a.assertClean()
         b.assertClean()
     }
