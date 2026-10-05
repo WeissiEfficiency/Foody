@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Nur HTTPS und nur System-Zertifizierungsstellen (keine Nutzer-CAs); Sync ist optional und braucht einen eigenen Server. -->
+<!-- Nur HTTPS; die lokale Foody-CA gilt ausschließlich für foody.homeserver.lan. -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
     </base-config>
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="false">foody.homeserver.lan</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/foody_local_ca" />
+        </trust-anchors>
+    </domain-config>
 </network-security-config>
