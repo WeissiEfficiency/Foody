@@ -31,7 +31,7 @@ open class TokenStore @Inject constructor(@ApplicationContext context: Context) 
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     @Synchronized
-    fun save(token: String) {
+    open fun save(token: String) {
         val encoded = try {
             encrypt(token)
         } catch (_: Exception) {
@@ -59,7 +59,7 @@ open class TokenStore @Inject constructor(@ApplicationContext context: Context) 
         e is AEADBadTagException || e is IllegalArgumentException || e is InvalidAlgorithmParameterException || e is UnrecoverableKeyException || e is MissingKeyException
 
     @Synchronized
-    fun clear() {
+    open fun clear() {
         prefs.edit().remove(KEY_TOKEN).commit()
     }
 

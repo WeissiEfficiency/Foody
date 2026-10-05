@@ -36,11 +36,19 @@ konsolidierte Einkaufslisten.
   „nach Bedarf“ (n. B.). Bereits importierte Quellen werden übersprungen.
 - **Sicherung als ZIP** (Daten und Fotos) und Wiederherstellung; vollständige lokale Löschung.
 
+## Synchronisierung (optional)
+
+Foody funktioniert ohne Server. Wer mehrere Geräte oder einen Haushalt teilen möchte, betreibt einen eigenen
+Sync-Server (Docker, hinter Traefik/HTTPS) und verbindet die App unter Einstellungen → Synchronisierung. Aufbau und
+Betrieb: [`server/README.md`](server/README.md); Entscheidung: [`docs/adr/0006-optional-self-hosted-sync.md`](docs/adr/0006-optional-self-hosted-sync.md).
+
 ## Projektstruktur
 
 | Modul | Inhalt |
 |---|---|
 | `:domain` | Reines Kotlin (keine Android-Abhängigkeiten): Einheiten, Skalierung, Nährwerte, Einkaufsaggregation, Diff, Export-Schnittstelle |
+| `:sync-protocol` | Gemeinsame DTOs und Protokollversion von App und Server |
+| `:server` | Optionaler Sync-Server (Ktor + SQLite) |
 | `:app` | Compose-UI, ViewModels, Room, Hilt, Repositories, Backup |
 
 Details: [`docs/architecture.md`](docs/architecture.md), fachliche Invarianten: [`docs/domain-rules.md`](docs/domain-rules.md), Sicherheit: [`docs/security.md`](docs/security.md).

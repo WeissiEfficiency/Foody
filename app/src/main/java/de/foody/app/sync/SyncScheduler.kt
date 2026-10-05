@@ -40,7 +40,8 @@ open class SyncEngineFactory @Inject constructor(
     /** Läuft gerade ein Sync-Lauf der aktuellen Engine? */
     open val isSyncRunning: Boolean get() = cached?.second?.isRunning == true
 
-    private val httpClient: HttpClient by lazy { defaultHttpClient() }
+    /** Gemeinsamer Client (Verbindungspool) für Engine und [SyncAccountRepository]; wird bei erster Nutzung angelegt. */
+    val httpClient: HttpClient by lazy { defaultHttpClient() }
     @Volatile private var cached: Pair<String, SyncEngine>? = null
 
     @Synchronized
@@ -54,6 +55,9 @@ open class SyncEngineFactory @Inject constructor(
         val state = db.syncDao().getState()
         val url = state?.serverUrl
         if (state == null || !state.active || url == null) return null
+        // Abgemeldet: nicht mit einem Token weitermachen, das beim erneuten Verbinden schon gespeichert ist, bevor
+        // der Haushalt gewählt wurde (`activate` löscht den Fehler und gibt den Sync wieder frei).
+        if (state.lastError == "unauthorized") return null
         if (tokenStore.load() == null) {
             // Aktiv, aber ohne Token (nicht entschlüsselbar, Gerätewechsel): sichtbar als abgemeldet markieren.
             if (state.lastError != "unauthorized") db.syncDao().upsertState(state.copy(lastError = "unauthorized"))
