@@ -59,7 +59,7 @@ class SyncMapperTest {
             RecipeIngredientEntity("l2", "r1", "i1", BigDecimal("200"), MeasureUnit.GRAM, 1, null, false),
         )
         val steps = listOf(InstructionStepEntity("s1", "r1", 0, "Kochen"), InstructionStepEntity("s2", "r1", 1, "Essen"))
-        val p = SyncMapper.recipe(r, lines, steps)
+        val p = SyncMapper.recipe(r, lines, steps, photo = null)
         assertNull(p.photo)
         assertEquals(10, p.prep)
         assertValid(RecordType.RECIPE, p)
@@ -68,6 +68,30 @@ class SyncMapperTest {
         assertEquals("file:/x.jpg", parts.recipe.imageUri)
         assertEquals(lines, parts.lines)
         assertEquals(steps, parts.steps)
+    }
+
+    @Test fun recipePhotoRoundTrip() {
+        val hash = "a".repeat(64)
+        val r = RecipeEntity(
+            id = "r1", name = "Suppe", defaultServings = 4, prepMinutes = null, cookMinutes = null,
+            imageUri = "file:/own.jpg", notes = null, tags = "", archivedAt = null, createdAt = 5, updatedAt = 6,
+        )
+        val p = SyncMapper.recipe(r, emptyList(), emptyList(), photo = hash)
+        assertEquals(hash, p.photo)
+        assertValid(RecordType.RECIPE, p)
+        // bekannt: Link auf die lokale Datei, kein Wunsch
+        val known = SyncMapper.recipe("r1", p, 6, null, knownPhotoUri = "file:/other.jpg")
+        assertEquals("file:/other.jpg", known.recipe.imageUri)
+        assertNull(known.wantedPhoto)
+        // unbekannt: Link bleibt, Wunsch gesetzt
+        val unknown = SyncMapper.recipe("r1", p, 6, r, knownPhotoUri = null, existingIsOwnPhoto = true)
+        assertEquals("file:/own.jpg", unknown.recipe.imageUri)
+        assertEquals(hash, unknown.wantedPhoto)
+        // kein Foto: fremder Link bleibt, eigenes Foto geht
+        val none = p.copy(photo = null)
+        assertEquals("content:/g", SyncMapper.recipe("r1", none, 6, r.copy(imageUri = "content:/g")).recipe.imageUri)
+        assertNull(SyncMapper.recipe("r1", none, 6, r, existingIsOwnPhoto = true).recipe.imageUri)
+        assertNull(SyncMapper.recipe("r1", none, 6, r, existingIsOwnPhoto = true).wantedPhoto)
     }
 
     @Test fun shoppingItemRoundTripKeepsCheckStamp() {
@@ -116,7 +140,7 @@ class SyncMapperTest {
         val mp = SyncMapper.mealSlot(MealSlotEntity("m1", LocalDate.of(2026, 1, 1), "LUNCH", "r", 1, null, 1, 1))
         assertEquals(500, SyncMapper.mealSlot("m1", mp, 500, null).createdAt)
         val rp = SyncMapper.recipe(
-            RecipeEntity("r", "R", 1, null, null, null, null, "", null, 1, 1), emptyList(), emptyList(),
+            RecipeEntity("r", "R", 1, null, null, null, null, "", null, 1, 1), emptyList(), emptyList(), null,
         )
         val parts = SyncMapper.recipe("r", rp, 500, null)
         assertEquals(500, parts.recipe.createdAt)

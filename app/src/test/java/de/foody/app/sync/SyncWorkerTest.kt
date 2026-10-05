@@ -12,6 +12,7 @@ import androidx.work.WorkerParameters
 import androidx.work.testing.TestListenableWorkerBuilder
 import androidx.work.testing.WorkManagerTestInitHelper
 import androidx.work.impl.WorkManagerImpl
+import de.foody.app.data.RecipePhotoStore
 import de.foody.app.data.db.FoodyDatabase
 import de.foody.app.data.db.SYNC_CALLBACK
 import de.foody.app.data.db.SyncOutboxEntity
@@ -26,6 +27,8 @@ import de.foody.sync.protocol.RegisterRequest
 import de.foody.sync.protocol.SyncRecord
 import java.time.Clock
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import java.util.concurrent.TimeUnit
@@ -60,6 +63,9 @@ private class ThrowingApi(private val failure: Exception?) : SyncApi {
     override suspend fun createInvite(): InviteDto = error("unused")
     override suspend fun devices(): List<DeviceDto> = error("unused")
     override suspend fun revokeDevice(id: String) = error("unused")
+    override suspend fun photosMissing(hashes: List<String>): List<String> = error("unused")
+    override suspend fun uploadPhoto(sha256: String, bytes: ByteArray) = error("unused")
+    override suspend fun downloadPhoto(sha256: String): ByteArray? = error("unused")
 }
 
 @RunWith(RobolectricTestRunner::class)
@@ -84,10 +90,13 @@ class SyncWorkerTest {
         dao.upsertState((dao.getState() ?: error("sync_state fehlt")).copy(active = true, serverUrl = "https://x.test"))
     }
 
+    private fun photoStore() = RecipePhotoStore(context, db.recipeDao())
+    private fun photoIndex() = PhotoIndex(db, photoStore())
+
     /** Factory, die eine Engine mit [api] liefert, oder `null` (inaktiv), wenn [api] fehlt. */
     private fun factory(api: SyncApi?) =
-        object : SyncEngineFactory(db, SyncLocalStore(db), SyncApplier(db), TokenStore(context)) {
-            private val engine = api?.let { SyncEngine(db, SyncLocalStore(db), SyncApplier(db), it, Clock.systemUTC()) }
+        object : SyncEngineFactory(db, SyncLocalStore(db, photoIndex()), SyncApplier(db, photoIndex()), TokenStore(context), photoIndex(), photoStore()) {
+            private val engine = api?.let { SyncEngine(db, SyncLocalStore(db, photoIndex()), SyncApplier(db, photoIndex()), it, Clock.systemUTC(), photoIndex(), photoStore()) }
             override suspend fun create(): SyncEngine? = engine
         }
 
@@ -98,6 +107,19 @@ class SyncWorkerTest {
                     SyncWorker(appContext, workerParameters, factory, SyncScheduler(context, db, factory))
             })
             .build()
+
+    @Test
+    fun factoryReturnsNoEngineWhileUnauthorized() = runTest {
+        val tokens = object : TokenStore(context) { override fun load() = "token" }
+        val real = SyncEngineFactory(db, SyncLocalStore(db, photoIndex()), SyncApplier(db, photoIndex()), tokens, photoIndex(), photoStore())
+        activate()
+        val dao = db.syncDao()
+        assertNotNull(real.create())
+        dao.upsertState(dao.getState()!!.copy(lastError = "unauthorized"))
+        assertNull(real.create(), "abgemeldet: auch mit gespeichertem Token kein Sync bis zum Aktivieren")
+        dao.upsertState(dao.getState()!!.copy(lastError = null))
+        assertNotNull(real.create())
+    }
 
     @Test
     fun transientFailureRetries() = runTest {
@@ -152,7 +174,7 @@ class SyncWorkerTest {
         val noToken = object : TokenStore(context) {
             override fun load(): String? = null
         }
-        val real = SyncEngineFactory(db, SyncLocalStore(db), SyncApplier(db), noToken)
+        val real = SyncEngineFactory(db, SyncLocalStore(db, photoIndex()), SyncApplier(db, photoIndex()), noToken, photoIndex(), photoStore())
         assertEquals(ListenableWorker.Result.success(), worker(real).doWork())
         assertEquals("unauthorized", db.syncDao().getState()!!.lastError)
     }
@@ -183,9 +205,12 @@ class SyncSchedulerTest {
 
     private var running = false
 
+    private fun photoStore() = RecipePhotoStore(context, db.recipeDao())
+    private fun photoIndex() = PhotoIndex(db, photoStore())
+
     private fun newScheduler() = SyncScheduler(
         context, db,
-        object : SyncEngineFactory(db, SyncLocalStore(db), SyncApplier(db), TokenStore(context)) {
+        object : SyncEngineFactory(db, SyncLocalStore(db, photoIndex()), SyncApplier(db, photoIndex()), TokenStore(context), photoIndex(), photoStore()) {
             override val isSyncRunning: Boolean get() = running
         },
     )

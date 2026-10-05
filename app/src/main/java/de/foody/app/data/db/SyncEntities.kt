@@ -2,6 +2,7 @@ package de.foody.app.data.db
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
@@ -46,4 +47,23 @@ data class SyncProblemEntity(
     val recordId: String,
     val code: String,
     val at: Long,
+)
+
+/**
+ * Hash-Cache je lokaler Fotodatei: [sha256] gilt, solange [size] und [modifiedAt] (Änderungszeit der Datei in ms)
+ * mit der Datei übereinstimmen. Kein Sync-Wurzeldatensatz, die Trigger ignorieren die Tabelle.
+ */
+@Entity(tableName = "sync_photo_local", indices = [Index("sha256")])
+data class SyncPhotoLocalEntity(
+    @PrimaryKey val uri: String,
+    val sha256: String,
+    val size: Long,
+    val modifiedAt: Long,
+)
+
+/** Foto, das ein vom Server angewendetes Rezept braucht, das lokal aber (noch) nicht vorliegt. */
+@Entity(tableName = "sync_photo_wanted")
+data class SyncPhotoWantedEntity(
+    @PrimaryKey val recipeId: String,
+    val sha256: String,
 )

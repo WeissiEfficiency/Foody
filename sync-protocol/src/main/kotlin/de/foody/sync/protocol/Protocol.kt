@@ -13,6 +13,9 @@ object Protocol {
     const val MAX_PUSH_BYTES = 5_242_880L
     const val MAX_PULL_LIMIT = 500
 
+    /** Größte erlaubte Fotodatei (Upload und Download). */
+    const val MAX_PHOTO_BYTES = 10_485_760L
+
     /** Unbekannte Felder werden ignoriert (Vorwärtskompatibilität); `null`-Felder entfallen im JSON. */
     val json: Json = Json {
         ignoreUnknownKeys = true

@@ -27,6 +27,8 @@ data class RecipeParts(
     val recipe: RecipeEntity,
     val lines: List<RecipeIngredientEntity>,
     val steps: List<InstructionStepEntity>,
+    /** Hash eines Fotos, das der Server-Datensatz hat, lokal aber noch fehlt (-> `sync_photo_wanted`); sonst `null`. */
+    val wantedPhoto: String? = null,
 )
 
 /** Zerlegter Einkaufsartikel: Artikel samt Herkunftszeilen. */
@@ -38,7 +40,7 @@ data class ShoppingItemParts(val item: ShoppingItemEntity, val sources: List<Sho
  *
  * `version` und `createdAt` sind rein lokal: Sie stammen beim Anwenden aus `existing`,
  * sonst `version = 1` und `createdAt = updatedAt`. Felder ohne Payload-Gegenstück
- * (z. B. Rezeptfoto `imageUri`) bleiben aus `existing` erhalten.
+ * bleiben aus `existing` erhalten; das Rezeptfoto `imageUri` folgt der Foto-Regel an `recipe(...)`.
  */
 object SyncMapper {
     private fun BigDecimal.wire() = toPlainString()
@@ -83,12 +85,18 @@ object SyncMapper {
 
     // --- Rezept ---
 
-    fun recipe(r: RecipeEntity, lines: List<RecipeIngredientEntity>, steps: List<InstructionStepEntity>) = RecipePayload(
+    /** [photo] ist der Hash des eigenen Fotos (`PhotoIndex.hashOf`), `null` ohne eigenes Foto. */
+    fun recipe(
+        r: RecipeEntity,
+        lines: List<RecipeIngredientEntity>,
+        steps: List<InstructionStepEntity>,
+        photo: String?,
+    ) = RecipePayload(
         name = r.name,
         servings = r.defaultServings,
         prep = r.prepMinutes,
         cook = r.cookMinutes,
-        photo = null, // Fotos: Etappe 4
+        photo = photo,
         notes = r.notes,
         tags = r.tags,
         archivedAt = r.archivedAt,
@@ -109,14 +117,46 @@ object SyncMapper {
         steps = steps.map { RecipePayload.Step(id = it.id, position = it.position, text = it.text) },
     )
 
-    fun recipe(id: String, p: RecipePayload, updatedAt: Long, existing: RecipeEntity?) = RecipeParts(
+    /**
+     * Foto-Regel (rein; die Nachschlagen übernimmt der Aufrufer): [knownPhotoUri] ist der lokale Link zu `p.photo`,
+     * falls diese Datei hier schon vorliegt; [existingIsOwnPhoto] sagt, ob `existing.imageUri` ein eigenes Foto ist.
+     * - `p.photo == null`: ein fremder Link (`content:`) bleibt, ein eigenes Foto wird entfernt.
+     * - Foto bekannt: `imageUri = knownPhotoUri`.
+     * - Foto unbekannt: `imageUri` bleibt, [RecipeParts.wantedPhoto] = `p.photo`.
+     */
+    fun recipe(
+        id: String,
+        p: RecipePayload,
+        updatedAt: Long,
+        existing: RecipeEntity?,
+        knownPhotoUri: String? = null,
+        existingIsOwnPhoto: Boolean = false,
+    ): RecipeParts {
+        val keep = existing?.imageUri
+        val imageUri = when {
+            p.photo == null -> if (existingIsOwnPhoto) null else keep
+            knownPhotoUri != null -> knownPhotoUri
+            else -> keep
+        }
+        val wanted = p.photo?.takeIf { knownPhotoUri == null }
+        return recipeParts(id, p, updatedAt, existing, imageUri, wanted)
+    }
+
+    private fun recipeParts(
+        id: String,
+        p: RecipePayload,
+        updatedAt: Long,
+        existing: RecipeEntity?,
+        imageUri: String?,
+        wantedPhoto: String?,
+    ) = RecipeParts(
         recipe = RecipeEntity(
             id = id,
             name = p.name,
             defaultServings = p.servings,
             prepMinutes = p.prep,
             cookMinutes = p.cook,
-            imageUri = existing?.imageUri, // Foto wird in Etappe 2 nicht synchronisiert
+            imageUri = imageUri,
             notes = p.notes,
             tags = p.tags,
             archivedAt = p.archivedAt,
@@ -140,6 +180,7 @@ object SyncMapper {
             )
         },
         steps = p.steps.map { InstructionStepEntity(id = it.id, recipeId = id, position = it.position, text = it.text) },
+        wantedPhoto = wantedPhoto,
     )
 
     // --- Essensplan ---

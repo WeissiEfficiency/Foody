@@ -37,6 +37,20 @@ class PayloadValidatorTest {
     )
 
     @Test
+    fun photoMustBeNullOrLowercaseHex64() {
+        fun check(photo: String?) = PayloadValidator.validate(rec(RecordType.RECIPE, recipe().copy(photo = photo)))
+        val hash = "a".repeat(64)
+        assertNull(check(null))
+        assertNull(check(hash))
+        assertEquals(ErrorCode.INVALID_PAYLOAD, check("A".repeat(64)))
+        assertEquals(ErrorCode.INVALID_PAYLOAD, check("a".repeat(63)))
+        assertEquals(ErrorCode.INVALID_PAYLOAD, check("a".repeat(65)))
+        assertEquals(ErrorCode.INVALID_PAYLOAD, check("../" + "a".repeat(61)))
+        assertEquals(ErrorCode.INVALID_PAYLOAD, check("file:///x.jpg"))
+        assertEquals(ErrorCode.INVALID_PAYLOAD, check(""))
+    }
+
+    @Test
     fun validRecordsPass() {
         val records = listOf(
             rec(RecordType.INGREDIENT, ingredient()),

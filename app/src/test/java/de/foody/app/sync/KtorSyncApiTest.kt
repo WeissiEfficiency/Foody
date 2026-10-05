@@ -4,6 +4,7 @@ import de.foody.server.sync.Compactor
 import de.foody.sync.protocol.ErrorCode
 import de.foody.sync.protocol.IngredientPayload
 import de.foody.sync.protocol.LoginRequest
+import de.foody.sync.protocol.PhotoHash
 import de.foody.sync.protocol.Protocol
 import de.foody.sync.protocol.PushStatus
 import de.foody.sync.protocol.RecordType
@@ -17,6 +18,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
+import io.ktor.server.response.respondBytesWriter
+import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
@@ -25,6 +28,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import io.ktor.utils.io.writeFully
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
@@ -196,5 +200,61 @@ class KtorSyncApiTest {
         }
         val e = assertFailsWith<SyncApiException.ClientError> { api(client, "https://localhost").adminLogin() }
         assertEquals(302, e.status)
+    }
+
+    private fun jpeg(vararg tail: Int) = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), *tail.map { it.toByte() }.toByteArray())
+
+    @Test
+    fun photoCallsRoundTripAgainstServer() = syncServerTest { _, _ ->
+        var token: String? = null
+        val api = api(client) { token }
+        token = api.adminLogin().token
+        api.createHousehold("Zuhause")
+        val bytes = jpeg(1, 2, 3, 4)
+        val sha = PhotoHash.of(bytes)
+        val other = PhotoHash.of(jpeg(9))
+
+        assertEquals(listOf(sha, other), api.photosMissing(listOf(sha, other)))
+        assertEquals(null, api.downloadPhoto(sha))
+
+        api.uploadPhoto(sha, bytes)
+        api.uploadPhoto(sha, bytes) // idempotent
+        assertEquals(listOf(other), api.photosMissing(listOf(sha, other)))
+        assertTrue(bytes.contentEquals(api.downloadPhoto(sha)))
+        assertEquals(emptyList(), api.photosMissing(emptyList()))
+    }
+
+    @Test
+    fun uploadWithWrongHashIsClientError() = syncServerTest { _, _ ->
+        var token: String? = null
+        val api = api(client) { token }
+        token = api.adminLogin().token
+        api.createHousehold("Zuhause")
+        val e = assertFailsWith<SyncApiException.ClientError> { api.uploadPhoto(PhotoHash.of(jpeg(1)), jpeg(2)) }
+        assertEquals(400, e.status)
+    }
+
+    @Test
+    fun oversizedDownloadIsRejectedWhileReading() = testApplication {
+        routing {
+            get("/api/v1/photos/{sha}") {
+                // Ohne Content-Length (chunked), damit nur das gezählte Lesen greift
+                call.respondBytesWriter(ContentType.Image.JPEG) {
+                    val chunk = ByteArray(1024 * 1024)
+                    repeat(11) { writeFully(chunk) }
+                }
+            }
+        }
+        assertFailsWith<SyncApiException.TooLarge> { api(client, "https://localhost").downloadPhoto(PhotoHash.of(jpeg(1))) }
+    }
+
+    @Test
+    fun downloadFailureDoesNotLeakToken() = testApplication {
+        routing { get("/api/v1/photos/{sha}") { call.respond(HttpStatusCode.InternalServerError) } }
+        val e = assertFailsWith<SyncApiException.Transient> {
+            api(client, "https://localhost") { "SECRET-TOKEN-4711" }.downloadPhoto(PhotoHash.of(jpeg(1)))
+        }
+        assertEquals(500, e.status)
+        assertTrue(!e.toString().contains("SECRET-TOKEN-4711"))
     }
 }

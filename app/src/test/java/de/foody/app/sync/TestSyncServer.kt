@@ -38,13 +38,18 @@ fun syncServerTest(
     // Der Treiber muss im ClassLoader dieses Tests registriert sein: Läuft zuvor ein Robolectric-Test (eigener
     // ClassLoader) in derselben JVM, hat nur dessen Kopie sich bei DriverManager angemeldet.
     Class.forName("org.sqlite.JDBC")
-    val config = ServerConfig(dbPath = ":memory:", port = 0, adminUser = null, adminPassword = null)
-    Database("jdbc:sqlite::memory:").use { db ->
-        val deps = ServerDeps.create(config, db, clock)
-        check(deps.accounts.bootstrapAdmin(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)) { "Admin-Bootstrap fehlgeschlagen" }
-        testApplication {
-            application { foodyModule(deps) }
-            block(deps, clock)
+    val photoDir = java.nio.file.Files.createTempDirectory("foody-photos")
+    val config = ServerConfig(dbPath = ":memory:", port = 0, adminUser = null, adminPassword = null, photoDir = photoDir.toString())
+    try {
+        Database("jdbc:sqlite::memory:").use { db ->
+            val deps = ServerDeps.create(config, db, clock)
+            check(deps.accounts.bootstrapAdmin(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)) { "Admin-Bootstrap fehlgeschlagen" }
+            testApplication {
+                application { foodyModule(deps) }
+                block(deps, clock)
+            }
         }
+    } finally {
+        photoDir.toFile().deleteRecursively()
     }
 }

@@ -28,6 +28,25 @@ Admin an. Danach beide Variablen leeren und mit `docker compose up -d` neu anwen
 
 Weitere Admin-Befehle: `reset-password`, `compact` (siehe `foody-admin` ohne Argumente).
 
+## Fotos
+
+Rezeptfotos liegen als `<FOODY_PHOTO_DIR>/<Haushalt>/<sha256>.jpg` (Standard `/data/photos`, eigenes Docker-Volume
+`foody-photos`; in die Sicherung der Datenbank sind sie **nicht** eingeschlossen, das Volume gesondert sichern).
+Upload nur als JPEG bis 10 MB (`PUT /api/v1/photos/{sha256}`). Fotos, die kein lebendes Rezept mehr verwendet,
+löscht die tägliche Kompaktierung (und `foody-admin compact`) nach 30 Tagen.
+
+## Lokale Entwicklung unter Windows
+
+Das erzeugte `foody-server.bat` (`FOODY_SERVER_ONLY=1 ./gradlew :server:installDist`) scheitert dort mit „Zeile zu lang“.
+Stattdessen im Installationsordner (`server/build/install/foody-server`) starten:
+
+```sh
+java -cp "lib/*" de.foody.server.MainKt
+```
+
+oder Docker verwenden. Manuelle API-Aufrufe (z. B. mit `curl`) brauchen den Header `X-Foody-Protocol: 1`,
+sonst antwortet der Server mit `protocol_too_old`.
+
 ## Hinweis zu Traefik (wichtig)
 
 Die Begrenzung von Fehlversuchen beim Login richtet sich nach der Client-IP, die Traefik per `X-Forwarded-For`

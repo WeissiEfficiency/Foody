@@ -110,6 +110,20 @@ interface RecipeDao {
         insertSteps(steps)
     }
 
+    /**
+     * Liest das gespeicherte Rezept und schreibt das Ergebnis von [build] in derselben Transaktion; so überschreibt
+     * Speichern kein Foto, das ein Sync zwischenzeitlich verlinkt hat.
+     */
+    @Transaction
+    suspend fun saveBuilt(
+        id: String?,
+        build: (RecipeEntity?) -> Triple<RecipeEntity, List<RecipeIngredientEntity>, List<InstructionStepEntity>>,
+    ): String {
+        val (entity, ingredients, steps) = build(id?.let { get(it) })
+        save(entity, ingredients, steps)
+        return entity.id
+    }
+
     @Query("SELECT COUNT(*) FROM recipe WHERE imageUri = :uri")
     suspend fun countByImage(uri: String): Int
 

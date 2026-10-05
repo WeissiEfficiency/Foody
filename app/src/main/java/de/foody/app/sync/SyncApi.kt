@@ -23,6 +23,15 @@ interface SyncApi {
     suspend fun revokeDevice(id: String)
     suspend fun push(records: List<SyncRecord>): PushResponse
     suspend fun pull(since: Long, limit: Int): PullResponse
+
+    /** Welche der [hashes] kennt der Server für den Haushalt noch nicht? */
+    suspend fun photosMissing(hashes: List<String>): List<String>
+
+    /** Lädt ein JPEG hoch; bereits vorhandene Fotos sind kein Fehler. */
+    suspend fun uploadPhoto(sha256: String, bytes: ByteArray)
+
+    /** Lädt ein Foto herunter (höchstens `Protocol.MAX_PHOTO_BYTES`); `null`, wenn der Server es nicht hat (404). */
+    suspend fun downloadPhoto(sha256: String): ByteArray?
 }
 
 /** Fehler eines Sync-Aufrufs; [status] ist 0, wenn keine HTTP-Antwort vorlag, [code] `null`, wenn der Server keinen nannte. */

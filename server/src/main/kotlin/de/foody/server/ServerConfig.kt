@@ -6,6 +6,8 @@ data class ServerConfig(
     val port: Int,
     val adminUser: String?,
     val adminPassword: String?,
+    /** Wurzelordner der Fotoablage (`FOODY_PHOTO_DIR`). */
+    val photoDir: String = "/data/photos",
 ) {
     companion object {
         fun fromEnv(env: Map<String, String> = System.getenv()): ServerConfig = ServerConfig(
@@ -13,6 +15,7 @@ data class ServerConfig(
             port = env["FOODY_PORT"]?.toIntOrNull() ?: 8080,
             adminUser = env["FOODY_ADMIN_USER"],
             adminPassword = env["FOODY_ADMIN_PASSWORD"],
+            photoDir = env["FOODY_PHOTO_DIR"] ?: "/data/photos",
         )
     }
 }

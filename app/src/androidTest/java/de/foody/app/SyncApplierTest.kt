@@ -5,6 +5,12 @@ import de.foody.app.data.db.FoodyDatabase
 import de.foody.app.data.db.IngredientEntity
 import de.foody.app.data.repo.RecipeDraft
 import de.foody.app.data.repo.RecipeRepository
+import androidx.test.core.app.ApplicationProvider
+import de.foody.app.data.RecipePhotoStore
+import de.foody.app.data.db.SyncPhotoWantedEntity
+import de.foody.app.data.db.SyncProblemEntity
+import de.foody.app.data.db.SyncRecordRevEntity
+import de.foody.app.sync.PhotoIndex
 import de.foody.app.sync.SyncApplier
 import de.foody.app.sync.SyncMapper
 import de.foody.domain.MeasureUnit
@@ -33,14 +39,108 @@ import kotlin.test.assertTrue
 class SyncApplierTest {
     private lateinit var db: FoodyDatabase
     private lateinit var applier: SyncApplier
+    private lateinit var photos: RecipePhotoStore
+    private val files = ArrayList<java.io.File>()
 
     @Before fun setUp() = runTest {
         db = syncTestDb()
         db.activateSyncForTest()
-        applier = SyncApplier(db)
+        photos = RecipePhotoStore(ApplicationProvider.getApplicationContext(), db.recipeDao())
+        applier = SyncApplier(db, PhotoIndex(db, photos))
     }
 
-    @After fun tearDown() = db.close()
+    @After fun tearDown() {
+        files.forEach { it.delete() }
+        db.close()
+    }
+
+    private fun ownPhoto(bytes: ByteArray): Pair<String, String> {
+        val f = photos.newPhotoFile().also { it.writeBytes(bytes); files += it }
+        val sha = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+        return photos.storedUri(f) to sha
+    }
+
+    /** Lokales Rezept mit Zutat und gesetztem [imageUri]; Outbox danach leer. */
+    private suspend fun recipeWithImage(imageUri: String?): String {
+        db.ingredientDao().upsert(localIngredient("i", "Salz"))
+        val rid = RecipeRepository(db.recipeDao()).save(draft("i"))
+        db.recipeDao().upsert(db.recipeDao().get(rid)!!.copy(imageUri = imageUri))
+        db.syncDao().clearOutbox()
+        return rid
+    }
+
+    private fun photoRec(id: String, photo: String?) =
+        rec(RecordType.RECIPE, id, recipePayload("R", listOf(line("l", "i"))).copy(photo = photo), rev = 5)
+
+    @Test fun knownPhotoIsLinked() = runTest {
+        val (uri, sha) = ownPhoto(byteArrayOf(9, 8, 7))
+        PhotoIndex(db, photos).hashOf(uri) // Cache füllen, wie es der Push täte
+        val rid = recipeWithImage(null)
+        db.syncDao().upsertPhotoWanted(SyncPhotoWantedEntity(rid, sha))
+        applier.apply(listOf(photoRec(rid, sha)), 1)
+        assertEquals(uri, db.recipeDao().get(rid)?.imageUri)
+        assertTrue(db.syncDao().photosWanted().isEmpty())
+        assertEquals(emptyList(), db.syncDao().outbox())
+    }
+
+    @Test fun unknownPhotoIsWanted() = runTest {
+        val rid = recipeWithImage("content://media/1")
+        val sha = "b".repeat(64)
+        applier.apply(listOf(photoRec(rid, sha)), 1)
+        assertEquals("content://media/1", db.recipeDao().get(rid)?.imageUri)
+        assertEquals(listOf(SyncPhotoWantedEntity(rid, sha)), db.syncDao().photosWanted())
+    }
+
+    @Test fun nullPhotoKeepsGalleryLink() = runTest {
+        val rid = recipeWithImage("content://media/1")
+        applier.apply(listOf(photoRec(rid, null)), 1)
+        assertEquals("content://media/1", db.recipeDao().get(rid)?.imageUri)
+        assertEquals(emptyList(), db.syncDao().outbox())
+    }
+
+    @Test fun nullPhotoRemovesOwnPhoto() = runTest {
+        val (uri, _) = ownPhoto(byteArrayOf(5, 5))
+        val rid = recipeWithImage(uri)
+        db.syncDao().upsertPhotoWanted(SyncPhotoWantedEntity(rid, "c".repeat(64)))
+        applier.apply(listOf(photoRec(rid, null)), 1)
+        assertNull(db.recipeDao().get(rid)?.imageUri)
+        assertTrue(db.syncDao().photosWanted().isEmpty())
+        assertEquals(emptyList(), db.syncDao().outbox())
+    }
+
+    @Test fun knownRevIsSkipped() = runTest {
+        val rid = recipeWithImage("content://media/1")
+        db.syncDao().setRev(SyncRecordRevEntity("recipe", rid, 5))
+        db.syncDao().addProblem(SyncProblemEntity("recipe", rid, "photo_unsyncable", 1))
+        val result = applier.apply(listOf(photoRec(rid, null)), 1) // rev 5 = bekannt (eigenes Echo)
+        assertEquals(1, result.skippedPending)
+        assertEquals(0, result.applied)
+        assertEquals(listOf("photo_unsyncable"), db.syncDao().problems().map { it.code })
+        // Eine neuere Revision wird angewendet
+        val newer = applier.apply(listOf(rec(RecordType.RECIPE, rid, recipePayload("R2", listOf(line("l", "i"))), rev = 6)), 2)
+        assertEquals(1, newer.applied)
+        assertEquals("R2", db.recipeDao().get(rid)?.name)
+    }
+
+    @Test fun nullPhotoFromOthersKeepsUnsyncableOwnPhoto() = runTest {
+        val (uri, _) = ownPhoto(byteArrayOf(5, 5))
+        val rid = recipeWithImage(uri)
+        db.syncDao().addProblem(SyncProblemEntity("recipe", rid, "photo_unsyncable", 1))
+        applier.apply(listOf(photoRec(rid, null)), 1) // Bearbeitung eines anderen Geräts, rev 5 neu
+        assertEquals(uri, db.recipeDao().get(rid)?.imageUri)
+        assertEquals(listOf("photo_unsyncable"), db.syncDao().problems().map { it.code })
+        // Mit Foto vom Server: normale Übernahme, Problem weg
+        applier.apply(listOf(rec(RecordType.RECIPE, rid, recipePayload("R", listOf(line("l", "i"))).copy(photo = "d".repeat(64)), rev = 6)), 2)
+        assertEquals(emptyList(), db.syncDao().problems())
+    }
+
+    @Test fun deletedRecipeDropsWish() = runTest {
+        val rid = recipeWithImage(null)
+        db.syncDao().upsertPhotoWanted(SyncPhotoWantedEntity(rid, "d".repeat(64)))
+        applier.apply(listOf(gone(RecordType.RECIPE, rid, 6)), 1)
+        assertNull(db.recipeDao().get(rid))
+        assertTrue(db.syncDao().photosWanted().isEmpty())
+    }
 
     private fun rec(type: RecordType, id: String, payload: Any, rev: Long = 1, updatedAt: Long = 100) =
         SyncRecord(id = id, type = type, updatedAt = updatedAt, rev = rev, payload = SyncMapper.toJson(payload))

@@ -48,7 +48,7 @@ private fun runAdmin(config: ServerConfig, args: List<String>): Int =
 /** Kompaktiert Löschmarkierungen beim Start und danach alle 24 Stunden; Fehler werden protokolliert, nie geworfen. */
 private fun Application.launchCompaction(deps: ServerDeps) {
     val log = LoggerFactory.getLogger("de.foody.server.compaction")
-    val compactor = Compactor(deps.db, deps.clock)
+    val compactor = Compactor(deps.db, deps.clock, deps.photos)
     launch(Dispatchers.IO) {
         while (isActive) {
             try {

@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
+import de.foody.app.data.RecipePhotoStore
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -33,24 +34,30 @@ open class SyncEngineFactory @Inject constructor(
     private val store: SyncLocalStore,
     private val applier: SyncApplier,
     private val tokenStore: TokenStore,
+    private val photoIndex: PhotoIndex,
+    private val photoStore: RecipePhotoStore,
 ) {
     /** Läuft gerade ein Sync-Lauf der aktuellen Engine? */
     open val isSyncRunning: Boolean get() = cached?.second?.isRunning == true
 
-    private val httpClient: HttpClient by lazy { defaultHttpClient() }
+    /** Gemeinsamer Client (Verbindungspool) für Engine und [SyncAccountRepository]; wird bei erster Nutzung angelegt. */
+    val httpClient: HttpClient by lazy { defaultHttpClient() }
     @Volatile private var cached: Pair<String, SyncEngine>? = null
 
     @Synchronized
     private fun engineFor(url: String): SyncEngine {
         cached?.takeIf { it.first == url }?.let { return it.second }
         val api = KtorSyncApi(url, httpClient) { tokenStore.load() }
-        return SyncEngine(db, store, applier, api, Clock.systemUTC()).also { cached = url to it }
+        return SyncEngine(db, store, applier, api, Clock.systemUTC(), photoIndex, photoStore).also { cached = url to it }
     }
 
     open suspend fun create(): SyncEngine? {
         val state = db.syncDao().getState()
         val url = state?.serverUrl
         if (state == null || !state.active || url == null) return null
+        // Abgemeldet: nicht mit einem Token weitermachen, das beim erneuten Verbinden schon gespeichert ist, bevor
+        // der Haushalt gewählt wurde (`activate` löscht den Fehler und gibt den Sync wieder frei).
+        if (state.lastError == "unauthorized") return null
         if (tokenStore.load() == null) {
             // Aktiv, aber ohne Token (nicht entschlüsselbar, Gerätewechsel): sichtbar als abgemeldet markieren.
             if (state.lastError != "unauthorized") db.syncDao().upsertState(state.copy(lastError = "unauthorized"))
