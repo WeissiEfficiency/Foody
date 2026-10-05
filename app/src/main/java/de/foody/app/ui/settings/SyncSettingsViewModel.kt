@@ -43,6 +43,10 @@ data class SyncSettingsState(
     val householdName: String? = null,
     val lastSyncAt: Long? = null,
     val unauthorized: Boolean = false,
+    /** „Erneut verbinden“ statt der Sync-Knöpfe: Token widerrufen oder kein Haushalt gewählt. */
+    val reconnectNeeded: Boolean = false,
+    /** Zusätzliche Statuszeile für dauerhafte Fehler (`null` = normale Verbunden-Zeile). */
+    @StringRes val statusNote: Int? = null,
     val problemCount: Int = 0,
     val busy: Boolean = false,
     @StringRes val message: Int? = null,
@@ -99,6 +103,8 @@ class SyncSettingsViewModel @Inject constructor(
             householdName = name.takeIf { s != null },
             lastSyncAt = s?.lastSyncAt,
             unauthorized = s?.lastError == UNAUTHORIZED,
+            reconnectNeeded = s?.lastError == UNAUTHORIZED || s?.lastError == NO_HOUSEHOLD,
+            statusNote = s?.lastError?.let(::statusNoteFor),
             problemCount = if (s != null) problems else 0,
             busy = l.busy,
             message = l.message,
@@ -158,6 +164,17 @@ class SyncSettingsViewModel @Inject constructor(
 
     private companion object {
         const val UNAUTHORIZED = "unauthorized"
+        const val NO_HOUSEHOLD = "no_household"
+
+        /** Dauerhafte Fehler aus `sync_state.lastError` (siehe SyncEngine); „transient: …“ ist nur vorübergehend. */
+        @StringRes
+        fun statusNoteFor(error: String): Int? = when {
+            error == "protocol_too_old" -> R.string.sync_error_update_app
+            error == "protocol_server_too_old" -> R.string.sync_error_update_server
+            error == NO_HOUSEHOLD -> R.string.sync_status_no_household
+            error.startsWith("failed:") -> R.string.sync_status_last_failed
+            else -> null
+        }
 
         @StringRes
         fun typeLabel(type: String): Int = when (type) {

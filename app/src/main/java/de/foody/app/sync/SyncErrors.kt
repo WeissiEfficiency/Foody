@@ -5,6 +5,7 @@ import de.foody.app.R
 import de.foody.sync.protocol.ErrorCode
 import java.security.cert.CertPathValidatorException
 import javax.net.ssl.SSLHandshakeException
+import javax.net.ssl.SSLPeerUnverifiedException
 
 /** Wo der Fehler auftrat; bestimmt z. B., wie ein 400 `invalid_input` zu lesen ist. */
 enum class ErrorContext { LOGIN, REGISTER, GENERAL }
@@ -42,7 +43,7 @@ object SyncErrors {
         var current: Throwable? = e
         var depth = 0
         while (current != null && depth++ < 16) {
-            if (current is SSLHandshakeException || current is CertPathValidatorException) return true
+            if (current is SSLHandshakeException || current is SSLPeerUnverifiedException || current is CertPathValidatorException) return true
             current = current.cause
         }
         return false

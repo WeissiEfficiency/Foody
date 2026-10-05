@@ -62,7 +62,8 @@ private class FakeAccounts(private val log: MutableList<String> = mutableListOf(
         calls += "create:$name"
         return HouseholdDto("new", name, "owner")
     }
-    override suspend fun selectHousehold(url: String, id: String) { calls += "select:$id" }
+    var selectError: Throwable? = null
+    override suspend fun selectHousehold(url: String, id: String) { calls += "select:$id"; selectError?.let { throw it } }
     override suspend fun hasLocalData() = localData
     override suspend fun activate(url: String, householdId: String, mode: FirstSync) {
         activateError?.let { throw it }
@@ -306,6 +307,23 @@ class SyncSetupViewModelTest {
         assertEquals(1, fake.discards)
         val state = db.syncDao().getState()!!
         assertTrue(state.active); assertEquals("unauthorized", state.lastError); assertEquals("h9", state.householdId)
+    }
+
+    @Test
+    fun reconnectHouseholdGoneShowsSpecificMessageAndDiscardsToken() = runBlocking {
+        val errors = listOf(
+            de.foody.app.sync.SyncApiException.ClientError(403, de.foody.sync.protocol.ErrorCode.FORBIDDEN),
+            de.foody.app.sync.SyncApiException.ClientError(404, de.foody.sync.protocol.ErrorCode.NOT_FOUND),
+        )
+        for (error in errors) {
+            fake.discards = 0
+            fake.loginResult = LoginResult("h1") // anderer Haushalt als der gespeicherte -> selectHousehold
+            fake.selectError = error
+            val vm = reconnectVm("h9"); vm.submitAccount()
+            withTimeout(10_000) { vm.state.first { !it.busy && it.error != null } }
+            assertEquals(R.string.sync_error_reconnect_household_gone, vm.state.value.error)
+            assertEquals(1, fake.discards)
+        }
     }
 
     @Test

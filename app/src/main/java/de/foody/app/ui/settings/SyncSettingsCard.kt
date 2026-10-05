@@ -62,11 +62,12 @@ fun SyncSettingsCard(
             val household = state.householdName
             val status = when {
                 state.unauthorized -> stringResource(R.string.sync_status_unauthorized)
+                state.statusNote != null -> stringResource(state.statusNote!!)
                 household != null -> stringResource(R.string.sync_status_connected_household, household, last)
                 else -> stringResource(R.string.sync_status_connected, last)
             }
             Text(status, style = MaterialTheme.typography.bodyMedium)
-            if (state.unauthorized) {
+            if (state.reconnectNeeded) {
                 Button({ onConnect(true) }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(50)) {
                     Text(stringResource(R.string.sync_reconnect))
                 }

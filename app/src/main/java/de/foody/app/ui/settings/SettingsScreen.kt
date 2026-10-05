@@ -62,6 +62,7 @@ fun SettingsScreen(
     val snackbar = remember { SnackbarHostState() }
     var confirmImport by rememberSaveable { mutableStateOf<String?>(null) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     val text = message?.let { stringResource(it) }
     LaunchedEffect(text) { if (text != null) { snackbar.showSnackbar(text); vm.messageShown() } }
     // Meldung von außen (z. B. nach dem Verbinden); erst zurücksetzen, wenn der Snackbar durch ist (sonst bricht der Schlüsselwechsel ihn ab)
@@ -124,7 +125,7 @@ fun SettingsScreen(
                     Text(stringResource(R.string.backup_hint), style = MaterialTheme.typography.bodySmall)
                     OutlinedButton({ exportLauncher.launch("foody-backup-${LocalDate.now()}.zip") }, Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(50)) { Text(stringResource(R.string.backup_export)) }
-                    OutlinedButton({ importLauncher.launch(arrayOf("application/zip", "application/json", "application/octet-stream")) }, Modifier.fillMaxWidth(),
+                    OutlinedButton({ scope.launch { if (!vm.refuseWhileSyncActive()) importLauncher.launch(arrayOf("application/zip", "application/json", "application/octet-stream")) } }, Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(50)) { Text(stringResource(R.string.backup_import)) }
                 }
                 SyncSettingsCard(snackbar, onConnectSync)
@@ -138,7 +139,7 @@ fun SettingsScreen(
                 SettingsCard(stringResource(R.string.danger_zone)) {
                     Text(stringResource(R.string.data_delete_warning), style = MaterialTheme.typography.bodySmall)
                     OutlinedButton(
-                        { confirmDelete = true },
+                        { scope.launch { if (!vm.refuseWhileSyncActive()) confirmDelete = true } },
                         Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(50),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),

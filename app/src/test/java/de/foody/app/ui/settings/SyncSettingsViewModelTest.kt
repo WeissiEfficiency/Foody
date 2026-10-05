@@ -160,6 +160,38 @@ class SyncSettingsViewModelTest {
     }
 
     @Test
+    fun persistentErrorsMapToStatusNote() = runBlocking {
+        val cases = listOf(
+            "protocol_too_old" to R.string.sync_error_update_app,
+            "protocol_server_too_old" to R.string.sync_error_update_server,
+            "no_household" to R.string.sync_status_no_household,
+            "failed: IllegalStateException" to R.string.sync_status_last_failed,
+        )
+        for ((error, note) in cases) {
+            connect(lastError = error)
+            val s = vm().state.await { it.connected }
+            assertEquals(note, s.statusNote, error)
+            assertEquals(error == "no_household", s.reconnectNeeded, error)
+        }
+    }
+
+    @Test
+    fun transientAndCursorStuckShowNoSpecialLine() = runBlocking {
+        for (error in listOf("transient: timeout", "transient: cursor_stuck", null)) {
+            connect(lastError = error)
+            val s = vm().state.await { it.connected }
+            assertNull(s.statusNote, error)
+            assertFalse(s.reconnectNeeded, error)
+        }
+    }
+
+    @Test
+    fun unauthorizedNeedsReconnect() = runBlocking {
+        connect(lastError = "unauthorized")
+        assertTrue(vm().state.await { it.connected }.reconnectNeeded)
+    }
+
+    @Test
     fun syncNowRequestsWork() = runBlocking {
         connect()
         val vm = vm()

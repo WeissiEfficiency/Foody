@@ -136,9 +136,12 @@ class SyncAccountRepository @Inject constructor(
         } catch (_: Exception) {
             // Best effort: Server nicht erreichbar, Token schon ungültig o. Ä.
         } finally {
-            tokenStore.clear()
-            localStore.deactivate()
-            scheduler.cancelAll()
+            // Auch bei Abbruch (z. B. Bildschirm verlassen) vollständig lokal trennen.
+            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                tokenStore.clear()
+                localStore.deactivate()
+                scheduler.cancelAll()
+            }
         }
     }
 

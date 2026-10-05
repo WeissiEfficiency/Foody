@@ -17,6 +17,7 @@ import de.foody.app.sync.ServerUrl
 import de.foody.app.sync.SyncAccountRepository
 import de.foody.app.sync.SyncAccounts
 import de.foody.app.sync.SyncApiException
+import de.foody.sync.protocol.ErrorCode
 import de.foody.app.sync.SyncErrors
 import de.foody.app.util.runSuspendCatching
 import de.foody.sync.protocol.HouseholdDto
@@ -191,7 +192,14 @@ class SyncSetupViewModel @Inject constructor(
         when {
             // Erneut verbinden: den bisherigen Haushalt behalten und alles Vorgemerkte senden; keine Rückfrage.
             previous != null -> {
-                if (householdId != previous) repo.selectHousehold(url, previous)
+                if (householdId != previous) {
+                    try {
+                        repo.selectHousehold(url, previous)
+                    } catch (e: SyncApiException.ClientError) {
+                        if (e.code == ErrorCode.FORBIDDEN || e.code == ErrorCode.NOT_FOUND) throw ReconnectHouseholdGone()
+                        throw e
+                    }
+                }
                 activate(previous, FirstSync.UPLOAD_ALL)
             }
             householdId != null -> joinExisting(householdId)
@@ -299,11 +307,16 @@ class SyncSetupViewModel @Inject constructor(
         update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
             runSuspendCatching { block() }.onFailure { e ->
-                update { it.copy(error = SyncErrors.messageFor(e, context)) }
+                update {
+                    it.copy(error = if (e is ReconnectHouseholdGone) R.string.sync_error_reconnect_household_gone else SyncErrors.messageFor(e, context))
+                }
             }
             update { it.copy(busy = false) }
         }
     }
+
+    /** Beim „Erneut verbinden“: das Konto gehört nicht mehr zum gespeicherten Haushalt. */
+    private class ReconnectHouseholdGone : Exception()
 
     private companion object {
         const val ARG_RECONNECT = "reconnect"

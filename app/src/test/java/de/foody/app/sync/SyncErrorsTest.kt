@@ -43,6 +43,13 @@ class SyncErrorsTest {
     }
 
     @Test
+    fun peerUnverifiedIsCertificateError() {
+        assertEquals(R.string.sync_error_certificate, msg(SyncApiException.Transient(0, null, javax.net.ssl.SSLPeerUnverifiedException("Hostname"))))
+        // Die Oberklasse allein (z. B. Verbindungsabbruch) ist kein Zertifikatsproblem.
+        assertEquals(R.string.sync_error_unreachable, msg(SyncApiException.Transient(0, null, javax.net.ssl.SSLException("reset"))))
+    }
+
+    @Test
     fun otherNetworkErrorsAreUnreachable() {
         assertEquals(R.string.sync_error_unreachable, msg(SyncApiException.Transient(0, null, IOException("refused"))))
         assertEquals(R.string.sync_error_unreachable, msg(SyncApiException.Transient(503, null)))

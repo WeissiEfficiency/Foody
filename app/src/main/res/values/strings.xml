@@ -339,6 +339,10 @@
     <string name="sync_status_off">Nicht verbunden</string>
     <string name="sync_status_connected">Verbunden · zuletzt %1$s</string>
     <string name="sync_status_connected_household">Verbunden mit %1$s · zuletzt %2$s</string>
+    <string name="sync_status_no_household">Kein Haushalt gewählt – bitte erneut verbinden</string>
+    <string name="sync_status_last_failed">Letzter Abgleich fehlgeschlagen.</string>
+    <string name="sync_blocks_destructive">Bei verbundener Synchronisierung bitte zuerst trennen.</string>
+    <string name="sync_error_reconnect_household_gone">Dieses Konto gehört nicht (mehr) zu diesem Haushalt – bitte trennen und neu verbinden.</string>
     <string name="sync_status_unauthorized">Abgemeldet – bitte erneut verbinden</string>
     <string name="sync_never">noch nie</string>
     <string name="sync_just_now">gerade eben</string>
