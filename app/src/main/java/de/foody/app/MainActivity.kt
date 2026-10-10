@@ -1,6 +1,9 @@
 package de.foody.app
 
 import javax.inject.Inject
+import androidx.lifecycle.lifecycleScope
+import de.foody.app.sync.SyncScheduler
+import kotlinx.coroutines.launch
 import de.foody.app.data.ThemePreferences
 import de.foody.app.ui.theme.ThemeMode
 import androidx.activity.SystemBarStyle
@@ -21,6 +24,13 @@ import de.foody.app.ui.theme.FoodyTheme
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject lateinit var themePreferences: ThemePreferences
+    @Inject lateinit var syncScheduler: SyncScheduler
+
+    override fun onStart() {
+        super.onStart()
+        // App kommt nach vorn: frische Daten anderer Geräte holen (der Hintergrund-Sync läuft nur stündlich)
+        lifecycleScope.launch { syncScheduler.requestOnAppOpen() }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Vor super.onCreate: übernimmt den Startbildschirm aus Theme.Foody.Starting

@@ -78,13 +78,17 @@ class SyncScheduler @Inject constructor(
     private val workManager get() = WorkManager.getInstance(context)
     private val constraints = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
-    /** Regelmäßiger Abgleich; ein bereits geplanter Auftrag bleibt unverändert. */
+    /**
+     * Regelmäßiger Abgleich im Stundentakt (Akku: lokale Änderungen gehen über die Outbox ohnehin sofort raus, und beim
+     * Öffnen der App wird abgeglichen – [requestOnAppOpen]). `UPDATE` hält die Auftrags-ID, bringt aber ein geändertes
+     * Intervall auch auf bestehende Installationen.
+     */
     fun schedulePeriodic() {
         val request = PeriodicWorkRequestBuilder<SyncWorker>(PERIOD_MINUTES, TimeUnit.MINUTES)
             .setConstraints(constraints)
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_SECONDS, TimeUnit.SECONDS)
             .build()
-        workManager.enqueueUniquePeriodicWork(PERIODIC_WORK, ExistingPeriodicWorkPolicy.KEEP, request)
+        workManager.enqueueUniquePeriodicWork(PERIODIC_WORK, ExistingPeriodicWorkPolicy.UPDATE, request)
     }
 
     /**
@@ -108,6 +112,15 @@ class SyncScheduler @Inject constructor(
      */
     suspend fun requestSoonIfQueuedSince(runStart: Long) {
         if (db.syncDao().hasQueuedSince(runStart)) requestSoon(afterRun = true)
+    }
+
+    /**
+     * Beim Öffnen der App abgleichen, damit Änderungen anderer Geräte da sind, ohne alle 15 Minuten zu wecken. Nur bei
+     * aktivem Sync, und nicht während eines Laufs (`REPLACE` würde ihn abbrechen).
+     */
+    suspend fun requestOnAppOpen() {
+        if (engineFactory.isSyncRunning || db.syncDao().getState()?.active != true) return
+        requestSoon()
     }
 
     fun cancelAll() {
@@ -137,7 +150,7 @@ class SyncScheduler @Inject constructor(
     companion object {
         const val PERIODIC_WORK = "foody-sync-periodic"
         const val NOW_WORK = "foody-sync-now"
-        private const val PERIOD_MINUTES = 15L
+        private const val PERIOD_MINUTES = 60L
         private const val BACKOFF_SECONDS = 30L
         private const val DELAY_SECONDS = 5L
     }
