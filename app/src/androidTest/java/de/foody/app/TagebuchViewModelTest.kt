@@ -71,6 +71,7 @@ class TagebuchViewModelTest {
 
     @After fun tearDown() {
         collector.cancel()
+        vm.aufraeumen()
         db.close()
     }
 

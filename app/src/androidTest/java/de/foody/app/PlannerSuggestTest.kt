@@ -64,6 +64,7 @@ class PlannerSuggestTest {
 
     @After fun tearDown() {
         collector.cancel()
+        vm.aufraeumen()
         db.close()
     }
 
