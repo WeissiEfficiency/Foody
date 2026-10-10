@@ -155,4 +155,11 @@ class NaehrwertScanTest {
 
     @Test fun neunAlsGrammNimmtErsteSpalte() =
         assertEquals("12", NaehrwertScan.auswerten(listOf(zeile("Zucker 12 9 3 9"), zeile("Kohlenhydrate 40 9 10 9"))).werte.wert(Nutrient.SUGAR_G))
+
+    /** Englische Packung: „1,046 kJ“ ist Tausendertrennung (Energie hat nie drei Nachkommastellen), „3,5 g“ bleibt Dezimal. */
+    @Test fun englischeTausendertrennungBeiEnergie() {
+        val e = NaehrwertScan.auswerten(listOf(zeile("Energy 1,046 kJ / 250 kcal"), zeile("Fat 3,5 g")))
+        assertEquals("1046", e.werte.wert(Nutrient.ENERGY_KJ))
+        assertEquals("3.5", e.werte.wert(Nutrient.FAT_G))
+    }
 }

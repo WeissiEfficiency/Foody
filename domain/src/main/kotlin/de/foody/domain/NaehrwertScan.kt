@@ -45,7 +45,8 @@ object NaehrwertScan {
     private val zahlMitEinheit = Regex("""(<\s*)?(\d+(?:[.  ]\d{3})*(?:[.,]\d+)?)\s*(kj|kcal|mg|g)\b""", RegexOption.IGNORE_CASE)
     /** Lesefehler „12 9“ statt „12 g“: eine allein stehende 9 hinter der Zahl gilt als Gramm; die erste zählt (je 100 g). */
     private val neunAlsGramm = Regex("""(<\s*)?(\d+(?:[.,]\d+)?)\s+9(?=\s|$)""")
-    private val spuren = Regex("""\b(spuren|trace|traces)\b""", RegexOption.IGNORE_CASE)
+    private val englischeTausender = Regex("""\d{1,3},\d{3}""")
+    private val spuren =Regex("""\b(spuren|trace|traces)\b""", RegexOption.IGNORE_CASE)
 
     fun auswerten(elemente: List<OcrElement>): ScanErgebnis {
         val zeilen = zeilen(elemente)
@@ -97,7 +98,13 @@ object NaehrwertScan {
 
     /** Erste Zahl mit passender Einheit; Energie bevorzugt kJ, sonst kcal umgerechnet. „Spuren“ = 0. */
     private fun wert(text: String, n: Nutrient): BigDecimal? {
-        val zahlen = zahlMitEinheit.findAll(text).map { m -> m.groupValues[3].lowercase() to zahl(m.groupValues[2]) }.toList()
+        val zahlen = zahlMitEinheit.findAll(text).map { m ->
+            val einheit = m.groupValues[3].lowercase()
+            val roh = m.groupValues[2]
+            // Englisch „1,046 kJ“: bei Energie ist ein Komma mit genau drei Ziffern danach Tausendertrennung.
+            val energieTausender = (einheit == "kj" || einheit == "kcal") && englischeTausender.matches(roh)
+            einheit to (if (energieTausender) BigDecimal(roh.replace(",", "")) else zahl(roh))
+        }.toList()
         if (n == Nutrient.ENERGY_KJ) {
             zahlen.firstOrNull { it.first == "kj" }?.let { return it.second }
             return zahlen.firstOrNull { it.first == "kcal" }?.second?.multiply(BigDecimal(KJ_JE_KCAL))?.setScale(0, RoundingMode.HALF_UP)
