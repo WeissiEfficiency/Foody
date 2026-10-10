@@ -26,7 +26,7 @@ data class DayNutrition(val kcal: Int, val protein: Int, val carbs: Int, val fat
                 if (!n.isComplete(Nutrient.ENERGY_KJ)) complete = false
             }
             fun BigDecimal.int() = setScale(0, RoundingMode.HALF_UP).toInt()
-            return DayNutrition(NutritionResult.kjToKcal(kj).int(), p.int(), c.int(), f.int(), complete)
+            return DayNutrition(NutritionResult.kcal(kj), p.int(), c.int(), f.int(), complete)
         }
     }
 }

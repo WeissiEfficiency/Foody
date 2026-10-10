@@ -8,6 +8,7 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import de.foody.domain.NutritionResult
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -42,7 +43,7 @@ object OpenFoodFacts {
         fun zahl(key: String) = n[key]?.jsonPrimitive?.contentOrNull?.toBigDecimalOrNull()
         // energy_100g liefert Open Food Facts in kJ
         val kj = zahl("energy-kj_100g")
-            ?: zahl("energy-kcal_100g")?.multiply(BigDecimal("4.184"))?.setScale(0, RoundingMode.HALF_UP)
+            ?: zahl("energy-kcal_100g")?.let(NutritionResult::kcalToKj)?.setScale(0, RoundingMode.HALF_UP)
             ?: zahl("energy_100g")
         val roh = buildMap {
             kj?.let { put(Nutrient.ENERGY_KJ, it) }

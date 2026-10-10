@@ -237,6 +237,6 @@ class TagebuchViewModel @Inject constructor(
     fun loeschen(id: String) = viewModelScope.launch { tagebuch.delete(id) }
 
     companion object {
-        val KJ_JE_KCAL = BigDecimal("4.184")
+        val KJ_JE_KCAL = de.foody.domain.NutritionResult.KJ_JE_KCAL
     }
 }

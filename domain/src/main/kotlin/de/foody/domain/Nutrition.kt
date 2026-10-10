@@ -34,7 +34,19 @@ data class NutritionResult(
     }
 
     companion object {
-        fun kjToKcal(kj: BigDecimal): BigDecimal = kj.divide(BigDecimal("4.184"), 1, RoundingMode.HALF_UP)
+        /** Umrechnung kJ ↔ kcal – die einzige Stelle mit diesem Faktor. */
+        val KJ_JE_KCAL = BigDecimal("4.184")
+
+        /** kcal mit einer Nachkommastelle (Zwischenwerte, z. B. Portionen-Schätzung). */
+        fun kjToKcal(kj: BigDecimal): BigDecimal = kj.divide(KJ_JE_KCAL, 1, RoundingMode.HALF_UP)
+
+        /**
+         * Angezeigte kcal: einmal kaufmännisch auf ganze kcal gerundet. Alle Anzeigen (Rezept, Liste, Planer, Tagebuch)
+         * nutzen diese Funktion – über [kjToKcal] erst auf eine Stelle und dann ganz zu runden, ergäbe ±1 (349,46 → 350).
+         */
+        fun kcal(kj: BigDecimal): Int = kj.divide(KJ_JE_KCAL, 0, RoundingMode.HALF_UP).toInt()
+
+        fun kcalToKj(kcal: BigDecimal): BigDecimal = kcal.multiply(KJ_JE_KCAL)
     }
 }
 
