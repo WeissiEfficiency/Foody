@@ -4,6 +4,7 @@ import de.foody.app.scan.Packung
 import de.foody.app.scan.PackungScan
 import de.foody.domain.Ingredient
 import de.foody.domain.Nutrient
+import de.foody.domain.IngredientCatalog
 import de.foody.domain.NutrientBasis
 import de.foody.domain.NutrientProfile
 import androidx.lifecycle.SavedStateHandle
@@ -190,8 +191,12 @@ class TagebuchViewModel @Inject constructor(
         return neu.divide(alt, 10, java.math.RoundingMode.HALF_UP)
     }
 
-    /** Gibt es im Katalog schon eine Zutat mit diesem Namen? (Häkchen heißt dann „Werte aktualisieren“.) */
-    suspend fun zutatMitNamen(name: String): IngredientEntity? = name.trim().takeIf { it.isNotEmpty() }?.let { ingredients.findByName(it) }
+    /**
+     * Gibt es im Katalog schon eine Zutat mit diesem Namen? (Häkchen heißt dann „Werte aktualisieren“.) Der eigene Name
+     * geht vor; sonst über [IngredientCatalog] vereinheitlicht wie beim Import: „Mehl“ findet „Weizenmehl“.
+     */
+    suspend fun zutatMitNamen(name: String): IngredientEntity? =
+        name.trim().takeIf { it.isNotEmpty() }?.let { ingredients.findByName(it) ?: ingredients.findByName(IngredientCatalog.canonicalName(it)) }
 
     /**
      * Trägt eine gescannte Packung ein. Mit [alsZutat] wird die Zutat angelegt bzw. – wenn es den Namen schon gibt –
@@ -208,7 +213,11 @@ class TagebuchViewModel @Inject constructor(
             return true
         }
         val jetzt = System.currentTimeMillis()
-        val basis = ingredients.findByName(n) ?: IngredientEntity(id = newId(), canonicalName = n, createdAt = jetzt, updatedAt = jetzt, version = 0)
+        val kanonisch = IngredientCatalog.canonicalName(n)
+        val basis = zutatMitNamen(n) ?: IngredientEntity(
+            id = newId(), canonicalName = kanonisch, category = IngredientCatalog.guessCategory(kanonisch),
+            createdAt = jetzt, updatedAt = jetzt, version = 0,
+        )
         fun wert(x: Nutrient, alt: BigDecimal?) = packung.werte[x] ?: alt
         val zutat = basis.copy(
             nutrientBasis = packung.basis ?: NutrientBasis.PER_100_G,

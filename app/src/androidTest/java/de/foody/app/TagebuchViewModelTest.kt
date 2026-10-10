@@ -193,4 +193,16 @@ class TagebuchViewModelTest {
         assertEquals("4001234567890", reis.barcode)
         assertEquals("reis", db.tagebuchDao().getAll().single().zutatId)
     }
+
+    /** „Mehl“ von der Packung landet bei „Weizenmehl“ (Katalog-Synonym) statt als zweite Zutat. */
+    @Test fun packungMitSynonymAktualisiertDieStammzutat() = runBlocking {
+        val jetzt = System.currentTimeMillis()
+        db.ingredientDao().upsert(IngredientEntity(id = "wm", canonicalName = "Weizenmehl", createdAt = jetzt, updatedAt = jetzt))
+        assertEquals("wm", vm.zutatMitNamen("Mehl")?.id, "Häkchen heißt „Werte aktualisieren“")
+        val mehl = skyr.copy(name = "Mehl", werte = mapOf(de.foody.domain.Nutrient.ENERGY_KJ to BigDecimal(1450)))
+        assertTrue(vm.packungEintragen(Mahlzeit.MITTAGESSEN, "Mehl", BigDecimal(100), MeasureUnit.GRAM, mehl, alsZutat = true))
+        assertEquals(null, db.ingredientDao().findByNameExact("Mehl"), "keine zweite Zutat")
+        assertEquals(0, BigDecimal(1450).compareTo(db.ingredientDao().get("wm")!!.energyKj))
+        assertEquals("wm", db.tagebuchDao().getAll().single().zutatId)
+    }
 }
