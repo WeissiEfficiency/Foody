@@ -11,6 +11,7 @@ import javax.inject.Singleton
 @Singleton
 class TagebuchRepository @Inject constructor(private val db: FoodyDatabase, private val dao: TagebuchDao) {
     fun observeRange(start: LocalDate, end: LocalDate) = dao.observeRange(start, end)
+    fun observeUebernommenePlanIds() = dao.observeUebernommenePlanIds()
     suspend fun get(id: String) = dao.get(id)
     suspend fun save(e: TagebuchEintragEntity) = dao.upsert(e.copy(updatedAt = System.currentTimeMillis()))
     suspend fun delete(id: String) = dao.delete(id)

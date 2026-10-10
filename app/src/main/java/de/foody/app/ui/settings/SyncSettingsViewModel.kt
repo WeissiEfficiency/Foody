@@ -162,7 +162,7 @@ class SyncSettingsViewModel @Inject constructor(
         local.update { it.copy(busy = false) }
     }
 
-    private companion object {
+    internal companion object {
         const val UNAUTHORIZED = "unauthorized"
         const val NO_HOUSEHOLD = "no_household"
 
@@ -183,6 +183,7 @@ class SyncSettingsViewModel @Inject constructor(
             "meal_slot" -> R.string.sync_type_meal_slot
             "pantry_item" -> R.string.sync_type_pantry_item
             "shopping_list" -> R.string.sync_type_shopping_list
+            "tagebuch_eintrag" -> R.string.sync_type_tagebuch
             else -> R.string.sync_type_shopping_item
         }
 

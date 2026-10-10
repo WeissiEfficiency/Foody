@@ -53,7 +53,7 @@ import de.foody.app.ui.common.DecimalField
 import de.foody.app.ui.common.DropdownField
 import de.foody.app.ui.common.FormColumn
 import de.foody.app.ui.common.label
-import de.foody.app.ui.common.parseDecimal
+import de.foody.app.ui.common.parseNichtNegativ
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.domain.PlanAuswahl
@@ -126,7 +126,9 @@ internal fun HinzufuegenDialog(mahlzeit: Mahlzeit, s: TagebuchUiState, vm: Tageb
             .filter { suche.isBlank() || it.name.contains(suche.trim(), ignoreCase = true) }
     }
     val gewaehltesRezept = PlanAuswahl.auswahlBehalten(rezeptId, sichtbar) { it.id }
-    val mengeZahl = parseDecimal(menge)?.takeIf { it.signum() > 0 }
+    val mengeZahl = parseNichtNegativ(menge)?.takeIf { it.signum() > 0 }
+    // Leere Felder sind erlaubt (unbekannt), Ungültiges nicht
+    fun optOk(text: String) = text.isBlank() || parseNichtNegativ(text) != null
     val vorschau = zutatId?.let { id -> mengeZahl?.let { vm.zutatVorschau(id, it, einheit) } }
     val kcalZahl = kcal.toIntOrNull()?.takeIf { it > 0 }
 
@@ -134,7 +136,7 @@ internal fun HinzufuegenDialog(mahlzeit: Mahlzeit, s: TagebuchUiState, vm: Tageb
     val kannHinzufuegen = when (aktiv) {
         Reiter.REZEPT -> gewaehltesRezept != null
         Reiter.ZUTAT -> zutatId != null && mengeZahl != null
-        Reiter.FREI -> name.isNotBlank() && kcalZahl != null
+        Reiter.FREI -> name.isNotBlank() && kcalZahl != null && optOk(eiweiss) && optOk(kh) && optOk(fett)
     }
 
     AlertDialog(
@@ -205,7 +207,7 @@ internal fun HinzufuegenDialog(mahlzeit: Mahlzeit, s: TagebuchUiState, vm: Tageb
                         if (vm.zutatEintragen(mahlzeit, zutatId!!, mengeZahl!!, einheit)) onDismiss() else keineWerte = true
                     }
                     Reiter.FREI -> {
-                        vm.freiEintragen(mahlzeit, name, kcalZahl!!, parseDecimal(eiweiss), parseDecimal(kh), parseDecimal(fett))
+                        vm.freiEintragen(mahlzeit, name, kcalZahl!!, parseNichtNegativ(eiweiss), parseNichtNegativ(kh), parseNichtNegativ(fett))
                         onDismiss()
                     }
                 }
@@ -241,7 +243,7 @@ internal fun BearbeitenDialog(e: TagebuchEintragEntity, onDismiss: () -> Unit, o
     var kcal by remember { mutableStateOf(anfangsKcal?.toString().orEmpty()) }
     val ok = when (e.art) {
         TagebuchArt.REZEPT -> true
-        TagebuchArt.ZUTAT -> parseDecimal(menge)?.signum() == 1
+        TagebuchArt.ZUTAT -> parseNichtNegativ(menge)?.signum() == 1
         TagebuchArt.FREI -> name.isNotBlank() && (kcal.toIntOrNull() ?: 0) > 0
     }
     AlertDialog(
@@ -271,7 +273,7 @@ internal fun BearbeitenDialog(e: TagebuchEintragEntity, onDismiss: () -> Unit, o
                 onSave(
                     when (e.art) {
                         TagebuchArt.REZEPT -> e.copy(mahlzeit = mahlzeit.name, portionen = portionen)
-                        TagebuchArt.ZUTAT -> e.copy(mahlzeit = mahlzeit.name, menge = parseDecimal(menge))
+                        TagebuchArt.ZUTAT -> e.copy(mahlzeit = mahlzeit.name, menge = parseNichtNegativ(menge))
                         TagebuchArt.FREI -> e.copy(
                             mahlzeit = mahlzeit.name, name = name.trim(),
                             // Nur bei geänderten kcal neu umrechnen, sonst bleibt der genaue kJ-Wert

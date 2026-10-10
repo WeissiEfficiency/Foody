@@ -241,6 +241,9 @@ interface TagebuchDao {
     @Query("SELECT * FROM tagebuch_eintrag") suspend fun getAll(): List<TagebuchEintragEntity>
     @Upsert suspend fun upsert(e: TagebuchEintragEntity)
     @Query("DELETE FROM tagebuch_eintrag WHERE id = :id") suspend fun delete(id: String)
+    @Query("SELECT DISTINCT planEintragId FROM tagebuch_eintrag WHERE planEintragId IS NOT NULL")
+    fun observeUebernommenePlanIds(): Flow<List<String>>
+
     @Query("SELECT EXISTS(SELECT 1 FROM tagebuch_eintrag WHERE planEintragId = :planEintragId)")
     suspend fun existsForPlan(planEintragId: String): Boolean
 }
