@@ -1,5 +1,7 @@
 package de.foody.app.ui.recipes
 
+import de.foody.app.ui.common.label
+import de.foody.domain.Gang
 import de.foody.domain.Diet
 import de.foody.domain.RecipeSort
 import androidx.compose.material.icons.filled.Tune
@@ -143,7 +145,8 @@ fun RecipeListScreen(
             )
         },
     ) { padding ->
-        val browsing = state.query.isBlank() && state.tag == null && !state.showArchived && !state.pantryOnly && state.diets.isEmpty()
+        val browsing = state.query.isBlank() && state.tag == null && !state.showArchived && !state.pantryOnly && state.diets.isEmpty() &&
+            state.gaenge.isEmpty() && !state.nurNichtEingeordnet
         LazyVerticalGrid(
             state = gridState,
             columns = GridCells.Adaptive(minSize = 156.dp),
@@ -207,7 +210,7 @@ fun RecipeListScreen(
         Box(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(FoodyGlass.fill))
     }
     if (showFilter) {
-        DiscoverSheet(state, vm::onToggleDiet, vm::onSort, vm::resetDiscover, onDismiss = { showFilter = false })
+        DiscoverSheet(state, vm::onToggleDiet, vm::onToggleGang, vm::onToggleNichtEingeordnet, vm::onSort, vm::resetDiscover, onDismiss = { showFilter = false })
     }
 }
 
@@ -299,7 +302,7 @@ private fun TagRow(
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
             // Ernährung und Sortierung im Blatt – die Chip-Zeile bleibt kurz
-            val active = state.diets.size + if (state.sort != RecipeSort.NAME) 1 else 0
+            val active = state.diets.size + state.gaenge.size + (if (state.nurNichtEingeordnet) 1 else 0) + if (state.sort != RecipeSort.NAME) 1 else 0
             FilterChip(
                 active > 0, onOpenFilter,
                 label = { Text(if (active > 0) stringResource(R.string.filter_button_count, active) else stringResource(R.string.filter_button)) },
@@ -309,7 +312,8 @@ private fun TagRow(
         }
         item {
             FilterChip(
-                state.tag == null && !state.showArchived && !state.favoritesOnly && !state.pantryOnly && state.diets.isEmpty(),
+                state.tag == null && !state.showArchived && !state.favoritesOnly && !state.pantryOnly && state.diets.isEmpty() &&
+                    state.gaenge.isEmpty() && !state.nurNichtEingeordnet,
                 {
                     onTag(null)
                     if (state.showArchived) onToggleArchived()
@@ -370,6 +374,8 @@ private fun ImportProgress(done: Int, total: Int) {
 private fun DiscoverSheet(
     state: RecipeListUiState,
     onToggleDiet: (Diet) -> Unit,
+    onToggleGang: (Gang) -> Unit,
+    onToggleNichtEingeordnet: () -> Unit,
     onSort: (RecipeSort) -> Unit,
     onReset: () -> Unit,
     onDismiss: () -> Unit,
@@ -395,6 +401,14 @@ private fun DiscoverSheet(
                 }
             }
             Text(stringResource(R.string.filter_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.einordnung_gang), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Gang.entries.forEach { g ->
+                    FilterChip(g in state.gaenge, { onToggleGang(g) }, label = { Text(stringResource(g.label())) }, shape = RoundedCornerShape(50), colors = chipColors)
+                }
+                FilterChip(state.nurNichtEingeordnet, onToggleNichtEingeordnet, label = { Text(stringResource(R.string.filter_nicht_eingeordnet)) },
+                    shape = RoundedCornerShape(50), colors = chipColors)
+            }
             Text(stringResource(R.string.sort_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(

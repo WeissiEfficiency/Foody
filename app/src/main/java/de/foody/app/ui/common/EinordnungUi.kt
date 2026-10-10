@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -56,6 +58,11 @@ fun <E> EinordnungChips(
     onToggle: (E) -> Unit,
     onZuruecksetzen: (() -> Unit)?,
 ) {
+    // Wie die übrigen Filter-Chips: ausgewählt = dunkel, sonst sind Zustände kaum zu unterscheiden
+    val chipColors = FilterChipDefaults.filterChipColors(
+        selectedContainerColor = MaterialTheme.colorScheme.secondary,
+        selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+    )
     Column(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(titel, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
@@ -66,7 +73,7 @@ fun <E> EinordnungChips(
             onZuruecksetzen?.let { TextButton(it) { Text(stringResource(R.string.einordnung_zuruecksetzen)) } }
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = if (vermutet) Modifier.alpha(0.6f) else Modifier) {
-            werte.forEach { w -> FilterChip(w in gewaehlt, { onToggle(w) }, label = { Text(stringResource(label(w))) }) }
+            werte.forEach { w -> FilterChip(w in gewaehlt, { onToggle(w) }, label = { Text(stringResource(label(w))) }, shape = RoundedCornerShape(50), colors = chipColors) }
         }
     }
 }

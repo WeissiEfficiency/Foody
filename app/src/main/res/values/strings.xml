@@ -229,6 +229,7 @@
     <string name="einordnung_gang">Gang</string>
     <string name="einordnung_vermutet">vermutet</string>
     <string name="einordnung_zuruecksetzen">Zurücksetzen</string>
+    <string name="filter_nicht_eingeordnet">Nicht eingeordnet</string>
 
     <!-- Einkauf -->
     <string name="shopping_generate">Liste erzeugen</string>
