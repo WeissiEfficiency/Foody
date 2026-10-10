@@ -26,6 +26,7 @@ import de.foody.domain.NutritionCalculator
 import de.foody.domain.NutritionResult
 import de.foody.domain.RecipeScaler
 import de.foody.domain.StepIngredientMatcher
+import java.math.RoundingMode
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -42,7 +43,7 @@ data class DisplayLine(
     val amountText: String?,
     val note: String?,
     val optional: Boolean,
-    /** Energie dieser Zeile für die gewählten Portionen (Menge × kcal je 100 g); null = nicht berechenbar. */
+    /** Energie dieser Zeile je Portion (Menge × kcal je 100 g ÷ Portionen), passend zu „kcal/Port.“; null = nicht berechenbar. */
     val kcal: Int? = null,
     val gap: LineGap? = null,
 )
@@ -85,7 +86,7 @@ class RecipeDetailViewModel @Inject constructor(
             DisplayLine(
                 l.id, l.ingredientId, ingMap[l.ingredientId]?.name.orEmpty(),
                 if (scaled.signum() == 0) null else formatAmount(scaled, l.unit), l.preparationNote, l.optional,
-                kcal = nutrition.lineEnergyKj[l.id]?.let { NutritionResult.kjToKcal(it).toInt() },
+                kcal = nutrition.lineEnergyPerServingKj(l.id)?.let { NutritionResult.kjToKcal(it).setScale(0, RoundingMode.HALF_UP).toInt() },
                 gap = nutrition.lineGaps[l.id],
             )
         }

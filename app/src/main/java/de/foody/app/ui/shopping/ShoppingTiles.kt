@@ -85,7 +85,10 @@ fun ShoppingTiles(
     var expandedRaw by rememberSaveable { mutableStateOf(RECENT) }
     val expanded = expandedRaw.split('|').toSet()
     fun toggleSection(key: String) {
-        expandedRaw = (if (key in expanded) expanded - key else expanded + key).joinToString("|")
+        // Den aktuellen Zustand lesen, nicht das beim Zeichnen erfasste `expanded`: Die Klick-Lambda der Überschrift
+        // wird über Neuzusammensetzungen hinweg wiederverwendet und sähe sonst einen veralteten Stand (Zuklappen ging nicht).
+        val current = expandedRaw.split('|').toSet()
+        expandedRaw = (if (key in current) current - key else current + key).joinToString("|")
     }
 
     val sectionIndex = ShoppingCatalog.sectionOrder.withIndex().associate { (i, s) -> s to i }
