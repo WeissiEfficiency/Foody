@@ -1,6 +1,17 @@
 package de.foody.app
 
 import android.content.Context
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.StateRestorationTester
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performTextInput
+import de.foody.app.ui.tagebuch.HinzufuegenDialog
+import de.foody.domain.Mahlzeit
+import kotlin.test.assertEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -74,5 +85,47 @@ class TagebuchScreenTest {
         compose.onNodeWithText("Curry").performScrollTo().assertIsDisplayed()
         // Zeile, Mahlzeit und Tag zeigen dieselbe Summe
         assert(compose.onAllNodesWithText("350 kcal").fetchSemanticsNodes().isNotEmpty())
+    }
+
+    @Test fun portionenKnopfAnDerKarte() {
+        compose.setContent { FoodyTheme { TagebuchScreen(vm = vm) } }
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Geplant: Curry")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("Portionen wählen").performScrollTo().performClick()
+        compose.onNodeWithText("1 Portion").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Mehr").performClick()
+        compose.onNodeWithText("1,5 Portionen").assertIsDisplayed()
+        compose.onAllNodesWithText("Gegessen").onLast().performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("525 kcal")).fetchSemanticsNodes().isNotEmpty() }
+    }
+
+    @Test fun doppeltippLegtZutatNurEinmalAn() {
+        compose.setContent {
+            FoodyTheme {
+                val s by vm.state.collectAsState()
+                HinzufuegenDialog(Mahlzeit.SNACK, s, vm, onDismiss = {})
+            }
+        }
+        compose.waitUntil(5_000) { vm.state.value.zutaten.isNotEmpty() }
+        compose.onNodeWithText("Zutat").performClick()
+        compose.onNode(hasSetTextAction() and hasText("Zutat suchen")).performTextInput("Reis")
+        compose.onNode(hasText("Reis") and !hasSetTextAction()).performClick()
+        compose.onNode(hasSetTextAction() and hasText("Menge")).performTextInput("100")
+        compose.onNodeWithText("Hinzufügen").performClick()
+        compose.onNodeWithText("Hinzufügen").performClick()
+        compose.waitForIdle()
+        runBlocking { kotlinx.coroutines.delay(500) }
+        assertEquals(1, runBlocking { db.tagebuchDao().getAll() }.size)
+    }
+
+    @Test fun bearbeitenUeberstehtWiederherstellung() {
+        vm.rezeptEintragen(Mahlzeit.MITTAGESSEN, runBlocking { db.recipeDao().getAll().single().id }, BigDecimal.ONE)
+        val tester = StateRestorationTester(compose)
+        tester.setContent { FoodyTheme { TagebuchScreen(vm = vm) } }
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("1 Portion")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("1 Portion").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Mehr").performClick()
+        compose.onNodeWithText("1,5 Portionen").assertIsDisplayed()
+        tester.emulateSavedInstanceStateRestore()
+        compose.onNodeWithText("1,5 Portionen").assertIsDisplayed()
     }
 }

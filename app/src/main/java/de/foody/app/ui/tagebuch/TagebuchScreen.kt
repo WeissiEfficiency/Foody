@@ -1,5 +1,6 @@
 package de.foody.app.ui.tagebuch
 
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -80,8 +81,9 @@ internal fun kcalText(kcal: Int, vollstaendig: Boolean = true) =
 fun TagebuchScreen(vm: TagebuchViewModel = hiltViewModel()) {
     val s by vm.state.collectAsStateWithLifecycle()
     var hinzufuegen by rememberSaveable { mutableStateOf<String?>(null) }
-    var bearbeiten by remember { mutableStateOf<TagebuchEintragEntity?>(null) }
-    var portionenFuer by remember { mutableStateOf<MealSlotEntity?>(null) }
+    // Nur IDs merken: überstehen Drehen und Prozessneustart, die Daten kommen aus dem Zustand
+    var bearbeitenId by rememberSaveable { mutableStateOf<String?>(null) }
+    var portionenFuerId by rememberSaveable { mutableStateOf<String?>(null) }
 
     Column {
         ScreenHeader(stringResource(R.string.tagebuch_eyebrow), s.tag.pretty()) {
@@ -106,8 +108,8 @@ fun TagebuchScreen(vm: TagebuchViewModel = hiltViewModel()) {
                     eintraege = s.eintraege[m].orEmpty(),
                     vorschlaege = s.vorschlaege[m].orEmpty(),
                     onGegessen = { vm.gegessen(it) },
-                    onPortionen = { portionenFuer = it },
-                    onBearbeiten = { bearbeiten = it },
+                    onPortionen = { portionenFuerId = it.id },
+                    onBearbeiten = { bearbeitenId = it.id },
                     onLoeschen = { vm.loeschen(it.id) },
                     onHinzufuegen = { hinzufuegen = m.name },
                 )
@@ -118,12 +120,15 @@ fun TagebuchScreen(vm: TagebuchViewModel = hiltViewModel()) {
     hinzufuegen?.let { name ->
         HinzufuegenDialog(Mahlzeit.valueOf(name), s, vm, onDismiss = { hinzufuegen = null })
     }
-    bearbeiten?.let { e ->
-        BearbeitenDialog(e, onDismiss = { bearbeiten = null }) { vm.bearbeiten(it); bearbeiten = null }
+    bearbeitenId?.let { id ->
+        s.eintraege.values.flatten().firstOrNull { it.id == id }?.let { e ->
+            BearbeitenDialog(e, onDismiss = { bearbeitenId = null }) { vm.bearbeiten(it); bearbeitenId = null }
+        }
     }
-    portionenFuer?.let { slot ->
-        PortionenDialog(s.vorschlaege.values.flatten().firstOrNull { it.first.id == slot.id }?.second?.name.orEmpty(),
-            onDismiss = { portionenFuer = null }) { p -> vm.gegessen(slot, p); portionenFuer = null }
+    portionenFuerId?.let { id ->
+        s.vorschlaege.values.flatten().firstOrNull { it.first.id == id }?.let { (slot, rezept) ->
+            PortionenDialog(rezept.name, onDismiss = { portionenFuerId = null }) { p -> vm.gegessen(slot, p); portionenFuerId = null }
+        }
     }
 }
 
@@ -218,11 +223,13 @@ private fun MahlzeitAbschnitt(
         vorschlaege.forEach { (slot, rezept) ->
             Surface(
                 shape = MaterialTheme.shapes.medium, color = FoodyGlass.fill, border = FoodyGlass.border,
-                modifier = Modifier.fillMaxWidth().alpha(0.75f).combinedClickable(onClick = {}, onLongClick = { onPortionen(slot) }),
+                modifier = Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClick = { onPortionen(slot) }),
             ) {
                 Row(Modifier.padding(start = 14.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    // Nur der Text ist abgeschwächt („noch nicht gegessen“); die Knöpfe bleiben voll sichtbar
                     Text(stringResource(R.string.tagebuch_geplant, rezept.name), style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                        maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).alpha(0.7f))
+                    IconButton({ onPortionen(slot) }) { Icon(Icons.Outlined.Tune, stringResource(R.string.tagebuch_portionen_waehlen)) }
                     FilledTonalButton({ onGegessen(slot) }, shape = RoundedCornerShape(50)) { Text(stringResource(R.string.tagebuch_gegessen)) }
                 }
             }

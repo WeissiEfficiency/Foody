@@ -9,6 +9,7 @@ import de.foody.sync.protocol.RecordType
 import de.foody.sync.protocol.SyncRecord
 import de.foody.sync.protocol.TagebuchPayload
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -231,5 +232,15 @@ class SyncTest {
         val pulled = client.pull(token, 0).records.single()
         assertEquals(RecordType.TAGEBUCH_EINTRAG, pulled.type)
         assertEquals(payload, Protocol.json.decodeFromJsonElement<TagebuchPayload>(pulled.payload!!))
+    }
+
+    /** Seit dem Tagebuch (Protokoll 2) bekommt eine App ohne Tagebuch-Typ „bitte aktualisieren“ statt eines Dekodierfehlers. */
+    @Test
+    fun appOhneTagebuchMussAktualisieren() = testServer { env ->
+        val (token, _) = env.setupHousehold()
+        val alt = client.get("/api/v1/sync/pull?since=0") { protocol(1); bearerAuth(token) }
+        assertEquals(io.ktor.http.HttpStatusCode.Conflict, alt.status)
+        assertEquals(ErrorCode.PROTOCOL_TOO_OLD, alt.errorCode())
+        assertEquals(2, Protocol.MIN_VERSION)
     }
 }

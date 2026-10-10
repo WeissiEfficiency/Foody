@@ -16,6 +16,7 @@
     <string name="tagebuch_leer">Noch nichts eingetragen. Tippe auf + bei einer Mahlzeit.</string>
     <string name="tagebuch_geplant">Geplant: %1$s</string>
     <string name="tagebuch_gegessen">Gegessen</string>
+    <string name="tagebuch_portionen_waehlen">Portionen wählen</string>
     <string name="tagebuch_hinzufuegen_fuer">Zu %1$s hinzufügen</string>
     <string name="tagebuch_bearbeiten">Bearbeiten</string>
     <string name="tagebuch_tab_rezept">Rezept</string>
