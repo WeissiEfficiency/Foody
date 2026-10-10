@@ -462,4 +462,25 @@ class SyncApplierTest {
         applier.apply(listOf(gone(RecordType.MEAL_SLOT, "s", rev = 4)), 2)
         assertEquals(emptyList(), db.syncDao().problems())
     }
+
+    @Test fun einordnungUndMahlzeitUeberstehenSync() = runTest {
+        val payload = recipePayload("Curry", listOf(line("rl", "i"))).copy(mahlzeiten = "ABENDESSEN", gaenge = "")
+        applier.apply(
+            listOf(
+                ingredientRec("i", "Salz"),
+                rec(RecordType.RECIPE, "r", payload),
+                rec(RecordType.MEAL_SLOT, "a", MealSlotPayload(date = "2026-01-01", slotType = "Abendessen", recipeId = "r", servings = 2)),
+                rec(RecordType.MEAL_SLOT, "b", MealSlotPayload(date = "2026-01-01", slotType = "Brunch", recipeId = "r", servings = 2)),
+            ),
+            nextCursor = 1,
+        )
+        val r = db.recipeDao().get("r")!!
+        assertEquals("ABENDESSEN", r.mahlzeiten)
+        assertEquals("", r.gaenge)
+        val out = SyncMapper.recipe(r, db.recipeDao().getIngredients("r"), db.recipeDao().getSteps("r"), photo = null)
+        assertEquals("ABENDESSEN", out.mahlzeiten)
+        assertEquals("", out.gaenge)
+        assertEquals("ABENDESSEN", db.mealPlanDao().get("a")?.slotType)
+        assertEquals("Brunch", db.mealPlanDao().get("b")?.slotType)
+    }
 }

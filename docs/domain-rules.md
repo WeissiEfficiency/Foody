@@ -32,3 +32,11 @@
     Brüche und gemischte Zahlen („1/2“, „1 1/2“, „1½“) werden als Zahl gelesen, nie nur der Zähler.
 21. Stück, Packungen und Dosen werden auf der Einkaufsliste auf ganze Einheiten aufgerundet (nach Vorratsabzug);
     Gramm und Milliliter bleiben exakt. Rechenrauschen unter 0,005 löst kein zusätzliches Stück aus.
+22. Einordnung: Ein Rezept passt zu Mahlzeiten (Frühstück, Mittagessen, Abendessen, Snack) und Gängen (Vorspeise,
+    Hauptspeise, Nachspeise, Brotzeit). Gespeichert wird nur die eigene Festlegung je Dimension (`null` = vermuten,
+    leer = bewusst keine); sonst wird aus Tags und Name vermutet und nie gespeichert. Stichwörter ab 5 Zeichen treffen
+    auch als Teilwort, kürzere nur als ganzes Wort; ein längeres Stichwort im selben Wort verdrängt enthaltene kürzere
+    („Pfannkuchen“ ist kein Kuchen). Ohne Mahlzeit passt ein Rezept zu jeder Mahlzeit.
+23. Planer: Beim Hinzufügen erscheinen nur Rezepte, die zur gewählten Mahlzeit (und, falls gewählt, zu einem der Gänge)
+    passen; „Alle Rezepte zeigen“ hebt den Filter auf. Der Wochenvorschlag füllt die Tage ab heute, an denen die gewählte
+    Mahlzeit noch fehlt, nur mit passenden Rezepten. Plan-Einträge speichern die Mahlzeit als festen Schlüssel.

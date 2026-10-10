@@ -9,6 +9,7 @@ import kotlin.random.Random
  * Reihenfolge der Kriterien: Was sich mit dem Vorrat kochen lässt, kommt zuerst; Favoriten werden bevorzugt;
  * ein zufälliger Anteil (fester [seed] → reproduzierbar, „Neu mischen“ = anderer Seed) sorgt für Abwechslung.
  * Kein Rezept zweimal im Vorschlag, und nichts, was gerade erst gekocht oder schon eingeplant ist.
+ * Mit [Mahlzeit] nur Rezepte, die dazu passen (leere Mahlzeitenmenge = passt überall).
  */
 object MealSuggestions {
     data class Candidate(
@@ -18,17 +19,20 @@ object MealSuggestions {
         val missing: Int?,
         /** Zuletzt eingeplant (auch in der Vergangenheit); null = nie. */
         val lastPlanned: LocalDate?,
+        /** Mahlzeiten laut [Einordnung]; leer = passt überall. */
+        val mahlzeiten: Set<Mahlzeit> = emptySet(),
     )
 
     /** Ohne Wiederholung: Was in diesem Abstand vor dem ersten Vorschlagstag eingeplant war, bleibt außen vor. */
     const val REPEAT_GAP_DAYS = 14L
 
-    fun suggest(candidates: List<Candidate>, days: List<LocalDate>, seed: Long): Map<LocalDate, String> {
+    fun suggest(candidates: List<Candidate>, days: List<LocalDate>, seed: Long, mahlzeit: Mahlzeit? = null): Map<LocalDate, String> {
         if (days.isEmpty()) return emptyMap()
         val firstDay = days.min()
         val random = Random(seed)
         val ranked = candidates
             .sortedBy { it.id } // unabhängig von der Reihenfolge der Datenbankabfrage
+            .filter { c -> mahlzeit == null || c.mahlzeiten.isEmpty() || mahlzeit in c.mahlzeiten }
             .filter { c -> c.lastPlanned == null || c.lastPlanned < firstDay.minusDays(REPEAT_GAP_DAYS) }
             .map { it to score(it) + random.nextDouble() }
             .sortedByDescending { it.second }

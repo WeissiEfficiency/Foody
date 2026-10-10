@@ -20,6 +20,8 @@ import org.junit.runner.RunWith
 import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import de.foody.app.data.db.MealSlotEntity
+import de.foody.domain.Mahlzeit
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
@@ -135,5 +137,25 @@ class BackupZipTest {
         val images = listOf(recipeImage(own), recipeImage(gallery))
         assertTrue(dbPath !in images, "Pfad in den privaten Speicher wird verworfen: $images")
         assertTrue("content://media/external/images/media/7" in images, "Galerielinks bleiben erhalten")
+    }
+
+    @Test fun einordnungImBackupUndFreitextWirdZugeordnet() = runTest {
+        val id = recipes.save(
+            RecipeDraft(id = null, name = "Porridge", defaultServings = 1, ingredients = emptyList(),
+                mahlzeiten = setOf(Mahlzeit.FRUEHSTUECK), einordnungUebernehmen = true),
+        )
+        val ohne = recipes.save(RecipeDraft(id = null, name = "Curry", defaultServings = 2, ingredients = emptyList()))
+        // Alter Freitext, wie ihn eine Sicherung vor DB v7 enthält
+        db.mealPlanDao().upsert(MealSlotEntity("s", java.time.LocalDate.of(2026, 10, 10), "Frühstück", id, 1, createdAt = 1, updatedAt = 1))
+        val zip = File(work, "s.zip").toUri()
+
+        backup.export(zip)
+        backup.deleteAll()
+        backup.import(zip)
+
+        assertEquals("FRUEHSTUECK", recipes.get(id)?.mahlzeiten)
+        assertNull(recipes.get(id)?.gaenge)
+        assertNull(recipes.get(ohne)?.mahlzeiten)
+        assertEquals("FRUEHSTUECK", db.mealPlanDao().get("s")?.slotType)
     }
 }

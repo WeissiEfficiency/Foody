@@ -21,6 +21,7 @@ import de.foody.domain.Diet
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import de.foody.domain.Gang
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -133,6 +134,23 @@ class RecipeListViewModelTest {
         // Bewertung zurücknehmen → wieder Namensreihenfolge (stabil sortiert)
         recipes.setRating(ids.getValue("Risotto"), null)
         awaitNames(listOf("Gemüsepfanne", "Risotto")) { it.sort == RecipeSort.BEST_RATED }
+        Unit
+    }
+
+    @Test fun gangFilterUndNichtEingeordnet() = runBlocking {
+        suspend fun leer(name: String) = recipes.save(RecipeDraft(id = null, name = name, defaultServings = 2, ingredients = emptyList()))
+        leer("Tiramisu")
+        leer("Käsespätzle")
+        awaitNames(listOf("Gemüsepfanne", "Käsespätzle", "Risotto", "Tiramisu"))
+
+        vm.onToggleGang(Gang.NACHSPEISE)
+        awaitNames(listOf("Tiramisu")) { it.gaenge == setOf(Gang.NACHSPEISE) }
+        vm.onToggleGang(Gang.HAUPTSPEISE) // ODER innerhalb der Gänge
+        awaitNames(listOf("Gemüsepfanne", "Risotto", "Tiramisu")) { it.gaenge.size == 2 }
+
+        vm.resetDiscover()
+        vm.onToggleNichtEingeordnet()
+        awaitNames(listOf("Käsespätzle")) { it.nurNichtEingeordnet && it.gaenge.isEmpty() }
         Unit
     }
 }

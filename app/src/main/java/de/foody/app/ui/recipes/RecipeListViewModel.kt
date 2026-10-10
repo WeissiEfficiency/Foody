@@ -1,5 +1,8 @@
 package de.foody.app.ui.recipes
 
+import de.foody.app.data.repo.einordnung
+import de.foody.domain.Gang
+import de.foody.domain.alsText
 import de.foody.app.data.repo.PlanRepository
 import de.foody.app.data.repo.IngredientRepository
 import de.foody.app.data.repo.toDomain
@@ -53,6 +56,9 @@ data class RecipeListUiState(
     /** Gewählte Ernährungsfilter (alle müssen zutreffen) und Sortierung. */
     val diets: Set<Diet> = emptySet(),
     val sort: RecipeSort = RecipeSort.NAME,
+    /** Gewählte Gänge (eines muss passen) und „nur nicht eingeordnete“ Rezepte. */
+    val gaenge: Set<Gang> = emptySet(),
+    val nurNichtEingeordnet: Boolean = false,
     /** Kurzprofil je Rezept-ID (kcal je Portion, Ernährungsform) – für Filter, Sortierung und Karten. */
     val profiles: Map<String, RecipeProfile> = emptyMap(),
     /** Tags aller aktiven Rezepte, häufigste zuerst – für die Filter-Chips. */
@@ -82,15 +88,21 @@ class RecipeListViewModel @Inject constructor(
     // Als Text gespeichert, damit SavedStateHandle sie ohne eigenen Saver übersteht
     private val dietsRaw = saved.getStateFlow("diets", "")
     private val sortRaw = saved.getStateFlow("sort", RecipeSort.NAME.name)
+    private val gaengeRaw = saved.getStateFlow("gaenge", "")
+    private val nichtEingeordnet = saved.getStateFlow("nichtEingeordnet", false)
 
     /** Tag-, Favoriten-, Vorrats- und Ernährungsfilter wirken im Speicher auf das Suchergebnis. */
     private data class LocalFilter(
         val tag: String?, val favoritesOnly: Boolean, val pantryOnly: Boolean, val diets: Set<Diet>, val sort: RecipeSort,
+        val gaenge: Set<Gang> = emptySet(), val nurNichtEingeordnet: Boolean = false,
     )
-    private val localFilter = combine(tag, favoritesOnly, pantryOnly, dietsRaw, sortRaw) { t, fav, pan, d, s ->
-        LocalFilter(t, fav, pan, d.split(',').mapNotNull { runCatching { Diet.valueOf(it) }.getOrNull() }.toSet(),
-            runCatching { RecipeSort.valueOf(s) }.getOrDefault(RecipeSort.NAME))
-    }
+    private val localFilter = combine(
+        combine(tag, favoritesOnly, pantryOnly, dietsRaw, sortRaw) { t, fav, pan, d, s ->
+            LocalFilter(t, fav, pan, d.split(',').mapNotNull { runCatching { Diet.valueOf(it) }.getOrNull() }.toSet(),
+                runCatching { RecipeSort.valueOf(s) }.getOrDefault(RecipeSort.NAME))
+        },
+        gaengeRaw, nichtEingeordnet,
+    ) { f, g, n -> f.copy(gaenge = Gang.mengeAus(g).orEmpty(), nurNichtEingeordnet = n) }
 
     /** Fehlende Pflichtzutaten je Rezept; nur Vorratseinträge mit Menge zählen als vorhanden. */
     private val missing = combine(repo.observeRequired(), pantry.observeAll()) { required, items ->
@@ -130,7 +142,8 @@ class RecipeListViewModel @Inject constructor(
         val matching = list.filter { r ->
             (f.tag == null || f.tag in r.tagList()) && (!f.favoritesOnly || r.favorite) &&
                 (!f.pantryOnly || (missing[r.id] ?: Int.MAX_VALUE) <= MAX_MISSING) &&
-                (f.diets.isEmpty() || profiles[r.id]?.diets?.containsAll(f.diets) == true)
+                (f.diets.isEmpty() || profiles[r.id]?.diets?.containsAll(f.diets) == true) &&
+                einordnungPasst(r, f)
         }.let { sortRecipes(it, f.sort, profiles, cooked) }
         RecipeListUiState(
             query = q,
@@ -143,6 +156,8 @@ class RecipeListViewModel @Inject constructor(
             missing = if (f.pantryOnly) missing else emptyMap(),
             diets = f.diets,
             sort = f.sort,
+            gaenge = f.gaenge,
+            nurNichtEingeordnet = f.nurNichtEingeordnet,
             profiles = profiles,
             tags = active.flatMap { it.tagList() }.groupingBy { it }.eachCount()
                 .entries.sortedByDescending { it.value }.map { it.key }.take(8),
@@ -161,7 +176,20 @@ class RecipeListViewModel @Inject constructor(
         saved["diets"] = (if (d.name in now) now - d.name else now + d.name).joinToString(",")
     }
     fun onSort(s: RecipeSort) { saved["sort"] = s.name }
-    fun resetDiscover() { saved["diets"] = ""; saved["sort"] = RecipeSort.NAME.name }
+    fun onToggleGang(g: Gang) {
+        val now = Gang.mengeAus(gaengeRaw.value).orEmpty()
+        saved["gaenge"] = alsText(if (g in now) now - g else now + g)
+    }
+    fun onToggleNichtEingeordnet() { saved["nichtEingeordnet"] = !nichtEingeordnet.value }
+    fun resetDiscover() {
+        saved["diets"] = ""; saved["sort"] = RecipeSort.NAME.name; saved["gaenge"] = ""; saved["nichtEingeordnet"] = false
+    }
+
+    private fun einordnungPasst(r: RecipeEntity, f: LocalFilter): Boolean {
+        if (f.gaenge.isEmpty() && !f.nurNichtEingeordnet) return true
+        val e = r.einordnung()
+        return (f.gaenge.isEmpty() || e.gaenge.any { it in f.gaenge }) && (!f.nurNichtEingeordnet || !e.eingeordnet)
+    }
 
     /** Einmaliges Import-Ergebnis; die UI quittiert es nach Anzeige. */
     data class ImportMessage(val imported: Int, val failed: Int, val skipped: Int, val openId: String?)

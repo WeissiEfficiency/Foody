@@ -38,6 +38,9 @@ data class RecipePayload(
     val rating: Int? = null,
     val lines: List<Line>,
     val steps: List<Step>,
+    /** Festgelegte Mahlzeiten/Gänge (Enum-Namen, kommagetrennt); null = nicht festgelegt. Seit App-DB v7. */
+    val mahlzeiten: String? = null,
+    val gaenge: String? = null,
 ) {
     @Serializable
     data class Line(

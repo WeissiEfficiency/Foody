@@ -19,6 +19,9 @@ import de.foody.app.data.db.RecipeEntity
 import de.foody.app.data.db.RecipeIngredientEntity
 import de.foody.app.data.db.SeedData
 import de.foody.domain.Dimension
+import de.foody.domain.Gang
+import de.foody.domain.Mahlzeit
+import de.foody.domain.alsText
 import de.foody.domain.IngredientCatalog
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Quantity
@@ -147,6 +150,11 @@ data class RecipeDraft(
      */
     val originalImageUri: String? = null,
     val trackOriginalImage: Boolean = false,
+    /** Festgelegte Einordnung; null = vermuten. Wird nur bei [einordnungUebernehmen] geschrieben. */
+    val mahlzeiten: Set<Mahlzeit>? = null,
+    val gaenge: Set<Gang>? = null,
+    /** Nur der Editor setzt das; Import und andere Aufrufer lassen die gespeicherte Einordnung unberührt. */
+    val einordnungUebernehmen: Boolean = false,
 ) {
     data class Line(
         val ingredientId: String,
@@ -195,6 +203,9 @@ class RecipeRepository @Inject constructor(private val dao: RecipeDao) {
                 // Favorit und Quelle gehören nicht zum Editor-Entwurf und bleiben beim Bearbeiten erhalten
                 favorite = existing?.favorite ?: false,
                 sourceUrl = d.sourceUrl ?: existing?.sourceUrl,
+                rating = existing?.rating,
+                mahlzeiten = if (d.einordnungUebernehmen) alsText(d.mahlzeiten) else existing?.mahlzeiten,
+                gaenge = if (d.einordnungUebernehmen) alsText(d.gaenge) else existing?.gaenge,
             )
             val lines = d.ingredients.mapIndexed { i, l ->
                 RecipeIngredientEntity(newId(), id, l.ingredientId, l.amount, l.unit, i, l.note, l.optional)
@@ -212,13 +223,15 @@ class RecipeRepository @Inject constructor(private val dao: RecipeDao) {
             dao.getIngredients(id).map { RecipeDraft.Line(it.ingredientId, it.amount, it.unit, it.preparationNote, it.optional) },
             dao.getSteps(id).map { it.text },
             r.sourceUrl,
+            mahlzeiten = Mahlzeit.mengeAus(r.mahlzeiten),
+            gaenge = Gang.mengeAus(r.gaenge),
         )
     }
 
     /** Kopie ohne Quell-URL (sonst gälte sie als Dublette des Imports) und ohne Favoriten-Markierung. */
     suspend fun duplicate(id: String, copySuffix: String): String? {
         val d = draftOf(id) ?: return null
-        return save(d.copy(id = null, name = "${d.name} $copySuffix", sourceUrl = null))
+        return save(d.copy(id = null, name = "${d.name} $copySuffix", sourceUrl = null, einordnungUebernehmen = true))
     }
 
     suspend fun setImage(id: String, uri: String?) = dao.setImage(id, uri, System.currentTimeMillis())

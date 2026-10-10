@@ -14,6 +14,7 @@ import de.foody.app.data.repo.PlanRepository
 import de.foody.app.data.repo.RecipeDraft
 import de.foody.app.data.repo.RecipeRepository
 import de.foody.app.ui.planner.PlannerViewModel
+import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -74,13 +75,44 @@ class PlannerSuggestTest {
         val alreadyPlanned = db.mealPlanDao().getRange(today, today.plusDays(2)).single().recipeId
         assertTrue(proposal.entries.none { it.second.id == alreadyPlanned }, "nichts doppelt in der Woche")
 
-        vm.acceptProposal("Abendessen")
+        vm.acceptProposal()
         val slots = withTimeout(5_000) {
             var s = db.mealPlanDao().getRange(today, today.plusDays(2))
             while (s.size < 3) { kotlinx.coroutines.delay(50); s = db.mealPlanDao().getRange(today, today.plusDays(2)) }
             s
         }
         assertEquals(3, slots.map { it.date }.toSet().size, "jeder Tag hat jetzt ein Gericht")
-        assertTrue(slots.filter { it.date != today.plusDays(1) }.all { it.servings == 3 && it.slotType == "Abendessen" })
+        assertTrue(slots.filter { it.date != today.plusDays(1) }.all { it.servings == 3 && it.slotType == "ABENDESSEN" })
+    }
+
+    private suspend fun awaitProposal(seed: Long) =
+        withTimeout(5_000) { vm.proposal.filterNotNull().first { it.seed == seed } }
+
+    @Test fun vorschlagFuerFruehstueckNurPassendUndJeMahlzeitLeer() = runBlocking {
+        val recipes = RecipeRepository(db.recipeDao())
+        recipes.save(RecipeDraft(id = null, name = "Gemüsecurry", defaultServings = 2, ingredients = emptyList()))
+        withTimeout(5_000) { vm.state.first { it.activeRecipes.size == 11 } }
+        for (seed in 1L..5L) {
+            vm.suggest(Mahlzeit.FRUEHSTUECK, seed)
+            val p = awaitProposal(seed)
+            assertEquals(Mahlzeit.FRUEHSTUECK, p.mahlzeit)
+            // Morgen steht nur ein Abendessen – für das Frühstück ist der Tag noch frei
+            assertEquals(listOf(today, today.plusDays(1), today.plusDays(2)), p.entries.map { it.first })
+            assertTrue(p.entries.none { it.second.name == "Gemüsecurry" }, "Curry passt nicht zum Frühstück")
+        }
+    }
+
+    @Test fun neuMischenBehaeltMahlzeit() = runBlocking {
+        vm.suggest(Mahlzeit.FRUEHSTUECK, 1)
+        awaitProposal(1)
+        vm.reshuffle()
+        assertEquals(Mahlzeit.FRUEHSTUECK, awaitProposal(2).mahlzeit)
+        vm.acceptProposal()
+        val fruehstueck = withTimeout(5_000) {
+            var s = db.mealPlanDao().getRange(today, today.plusDays(2)).filter { it.slotType == "FRUEHSTUECK" }
+            while (s.size < 3) { kotlinx.coroutines.delay(50); s = db.mealPlanDao().getRange(today, today.plusDays(2)).filter { it.slotType == "FRUEHSTUECK" } }
+            s
+        }
+        assertEquals(3, fruehstueck.size)
     }
 }

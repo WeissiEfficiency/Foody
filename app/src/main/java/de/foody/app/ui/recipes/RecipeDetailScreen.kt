@@ -1,5 +1,7 @@
 package de.foody.app.ui.recipes
 
+import androidx.compose.ui.draw.alpha
+import de.foody.app.data.repo.einordnung
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.outlined.Restaurant
@@ -371,6 +373,13 @@ private fun MetaRow(recipe: RecipeEntity, nutrition: NutritionResult?) {
             val approx = if (nutrition.isComplete(Nutrient.ENERGY_KJ)) "" else "≥ "
             MetaPill(approx + stringResource(R.string.kcal_per_serving, NutritionResult.kjToKcal(kj).display(0)),
                 icon = Icons.Outlined.LocalFireDepartment)
+        }
+        val e = recipe.einordnung()
+        e.mahlzeiten.sortedBy { it.ordinal }.forEach {
+            MetaPill(stringResource(it.label()), if (e.mahlzeitenVermutet) Modifier.alpha(0.6f) else Modifier)
+        }
+        e.gaenge.sortedBy { it.ordinal }.forEach {
+            MetaPill(stringResource(it.label()), if (e.gaengeVermutet) Modifier.alpha(0.6f) else Modifier)
         }
         recipe.tags.split(',').map { it.trim() }.filter { it.isNotEmpty() }.forEach { MetaPill(it) }
     }

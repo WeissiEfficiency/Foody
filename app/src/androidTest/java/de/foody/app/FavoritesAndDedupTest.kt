@@ -6,6 +6,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.app.data.db.FoodyDatabase
 import de.foody.app.data.repo.IngredientRepository
+import de.foody.app.data.repo.RecipeDraft
+import de.foody.domain.Gang
+import de.foody.domain.Mahlzeit
 import de.foody.app.data.repo.RecipeImportRepository
 import de.foody.app.data.repo.RecipeRepository
 import kotlinx.coroutines.test.runTest
@@ -86,5 +89,29 @@ class FavoritesAndDedupTest {
         val copy = recipes.get(recipes.duplicate(id, "(Kopie)")!!)!!
         assertNull(copy.sourceUrl)
         assertEquals(false, copy.favorite)
+    }
+
+    @Test fun bearbeitenOhneEinordnungBehaeltFestlegungUndBewertung() = runTest {
+        val id = recipes.save(
+            RecipeDraft(
+                null, "Curry", 2, ingredients = emptyList(),
+                mahlzeiten = setOf(Mahlzeit.ABENDESSEN), gaenge = emptySet(), einordnungUebernehmen = true,
+            ),
+        )
+        recipes.setRating(id, 4)
+        recipes.save(recipes.draftOf(id)!!.copy(name = "Curry scharf"))
+        val r = recipes.get(id)!!
+        assertEquals("ABENDESSEN", r.mahlzeiten)
+        assertEquals("", r.gaenge)
+        assertEquals(4, r.rating)
+    }
+
+    @Test fun kopieBehaeltEinordnung() = runTest {
+        val id = recipes.save(
+            RecipeDraft(null, "Curry", 2, ingredients = emptyList(), mahlzeiten = setOf(Mahlzeit.MITTAGESSEN), einordnungUebernehmen = true),
+        )
+        val copy = recipes.get(recipes.duplicate(id, "(Kopie)")!!)!!
+        assertEquals("MITTAGESSEN", copy.mahlzeiten)
+        assertNull(copy.gaenge)
     }
 }

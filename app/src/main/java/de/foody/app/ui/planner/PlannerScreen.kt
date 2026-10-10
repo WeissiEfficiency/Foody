@@ -1,5 +1,14 @@
 package de.foody.app.ui.planner
 
+import androidx.compose.material3.Switch
+import de.foody.app.data.repo.einordnung
+import de.foody.app.ui.common.label
+import de.foody.app.ui.common.slotLabel
+import de.foody.domain.Gang
+import de.foody.domain.Mahlzeit
+import de.foody.domain.PlanAuswahl
+import de.foody.domain.alsText
+import java.time.LocalTime
 import de.foody.domain.DayNutrition
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.ui.semantics.semantics
@@ -157,8 +166,8 @@ fun PlannerScreen(onOpenRecipe: (String) -> Unit, vm: PlannerViewModel = hiltVie
     }
 
     proposal?.let { p ->
-        val dinner = stringResource(R.string.slot_dinner)
-        ProposalDialog(p, onAccept = { vm.acceptProposal(dinner) }, onReshuffle = vm::reshuffle, onDismiss = vm::dismissProposal)
+        ProposalDialog(p, onMahlzeit = { vm.suggest(it, p.seed) }, onAccept = { vm.acceptProposal() },
+            onReshuffle = vm::reshuffle, onDismiss = vm::dismissProposal)
     }
 
     addForEpochDay?.let { epoch ->
@@ -191,7 +200,9 @@ private fun DaySection(
             }
         }
         nutrition?.let { DayNutritionRow(it, goal) }
-        slots.forEach { slot -> SlotCard(slot, recipes[slot.recipeId], vm, onOpen) }
+        // Tagesablauf statt Alphabet: Frühstück, Mittag, Snack, Abend, dann alte Freitexte
+        slots.sortedWith(compareBy({ Mahlzeit.reihenfolge(it.slotType) }, { it.slotType }))
+            .forEach { slot -> SlotCard(slot, recipes[slot.recipeId], vm, onOpen) }
         if (slots.isEmpty()) {
             // Gestrichelte Fläche lädt zum Planen ein, statt nur ein kleines Plus zu zeigen
             val outline = MaterialTheme.colorScheme.outline
@@ -229,7 +240,7 @@ private fun SlotCard(slot: MealSlotEntity, recipe: RecipeEntity?, vm: PlannerVie
         Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             RecipeImage(recipe?.imageUri, recipe?.name.orEmpty(), Modifier.size(72.dp).clip(MaterialTheme.shapes.small), emojiSize = 32.sp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(slot.slotType.uppercase(), style = EyebrowStyle, color = MaterialTheme.colorScheme.primary)
+                Text(slotLabel(slot.slotType).uppercase(), style = EyebrowStyle, color = MaterialTheme.colorScheme.primary)
                 Text(recipe?.name.orEmpty(), style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ServingsStepper(slot.servings, { vm.setServings(slot, it) })
@@ -260,34 +271,61 @@ private fun AddSlotDialog(
     date: LocalDate,
     recipes: List<RecipeEntity>,
     onDismiss: () -> Unit,
-    onAdd: (String, String, Int) -> Unit,
+    onAdd: (Mahlzeit, String, Int) -> Unit,
 ) {
-    val presets = listOf(
-        stringResource(R.string.slot_breakfast), stringResource(R.string.slot_lunch),
-        stringResource(R.string.slot_dinner), stringResource(R.string.slot_snack),
-    )
-    var slotType by rememberSaveable { mutableStateOf(presets[2]) }
+    // Als Namen gespeichert, damit rememberSaveable ohne eigenen Saver auskommt
+    var mahlzeitName by rememberSaveable { mutableStateOf(Mahlzeit.vorschlagFuer(LocalTime.now()).name) }
+    var gaengeText by rememberSaveable { mutableStateOf("") }
+    var alle by rememberSaveable { mutableStateOf(false) }
     var recipeId by rememberSaveable { mutableStateOf<String?>(null) }
     var servings by rememberSaveable { mutableIntStateOf(2) }
+    val mahlzeit = Mahlzeit.valueOf(mahlzeitName)
+    val gaenge = Gang.mengeAus(gaengeText).orEmpty()
+    val einordnungen = remember(recipes) { recipes.associate { it.id to it.einordnung() } }
+    val sichtbar = remember(recipes, mahlzeit, gaenge, alle) {
+        PlanAuswahl.filtern(recipes, { einordnungen.getValue(it.id) }, mahlzeit, gaenge, alle)
+    }
+    // Was der Filter ausblendet, bleibt nicht gewählt – sonst plante man ein unsichtbares Rezept ein
+    val gewaehlt = PlanAuswahl.auswahlBehalten(recipeId, sichtbar) { it.id }
+    val chipColors = FilterChipDefaults.filterChipColors(
+        selectedContainerColor = MaterialTheme.colorScheme.secondary,
+        selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+    )
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.planner_add_for, date.pretty())) },
         text = {
             FormColumn {
+                Text(stringResource(R.string.field_slot), style = MaterialTheme.typography.labelLarge)
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    presets.forEach { p -> FilterChip(slotType == p, { slotType = p }, label = { Text(p) }) }
+                    Mahlzeit.entries.forEach { m ->
+                        FilterChip(mahlzeit == m, { mahlzeitName = m.name }, label = { Text(stringResource(m.label())) },
+                            shape = RoundedCornerShape(50), colors = chipColors)
+                    }
                 }
-                OutlinedTextField(slotType, { slotType = it }, label = { Text(stringResource(R.string.field_slot)) }, singleLine = true)
-                if (recipes.isEmpty()) {
-                    Text(stringResource(R.string.planner_no_recipes))
-                } else {
-                    RecipePicker(recipes, recipeId) { recipeId = it.id; servings = it.defaultServings }
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Gang.entries.forEach { g ->
+                        FilterChip(g in gaenge, { gaengeText = alsText(if (g in gaenge) gaenge - g else gaenge + g).orEmpty() },
+                            label = { Text(stringResource(g.label())) }, shape = RoundedCornerShape(50), colors = chipColors)
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.planner_alle_rezepte), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    Switch(alle, { alle = it })
+                }
+                when {
+                    recipes.isEmpty() -> Text(stringResource(R.string.planner_no_recipes))
+                    sichtbar.isEmpty() -> Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.planner_keine_passenden), modifier = Modifier.weight(1f))
+                        TextButton({ alle = true }) { Text(stringResource(R.string.planner_alle_zeigen)) }
+                    }
+                    else -> RecipePicker(sichtbar, gewaehlt) { recipeId = it.id; servings = it.defaultServings }
                 }
                 ServingsStepper(servings, { servings = it })
             }
         },
         confirmButton = {
-            TextButton(enabled = recipeId != null && slotType.isNotBlank(), onClick = { onAdd(slotType.trim(), recipeId!!, servings) }) {
+            TextButton(enabled = gewaehlt != null, onClick = { onAdd(mahlzeit, gewaehlt!!, servings) }) {
                 Text(stringResource(R.string.action_add))
             }
         },
@@ -335,16 +373,32 @@ private fun RecipePicker(recipes: List<RecipeEntity>, selectedId: String?, onSel
 
 /** Vorschau der Vorschläge: erst übernehmen, wenn es passt – oder neu mischen. */
 @Composable
-private fun ProposalDialog(p: PlannerViewModel.Proposal, onAccept: () -> Unit, onReshuffle: () -> Unit, onDismiss: () -> Unit) {
+private fun ProposalDialog(
+    p: PlannerViewModel.Proposal,
+    onMahlzeit: (Mahlzeit) -> Unit,
+    onAccept: () -> Unit,
+    onReshuffle: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val chipColors = FilterChipDefaults.filterChipColors(
+        selectedContainerColor = MaterialTheme.colorScheme.secondary,
+        selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+    )
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Outlined.AutoAwesome, null) },
         title = { Text(stringResource(R.string.planner_suggest_title)) },
         text = {
-            if (p.entries.isEmpty()) {
-                Text(stringResource(R.string.planner_suggest_nothing))
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Mahlzeit.entries.forEach { m ->
+                        FilterChip(p.mahlzeit == m, { onMahlzeit(m) }, label = { Text(stringResource(m.label())) },
+                            shape = RoundedCornerShape(50), colors = chipColors)
+                    }
+                }
+                if (p.entries.isEmpty()) {
+                    Text(stringResource(R.string.planner_suggest_nothing))
+                } else {
                     Text(stringResource(R.string.planner_suggest_hint), style = MaterialTheme.typography.bodySmall)
                     p.entries.forEach { (day, recipe) ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
