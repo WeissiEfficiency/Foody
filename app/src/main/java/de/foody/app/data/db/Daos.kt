@@ -230,3 +230,16 @@ interface MaintenanceDao {
 data class RequiredIngredientRow(val recipeId: String, val ingredientId: String, val ingredientName: String)
 
 data class CookedCount(val recipeId: String, val count: Int)
+
+@Dao
+interface TagebuchDao {
+    @Query("SELECT * FROM tagebuch_eintrag WHERE datum BETWEEN :start AND :end ORDER BY datum, createdAt")
+    fun observeRange(start: LocalDate, end: LocalDate): Flow<List<TagebuchEintragEntity>>
+
+    @Query("SELECT * FROM tagebuch_eintrag WHERE id = :id") suspend fun get(id: String): TagebuchEintragEntity?
+    @Query("SELECT * FROM tagebuch_eintrag") suspend fun getAll(): List<TagebuchEintragEntity>
+    @Upsert suspend fun upsert(e: TagebuchEintragEntity)
+    @Query("DELETE FROM tagebuch_eintrag WHERE id = :id") suspend fun delete(id: String)
+    @Query("SELECT EXISTS(SELECT 1 FROM tagebuch_eintrag WHERE planEintragId = :planEintragId)")
+    suspend fun existsForPlan(planEintragId: String): Boolean
+}
