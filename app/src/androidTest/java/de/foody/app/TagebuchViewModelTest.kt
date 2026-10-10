@@ -124,4 +124,15 @@ class TagebuchViewModelTest {
         val s = await { it.tag == LocalDate.of(2026, 1, 2) }
         assertEquals((0L..6L).map { LocalDate.of(2025, 12, 27).plusDays(it) }, s.woche.map { it.first })
     }
+
+    @Test fun bearbeitenSkaliertFestgehalteneWerte() = runBlocking {
+        vm.rezeptEintragen(Mahlzeit.MITTAGESSEN, curryId, BigDecimal.ONE)
+        val e = eintraege(await { it.bilanz.tag.kcal == 350 }).single()
+        // Rezept danach ändern: 4 statt 2 Portionen → live wären es nur noch 175 kcal je Portion
+        recipes.save(recipes.draftOf(curryId)!!.copy(defaultServings = 4))
+        vm.bearbeiten(e.copy(mahlzeit = Mahlzeit.ABENDESSEN.name))
+        assertEquals(350, await { it.eintraege[Mahlzeit.ABENDESSEN]?.size == 1 }.bilanz.tag.kcal, "nur Mahlzeit geändert")
+        vm.bearbeiten(db.tagebuchDao().get(e.id)!!.copy(portionen = BigDecimal("2")))
+        assertEquals(700, await { it.bilanz.tag.kcal != 350 }.bilanz.tag.kcal, "doppelte Portionen = doppelte festgehaltene Werte")
+    }
 }

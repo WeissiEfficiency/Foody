@@ -26,14 +26,14 @@ interface SyncDao {
     @Query("DELETE FROM sync_outbox WHERE type = :type AND recordId = :id") suspend fun dequeue(type: String, id: String)
     @Query("DELETE FROM sync_outbox") suspend fun clearOutbox()
 
-    /** Gibt es Nutzerdaten (Rezepte, Planpositionen, Vorrat, Einkaufslisten)? Startzutaten zählen nicht. */
+    /** Gibt es Nutzerdaten (Rezepte, Planpositionen, Vorrat, Einkaufslisten, Tagebuch)? Startzutaten zählen nicht. */
     @Query(
         """SELECT EXISTS(SELECT 1 FROM recipe) OR EXISTS(SELECT 1 FROM meal_slot) OR EXISTS(SELECT 1 FROM pantry_item)
-           OR EXISTS(SELECT 1 FROM shopping_list) OR EXISTS(SELECT 1 FROM shopping_item)""",
+           OR EXISTS(SELECT 1 FROM shopping_list) OR EXISTS(SELECT 1 FROM shopping_item) OR EXISTS(SELECT 1 FROM tagebuch_eintrag)""",
     )
     suspend fun hasUserData(): Boolean
 
-    /** Merkt alle Wurzeldatensätze (sechs Typen) als lebend vor; vorhandene Einträge werden ersetzt. */
+    /** Merkt alle Wurzeldatensätze (sieben Typen) als lebend vor; vorhandene Einträge werden ersetzt. */
     @Query(
         """INSERT OR REPLACE INTO sync_outbox (type, recordId, deleted, queuedAt)
            SELECT 'ingredient', id, 0, :now FROM ingredient
@@ -41,7 +41,8 @@ interface SyncDao {
            UNION ALL SELECT 'meal_slot', id, 0, :now FROM meal_slot
            UNION ALL SELECT 'pantry_item', id, 0, :now FROM pantry_item
            UNION ALL SELECT 'shopping_list', id, 0, :now FROM shopping_list
-           UNION ALL SELECT 'shopping_item', id, 0, :now FROM shopping_item""",
+           UNION ALL SELECT 'shopping_item', id, 0, :now FROM shopping_item
+           UNION ALL SELECT 'tagebuch_eintrag', id, 0, :now FROM tagebuch_eintrag""",
     )
     suspend fun enqueueAllRoots(now: Long)
 

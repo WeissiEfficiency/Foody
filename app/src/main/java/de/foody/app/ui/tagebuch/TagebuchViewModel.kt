@@ -156,19 +156,28 @@ class TagebuchViewModel @Inject constructor(
             tagebuch.save(eintrag(tag, m, TagebuchArt.FREI, name.trim(), w))
         }
 
-    /** Speichert Änderungen; bei Rezept und Zutat werden die Werte aus Portionen bzw. Menge neu berechnet. */
+    /**
+     * Speichert Änderungen. Die Werte bleiben festgehalten: Ändern sich Portionen bzw. Menge, werden sie im selben
+     * Verhältnis skaliert – nie aus dem heutigen Rezept neu berechnet (ADR 0007). Nur die Mahlzeit zu ändern lässt sie unberührt.
+     */
     fun bearbeiten(e: TagebuchEintragEntity) = viewModelScope.launch {
-        val neu = when (e.art) {
-            TagebuchArt.REZEPT -> e.rezeptId?.let { id -> rezeptWerte(id, e.portionen ?: BigDecimal.ONE)?.second }
-            TagebuchArt.ZUTAT -> e.zutatId?.let { ingredients.get(it) }?.let { z ->
-                Tagebuch.naehrwerteZutat(z.toDomain(), e.menge ?: BigDecimal.ZERO, e.einheit ?: MeasureUnit.GRAM)
-            }
+        val alt = tagebuch.get(e.id) ?: return@launch
+        val faktor = when (e.art) {
+            TagebuchArt.REZEPT -> verhaeltnis(e.portionen, alt.portionen)
+            TagebuchArt.ZUTAT -> verhaeltnis(e.menge, alt.menge)
             TagebuchArt.FREI -> null
         }
-        // Rezept oder Zutat inzwischen gelöscht: die festgehaltenen Werte bleiben
+        fun BigDecimal?.mal() = this?.let { v -> faktor?.let { v.multiply(it) } ?: v }
         tagebuch.save(
-            neu?.let { e.copy(energieKj = it.energieKj, eiweiss = it.eiweiss, kohlenhydrate = it.kohlenhydrate, fett = it.fett, vollstaendig = it.vollstaendig) } ?: e,
+            if (faktor == null) e
+            else e.copy(energieKj = alt.energieKj.mal(), eiweiss = alt.eiweiss.mal(), kohlenhydrate = alt.kohlenhydrate.mal(), fett = alt.fett.mal()),
         )
+    }
+
+    /** neu ÷ alt; `null` ohne Änderung oder ohne brauchbaren alten Wert (dann bleiben die Werte, wie sie sind). */
+    private fun verhaeltnis(neu: BigDecimal?, alt: BigDecimal?): BigDecimal? {
+        if (neu == null || alt == null || alt.signum() <= 0 || neu.compareTo(alt) == 0) return null
+        return neu.divide(alt, 10, java.math.RoundingMode.HALF_UP)
     }
 
     fun loeschen(id: String) = viewModelScope.launch { tagebuch.delete(id) }
