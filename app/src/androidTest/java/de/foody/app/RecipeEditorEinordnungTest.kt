@@ -36,12 +36,17 @@ class RecipeEditorEinordnungTest {
         recipes = RecipeRepository(db.recipeDao())
     }
 
-    @After fun tearDown() = db.close()
+    private val editoren = mutableListOf<RecipeEditorViewModel>()
+
+    @After fun tearDown() {
+        editoren.forEach { it.aufraeumen() }
+        db.close()
+    }
 
     private fun editor(id: String? = null) = RecipeEditorViewModel(
         recipes, IngredientRepository(db, db.ingredientDao(), context), RecipePhotoStore(context, db.recipeDao()),
         SavedStateHandle(if (id == null) emptyMap() else mapOf("id" to id)),
-    )
+    ).also { editoren += it }
 
     private suspend fun RecipeEditorViewModel.loaded() = apply { withTimeout(5_000) { state.first { it.loaded } } }
 

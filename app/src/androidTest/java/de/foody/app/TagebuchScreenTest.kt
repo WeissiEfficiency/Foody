@@ -72,7 +72,10 @@ class TagebuchScreenTest {
         )
     }
 
-    @After fun tearDown() = db.close()
+    @After fun tearDown() {
+        vm.aufraeumen()
+        db.close()
+    }
 
     @Test fun vorschlagWirdZumEintrag() {
         compose.setContent { FoodyTheme { TagebuchScreen(vm = vm) } }

@@ -54,7 +54,10 @@ class RecipeListViewModelTest {
             PlanRepository(db, db.mealPlanDao(), db.recipeDao(), db.pantryDao(), db.ingredientDao()), importer, SavedStateHandle())
     }
 
-    @After fun tearDown() = db.close()
+    @After fun tearDown() {
+        vm.aufraeumen()
+        db.close()
+    }
 
     private fun RecipeListUiState.names() = recipes.map { it.name }
 
