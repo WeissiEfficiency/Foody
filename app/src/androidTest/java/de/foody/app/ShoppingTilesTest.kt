@@ -44,7 +44,10 @@ class ShoppingTilesTest {
         compose.setContent { FoodyTheme { ShoppingScreen(vm) } }
     }
 
-    @After fun tearDown() = db.close()
+    @After fun tearDown() {
+        vm.aufraeumen()
+        db.close()
+    }
 
     private fun state(text: String) = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, text)
     private fun openItems() = runBlocking { db.shoppingDao().getAllItems().filter { !it.checked }.map { it.name } }

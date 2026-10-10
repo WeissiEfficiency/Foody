@@ -58,7 +58,10 @@ class RecipeSearchFocusTest {
             PlanRepository(db, db.mealPlanDao(), db.recipeDao(), db.pantryDao(), db.ingredientDao()), importer, SavedStateHandle())
     }
 
-    @After fun tearDown() = db.close()
+    @After fun tearDown() {
+        vm.aufraeumen()
+        db.close()
+    }
 
     @Test fun searchFieldKeepsFocusWhileTyping() {
         compose.setContent { FoodyTheme { RecipeListScreen(onOpen = {}, onCreate = {}, vm = vm) } }
