@@ -46,3 +46,7 @@
     und Tag „≥“.
 25. Planer „Ø kcal pro Tag“: zählt nur Tage mit Abendessen und mindestens einer weiteren Mahlzeit; „≥“, wenn einem
     gezählten Tag Nährwerte fehlen.
+26. Packung scannen: Gescannte Werte (Strichcode/Open Food Facts oder Foto) sind nur ein Vorschlag – vorausgefüllt und
+    markiert, übernommen erst beim Speichern. Unplausibles wird verworfen (Energie über 4000 kJ, Gramm über 100,
+    Zucker über Kohlenhydraten). Ein Strichcode, den eine Zutat schon hat, führt zu dieser Zutat (ohne Online-Abfrage).
+    Eine vorhandene Zutat wird im Tagebuch nur mit gesetztem Häkchen „Werte aktualisieren“ überschrieben.

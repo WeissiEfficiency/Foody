@@ -27,7 +27,8 @@ object NaehrwertScan {
         Regel(Nutrient.FIBER_G, listOf("ballaststoff", "fibre", "fiber")),
         Regel(Nutrient.CARBS_G, listOf("kohlenhydrat", "carbohydrate")),
         Regel(Nutrient.FAT_G, listOf("fett", "fat"), ausschluss = listOf("gesättigt", "gesaettigt", "saturated", "fettsäure", "fettsaeure")),
-        Regel(Nutrient.PROTEIN_G, listOf("eiweiß", "eiweiss", "protein")),
+        // „eiwei“ deckt „Eiweiß“, „Eiweiss“ und den häufigen Lesefehler „Eiweis“ ab
+        Regel(Nutrient.PROTEIN_G, listOf("eiwei", "protein")),
         Regel(Nutrient.SALT_G, listOf("salz", "salt")),
         Regel(Nutrient.ENERGY_KJ, listOf("brennwert", "energie", "energy")),
     )
@@ -38,6 +39,8 @@ object NaehrwertScan {
 
     /** Zahl mit Einheit, z. B. „1.234 kJ“, „3,5 g“, „<0,5 g“, „12mg“. */
     private val zahlMitEinheit = Regex("""(<\s*)?(\d+(?:[.  ]\d{3})*(?:[.,]\d+)?)\s*(kj|kcal|mg|g)\b""", RegexOption.IGNORE_CASE)
+    /** Lesefehler „12 9“ statt „12 g“: eine 9 nach Leerzeichen am Zeilenende gilt als Gramm. */
+    private val neunAlsGramm = Regex("""(<\s*)?(\d+(?:[.,]\d+)?)\s+9\s*$""")
     private val spuren = Regex("""\b(spuren|trace|traces)\b""", RegexOption.IGNORE_CASE)
 
     fun auswerten(elemente: List<OcrElement>): ScanErgebnis {
@@ -87,6 +90,7 @@ object NaehrwertScan {
         }
         zahlen.firstOrNull { it.first == "g" }?.let { return it.second }
         zahlen.firstOrNull { it.first == "mg" }?.let { return it.second.divide(BigDecimal(1000)) }
+        neunAlsGramm.find(text)?.let { return zahl(it.groupValues[2]) }
         return if (spuren.containsMatchIn(text)) BigDecimal.ZERO else null
     }
 

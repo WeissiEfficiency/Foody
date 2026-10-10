@@ -95,4 +95,32 @@ class NaehrwertScanTest {
         assertTrue(e.werte.isEmpty())
         assertEquals(NutrientBasis.PER_100_G, e.basis)
     }
+
+    /** Echte ML-Kit-Ausgabe eines leicht schiefen Fotos (Emulator): „ß“ → „s“ und „g“ → „9“ sind typische Lesefehler. */
+    @Test fun echteTexterkennungMitLesefehlern() {
+        val e = NaehrwertScan.auswerten(
+            listOf(
+                OcrElement("Nährwerte", 54, 66, 104), OcrElement("Brennwert", 56, 142, 176), OcrElement("Fett", 58, 218, 252),
+                OcrElement("davon gesättigte Fettsäuren", 59, 282, 334), OcrElement("Kohlenhydrate", 62, 368, 406),
+                OcrElement("davon Zucker", 63, 440, 477), OcrElement("Ballaststoffe", 66, 514, 553), OcrElement("Eiweis", 68, 595, 627),
+                OcrElement("Salz", 69, 669, 701), OcrElement("je 100 g", 620, 52, 94), OcrElement("1.234 kJ / 295 kcal", 627, 121, 162),
+                OcrElement("3,5 g", 626, 203, 243), OcrElement("2,1 g", 628, 282, 318), OcrElement("45 g", 630, 356, 394),
+                OcrElement("12 9", 633, 428, 467), OcrElement("3,0 g", 634, 503, 544), OcrElement("8,0 g", 638, 582, 618),
+                OcrElement("0,02 g", 637, 653, 692),
+            ),
+        )
+        assertEquals("1234", e.werte.wert(Nutrient.ENERGY_KJ))
+        assertEquals("3.5", e.werte.wert(Nutrient.FAT_G))
+        assertEquals("45", e.werte.wert(Nutrient.CARBS_G))
+        assertEquals("12", e.werte.wert(Nutrient.SUGAR_G), "„12 9“ ist „12 g“")
+        assertEquals("3", e.werte.wert(Nutrient.FIBER_G))
+        assertEquals("8", e.werte.wert(Nutrient.PROTEIN_G), "„Eiweis“ ist Eiweiß")
+        assertEquals("0.02", e.werte.wert(Nutrient.SALT_G))
+    }
+
+    @Test fun neunAlsGrammNurAmZeilenende() {
+        // „9“ direkt hinter der Zahl am Ende gilt als „g“; eine echte Zahl 9 mit Einheit bleibt, wie sie ist
+        assertEquals("9", NaehrwertScan.auswerten(listOf(zeile("Fett 9 g"))).werte.wert(Nutrient.FAT_G))
+        assertEquals("0.5", NaehrwertScan.auswerten(listOf(zeile("Salz 0,5 9"))).werte.wert(Nutrient.SALT_G))
+    }
 }
