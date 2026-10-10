@@ -6,6 +6,10 @@ import de.foody.app.data.db.PantryItemEntity
 import de.foody.app.data.db.RecipeEntity
 import de.foody.app.data.db.RecipeIngredientEntity
 import de.foody.domain.ConversionInfo
+import de.foody.domain.Einordnung
+import de.foody.domain.Gang
+import de.foody.domain.Mahlzeit
+import de.foody.domain.RezeptEinordnung
 import de.foody.domain.Ingredient
 import de.foody.domain.MealSlot
 import de.foody.domain.Nutrient
@@ -18,6 +22,11 @@ import de.foody.domain.RecipeIngredient
 import java.util.UUID
 
 fun newId(): String = UUID.randomUUID().toString()
+
+/** Festgelegte oder vermutete Einordnung; wird bei jedem Lesen berechnet, nie gespeichert. */
+fun RecipeEntity.einordnung(): Einordnung = RezeptEinordnung.einordnen(
+    name, tags.split(',').map { it.trim() }.filter { it.isNotEmpty() }, Mahlzeit.mengeAus(mahlzeiten), Gang.mengeAus(gaenge),
+)
 
 fun IngredientEntity.toDomain() = Ingredient(
     id = id,

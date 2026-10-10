@@ -51,6 +51,10 @@ data class RecipeEntity(
     val sourceUrl: String? = null,
     /** Eigene Bewertung 1–5, null = unbewertet. Seit DB v3. */
     val rating: Int? = null,
+    /** Festgelegte Mahlzeiten (Enum-Namen, kommagetrennt); null = vermuten, "" = bewusst keine. Seit DB v7. */
+    val mahlzeiten: String? = null,
+    /** Festgelegte Gänge wie [mahlzeiten]. Seit DB v7. */
+    val gaenge: String? = null,
 )
 
 @Entity(

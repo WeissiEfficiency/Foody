@@ -5,6 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import de.foody.domain.Mahlzeit
 
 /**
  * Lokale Single Source of Truth. Schema wird nach app/schemas exportiert;
@@ -29,7 +30,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SyncPhotoLocalEntity::class,
         SyncPhotoWantedEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -120,5 +121,26 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
     }
 }
 
+/**
+ * v6 → v7: Einordnung am Rezept (Mahlzeiten, Gänge; null = vermuten) und Plan-Einträge mit festen Mahlzeit-Schlüsseln.
+ * Die Zuordnung der alten Freitexte läuft in Kotlin, weil SQLites lower() keine Umlaute kennt („FRÜHSTÜCK“).
+ * Unbekannte Freitexte bleiben stehen („Sonstiges“). Die Sync-Trigger laden umgestellte Einträge einmal hoch – gewollt.
+ */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `recipe` ADD COLUMN `mahlzeiten` TEXT")
+        db.execSQL("ALTER TABLE `recipe` ADD COLUMN `gaenge` TEXT")
+        val umstellen = buildList {
+            db.query("SELECT id, slotType FROM meal_slot").use { c ->
+                while (c.moveToNext()) {
+                    val neu = Mahlzeit.ausText(c.getString(1))?.name
+                    if (neu != null && neu != c.getString(1)) add(c.getString(0) to neu)
+                }
+            }
+        }
+        umstellen.forEach { (id, neu) -> db.execSQL("UPDATE meal_slot SET slotType = ? WHERE id = ?", arrayOf(neu, id)) }
+    }
+}
+
 /** Alle Migrationen in Reihenfolge – nie fallbackToDestructiveMigration (docs/architecture.md). */
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)

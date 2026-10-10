@@ -5,6 +5,7 @@ import de.foody.app.data.db.MIGRATION_2_3
 import de.foody.app.data.db.MIGRATION_3_4
 import de.foody.app.data.db.MIGRATION_4_5
 import de.foody.app.data.db.MIGRATION_5_6
+import de.foody.app.data.db.MIGRATION_6_7
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -134,6 +135,22 @@ class MigrationTest {
                 val names = buildSet { while (c.moveToNext()) add(c.getString(0)) }
                 assertEquals(SyncTriggers.names.toSet(), names)
                 assertTrue("sync_recipe_image_wish" in names && "sync_recipe_wish_ai" in names && "sync_recipe_wish_ad" in names)
+            }
+        }
+    }
+
+    @Test fun migrate6To7AddsEinordnungAndNormalizesSlots() {
+        helper.createDatabase(dbName, 6).use { db ->
+            db.execSQL("INSERT INTO recipe (id, name, defaultServings, tags, createdAt, updatedAt, version, favorite) VALUES ('r', 'Curry', 2, '', 1, 1, 1, 0)")
+            listOf("a" to "Abendessen", "b" to "frühstück", "c" to "FRÜHSTÜCK", "d" to "Brunch").forEach { (id, t) ->
+                db.execSQL("INSERT INTO meal_slot (id, date, slotType, recipeId, servings, createdAt, updatedAt) VALUES ('$id', '2026-10-10', '$t', 'r', 2, 1, 1)")
+            }
+        }
+        helper.runMigrationsAndValidate(dbName, 7, true, MIGRATION_6_7).use { db ->
+            db.query("SELECT mahlzeiten, gaenge FROM recipe").use { c -> c.moveToFirst(); assertTrue(c.isNull(0) && c.isNull(1)) }
+            db.query("SELECT id, slotType FROM meal_slot ORDER BY id").use { c ->
+                val m = buildMap { while (c.moveToNext()) put(c.getString(0), c.getString(1)) }
+                assertEquals(mapOf("a" to "ABENDESSEN", "b" to "FRUEHSTUECK", "c" to "FRUEHSTUECK", "d" to "Brunch"), m)
             }
         }
     }
