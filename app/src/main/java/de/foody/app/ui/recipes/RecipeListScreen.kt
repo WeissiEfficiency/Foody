@@ -339,7 +339,7 @@ private fun TagRow(
                 colors = chipColors, shape = RoundedCornerShape(50),
             )
         }
-        items(state.tags) { t ->
+        items(state.tags, key = { it }) { t ->
             FilterChip(state.tag == t, { onTag(t) }, label = { Text(t) }, colors = chipColors, shape = RoundedCornerShape(50))
         }
         item {

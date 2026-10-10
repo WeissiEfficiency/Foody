@@ -248,10 +248,10 @@ class SyncSchedulerTest {
     }
 
     @Test
-    fun periodicUsesFifteenMinutesAndExponentialBackoff() {
+    fun periodicUsesSixtyMinutesAndExponentialBackoff() {
         scheduler.schedulePeriodic()
         val info = infos(SyncScheduler.PERIODIC_WORK).single()
-        assertEquals(TimeUnit.MINUTES.toMillis(15), info.periodicityInfo?.repeatIntervalMillis)
+        assertEquals(TimeUnit.MINUTES.toMillis(60), info.periodicityInfo?.repeatIntervalMillis)
         val spec = (workManager as WorkManagerImpl).workDatabase.workSpecDao().getWorkSpec(info.id.toString())!!
         assertEquals(BackoffPolicy.EXPONENTIAL, spec.backoffPolicy)
         assertEquals(TimeUnit.SECONDS.toMillis(30), spec.backoffDelayDuration)
@@ -326,5 +326,31 @@ class SyncSchedulerTest {
         } finally {
             scope.cancel()
         }
+    }
+
+    /** Bestehende Installationen mit dem alten 15-Minuten-Auftrag bekommen das neue Intervall (gleiche Auftrags-ID). */
+    @Test
+    fun periodicUpdatesOldInterval() {
+        val alt = androidx.work.PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES).build()
+        workManager.enqueueUniquePeriodicWork(SyncScheduler.PERIODIC_WORK, androidx.work.ExistingPeriodicWorkPolicy.KEEP, alt).result.get()
+        scheduler.schedulePeriodic()
+        val info = infos(SyncScheduler.PERIODIC_WORK).single()
+        assertEquals(alt.id, info.id)
+        assertEquals(TimeUnit.MINUTES.toMillis(60), info.periodicityInfo?.repeatIntervalMillis)
+    }
+
+    /** Beim Öffnen der App wird abgeglichen – nur mit aktivem Sync und nicht mitten in einen laufenden Lauf hinein. */
+    @Test
+    fun appOpenRequestsSyncOnlyWhenActiveAndIdle() = runBlocking {
+        scheduler.requestOnAppOpen()
+        assertEquals(0, infos(SyncScheduler.NOW_WORK).size, "Sync aus")
+        val dao = db.syncDao()
+        dao.upsertState((dao.getState() ?: error("sync_state fehlt")).copy(active = true))
+        running = true
+        scheduler.requestOnAppOpen()
+        assertEquals(0, infos(SyncScheduler.NOW_WORK).size, "läuft gerade")
+        running = false
+        scheduler.requestOnAppOpen()
+        assertEquals(1, infos(SyncScheduler.NOW_WORK).count { it.state == WorkInfo.State.ENQUEUED })
     }
 }

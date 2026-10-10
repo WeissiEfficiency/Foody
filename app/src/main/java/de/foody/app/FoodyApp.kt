@@ -35,7 +35,7 @@ class FoodyApp : Application(), Configuration.Provider {
         appScope.launch {
             ingredients.seedIfNeeded()
             // Fotos aus älteren Versionen wurden in voller Kameraauflösung gespeichert – einmalig verkleinern
-            photos.shrinkAll()
+            photos.shrinkAllEinmal()
         }
         // Hintergrund-Sync nur planen, wenn er eingeschaltet ist; sonst bleibt alles aus.
         syncScope.launch {

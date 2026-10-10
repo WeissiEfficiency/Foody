@@ -66,7 +66,8 @@ der Löschung; Zutaten mit gleichem Namen werden zur älteren ID zusammengeführ
 
 ### Hintergrund-Sync
 
-`SyncScheduler` (WorkManager, nur mit Netzwerk): periodisch alle 15 Minuten (`schedulePeriodic`) und nach lokalen
+`SyncScheduler` (WorkManager, nur mit Netzwerk): periodisch stündlich (`schedulePeriodic`, `UPDATE` bringt ein
+geändertes Intervall auf bestehende Installationen), beim Öffnen der App (`requestOnAppOpen` aus `MainActivity.onStart`) und nach lokalen
 Änderungen entprellt nach 5 s (`requestSoon`, ausgelöst durch das Beobachten der Outbox-Größe); Backoff exponentiell ab
 30 s. `FoodyApp` plant beim Start nur, wenn der Sync aktiv ist. Wurde während eines Laufs etwas vorgemerkt, hängt der
 Worker einen weiteren Lauf an (`requestSoonIfQueuedSince`).

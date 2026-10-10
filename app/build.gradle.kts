@@ -29,6 +29,12 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Foody ist nur deutsch: Übersetzungen der Bibliotheken (AndroidX, Play-Dienste, …) in Dutzende Sprachen
+    // weglassen. Die Standard-Ressourcen (`values/`) bleiben immer erhalten.
+    androidResources {
+        localeFilters += listOf("de")
+    }
+
     signingConfigs {
         if (keystoreProperties.isNotEmpty()) {
             create("release") {

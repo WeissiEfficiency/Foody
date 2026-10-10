@@ -61,4 +61,21 @@ class PhotoShrinkTest {
         assertEquals(modified, file.lastModified())
         file.delete()
     }
+
+    /** Der Start verkleinert alte Fotos nur einmal (je Verkleinerungs-Version), nicht bei jedem Start erneut. */
+    @Test fun startVerkleinertNurEinmal() = runTest {
+        context.getSharedPreferences("foody", Context.MODE_PRIVATE).edit().remove(RecipePhotoStore.PREF_VERKLEINERT).commit()
+        fun gross(): java.io.File {
+            val (file, _) = photos.newPhotoTarget()
+            val bmp = Bitmap.createBitmap(3200, 2400, Bitmap.Config.ARGB_8888)
+            file.outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+            return file
+        }
+        val erstes = gross()
+        assertTrue(photos.shrinkAllEinmal() >= 1)
+        val zweites = gross()
+        assertEquals(0, photos.shrinkAllEinmal(), "zweiter Start liest die Fotos nicht mehr")
+        assertEquals(3200, bounds(zweites.path).outWidth)
+        erstes.delete(); zweites.delete()
+    }
 }

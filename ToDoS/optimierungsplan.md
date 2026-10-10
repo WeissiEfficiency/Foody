@@ -74,6 +74,8 @@ Die Abschluss-Reviews deckten nur die neuen Features ab. Älterer Code wurde nie
 
 Vorgehen je Bereich: `/code-review` auf den Ordner, Funde wie bisher mit Test, der vorher fehlschlägt.
 
+**Übrige Bereiche (2026-10-11):** Sicherung/Import und Kochtimer durchgesehen – ohne Befund (Sync-Sperre für Löschen/Import vorhanden, alle Nutzerdaten in der Sicherung, Zip-Slip/Größengrenzen, Wakelock nur bis zum nächsten Ende und in allen Pfaden freigegeben). Einkaufsliste laut Stefan in Ordnung, nicht weiter geprüft.
+
 **Ergebnis Sync (2026-10-10), 10 Funde:**
 
 | Fund | Stand |
@@ -129,6 +131,20 @@ Vorgehen je Bereich: `/code-review` auf den Ordner, Funde wie bisher mit Test, d
 |---|---|
 | `items(state.tags)` ohne `key` (Rezeptliste) | `key = { it }` |
 | große Screens (535/451/428 Zeilen) | aufteilen, wo Teile unabhängig neu zeichnen sollen (Stabilität der Parameter prüfen, Compose-Compiler-Report) |
+
+**Ergebnis Phase 3 (2026-10-11):**
+
+| Maßnahme | Stand |
+|---|---|
+| `localeFilters = de` (Übersetzungen der Bibliotheken) | ✅ Release-APK 3,43 → 2,91 MB (−15 %), `resources.arsc` 595 → 82 KB |
+| `shrinkAll()` bei jedem Start | ✅ nur einmal je Verkleinerungs-Version; Fotos aus Sicherungen verkleinert der Import |
+| Suche ohne `debounce` | ✅ 150 ms für die Abfrage, Eingabe sofort, Leeren ohne Verzögerung |
+| `RecipeProfiles` für alle Rezepte bei jeder Änderung | ✅ Cache je Rezept (Schlüssel: Rezept, Zeilen, verwendete Zutaten) |
+| `items(state.tags)` ohne `key` | ✅ |
+| Sync alle 15 min | ✅ stündlich + beim Öffnen der App; `UPDATE` bringt das Intervall auf bestehende Installationen |
+| Geteilter `observeAll()`-Flow, Listen erst im Tagebuch-Dialog | ✗ bewusst nicht: ein app-weit geteilter Flow hielte die Abfragen dauerhaft aktiv (Speicher), der State trägt nur Referenzen |
+| große Screens aufteilen | ✗ ohne gemessenes Problem; erst bei Rucklern (Compose-Compiler-Report) |
+| Open-Food-Facts-Cache | ✗ durch `ingredient.barcode` abgedeckt |
 
 ## Phase 4 – Vorladen / Start beschleunigen (½–1 Tag)
 
