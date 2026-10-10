@@ -22,6 +22,11 @@
     <string name="scan_wird_geladen">Scanner wird vorbereitet – gleich noch einmal versuchen</string>
     <string name="scan_nicht_verfuegbar">Braucht Google-Play-Dienste</string>
     <string name="scan_fehler">Scan fehlgeschlagen – bitte noch einmal versuchen</string>
+    <string name="tagebuch_je_100g">Je 100 g</string>
+    <string name="tagebuch_je_100ml">Je 100 ml</string>
+    <string name="tagebuch_als_zutat">Als Zutat im Katalog speichern</string>
+    <string name="tagebuch_zutat_aktualisieren">Werte bei „%1$s“ aktualisieren</string>
+    <string name="tagebuch_zurueck_zu_frei">Zurück zu frei</string>
     <string name="tagebuch_eyebrow">Tagebuch</string>
     <string name="tagebuch_vortag">Vortag</string>
     <string name="tagebuch_folgetag">Folgetag</string>

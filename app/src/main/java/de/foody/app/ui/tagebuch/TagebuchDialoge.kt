@@ -1,5 +1,16 @@
 package de.foody.app.ui.tagebuch
 
+import androidx.compose.material3.Checkbox
+import androidx.compose.runtime.LaunchedEffect
+import de.foody.app.scan.Packung
+import de.foody.app.ui.common.PackungScanKnopf
+import de.foody.app.ui.common.display
+import de.foody.domain.Ingredient
+import de.foody.domain.Naehrwerte
+import de.foody.domain.Nutrient
+import de.foody.domain.NutrientBasis
+import de.foody.domain.NutrientProfile
+import de.foody.domain.Tagebuch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -131,6 +142,48 @@ internal fun HinzufuegenDialog(mahlzeit: Mahlzeit, s: TagebuchUiState, vm: Tageb
     fun optOk(text: String) = text.isBlank() || parseNichtNegativ(text) != null
     val vorschau = zutatId?.let { id -> mengeZahl?.let { vm.zutatVorschau(id, it, einheit) } }
     val kcalZahl = kcal.toIntOrNull()?.takeIf { it > 0 }
+    // Packungsmodus im Reiter „Frei“: gescannte Werte je 100 g/ml plus gegessene Menge
+    var packung by remember { mutableStateOf<Packung?>(null) }
+    var pMenge by rememberSaveable { mutableStateOf("") }
+    var pKcal by rememberSaveable { mutableStateOf("") }
+    var pEiweiss by rememberSaveable { mutableStateOf("") }
+    var pKh by rememberSaveable { mutableStateOf("") }
+    var pFett by rememberSaveable { mutableStateOf("") }
+    var alsZutat by rememberSaveable { mutableStateOf(true) }
+    var vorhanden by remember { mutableStateOf<String?>(null) }
+    fun kcalJe100(p: Packung) = p.werte[Nutrient.ENERGY_KJ]?.let { Naehrwerte(it, null, null, null, true).kcal }
+    fun packungUebernehmen(p: Packung) {
+        packung = p
+        if (name.isBlank() || p.name != null) name = p.name ?: name
+        pKcal = kcalJe100(p)?.toString().orEmpty()
+        pEiweiss = p.werte[Nutrient.PROTEIN_G]?.display(1).orEmpty()
+        pKh = p.werte[Nutrient.CARBS_G]?.display(1).orEmpty()
+        pFett = p.werte[Nutrient.FAT_G]?.display(1).orEmpty()
+    }
+    /** Die Packung mit den (ggf. korrigierten) Feldern; kcal unverändert → genauer kJ-Wert der Packung bleibt. */
+    fun bearbeitetePackung(): Packung? {
+        val p = packung ?: return null
+        val werte = p.werte.toMutableMap()
+        val kcalNeu = pKcal.toIntOrNull()
+        if (kcalNeu == null) werte.remove(Nutrient.ENERGY_KJ)
+        else if (kcalNeu != kcalJe100(p)) werte[Nutrient.ENERGY_KJ] = BigDecimal(kcalNeu).multiply(TagebuchViewModel.KJ_JE_KCAL)
+        listOf(Nutrient.PROTEIN_G to pEiweiss, Nutrient.CARBS_G to pKh, Nutrient.FAT_G to pFett).forEach { (n, t) ->
+            parseNichtNegativ(t)?.let { werte[n] = it } ?: werte.remove(n)
+        }
+        return p.copy(werte = werte)
+    }
+    val pEinheit = if (packung?.basis == NutrientBasis.PER_100_ML) MeasureUnit.MILLILITER else MeasureUnit.GRAM
+    val pMengeZahl = parseNichtNegativ(pMenge)?.takeIf { it.signum() > 0 }
+    val pVorschau = bearbeitetePackung()?.let { p ->
+        pMengeZahl?.let { m -> Tagebuch.naehrwerteZutat(Ingredient("", name, nutrients = NutrientProfile(p.basis, p.werte)), m, pEinheit) }
+    }
+    LaunchedEffect(name, packung) {
+        if (packung != null) {
+            vorhanden = vm.zutatMitNamen(name)?.canonicalName
+            // Vorhandene Zutat nicht still überschreiben: dann ist „aktualisieren“ standardmäßig aus
+            alsZutat = vorhanden == null
+        }
+    }
 
     val aktiv = Reiter.entries[reiter]
     // Gegen Doppeltipp: nach dem ersten Tipp gesperrt, bis das Speichern fertig ist
@@ -138,7 +191,8 @@ internal fun HinzufuegenDialog(mahlzeit: Mahlzeit, s: TagebuchUiState, vm: Tageb
     val kannHinzufuegen = when (aktiv) {
         Reiter.REZEPT -> gewaehltesRezept != null
         Reiter.ZUTAT -> zutatId != null && mengeZahl != null
-        Reiter.FREI -> name.isNotBlank() && kcalZahl != null && optOk(eiweiss) && optOk(kh) && optOk(fett)
+        Reiter.FREI -> if (packung != null) name.isNotBlank() && pVorschau != null && optOk(pEiweiss) && optOk(pKh) && optOk(pFett)
+        else name.isNotBlank() && kcalZahl != null && optOk(eiweiss) && optOk(kh) && optOk(fett)
     }
 
     AlertDialog(
@@ -187,7 +241,41 @@ internal fun HinzufuegenDialog(mahlzeit: Mahlzeit, s: TagebuchUiState, vm: Tageb
                             }
                         }
                     }
-                    Reiter.FREI -> {
+                    Reiter.FREI -> if (packung != null) {
+                        Text(stringResource(R.string.scan_uebernommen, packung!!.quelle), style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary)
+                        OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.field_name)) }, singleLine = true,
+                            modifier = Modifier.fillMaxWidth())
+                        DecimalField(pMenge, { pMenge = it }, "${stringResource(R.string.field_amount)} (${pEinheit.symbol})")
+                        Text(stringResource(if (pEinheit == MeasureUnit.MILLILITER) R.string.tagebuch_je_100ml else R.string.tagebuch_je_100g),
+                            style = MaterialTheme.typography.labelLarge)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            DecimalField(pKcal, { v -> pKcal = v.filter(Char::isDigit).take(4) }, "kcal", Modifier.weight(1f), markiert = true)
+                            DecimalField(pEiweiss, { pEiweiss = it }, stringResource(R.string.tagebuch_eiweiss), Modifier.weight(1f), markiert = pEiweiss.isNotEmpty())
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            DecimalField(pKh, { pKh = it }, stringResource(R.string.tagebuch_kh), Modifier.weight(1f), markiert = pKh.isNotEmpty())
+                            DecimalField(pFett, { pFett = it }, stringResource(R.string.tagebuch_fett), Modifier.weight(1f), markiert = pFett.isNotEmpty())
+                        }
+                        pVorschau?.kcal?.let {
+                            Text(stringResource(R.string.tagebuch_vorschau, kcalText(it, pVorschau.vollstaendig)),
+                                style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(alsZutat, { alsZutat = it })
+                            Text(
+                                vorhanden?.let { stringResource(R.string.tagebuch_zutat_aktualisieren, it) } ?: stringResource(R.string.tagebuch_als_zutat),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                        TextButton({ packung = null }) { Text(stringResource(R.string.tagebuch_zurueck_zu_frei)) }
+                    } else {
+                        PackungScanKnopf(vm.scan, ::packungUebernehmen, onImKatalog = { z ->
+                            // Strichcode kennt der Katalog schon: direkt die Zutat mit Menge eintragen
+                            zutatId = z.id
+                            zutatSuche = z.canonicalName
+                            reiter = Reiter.ZUTAT.ordinal
+                        })
                         OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.field_name)) }, singleLine = true,
                             modifier = Modifier.fillMaxWidth())
                         OutlinedTextField(kcal, { v -> kcal = v.filter(Char::isDigit).take(5) }, label = { Text("kcal") }, singleLine = true,
@@ -209,7 +297,11 @@ internal fun HinzufuegenDialog(mahlzeit: Mahlzeit, s: TagebuchUiState, vm: Tageb
                     Reiter.ZUTAT -> scope.launch {
                         if (vm.zutatEintragen(mahlzeit, zutatId!!, mengeZahl!!, einheit)) onDismiss() else { keineWerte = true; sendet = false }
                     }
-                    Reiter.FREI -> {
+                    Reiter.FREI -> if (packung != null) {
+                        scope.launch {
+                            if (vm.packungEintragen(mahlzeit, name, pMengeZahl!!, pEinheit, bearbeitetePackung()!!, alsZutat)) onDismiss() else sendet = false
+                        }
+                    } else {
                         vm.freiEintragen(mahlzeit, name, kcalZahl!!, parseNichtNegativ(eiweiss), parseNichtNegativ(kh), parseNichtNegativ(fett))
                         onDismiss()
                     }

@@ -63,7 +63,7 @@ class TagebuchViewModelTest {
         plan = PlanRepository(db, db.mealPlanDao(), db.recipeDao(), db.pantryDao(), db.ingredientDao())
         vm = TagebuchViewModel(
             TagebuchRepository(db, db.tagebuchDao()), plan, recipes, IngredientRepository(db, db.ingredientDao(), context),
-            GoalPreferences(context), SavedStateHandle(),
+            GoalPreferences(context), SavedStateHandle(), ohneScan(),
         )
         collector.launch { vm.state.collect {} }
         Unit
@@ -148,5 +148,49 @@ class TagebuchViewModelTest {
         await { it.tag == today.plusDays(8) }
         kotlinx.coroutines.delay(500)
         assertTrue(vm.state.value.vorschlaege.isEmpty(), "schon gegessen – kein Vorschlag, dessen „Gegessen“ nichts täte")
+    }
+
+    private val skyr = de.foody.app.scan.Packung(
+        "Skyr", NutrientBasis.PER_100_G,
+        mapOf(de.foody.domain.Nutrient.ENERGY_KJ to BigDecimal(260), de.foody.domain.Nutrient.PROTEIN_G to BigDecimal(11)),
+        "4001234567890", de.foody.app.scan.OpenFoodFacts.QUELLE,
+    )
+
+    @Test fun packungAlsNeueZutat() = runBlocking {
+        assertTrue(vm.packungEintragen(Mahlzeit.SNACK, "Skyr", BigDecimal(150), MeasureUnit.GRAM, skyr, alsZutat = true))
+        val zutat = db.ingredientDao().findByNameExact("Skyr")!!
+        assertEquals(0, BigDecimal(260).compareTo(zutat.energyKj))
+        assertEquals("4001234567890", zutat.barcode)
+        assertEquals(de.foody.app.scan.OpenFoodFacts.QUELLE, zutat.nutrientSource)
+        val e = db.tagebuchDao().getAll().single()
+        assertEquals(TagebuchArt.ZUTAT, e.art)
+        assertEquals(zutat.id, e.zutatId)
+        // 260 kJ je 100 g × 1,5 = 390 kJ ≈ 93 kcal
+        assertEquals(93, await { eintraege(it).size == 1 }.bilanz.tag.kcal)
+    }
+
+    @Test fun packungOhneHaekchenIstFrei() = runBlocking {
+        assertTrue(vm.packungEintragen(Mahlzeit.SNACK, "Skyr", BigDecimal(150), MeasureUnit.GRAM, skyr, alsZutat = false))
+        assertEquals(null, db.ingredientDao().findByNameExact("Skyr"))
+        val e = db.tagebuchDao().getAll().single()
+        assertEquals(TagebuchArt.FREI, e.art)
+        assertEquals(93, await { eintraege(it).size == 1 }.bilanz.tag.kcal)
+    }
+
+    @Test fun vorhandeneZutatOhneHaekchenBleibt() = runBlocking {
+        val anders = skyr.copy(name = "Reis", werte = mapOf(de.foody.domain.Nutrient.ENERGY_KJ to BigDecimal(1500)))
+        assertTrue(vm.packungEintragen(Mahlzeit.MITTAGESSEN, "Reis", BigDecimal(100), MeasureUnit.GRAM, anders, alsZutat = false))
+        assertEquals(0, BigDecimal("1464").compareTo(db.ingredientDao().get("reis")!!.energyKj), "Katalogwert unverändert")
+        // Der Eintrag nutzt die gescannten Werte: 1500 kJ ≈ 359 kcal
+        assertEquals(359, await { eintraege(it).size == 1 }.bilanz.tag.kcal)
+    }
+
+    @Test fun vorhandeneZutatMitHaekchenWirdAktualisiert() = runBlocking {
+        val anders = skyr.copy(name = "Reis", werte = mapOf(de.foody.domain.Nutrient.ENERGY_KJ to BigDecimal(1500)))
+        assertTrue(vm.packungEintragen(Mahlzeit.MITTAGESSEN, "Reis", BigDecimal(100), MeasureUnit.GRAM, anders, alsZutat = true))
+        val reis = db.ingredientDao().get("reis")!!
+        assertEquals(0, BigDecimal(1500).compareTo(reis.energyKj))
+        assertEquals("4001234567890", reis.barcode)
+        assertEquals("reis", db.tagebuchDao().getAll().single().zutatId)
     }
 }

@@ -1,5 +1,10 @@
 package de.foody.app.ui.tagebuch
 
+import de.foody.app.scan.Packung
+import de.foody.app.scan.PackungScan
+import de.foody.domain.Ingredient
+import de.foody.domain.Nutrient
+import de.foody.domain.NutrientProfile
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -62,6 +67,8 @@ class TagebuchViewModel @Inject constructor(
     private val ingredients: IngredientRepository,
     goals: GoalPreferences,
     private val saved: SavedStateHandle,
+    /** „Von Packung scannen“ im Reiter „Frei“. */
+    val scan: PackungScan,
 ) : ViewModel() {
     private val tagEpoch = saved.getStateFlow("tag", LocalDate.now().toEpochDay())
 
@@ -180,6 +187,38 @@ class TagebuchViewModel @Inject constructor(
     private fun verhaeltnis(neu: BigDecimal?, alt: BigDecimal?): BigDecimal? {
         if (neu == null || alt == null || alt.signum() <= 0 || neu.compareTo(alt) == 0) return null
         return neu.divide(alt, 10, java.math.RoundingMode.HALF_UP)
+    }
+
+    /** Gibt es im Katalog schon eine Zutat mit diesem Namen? (Häkchen heißt dann „Werte aktualisieren“.) */
+    suspend fun zutatMitNamen(name: String): IngredientEntity? = name.trim().takeIf { it.isNotEmpty() }?.let { ingredients.findByName(it) }
+
+    /**
+     * Trägt eine gescannte Packung ein. Mit [alsZutat] wird die Zutat angelegt bzw. – wenn es den Namen schon gibt –
+     * mit den gescannten Werten aktualisiert und als Zutat-Eintrag gebucht; ohne entsteht ein freier Eintrag.
+     * Der Eintrag nutzt immer die gescannten Werte. `false`, wenn die Menge nicht berechenbar ist (z. B. Stück).
+     */
+    suspend fun packungEintragen(m: Mahlzeit, name: String, menge: BigDecimal, einheit: MeasureUnit, packung: Packung, alsZutat: Boolean): Boolean {
+        val n = name.trim()
+        val profil = NutrientProfile(packung.basis, packung.werte)
+        val w = Tagebuch.naehrwerteZutat(Ingredient("", n, nutrients = profil), menge, einheit) ?: return false
+        val datum = tag
+        if (!alsZutat) {
+            tagebuch.save(eintrag(datum, m, TagebuchArt.FREI, n, w))
+            return true
+        }
+        val jetzt = System.currentTimeMillis()
+        val basis = ingredients.findByName(n) ?: IngredientEntity(id = newId(), canonicalName = n, createdAt = jetzt, updatedAt = jetzt, version = 0)
+        fun wert(x: Nutrient, alt: BigDecimal?) = packung.werte[x] ?: alt
+        val zutat = basis.copy(
+            nutrientBasis = packung.basis,
+            energyKj = wert(Nutrient.ENERGY_KJ, basis.energyKj), protein = wert(Nutrient.PROTEIN_G, basis.protein),
+            carbs = wert(Nutrient.CARBS_G, basis.carbs), fat = wert(Nutrient.FAT_G, basis.fat), fiber = wert(Nutrient.FIBER_G, basis.fiber),
+            sugar = wert(Nutrient.SUGAR_G, basis.sugar), salt = wert(Nutrient.SALT_G, basis.salt),
+            nutrientSource = packung.quelle, barcode = basis.barcode ?: packung.strichcode,
+        )
+        ingredients.save(zutat)
+        tagebuch.save(eintrag(datum, m, TagebuchArt.ZUTAT, zutat.canonicalName, w, zutatId = zutat.id, menge = menge, einheit = einheit))
+        return true
     }
 
     fun loeschen(id: String) = viewModelScope.launch { tagebuch.delete(id) }
