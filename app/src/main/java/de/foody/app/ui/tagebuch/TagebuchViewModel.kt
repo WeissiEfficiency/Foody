@@ -74,14 +74,17 @@ class TagebuchViewModel @Inject constructor(
 ) : ViewModel() {
     private val tagEpoch = saved.getStateFlow("tag", LocalDate.now().toEpochDay())
 
-    private val woche = tagEpoch.flatMapLatest { t ->
+    /**
+     * Tag, Einträge der Woche bis dahin und Planpositionen des Tages – als ein Fluss je Tag, damit der neue Tag nie mit
+     * den Daten des alten zusammen erscheint (sonst flackern beim Blättern kurz die alten Vorschläge).
+     */
+    private val tagDaten = tagEpoch.flatMapLatest { t ->
         val tag = LocalDate.ofEpochDay(t)
-        tagebuch.observeRange(tag.minusDays(6), tag)
+        combine(tagebuch.observeRange(tag.minusDays(6), tag), plan.observeRange(tag, tag)) { woche, slots -> Triple(t, woche, slots) }
     }
-    private val slots = tagEpoch.flatMapLatest { t -> LocalDate.ofEpochDay(t).let { plan.observeRange(it, it) } }
 
     val state = combine(
-        combine(tagEpoch, woche, slots, ::Triple),
+        tagDaten,
         recipes.observeAll(),
         ingredients.observeAll(),
         goals.dailyKcal,

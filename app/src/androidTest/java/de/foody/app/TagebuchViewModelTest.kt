@@ -205,4 +205,19 @@ class TagebuchViewModelTest {
         assertEquals(0, BigDecimal(1450).compareTo(db.ingredientDao().get("wm")!!.energyKj))
         assertEquals("wm", db.tagebuchDao().getAll().single().zutatId)
     }
+
+    /** Beim Tageswechsel darf kein Zustand den neuen Tag mit den Vorschlägen/Einträgen des alten zeigen (Flackern). */
+    @Test fun tageswechselZeigtKeineDatenDesVortags() = runBlocking {
+        plan.add(today, Mahlzeit.ABENDESSEN.name, curryId, 2)
+        vm.rezeptEintragen(Mahlzeit.MITTAGESSEN, curryId, BigDecimal.ONE)
+        await { it.vorschlaege[Mahlzeit.ABENDESSEN].orEmpty().size == 1 && eintraege(it).size == 1 }
+        val gesehen = java.util.Collections.synchronizedList(ArrayList<TagebuchUiState>())
+        val mitschnitt = collector.launch { vm.state.collect { gesehen += it } }
+        vm.zeigeTag(today.plusDays(1))
+        await { it.tag == today.plusDays(1) }
+        kotlinx.coroutines.delay(500)
+        mitschnitt.cancel()
+        val falsch = gesehen.filter { it.tag == today.plusDays(1) && (it.vorschlaege.isNotEmpty() || eintraege(it).isNotEmpty()) }
+        assertEquals(emptyList(), falsch.map { it.tag to it.vorschlaege.keys + it.eintraege.keys })
+    }
 }
