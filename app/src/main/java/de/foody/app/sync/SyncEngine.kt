@@ -446,36 +446,19 @@ class SyncEngine(
             if (dao.isQueued(type.wire, id)) return@withTransaction
             // Vom Server abgelehnt (Problem vermerkt): der lokale Stand ist die einzige Kopie, nicht löschen.
             if (dao.hasProblem(type.wire, id)) return@withTransaction
-            if ((type to id) in remoteRefs || isStillNeeded(type, id)) {
+            if ((type to id) in remoteRefs || applier.isStillNeeded(type, id)) {
                 // Bleibt stehen, der Server kennt ihn aber nicht: erneut senden, damit beide Seiten konvergieren.
                 dao.enqueue(SyncOutboxEntity(type.wire, id, deleted = false, queuedAt = clock.millis()))
                 return@withTransaction
             }
             dao.setApplyingRemote(true)
             try {
-                when (type) {
-                    RecordType.INGREDIENT -> db.ingredientDao().delete(id)
-                    RecordType.RECIPE -> db.recipeDao().delete(id)
-                    RecordType.MEAL_SLOT -> db.mealPlanDao().delete(id)
-                    RecordType.PANTRY_ITEM -> db.pantryDao().delete(id)
-                    RecordType.SHOPPING_LIST -> db.shoppingDao().deleteList(id)
-                    RecordType.SHOPPING_ITEM -> db.shoppingDao().deleteItem(id)
-                    RecordType.TAGEBUCH_EINTRAG -> db.tagebuchDao().delete(id)
-                }
+                applier.deleteLocal(type, id)
             } finally {
                 dao.setApplyingRemote(false)
             }
             dao.clearProblem(type.wire, id)
         }
-    }
-
-    /** Würde das Löschen noch gebrauchte Daten reißen (RESTRICT oder Kaskade über offene lokale Änderungen)? */
-    private suspend fun isStillNeeded(type: RecordType, id: String): Boolean = when (type) {
-        RecordType.INGREDIENT -> db.ingredientDao().usageCount(id) > 0 || dao.hasQueuedPantryFor(id) ||
-            dao.hasQueuedShoppingItemsFor(id)
-        RecordType.RECIPE -> dao.hasQueuedSlotsFor(id)
-        RecordType.SHOPPING_LIST -> dao.hasQueuedItemsFor(id)
-        else -> false
     }
 
     private companion object {
