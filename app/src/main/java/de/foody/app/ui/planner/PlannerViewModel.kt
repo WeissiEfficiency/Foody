@@ -1,5 +1,8 @@
 package de.foody.app.ui.planner
 
+import de.foody.domain.Durchschnitt
+import de.foody.domain.PlanDurchschnitt
+import de.foody.domain.PlanTag
 import de.foody.app.data.repo.einordnung
 import de.foody.domain.Mahlzeit
 import de.foody.app.data.GoalPreferences
@@ -42,6 +45,8 @@ data class PlannerUiState(
     val dayNutrition: Map<LocalDate, DayNutrition> = emptyMap(),
     /** Tagesziel in kcal aus den Einstellungen; null = kein Ziel. */
     val dailyGoalKcal: Int? = null,
+    /** Ø kcal über voll geplante Tage (Abendessen plus weitere Mahlzeit); null = kein solcher Tag. */
+    val durchschnitt: Durchschnitt? = null,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -75,7 +80,8 @@ class PlannerViewModel @Inject constructor(
             val meals = slots.mapNotNull { slot -> s.recipes[slot.recipeId]?.toDomain(byRecipe[slot.recipeId].orEmpty()) }
             DayNutrition.of(meals, ingMap)?.let { day to it }
         }.toMap()
-        s.copy(dayNutrition = nutrition, dailyGoalKcal = goal)
+        val schnitt = PlanDurchschnitt.kcal(nutrition.map { (day, n) -> PlanTag(s.slotsByDay[day].orEmpty().map { it.slotType }, n) })
+        s.copy(dayNutrition = nutrition, dailyGoalKcal = goal, durchschnitt = schnitt)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlannerUiState())
 
     fun shift(daysDelta: Long) { saved["start"] = start.value + daysDelta }
