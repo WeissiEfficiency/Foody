@@ -126,8 +126,11 @@ object RezeptEinordnung {
     }
 
     private fun treffer(name: String, tags: List<String>): List<Regel> {
-        val woerter = tags.map { it.trim().lowercase() }.filter { it.isNotEmpty() } +
-            name.lowercase().split(Regex("[^\\p{L}]+")).filter { it.isNotEmpty() }
+        val nameWoerter = name.lowercase().split(Regex("[^\\p{L}]+")).filter { it.isNotEmpty() }
+        // Mehrteilige Stichwörter („overnight oats“) als zusammenhängende Wortfolge im Namen suchen
+        val mehrteilig = regeln.flatMap { it.stichwoerter }.filter { ' ' in it }
+            .filter { s -> " ${nameWoerter.joinToString(" ")} ".contains(" $s ") }
+        val woerter = tags.map { it.trim().lowercase() }.filter { it.isNotEmpty() } + nameWoerter + mehrteilig
         val stichwoerter = woerter.flatMap { wort ->
             val passend = regeln.flatMap { it.stichwoerter }.filter { s -> wort == s || (s.length >= TEILWORT_AB && s in wort) }
             // „Pfannkuchen“ ist Frühstück, kein Kuchen: Ein enthaltenes kürzeres Stichwort zählt nicht

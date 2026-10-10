@@ -96,4 +96,8 @@ class RezeptEinordnungTest {
         assertFalse(r.passtZu(Mahlzeit.ABENDESSEN, setOf(Gang.NACHSPEISE)))
         assertFalse(r.passtZu(Mahlzeit.FRUEHSTUECK, emptySet()))
     }
+
+    /** Stichwörter aus mehreren Wörtern treffen auch im Namen, nicht nur als Tag. */
+    @Test fun mehrteiligesStichwortImNamen() =
+        assertEquals(setOf(Mahlzeit.FRUEHSTUECK), e("Overnight Oats mit Beeren").mahlzeiten)
 }
