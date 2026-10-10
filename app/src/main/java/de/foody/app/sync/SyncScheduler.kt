@@ -24,8 +24,8 @@ import kotlinx.coroutines.launch
 
 /**
  * Liefert die [SyncEngine] für den aktuellen Sync-Zustand: `null`, wenn der Sync inaktiv ist oder URL bzw. Token
- * fehlen. Solange die Server-URL gleich bleibt, kommt dieselbe Instanz zurück, sodass ihr Mutex Läufe des
- * Workers und späterer „Jetzt synchronisieren“-Aufrufe hintereinander schaltet. (Das Token liest die API je
+ * fehlen. Solange die Server-URL gleich bleibt, kommt dieselbe Instanz zurück. Läufe schaltet die gemeinsame
+ * Sperre [SyncLocalStore.runLock] hintereinander, auch über einen Adresswechsel hinweg. (Das Token liest die API je
  * Aufruf aus dem [TokenStore], ein neues Token braucht keine neue Engine.)
  */
 @Singleton

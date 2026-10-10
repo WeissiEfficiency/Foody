@@ -54,6 +54,8 @@ interface SyncDao {
     @Query("SELECT * FROM sync_problem") suspend fun problems(): List<SyncProblemEntity>
     @Query("SELECT EXISTS(SELECT 1 FROM sync_problem WHERE type = :type AND recordId = :id)")
     suspend fun hasProblem(type: String, id: String): Boolean
+    @Query("SELECT EXISTS(SELECT 1 FROM sync_problem WHERE type = :type AND recordId = :id AND code = :code)")
+    suspend fun hasProblem(type: String, id: String, code: String): Boolean
     @Query("DELETE FROM sync_problem") suspend fun clearProblems()
     @Query("DELETE FROM sync_problem WHERE type = :type AND recordId = :id") suspend fun clearProblem(type: String, id: String)
 
@@ -103,6 +105,7 @@ interface SyncDao {
     @Query("SELECT * FROM sync_photo_wanted WHERE recipeId = :recipeId") suspend fun photoWanted(recipeId: String): SyncPhotoWantedEntity?
     @Upsert suspend fun upsertPhotoWanted(e: SyncPhotoWantedEntity)
     @Query("DELETE FROM sync_photo_wanted WHERE recipeId = :recipeId") suspend fun deletePhotoWanted(recipeId: String)
+    @Query("DELETE FROM sync_photo_wanted") suspend fun clearPhotosWanted()
 
     /** Setzt das Foto eines Rezepts, ohne `updatedAt` zu ändern (nur mit `applyingRemote = 1` aufrufen). */
     @Query("UPDATE recipe SET imageUri = :uri WHERE id = :id") suspend fun setRecipeImage(id: String, uri: String)

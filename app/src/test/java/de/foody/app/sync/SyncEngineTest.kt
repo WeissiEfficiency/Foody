@@ -39,6 +39,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -99,6 +100,7 @@ class SyncEngineTest {
     private lateinit var api: FakeSyncApi
     private lateinit var engine: SyncEngine
     private lateinit var photoStore: RecipePhotoStore
+    private lateinit var store: SyncLocalStore
 
     @Before
     fun setUp() = runTest {
@@ -109,7 +111,8 @@ class SyncEngineTest {
         api = FakeSyncApi()
         photoStore = RecipePhotoStore(RuntimeEnvironment.getApplication(), db.recipeDao())
         val photoIndex = PhotoIndex(db, photoStore)
-        engine = SyncEngine(db, SyncLocalStore(db, photoIndex), SyncApplier(db, photoIndex), api, Clock.systemUTC(), photoIndex, photoStore)
+        store = SyncLocalStore(db, photoIndex)
+        engine = SyncEngine(db, store, SyncApplier(db, photoIndex), api, Clock.systemUTC(), photoIndex, photoStore)
     }
 
     @After
@@ -276,7 +279,7 @@ class SyncEngineTest {
     }
 
     @Test
-    fun uploadClientErrorDefersOnlyThatRecipe() = runTest {
+    fun uploadClientErrorSendsOnlyThatRecipeWithoutPhoto() = runTest {
         activate()
         val badBytes = jpeg(6, 6)
         val bad = recipe("r1", ownPhoto(badBytes))
@@ -288,9 +291,14 @@ class SyncEngineTest {
         )
         val goodBytes = jpeg(8, 8)
         db.recipeDao().upsert(db.recipeDao().get(good)!!.copy(imageUri = ownPhoto(goodBytes)))
+        var refusals = 0
         val refusing = object : SyncApi by api {
             override suspend fun uploadPhoto(sha256: String, bytes: ByteArray) {
-                if (sha256 == PhotoHash.of(badBytes)) throw SyncApiException.ClientError(400, null)
+                // z. B. ein Reverse-Proxy mit kleinerem Body-Limit (413) oder ein 4xx des Servers
+                if (sha256 == PhotoHash.of(badBytes)) {
+                    refusals++
+                    throw SyncApiException.ClientError(400, null)
+                }
                 api.uploadPhoto(sha256, bytes)
             }
         }
@@ -299,10 +307,19 @@ class SyncEngineTest {
         val e = SyncEngine(db, SyncLocalStore(db, photoIndex), SyncApplier(db, photoIndex), refusing, Clock.systemUTC(), photoIndex, photoStore)
         val outcome = e.run()
         assertTrue(outcome is SyncOutcome.Success, outcome.toString())
-        assertEquals(listOf(good), api.pushes.flatten().filter { it.type == RecordType.RECIPE }.map { it.id })
+        val pushed = api.pushes.flatten()
+        assertEquals(setOf(good, bad), pushed.filter { it.type == RecordType.RECIPE }.map { it.id }.toSet())
+        // Wie ein lokal nicht übertragbares Foto: das Rezept geht ohne Foto raus, statt ewig in der Outbox zu warten.
+        assertNull(recipePhoto(pushed, bad))
+        assertEquals(PhotoHash.of(goodBytes), recipePhoto(pushed, good))
         assertTrue(api.pulls.isNotEmpty(), "Pull läuft trotzdem")
-        assertTrue(db.syncDao().outbox().any { it.recordId == bad })
+        assertTrue(db.syncDao().outbox().none { it.type == "recipe" })
         assertEquals(listOf(bad to "photo_unsyncable"), db.syncDao().problems().map { it.recordId to it.code })
+        assertNotNull(db.recipeDao().get(bad)!!.imageUri, "Das eigene Foto bleibt lokal")
+
+        // Der nächste Lauf lädt das abgelehnte Foto nicht erneut hoch.
+        assertTrue(e.run() is SyncOutcome.Success)
+        assertEquals(1, refusals)
     }
 
     @Test
@@ -381,6 +398,39 @@ class SyncEngineTest {
         assertNotNull(db.recipeDao().get(good)!!.imageUri, "zweiter Wunsch wurde trotzdem geladen")
         assertNull(db.recipeDao().get(bad)!!.imageUri)
         assertEquals(listOf(bad), db.syncDao().photosWanted().map { it.recipeId })
+    }
+
+    @Test
+    fun oversizedDownloadDoesNotBlockOtherWishesOrFailTheRun() = runTest {
+        activate()
+        val bigHash = PhotoHash.of(jpeg(1, 1))
+        val goodBytes = jpeg(2, 2)
+        // Wünsche laufen nach Rezept-ID: der zu große kommt zuerst.
+        val big = recipe("r1", null)
+        val good = RecipeRepository(db.recipeDao()).save(
+            RecipeDraft(
+                id = "r2", name = "G", defaultServings = 2,
+                ingredients = listOf(RecipeDraft.Line("i", BigDecimal.ONE, MeasureUnit.GRAM, null, false)),
+            ),
+        )
+        db.syncDao().clearOutbox()
+        db.syncDao().upsertPhotoWanted(SyncPhotoWantedEntity(big, bigHash))
+        db.syncDao().upsertPhotoWanted(SyncPhotoWantedEntity(good, PhotoHash.of(goodBytes)))
+        api.serverPhotos[PhotoHash.of(goodBytes)] = goodBytes
+        val proxy = object : SyncApi by api {
+            override suspend fun downloadPhoto(sha256: String): ByteArray? {
+                // z. B. eine falsche Content-Length eines Proxys
+                if (sha256 == bigHash) throw SyncApiException.TooLarge(200, null)
+                return api.downloadPhoto(sha256)
+            }
+        }
+        val photoIndex = PhotoIndex(db, photoStore)
+        val e = SyncEngine(db, SyncLocalStore(db, photoIndex), SyncApplier(db, photoIndex), proxy, Clock.systemUTC(), photoIndex, photoStore)
+        val outcome = e.run()
+        assertTrue(outcome is SyncOutcome.Success, outcome.toString())
+        assertNull(db.syncDao().getState()!!.lastError)
+        assertNotNull(db.recipeDao().get(good)!!.imageUri, "der zweite Wunsch wird trotzdem geladen")
+        assertEquals(listOf(big), db.syncDao().photosWanted().map { it.recipeId })
     }
 
     @Test
@@ -498,6 +548,36 @@ class SyncEngineTest {
         assertEquals("missing_reference", db.syncDao().problems().single().code)
         // Der verbliebene Eintrag führt nicht zu einer Endlosschleife.
         assertEquals(1, api.pushes.size)
+    }
+
+    /**
+     * Die Zutat kennt nur dieses Gerät, sie wurde aber nie vorgemerkt (z. B. Startzutat nach „nur herunterladen“).
+     * Der Server lehnt das Rezept mit `missing_reference` ab; die Zutat wird nachgereicht, danach kommt das Rezept an.
+     */
+    @Test
+    fun missingReferenceQueuesTheLocalParent() = runTest {
+        activate()
+        val rid = recipe("r1", null)
+        db.syncDao().dequeue("ingredient", "i")
+        val known = HashSet<Pair<RecordType, String>>()
+        api.onPush = { records ->
+            PushResponse(
+                records.map { r ->
+                    if (de.foody.sync.protocol.PayloadValidator.references(r).all { it in known }) {
+                        known += r.type to r.id
+                        accepted(r, 1)
+                    } else {
+                        PushResult(r.id, r.type, PushStatus.REJECTED, code = ErrorCode.MISSING_REFERENCE)
+                    }
+                },
+            )
+        }
+        engine.run()
+        engine.run()
+        assertTrue((RecordType.INGREDIENT to "i") in known, "Zutat nachgereicht")
+        assertTrue((RecordType.RECIPE to rid) in known, "Rezept angekommen")
+        assertEquals(emptyList(), db.syncDao().outbox())
+        assertEquals(emptyList(), db.syncDao().problems())
     }
 
     @Test
@@ -739,5 +819,31 @@ class SyncEngineTest {
         assertEquals(SyncOutcome.Failed(true, "cursor_stuck"), engine.run())
         assertEquals(1, api.pulls.size)
         assertEquals("transient: cursor_stuck", db.syncDao().getState()!!.lastError)
+    }
+
+    /** „Trennen“ während eines Laufs: Was der Lauf noch schreibt, darf das Aufräumen nicht überdauern. */
+    @Test
+    fun deactivateWaitsForRunningSyncAndClearsPhotoWishes() = runTest {
+        activate()
+        val pullStarted = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val release = kotlinx.coroutines.CompletableDeferred<Unit>()
+        api.onPull = {
+            pullStarted.complete(Unit)
+            release.await()
+            PullResponse(listOf(ingredientRecord("a", "A", 4), photoRecord("r1", PhotoHash.of(jpeg(9)), rev = 5)), 10, false)
+        }
+        val run = launch { engine.run() }
+        pullStarted.await()
+        val deactivate = launch(kotlinx.coroutines.Dispatchers.Default) { store.deactivate() }
+        // Ohne Warten wäre das Aufräumen hier schon fertig; mit Warten läuft es erst nach dem Lauf.
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            kotlinx.coroutines.withTimeoutOrNull(500) { deactivate.join() }
+        }
+        release.complete(Unit)
+        run.join()
+        deactivate.join()
+        assertNull(db.syncDao().revOf("ingredient", "a"))
+        assertEquals(emptyList(), db.syncDao().photosWanted())
+        assertFalse(db.syncDao().getState()!!.active)
     }
 }

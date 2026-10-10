@@ -69,7 +69,7 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
     /** Alles, was ein lebender Datensatz zum Schreiben braucht; entsteht vor dem ersten Schreibzugriff. */
     private sealed interface Mapped {
         data class Ingredient(val entity: IngredientEntity) : Mapped
-        data class Recipe(val parts: RecipeParts) : Mapped
+        data class Recipe(val parts: RecipeParts, val remotePhoto: String?) : Mapped
         data class MealSlot(val entity: MealSlotEntity) : Mapped
         data class Pantry(val entity: PantryItemEntity) : Mapped
         data class ShoppingList(val entity: ShoppingListEntity) : Mapped
@@ -181,7 +181,7 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
                 // Von anderen Geräten ohne Foto bearbeitet, hier aber ein nicht übertragbares eigenes Foto: behalten
                 val keepUnsyncable = decoded.photo == null && hasUnsyncableProblem(r.id)
                 val own = !keepUnsyncable && existing?.imageUri?.let { photoIndex.isOwnPhoto(it) } == true
-                Mapped.Recipe(SyncMapper.recipe(r.id, decoded, updatedAt, existing, known, own))
+                Mapped.Recipe(SyncMapper.recipe(r.id, decoded, updatedAt, existing, known, own), decoded.photo)
             }
             is MealSlotPayload ->
                 Mapped.MealSlot(SyncMapper.mealSlot(r.id, decoded, updatedAt, db.mealPlanDao().get(r.id)))
@@ -204,7 +204,8 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
         null
     }
 
-    private suspend fun exists(type: RecordType, id: String): Boolean = when (type) {
+    /** Gibt es den Datensatz lokal? */
+    internal suspend fun exists(type: RecordType, id: String): Boolean = when (type) {
         RecordType.INGREDIENT -> db.ingredientDao().get(id) != null
         RecordType.RECIPE -> db.recipeDao().get(id) != null
         RecordType.MEAL_SLOT -> db.mealPlanDao().get(id) != null
@@ -244,14 +245,14 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
         }
         dao.setRev(SyncRecordRevEntity(r.type.wire, r.id, r.rev ?: 0L))
         // Das Problem „Foto nicht übertragbar“ bleibt, solange der Server-Stand kein Foto hat
-        val keepProblem = mapped is Mapped.Recipe && (r.type.decode(r.payload!!) as RecipePayload).photo == null &&
+        val keepProblem = mapped is Mapped.Recipe && mapped.remotePhoto == null &&
             mapped.parts.recipe.imageUri != null && hasUnsyncableProblem(r.id)
         if (!keepProblem) dao.clearProblem(r.type.wire, r.id)
         c.applied++
     }
 
     private suspend fun hasUnsyncableProblem(recipeId: String): Boolean =
-        dao.problems().any { it.type == RecordType.RECIPE.wire && it.recordId == recipeId && it.code == SyncLocalStore.PHOTO_UNSYNCABLE }
+        dao.hasProblem(RecordType.RECIPE.wire, recipeId, SyncLocalStore.PHOTO_UNSYNCABLE)
 
     /**
      * Schreibt eine Server-Zutat. Gibt es lokal eine andere Zutat mit gleichem Namen (ohne Groß-/Kleinschreibung),
@@ -285,13 +286,32 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
         c.merged++
     }
 
-    /** Würde die Löschung lokal noch gebrauchte Daten reißen (FK RESTRICT oder Kaskade über offene Änderungen)? */
-    private suspend fun isStillNeeded(r: SyncRecord): Boolean = when (r.type) {
-        RecordType.INGREDIENT -> db.ingredientDao().usageCount(r.id) > 0 || dao.hasQueuedPantryFor(r.id) ||
-            dao.hasQueuedShoppingItemsFor(r.id)
-        RecordType.RECIPE -> dao.hasQueuedSlotsFor(r.id)
-        RecordType.SHOPPING_LIST -> dao.hasQueuedItemsFor(r.id)
+    /**
+     * Würde die Löschung lokal noch gebrauchte Daten reißen (FK RESTRICT oder Kaskade über offene Änderungen)?
+     * Gilt für Server-Löschungen und den Voll-Abgleich (`SyncEngine`) gleichermaßen.
+     */
+    internal suspend fun isStillNeeded(type: RecordType, id: String): Boolean = when (type) {
+        RecordType.INGREDIENT -> db.ingredientDao().usageCount(id) > 0 || dao.hasQueuedPantryFor(id) ||
+            dao.hasQueuedShoppingItemsFor(id)
+        RecordType.RECIPE -> dao.hasQueuedSlotsFor(id)
+        RecordType.SHOPPING_LIST -> dao.hasQueuedItemsFor(id)
         else -> false
+    }
+
+    /** Löscht den lokalen Datensatz (Kinder per Kaskade); der Aufrufer setzt `applyingRemote`. */
+    internal suspend fun deleteLocal(type: RecordType, id: String) {
+        when (type) {
+            RecordType.INGREDIENT -> db.ingredientDao().delete(id)
+            RecordType.RECIPE -> {
+                db.recipeDao().delete(id)
+                dao.deletePhotoWanted(id)
+            }
+            RecordType.MEAL_SLOT -> db.mealPlanDao().delete(id)
+            RecordType.PANTRY_ITEM -> db.pantryDao().delete(id)
+            RecordType.SHOPPING_LIST -> db.shoppingDao().deleteList(id)
+            RecordType.SHOPPING_ITEM -> db.shoppingDao().deleteItem(id)
+            RecordType.TAGEBUCH_EINTRAG -> db.tagebuchDao().delete(id)
+        }
     }
 
     private suspend fun applyDeletion(r: SyncRecord, c: Counters) {
@@ -301,7 +321,7 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
             dao.clearProblem(r.type.wire, r.id)
             return
         }
-        if (isStillNeeded(r)) {
+        if (isStillNeeded(r.type, r.id)) {
             // Noch von Rezeptzeilen verwendet oder von Kaskade mit offener lokaler Änderung betroffen (Vorrat,
             // Planposition, Einkaufseintrag): nicht löschen, beim nächsten Push wiederbeleben (baseRev = rev)
             dao.setRev(rev)
@@ -309,18 +329,7 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
             c.revived++
             return
         }
-        when (r.type) {
-            RecordType.INGREDIENT -> db.ingredientDao().delete(r.id)
-            RecordType.RECIPE -> {
-                db.recipeDao().delete(r.id)
-                dao.deletePhotoWanted(r.id)
-            }
-            RecordType.MEAL_SLOT -> db.mealPlanDao().delete(r.id)
-            RecordType.PANTRY_ITEM -> db.pantryDao().delete(r.id)
-            RecordType.SHOPPING_LIST -> db.shoppingDao().deleteList(r.id)
-            RecordType.SHOPPING_ITEM -> db.shoppingDao().deleteItem(r.id)
-            RecordType.TAGEBUCH_EINTRAG -> db.tagebuchDao().delete(r.id)
-        }
+        deleteLocal(r.type, r.id)
         dao.setRev(rev)
         dao.clearProblem(r.type.wire, r.id)
         c.applied++

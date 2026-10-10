@@ -24,7 +24,6 @@ import java.time.Clock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerializationException
 
@@ -55,12 +54,11 @@ class SyncEngine(
     private val photoStore: RecipePhotoStore,
 ) {
     private val dao get() = db.syncDao()
-    private val mutex = Mutex()
 
-    /** `true`, solange [run] läuft (Mutex gehalten); billig, ohne Suspend. */
-    val isRunning: Boolean get() = mutex.isLocked
+    /** `true`, solange ein Lauf die Sperre hält ([SyncLocalStore.runLock]); billig, ohne Suspend. */
+    val isRunning: Boolean get() = store.runLock.isLocked
 
-    suspend fun run(): SyncOutcome = mutex.withLock {
+    suspend fun run(): SyncOutcome = store.runLock.withLock {
         val state = dao.getState()
         if (state == null || !state.active) return@withLock SyncOutcome.Success(0, 0, 0)
         try {
@@ -184,14 +182,33 @@ class SyncEngine(
                 }
                 PushStatus.REJECTED -> {
                     dao.addProblem(SyncProblemEntity(type, id, rejectCode(result.code), clock.millis()))
-                    // Fehlende Verweise erledigen sich evtl. durch den nächsten Pull: Eintrag bleibt.
-                    if (result.code != ErrorCode.MISSING_REFERENCE) dequeueIfUnchanged(pending)
+                    // Fehlende Verweise erledigen sich durch den nächsten Pull oder durch das Nachreichen: Eintrag bleibt.
+                    if (result.code == ErrorCode.MISSING_REFERENCE) queueLocalParents(pending.record) else dequeueIfUnchanged(pending)
                 }
             }
         }
         // Der Cursor gehört dem Pull; `current` ist nur ein einzelner Datensatz.
         current?.let { applier.apply(listOf(it), 0, updateCursor = false, skipKnown = false) }
         return result.status != PushStatus.REJECTED
+    }
+
+    /**
+     * Merkt Verweisziele vor, die es lokal gibt, die aber nicht in der Outbox stehen: Der Server kennt sie offenbar nicht
+     * (etwa eine Startzutat, die nach „nur herunterladen“ nie geändert und daher nie gesendet wurde). Ohne das bliebe der
+     * abgelehnte Datensatz für immer stehen; so geht das Ziel im nächsten Batch raus und der Datensatz danach.
+     */
+    private suspend fun queueLocalParents(record: SyncRecord) {
+        val refs = try {
+            PayloadValidator.references(record)
+        } catch (_: SerializationException) {
+            return
+        } catch (_: IllegalArgumentException) {
+            return
+        }
+        for ((type, id) in refs) {
+            if (dao.isQueued(type.wire, id) || !applier.exists(type, id)) continue
+            dao.enqueue(SyncOutboxEntity(type.wire, id, deleted = false, queuedAt = clock.millis()))
+        }
     }
 
     /** Entfernt den Outbox-Eintrag, wenn er seit dem Bauen des Batches nicht erneut vorgemerkt wurde. */
@@ -213,8 +230,8 @@ class SyncEngine(
      * (Foto-Wunsch, noch nicht geladen) wird übersprungen – den hat der Server, von dem er stammt. Fehlt dagegen ein
      * eigenes Foto (Datei weg, geändert, zu groß), wartet das Rezept in der Outbox, statt mit unbekanntem Hash zu gehen. Lese- oder
      * Upload-Fehler (IO, 5xx) brechen den Lauf als `Transient` ab (nichts aus dem Batch verlässt die Outbox). Lehnt der
-     * Server ein einzelnes Foto dauerhaft ab (4xx, 413), bekommen nur die betroffenen Rezepte das Problem
-     * `photo_unsyncable` und bleiben in der Outbox. Liefert die Datensätze, die gesendet werden dürfen.
+     * Server ein einzelnes Foto dauerhaft ab (4xx, 413), gehen nur die betroffenen Rezepte ohne Foto und mit dem Problem
+     * `photo_unsyncable` raus ([withoutPhoto]). Liefert die Datensätze, die gesendet werden dürfen.
      */
     private suspend fun uploadMissingPhotos(batch: List<PendingRecord>): List<PendingRecord> {
         val hashes = batch.mapNotNull { photoOf(it.record) }.distinct()
@@ -250,11 +267,20 @@ class SyncEngine(
             }
         }
         if (refused.isEmpty() && deferred.isEmpty()) return batch
-        val (blocked, rest) = batch.partition { photoOf(it.record) in refused }
-        for (pending in blocked) {
-            dao.addProblem(SyncProblemEntity(pending.record.type.wire, pending.record.id, SyncLocalStore.PHOTO_UNSYNCABLE, clock.millis()))
+        return batch.filter { it.record.id !in deferred }.map { pending ->
+            if (photoOf(pending.record) in refused) withoutPhoto(pending) else pending
         }
-        return rest.filter { it.record.id !in deferred }
+    }
+
+    /**
+     * Das Rezept ohne Foto und mit dem Problem `photo_unsyncable` – wie ein lokal als nicht übertragbar erkanntes Foto.
+     * Würde es stattdessen in der Outbox warten, lüde jeder Lauf dieselben Bytes erneut hoch und das Rezept käme nie an.
+     * Eine spätere Änderung des Rezepts versucht das Foto erneut.
+     */
+    private fun withoutPhoto(pending: PendingRecord): PendingRecord {
+        val payload = RecordType.RECIPE.decode(pending.record.payload!!) as RecipePayload
+        val record = pending.record.copy(payload = SyncMapper.toJson(payload.copy(photo = null)))
+        return pending.copy(record = record, photoProblem = SyncLocalStore.PHOTO_UNSYNCABLE)
     }
 
     private fun photoOf(record: SyncRecord): String? {
@@ -302,6 +328,8 @@ class SyncEngine(
                 continue
             } catch (_: SyncApiException.ClientError) {
                 continue // dieser Wunsch bleibt, blockiert aber die anderen nicht
+            } catch (_: SyncApiException.TooLarge) {
+                continue // ebenso: Antwort über MAX_PHOTO_BYTES (etwa falsche Länge eines Proxys)
             } ?: continue
             db.withTransaction {
                 if (dao.photoWanted(wish.recipeId)?.sha256 != wish.sha256) return@withTransaction
@@ -418,36 +446,19 @@ class SyncEngine(
             if (dao.isQueued(type.wire, id)) return@withTransaction
             // Vom Server abgelehnt (Problem vermerkt): der lokale Stand ist die einzige Kopie, nicht löschen.
             if (dao.hasProblem(type.wire, id)) return@withTransaction
-            if ((type to id) in remoteRefs || isStillNeeded(type, id)) {
+            if ((type to id) in remoteRefs || applier.isStillNeeded(type, id)) {
                 // Bleibt stehen, der Server kennt ihn aber nicht: erneut senden, damit beide Seiten konvergieren.
                 dao.enqueue(SyncOutboxEntity(type.wire, id, deleted = false, queuedAt = clock.millis()))
                 return@withTransaction
             }
             dao.setApplyingRemote(true)
             try {
-                when (type) {
-                    RecordType.INGREDIENT -> db.ingredientDao().delete(id)
-                    RecordType.RECIPE -> db.recipeDao().delete(id)
-                    RecordType.MEAL_SLOT -> db.mealPlanDao().delete(id)
-                    RecordType.PANTRY_ITEM -> db.pantryDao().delete(id)
-                    RecordType.SHOPPING_LIST -> db.shoppingDao().deleteList(id)
-                    RecordType.SHOPPING_ITEM -> db.shoppingDao().deleteItem(id)
-                    RecordType.TAGEBUCH_EINTRAG -> db.tagebuchDao().delete(id)
-                }
+                applier.deleteLocal(type, id)
             } finally {
                 dao.setApplyingRemote(false)
             }
             dao.clearProblem(type.wire, id)
         }
-    }
-
-    /** Würde das Löschen noch gebrauchte Daten reißen (RESTRICT oder Kaskade über offene lokale Änderungen)? */
-    private suspend fun isStillNeeded(type: RecordType, id: String): Boolean = when (type) {
-        RecordType.INGREDIENT -> db.ingredientDao().usageCount(id) > 0 || dao.hasQueuedPantryFor(id) ||
-            dao.hasQueuedShoppingItemsFor(id)
-        RecordType.RECIPE -> dao.hasQueuedSlotsFor(id)
-        RecordType.SHOPPING_LIST -> dao.hasQueuedItemsFor(id)
-        else -> false
     }
 
     private companion object {
