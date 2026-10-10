@@ -322,7 +322,5 @@ class PantryRepository @Inject constructor(private val dao: PantryDao) {
     suspend fun delete(id: String) = dao.delete(id)
 }
 
-internal fun Dimension.baseUnit() = MeasureUnit.baseOf(this)
-
 /** Maskiert LIKE-Platzhalter, damit „50%“ nicht als Muster gilt (passend zu ESCAPE '!' in der Abfrage). */
 internal fun escapeLike(q: String): String = q.replace("!", "!!").replace("%", "!%").replace("_", "!_")

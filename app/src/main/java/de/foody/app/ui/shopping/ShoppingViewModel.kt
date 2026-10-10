@@ -120,8 +120,6 @@ class ShoppingViewModel @Inject constructor(
         }
     }
 
-    fun createEmpty(name: String) = viewModelScope.launch { saved["listId"] = repo.createEmptyList(name) }
-
     fun recalculate(usePantry: Boolean = true) {
         val id = state.value.selected?.id ?: return
         viewModelScope.launch {
