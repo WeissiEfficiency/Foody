@@ -29,6 +29,20 @@ Ohne Zahlen lässt sich „schneller/kleiner“ nicht belegen. Einmal messen, na
 4. **Speicher** nach dem Öffnen von Rezeptliste → Detail → Tagebuch (`dumpsys meminfo`).
 5. Ergebnisse als Tabelle hier eintragen.
 
+**Ergebnis Phase 0** (2026-10-10, `main` 669fcf1, Emulator `Foody_Test` API 36, leere Datenbank):
+
+| Messung | Wert | Bemerkung |
+|---|---|---|
+| Release-APK (unsigniert, R8) | **3,3 MB** | Code (`classes.dex`) 2,5 MB, `resources.arsc` 581 KB (v. a. Bibliotheks-Übersetzungen), Rest < 150 KB |
+| Kaltstart `am start -W`, 10× (benchmarkRelease) | **Median ≈ 800 ms** (613–1180) | Emulator schwankt stark; Profil wird beim ersten Start installiert |
+| Speicher nach Start | 50 MB PSS (Java 5 MB, Native 15 MB) | |
+| Speicher nach allen Tabs | 63 MB PSS (Java 9 MB, Native 18 MB) | unkritisch |
+| Macrobenchmark `StartupBenchmark` | nicht messbar | Emulator stürzt ab; zusätzlich übersprang das Plugin die Tests ohne `androidx.benchmark.enabledRules=Macrobenchmark` |
+| Ruckeln (Frame-Timing) | offen | braucht Testdaten + eigenen Benchmark (Phase 4) |
+
+**Neue Funde dabei:** Der Baseline-Profil-Generator tippt noch auf den Tab „Vorrat“ (gibt es seit dem Tagebuch nicht mehr)
+und kennt Tagebuch, Planer-Dialog und Scan nicht – das Profil ist also doppelt veraltet.
+
 ## Phase 1 – Fehler finden (1–2 Tage)
 
 ### 1a. Bekannte offene Fehler (aus den Reviews zu A, B, C) – priorisiert
