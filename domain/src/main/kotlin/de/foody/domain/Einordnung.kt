@@ -73,6 +73,16 @@ object RezeptEinordnung {
 
     private val mittagAbend = setOf(Mahlzeit.MITTAGESSEN, Mahlzeit.ABENDESSEN)
 
+    /**
+     * Herzhafte Merkmale: Stehen sie neben „Kuchen“, „Torte“ oder „Tarte“, ist es ein herzhafter Kuchen (Hauptspeise)
+     * statt einer Nachspeise – z. B. „Gruyère-Rosmarin-Kuchen“. Bewusst ohne „käse“ (Käsekuchen ist süß).
+     */
+    private val herzhaft = listOf(
+        "gruyère", "gruyere", "parmesan", "bergkäse", "feta", "speck", "schinken", "zwiebel", "lauch", "spinat", "rosmarin",
+        "lachs", "thunfisch", "quiche",
+    )
+    private val suessesGebaeck = listOf("kuchen", "torte", "tarte")
+
     private val regeln = listOf(
         Regel(
             listOf("frühstück", "müsli", "porridge", "pfannkuchen", "pancake", "rührei", "omelett", "granola", "overnight oats"),
@@ -107,6 +117,8 @@ object RezeptEinordnung {
                 "hähnchen", "chicken", "hühner", "fleisch", "filet", "steak", "keule", "roulade", "klopse", "meatballs",
                 "wurst", "würste", "pulled", "ragout", "masala", "carne", "fisch", "lachs", "knödel", "semmelknödel",
                 "gnocchi", "kartoffel", "erdäpfel", "polenta", "ramen", "carbonara", "cordon", "pide", "bäckchen", "saté",
+                // Nach der zweiten Messung (2026-10-11): gefüllte Pfannkuchen, Rösti
+                "pilz", "pilze", "pilzfüllung", "champignon", "rösti",
             ),
             mittagAbend, setOf(Gang.HAUPTSPEISE),
         ),
@@ -136,7 +148,11 @@ object RezeptEinordnung {
             // „Pfannkuchen“ ist Frühstück, kein Kuchen: Ein enthaltenes kürzeres Stichwort zählt nicht
             passend.filter { s -> passend.none { it != s && s in it } }
         }.toSet()
-        return regeln.filter { r -> r.stichwoerter.any { it in stichwoerter } }
+        val treffer = regeln.filter { r -> r.stichwoerter.any { it in stichwoerter } }
+        val herzhafterKuchen = woerter.any { w -> herzhaft.any { it in w } } && woerter.any { w -> suessesGebaeck.any { it in w } }
+        if (!herzhafterKuchen) return treffer
+        // Herzhafter Kuchen: die Nachspeise-Treffer weichen der Hauptspeise
+        return treffer.filterNot { Gang.NACHSPEISE in it.gaenge } + regeln.last()
     }
 }
 

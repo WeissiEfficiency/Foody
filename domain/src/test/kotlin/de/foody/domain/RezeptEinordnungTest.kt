@@ -107,4 +107,21 @@ class RezeptEinordnungTest {
         assertEquals("ABENDESSEN", alsText(setOf(Mahlzeit.ABENDESSEN), null, Mahlzeit.entries))
         assertEquals(null, alsText(null, "BRUNCH", Mahlzeit.entries), "„vermuten“ setzt bewusst zurück")
     }
+
+    /** Aus der Messung an der Chefkoch-Sammlung (2026-10-11): herzhafte Kuchen, gefüllte Pfannkuchen, Rösti. */
+    @Test fun herzhafterKuchenMitKaeseIstHauptspeise() {
+        val r = e("Gruyere - Rosmarin - Kuchen")
+        assertEquals(setOf(Mahlzeit.MITTAGESSEN, Mahlzeit.ABENDESSEN), r.mahlzeiten)
+        assertEquals(setOf(Gang.HAUPTSPEISE), r.gaenge)
+        // Süße Kuchen bleiben Nachspeise – auch „Käsekuchen“ (Käse ist kein herzhaftes Merkmal)
+        assertEquals(setOf(Gang.NACHSPEISE), e("Der beste Käsekuchen der Welt").gaenge)
+        assertEquals(setOf(Gang.NACHSPEISE), e("Saftiger Zitronenkuchen").gaenge)
+    }
+
+    @Test fun gefuellterPfannkuchenUndRoestiSindAuchHauptspeise() {
+        val p = e("Pfannkuchenbeutel mit Pilzfüllung")
+        assertTrue(Mahlzeit.FRUEHSTUECK in p.mahlzeiten && Mahlzeit.MITTAGESSEN in p.mahlzeiten)
+        assertEquals(setOf(Gang.HAUPTSPEISE), p.gaenge)
+        assertTrue(Gang.HAUPTSPEISE in e("Frühlings-Rösti mit Bärlauch-Dip").gaenge)
+    }
 }

@@ -16,7 +16,7 @@ data class Naehrwerte(
     val fett: BigDecimal?,
     val vollstaendig: Boolean,
 ) {
-    val kcal: Int? get() = energieKj?.let { NutritionResult.kjToKcal(it).setScale(0, RoundingMode.HALF_UP).toInt() }
+    val kcal: Int? get() = energieKj?.let(NutritionResult::kcal)
 }
 
 data class EintragWerte(val mahlzeit: Mahlzeit, val werte: Naehrwerte)

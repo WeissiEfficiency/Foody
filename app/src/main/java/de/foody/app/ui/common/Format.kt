@@ -27,7 +27,7 @@ fun parseDecimal(text: String): BigDecimal? =
  */
 fun parseNichtNegativ(text: String): BigDecimal? {
     if (text.contains('e', ignoreCase = true)) return null
-    return parseDecimal(text)?.takeIf { it.signum() >= 0 && it.scale() <= 20 && it.precision() <= 30 }
+    return parseDecimal(text)?.takeIf { it.signum() >= 0 && de.foody.sync.protocol.ZahlGrenzen.imRahmen(it) }
 }
 
 fun formatAmount(amount: BigDecimal, unit: MeasureUnit): String = "${amount.display()} ${unit.symbol}"

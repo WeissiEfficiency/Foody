@@ -103,6 +103,16 @@ Vorgehen je Bereich: `/code-review` auf den Ordner, Funde wie bisher mit Test, d
 4. **Grenzwerte vereinheitlichen:** Plausibilität (Scan), `parseNichtNegativ` (UI), Validator (Server) und
    `decimal()` (Sicherung) nutzen eigene Grenzen – eine gemeinsame Quelle in `sync-protocol`/`domain`.
 
+**Ergebnis Phase 2 (2026-10-11):**
+1. ✅ `NutritionResult.kcal(kj)` rundet einmal; alle Anzeigen nutzen es, der Faktor 4,184 steht nur noch dort
+   (vorher vier Kopien und doppelte Rundung: 349,46 → 350).
+2. ✅ Alle 26 Regeln in `docs/domain-rules.md` mit Tests verknüpft; neu belegt: Regel 8 (Planen ändert Vorrat nicht)
+   und 17 (direkt auf die Liste zieht keinen Vorrat ab).
+3. ✅ Zweite Messung (114 Rezepte): 4 ohne Treffer (Eigennamen wie „La Garbure“); behoben: herzhafte Kuchen
+   (Gruyère-Kuchen), gefüllte Pfannkuchen, Rösti.
+4. ✅ `ZahlGrenzen` in `sync-protocol` für Validator, Sicherung und Eingabefelder; die Scan-Plausibilität bleibt eigen
+   (physikalisch sinnvolle Werte, keine Format-Grenze).
+
 ## Phase 3 – Ressourcen minimieren (1–2 Tage)
 
 ### Rechenzeit / Datenbank

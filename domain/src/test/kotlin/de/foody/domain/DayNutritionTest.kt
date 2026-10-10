@@ -37,4 +37,12 @@ class DayNutritionTest {
     @Test fun emptyDayHasNoValues() {
         assertNull(DayNutrition.of(emptyList(), emptyMap()))
     }
+
+    /** Eine Rundung statt zwei: 349,46 kcal sind 349 (über 349,5 gerundet wäre es 350). */
+    @Test fun kcalWirdEinmalGerundet() {
+        val kj = bd("349.46").multiply(NutritionResult.KJ_JE_KCAL)
+        assertEquals(349, NutritionResult.kcal(kj))
+        assertEquals(349, DayNutrition.of(listOf(recipe(1, "k" to "100")), mapOf("k" to Ingredient("k", "K",
+            nutrients = NutrientProfile(NutrientBasis.PER_100_G, mapOf(Nutrient.ENERGY_KJ to kj)))))!!.kcal)
+    }
 }

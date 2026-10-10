@@ -329,11 +329,6 @@ private fun InputStream.copyCapped(out: java.io.OutputStream, limit: Long): Long
     }
 }
 
-/**
- * Zahl aus einer Sicherung. Begrenzt Länge und Exponent: „1E999999999“ wäre ein gültiges BigDecimal,
- * würde beim Formatieren oder Umrechnen aber Speicher und Zeit fressen.
- */
-internal fun decimal(text: String): BigDecimal {
-    require(text.length <= 40) { "Zahl zu lang" }
-    return BigDecimal(text).also { require(it.scale() in -6..20 && it.precision() <= 30) { "Zahl außerhalb des Bereichs" } }
-}
+/** Zahl aus einer Sicherung, mit den Grenzen aus [de.foody.sync.protocol.ZahlGrenzen]. */
+internal fun decimal(text: String): BigDecimal =
+    requireNotNull(de.foody.sync.protocol.ZahlGrenzen.lesen(text)) { "Zahl ungültig oder außerhalb des Bereichs" }

@@ -50,3 +50,36 @@
     markiert, übernommen erst beim Speichern. Unplausibles wird verworfen (Energie über 4000 kJ, Gramm über 100,
     Zucker über Kohlenhydraten). Ein Strichcode, den eine Zutat schon hat, führt zu dieser Zutat (ohne Online-Abfrage).
     Eine vorhandene Zutat wird im Tagebuch nur mit gesetztem Häkchen „Werte aktualisieren“ überschrieben.
+
+## Tests je Regel
+
+Jede Regel ist durch mindestens einen Test belegt (Domain: `domain/src/test`, App: `app/src/androidTest`).
+
+| Regel | Tests |
+|---|---|
+| 1 | `DomainTest.scalesFourServingRecipe`, `DomainTest.scalesByPlannedServings` |
+| 2 | `DomainTest.addsGramsAndKilograms`, `DomainTest.spoonsAreVolumes` |
+| 3 | `DomainTest.volumeToMassNeedsDensity`, `DomainTest.pieceToGramWithoutPieceWeightStaysUnconverted`, `DomainTest.sameIngredientDifferentDimensionsWithoutDensityStaySeparate`, `AmountParsingTest.zeroDensityConvertsInNeitherDirection` |
+| 4 | Typ-Regel (alle Mengen sind `BigDecimal`); `DomainTest.keepsFractionalContributions` |
+| 5 | `DomainTest.missingNutrientsAreIncompleteNotZero`, `DayNutritionTest.missingValuesMakeItALowerBound` |
+| 6 | `DayNutritionTest.kcalWirdEinmalGerundet`, `TagebuchTest.summeAusGerundetenZeilen`, `NaehrwertScanTest.nurKcalWirdUmgerechnet` |
+| 7 | `DomainTest.milkAndFlourNeverMerged`, `DomainTest.aggregatesSameIngredientAcrossRecipesWithSources` |
+| 8 | `DomainTest.pantryIsSubtractedNeverNegative`, `RecipeToShoppingTest.planenAlleinLaesstDenVorratStehen`, `ShoppingFlowTest.markCookedDeductsPantryAcrossUnits` |
+| 9 | `DomainTest.optionalIngredientsExcludedByDefault`, `RecipeToShoppingTest.addsScaledLinesToNewestListAndSkipsAsNeededWaterAndOptional` |
+| 10 | `DomainTest.diffDetectsAddedChangedRemoved`, `ShoppingFlowTest.applyDiffKeepsCheckedWhenLessIsNeeded` |
+| 11 | `DomainTest.aggregatesSameIngredientAcrossRecipesWithSources`, `ShoppingFlowTest.recipeToPlanToShoppingSnapshot` |
+| 12 | `DomainTest.dstDoesNotShiftLocalDay` |
+| 13 | `MarkdownImportTest.ingredientsWithoutAmount`, `DomainTest.asNeededLinesNeverReachShoppingList` |
+| 14 | `MarkdownImportTest.adjectivesGoToNoteAndOptionalIsDetected` |
+| 15 | `IngredientCatalogTest.mapsFrequentImportNamesToCanonicalIngredients`, `IngredientCatalogTest.matchingIgnoresCaseSpacesAndPluralsButKeepsUnknownNames` |
+| 16 | `IngredientCatalogTest.waterIsNeverBought` |
+| 17 | `RecipeToShoppingTest.addsScaledLinesToNewestListAndSkipsAsNeededWaterAndOptional`, `RecipeToShoppingTest.direktAufDieListeZiehtKeinenVorratAb` |
+| 18 | `FavoritesAndDedupTest.importingTheSameSourceTwiceIsSkipped`, `FavoritesAndDedupTest.favoriteAndSourceSurviveEditingButNotDuplicating` |
+| 19 | `StepTimerParserTest.rangesUseTheLowerBoundSoNothingBurns`, `AmountParsingTest.timerRangeWithBisUsesLowerBound`, `StepMentionTest.findsPartialAmountRightBeforeTheIngredient` |
+| 20 | `AmountParsingTest.rangeKeepsUnitAndUsesTheLowerBound`, `AmountParsingTest.fractionIsNotReadAsItsNumerator`, `AmountParsingTest.mixedNumbersAddTheFraction` |
+| 21 | `ShoppingRoundingTest.countableNeedsAreRoundedUp`, `ShoppingRoundingTest.roundingNoiseDoesNotBuyAnExtraPiece` |
+| 22 | `RezeptEinordnungTest` (u. a. `festgelegtSchlaegtVermutungJeDimension`, `ohneTrefferPasstUeberall`) |
+| 23 | `PlanAuswahlTest.strengNachMahlzeit`, `PlanAuswahlTest.gangFilterSchliesstUneingeordneteAus` |
+| 24 | `TagebuchTest.rezeptPortionenSkalieren`, `TagebuchViewModelTest.festgehaltenNachRezeptAenderung` |
+| 25 | `PlanDurchschnittTest` |
+| 26 | `IngredientScanTest.strichcodeFuelltFelderUndMerktSichCode`, `TagebuchScreenTest.packungImReiterFrei` |

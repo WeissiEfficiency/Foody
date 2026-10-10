@@ -37,7 +37,6 @@ object NaehrwertScan {
         Regel(Nutrient.ENERGY_KJ, listOf("brennwert", "energie", "energy")),
     )
 
-    private const val KJ_JE_KCAL = "4.184"
     private val MAX_KJ = BigDecimal(4000)
     private val MAX_GRAMM = BigDecimal(100)
 
@@ -107,7 +106,7 @@ object NaehrwertScan {
         }.toList()
         if (n == Nutrient.ENERGY_KJ) {
             zahlen.firstOrNull { it.first == "kj" }?.let { return it.second }
-            return zahlen.firstOrNull { it.first == "kcal" }?.second?.multiply(BigDecimal(KJ_JE_KCAL))?.setScale(0, RoundingMode.HALF_UP)
+            return zahlen.firstOrNull { it.first == "kcal" }?.second?.let(NutritionResult::kcalToKj)?.setScale(0, RoundingMode.HALF_UP)
         }
         zahlen.firstOrNull { it.first == "g" }?.let { return it.second }
         zahlen.firstOrNull { it.first == "mg" }?.let { return it.second.divide(BigDecimal(1000)) }

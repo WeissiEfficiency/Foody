@@ -32,7 +32,7 @@ object RecipeProfiles {
     fun profile(recipe: Recipe, ingredients: Map<String, Ingredient>): RecipeProfile {
         val nutrition = NutritionCalculator.calculate(recipe, ingredients)
         fun per(n: Nutrient) = nutrition.perServing(n)
-        val kcal = per(Nutrient.ENERGY_KJ)?.let(NutritionResult::kjToKcal)?.setScale(0, RoundingMode.HALF_UP)?.toInt()
+        val kcal = per(Nutrient.ENERGY_KJ)?.let(NutritionResult::kcal)
         val protein = per(Nutrient.PROTEIN_G)?.setScale(0, RoundingMode.HALF_UP)?.toInt()
         val carbs = per(Nutrient.CARBS_G)?.setScale(0, RoundingMode.HALF_UP)?.toInt()
         val completeness = nutrition.completeness[Nutrient.ENERGY_KJ] ?: 0.0

@@ -86,7 +86,7 @@ class RecipeDetailViewModel @Inject constructor(
             DisplayLine(
                 l.id, l.ingredientId, ingMap[l.ingredientId]?.name.orEmpty(),
                 if (scaled.signum() == 0) null else formatAmount(scaled, l.unit), l.preparationNote, l.optional,
-                kcal = nutrition.lineEnergyPerServingKj(l.id)?.let { NutritionResult.kjToKcal(it).setScale(0, RoundingMode.HALF_UP).toInt() },
+                kcal = nutrition.lineEnergyPerServingKj(l.id)?.let(NutritionResult::kcal),
                 gap = nutrition.lineGaps[l.id],
             )
         }

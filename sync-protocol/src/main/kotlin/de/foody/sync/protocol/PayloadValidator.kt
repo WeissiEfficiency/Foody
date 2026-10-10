@@ -10,7 +10,6 @@ object PayloadValidator {
     private const val MAX_NAME = 200
     private const val MAX_TEXT = 10_000
     private const val MAX_TAGS = 1_000
-    private const val MAX_NUMBER_LENGTH = 40
     private val ID_REGEX = Regex("^[A-Za-z0-9_-]{1,64}$")
     private val UNITS = setOf(
         "MILLIGRAM", "GRAM", "KILOGRAM", "MILLILITER", "CENTILITER", "LITER", "TEASPOON", "TABLESPOON", "PIECE", "PACKAGE", "CAN",
@@ -163,15 +162,9 @@ object PayloadValidator {
         if (text != null) number(text)
     }
 
-    /** Wie `BackupRepository.decimal`: Länge ≤ 40, Skala −6…20, Präzision ≤ 30. */
+    /** Grenzen aus [ZahlGrenzen] (wie Sicherung und Eingabefelder). */
     private fun number(text: String) {
-        ensure(text.length <= MAX_NUMBER_LENGTH)
-        val value = try {
-            BigDecimal(text)
-        } catch (_: NumberFormatException) {
-            fail()
-        }
-        ensure(value.scale() in -6..20 && value.precision() <= 30)
+        ensure(ZahlGrenzen.lesen(text) != null)
     }
 
     private fun date(text: String) {

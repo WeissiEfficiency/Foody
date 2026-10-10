@@ -105,6 +105,7 @@ import de.foody.app.ui.theme.EyebrowStyle
 import de.foody.app.ui.theme.FavoriteRed
 import de.foody.domain.Nutrient
 import de.foody.domain.NutritionResult
+import java.math.BigDecimal
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
@@ -371,7 +372,7 @@ private fun MetaRow(recipe: RecipeEntity, nutrition: NutritionResult?) {
         recipe.cookMinutes?.let { MetaPill(stringResource(R.string.cook_minutes, it)) }
         nutrition?.perServing(Nutrient.ENERGY_KJ)?.let { kj ->
             val approx = if (nutrition.isComplete(Nutrient.ENERGY_KJ)) "" else "≥ "
-            MetaPill(approx + stringResource(R.string.kcal_per_serving, NutritionResult.kjToKcal(kj).display(0)),
+            MetaPill(approx + stringResource(R.string.kcal_per_serving, BigDecimal(NutritionResult.kcal(kj)).display(0)),
                 icon = Icons.Outlined.LocalFireDepartment)
         }
         val e = recipe.einordnung()
@@ -461,7 +462,7 @@ fun NutritionCard(n: NutritionResult) {
                 val v = n.perServing(nut)
                 val value = when {
                     v == null -> "–"
-                    nut == Nutrient.ENERGY_KJ -> NutritionResult.kjToKcal(v).display(0)
+                    nut == Nutrient.ENERGY_KJ -> BigDecimal(NutritionResult.kcal(v)).display(0)
                     else -> v.display(1)
                 }
                 val unit = if (nut == Nutrient.ENERGY_KJ) "kcal" else "g"
@@ -498,7 +499,7 @@ fun NutritionCard(n: NutritionResult) {
                         val unknown = stringResource(R.string.unknown)
                         fun fmt(v: java.math.BigDecimal?) = when {
                             v == null -> unknown
-                            nut == Nutrient.ENERGY_KJ -> "${NutritionResult.kjToKcal(v).display(0)} kcal"
+                            nut == Nutrient.ENERGY_KJ -> "${BigDecimal(NutritionResult.kcal(v)).display(0)} kcal"
                             else -> "${v.display(1)} g"
                         }
                         val suffix = if (total != null && !n.isComplete(nut)) " *" else ""
