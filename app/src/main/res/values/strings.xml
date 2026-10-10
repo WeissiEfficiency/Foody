@@ -220,6 +220,15 @@
     <string name="slot_lunch">Mittagessen</string>
     <string name="slot_dinner">Abendessen</string>
     <string name="slot_snack">Snack</string>
+    <string name="gang_vorspeise">Vorspeise</string>
+    <string name="gang_hauptspeise">Hauptspeise</string>
+    <string name="gang_nachspeise">Nachspeise</string>
+    <string name="gang_brotzeit">Brotzeit</string>
+    <string name="einordnung_titel">Einordnung</string>
+    <string name="einordnung_mahlzeit">Passt zu</string>
+    <string name="einordnung_gang">Gang</string>
+    <string name="einordnung_vermutet">vermutet</string>
+    <string name="einordnung_zuruecksetzen">Zurücksetzen</string>
 
     <!-- Einkauf -->
     <string name="shopping_generate">Liste erzeugen</string>

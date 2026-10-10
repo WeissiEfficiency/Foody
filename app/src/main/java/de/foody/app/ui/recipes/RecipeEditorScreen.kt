@@ -1,5 +1,9 @@
 package de.foody.app.ui.recipes
 
+import de.foody.app.ui.common.EinordnungChips
+import de.foody.app.ui.common.label
+import de.foody.domain.Gang
+import de.foody.domain.Mahlzeit
 import androidx.compose.ui.graphics.Color
 import android.content.Intent
 import android.net.Uri
@@ -103,6 +107,16 @@ fun RecipeEditorScreen(onDone: () -> Unit, onManageIngredients: () -> Unit, vm: 
             item {
                 OutlinedTextField(s.tags, { v -> vm.set { it.copy(tags = v) } }, label = { Text(stringResource(R.string.field_tags)) },
                     modifier = Modifier.fillMaxWidth())
+            }
+            item {
+                val e = s.einordnung
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.einordnung_titel), style = MaterialTheme.typography.titleMedium)
+                    EinordnungChips(stringResource(R.string.einordnung_mahlzeit), Mahlzeit.entries, e.mahlzeiten, e.mahlzeitenVermutet,
+                        { it.label() }, vm::toggleMahlzeit, if (s.mahlzeiten != null) vm::mahlzeitenZuruecksetzen else null)
+                    EinordnungChips(stringResource(R.string.einordnung_gang), Gang.entries, e.gaenge, e.gaengeVermutet,
+                        { it.label() }, vm::toggleGang, if (s.gaenge != null) vm::gaengeZuruecksetzen else null)
+                }
             }
             item {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -12,7 +12,11 @@ import de.foody.app.data.repo.RecipeRepository
 import de.foody.app.ui.RecipeEditorRoute
 import de.foody.app.ui.common.display
 import de.foody.app.ui.common.parseDecimal
+import de.foody.domain.Einordnung
+import de.foody.domain.Gang
+import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
+import de.foody.domain.RezeptEinordnung
 import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,7 +54,14 @@ data class EditorState(
     val lines: List<EditorLine> = listOf(EditorLine()),
     val steps: List<String> = listOf(""),
     val showErrors: Boolean = false,
+    /** Festgelegte Einordnung; null = vermuten (nur die Festlegung wird gespeichert). */
+    val mahlzeiten: Set<Mahlzeit>? = null,
+    val gaenge: Set<Gang>? = null,
 ) {
+    /** Aktuelle Einordnung: Festlegung oder Vermutung aus Name und Tags. */
+    val einordnung: Einordnung
+        get() = RezeptEinordnung.einordnen(name, tags.split(',').map { it.trim() }.filter { it.isNotEmpty() }, mahlzeiten, gaenge)
+
     val nameError get() = name.isBlank()
     val servingsError get() = (servings.toIntOrNull() ?: 0) < 1
     // Leere Menge = „nach Bedarf“ (0); sonst muss eine Zahl ≥ 0 angegeben sein.
@@ -100,6 +111,8 @@ class RecipeEditorViewModel @Inject constructor(
                         amount = if (it.amount.signum() == 0) "" else it.amount.display(3), unit = it.unit, note = it.preparationNote.orEmpty(), optional = it.optional)
                 }.ifEmpty { listOf(EditorLine()) },
                 steps = steps.map { it.text }.ifEmpty { listOf("") },
+                mahlzeiten = Mahlzeit.mengeAus(r.mahlzeiten),
+                gaenge = Gang.mengeAus(r.gaenge),
             )
         }
     }
@@ -121,6 +134,14 @@ class RecipeEditorViewModel @Inject constructor(
         }
     }
 
+    /** Erstes Antippen übernimmt die angezeigte Vermutung samt Änderung als Festlegung. */
+    fun toggleMahlzeit(m: Mahlzeit) = set { s -> s.copy(mahlzeiten = (s.mahlzeiten ?: s.einordnung.mahlzeiten).umschalten(m)) }
+    fun toggleGang(g: Gang) = set { s -> s.copy(gaenge = (s.gaenge ?: s.einordnung.gaenge).umschalten(g)) }
+    fun mahlzeitenZuruecksetzen() = set { it.copy(mahlzeiten = null) }
+    fun gaengeZuruecksetzen() = set { it.copy(gaenge = null) }
+
+    private fun <E> Set<E>.umschalten(e: E) = if (e in this) this - e else this + e
+
     fun updateLine(key: String, f: (EditorLine) -> EditorLine) = set { s -> s.copy(lines = s.lines.map { if (it.key == key) f(it) else it }) }
 
     fun save(onDone: () -> Unit) {
@@ -137,6 +158,7 @@ class RecipeEditorViewModel @Inject constructor(
                     recipeId, s.name, s.servings.toInt(), s.prep.toIntOrNull(), s.cook.toIntOrNull(), s.imageUri,
                     s.notes, s.tags, lines, s.steps,
                     originalImageUri = s.originalImageUri, trackOriginalImage = recipeId != null,
+                    mahlzeiten = s.mahlzeiten, gaenge = s.gaenge, einordnungUebernehmen = true,
                 ),
             )
             if (s.originalImageUri != s.imageUri) photos.deleteIfUnused(s.originalImageUri)
