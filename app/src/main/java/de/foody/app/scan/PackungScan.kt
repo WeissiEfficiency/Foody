@@ -17,6 +17,11 @@ class PackungScan @Inject constructor(
 ) {
     val verfuegbar: Boolean get() = play.verfuegbar()
 
+    /** Beim Anzeigen des Scan-Knopfs: Module vorladen, damit der erste Scan nicht erst „wird vorbereitet“ zeigt. */
+    fun vorladen() {
+        if (play.verfuegbar()) play.vorladen()
+    }
+
     suspend fun strichcode(): ScanAusgang {
         if (!play.verfuegbar()) return ScanAusgang.NichtVerfuegbar
         val code = when (val s = leser.lesen()) {

@@ -46,6 +46,9 @@ fun interface KatalogSuche {
 /** Laufen Google-Play-Dienste? Ohne sie gibt es weder Code Scanner noch Texterkennung. */
 fun interface PlayDienste {
     fun verfuegbar(): Boolean
+
+    /** Scanner-Module im Hintergrund vorladen lassen (die Play-Dienste wählen den Zeitpunkt, z. B. im WLAN). */
+    fun vorladen() {}
 }
 
 /** Darf die Produktnummer an Open Food Facts gehen? (Einstellung in „Mehr“) */

@@ -171,6 +171,14 @@ Vorgehen je Bereich: `/code-review` auf den Ordner, Funde wie bisher mit Test, d
 5. **Bilder:** „Rezept des Tages“ und die ersten Karten per Coil vorladen (`ImageLoader.enqueue`), Speicher-Cache
    bewusst begrenzen.
 
+**Ergebnis 4.3–4.5 (2026-10-11):**
+- 4.3 Datenbank früh öffnen: war schon erfüllt – `FoodyApp.onCreate` liest im Hintergrund `sync_state` und öffnet
+  damit die Datenbank (samt Migrationsprüfung), bevor der erste Bildschirm sie braucht.
+- 4.4 ✅ Scanner-Module: Sobald der Knopf „Von Packung scannen“ zu sehen ist, `ModuleInstall.deferredInstall` für
+  Code Scanner und Texterkennung (Play-Dienste wählen den Zeitpunkt, kein Dialog; einmal je Prozess).
+- 4.5 ✗ Fotos vorladen: Das „Rezept des Tages“ lädt ohnehin sofort auf dem Startbildschirm; früheres Laden brächte
+  Millisekunden und kostete Speicher für Bilder, die vielleicht nie zu sehen sind.
+
 ## Phase 5 – Absichern (laufend)
 
 - Macrobenchmark in der CI (oder manuell vor Releases) mit Grenzwerten aus Phase 0.

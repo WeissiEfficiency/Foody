@@ -83,4 +83,21 @@ class PackungScanTest {
         assertEquals(ScanAusgang.NichtVerfuegbar, scan().strichcode())
         assertEquals(ScanAusgang.NichtVerfuegbar, scan().foto("content://bild", null))
     }
+
+    @Test fun vorladenNurMitPlayDiensten() {
+        var vorgeladen = 0
+        fun mit(play: Boolean) = PackungScan(
+            leser = { StrichcodeStatus.Abgebrochen }, tabelle = { ScanStatus.Fehler }, suche = { ProduktSuche.Antwort.Unbekannt },
+            katalog = { null },
+            play = object : PlayDienste {
+                override fun verfuegbar() = play
+                override fun vorladen() { vorgeladen++ }
+            },
+            online = { true },
+        )
+        mit(play = false).vorladen()
+        assertEquals(0, vorgeladen)
+        mit(play = true).vorladen()
+        assertEquals(1, vorgeladen)
+    }
 }
