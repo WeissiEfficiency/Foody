@@ -40,6 +40,14 @@ class RezeptEinordnungTest {
         assertEquals(setOf(Gang.NACHSPEISE), e("Käsekuchen").gaenge)
     }
 
+    @Test fun herzhafteKuchenUndTortelliniSindHauptspeisen() {
+        listOf("Flammkuchen Elsässer Art", "Zwiebelkuchen", "Tortellini alla panna", "Tortelloni mit Spinat").forEach { name ->
+            val r = e(name)
+            assertEquals(setOf(Gang.HAUPTSPEISE), r.gaenge, name)
+            assertTrue(r.passtZu(Mahlzeit.ABENDESSEN), name)
+        }
+    }
+
     @Test fun ohneTrefferPasstUeberall() {
         val r = e("Käsespätzle")
         assertTrue(r.mahlzeiten.isEmpty() && !r.eingeordnet && Mahlzeit.entries.all(r::passtZu))

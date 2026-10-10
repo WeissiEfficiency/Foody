@@ -89,6 +89,8 @@ object RezeptEinordnung {
             listOf(
                 "curry", "pasta", "nudel", "spaghetti", "lasagne", "auflauf", "risotto", "eintopf", "gulasch", "pfanne",
                 "burger", "pizza", "braten", "schnitzel", "hauptgericht",
+                // Herzhaftes mit „kuchen“/„torte“ im Wort: das längere Stichwort verdrängt die Nachspeise
+                "flammkuchen", "zwiebelkuchen", "tortellini", "tortelloni",
             ),
             mittagAbend, setOf(Gang.HAUPTSPEISE),
         ),

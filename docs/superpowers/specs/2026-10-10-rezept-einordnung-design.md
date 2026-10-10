@@ -85,7 +85,7 @@ object RezeptEinordnung {
 | vorspeise, suppe, salat | Mittagessen, Abendessen | Vorspeise, Hauptspeise |
 | brotzeit, brot, aufstrich, dip | Abendessen | Brotzeit |
 | snack, riegel, smoothie, joghurt | Frühstück, Snack | – |
-| curry, pasta, nudel, spaghetti, lasagne, auflauf, risotto, eintopf, gulasch, pfanne, burger, pizza, braten, schnitzel, hauptgericht | Mittagessen, Abendessen | Hauptspeise |
+| curry, pasta, nudel, spaghetti, lasagne, auflauf, risotto, eintopf, gulasch, pfanne, burger, pizza, braten, schnitzel, hauptgericht, flammkuchen, zwiebelkuchen, tortellini, tortelloni | Mittagessen, Abendessen | Hauptspeise |
 
 - Kein Treffer → leere Mengen (Mahlzeit: passt überall; nicht eingeordnet).
 - Die Vermutung wird **nie gespeichert**, sondern bei jedem Lesen berechnet. Regeländerungen wirken sofort auf
