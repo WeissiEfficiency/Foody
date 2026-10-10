@@ -160,10 +160,16 @@ dependencies {
     // Sync-Client (optional, nur HTTPS); Bodies werden selbst mit kotlinx.serialization verarbeitet
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
+    // Nährwerte von der Packung: Strichcode und Texterkennung über die Google-Play-Dienste (Module werden nachgeladen)
+    implementation(libs.play.services.base)
+    implementation(libs.play.services.mlkit.text.recognition)
+    implementation(libs.play.services.code.scanner)
+    implementation(libs.coroutines.play.services)
 
     testImplementation(libs.junit4)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.coroutines.test)
+    testImplementation(libs.ktor.client.mock)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.work.testing)
     // Echter Server im Test (testApplication) für Client- und Ende-zu-Ende-Tests
