@@ -46,15 +46,16 @@ class PackungScanTest {
 
     @Test fun onlineAusSuchtNurImKatalog() = runTest {
         online = false
-        assertEquals(ScanAusgang.NichtGefunden(code, offline = false), scan().strichcode())
+        // Eigene Meldung: es wurde gar nicht online gesucht (nicht „nicht in Open Food Facts“)
+        assertEquals(ScanAusgang.NichtGefunden(code, ScanAusgang.Grund.ONLINE_AUS), scan().strichcode())
         assertEquals(0, onlineGefragt)
     }
 
     @Test fun offlineBietetFotoAn() = runTest {
         antwort = ProduktSuche.Antwort.Offline
-        assertEquals(ScanAusgang.NichtGefunden(code, offline = true), scan().strichcode())
+        assertEquals(ScanAusgang.NichtGefunden(code, ScanAusgang.Grund.OFFLINE), scan().strichcode())
         antwort = ProduktSuche.Antwort.Unbekannt
-        assertEquals(ScanAusgang.NichtGefunden(code, offline = false), scan().strichcode())
+        assertEquals(ScanAusgang.NichtGefunden(code, ScanAusgang.Grund.UNBEKANNT), scan().strichcode())
     }
 
     @Test fun abbruchUndLaden() = runTest {

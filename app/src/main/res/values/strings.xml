@@ -18,6 +18,7 @@
     <string name="scan_uebernommen">Von der Packung übernommen (%1$s) – bitte prüfen</string>
     <string name="scan_nicht_gefunden">Nicht in Open Food Facts – Nährwerttabelle fotografieren?</string>
     <string name="scan_offline">Keine Verbindung – Nährwerttabelle fotografieren?</string>
+    <string name="scan_online_aus">Nicht im eigenen Katalog (Online-Suche ist aus) – Nährwerttabelle fotografieren?</string>
     <string name="scan_keine_tabelle">Keine Nährwerttabelle erkannt – bitte näher und gerade fotografieren</string>
     <string name="scan_wird_geladen">Scanner wird vorbereitet – gleich noch einmal versuchen</string>
     <string name="scan_nicht_verfuegbar">Braucht Google-Play-Dienste</string>
