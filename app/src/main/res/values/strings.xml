@@ -230,6 +230,9 @@
     <string name="einordnung_vermutet">vermutet</string>
     <string name="einordnung_zuruecksetzen">Zurücksetzen</string>
     <string name="filter_nicht_eingeordnet">Nicht eingeordnet</string>
+    <string name="planner_alle_rezepte">Alle Rezepte zeigen</string>
+    <string name="planner_keine_passenden">Keine passenden Rezepte</string>
+    <string name="planner_alle_zeigen">Alle zeigen</string>
 
     <!-- Einkauf -->
     <string name="shopping_generate">Liste erzeugen</string>

@@ -1,5 +1,7 @@
 package de.foody.app.ui.planner
 
+import de.foody.app.data.repo.einordnung
+import de.foody.domain.Mahlzeit
 import de.foody.app.data.GoalPreferences
 import de.foody.app.data.repo.IngredientRepository
 import de.foody.app.data.repo.toDomain
@@ -80,42 +82,46 @@ class PlannerViewModel @Inject constructor(
     fun today() { saved["start"] = LocalDate.now().toEpochDay() }
     fun setDays(d: Int) { saved["days"] = d.coerceIn(1, 31) }
 
-    fun add(date: LocalDate, slotType: String, recipeId: String, servings: Int) =
-        viewModelScope.launch { plan.add(date, slotType, recipeId, servings) }
+    fun add(date: LocalDate, mahlzeit: Mahlzeit, recipeId: String, servings: Int) =
+        viewModelScope.launch { plan.add(date, mahlzeit.name, recipeId, servings) }
     fun setServings(slot: MealSlotEntity, n: Int) = viewModelScope.launch { plan.update(slot.copy(servings = n)) }
     fun move(slot: MealSlotEntity, delta: Long) = viewModelScope.launch { plan.update(slot.copy(date = slot.date.plusDays(delta))) }
     fun delete(slot: MealSlotEntity) = viewModelScope.launch { plan.delete(slot.id) }
     fun cooked(slot: MealSlotEntity) = viewModelScope.launch { plan.markCooked(slot.id) }
 
-    /** Vorschlag für die leeren Tage ab heute; [seed] macht „Neu mischen“ reproduzierbar. */
-    data class Proposal(val seed: Long, val entries: List<Pair<LocalDate, RecipeEntity>>)
+    /** Vorschlag für die Tage ab heute, an denen [mahlzeit] noch fehlt; [seed] macht „Neu mischen“ reproduzierbar. */
+    data class Proposal(val seed: Long, val mahlzeit: Mahlzeit, val entries: List<Pair<LocalDate, RecipeEntity>>)
 
     private val _proposal = MutableStateFlow<Proposal?>(null)
     val proposal = _proposal.asStateFlow()
 
-    fun suggest(seed: Long = System.currentTimeMillis()) = viewModelScope.launch {
+    fun suggest(mahlzeit: Mahlzeit = Mahlzeit.ABENDESSEN, seed: Long = System.currentTimeMillis()) = viewModelScope.launch {
         val s = state.value
         val today = LocalDate.now()
-        val empty = s.range.days.filter { it >= today && s.slotsByDay[it].isNullOrEmpty() }
+        val empty = s.range.days.filter { day ->
+            day >= today && s.slotsByDay[day].orEmpty().none { Mahlzeit.ausText(it.slotType) == mahlzeit }
+        }
         if (empty.isEmpty() || s.activeRecipes.isEmpty()) {
-            _proposal.value = Proposal(seed, emptyList())
+            _proposal.value = Proposal(seed, mahlzeit, emptyList())
             return@launch
         }
         val inPantry = pantry.observeAll().first().filter { it.amount.signum() > 0 }.map { it.ingredientId }.toSet()
         val missing = PantryCoverage.missingByRecipe(recipes.observeRequired().first(), inPantry)
         // Auch die schon geplanten Tage des Zeitraums zählen: Was diese Woche dran ist, wird nicht noch einmal vorgeschlagen
         val lastPlanned = plan.lastPlannedByRecipe(empty.min().minusDays(MealSuggestions.REPEAT_GAP_DAYS), s.range.endInclusive)
-        val candidates = s.activeRecipes.map { MealSuggestions.Candidate(it.id, it.favorite, missing[it.id], lastPlanned[it.id]) }
-        val picks = MealSuggestions.suggest(candidates, empty, seed)
-        _proposal.value = Proposal(seed, picks.entries.sortedBy { it.key }.mapNotNull { (day, id) -> s.recipes[id]?.let { day to it } })
+        val candidates = s.activeRecipes.map {
+            MealSuggestions.Candidate(it.id, it.favorite, missing[it.id], lastPlanned[it.id], it.einordnung().mahlzeiten)
+        }
+        val picks = MealSuggestions.suggest(candidates, empty, seed, mahlzeit)
+        _proposal.value = Proposal(seed, mahlzeit, picks.entries.sortedBy { it.key }.mapNotNull { (day, id) -> s.recipes[id]?.let { day to it } })
     }
 
-    fun reshuffle() { _proposal.value?.let { suggest(it.seed + 1) } }
+    fun reshuffle() { _proposal.value?.let { suggest(it.mahlzeit, it.seed + 1) } }
     fun dismissProposal() { _proposal.value = null }
 
-    fun acceptProposal(slotType: String) = viewModelScope.launch {
-        val entries = _proposal.value?.entries.orEmpty()
+    fun acceptProposal() = viewModelScope.launch {
+        val p = _proposal.value ?: return@launch
         _proposal.value = null
-        entries.forEach { (day, recipe) -> plan.add(day, slotType, recipe.id, recipe.defaultServings) }
+        p.entries.forEach { (day, recipe) -> plan.add(day, p.mahlzeit.name, recipe.id, recipe.defaultServings) }
     }
 }

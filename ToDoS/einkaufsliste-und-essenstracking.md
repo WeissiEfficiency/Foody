@@ -134,6 +134,9 @@ Hoch, wenn das Essentracking als produktiver Alltagsteil dienen soll.
 
 ## 5) Smarte Auswahl für Essen bei der Wochenplanung
 
+**Erledigt** (Spec `docs/superpowers/specs/2026-10-10-rezept-einordnung-design.md`): Rezepte haben Mahlzeiten und Gänge
+(vermutet oder festgelegt); Planer und Wochenvorschlag filtern danach.
+
 ### Ziel
 Bei der Wochenplanung soll der Nutzer schnell passende Essen auswählen können, ohne lange durch allzu viele Rezepte zu stöbern.
 
@@ -169,6 +172,8 @@ Hoch, wenn Wochenplanung ein zentraler Teil der App ist.
 ---
 
 ## 6) Sortierung und Gewichtsung der Mahlzeiten
+
+**Erledigt** mit Abschnitt 5: Gang-Filter im Planer und in der Rezeptliste, Tageskarte nach Tagesablauf sortiert.
 
 ### Ziel
 Beim Planen soll der Nutzer nicht nur nach Kategorie auswählen, sondern auch nach gewünschter Gewichtung.
