@@ -56,7 +56,8 @@ object Tagebuch {
         fun total(f: (Naehrwerte) -> BigDecimal?) = werte.fold(BigDecimal.ZERO) { acc, w -> acc + (f(w) ?: BigDecimal.ZERO) }
         fun BigDecimal.ganz() = setScale(0, RoundingMode.HALF_UP).toInt()
         return Summe(
-            kcal = NutritionResult.kjToKcal(total { it.energieKj }).ganz(),
+            // Summe der gerundeten Zeilen: passt zu dem, was je Eintrag angezeigt wird (sonst ±1 durch doppeltes Runden).
+            kcal = werte.sumOf { it.kcal ?: 0 },
             eiweiss = total { it.eiweiss }.ganz(),
             kohlenhydrate = total { it.kohlenhydrate }.ganz(),
             fett = total { it.fett }.ganz(),
