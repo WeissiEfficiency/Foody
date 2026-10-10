@@ -109,6 +109,26 @@ data class ShoppingItemPayload(
     )
 }
 
+/** Tagebuch-Eintrag; Nährwerte festgehalten, Referenzen lose (ohne Prüfung auf Existenz). */
+@Serializable
+data class TagebuchPayload(
+    val datum: String,
+    val mahlzeit: String,
+    val art: String,
+    val name: String,
+    val rezeptId: String? = null,
+    val planEintragId: String? = null,
+    val portionen: String? = null,
+    val zutatId: String? = null,
+    val menge: String? = null,
+    val einheit: String? = null,
+    val energieKj: String? = null,
+    val eiweiss: String? = null,
+    val kohlenhydrate: String? = null,
+    val fett: String? = null,
+    val vollstaendig: Boolean = true,
+)
+
 /** Dekodiert [payload] in den zum Typ passenden Payload-Typ; wirft [SerializationException] bei Formfehlern. */
 fun RecordType.decode(payload: JsonObject): Any {
     val json = Protocol.json
@@ -119,5 +139,6 @@ fun RecordType.decode(payload: JsonObject): Any {
         RecordType.PANTRY_ITEM -> json.decodeFromJsonElement(PantryItemPayload.serializer(), payload)
         RecordType.SHOPPING_LIST -> json.decodeFromJsonElement(ShoppingListPayload.serializer(), payload)
         RecordType.SHOPPING_ITEM -> json.decodeFromJsonElement(ShoppingItemPayload.serializer(), payload)
+        RecordType.TAGEBUCH_EINTRAG -> json.decodeFromJsonElement(TagebuchPayload.serializer(), payload)
     }
 }

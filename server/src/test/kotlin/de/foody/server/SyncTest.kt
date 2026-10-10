@@ -7,6 +7,7 @@ import de.foody.sync.protocol.RecipePayload
 import de.foody.sync.protocol.PushStatus
 import de.foody.sync.protocol.RecordType
 import de.foody.sync.protocol.SyncRecord
+import de.foody.sync.protocol.TagebuchPayload
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -219,5 +220,16 @@ class SyncTest {
         assertEquals(2, client.pull(token, 0, 100_000).records.size)
         val noParams = client.pullRaw(token, "")
         assertEquals(2, Protocol.json.decodeFromString(PullResponse.serializer(), noParams.bodyAsText()).records.size)
+    }
+
+    @Test
+    fun tagebuchEintragRoundTrip() = testServer { env ->
+        val (token, _) = env.setupHousehold()
+        val payload = TagebuchPayload(datum = "2026-10-10", mahlzeit = "SNACK", art = "FREI", name = "Apfel", energieKj = "335")
+        val record = SyncRecord(id = "dddddddd-dddd-4ddd-8ddd-dddddddddddd", type = RecordType.TAGEBUCH_EINTRAG, updatedAt = 1, payload = obj(payload))
+        assertEquals(listOf(PushStatus.ACCEPTED), client.pushOk(token, listOf(record)).results.map { it.status })
+        val pulled = client.pull(token, 0).records.single()
+        assertEquals(RecordType.TAGEBUCH_EINTRAG, pulled.type)
+        assertEquals(payload, Protocol.json.decodeFromJsonElement<TagebuchPayload>(pulled.payload!!))
     }
 }

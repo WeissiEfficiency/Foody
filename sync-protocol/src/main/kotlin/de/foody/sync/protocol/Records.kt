@@ -13,6 +13,8 @@ enum class RecordType(val wire: String) {
     @SerialName("pantry_item") PANTRY_ITEM("pantry_item"),
     @SerialName("shopping_list") SHOPPING_LIST("shopping_list"),
     @SerialName("shopping_item") SHOPPING_ITEM("shopping_item"),
+    /** Seit App-DB v8; der Name ist der Tabellenname, den die Sync-Trigger in die Outbox schreiben. */
+    @SerialName("tagebuch_eintrag") TAGEBUCH_EINTRAG("tagebuch_eintrag"),
 }
 
 /**
