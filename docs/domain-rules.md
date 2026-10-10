@@ -40,3 +40,9 @@
 23. Planer: Beim Hinzufügen erscheinen nur Rezepte, die zur gewählten Mahlzeit (und, falls gewählt, zu einem der Gänge)
     passen; „Alle Rezepte zeigen“ hebt den Filter auf. Der Wochenvorschlag füllt die Tage ab heute, an denen die gewählte
     Mahlzeit noch fehlt, nur mit passenden Rezepten. Plan-Einträge speichern die Mahlzeit als festen Schlüssel.
+24. Tagebuch: Ein Eintrag gilt pro Person (eine Portion = was eine Person isst). Nährwerte werden beim Eintragen
+    festgehalten und ändern sich nicht, wenn Rezept oder Zutat später geändert oder gelöscht werden (ADR 0007).
+    Ein Plan-Eintrag lässt sich höchstens einmal als „gegessen“ übernehmen. Fehlen Energiewerte, zeigen Zeile, Mahlzeit
+    und Tag „≥“.
+25. Planer „Ø kcal pro Tag“: zählt nur Tage mit Abendessen und mindestens einer weiteren Mahlzeit; „≥“, wenn einem
+    gezählten Tag Nährwerte fehlen.

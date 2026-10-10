@@ -1,5 +1,7 @@
 package de.foody.app.ui.pantry
 
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import de.foody.app.ui.common.HeaderAction
 import androidx.compose.ui.graphics.Color
 import de.foody.app.ui.theme.FoodyGlass
 import androidx.compose.foundation.background
@@ -63,7 +65,7 @@ import de.foody.domain.MeasureUnit
 import java.time.LocalDate
 
 @Composable
-fun PantryScreen(vm: PantryViewModel = hiltViewModel()) {
+fun PantryScreen(onBack: () -> Unit, vm: PantryViewModel = hiltViewModel()) {
     val s by vm.state.collectAsStateWithLifecycle()
     var editingId by rememberSaveable { mutableStateOf<String?>(null) }
     var creating by rememberSaveable { mutableStateOf(false) }
@@ -81,7 +83,10 @@ fun PantryScreen(vm: PantryViewModel = hiltViewModel()) {
         },
     ) { padding ->
         Column(Modifier.padding(padding)) {
-            ScreenHeader(stringResource(R.string.nav_pantry), stringResource(R.string.pantry_title))
+            // Seit das Tagebuch den Tab übernommen hat, liegt der Vorrat unter „Mehr“
+            ScreenHeader(stringResource(R.string.nav_pantry), stringResource(R.string.pantry_title)) {
+                HeaderAction(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back), onBack)
+            }
             if (s.rows.isEmpty()) {
                 EmptyState(
                     stringResource(R.string.pantry_empty), icon = Icons.Outlined.Kitchen,

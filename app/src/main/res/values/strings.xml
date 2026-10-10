@@ -9,6 +9,34 @@
     <string name="nav_pantry">Vorrat</string>
     <string name="nav_settings">Einstellungen</string>
     <string name="nav_more">Mehr</string>
+    <string name="nav_tagebuch">Tagebuch</string>
+    <string name="tagebuch_eyebrow">Tagebuch</string>
+    <string name="tagebuch_vortag">Vortag</string>
+    <string name="tagebuch_folgetag">Folgetag</string>
+    <string name="tagebuch_leer">Noch nichts eingetragen. Tippe auf + bei einer Mahlzeit.</string>
+    <string name="tagebuch_geplant">Geplant: %1$s</string>
+    <string name="tagebuch_gegessen">Gegessen</string>
+    <string name="tagebuch_hinzufuegen_fuer">Zu %1$s hinzufügen</string>
+    <string name="tagebuch_bearbeiten">Bearbeiten</string>
+    <string name="tagebuch_tab_rezept">Rezept</string>
+    <string name="tagebuch_tab_zutat">Zutat</string>
+    <string name="tagebuch_tab_frei">Frei</string>
+    <string name="tagebuch_zutat_suchen">Zutat suchen</string>
+    <string name="tagebuch_keine_werte">Keine Nährwerte – frei eintragen?</string>
+    <string name="tagebuch_vorschau">≈ %1$s kcal</string>
+    <string name="tagebuch_summe">%1$s kcal</string>
+    <string name="tagebuch_summe_ziel">%1$s / %2$s kcal</string>
+    <string name="tagebuch_makros">Eiweiß %1$d g · KH %2$d g · Fett %3$d g</string>
+    <string name="tagebuch_eiweiss">Eiweiß g</string>
+    <string name="tagebuch_kh">KH g</string>
+    <string name="tagebuch_fett">Fett g</string>
+    <string name="tagebuch_weniger">Weniger</string>
+    <string name="tagebuch_mehr">Mehr</string>
+    <plurals name="tagebuch_portionen">
+        <item quantity="one">%1$s Portion</item>
+        <item quantity="other">%1$s Portionen</item>
+    </plurals>
+    <string name="settings_vorrat">Vorrat öffnen</string>
 
     <!-- Aktionen -->
     <string name="action_add">Hinzufügen</string>

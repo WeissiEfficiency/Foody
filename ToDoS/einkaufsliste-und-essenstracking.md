@@ -39,6 +39,9 @@ Sehr hoch.
 
 ## 2) Essenstracking als eigenes Feature
 
+**Erledigt** (Spec `docs/superpowers/specs/2026-10-10-essenstracking-design.md`): Tab „Tagebuch“ mit Frühstück, Mittag,
+Snack und Abend, Vorschlägen aus dem Plan, Wochenleiste und Tagesziel.
+
 ### Zweck
 Das Essenstracking soll die Nahrungsaufnahme über den Tag hinweg sichtbar machen und hilft dabei, die Essensplanung mit Nährwert- und Tageszielen zu verknüpfen.
 
@@ -99,6 +102,9 @@ Niedrig bis mittel, als Erweiterungsfeature.
 ---
 
 ## 4) Kcal-Tracking für den Tag
+
+**Erledigt** (Spec `docs/superpowers/specs/2026-10-10-essenstracking-design.md`): Tab „Tagebuch“ mit Frühstück, Mittag,
+Snack und Abend, Vorschlägen aus dem Plan, Wochenleiste und Tagesziel.
 
 ### Zweck
 Die tägliche Nährwert-Erfassung soll als leicht nutzbares Tracking funktionieren.
@@ -214,7 +220,7 @@ Mittel bis hoch.
   Zeilen passten daher nicht zur Summe. Jetzt zeigen die Zeilen kcal je Portion (gerundet statt abgeschnitten).
 - Einkaufsliste: Aufgeklappte Abteilungen ließen sich nicht wieder zuklappen, außer man öffnete vorher eine andere.
 
-### Offen
+### Offen (erledigt mit dem Tagebuch)
 - Planer, „Ø kcal pro Tag“ oben: Tage mit nur einer geplanten Mahlzeit zählen als voller Tag und drücken den
   Schnitt; Rezepte ohne Nährwerte zählen mit 0 kcal, ohne dass die Zeile „≥“ zeigt. Mit dem Essenstracking
   (Frühstück/Mittag/Abend/Snack) zusammen neu denken.

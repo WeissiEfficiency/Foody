@@ -1,5 +1,7 @@
 package de.foody.app.ui
 
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import de.foody.app.ui.tagebuch.TagebuchScreen
 import de.foody.app.ui.theme.FoodyBackground
 import de.foody.app.ui.theme.FoodyGlass
 import androidx.compose.ui.graphics.Color
@@ -55,6 +57,7 @@ import kotlinx.serialization.Serializable
 @Serializable object PlannerRoute
 @Serializable object ShoppingRoute
 @Serializable object PantryRoute
+@Serializable object TagebuchRoute
 @Serializable object SettingsRoute
 @Serializable object IngredientsRoute
 @Serializable data class SyncSetupRoute(val reconnect: Boolean = false)
@@ -66,7 +69,7 @@ private enum class TopLevel(val route: Any, @param:StringRes val label: Int, val
     RECIPES(RecipesRoute, R.string.nav_recipes, Icons.Default.RestaurantMenu),
     PLANNER(PlannerRoute, R.string.nav_planner, Icons.Default.CalendarMonth),
     SHOPPING(ShoppingRoute, R.string.nav_shopping, Icons.AutoMirrored.Filled.List),
-    PANTRY(PantryRoute, R.string.nav_pantry, Icons.Default.Inventory2),
+    TAGEBUCH(TagebuchRoute, R.string.nav_tagebuch, Icons.AutoMirrored.Outlined.MenuBook),
     SETTINGS(SettingsRoute, R.string.nav_more, Icons.Default.Settings),
 }
 
@@ -152,12 +155,14 @@ fun FoodyRoot() {
             }
             composable<PlannerRoute> { PlannerScreen(onOpenRecipe = { nav.navigate(RecipeDetailRoute(it)) }) }
             composable<ShoppingRoute> { ShoppingScreen() }
-            composable<PantryRoute> { PantryScreen() }
+            composable<TagebuchRoute> { TagebuchScreen() }
+            composable<PantryRoute> { PantryScreen(onBack = { nav.popBackStack() }) }
             composable<SettingsRoute> { entry ->
                 // Der Verbinden-Assistent hinterlässt seine Erfolgsmeldung im SavedStateHandle dieses Eintrags.
                 val notice by entry.savedStateHandle.getStateFlow<Int?>(SYNC_NOTICE, null).collectAsStateWithLifecycle()
                 SettingsScreen(
                     onManageIngredients = { nav.navigate(IngredientsRoute) },
+                    onOpenPantry = { nav.navigate(PantryRoute) },
                     onConnectSync = { reconnect -> nav.navigate(SyncSetupRoute(reconnect)) },
                     notice = notice,
                     onNoticeShown = { entry.savedStateHandle[SYNC_NOTICE] = null },
