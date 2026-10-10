@@ -135,6 +135,19 @@ Vorgehen je Bereich: `/code-review` auf den Ordner, Funde wie bisher mit Test, d
 1. **Baseline-Profil neu erzeugen** (Stand 2026-10-03): Abläufe ergänzen – Planer mit Dialog, Tagebuch öffnen und
    blättern, Zutaten-Dialog. Größter Hebel für Start und erstes Scrollen.
 2. **Startup-Profil** (DEX-Layout) aus demselben Generator aktivieren.
+
+**Ergebnis 4.1/4.2 (2026-10-10):**
+- Generator tippte noch auf „Vorrat“ (seit Teil B unter „Mehr“). Neu: Planer-Dialog „Gericht planen“, Tagebuch-Eintrag
+  mit den Reitern Rezept/Zutat/Frei, unter „Mehr“ Vorrat und Zutatenkatalog.
+- Profil 24 357 → 28 218 Regeln; App-eigene 1 311 → 2 534 (Tagebuch 0 → 343, Planer 114 → 214, Zutaten 6 → 126,
+  Vorrat 42, Scan 39).
+- Kaltstart (`am start -W`, speed-profile) bleibt im Rauschen des Emulators (Median 850–1 200 ms je nach Lauf); der
+  Startpfad war schon im alten Profil. Gewinn: erstes Öffnen der neuen Bildschirme ohne JIT-Ruckler.
+- **Startup-Profil verworfen:** +150 KB APK, im Emulator kein messbarer Unterschied (A/B: 1 222/1 071 ms mit, 1 128 ms
+  ohne). Auf einem echten Gerät mit langsamem Speicher erneut messen.
+- **Stolperstein Erzeugung:** Benchmark 1.5 schreibt nur `…-startup-prof.txt`, und AGP 9.4 löscht ihn beim
+  Deinstallieren, bevor er geholt wird – `generateReleaseBaselineProfile` endet „erfolgreich“, das Profil fehlt aber.
+  Ablauf steht in `baselineprofile/build.gradle.kts`.
 3. **Datenbank früh öffnen:** Room im App-Start auf einem Hintergrund-Thread anstoßen (erste Abfrage), damit der
    erste Bildschirm nicht auf das Öffnen wartet.
 4. **Play-Dienste-Module vorladen:** Beim ersten Öffnen des Zutaten-Dialogs bzw. Reiters „Frei“ `ModuleInstall`
