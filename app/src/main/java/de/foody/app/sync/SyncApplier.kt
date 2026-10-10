@@ -204,7 +204,8 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
         null
     }
 
-    private suspend fun exists(type: RecordType, id: String): Boolean = when (type) {
+    /** Gibt es den Datensatz lokal? */
+    internal suspend fun exists(type: RecordType, id: String): Boolean = when (type) {
         RecordType.INGREDIENT -> db.ingredientDao().get(id) != null
         RecordType.RECIPE -> db.recipeDao().get(id) != null
         RecordType.MEAL_SLOT -> db.mealPlanDao().get(id) != null

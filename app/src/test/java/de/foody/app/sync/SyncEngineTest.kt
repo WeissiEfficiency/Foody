@@ -547,6 +547,36 @@ class SyncEngineTest {
         assertEquals(1, api.pushes.size)
     }
 
+    /**
+     * Die Zutat kennt nur dieses Gerät, sie wurde aber nie vorgemerkt (z. B. Startzutat nach „nur herunterladen“).
+     * Der Server lehnt das Rezept mit `missing_reference` ab; die Zutat wird nachgereicht, danach kommt das Rezept an.
+     */
+    @Test
+    fun missingReferenceQueuesTheLocalParent() = runTest {
+        activate()
+        val rid = recipe("r1", null)
+        db.syncDao().dequeue("ingredient", "i")
+        val known = HashSet<Pair<RecordType, String>>()
+        api.onPush = { records ->
+            PushResponse(
+                records.map { r ->
+                    if (de.foody.sync.protocol.PayloadValidator.references(r).all { it in known }) {
+                        known += r.type to r.id
+                        accepted(r, 1)
+                    } else {
+                        PushResult(r.id, r.type, PushStatus.REJECTED, code = ErrorCode.MISSING_REFERENCE)
+                    }
+                },
+            )
+        }
+        engine.run()
+        engine.run()
+        assertTrue((RecordType.INGREDIENT to "i") in known, "Zutat nachgereicht")
+        assertTrue((RecordType.RECIPE to rid) in known, "Rezept angekommen")
+        assertEquals(emptyList(), db.syncDao().outbox())
+        assertEquals(emptyList(), db.syncDao().problems())
+    }
+
     @Test
     fun rejectedInvalidIsDropped() = runTest {
         activate()

@@ -184,14 +184,33 @@ class SyncEngine(
                 }
                 PushStatus.REJECTED -> {
                     dao.addProblem(SyncProblemEntity(type, id, rejectCode(result.code), clock.millis()))
-                    // Fehlende Verweise erledigen sich evtl. durch den nächsten Pull: Eintrag bleibt.
-                    if (result.code != ErrorCode.MISSING_REFERENCE) dequeueIfUnchanged(pending)
+                    // Fehlende Verweise erledigen sich durch den nächsten Pull oder durch das Nachreichen: Eintrag bleibt.
+                    if (result.code == ErrorCode.MISSING_REFERENCE) queueLocalParents(pending.record) else dequeueIfUnchanged(pending)
                 }
             }
         }
         // Der Cursor gehört dem Pull; `current` ist nur ein einzelner Datensatz.
         current?.let { applier.apply(listOf(it), 0, updateCursor = false, skipKnown = false) }
         return result.status != PushStatus.REJECTED
+    }
+
+    /**
+     * Merkt Verweisziele vor, die es lokal gibt, die aber nicht in der Outbox stehen: Der Server kennt sie offenbar nicht
+     * (etwa eine Startzutat, die nach „nur herunterladen“ nie geändert und daher nie gesendet wurde). Ohne das bliebe der
+     * abgelehnte Datensatz für immer stehen; so geht das Ziel im nächsten Batch raus und der Datensatz danach.
+     */
+    private suspend fun queueLocalParents(record: SyncRecord) {
+        val refs = try {
+            PayloadValidator.references(record)
+        } catch (_: SerializationException) {
+            return
+        } catch (_: IllegalArgumentException) {
+            return
+        }
+        for ((type, id) in refs) {
+            if (dao.isQueued(type.wire, id) || !applier.exists(type, id)) continue
+            dao.enqueue(SyncOutboxEntity(type.wire, id, deleted = false, queuedAt = clock.millis()))
+        }
     }
 
     /** Entfernt den Outbox-Eintrag, wenn er seit dem Bauen des Batches nicht erneut vorgemerkt wurde. */
