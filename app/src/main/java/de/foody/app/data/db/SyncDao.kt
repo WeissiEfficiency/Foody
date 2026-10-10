@@ -88,6 +88,7 @@ interface SyncDao {
     @Query("SELECT id FROM ingredient") suspend fun ingredientIds(): List<String>
     @Query("SELECT id FROM recipe") suspend fun recipeIds(): List<String>
     @Query("SELECT id FROM meal_slot") suspend fun mealSlotIds(): List<String>
+    @Query("SELECT id FROM tagebuch_eintrag") suspend fun tagebuchIds(): List<String>
     @Query("SELECT id FROM pantry_item") suspend fun pantryItemIds(): List<String>
     @Query("SELECT id FROM shopping_list") suspend fun shoppingListIds(): List<String>
     @Query("SELECT id FROM shopping_item") suspend fun shoppingItemIds(): List<String>

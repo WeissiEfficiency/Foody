@@ -219,10 +219,11 @@ interface MaintenanceDao {
     @Query("DELETE FROM recipe_ingredient") suspend fun clearRecipeIngredients()
     @Query("DELETE FROM recipe") suspend fun clearRecipes()
     @Query("DELETE FROM ingredient") suspend fun clearIngredients()
+    @Query("DELETE FROM tagebuch_eintrag") suspend fun clearTagebuch()
 
     /** Löscht alle Daten in FK-sicherer Reihenfolge; innerhalb einer Transaktion aufrufen. */
     suspend fun clearAll() {
-        clearSources(); clearItems(); clearLists(); clearPantry(); clearSlots()
+        clearTagebuch(); clearSources(); clearItems(); clearLists(); clearPantry(); clearSlots()
         clearSteps(); clearRecipeIngredients(); clearRecipes(); clearIngredients()
     }
 }
