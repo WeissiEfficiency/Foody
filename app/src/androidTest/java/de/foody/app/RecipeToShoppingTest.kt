@@ -70,4 +70,22 @@ class RecipeToShoppingTest {
         val item = db.shoppingDao().getItems(first.listId).single()
         assertEquals(0, BigDecimal("2000").compareTo(item.amount))
     }
+
+    /** Regel 17: direkt auf die Liste gesetzt, zieht nichts vom Vorrat ab – weder die Menge noch den Vorrat selbst. */
+    @Test fun direktAufDieListeZiehtKeinenVorratAb() = runTest {
+        val soup = soup()
+        db.pantryDao().upsert(de.foody.app.data.db.PantryItemEntity("p", "kart", BigDecimal("300"), MeasureUnit.GRAM, null, 0))
+        val result = shopping.addRecipe(soup, servings = 2, defaultListName = "Einkauf")
+        assertEquals(0, BigDecimal("500").compareTo(db.shoppingDao().getItems(result.listId).single().amount))
+        assertEquals(0, BigDecimal("300").compareTo(db.pantryDao().getAll().single().amount))
+    }
+
+    /** Regel 8: Planen allein verändert den Vorrat nicht; erst „gekocht“ bucht ab (siehe ShoppingFlowTest). */
+    @Test fun planenAlleinLaesstDenVorratStehen() = runTest {
+        val soup = soup()
+        db.pantryDao().upsert(de.foody.app.data.db.PantryItemEntity("p", "kart", BigDecimal("300"), MeasureUnit.GRAM, null, 0))
+        val plan = de.foody.app.data.repo.PlanRepository(db, db.mealPlanDao(), db.recipeDao(), db.pantryDao(), db.ingredientDao())
+        plan.add(java.time.LocalDate.of(2026, 10, 1), "ABENDESSEN", soup, 4)
+        assertEquals(0, BigDecimal("300").compareTo(db.pantryDao().getAll().single().amount))
+    }
 }
