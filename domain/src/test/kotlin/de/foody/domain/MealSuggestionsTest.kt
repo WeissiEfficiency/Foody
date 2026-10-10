@@ -46,6 +46,16 @@ class MealSuggestionsTest {
         assertEquals(mapOf(monday to "vor-einem-monat"), MealSuggestions.suggest(list, listOf(monday), seed = 1))
     }
 
+    @Test fun nurPassendeKandidatenFuerDieMahlzeit() {
+        val list = (1..10).map { Candidate("abend$it", false, null, null, mahlzeiten = setOf(Mahlzeit.ABENDESSEN)) } +
+            Candidate("frueh", false, null, null, mahlzeiten = setOf(Mahlzeit.FRUEHSTUECK)) +
+            Candidate("ueberall", false, null, null)
+        repeat(20) { seed ->
+            val plan = MealSuggestions.suggest(list, week, seed.toLong(), Mahlzeit.FRUEHSTUECK)
+            assertEquals(setOf("frueh", "ueberall"), plan.values.toSet())
+        }
+    }
+
     @Test fun sameSeedSameResultOtherSeedReshuffles() {
         val list = candidates(40)
         assertEquals(MealSuggestions.suggest(list, week, 7), MealSuggestions.suggest(list.reversed(), week, 7))
