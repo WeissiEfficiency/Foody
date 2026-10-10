@@ -81,4 +81,14 @@ class TagebuchTest {
 
     @Test fun offeneVorschlaegeOhneUebernommene() =
         assertEquals(listOf("a", "c"), Tagebuch.offeneVorschlaege(listOf("a", "b", "c"), { it }, setOf("b")))
+
+    /** Die Summe passt zu den angezeigten Zeilen: 2 × 100,4 kcal → Zeilen 100 + 100, Summe 200 (nicht 201). */
+    @Test fun summeAusGerundetenZeilen() {
+        val kj = bd("100.4") * bd("4.184") // 420,0736 kJ ≈ 100,4 kcal
+        val zeile = Naehrwerte(kj, null, null, null, true)
+        assertEquals(100, zeile.kcal)
+        val b = Tagebuch.bilanz(listOf(EintragWerte(Mahlzeit.SNACK, zeile), EintragWerte(Mahlzeit.SNACK, zeile)))
+        assertEquals(200, b.tag.kcal)
+        assertEquals(200, b.jeMahlzeit.getValue(Mahlzeit.SNACK).kcal)
+    }
 }

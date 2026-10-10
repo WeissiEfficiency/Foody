@@ -14,7 +14,8 @@ import java.math.RoundingMode
 /** Nährwerte einer Packung je 100 g bzw. 100 ml – aus Open Food Facts oder vom Foto; nur ein Vorschlag. */
 data class Packung(
     val name: String?,
-    val basis: NutrientBasis,
+    /** `null`: auf dem Foto nicht erkennbar – die bisherige Basis bleibt. */
+    val basis: NutrientBasis?,
     val werte: Map<Nutrient, BigDecimal>,
     val strichcode: String?,
     val quelle: String,

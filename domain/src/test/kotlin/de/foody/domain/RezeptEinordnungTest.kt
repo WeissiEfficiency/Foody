@@ -96,4 +96,15 @@ class RezeptEinordnungTest {
         assertFalse(r.passtZu(Mahlzeit.ABENDESSEN, setOf(Gang.NACHSPEISE)))
         assertFalse(r.passtZu(Mahlzeit.FRUEHSTUECK, emptySet()))
     }
+
+    /** Stichwörter aus mehreren Wörtern treffen auch im Namen, nicht nur als Tag. */
+    @Test fun mehrteiligesStichwortImNamen() =
+        assertEquals(setOf(Mahlzeit.FRUEHSTUECK), e("Overnight Oats mit Beeren").mahlzeiten)
+
+    /** Beim Speichern bleiben Werte erhalten, die diese App-Version nicht kennt (z. B. per Sync von einer neueren). */
+    @Test fun unbekannteWerteBleibenBeimSpeichern() {
+        assertEquals("MITTAGESSEN,BRUNCH", alsText(setOf(Mahlzeit.MITTAGESSEN), "FRUEHSTUECK,BRUNCH", Mahlzeit.entries))
+        assertEquals("ABENDESSEN", alsText(setOf(Mahlzeit.ABENDESSEN), null, Mahlzeit.entries))
+        assertEquals(null, alsText(null, "BRUNCH", Mahlzeit.entries), "„vermuten“ setzt bewusst zurück")
+    }
 }

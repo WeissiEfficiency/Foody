@@ -175,7 +175,7 @@ internal fun IngredientDialog(
                 Nutrient.SALT_G -> salt = t
             }
         }
-        basis = p.basis
+        p.basis?.let { basis = it }
         if (name.isBlank()) p.name?.let { name = it }
         source = p.quelle
         barcode = p.strichcode ?: barcode

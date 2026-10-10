@@ -26,11 +26,11 @@ class PackungScan @Inject constructor(
             StrichcodeStatus.Fehler -> return ScanAusgang.Fehler
         }
         katalog.zutatMitStrichcode(code)?.let { return ScanAusgang.ImKatalog(it) }
-        if (!online.erlaubt()) return ScanAusgang.NichtGefunden(code, offline = false)
+        if (!online.erlaubt()) return ScanAusgang.NichtGefunden(code, ScanAusgang.Grund.ONLINE_AUS)
         return when (val a = suche.suche(code)) {
             is ProduktSuche.Antwort.Gefunden -> ScanAusgang.Gefunden(a.packung)
-            ProduktSuche.Antwort.Unbekannt -> ScanAusgang.NichtGefunden(code, offline = false)
-            ProduktSuche.Antwort.Offline -> ScanAusgang.NichtGefunden(code, offline = true)
+            ProduktSuche.Antwort.Unbekannt -> ScanAusgang.NichtGefunden(code, ScanAusgang.Grund.UNBEKANNT)
+            ProduktSuche.Antwort.Offline -> ScanAusgang.NichtGefunden(code, ScanAusgang.Grund.OFFLINE)
         }
     }
 

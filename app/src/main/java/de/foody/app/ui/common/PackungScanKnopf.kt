@@ -70,11 +70,15 @@ fun PackungScanKnopf(
         laeuft = false
         meldung = null
         when (a) {
-            is ScanAusgang.Gefunden -> { fotoAnbieten = false; onPackung(a.packung) }
-            is ScanAusgang.ImKatalog -> { fotoAnbieten = false; onImKatalog(a.zutat) }
+            is ScanAusgang.Gefunden -> { fotoAnbieten = false; code = null; onPackung(a.packung) }
+            is ScanAusgang.ImKatalog -> { fotoAnbieten = false; code = null; onImKatalog(a.zutat) }
             is ScanAusgang.NichtGefunden -> {
                 code = a.strichcode
-                meldung = if (a.offline) R.string.scan_offline else R.string.scan_nicht_gefunden
+                meldung = when (a.grund) {
+                    ScanAusgang.Grund.OFFLINE -> R.string.scan_offline
+                    ScanAusgang.Grund.ONLINE_AUS -> R.string.scan_online_aus
+                    ScanAusgang.Grund.UNBEKANNT -> R.string.scan_nicht_gefunden
+                }
                 fotoAnbieten = true
             }
             is ScanAusgang.KeineTabelle -> { meldung = R.string.scan_keine_tabelle; fotoAnbieten = true }
@@ -87,7 +91,8 @@ fun PackungScanKnopf(
 
     fun foto(uri: String, danach: () -> Unit = {}) {
         laeuft = true
-        scope.launch { auswerten(scan.foto(uri, code)); danach() }
+        // finally: auch wenn der Bildschirm während der Erkennung verlassen wird, ist die Kameradatei danach weg
+        scope.launch { try { auswerten(scan.foto(uri, code)) } finally { danach() } }
     }
 
     val kamera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
@@ -105,6 +110,8 @@ fun PackungScanKnopf(
 
     fun kameraStarten() {
         val dir = File(context.cacheDir, "scan").apply { mkdirs() }
+        // Reste früherer Versuche (Prozess beendet, App abgestürzt) wegräumen: es gibt immer nur ein Foto zur Zeit.
+        dir.listFiles()?.forEach { it.delete() }
         val datei = File(dir, "packung-${UUID.randomUUID()}.jpg")
         fotoPfad = datei.path
         kamera.launch(FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", datei))
@@ -125,8 +132,10 @@ fun PackungScanKnopf(
                     code = null
                     scope.launch { auswerten(scan.strichcode()) }
                 })
-                DropdownMenuItem({ Text(stringResource(R.string.scan_foto)) }, { menu = false; kameraStarten() })
-                DropdownMenuItem({ Text(stringResource(R.string.scan_galerie)) }, { menu = false; galerieStarten() })
+                // Ein neuer Versuch über das Menü gehört zu keinem früheren Strichcode (vielleicht eine andere Packung);
+                // nur die angebotenen Foto-Knöpfe nach „nicht gefunden“ hängen den gelesenen Code an.
+                DropdownMenuItem({ Text(stringResource(R.string.scan_foto)) }, { menu = false; code = null; fotoAnbieten = false; kameraStarten() })
+                DropdownMenuItem({ Text(stringResource(R.string.scan_galerie)) }, { menu = false; code = null; fotoAnbieten = false; galerieStarten() })
             }
         }
         if (!verfuegbar) {

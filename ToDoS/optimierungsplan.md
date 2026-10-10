@@ -49,17 +49,17 @@ und kennt Tagebuch, Planer-Dialog und Scan nicht – das Profil ist also doppelt
 
 | Prio | Bereich | Fehler | Aufwand |
 |---|---|---|---|
-| **hoch** | Scan | #74 noch nicht gemergt: bekannter Strichcode überschreibt vorhandene Zutat | läuft (CI) |
-| mittel | Scan | Fehlgeschlagener Modul-Download → dauerhaft „wird vorbereitet“ (Ergebnis von `installModules` auswerten) | klein |
-| mittel | Scan | Basis wird beim Foto immer gesetzt (Getränk ohne „100 ml“ im Bild → g) | klein |
-| mittel | Scan | Name im Tagebuch nicht über `IngredientCatalog` normalisiert („Mehl“ ≠ „Weizenmehl“) | klein |
-| mittel | Tagebuch | kurzes Flackern alter Vorschläge beim Tageswechsel (`combine` über verschiedene Tage) | mittel |
-| klein | Scan | Kamera-Temp-Datei bleibt bei Abbruch; alter Strichcode hängt am späteren Foto; Meldung bei Online-Suche aus | klein |
-| klein | Scan | englisch „1,046 kJ“ als 1,046 gelesen | klein |
-| klein | Tagebuch | kcal je Zeile ±1 zur Summe (doppelte Rundung) | klein |
-| klein | Planer | Ø erkennt alte Freitext-Abendessen nicht; Wochenvorschlag neben „Abendbrot“ | klein |
-| klein | A | „Overnight Oats“ im Namen; Editor entfernt unbekannte Einordnungswerte; Suchtext im Planer-Dialog | klein |
-| klein | UI | „Mehr“ im Vorrat nicht hervorgehoben | klein |
+| ~~hoch~~ | Scan | #74 noch nicht gemergt: bekannter Strichcode überschreibt vorhandene Zutat | ✅ #74 |
+| mittel | Scan | Fehlgeschlagener Modul-Download → dauerhaft „wird vorbereitet“ (Ergebnis von `installModules` auswerten) | ✅ |
+| mittel | Scan | Basis wird beim Foto immer gesetzt (Getränk ohne „100 ml“ im Bild → g) | ✅ |
+| mittel | Scan | Name im Tagebuch nicht über `IngredientCatalog` normalisiert („Mehl“ ≠ „Weizenmehl“) | ✅ |
+| mittel | Tagebuch | kurzes Flackern alter Vorschläge beim Tageswechsel (`combine` über verschiedene Tage) | ✅ |
+| klein | Scan | Kamera-Temp-Datei bleibt bei Abbruch; alter Strichcode hängt am späteren Foto; Meldung bei Online-Suche aus | ✅ |
+| klein | Scan | englisch „1,046 kJ“ als 1,046 gelesen | ✅ |
+| klein | Tagebuch | kcal je Zeile ±1 zur Summe (doppelte Rundung) | ✅ |
+| klein | Planer | Ø erkennt alte Freitext-Abendessen nicht; Wochenvorschlag neben „Abendbrot“ (offen, genauer beschreiben) | klein |
+| klein | A | „Overnight Oats“ im Namen ✅; Editor entfernt unbekannte Einordnungswerte ✅; Suchtext im Planer-Dialog (offen, genauer beschreiben) | klein |
+| klein | UI | „Mehr“ im Vorrat nicht hervorgehoben | ✅ |
 
 ### 1b. Bisher **nicht** reviewte Bereiche – gezielte Fehlersuche
 

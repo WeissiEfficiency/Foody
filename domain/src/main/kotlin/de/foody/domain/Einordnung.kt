@@ -126,8 +126,11 @@ object RezeptEinordnung {
     }
 
     private fun treffer(name: String, tags: List<String>): List<Regel> {
-        val woerter = tags.map { it.trim().lowercase() }.filter { it.isNotEmpty() } +
-            name.lowercase().split(Regex("[^\\p{L}]+")).filter { it.isNotEmpty() }
+        val nameWoerter = name.lowercase().split(Regex("[^\\p{L}]+")).filter { it.isNotEmpty() }
+        // Mehrteilige Stichwörter („overnight oats“) als zusammenhängende Wortfolge im Namen suchen
+        val mehrteilig = regeln.flatMap { it.stichwoerter }.filter { ' ' in it }
+            .filter { s -> " ${nameWoerter.joinToString(" ")} ".contains(" $s ") }
+        val woerter = tags.map { it.trim().lowercase() }.filter { it.isNotEmpty() } + nameWoerter + mehrteilig
         val stichwoerter = woerter.flatMap { wort ->
             val passend = regeln.flatMap { it.stichwoerter }.filter { s -> wort == s || (s.length >= TEILWORT_AB && s in wort) }
             // „Pfannkuchen“ ist Frühstück, kein Kuchen: Ein enthaltenes kürzeres Stichwort zählt nicht
@@ -139,6 +142,17 @@ object RezeptEinordnung {
 
 /** Kommagetrennte Enum-Namen in Enum-Reihenfolge; `null` bleibt `null`, leere Menge wird `""`. */
 fun <E : Enum<E>> alsText(menge: Set<E>?): String? = menge?.sortedBy { it.ordinal }?.joinToString(",") { it.name }
+
+/**
+ * Wie [alsText], hängt aber Einträge aus [bisher] an, die diese App-Version nicht kennt (etwa per Sync von einer neueren
+ * Version) – sonst gingen sie beim Speichern verloren. `null` (= vermuten) bleibt `null`.
+ */
+fun <E : Enum<E>> alsText(menge: Set<E>?, bisher: String?, alle: List<E>): String? {
+    if (menge == null) return null
+    val bekannt = alle.map { it.name }.toSet()
+    val unbekannt = bisher.orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() && it !in bekannt }
+    return (listOfNotNull(alsText(menge).takeIf { !it.isNullOrEmpty() }) + unbekannt).joinToString(",")
+}
 
 /** Unbekannte oder beschädigte Einträge werden übersprungen, nicht gemeldet. */
 private fun <E : Enum<E>> mengeAus(text: String?, alle: List<E>): Set<E>? {

@@ -4,6 +4,8 @@ import de.foody.app.scan.Packung
 import de.foody.app.scan.PackungScan
 import de.foody.domain.Ingredient
 import de.foody.domain.Nutrient
+import de.foody.domain.IngredientCatalog
+import de.foody.domain.NutrientBasis
 import de.foody.domain.NutrientProfile
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -72,14 +74,17 @@ class TagebuchViewModel @Inject constructor(
 ) : ViewModel() {
     private val tagEpoch = saved.getStateFlow("tag", LocalDate.now().toEpochDay())
 
-    private val woche = tagEpoch.flatMapLatest { t ->
+    /**
+     * Tag, Einträge der Woche bis dahin und Planpositionen des Tages – als ein Fluss je Tag, damit der neue Tag nie mit
+     * den Daten des alten zusammen erscheint (sonst flackern beim Blättern kurz die alten Vorschläge).
+     */
+    private val tagDaten = tagEpoch.flatMapLatest { t ->
         val tag = LocalDate.ofEpochDay(t)
-        tagebuch.observeRange(tag.minusDays(6), tag)
+        combine(tagebuch.observeRange(tag.minusDays(6), tag), plan.observeRange(tag, tag)) { woche, slots -> Triple(t, woche, slots) }
     }
-    private val slots = tagEpoch.flatMapLatest { t -> LocalDate.ofEpochDay(t).let { plan.observeRange(it, it) } }
 
     val state = combine(
-        combine(tagEpoch, woche, slots, ::Triple),
+        tagDaten,
         recipes.observeAll(),
         ingredients.observeAll(),
         goals.dailyKcal,
@@ -189,8 +194,12 @@ class TagebuchViewModel @Inject constructor(
         return neu.divide(alt, 10, java.math.RoundingMode.HALF_UP)
     }
 
-    /** Gibt es im Katalog schon eine Zutat mit diesem Namen? (Häkchen heißt dann „Werte aktualisieren“.) */
-    suspend fun zutatMitNamen(name: String): IngredientEntity? = name.trim().takeIf { it.isNotEmpty() }?.let { ingredients.findByName(it) }
+    /**
+     * Gibt es im Katalog schon eine Zutat mit diesem Namen? (Häkchen heißt dann „Werte aktualisieren“.) Der eigene Name
+     * geht vor; sonst über [IngredientCatalog] vereinheitlicht wie beim Import: „Mehl“ findet „Weizenmehl“.
+     */
+    suspend fun zutatMitNamen(name: String): IngredientEntity? =
+        name.trim().takeIf { it.isNotEmpty() }?.let { ingredients.findByName(it) ?: ingredients.findByName(IngredientCatalog.canonicalName(it)) }
 
     /**
      * Trägt eine gescannte Packung ein. Mit [alsZutat] wird die Zutat angelegt bzw. – wenn es den Namen schon gibt –
@@ -199,7 +208,7 @@ class TagebuchViewModel @Inject constructor(
      */
     suspend fun packungEintragen(m: Mahlzeit, name: String, menge: BigDecimal, einheit: MeasureUnit, packung: Packung, alsZutat: Boolean): Boolean {
         val n = name.trim()
-        val profil = NutrientProfile(packung.basis, packung.werte)
+        val profil = NutrientProfile(packung.basis ?: NutrientBasis.PER_100_G, packung.werte)
         val w = Tagebuch.naehrwerteZutat(Ingredient("", n, nutrients = profil), menge, einheit) ?: return false
         val datum = tag
         if (!alsZutat) {
@@ -207,10 +216,14 @@ class TagebuchViewModel @Inject constructor(
             return true
         }
         val jetzt = System.currentTimeMillis()
-        val basis = ingredients.findByName(n) ?: IngredientEntity(id = newId(), canonicalName = n, createdAt = jetzt, updatedAt = jetzt, version = 0)
+        val kanonisch = IngredientCatalog.canonicalName(n)
+        val basis = zutatMitNamen(n) ?: IngredientEntity(
+            id = newId(), canonicalName = kanonisch, category = IngredientCatalog.guessCategory(kanonisch),
+            createdAt = jetzt, updatedAt = jetzt, version = 0,
+        )
         fun wert(x: Nutrient, alt: BigDecimal?) = packung.werte[x] ?: alt
         val zutat = basis.copy(
-            nutrientBasis = packung.basis,
+            nutrientBasis = packung.basis ?: NutrientBasis.PER_100_G,
             energyKj = wert(Nutrient.ENERGY_KJ, basis.energyKj), protein = wert(Nutrient.PROTEIN_G, basis.protein),
             carbs = wert(Nutrient.CARBS_G, basis.carbs), fat = wert(Nutrient.FAT_G, basis.fat), fiber = wert(Nutrient.FIBER_G, basis.fiber),
             sugar = wert(Nutrient.SUGAR_G, basis.sugar), salt = wert(Nutrient.SALT_G, basis.salt),

@@ -193,4 +193,31 @@ class TagebuchViewModelTest {
         assertEquals("4001234567890", reis.barcode)
         assertEquals("reis", db.tagebuchDao().getAll().single().zutatId)
     }
+
+    /** „Mehl“ von der Packung landet bei „Weizenmehl“ (Katalog-Synonym) statt als zweite Zutat. */
+    @Test fun packungMitSynonymAktualisiertDieStammzutat() = runBlocking {
+        val jetzt = System.currentTimeMillis()
+        db.ingredientDao().upsert(IngredientEntity(id = "wm", canonicalName = "Weizenmehl", createdAt = jetzt, updatedAt = jetzt))
+        assertEquals("wm", vm.zutatMitNamen("Mehl")?.id, "Häkchen heißt „Werte aktualisieren“")
+        val mehl = skyr.copy(name = "Mehl", werte = mapOf(de.foody.domain.Nutrient.ENERGY_KJ to BigDecimal(1450)))
+        assertTrue(vm.packungEintragen(Mahlzeit.MITTAGESSEN, "Mehl", BigDecimal(100), MeasureUnit.GRAM, mehl, alsZutat = true))
+        assertEquals(null, db.ingredientDao().findByNameExact("Mehl"), "keine zweite Zutat")
+        assertEquals(0, BigDecimal(1450).compareTo(db.ingredientDao().get("wm")!!.energyKj))
+        assertEquals("wm", db.tagebuchDao().getAll().single().zutatId)
+    }
+
+    /** Beim Tageswechsel darf kein Zustand den neuen Tag mit den Vorschlägen/Einträgen des alten zeigen (Flackern). */
+    @Test fun tageswechselZeigtKeineDatenDesVortags() = runBlocking {
+        plan.add(today, Mahlzeit.ABENDESSEN.name, curryId, 2)
+        vm.rezeptEintragen(Mahlzeit.MITTAGESSEN, curryId, BigDecimal.ONE)
+        await { it.vorschlaege[Mahlzeit.ABENDESSEN].orEmpty().size == 1 && eintraege(it).size == 1 }
+        val gesehen = java.util.Collections.synchronizedList(ArrayList<TagebuchUiState>())
+        val mitschnitt = collector.launch { vm.state.collect { gesehen += it } }
+        vm.zeigeTag(today.plusDays(1))
+        await { it.tag == today.plusDays(1) }
+        kotlinx.coroutines.delay(500)
+        mitschnitt.cancel()
+        val falsch = gesehen.filter { it.tag == today.plusDays(1) && (it.vorschlaege.isNotEmpty() || eintraege(it).isNotEmpty()) }
+        assertEquals(emptyList(), falsch.map { it.tag to it.vorschlaege.keys + it.eintraege.keys })
+    }
 }

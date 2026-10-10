@@ -60,11 +60,14 @@ sealed interface ScanAusgang {
     /** Die Zutat mit diesem Strichcode gibt es schon. */
     data class ImKatalog(val zutat: IngredientEntity) : ScanAusgang
     /** Strichcode gelesen, aber keine Werte – Foto anbieten; [strichcode] beim Speichern trotzdem merken. */
-    data class NichtGefunden(val strichcode: String, val offline: Boolean) : ScanAusgang
+    data class NichtGefunden(val strichcode: String, val grund: Grund) : ScanAusgang
     /** Foto ohne erkennbare Nährwerttabelle. */
     data class KeineTabelle(val strichcode: String?) : ScanAusgang
     data object WirdGeladen : ScanAusgang
     data object NichtVerfuegbar : ScanAusgang
     data object Abgebrochen : ScanAusgang
     data object Fehler : ScanAusgang
+
+    /** Warum ein gelesener Strichcode keine Werte brachte – bestimmt die Meldung. */
+    enum class Grund { UNBEKANNT, OFFLINE, ONLINE_AUS }
 }

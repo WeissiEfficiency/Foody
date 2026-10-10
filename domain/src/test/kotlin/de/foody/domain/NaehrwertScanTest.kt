@@ -93,7 +93,14 @@ class NaehrwertScanTest {
     @Test fun leereEingabe() {
         val e = NaehrwertScan.auswerten(emptyList())
         assertTrue(e.werte.isEmpty())
-        assertEquals(NutrientBasis.PER_100_G, e.basis)
+        assertEquals<NutrientBasis?>(null, e.basis)
+    }
+
+    /** Ohne „100 g“/„100 ml“ im Bild bleibt die Basis offen – ein Getränk würde sonst still auf Gramm gesetzt. */
+    @Test fun basisOhneAngabeBleibtOffen() {
+        val e = NaehrwertScan.auswerten(listOf(zeile("Fett 1,5 g"), zeile("Kohlenhydrate 4,8 g")))
+        assertEquals<NutrientBasis?>(null, e.basis)
+        assertEquals("1.5", e.werte.wert(Nutrient.FAT_G))
     }
 
     /** Echte ML-Kit-Ausgabe eines leicht schiefen Fotos (Emulator): „ß“ → „s“ und „g“ → „9“ sind typische Lesefehler. */
@@ -148,4 +155,11 @@ class NaehrwertScanTest {
 
     @Test fun neunAlsGrammNimmtErsteSpalte() =
         assertEquals("12", NaehrwertScan.auswerten(listOf(zeile("Zucker 12 9 3 9"), zeile("Kohlenhydrate 40 9 10 9"))).werte.wert(Nutrient.SUGAR_G))
+
+    /** Englische Packung: „1,046 kJ“ ist Tausendertrennung (Energie hat nie drei Nachkommastellen), „3,5 g“ bleibt Dezimal. */
+    @Test fun englischeTausendertrennungBeiEnergie() {
+        val e = NaehrwertScan.auswerten(listOf(zeile("Energy 1,046 kJ / 250 kcal"), zeile("Fat 3,5 g")))
+        assertEquals("1046", e.werte.wert(Nutrient.ENERGY_KJ))
+        assertEquals("3.5", e.werte.wert(Nutrient.FAT_G))
+    }
 }

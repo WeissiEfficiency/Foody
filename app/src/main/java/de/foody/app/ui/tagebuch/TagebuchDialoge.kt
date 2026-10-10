@@ -177,7 +177,7 @@ internal fun HinzufuegenDialog(mahlzeit: Mahlzeit, s: TagebuchUiState, vm: Tageb
     val pEinheit = if (packung?.basis == NutrientBasis.PER_100_ML) MeasureUnit.MILLILITER else MeasureUnit.GRAM
     val pMengeZahl = parseNichtNegativ(pMenge)?.takeIf { it.signum() > 0 }
     val pVorschau = bearbeitetePackung()?.let { p ->
-        pMengeZahl?.let { m -> Tagebuch.naehrwerteZutat(Ingredient("", name, nutrients = NutrientProfile(p.basis, p.werte)), m, pEinheit) }
+        pMengeZahl?.let { m -> Tagebuch.naehrwerteZutat(Ingredient("", name, nutrients = NutrientProfile(p.basis ?: NutrientBasis.PER_100_G, p.werte)), m, pEinheit) }
     }
     var geprueft by remember { mutableStateOf(false) }
     // Hat der Nutzer das Häkchen selbst gesetzt, gilt seine Wahl – auch wenn die Namensprüfung erst danach fertig wird
