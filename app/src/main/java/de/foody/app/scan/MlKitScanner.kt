@@ -24,9 +24,18 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
 
-/** Fehlt ein Modul der Play-Dienste, wird es nachgeladen; bis dahin meldet der Scanner „wird geladen“. */
-private fun Context.modulLaden(api: OptionalModuleApi) {
-    ModuleInstall.getClient(this).installModules(ModuleInstallRequest.newBuilder().addApi(api).build())
+/**
+ * Fehlt ein Modul der Play-Dienste, wird es nachgeladen; `true`, wenn der Download angenommen wurde (bis dahin meldet
+ * der Scanner „wird geladen“). Lehnen die Play-Dienste ab (offline, kein Speicher, …), `false` – sonst stünde dauerhaft
+ * „wird vorbereitet“ da, obwohl nichts geladen wird.
+ */
+private suspend fun Context.modulLaden(api: OptionalModuleApi): Boolean = try {
+    ModuleInstall.getClient(this).installModules(ModuleInstallRequest.newBuilder().addApi(api).build()).await()
+    true
+} catch (e: CancellationException) {
+    throw e
+} catch (_: Exception) {
+    false
 }
 
 @Singleton
@@ -49,8 +58,7 @@ class MlKitTabellenScanner @Inject constructor(@ApplicationContext private val c
     } catch (e: CancellationException) {
         throw e
     } catch (e: MlKitException) {
-        if (e.errorCode == MlKitException.UNAVAILABLE) {
-            context.modulLaden(erkenner)
+        if (e.errorCode == MlKitException.UNAVAILABLE && context.modulLaden(erkenner)) {
             ScanStatus.WirdGeladen
         } else {
             ScanStatus.Fehler
@@ -68,7 +76,7 @@ class GmsStrichcodeLeser @Inject constructor(@ApplicationContext private val con
             .setBarcodeFormats(Barcode.FORMAT_EAN_13, Barcode.FORMAT_EAN_8, Barcode.FORMAT_UPC_A, Barcode.FORMAT_UPC_E)
             .build()
         val scanner = GmsBarcodeScanning.getClient(context, optionen)
-        return suspendCancellableCoroutine { cont ->
+        val status = suspendCancellableCoroutine { cont ->
             scanner.startScan()
                 .addOnSuccessListener { b ->
                     val code = b.rawValue?.filter(Char::isDigit).orEmpty()
@@ -76,13 +84,12 @@ class GmsStrichcodeLeser @Inject constructor(@ApplicationContext private val con
                 }
                 .addOnCanceledListener { cont.resume(StrichcodeStatus.Abgebrochen) }
                 .addOnFailureListener { e ->
-                    if (e is MlKitException && e.errorCode == MlKitException.UNAVAILABLE) {
-                        context.modulLaden(scanner)
-                        cont.resume(StrichcodeStatus.WirdGeladen)
-                    } else {
-                        cont.resume(StrichcodeStatus.Fehler)
-                    }
+                    val fehlt = e is MlKitException && e.errorCode == MlKitException.UNAVAILABLE
+                    cont.resume(if (fehlt) StrichcodeStatus.WirdGeladen else StrichcodeStatus.Fehler)
                 }
         }
+        // Modul fehlt: nachladen anstoßen; klappt das nicht, ist es ein Fehler statt „wird vorbereitet“.
+        if (status == StrichcodeStatus.WirdGeladen && !context.modulLaden(scanner)) return StrichcodeStatus.Fehler
+        return status
     }
 }
