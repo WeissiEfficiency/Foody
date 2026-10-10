@@ -1,5 +1,6 @@
 package de.foody.app.ui.ingredients
 
+import androidx.compose.runtime.key
 import de.foody.app.scan.Packung
 import de.foody.app.scan.PackungScan
 import de.foody.app.ui.common.PackungScanKnopf
@@ -108,16 +109,20 @@ fun IngredientsScreen(onBack: () -> Unit, vm: IngredientsViewModel = hiltViewMod
     }
     val editing = list.firstOrNull { it.id == editingId }
     if (editing != null || creating) {
-        IngredientDialog(
-            initial = editing,
-            scan = vm.scan,
-            onDismiss = { editingId = null; creating = false },
-            onSave = { vm.save(it); editingId = null; creating = false },
-            onDelete = editing?.let { e -> { vm.delete(e.id); editingId = null } },
-            onMerge = editing?.let { e -> { mergingId = e.id; editingId = null } },
-            // Strichcode gehört schon zu einer Zutat: diese öffnen statt eine Dublette anzulegen
-            onImKatalog = { z -> creating = false; editingId = z.id },
-        )
+        // Eigene Zustände je Zutat: Springt der Dialog per Strichcode auf eine vorhandene Zutat, darf er deren Felder
+        // nicht mit dem halb ausgefüllten alten Formular überschreiben
+        key(editingId ?: "neu") {
+            IngredientDialog(
+                initial = editing,
+                scan = vm.scan,
+                onDismiss = { editingId = null; creating = false },
+                onSave = { vm.save(it); editingId = null; creating = false },
+                onDelete = editing?.let { e -> { vm.delete(e.id); editingId = null } },
+                onMerge = editing?.let { e -> { mergingId = e.id; editingId = null } },
+                // Strichcode gehört schon zu einer Zutat: diese öffnen statt eine Dublette anzulegen
+                onImKatalog = { z -> creating = false; editingId = z.id },
+            )
+        }
     }
     val merging = list.firstOrNull { it.id == mergingId }
     if (merging != null) {

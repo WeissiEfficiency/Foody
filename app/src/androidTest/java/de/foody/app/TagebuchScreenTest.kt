@@ -9,10 +9,12 @@ import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import de.foody.app.ui.tagebuch.HinzufuegenDialog
 import de.foody.domain.Mahlzeit
 import kotlin.test.assertEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -157,11 +159,18 @@ class TagebuchScreenTest {
         compose.onNodeWithText("Strichcode scannen").performClick()
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("Als Zutat im Katalog speichern")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(hasSetTextAction() and hasText("Skyr")).assertExists()
+        // Abgewähltes Häkchen bleibt aus, auch wenn danach der Name geändert wird
+        compose.onNodeWithText("Als Zutat im Katalog speichern").performClick()
+        compose.onNode(hasSetTextAction() and hasText("Skyr")).performTextReplacement("Skyr Natur")
+        compose.waitForIdle()
+        compose.onNode(androidx.compose.ui.test.isToggleable()).assertIsOff()
+        compose.onNodeWithText("Als Zutat im Katalog speichern").performClick()
         compose.onNode(hasSetTextAction() and hasText("Menge", substring = true)).performTextInput("150")
         compose.onNodeWithText("≈ 93 kcal").assertExists()
         compose.onNodeWithText("Hinzufügen").performClick()
         compose.waitUntil(5_000) { runBlocking { db.tagebuchDao().getAll().isNotEmpty() } }
-        assertEquals("4001234567890", runBlocking { db.ingredientDao().findByNameExact("Skyr") }?.barcode)
+        val angelegt = runBlocking { db.ingredientDao().getAll() }.filter { it.barcode != null }.map { it.canonicalName to it.barcode }
+        assertEquals(listOf("Skyr Natur" to "4001234567890"), angelegt, "angelegte Zutaten mit Strichcode")
         mitScan.aufraeumen()
     }
 }

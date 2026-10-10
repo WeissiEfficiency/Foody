@@ -43,7 +43,7 @@ class MlKitTabellenScanner @Inject constructor(@ApplicationContext private val c
     override suspend fun scan(bildUri: String): ScanStatus = try {
         val text = erkenner.process(InputImage.fromFilePath(context, Uri.parse(bildUri))).await()
         val elemente = text.textBlocks.flatMap { block ->
-            block.lines.mapNotNull { zeile -> zeile.boundingBox?.let { OcrElement(zeile.text, it.left, it.top, it.bottom) } }
+            block.lines.mapNotNull { zeile -> zeile.boundingBox?.let { OcrElement(zeile.text, it.left, it.top, it.bottom, zeile.angle) } }
         }
         ScanStatus.Erkannt(NaehrwertScan.auswerten(elemente))
     } catch (e: CancellationException) {

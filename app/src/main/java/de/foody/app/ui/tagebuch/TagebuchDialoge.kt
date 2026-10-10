@@ -1,5 +1,7 @@
 package de.foody.app.ui.tagebuch
 
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.Checkbox
 import androidx.compose.runtime.LaunchedEffect
 import de.foody.app.scan.Packung
@@ -177,11 +179,17 @@ internal fun HinzufuegenDialog(mahlzeit: Mahlzeit, s: TagebuchUiState, vm: Tageb
     val pVorschau = bearbeitetePackung()?.let { p ->
         pMengeZahl?.let { m -> Tagebuch.naehrwerteZutat(Ingredient("", name, nutrients = NutrientProfile(p.basis, p.werte)), m, pEinheit) }
     }
+    var geprueft by remember { mutableStateOf(false) }
+    // Hat der Nutzer das Häkchen selbst gesetzt, gilt seine Wahl – auch wenn die Namensprüfung erst danach fertig wird
+    var vomNutzer by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(name, packung) {
         if (packung != null) {
-            vorhanden = vm.zutatMitNamen(name)?.canonicalName
-            // Vorhandene Zutat nicht still überschreiben: dann ist „aktualisieren“ standardmäßig aus
-            alsZutat = vorhanden == null
+            val neu = vm.zutatMitNamen(name)?.canonicalName
+            // Vorschlag nur beim ersten Mal und wenn sich „gibt es schon“ ändert, nicht bei jedem Tastendruck.
+            // Vorhandene Zutat nicht still überschreiben: dann ist „aktualisieren“ standardmäßig aus.
+            if (!vomNutzer && (!geprueft || neu != vorhanden)) alsZutat = neu == null
+            vorhanden = neu
+            geprueft = true
         }
     }
 
@@ -261,8 +269,11 @@ internal fun HinzufuegenDialog(mahlzeit: Mahlzeit, s: TagebuchUiState, vm: Tageb
                             Text(stringResource(R.string.tagebuch_vorschau, kcalText(it, pVorschau.vollstaendig)),
                                 style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                         }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(alsZutat, { alsZutat = it })
+                        Row(
+                            Modifier.fillMaxWidth().toggleable(alsZutat, role = Role.Checkbox) { alsZutat = it; vomNutzer = true },
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Checkbox(alsZutat, null)
                             Text(
                                 vorhanden?.let { stringResource(R.string.tagebuch_zutat_aktualisieren, it) } ?: stringResource(R.string.tagebuch_als_zutat),
                                 style = MaterialTheme.typography.bodyMedium,

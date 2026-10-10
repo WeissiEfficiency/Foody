@@ -4,7 +4,8 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 /** Ein erkanntes Textelement (eine ML-Kit-Zeile) mit Position in Pixeln – ohne Android-Typen. */
-data class OcrElement(val text: String, val links: Int, val oben: Int, val unten: Int) {
+/** [winkel]: Neigung der Textzeile in Grad (ML Kit `Line.angle`); 0 = waagerecht. */
+data class OcrElement(val text: String, val links: Int, val oben: Int, val unten: Int, val winkel: Float = 0f) {
     val mitte: Int get() = (oben + unten) / 2
     val hoehe: Int get() = unten - oben
 }
@@ -27,7 +28,8 @@ object NaehrwertScan {
         Regel(Nutrient.FIBER_G, listOf("ballaststoff", "fibre", "fiber")),
         Regel(Nutrient.CARBS_G, listOf("kohlenhydrat", "carbohydrate")),
         Regel(Nutrient.FAT_G, listOf("fett", "fat"), ausschluss = listOf("gesättigt", "gesaettigt", "saturated", "fettsäure", "fettsaeure")),
-        Regel(Nutrient.PROTEIN_G, listOf("eiweiß", "eiweiss", "protein")),
+        // „eiwei“ deckt „Eiweiß“, „Eiweiss“ und den häufigen Lesefehler „Eiweis“ ab
+        Regel(Nutrient.PROTEIN_G, listOf("eiwei", "protein")),
         Regel(Nutrient.SALT_G, listOf("salz", "salt")),
         Regel(Nutrient.ENERGY_KJ, listOf("brennwert", "energie", "energy")),
     )
@@ -38,6 +40,8 @@ object NaehrwertScan {
 
     /** Zahl mit Einheit, z. B. „1.234 kJ“, „3,5 g“, „<0,5 g“, „12mg“. */
     private val zahlMitEinheit = Regex("""(<\s*)?(\d+(?:[.  ]\d{3})*(?:[.,]\d+)?)\s*(kj|kcal|mg|g)\b""", RegexOption.IGNORE_CASE)
+    /** Lesefehler „12 9“ statt „12 g“: eine allein stehende 9 hinter der Zahl gilt als Gramm; die erste zählt (je 100 g). */
+    private val neunAlsGramm = Regex("""(<\s*)?(\d+(?:[.,]\d+)?)\s+9(?=\s|$)""")
     private val spuren = Regex("""\b(spuren|trace|traces)\b""", RegexOption.IGNORE_CASE)
 
     fun auswerten(elemente: List<OcrElement>): ScanErgebnis {
@@ -66,14 +70,20 @@ object NaehrwertScan {
         return ok
     }
 
-    /** Elemente gleicher Höhe (Mitte innerhalb der halben mittleren Zeilenhöhe) bilden eine Zeile, links nach rechts. */
+    /**
+     * Elemente gleicher Höhe (Mitte innerhalb der halben mittleren Zeilenhöhe) bilden eine Zeile, links nach rechts.
+     * Bei schiefem Foto liegt die Wertspalte höher oder tiefer als ihre Bezeichnung; die Höhen werden deshalb mit dem
+     * mittleren Neigungswinkel der Zeilen auf die linke Kante zurückgerechnet.
+     */
     private fun zeilen(elemente: List<OcrElement>): List<String> {
         if (elemente.isEmpty()) return emptyList()
         val toleranz = maxOf(1, elemente.map { it.hoehe }.sorted()[elemente.size / 2] / 2)
+        val steigung = kotlin.math.tan(Math.toRadians(elemente.map { it.winkel }.sorted()[elemente.size / 2].toDouble()))
+        fun hoehe(e: OcrElement) = e.mitte - steigung * e.links
         val gruppen = mutableListOf<MutableList<OcrElement>>()
-        for (e in elemente.sortedBy { it.mitte }) {
+        for (e in elemente.sortedBy(::hoehe)) {
             val g = gruppen.lastOrNull()
-            if (g != null && kotlin.math.abs(e.mitte - g.map { it.mitte }.average().toInt()) <= toleranz) g += e else gruppen += mutableListOf(e)
+            if (g != null && kotlin.math.abs(hoehe(e) - g.map(::hoehe).average()) <= toleranz) g += e else gruppen += mutableListOf(e)
         }
         return gruppen.map { g -> g.sortedBy { it.links }.joinToString(" ") { it.text } }
     }
@@ -87,6 +97,7 @@ object NaehrwertScan {
         }
         zahlen.firstOrNull { it.first == "g" }?.let { return it.second }
         zahlen.firstOrNull { it.first == "mg" }?.let { return it.second.divide(BigDecimal(1000)) }
+        neunAlsGramm.find(text)?.let { return zahl(it.groupValues[2]) }
         return if (spuren.containsMatchIn(text)) BigDecimal.ZERO else null
     }
 
