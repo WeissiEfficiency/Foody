@@ -24,11 +24,13 @@ private class MissingKeyException : Exception()
  * `AndroidKeyStore` (Alias `foody_sync_token`), `iv:Chiffrat` (Base64) in den SharedPreferences `foody_sync`.
  * Ist der Eintrag nicht entschlüsselbar, liefert [load] `null`; gelöscht wird er nur, wenn er endgültig
  * unbrauchbar ist (falsches Format, Prüfsumme, Schlüssel weg), nicht bei vorübergehenden Keystore-Fehlern.
- * Das Token wird nie geloggt.
+ * Das Token wird nie geloggt. Die API liest das Token bei jeder Anfrage; damit nicht jedes Mal der Keystore entschlüsselt,
+ * bleibt das zuletzt entschlüsselte Paar (gespeicherter Wert → Token) im Speicher, solange der gespeicherte Wert gleich ist.
  */
 @Singleton
 open class TokenStore @Inject constructor(@ApplicationContext context: Context) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private var cached: Pair<String, String>? = null
 
     @Synchronized
     open fun save(token: String) {
@@ -41,13 +43,15 @@ open class TokenStore @Inject constructor(@ApplicationContext context: Context) 
         }
         // commit statt apply: Nach dem Anmelden darf das Token nicht verloren gehen.
         check(prefs.edit().putString(KEY_TOKEN, encoded).commit()) { "Token konnte nicht gespeichert werden" }
+        cached = encoded to token
     }
 
     @Synchronized
     open fun load(): String? {
         val stored = prefs.getString(KEY_TOKEN, null) ?: return null
+        cached?.takeIf { it.first == stored }?.let { return it.second }
         return try {
-            decrypt(stored)
+            decrypt(stored).also { cached = stored to it }
         } catch (e: Exception) {
             // Nur bei endgültig unbrauchbarem Eintrag löschen; vorübergehende Keystore-Fehler lassen ihn stehen.
             if (isPermanent(e)) prefs.edit().remove(KEY_TOKEN).commit()
@@ -60,6 +64,7 @@ open class TokenStore @Inject constructor(@ApplicationContext context: Context) 
 
     @Synchronized
     open fun clear() {
+        cached = null
         prefs.edit().remove(KEY_TOKEN).commit()
     }
 
