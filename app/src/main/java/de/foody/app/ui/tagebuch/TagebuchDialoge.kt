@@ -86,7 +86,7 @@ internal fun PortionenStepper(wert: BigDecimal, onChange: (BigDecimal) -> Unit) 
 
 @Composable
 internal fun PortionenDialog(name: String, onDismiss: () -> Unit, onConfirm: (BigDecimal) -> Unit) {
-    var portionen by remember { mutableStateOf(BigDecimal.ONE) }
+    var portionen by rememberSaveable { mutableStateOf(BigDecimal.ONE) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(name) },
@@ -107,7 +107,7 @@ internal fun HinzufuegenDialog(mahlzeit: Mahlzeit, s: TagebuchUiState, vm: Tageb
     var rezeptId by rememberSaveable { mutableStateOf<String?>(null) }
     var alle by rememberSaveable { mutableStateOf(false) }
     var suche by rememberSaveable { mutableStateOf("") }
-    var portionen by remember { mutableStateOf(BigDecimal.ONE) }
+    var portionen by rememberSaveable { mutableStateOf(BigDecimal.ONE) }
     // Zutat
     var zutatId by rememberSaveable { mutableStateOf<String?>(null) }
     var zutatSuche by rememberSaveable { mutableStateOf("") }
@@ -133,6 +133,8 @@ internal fun HinzufuegenDialog(mahlzeit: Mahlzeit, s: TagebuchUiState, vm: Tageb
     val kcalZahl = kcal.toIntOrNull()?.takeIf { it > 0 }
 
     val aktiv = Reiter.entries[reiter]
+    // Gegen Doppeltipp: nach dem ersten Tipp gesperrt, bis das Speichern fertig ist
+    var sendet by remember { mutableStateOf(false) }
     val kannHinzufuegen = when (aktiv) {
         Reiter.REZEPT -> gewaehltesRezept != null
         Reiter.ZUTAT -> zutatId != null && mengeZahl != null
@@ -200,11 +202,12 @@ internal fun HinzufuegenDialog(mahlzeit: Mahlzeit, s: TagebuchUiState, vm: Tageb
             }
         },
         confirmButton = {
-            TextButton(enabled = kannHinzufuegen, onClick = {
+            TextButton(enabled = kannHinzufuegen && !sendet, onClick = {
+                sendet = true
                 when (aktiv) {
                     Reiter.REZEPT -> { vm.rezeptEintragen(mahlzeit, gewaehltesRezept!!, portionen); onDismiss() }
                     Reiter.ZUTAT -> scope.launch {
-                        if (vm.zutatEintragen(mahlzeit, zutatId!!, mengeZahl!!, einheit)) onDismiss() else keineWerte = true
+                        if (vm.zutatEintragen(mahlzeit, zutatId!!, mengeZahl!!, einheit)) onDismiss() else { keineWerte = true; sendet = false }
                     }
                     Reiter.FREI -> {
                         vm.freiEintragen(mahlzeit, name, kcalZahl!!, parseNichtNegativ(eiweiss), parseNichtNegativ(kh), parseNichtNegativ(fett))
@@ -235,12 +238,12 @@ private fun Auswahlliste(eintraege: List<Pair<String, String>>, gewaehlt: String
 /** Bearbeiten: Portionen bzw. Menge, bei freien Einträgen Name und kcal; Mahlzeit immer. */
 @Composable
 internal fun BearbeitenDialog(e: TagebuchEintragEntity, onDismiss: () -> Unit, onSave: (TagebuchEintragEntity) -> Unit) {
-    var mahlzeit by remember { mutableStateOf(Mahlzeit.ausText(e.mahlzeit) ?: Mahlzeit.ABENDESSEN) }
-    var portionen by remember { mutableStateOf(e.portionen ?: BigDecimal.ONE) }
-    var menge by remember { mutableStateOf(e.menge?.stripTrailingZeros()?.toPlainString()?.replace('.', ',').orEmpty()) }
-    var name by remember { mutableStateOf(e.name) }
+    var mahlzeit by rememberSaveable(e.id) { mutableStateOf(Mahlzeit.ausText(e.mahlzeit) ?: Mahlzeit.ABENDESSEN) }
+    var portionen by rememberSaveable(e.id) { mutableStateOf(e.portionen ?: BigDecimal.ONE) }
+    var menge by rememberSaveable(e.id) { mutableStateOf(e.menge?.stripTrailingZeros()?.toPlainString()?.replace('.', ',').orEmpty()) }
+    var name by rememberSaveable(e.id) { mutableStateOf(e.name) }
     val anfangsKcal = e.energieKj?.let { de.foody.domain.Naehrwerte(it, null, null, null, true).kcal }
-    var kcal by remember { mutableStateOf(anfangsKcal?.toString().orEmpty()) }
+    var kcal by rememberSaveable(e.id) { mutableStateOf(anfangsKcal?.toString().orEmpty()) }
     val ok = when (e.art) {
         TagebuchArt.REZEPT -> true
         TagebuchArt.ZUTAT -> parseNichtNegativ(menge)?.signum() == 1
