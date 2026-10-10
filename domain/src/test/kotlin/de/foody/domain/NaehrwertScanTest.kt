@@ -123,4 +123,29 @@ class NaehrwertScanTest {
         assertEquals("9", NaehrwertScan.auswerten(listOf(zeile("Fett 9 g"))).werte.wert(Nutrient.FAT_G))
         assertEquals("0.5", NaehrwertScan.auswerten(listOf(zeile("Salz 0,5 9"))).werte.wert(Nutrient.SALT_G))
     }
+
+    /**
+     * Stärker schiefes Foto: Die Wertspalte liegt um fast eine Zeilenhöhe höher als ihre Bezeichnung. Mit dem
+     * Neigungswinkel der Zeilen (ML Kit `Line.angle`) werden die Höhen entzerrt, sonst rutschen Werte eine Zeile weiter.
+     */
+    @Test fun schiefesFotoMitWinkel() {
+        val winkel = -3.8f // Grad; rechts höher als links
+        val hoehe = 30
+        val abstand = 40
+        val versatz = (kotlin.math.tan(Math.toRadians(winkel.toDouble())) * 390).toInt() // ≈ -26 px bei 390 px Abstand
+        val zeilen = listOf("Energie" to "1500 kJ", "Fett" to "3,5 g", "Kohlenhydrate" to "45 g", "Eiweiß" to "8 g", "Salz" to "1 g")
+        val elemente = zeilen.flatMapIndexed { i, (l, v) ->
+            val y = 100 + i * abstand
+            listOf(OcrElement(l, 10, y, y + hoehe, winkel), OcrElement(v, 400, y + versatz, y + versatz + hoehe, winkel))
+        }
+        val e = NaehrwertScan.auswerten(elemente)
+        assertEquals("1500", e.werte.wert(Nutrient.ENERGY_KJ))
+        assertEquals("3.5", e.werte.wert(Nutrient.FAT_G))
+        assertEquals("45", e.werte.wert(Nutrient.CARBS_G))
+        assertEquals("8", e.werte.wert(Nutrient.PROTEIN_G))
+        assertEquals("1", e.werte.wert(Nutrient.SALT_G))
+    }
+
+    @Test fun neunAlsGrammNimmtErsteSpalte() =
+        assertEquals("12", NaehrwertScan.auswerten(listOf(zeile("Zucker 12 9 3 9"), zeile("Kohlenhydrate 40 9 10 9"))).werte.wert(Nutrient.SUGAR_G))
 }
