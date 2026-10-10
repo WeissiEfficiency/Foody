@@ -21,6 +21,7 @@ import de.foody.app.data.db.RecipeIngredientEntity
 import de.foody.app.data.db.ShoppingItemEntity
 import de.foody.app.data.db.ShoppingItemSourceEntity
 import de.foody.app.data.db.ShoppingListEntity
+import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.domain.NutrientBasis
 import kotlinx.coroutines.Dispatchers
@@ -62,6 +63,8 @@ data class BackupDto(
         val favorite: Boolean = false, val sourceUrl: String? = null,
         // Seit DB v3
         val rating: Int? = null,
+        // Seit DB v7
+        val mahlzeiten: String? = null, val gaenge: String? = null,
     )
     @Serializable data class RecipeIngredient(
         val id: String, val recipeId: String, val ingredientId: String, val amount: String, val unit: String,
@@ -197,7 +200,7 @@ class BackupRepository @Inject constructor(
                     it.energyKj.s(), it.protein.s(), it.carbs.s(), it.fat.s(), it.fiber.s(), it.sugar.s(), it.salt.s(), it.nutrientSource, it.createdAt, it.updatedAt)
             },
             recipes = r.getAll().map {
-                BackupDto.Recipe(it.id, it.name, it.defaultServings, it.prepMinutes, it.cookMinutes, it.imageUri, it.notes, it.tags, it.archivedAt, it.createdAt, it.updatedAt, it.favorite, it.sourceUrl, it.rating)
+                BackupDto.Recipe(it.id, it.name, it.defaultServings, it.prepMinutes, it.cookMinutes, it.imageUri, it.notes, it.tags, it.archivedAt, it.createdAt, it.updatedAt, it.favorite, it.sourceUrl, it.rating, it.mahlzeiten, it.gaenge)
             },
             recipeIngredients = r.getAllIngredients().map {
                 BackupDto.RecipeIngredient(it.id, it.recipeId, it.ingredientId, it.amount.toPlainString(), it.unit.name, it.sortOrder, it.preparationNote, it.optional)
@@ -234,7 +237,7 @@ class BackupRepository @Inject constructor(
                     id = it.id, name = it.name, defaultServings = it.servings, prepMinutes = it.prep, cookMinutes = it.cook,
                     imageUri = it.imageUri, notes = it.notes, tags = it.tags, archivedAt = it.archivedAt,
                     createdAt = it.createdAt, updatedAt = it.updatedAt, favorite = it.favorite, sourceUrl = it.sourceUrl,
-                    rating = it.rating,
+                    rating = it.rating, mahlzeiten = it.mahlzeiten, gaenge = it.gaenge,
                 ),
             )
         }
@@ -245,7 +248,7 @@ class BackupRepository @Inject constructor(
         d.mealSlots.forEach {
             db.mealPlanDao().upsert(
                 MealSlotEntity(
-                    id = it.id, date = LocalDate.parse(it.date), slotType = it.slotType, recipeId = it.recipeId, servings = it.servings,
+                    id = it.id, date = LocalDate.parse(it.date), slotType = Mahlzeit.ausText(it.slotType)?.name ?: it.slotType, recipeId = it.recipeId, servings = it.servings,
                     cookedAt = it.cookedAt, createdAt = it.createdAt, updatedAt = it.updatedAt,
                 ),
             )

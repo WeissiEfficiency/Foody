@@ -9,6 +9,7 @@ import de.foody.app.data.db.RecipeIngredientEntity
 import de.foody.app.data.db.ShoppingItemEntity
 import de.foody.app.data.db.ShoppingItemSourceEntity
 import de.foody.app.data.db.ShoppingListEntity
+import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.domain.NutrientBasis
 import de.foody.sync.protocol.IngredientPayload
@@ -103,6 +104,8 @@ object SyncMapper {
         favorite = r.favorite,
         sourceUrl = r.sourceUrl,
         rating = r.rating,
+        mahlzeiten = r.mahlzeiten,
+        gaenge = r.gaenge,
         lines = lines.map {
             RecipePayload.Line(
                 id = it.id,
@@ -166,6 +169,8 @@ object SyncMapper {
             favorite = p.favorite,
             sourceUrl = p.sourceUrl,
             rating = p.rating,
+            mahlzeiten = p.mahlzeiten,
+            gaenge = p.gaenge,
         ),
         lines = p.lines.map {
             RecipeIngredientEntity(
@@ -196,7 +201,8 @@ object SyncMapper {
     fun mealSlot(id: String, p: MealSlotPayload, updatedAt: Long, existing: MealSlotEntity?) = MealSlotEntity(
         id = id,
         date = LocalDate.parse(p.date),
-        slotType = p.slotType,
+        // Ältere Geräte senden noch Freitext („Abendessen“): auf den festen Schlüssel abbilden
+        slotType = Mahlzeit.ausText(p.slotType)?.name ?: p.slotType,
         recipeId = p.recipeId,
         servings = p.servings,
         cookedAt = p.cookedAt,
