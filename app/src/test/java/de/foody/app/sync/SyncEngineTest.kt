@@ -39,6 +39,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -99,6 +100,7 @@ class SyncEngineTest {
     private lateinit var api: FakeSyncApi
     private lateinit var engine: SyncEngine
     private lateinit var photoStore: RecipePhotoStore
+    private lateinit var store: SyncLocalStore
 
     @Before
     fun setUp() = runTest {
@@ -109,7 +111,8 @@ class SyncEngineTest {
         api = FakeSyncApi()
         photoStore = RecipePhotoStore(RuntimeEnvironment.getApplication(), db.recipeDao())
         val photoIndex = PhotoIndex(db, photoStore)
-        engine = SyncEngine(db, SyncLocalStore(db, photoIndex), SyncApplier(db, photoIndex), api, Clock.systemUTC(), photoIndex, photoStore)
+        store = SyncLocalStore(db, photoIndex)
+        engine = SyncEngine(db, store, SyncApplier(db, photoIndex), api, Clock.systemUTC(), photoIndex, photoStore)
     }
 
     @After
@@ -816,5 +819,31 @@ class SyncEngineTest {
         assertEquals(SyncOutcome.Failed(true, "cursor_stuck"), engine.run())
         assertEquals(1, api.pulls.size)
         assertEquals("transient: cursor_stuck", db.syncDao().getState()!!.lastError)
+    }
+
+    /** „Trennen“ während eines Laufs: Was der Lauf noch schreibt, darf das Aufräumen nicht überdauern. */
+    @Test
+    fun deactivateWaitsForRunningSyncAndClearsPhotoWishes() = runTest {
+        activate()
+        val pullStarted = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val release = kotlinx.coroutines.CompletableDeferred<Unit>()
+        api.onPull = {
+            pullStarted.complete(Unit)
+            release.await()
+            PullResponse(listOf(ingredientRecord("a", "A", 4), photoRecord("r1", PhotoHash.of(jpeg(9)), rev = 5)), 10, false)
+        }
+        val run = launch { engine.run() }
+        pullStarted.await()
+        val deactivate = launch(kotlinx.coroutines.Dispatchers.Default) { store.deactivate() }
+        // Ohne Warten wäre das Aufräumen hier schon fertig; mit Warten läuft es erst nach dem Lauf.
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            kotlinx.coroutines.withTimeoutOrNull(500) { deactivate.join() }
+        }
+        release.complete(Unit)
+        run.join()
+        deactivate.join()
+        assertNull(db.syncDao().revOf("ingredient", "a"))
+        assertEquals(emptyList(), db.syncDao().photosWanted())
+        assertFalse(db.syncDao().getState()!!.active)
     }
 }

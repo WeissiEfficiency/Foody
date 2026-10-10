@@ -9,6 +9,8 @@ import de.foody.sync.protocol.Protocol
 import de.foody.sync.protocol.RecordType
 import de.foody.sync.protocol.SyncRecord
 import java.util.Optional
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -31,6 +33,12 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
     private val dao get() = db.syncDao()
 
     /**
+     * Ein Sync-Lauf zur Zeit, über alle Engines hinweg (auch nach einem Wechsel der Server-Adresse). [deactivate] wartet
+     * darauf, damit ein laufender Abgleich nach dem Aufräumen keine Revisionen, Probleme oder Foto-Wünsche zurückschreibt.
+     */
+    val runLock = Mutex()
+
+    /**
      * Schaltet den Sync ein (Cursor zurück auf 0). Mit [uploadExisting] werden zusätzlich alle vorhandenen
      * Datensätze zum Senden vorgemerkt. Alles in einer Transaktion.
      */
@@ -50,14 +58,18 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
         }
     }
 
-    /** Schaltet den Sync aus und verwirft Outbox, Revisionen und Probleme. */
-    suspend fun deactivate() {
+    /**
+     * Schaltet den Sync aus und verwirft Outbox, Revisionen, Probleme und Foto-Wünsche (ein späteres Verbinden holt alles
+     * ab Cursor 0 und legt die Wünsche neu an). Wartet auf einen laufenden Abgleich.
+     */
+    suspend fun deactivate() = runLock.withLock {
         db.withTransaction {
             val state = dao.getState() ?: SyncStateEntity()
             dao.upsertState(state.copy(active = false, serverUrl = null, householdId = null, cursor = 0, lastError = null))
             dao.clearOutbox()
             dao.clearRevs()
             dao.clearProblems()
+            dao.clearPhotosWanted()
         }
     }
 

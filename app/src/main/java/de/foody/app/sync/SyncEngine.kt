@@ -24,7 +24,6 @@ import java.time.Clock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerializationException
 
@@ -55,12 +54,11 @@ class SyncEngine(
     private val photoStore: RecipePhotoStore,
 ) {
     private val dao get() = db.syncDao()
-    private val mutex = Mutex()
 
-    /** `true`, solange [run] läuft (Mutex gehalten); billig, ohne Suspend. */
-    val isRunning: Boolean get() = mutex.isLocked
+    /** `true`, solange ein Lauf die Sperre hält ([SyncLocalStore.runLock]); billig, ohne Suspend. */
+    val isRunning: Boolean get() = store.runLock.isLocked
 
-    suspend fun run(): SyncOutcome = mutex.withLock {
+    suspend fun run(): SyncOutcome = store.runLock.withLock {
         val state = dao.getState()
         if (state == null || !state.active) return@withLock SyncOutcome.Success(0, 0, 0)
         try {

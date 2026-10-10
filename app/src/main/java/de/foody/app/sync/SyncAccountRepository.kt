@@ -139,8 +139,9 @@ class SyncAccountRepository @Inject constructor(
             // Auch bei Abbruch (z. B. Bildschirm verlassen) vollständig lokal trennen.
             kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
                 tokenStore.clear()
-                localStore.deactivate()
+                // Erst die Aufträge abbrechen: deactivate wartet auf einen laufenden Abgleich.
                 scheduler.cancelAll()
+                localStore.deactivate()
             }
         }
     }
