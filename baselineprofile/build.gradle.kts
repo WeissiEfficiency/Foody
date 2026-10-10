@@ -1,10 +1,12 @@
 // Erzeugt das Baseline-Profil für :app – die Liste der Methoden, die beim Start und in den Haupt-Tabs gebraucht
 // werden. ART kompiliert sie schon bei der Installation vorab, statt sie erst beim Benutzen zu interpretieren.
 //
-// Neu erzeugen (Emulator/Gerät mit Android 13+ verbunden):
-//   ./gradlew :app:generateReleaseBaselineProfile
-// Ergebnis: app/src/release/generated/baselineProfiles/baseline-prof.txt – wird eingecheckt; normale Builds
-// und die CI brauchen dafür kein Gerät.
+// Neu erzeugen (genau ein Emulator/Gerät mit Android 13+ verbunden – nie eines mit echten Daten):
+//   ./gradlew :baselineprofile:connectedNonMinifiedReleaseAndroidTest //     -Pandroid.testInstrumentationRunnerArguments.class=de.foody.baselineprofile.BaselineProfileGenerator //     -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile //     -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true
+//   adb pull /sdcard/Android/media/de.foody.baselineprofile/additional_test_output/BaselineProfileGenerator_generate-startup-prof.txt //     app/src/release/generated/baselineProfiles/baseline-prof.txt
+//   adb uninstall de.foody.baselineprofile
+// (`:app:generateReleaseBaselineProfile` meldet zwar Erfolg, mit Benchmark 1.5 und AGP 9.4 wird die Datei aber vor
+// dem Abholen mit der Test-App gelöscht.) Die Datei wird eingecheckt; normale Builds und die CI brauchen kein Gerät.
 plugins {
     alias(libs.plugins.android.test)
     alias(libs.plugins.baselineprofile)
