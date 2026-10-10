@@ -40,8 +40,24 @@ private suspend fun Context.modulLaden(api: OptionalModuleApi): Boolean = try {
 
 @Singleton
 class GooglePlayDienste @Inject constructor(@ApplicationContext private val context: Context) : PlayDienste {
+    private var vorgeladen = false
+
     override fun verfuegbar(): Boolean =
         GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS
+
+    /**
+     * `deferredInstall`: Die Play-Dienste laden Code Scanner und Texterkennung, wenn es passt (unauffällig, ohne Dialog);
+     * fehlen sie noch beim ersten Scan, greift weiterhin `modulLaden`. Einmal je Prozess genügt.
+     */
+    @Synchronized
+    override fun vorladen() {
+        if (vorgeladen) return
+        vorgeladen = true
+        val scanner = GmsBarcodeScanning.getClient(context)
+        val text = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        ModuleInstall.getClient(context).deferredInstall(scanner, text)
+            .addOnCompleteListener { text.close() }
+    }
 }
 
 /** Texterkennung auf dem Gerät (ML Kit über die Play-Dienste); das Bild verlässt das Gerät nicht. */

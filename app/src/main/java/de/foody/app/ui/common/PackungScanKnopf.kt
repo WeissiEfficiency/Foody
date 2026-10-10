@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +59,8 @@ fun PackungScanKnopf(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val verfuegbar = remember { scan.verfuegbar }
+    // Sobald der Knopf zu sehen ist (Zutaten-Dialog, Reiter „Frei“): Module im Hintergrund vorladen lassen
+    LaunchedEffect(Unit) { scan.vorladen() }
     var menu by remember { mutableStateOf(false) }
     var laeuft by remember { mutableStateOf(false) }
     var meldung by rememberSaveable { mutableStateOf<Int?>(null) }
