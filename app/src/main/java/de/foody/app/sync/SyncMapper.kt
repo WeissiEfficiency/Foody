@@ -65,6 +65,7 @@ object SyncMapper {
         sugar = e.sugar?.wire(),
         salt = e.salt?.wire(),
         source = e.nutrientSource,
+        barcode = e.barcode,
     )
 
     fun ingredient(id: String, p: IngredientPayload, updatedAt: Long, existing: IngredientEntity?) = IngredientEntity(
@@ -82,6 +83,7 @@ object SyncMapper {
         sugar = p.sugar?.let(::BigDecimal),
         salt = p.salt?.let(::BigDecimal),
         nutrientSource = p.source,
+        barcode = p.barcode,
         createdAt = existing?.createdAt ?: updatedAt,
         updatedAt = updatedAt,
         version = existing?.version ?: 1,

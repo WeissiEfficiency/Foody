@@ -1,5 +1,10 @@
 package de.foody.app.ui.ingredients
 
+import de.foody.app.scan.Packung
+import de.foody.app.scan.PackungScan
+import de.foody.app.ui.common.PackungScanKnopf
+import de.foody.domain.Nutrient
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -105,10 +110,13 @@ fun IngredientsScreen(onBack: () -> Unit, vm: IngredientsViewModel = hiltViewMod
     if (editing != null || creating) {
         IngredientDialog(
             initial = editing,
+            scan = vm.scan,
             onDismiss = { editingId = null; creating = false },
             onSave = { vm.save(it); editingId = null; creating = false },
             onDelete = editing?.let { e -> { vm.delete(e.id); editingId = null } },
             onMerge = editing?.let { e -> { mergingId = e.id; editingId = null } },
+            // Strichcode gehört schon zu einer Zutat: diese öffnen statt eine Dublette anzulegen
+            onImKatalog = { z -> creating = false; editingId = z.id },
         )
     }
     val merging = list.firstOrNull { it.id == mergingId }
@@ -122,12 +130,14 @@ fun IngredientsScreen(onBack: () -> Unit, vm: IngredientsViewModel = hiltViewMod
 
 
 @Composable
-private fun IngredientDialog(
+internal fun IngredientDialog(
     initial: IngredientEntity?,
+    scan: PackungScan?,
     onDismiss: () -> Unit,
     onSave: (IngredientEntity) -> Unit,
     onDelete: (() -> Unit)?,
     onMerge: (() -> Unit)?,
+    onImKatalog: (IngredientEntity) -> Unit,
 ) {
     fun java.math.BigDecimal?.t() = this?.display(3).orEmpty()
     var name by rememberSaveable { mutableStateOf(initial?.canonicalName.orEmpty()) }
@@ -143,6 +153,29 @@ private fun IngredientDialog(
     var sugar by rememberSaveable { mutableStateOf(initial?.sugar.t()) }
     var salt by rememberSaveable { mutableStateOf(initial?.salt.t()) }
     var source by rememberSaveable { mutableStateOf(initial?.nutrientSource ?: "") }
+    var barcode by rememberSaveable { mutableStateOf(initial?.barcode) }
+    // Vom Scan vorausgefüllte Nährwerte (Enum-Namen), damit sie markiert und geprüft werden
+    var erkannt by rememberSaveable { mutableStateOf(emptyList<String>()) }
+    fun markiert(n: Nutrient) = n.name in erkannt
+    fun uebernehmen(p: Packung) {
+        p.werte.forEach { (n, v) ->
+            val t = v.display(3)
+            when (n) {
+                Nutrient.ENERGY_KJ -> kj = t
+                Nutrient.PROTEIN_G -> protein = t
+                Nutrient.CARBS_G -> carbs = t
+                Nutrient.FAT_G -> fat = t
+                Nutrient.FIBER_G -> fiber = t
+                Nutrient.SUGAR_G -> sugar = t
+                Nutrient.SALT_G -> salt = t
+            }
+        }
+        basis = p.basis
+        if (name.isBlank()) p.name?.let { name = it }
+        source = p.quelle
+        barcode = p.strichcode ?: barcode
+        erkannt = (erkannt + p.werte.keys.map { it.name }).distinct()
+    }
 
     val manual = stringResource(R.string.source_manual)
     val basisLabels = mapOf(
@@ -161,13 +194,18 @@ private fun IngredientDialog(
                 DropdownField(stringResource(R.string.field_basis), basis, NutrientBasis.entries.toList(),
                     { basisLabels.getValue(it) }, { basis = it })
                 Text(stringResource(R.string.nutrients_hint))
-                DecimalField(kj, { kj = it }, stringResource(R.string.nutrient_energy) + " (kJ)")
-                DecimalField(protein, { protein = it }, stringResource(R.string.nutrient_protein) + " (g)")
-                DecimalField(carbs, { carbs = it }, stringResource(R.string.nutrient_carbs) + " (g)")
-                DecimalField(fat, { fat = it }, stringResource(R.string.nutrient_fat) + " (g)")
-                DecimalField(fiber, { fiber = it }, stringResource(R.string.nutrient_fiber) + " (g)")
-                DecimalField(sugar, { sugar = it }, stringResource(R.string.nutrient_sugar) + " (g)")
-                DecimalField(salt, { salt = it }, stringResource(R.string.nutrient_salt) + " (g)")
+                scan?.let { PackungScanKnopf(it, ::uebernehmen, onImKatalog) }
+                if (erkannt.isNotEmpty()) {
+                    Text(stringResource(R.string.scan_uebernommen, source), style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary)
+                }
+                DecimalField(kj, { kj = it }, stringResource(R.string.nutrient_energy) + " (kJ)", markiert = markiert(Nutrient.ENERGY_KJ))
+                DecimalField(protein, { protein = it }, stringResource(R.string.nutrient_protein) + " (g)", markiert = markiert(Nutrient.PROTEIN_G))
+                DecimalField(carbs, { carbs = it }, stringResource(R.string.nutrient_carbs) + " (g)", markiert = markiert(Nutrient.CARBS_G))
+                DecimalField(fat, { fat = it }, stringResource(R.string.nutrient_fat) + " (g)", markiert = markiert(Nutrient.FAT_G))
+                DecimalField(fiber, { fiber = it }, stringResource(R.string.nutrient_fiber) + " (g)", markiert = markiert(Nutrient.FIBER_G))
+                DecimalField(sugar, { sugar = it }, stringResource(R.string.nutrient_sugar) + " (g)", markiert = markiert(Nutrient.SUGAR_G))
+                DecimalField(salt, { salt = it }, stringResource(R.string.nutrient_salt) + " (g)", markiert = markiert(Nutrient.SALT_G))
                 OutlinedTextField(source, { source = it }, label = { Text(stringResource(R.string.field_source)) }, singleLine = true)
             }
         },
@@ -192,6 +230,7 @@ private fun IngredientDialog(
                             createdAt = initial?.createdAt ?: now,
                             updatedAt = now,
                             version = initial?.version ?: 0,
+                            barcode = barcode,
                         ),
                     )
                 },

@@ -68,7 +68,7 @@ class TagebuchScreenTest {
         plan.add(LocalDate.now(), "ABENDESSEN", curry, 2)
         vm = TagebuchViewModel(
             TagebuchRepository(db, db.tagebuchDao()), plan, recipes, IngredientRepository(db, db.ingredientDao(), context),
-            GoalPreferences(context), SavedStateHandle(),
+            GoalPreferences(context), SavedStateHandle(), ohneScan(),
         )
     }
 
@@ -130,5 +130,38 @@ class TagebuchScreenTest {
         compose.onNodeWithText("1,5 Portionen").assertIsDisplayed()
         tester.emulateSavedInstanceStateRestore()
         compose.onNodeWithText("1,5 Portionen").assertIsDisplayed()
+    }
+
+    @Test fun packungImReiterFrei() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val skyr = de.foody.app.scan.Packung(
+            "Skyr", NutrientBasis.PER_100_G, mapOf(de.foody.domain.Nutrient.ENERGY_KJ to BigDecimal(260)), "4001234567890",
+            de.foody.app.scan.OpenFoodFacts.QUELLE,
+        )
+        val mitScan = TagebuchViewModel(
+            TagebuchRepository(db, db.tagebuchDao()), PlanRepository(db, db.mealPlanDao(), db.recipeDao(), db.pantryDao(), db.ingredientDao()),
+            RecipeRepository(db.recipeDao()), IngredientRepository(db, db.ingredientDao(), context), GoalPreferences(context), SavedStateHandle(),
+            de.foody.app.scan.PackungScan(
+                leser = { de.foody.app.scan.StrichcodeStatus.Gelesen("4001234567890") }, tabelle = { de.foody.app.scan.ScanStatus.Fehler },
+                suche = { de.foody.app.scan.ProduktSuche.Antwort.Gefunden(skyr) }, katalog = { null }, play = { true }, online = { true },
+            ),
+        )
+        compose.setContent {
+            FoodyTheme {
+                val s by mitScan.state.collectAsState()
+                HinzufuegenDialog(Mahlzeit.SNACK, s, mitScan, onDismiss = {})
+            }
+        }
+        compose.onNodeWithText("Frei").performClick()
+        compose.onNodeWithText("Von Packung scannen").performClick()
+        compose.onNodeWithText("Strichcode scannen").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Als Zutat im Katalog speichern")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasSetTextAction() and hasText("Skyr")).assertExists()
+        compose.onNode(hasSetTextAction() and hasText("Menge", substring = true)).performTextInput("150")
+        compose.onNodeWithText("≈ 93 kcal").assertExists()
+        compose.onNodeWithText("Hinzufügen").performClick()
+        compose.waitUntil(5_000) { runBlocking { db.tagebuchDao().getAll().isNotEmpty() } }
+        assertEquals("4001234567890", runBlocking { db.ingredientDao().findByNameExact("Skyr") }?.barcode)
+        mitScan.aufraeumen()
     }
 }

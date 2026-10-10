@@ -56,7 +56,7 @@ class SettingsViewModelTest {
 
     private fun vm(): SettingsViewModel {
         val backup = BackupRepository(db, app, RecipePhotoStore(app, db.recipeDao()))
-        return SettingsViewModel(backup, db, ThemePreferences(app), GoalPreferences(app))
+        return SettingsViewModel(backup, db, ThemePreferences(app), GoalPreferences(app), de.foody.app.scan.ScanPreferences(app))
     }
 
     private suspend fun recipe() = db.recipeDao().upsert(RecipeEntity("r1", "Linsensuppe", 2, null, null, null, null, "", null, 1L, 1L))

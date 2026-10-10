@@ -10,3 +10,9 @@ import kotlinx.coroutines.cancel
  * zufällig in einem späteren Test auf („connection pool has been closed“).
  */
 fun ViewModel.aufraeumen() = viewModelScope.cancel()
+
+/** Scan ohne Play-Dienste für Tests, die das Tagebuch ohne Scan prüfen. */
+fun ohneScan() = de.foody.app.scan.PackungScan(
+    leser = { de.foody.app.scan.StrichcodeStatus.Abgebrochen }, tabelle = { de.foody.app.scan.ScanStatus.Fehler },
+    suche = { de.foody.app.scan.ProduktSuche.Antwort.Unbekannt }, katalog = { null }, play = { false }, online = { false },
+)

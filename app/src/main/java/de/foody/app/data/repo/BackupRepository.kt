@@ -59,6 +59,8 @@ data class BackupDto(
         val id: String, val name: String, val category: String?, val density: String?, val pieceWeight: String?,
         val basis: String?, val energyKj: String?, val protein: String?, val carbs: String?, val fat: String?,
         val fiber: String?, val sugar: String?, val salt: String?, val source: String?, val createdAt: Long, val updatedAt: Long,
+        // Seit DB v9
+        val barcode: String? = null,
     )
     @Serializable data class Recipe(
         val id: String, val name: String, val servings: Int, val prep: Int?, val cook: Int?, val imageUri: String?,
@@ -208,7 +210,7 @@ class BackupRepository @Inject constructor(
         return BackupDto(
             ingredients = i.getAll().map {
                 BackupDto.Ingredient(it.id, it.canonicalName, it.category, it.densityGPerMl.s(), it.pieceWeightG.s(), it.nutrientBasis?.name,
-                    it.energyKj.s(), it.protein.s(), it.carbs.s(), it.fat.s(), it.fiber.s(), it.sugar.s(), it.salt.s(), it.nutrientSource, it.createdAt, it.updatedAt)
+                    it.energyKj.s(), it.protein.s(), it.carbs.s(), it.fat.s(), it.fiber.s(), it.sugar.s(), it.salt.s(), it.nutrientSource, it.createdAt, it.updatedAt, barcode = it.barcode)
             },
             recipes = r.getAll().map {
                 BackupDto.Recipe(it.id, it.name, it.defaultServings, it.prepMinutes, it.cookMinutes, it.imageUri, it.notes, it.tags, it.archivedAt, it.createdAt, it.updatedAt, it.favorite, it.sourceUrl, it.rating, it.mahlzeiten, it.gaenge)
@@ -245,7 +247,7 @@ class BackupRepository @Inject constructor(
                     densityGPerMl = it.density.bd(), pieceWeightG = it.pieceWeight.bd(), nutrientBasis = it.basis?.let(NutrientBasis::valueOf),
                     energyKj = it.energyKj.bd(), protein = it.protein.bd(), carbs = it.carbs.bd(), fat = it.fat.bd(),
                     fiber = it.fiber.bd(), sugar = it.sugar.bd(), salt = it.salt.bd(), nutrientSource = it.source,
-                    createdAt = it.createdAt, updatedAt = it.updatedAt,
+                    createdAt = it.createdAt, updatedAt = it.updatedAt, barcode = it.barcode,
                 ),
             )
         }

@@ -20,6 +20,10 @@ interface IngredientDao {
     @Query("SELECT * FROM ingredient WHERE id = :id")
     suspend fun get(id: String): IngredientEntity?
 
+    /** Älteste Zutat mit diesem Strichcode (nach dem Zusammenführen kann es mehrere geben). */
+    @Query("SELECT * FROM ingredient WHERE barcode = :code ORDER BY createdAt LIMIT 1")
+    suspend fun findByBarcode(code: String): IngredientEntity?
+
     @Query("SELECT * FROM ingredient WHERE id IN (:ids)")
     suspend fun getByIds(ids: Collection<String>): List<IngredientEntity>
 

@@ -1,5 +1,6 @@
 package de.foody.app
 
+import de.foody.app.data.db.MIGRATION_8_9
 import kotlin.test.assertTrue
 import de.foody.app.data.db.MIGRATION_2_3
 import de.foody.app.data.db.MIGRATION_3_4
@@ -174,6 +175,18 @@ class MigrationTest {
                 val names = buildSet { while (c.moveToNext()) add(c.getString(0)) }
                 assertEquals(SyncTriggers.names.toSet(), names)
                 assertTrue(setOf("sync_tagebuch_eintrag_ai", "sync_tagebuch_eintrag_au", "sync_tagebuch_eintrag_ad").all { it in names })
+            }
+        }
+    }
+
+    @Test fun migrate8To9AddsBarcode() {
+        helper.createDatabase(dbName, 8).use { db ->
+            db.execSQL("INSERT INTO ingredient (id, canonicalName, createdAt, updatedAt, version) VALUES ('i', 'Joghurt', 1, 1, 1)")
+        }
+        helper.runMigrationsAndValidate(dbName, 9, true, MIGRATION_8_9).use { db ->
+            db.query("SELECT barcode FROM ingredient WHERE id = 'i'").use { c -> c.moveToFirst(); assertTrue(c.isNull(0)) }
+            db.query("SELECT count(*) FROM sqlite_master WHERE type='index' AND name = 'index_ingredient_barcode'").use { c ->
+                c.moveToFirst(); assertEquals(1, c.getInt(0))
             }
         }
     }

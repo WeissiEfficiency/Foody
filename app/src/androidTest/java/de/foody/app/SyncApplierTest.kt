@@ -505,4 +505,11 @@ class SyncApplierTest {
         applier.apply(listOf(gone(RecordType.TAGEBUCH_EINTRAG, tagebuchId, 2)), 2)
         assertNull(db.tagebuchDao().get(tagebuchId))
     }
+
+    @Test fun strichcodeUeberstehtSync() = runTest {
+        applier.apply(listOf(rec(RecordType.INGREDIENT, "i", IngredientPayload(name = "Joghurt", barcode = "4006040002031"))), 1)
+        val e = db.ingredientDao().get("i")!!
+        assertEquals("4006040002031", e.barcode)
+        assertEquals("4006040002031", SyncMapper.ingredient(e).barcode)
+    }
 }

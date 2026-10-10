@@ -1,5 +1,8 @@
 package de.foody.app.ui.settings
 
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
@@ -116,6 +119,17 @@ fun SettingsScreen(
                         singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                     )
+                }
+                SettingsCard(stringResource(R.string.settings_scan_titel)) {
+                    val online by vm.onlineSuche.collectAsStateWithLifecycle()
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.settings_online_suche), style = MaterialTheme.typography.bodyLarge)
+                            Text(stringResource(R.string.settings_online_suche_hinweis), style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(online, vm::setOnlineSuche)
+                    }
                 }
                 SettingsCard(stringResource(R.string.nav_pantry)) {
                     OutlinedButton(onOpenPantry, Modifier.fillMaxWidth(), shape = RoundedCornerShape(50)) {

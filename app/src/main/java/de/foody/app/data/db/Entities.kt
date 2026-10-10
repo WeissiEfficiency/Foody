@@ -11,7 +11,7 @@ import de.foody.domain.TagebuchArt
 import java.math.BigDecimal
 import java.time.LocalDate
 
-@Entity(tableName = "ingredient", indices = [Index("canonicalName", unique = true)])
+@Entity(tableName = "ingredient", indices = [Index("canonicalName", unique = true), Index("barcode")])
 data class IngredientEntity(
     @PrimaryKey val id: String,
     val canonicalName: String,
@@ -30,6 +30,8 @@ data class IngredientEntity(
     val createdAt: Long,
     val updatedAt: Long,
     val version: Int = 1,
+    /** Strichcode (EAN/UPC) der Packung, damit ein erneuter Scan die Zutat offline findet. Seit DB v9. */
+    val barcode: String? = null,
 )
 
 @Entity(tableName = "recipe", indices = [Index("name"), Index("sourceUrl")])
