@@ -276,7 +276,7 @@ class SyncEngineTest {
     }
 
     @Test
-    fun uploadClientErrorDefersOnlyThatRecipe() = runTest {
+    fun uploadClientErrorSendsOnlyThatRecipeWithoutPhoto() = runTest {
         activate()
         val badBytes = jpeg(6, 6)
         val bad = recipe("r1", ownPhoto(badBytes))
@@ -288,9 +288,14 @@ class SyncEngineTest {
         )
         val goodBytes = jpeg(8, 8)
         db.recipeDao().upsert(db.recipeDao().get(good)!!.copy(imageUri = ownPhoto(goodBytes)))
+        var refusals = 0
         val refusing = object : SyncApi by api {
             override suspend fun uploadPhoto(sha256: String, bytes: ByteArray) {
-                if (sha256 == PhotoHash.of(badBytes)) throw SyncApiException.ClientError(400, null)
+                // z. B. ein Reverse-Proxy mit kleinerem Body-Limit (413) oder ein 4xx des Servers
+                if (sha256 == PhotoHash.of(badBytes)) {
+                    refusals++
+                    throw SyncApiException.ClientError(400, null)
+                }
                 api.uploadPhoto(sha256, bytes)
             }
         }
@@ -299,10 +304,19 @@ class SyncEngineTest {
         val e = SyncEngine(db, SyncLocalStore(db, photoIndex), SyncApplier(db, photoIndex), refusing, Clock.systemUTC(), photoIndex, photoStore)
         val outcome = e.run()
         assertTrue(outcome is SyncOutcome.Success, outcome.toString())
-        assertEquals(listOf(good), api.pushes.flatten().filter { it.type == RecordType.RECIPE }.map { it.id })
+        val pushed = api.pushes.flatten()
+        assertEquals(setOf(good, bad), pushed.filter { it.type == RecordType.RECIPE }.map { it.id }.toSet())
+        // Wie ein lokal nicht übertragbares Foto: das Rezept geht ohne Foto raus, statt ewig in der Outbox zu warten.
+        assertNull(recipePhoto(pushed, bad))
+        assertEquals(PhotoHash.of(goodBytes), recipePhoto(pushed, good))
         assertTrue(api.pulls.isNotEmpty(), "Pull läuft trotzdem")
-        assertTrue(db.syncDao().outbox().any { it.recordId == bad })
+        assertTrue(db.syncDao().outbox().none { it.type == "recipe" })
         assertEquals(listOf(bad to "photo_unsyncable"), db.syncDao().problems().map { it.recordId to it.code })
+        assertNotNull(db.recipeDao().get(bad)!!.imageUri, "Das eigene Foto bleibt lokal")
+
+        // Der nächste Lauf lädt das abgelehnte Foto nicht erneut hoch.
+        assertTrue(e.run() is SyncOutcome.Success)
+        assertEquals(1, refusals)
     }
 
     @Test

@@ -213,8 +213,8 @@ class SyncEngine(
      * (Foto-Wunsch, noch nicht geladen) wird übersprungen – den hat der Server, von dem er stammt. Fehlt dagegen ein
      * eigenes Foto (Datei weg, geändert, zu groß), wartet das Rezept in der Outbox, statt mit unbekanntem Hash zu gehen. Lese- oder
      * Upload-Fehler (IO, 5xx) brechen den Lauf als `Transient` ab (nichts aus dem Batch verlässt die Outbox). Lehnt der
-     * Server ein einzelnes Foto dauerhaft ab (4xx, 413), bekommen nur die betroffenen Rezepte das Problem
-     * `photo_unsyncable` und bleiben in der Outbox. Liefert die Datensätze, die gesendet werden dürfen.
+     * Server ein einzelnes Foto dauerhaft ab (4xx, 413), gehen nur die betroffenen Rezepte ohne Foto und mit dem Problem
+     * `photo_unsyncable` raus ([withoutPhoto]). Liefert die Datensätze, die gesendet werden dürfen.
      */
     private suspend fun uploadMissingPhotos(batch: List<PendingRecord>): List<PendingRecord> {
         val hashes = batch.mapNotNull { photoOf(it.record) }.distinct()
@@ -250,11 +250,20 @@ class SyncEngine(
             }
         }
         if (refused.isEmpty() && deferred.isEmpty()) return batch
-        val (blocked, rest) = batch.partition { photoOf(it.record) in refused }
-        for (pending in blocked) {
-            dao.addProblem(SyncProblemEntity(pending.record.type.wire, pending.record.id, SyncLocalStore.PHOTO_UNSYNCABLE, clock.millis()))
+        return batch.filter { it.record.id !in deferred }.map { pending ->
+            if (photoOf(pending.record) in refused) withoutPhoto(pending) else pending
         }
-        return rest.filter { it.record.id !in deferred }
+    }
+
+    /**
+     * Das Rezept ohne Foto und mit dem Problem `photo_unsyncable` – wie ein lokal als nicht übertragbar erkanntes Foto.
+     * Würde es stattdessen in der Outbox warten, lüde jeder Lauf dieselben Bytes erneut hoch und das Rezept käme nie an.
+     * Eine spätere Änderung des Rezepts versucht das Foto erneut.
+     */
+    private fun withoutPhoto(pending: PendingRecord): PendingRecord {
+        val payload = RecordType.RECIPE.decode(pending.record.payload!!) as RecipePayload
+        val record = pending.record.copy(payload = SyncMapper.toJson(payload.copy(photo = null)))
+        return pending.copy(record = record, photoProblem = SyncLocalStore.PHOTO_UNSYNCABLE)
     }
 
     private fun photoOf(record: SyncRecord): String? {
