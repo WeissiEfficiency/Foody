@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import de.foody.app.ui.tagebuch.HinzufuegenDialog
 import de.foody.domain.Mahlzeit
 import kotlin.test.assertEquals
@@ -160,7 +161,7 @@ class TagebuchScreenTest {
         compose.onNode(hasSetTextAction() and hasText("Skyr")).assertExists()
         // Abgewähltes Häkchen bleibt aus, auch wenn danach der Name geändert wird
         compose.onNodeWithText("Als Zutat im Katalog speichern").performClick()
-        compose.onNode(hasSetTextAction() and hasText("Skyr")).performTextInput(" Natur")
+        compose.onNode(hasSetTextAction() and hasText("Skyr")).performTextReplacement("Skyr Natur")
         compose.waitForIdle()
         compose.onNode(androidx.compose.ui.test.isToggleable()).assertIsOff()
         compose.onNodeWithText("Als Zutat im Katalog speichern").performClick()
@@ -168,7 +169,8 @@ class TagebuchScreenTest {
         compose.onNodeWithText("≈ 93 kcal").assertExists()
         compose.onNodeWithText("Hinzufügen").performClick()
         compose.waitUntil(5_000) { runBlocking { db.tagebuchDao().getAll().isNotEmpty() } }
-        assertEquals("4001234567890", runBlocking { db.ingredientDao().findByNameExact("Skyr Natur") }?.barcode)
+        val angelegt = runBlocking { db.ingredientDao().getAll() }.filter { it.barcode != null }.map { it.canonicalName to it.barcode }
+        assertEquals(listOf("Skyr Natur" to "4001234567890"), angelegt, "angelegte Zutaten mit Strichcode")
         mitScan.aufraeumen()
     }
 }
