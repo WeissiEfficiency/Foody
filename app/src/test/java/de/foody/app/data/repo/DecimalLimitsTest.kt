@@ -17,6 +17,6 @@ class DecimalLimitsTest {
         assertFailsWith<IllegalArgumentException> { decimal("1E999999999") }
         assertFailsWith<IllegalArgumentException> { decimal("1E-999999999") }
         assertFailsWith<IllegalArgumentException> { decimal("1".repeat(41)) }
-        assertFailsWith<NumberFormatException> { decimal("viel") }
+        assertFailsWith<IllegalArgumentException> { decimal("viel") }
     }
 }
