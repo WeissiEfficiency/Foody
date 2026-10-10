@@ -55,6 +55,9 @@
         <item quantity="other">%1$s Portionen</item>
     </plurals>
     <string name="settings_vorrat">Vorrat öffnen</string>
+    <string name="settings_scan_titel">Packung scannen</string>
+    <string name="settings_online_suche">Online-Produktsuche (Open Food Facts)</string>
+    <string name="settings_online_suche_hinweis">Sendet beim Strichcode-Scan nur die Produktnummer. Aus: nur eigener Katalog, sonst Foto der Nährwerttabelle.</string>
 
     <!-- Aktionen -->
     <string name="action_add">Hinzufügen</string>

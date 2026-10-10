@@ -1,5 +1,6 @@
 package de.foody.app.ui.settings
 
+import de.foody.app.scan.ScanPreferences
 import de.foody.app.data.GoalPreferences
 import de.foody.app.data.ThemePreferences
 import de.foody.app.ui.theme.ThemeMode
@@ -25,9 +26,14 @@ class SettingsViewModel @Inject constructor(
     private val db: FoodyDatabase,
     private val themePreferences: ThemePreferences,
     private val goals: GoalPreferences,
+    private val scan: ScanPreferences,
 ) : ViewModel() {
     val dailyKcalGoal = goals.dailyKcal
     fun setDailyKcalGoal(text: String) = goals.setDailyKcal(text.trim().toIntOrNull())
+
+    /** Online-Produktsuche (Open Food Facts) beim Strichcode-Scan; sendet nur die Produktnummer. */
+    val onlineSuche = scan.onlineSuche
+    fun setOnlineSuche(an: Boolean) = scan.setOnlineSuche(an)
 
     val themeMode = themePreferences.mode
     fun setThemeMode(mode: ThemeMode) = themePreferences.set(mode)
