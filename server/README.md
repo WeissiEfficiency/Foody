@@ -44,7 +44,7 @@ Stattdessen im Installationsordner (`server/build/install/foody-server`) starten
 java -cp "lib/*" de.foody.server.MainKt
 ```
 
-oder Docker verwenden. Manuelle API-Aufrufe (z. B. mit `curl`) brauchen den Header `X-Foody-Protocol: 1`,
+oder Docker verwenden. Manuelle API-Aufrufe (z. B. mit `curl`) brauchen den Header `X-Foody-Protocol: 2` (aktuelle `Protocol.VERSION`),
 sonst antwortet der Server mit `protocol_too_old`.
 
 ## Hinweis zu Traefik (wichtig)
