@@ -26,6 +26,7 @@ object DatabaseModule {
     @Provides fun ingredientDao(db: FoodyDatabase) = db.ingredientDao()
     @Provides fun recipeDao(db: FoodyDatabase) = db.recipeDao()
     @Provides fun mealPlanDao(db: FoodyDatabase) = db.mealPlanDao()
+    @Provides fun tagebuchDao(db: FoodyDatabase) = db.tagebuchDao()
     @Provides fun pantryDao(db: FoodyDatabase) = db.pantryDao()
     @Provides fun shoppingDao(db: FoodyDatabase) = db.shoppingDao()
     @Provides fun syncDao(db: FoodyDatabase) = db.syncDao()

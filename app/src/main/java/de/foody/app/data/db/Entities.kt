@@ -7,6 +7,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import de.foody.domain.MeasureUnit
 import de.foody.domain.NutrientBasis
+import de.foody.domain.TagebuchArt
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -170,4 +171,32 @@ data class ShoppingItemSourceEntity(
     val date: LocalDate,
     val contributedAmount: BigDecimal,
     val unit: MeasureUnit,
+)
+
+/**
+ * Tagebuch-Eintrag (seit DB v8): was ein Mensch des Haushalts gegessen hat, gerechnet pro Person.
+ * Nährwerte sind beim Eintragen festgehalten; `rezeptId`, `zutatId` und `planEintragId` sind lose Referenzen
+ * ohne Fremdschlüssel, damit Löschen von Rezept, Zutat oder Plan-Eintrag den Verlauf nie verändert.
+ */
+@Entity(tableName = "tagebuch_eintrag", indices = [Index("datum"), Index("planEintragId")])
+data class TagebuchEintragEntity(
+    @PrimaryKey val id: String,
+    val datum: LocalDate,
+    /** `Mahlzeit`-Enum-Name. */
+    val mahlzeit: String,
+    val art: TagebuchArt,
+    val name: String,
+    val rezeptId: String? = null,
+    val planEintragId: String? = null,
+    val portionen: BigDecimal? = null,
+    val zutatId: String? = null,
+    val menge: BigDecimal? = null,
+    val einheit: MeasureUnit? = null,
+    val energieKj: BigDecimal? = null,
+    val eiweiss: BigDecimal? = null,
+    val kohlenhydrate: BigDecimal? = null,
+    val fett: BigDecimal? = null,
+    val vollstaendig: Boolean = true,
+    val createdAt: Long,
+    val updatedAt: Long,
 )

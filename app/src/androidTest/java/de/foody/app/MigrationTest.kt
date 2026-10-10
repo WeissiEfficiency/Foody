@@ -6,6 +6,7 @@ import de.foody.app.data.db.MIGRATION_3_4
 import de.foody.app.data.db.MIGRATION_4_5
 import de.foody.app.data.db.MIGRATION_5_6
 import de.foody.app.data.db.MIGRATION_6_7
+import de.foody.app.data.db.MIGRATION_7_8
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -112,7 +113,7 @@ class MigrationTest {
             }
             db.query("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'sync_%'").use { c ->
                 val names = buildSet { while (c.moveToNext()) add(c.getString(0)) }
-                assertEquals(SyncTriggers.names.toSet(), names)
+                assertEquals(SyncTriggers.names.filter { SyncTriggers.tableOf(it) != "tagebuch_eintrag" }.toSet(), names)
             }
             db.query("SELECT sql FROM sqlite_master WHERE type='trigger' AND name = 'sync_ingredient_au'").use { c ->
                 c.moveToFirst(); assertTrue(c.getString(0).contains("queuedAt + 1"))
@@ -133,7 +134,7 @@ class MigrationTest {
             }
             db.query("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'sync_%'").use { c ->
                 val names = buildSet { while (c.moveToNext()) add(c.getString(0)) }
-                assertEquals(SyncTriggers.names.toSet(), names)
+                assertEquals(SyncTriggers.names.filter { SyncTriggers.tableOf(it) != "tagebuch_eintrag" }.toSet(), names)
                 assertTrue("sync_recipe_image_wish" in names && "sync_recipe_wish_ai" in names && "sync_recipe_wish_ad" in names)
             }
         }
@@ -151,6 +152,28 @@ class MigrationTest {
             db.query("SELECT id, slotType FROM meal_slot ORDER BY id").use { c ->
                 val m = buildMap { while (c.moveToNext()) put(c.getString(0), c.getString(1)) }
                 assertEquals(mapOf("a" to "ABENDESSEN", "b" to "FRUEHSTUECK", "c" to "FRUEHSTUECK", "d" to "Brunch"), m)
+            }
+        }
+    }
+
+    @Test fun migrate7To8AddsTagebuchWithTriggers() {
+        helper.createDatabase(dbName, 7).use { db ->
+            db.execSQL("INSERT INTO recipe (id, name, defaultServings, tags, createdAt, updatedAt, version, favorite) VALUES ('r', 'Curry', 2, '', 1, 1, 1, 0)")
+            db.execSQL("INSERT INTO meal_slot (id, date, slotType, recipeId, servings, createdAt, updatedAt) VALUES ('s', 20371, 'ABENDESSEN', 'r', 2, 1, 1)")
+        }
+        helper.runMigrationsAndValidate(dbName, 8, true, MIGRATION_7_8).use { db ->
+            db.execSQL(
+                "INSERT INTO tagebuch_eintrag (id, datum, mahlzeit, art, name, vollstaendig, createdAt, updatedAt) " +
+                    "VALUES ('t', 20371, 'SNACK', 'FREI', 'Apfel', 1, 1, 1)",
+            )
+            db.query("SELECT slotType FROM meal_slot WHERE id = 's'").use { c -> c.moveToFirst(); assertEquals("ABENDESSEN", c.getString(0)) }
+            db.query("SELECT count(*) FROM sqlite_master WHERE type='index' AND name = 'index_tagebuch_eintrag_datum'").use { c ->
+                c.moveToFirst(); assertEquals(1, c.getInt(0))
+            }
+            db.query("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'sync_%'").use { c ->
+                val names = buildSet { while (c.moveToNext()) add(c.getString(0)) }
+                assertEquals(SyncTriggers.names.toSet(), names)
+                assertTrue(setOf("sync_tagebuch_eintrag_ai", "sync_tagebuch_eintrag_au", "sync_tagebuch_eintrag_ad").all { it in names })
             }
         }
     }

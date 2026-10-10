@@ -29,8 +29,9 @@ import de.foody.domain.Mahlzeit
         SyncProblemEntity::class,
         SyncPhotoLocalEntity::class,
         SyncPhotoWantedEntity::class,
+        TagebuchEintragEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -42,6 +43,7 @@ abstract class FoodyDatabase : RoomDatabase() {
     abstract fun shoppingDao(): ShoppingDao
     abstract fun maintenanceDao(): MaintenanceDao
     abstract fun syncDao(): SyncDao
+    abstract fun tagebuchDao(): TagebuchDao
 
     companion object {
         const val NAME = "foody.db"
@@ -142,5 +144,21 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
     }
 }
 
+/** v7 → v8: Tagebuch-Tabelle; neue Wurzeltabelle für den Sync → Trigger neu anlegen. Bestehende Daten unverändert. */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `tagebuch_eintrag` (`id` TEXT NOT NULL, `datum` INTEGER NOT NULL, `mahlzeit` TEXT NOT NULL, " +
+                "`art` TEXT NOT NULL, `name` TEXT NOT NULL, `rezeptId` TEXT, `planEintragId` TEXT, `portionen` TEXT, `zutatId` TEXT, " +
+                "`menge` TEXT, `einheit` TEXT, `energieKj` TEXT, `eiweiss` TEXT, `kohlenhydrate` TEXT, `fett` TEXT, " +
+                "`vollstaendig` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_tagebuch_eintrag_datum` ON `tagebuch_eintrag` (`datum`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_tagebuch_eintrag_planEintragId` ON `tagebuch_eintrag` (`planEintragId`)")
+        SyncTriggers.drop(db)
+        SyncTriggers.create(db)
+    }
+}
+
 /** Alle Migrationen in Reihenfolge – nie fallbackToDestructiveMigration (docs/architecture.md). */
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)

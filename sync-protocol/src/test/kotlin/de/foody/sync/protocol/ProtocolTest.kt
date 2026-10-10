@@ -24,7 +24,7 @@ class ProtocolTest {
     @Test
     fun recordTypeOrderIsDependencyOrder() {
         assertEquals(
-            listOf("ingredient", "recipe", "meal_slot", "pantry_item", "shopping_list", "shopping_item"),
+            listOf("ingredient", "recipe", "meal_slot", "pantry_item", "shopping_list", "shopping_item", "tagebuch_eintrag"),
             RecordType.entries.map { it.wire },
         )
     }
@@ -63,6 +63,10 @@ class ProtocolTest {
                 manual = false, category = null, sortOrder = 1, note = null,
                 sources = listOf(ShoppingItemPayload.Source(id1, id2, id1, "Brot", "2026-10-04", "1", "KILOGRAM")),
             ),
+            RecordType.TAGEBUCH_EINTRAG to TagebuchPayload(
+                datum = "2026-10-10", mahlzeit = "SNACK", art = "ZUTAT", name = "Joghurt", zutatId = id1, menge = "150",
+                einheit = "GRAM", energieKj = "380", eiweiss = "5", vollstaendig = false,
+            ),
         )
         assertEquals(RecordType.entries.toSet(), samples.keys)
         for ((type, expected) in samples) {
@@ -73,6 +77,7 @@ class ProtocolTest {
                 is PantryItemPayload -> obj(expected)
                 is ShoppingListPayload -> obj(expected)
                 is ShoppingItemPayload -> obj(expected)
+                is TagebuchPayload -> obj(expected)
                 else -> error("unerwartet")
             }
             assertEquals(expected, type.decode(encoded), type.name)

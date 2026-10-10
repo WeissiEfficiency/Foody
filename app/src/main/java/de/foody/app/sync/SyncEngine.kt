@@ -401,6 +401,7 @@ class SyncEngine(
                 RecordType.PANTRY_ITEM -> dao.pantryItemIds()
                 RecordType.SHOPPING_LIST -> dao.shoppingListIds()
                 RecordType.SHOPPING_ITEM -> dao.shoppingItemIds()
+                RecordType.TAGEBUCH_EINTRAG -> dao.tagebuchIds()
             }
             for (id in ids) {
                 if ((type to id) !in remote) deleteStale(type, id, remoteRefs)
@@ -431,6 +432,7 @@ class SyncEngine(
                     RecordType.PANTRY_ITEM -> db.pantryDao().delete(id)
                     RecordType.SHOPPING_LIST -> db.shoppingDao().deleteList(id)
                     RecordType.SHOPPING_ITEM -> db.shoppingDao().deleteItem(id)
+                    RecordType.TAGEBUCH_EINTRAG -> db.tagebuchDao().delete(id)
                 }
             } finally {
                 dao.setApplyingRemote(false)
@@ -454,7 +456,7 @@ class SyncEngine(
 
         /** Kinder vor Eltern (umgekehrte Abhängigkeitsreihenfolge). */
         val DELETE_ORDER = listOf(
-            RecordType.SHOPPING_ITEM, RecordType.SHOPPING_LIST, RecordType.PANTRY_ITEM,
+            RecordType.TAGEBUCH_EINTRAG, RecordType.SHOPPING_ITEM, RecordType.SHOPPING_LIST, RecordType.PANTRY_ITEM,
             RecordType.MEAL_SLOT, RecordType.RECIPE, RecordType.INGREDIENT,
         )
     }

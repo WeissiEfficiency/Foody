@@ -1,5 +1,7 @@
 package de.foody.app.data.repo
 
+import de.foody.app.data.db.TagebuchEintragEntity
+import de.foody.domain.TagebuchArt
 import de.foody.app.data.RecipePhotoStore
 import androidx.core.net.toUri
 import java.io.File
@@ -50,6 +52,8 @@ data class BackupDto(
     val shoppingLists: List<ShopList>,
     val shoppingItems: List<ShopItem>,
     val shoppingSources: List<ShopSource>,
+    // Seit DB v8; Standardwert hält ältere Sicherungen lesbar
+    val tagebuch: List<Tagebuch> = emptyList(),
 ) {
     @Serializable data class Ingredient(
         val id: String, val name: String, val category: String?, val density: String?, val pieceWeight: String?,
@@ -90,6 +94,13 @@ data class BackupDto(
     @Serializable data class ShopSource(
         val id: String, val itemId: String, val mealSlotId: String, val recipeIngredientId: String, val recipeName: String,
         val date: String, val amount: String, val unit: String,
+    )
+    @Serializable data class Tagebuch(
+        val id: String, val datum: String, val mahlzeit: String, val art: String, val name: String,
+        val rezeptId: String? = null, val planEintragId: String? = null, val portionen: String? = null,
+        val zutatId: String? = null, val menge: String? = null, val einheit: String? = null,
+        val energieKj: String? = null, val eiweiss: String? = null, val kohlenhydrate: String? = null, val fett: String? = null,
+        val vollstaendig: Boolean = true, val createdAt: Long, val updatedAt: Long,
     )
 }
 
@@ -215,6 +226,13 @@ class BackupRepository @Inject constructor(
             shoppingSources = s.getAllSources().map {
                 BackupDto.ShopSource(it.id, it.shoppingItemId, it.mealSlotId, it.recipeIngredientId, it.recipeName, it.date.toString(), it.contributedAmount.toPlainString(), it.unit.name)
             },
+            tagebuch = db.tagebuchDao().getAll().map {
+                BackupDto.Tagebuch(
+                    it.id, it.datum.toString(), it.mahlzeit, it.art.name, it.name, it.rezeptId, it.planEintragId, it.portionen?.toPlainString(),
+                    it.zutatId, it.menge?.toPlainString(), it.einheit?.name, it.energieKj?.toPlainString(), it.eiweiss?.toPlainString(),
+                    it.kohlenhydrate?.toPlainString(), it.fett?.toPlainString(), it.vollstaendig, it.createdAt, it.updatedAt,
+                )
+            },
         )
     }
 
@@ -274,6 +292,17 @@ class BackupRepository @Inject constructor(
         db.shoppingDao().insertSources(d.shoppingSources.map {
             ShoppingItemSourceEntity(it.id, it.itemId, it.mealSlotId, it.recipeIngredientId, it.recipeName, LocalDate.parse(it.date), decimal(it.amount), MeasureUnit.valueOf(it.unit))
         })
+        d.tagebuch.forEach {
+            db.tagebuchDao().upsert(
+                TagebuchEintragEntity(
+                    id = it.id, datum = LocalDate.parse(it.datum), mahlzeit = Mahlzeit.ausText(it.mahlzeit)?.name ?: it.mahlzeit,
+                    art = TagebuchArt.valueOf(it.art), name = it.name, rezeptId = it.rezeptId, planEintragId = it.planEintragId,
+                    portionen = it.portionen.bd(), zutatId = it.zutatId, menge = it.menge.bd(), einheit = it.einheit?.let(MeasureUnit::valueOf),
+                    energieKj = it.energieKj.bd(), eiweiss = it.eiweiss.bd(), kohlenhydrate = it.kohlenhydrate.bd(), fett = it.fett.bd(),
+                    vollstaendig = it.vollstaendig, createdAt = it.createdAt, updatedAt = it.updatedAt,
+                ),
+            )
+        }
     }
 }
 

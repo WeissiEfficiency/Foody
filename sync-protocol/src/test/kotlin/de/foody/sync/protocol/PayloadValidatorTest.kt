@@ -160,4 +160,19 @@ class PayloadValidatorTest {
         assertEquals("zwiebel", PayloadValidator.canonicalName(rec(RecordType.INGREDIENT, ingredient(" Zwiebel "))))
         assertNull(PayloadValidator.canonicalName(rec(RecordType.RECIPE, recipe())))
     }
+
+    private fun tagebuch(mahlzeit: String = "ABENDESSEN", energieKj: String? = "1464", art: String = "REZEPT") = TagebuchPayload(
+        datum = "2026-10-10", mahlzeit = mahlzeit, art = art, name = "Curry", rezeptId = a, planEintragId = b,
+        portionen = "1", energieKj = energieKj, eiweiss = "12.5",
+    )
+
+    @Test
+    fun tagebuchGueltigUndUngueltig() {
+        assertNull(PayloadValidator.validate(rec(RecordType.TAGEBUCH_EINTRAG, tagebuch())))
+        assertEquals(ErrorCode.INVALID_PAYLOAD, PayloadValidator.validate(rec(RecordType.TAGEBUCH_EINTRAG, tagebuch(mahlzeit = "Brunch"))))
+        assertEquals(ErrorCode.INVALID_PAYLOAD, PayloadValidator.validate(rec(RecordType.TAGEBUCH_EINTRAG, tagebuch(energieKj = "-1"))))
+        assertEquals(ErrorCode.INVALID_PAYLOAD, PayloadValidator.validate(rec(RecordType.TAGEBUCH_EINTRAG, tagebuch(art = "X"))))
+        // Lose Referenzen: Rezept und Plan-Eintrag dürfen fehlen, ohne dass der Datensatz zurückgehalten wird
+        assertEquals(emptyList(), PayloadValidator.references(rec(RecordType.TAGEBUCH_EINTRAG, tagebuch())))
+    }
 }

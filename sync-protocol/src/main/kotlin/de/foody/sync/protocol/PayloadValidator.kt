@@ -16,6 +16,8 @@ object PayloadValidator {
         "MILLIGRAM", "GRAM", "KILOGRAM", "MILLILITER", "CENTILITER", "LITER", "TEASPOON", "TABLESPOON", "PIECE", "PACKAGE", "CAN",
     )
     private val BASES = setOf("PER_100_G", "PER_100_ML")
+    private val MAHLZEITEN = setOf("FRUEHSTUECK", "MITTAGESSEN", "ABENDESSEN", "SNACK")
+    private val TAGEBUCH_ARTEN = setOf("REZEPT", "ZUTAT", "FREI")
 
     /** Interner Abbruch bei der ersten Verletzung; ohne Stacktrace, da reiner Kontrollfluss. */
     private class Invalid : Exception(null, null, false, false)
@@ -133,8 +135,24 @@ object PayloadValidator {
                     ensure(source.unit in UNITS)
                 }
             }
+            is TagebuchPayload -> {
+                date(payload.datum)
+                ensure(payload.mahlzeit in MAHLZEITEN)
+                ensure(payload.art in TAGEBUCH_ARTEN)
+                name(payload.name)
+                listOf(payload.rezeptId, payload.planEintragId, payload.zutatId).forEach { ensure(it == null || isValidId(it)) }
+                ensure(payload.einheit == null || payload.einheit in UNITS)
+                listOf(payload.portionen, payload.menge, payload.energieKj, payload.eiweiss, payload.kohlenhydrate, payload.fett)
+                    .forEach { nonNegative(it) }
+            }
             else -> fail()
         }
+    }
+
+    private fun nonNegative(text: String?) {
+        if (text == null) return
+        number(text)
+        ensure(BigDecimal(text).signum() >= 0)
     }
 
     private fun name(text: String) = ensure(text.isNotBlank() && text.length <= MAX_NAME)

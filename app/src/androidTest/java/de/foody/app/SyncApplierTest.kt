@@ -19,6 +19,7 @@ import de.foody.sync.protocol.MealSlotPayload
 import de.foody.sync.protocol.PantryItemPayload
 import de.foody.sync.protocol.RecipePayload
 import de.foody.sync.protocol.RecordType
+import de.foody.sync.protocol.TagebuchPayload
 import de.foody.sync.protocol.ShoppingItemPayload
 import de.foody.sync.protocol.ShoppingListPayload
 import de.foody.sync.protocol.SyncRecord
@@ -482,5 +483,26 @@ class SyncApplierTest {
         assertEquals("", out.gaenge)
         assertEquals("ABENDESSEN", db.mealPlanDao().get("a")?.slotType)
         assertEquals("Brunch", db.mealPlanDao().get("b")?.slotType)
+    }
+
+    private val tagebuchId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"
+
+    @Test fun tagebuchOhneLokalesRezeptWirdAngewendet() = runTest {
+        val payload = TagebuchPayload(
+            datum = "2026-10-10", mahlzeit = "ABENDESSEN", art = "REZEPT", name = "Curry",
+            rezeptId = "fehlt", portionen = "1", energieKj = "1000",
+        )
+        val result = applier.apply(listOf(rec(RecordType.TAGEBUCH_EINTRAG, tagebuchId, payload)), 1)
+        assertEquals(0, result.problems)
+        val e = db.tagebuchDao().get(tagebuchId)!!
+        assertEquals(0, java.math.BigDecimal("1000").compareTo(e.energieKj))
+        assertEquals(payload, SyncMapper.tagebuch(e))
+    }
+
+    @Test fun tagebuchLoeschen() = runTest {
+        applier.apply(listOf(rec(RecordType.TAGEBUCH_EINTRAG, tagebuchId,
+            TagebuchPayload(datum = "2026-10-10", mahlzeit = "SNACK", art = "FREI", name = "Apfel", energieKj = "335"))), 1)
+        applier.apply(listOf(gone(RecordType.TAGEBUCH_EINTRAG, tagebuchId, 2)), 2)
+        assertNull(db.tagebuchDao().get(tagebuchId))
     }
 }

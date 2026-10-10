@@ -1,5 +1,8 @@
 package de.foody.app.sync
 
+import de.foody.app.data.db.TagebuchEintragEntity
+import de.foody.sync.protocol.TagebuchPayload
+import de.foody.domain.TagebuchArt
 import de.foody.app.data.db.IngredientEntity
 import de.foody.app.data.db.InstructionStepEntity
 import de.foody.app.data.db.MealSlotEntity
@@ -318,8 +321,50 @@ object SyncMapper {
             is PantryItemPayload -> json.encodeToJsonElement(PantryItemPayload.serializer(), payload)
             is ShoppingListPayload -> json.encodeToJsonElement(ShoppingListPayload.serializer(), payload)
             is ShoppingItemPayload -> json.encodeToJsonElement(ShoppingItemPayload.serializer(), payload)
+            is TagebuchPayload -> json.encodeToJsonElement(TagebuchPayload.serializer(), payload)
             else -> throw IllegalArgumentException("Unbekannter Payload-Typ: ${payload::class.simpleName}")
         }
         return element as JsonObject
     }
+
+    // --- Tagebuch ---
+
+    fun tagebuch(e: TagebuchEintragEntity) = TagebuchPayload(
+        datum = e.datum.toString(),
+        mahlzeit = e.mahlzeit,
+        art = e.art.name,
+        name = e.name,
+        rezeptId = e.rezeptId,
+        planEintragId = e.planEintragId,
+        portionen = e.portionen?.toPlainString(),
+        zutatId = e.zutatId,
+        menge = e.menge?.toPlainString(),
+        einheit = e.einheit?.name,
+        energieKj = e.energieKj?.toPlainString(),
+        eiweiss = e.eiweiss?.toPlainString(),
+        kohlenhydrate = e.kohlenhydrate?.toPlainString(),
+        fett = e.fett?.toPlainString(),
+        vollstaendig = e.vollstaendig,
+    )
+
+    fun tagebuch(id: String, p: TagebuchPayload, updatedAt: Long, existing: TagebuchEintragEntity?) = TagebuchEintragEntity(
+        id = id,
+        datum = LocalDate.parse(p.datum),
+        mahlzeit = p.mahlzeit,
+        art = TagebuchArt.valueOf(p.art),
+        name = p.name,
+        rezeptId = p.rezeptId,
+        planEintragId = p.planEintragId,
+        portionen = p.portionen?.let(::BigDecimal),
+        zutatId = p.zutatId,
+        menge = p.menge?.let(::BigDecimal),
+        einheit = p.einheit?.let(MeasureUnit::valueOf),
+        energieKj = p.energieKj?.let(::BigDecimal),
+        eiweiss = p.eiweiss?.let(::BigDecimal),
+        kohlenhydrate = p.kohlenhydrate?.let(::BigDecimal),
+        fett = p.fett?.let(::BigDecimal),
+        vollstaendig = p.vollstaendig,
+        createdAt = existing?.createdAt ?: updatedAt,
+        updatedAt = updatedAt,
+    )
 }

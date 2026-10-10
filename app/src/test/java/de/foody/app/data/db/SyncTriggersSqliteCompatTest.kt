@@ -26,7 +26,7 @@ class SyncTriggersSqliteCompatTest {
 
     private val tables = listOf(
         "ingredient", "recipe", "recipe_ingredient", "instruction_step", "meal_slot", "pantry_item",
-        "shopping_list", "shopping_item", "shopping_item_source", "sync_outbox", "sync_record_rev", "sync_state", "sync_problem", "sync_photo_wanted",
+        "shopping_list", "shopping_item", "shopping_item_source", "sync_outbox", "sync_record_rev", "sync_state", "sync_problem", "sync_photo_wanted", "tagebuch_eintrag",
     )
 
     @Before fun setUp() {
@@ -35,7 +35,7 @@ class SyncTriggersSqliteCompatTest {
         val driver = loader.loadClass("org.sqlite.JDBC").getDeclaredConstructor().newInstance() as Driver
         conn = driver.connect("jdbc:sqlite::memory:", Properties())
         val schema = Json.parseToJsonElement(
-            File("schemas/de.foody.app.data.db.FoodyDatabase/6.json").readText(),
+            File("schemas/de.foody.app.data.db.FoodyDatabase/8.json").readText(),
         ).jsonObject["database"]!!.jsonObject["entities"]!!.jsonArray.map { it.jsonObject }
         exec("PRAGMA foreign_keys = ON")
         exec("PRAGMA recursive_triggers = 1")
@@ -139,5 +139,15 @@ class SyncTriggersSqliteCompatTest {
 
     private fun queuedAt(id: String): Long = conn.createStatement().use { st ->
         st.executeQuery("SELECT queuedAt FROM sync_outbox WHERE type = 'ingredient' AND recordId = '$id'").use { rs -> rs.next(); rs.getLong(1) }
+    }
+
+    @Test fun tagebuchEintragWirdVorgemerkt() {
+        exec(
+            "INSERT OR ABORT INTO tagebuch_eintrag (id, datum, mahlzeit, art, name, vollstaendig, createdAt, updatedAt) " +
+                "VALUES ('t', 20371, 'SNACK', 'FREI', 'Apfel', 1, 1, 1)",
+        )
+        assertEquals(mapOf(("tagebuch_eintrag" to "t") to 0), outbox().filterKeys { it.first == "tagebuch_eintrag" })
+        exec("DELETE FROM tagebuch_eintrag WHERE id = 't'")
+        assertEquals(1, outbox().getValue("tagebuch_eintrag" to "t"))
     }
 }

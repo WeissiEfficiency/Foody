@@ -145,11 +145,11 @@ fun PlannerScreen(onOpenRecipe: (String) -> Unit, vm: PlannerViewModel = hiltVie
                         Text(stringResource(R.string.planner_suggest))
                     }
                 }
-                if (s.dayNutrition.isNotEmpty()) {
+                s.durchschnitt?.let { d ->
                     item(key = "average") {
-                        val avg = s.dayNutrition.values.map { it.kcal }.average().toInt()
+                        val wert = (if (d.vollstaendig) "" else "≥ ") + d.kcal
                         Text(
-                            pluralStringResource(R.plurals.planner_average, s.dayNutrition.size, avg, s.dayNutrition.size),
+                            pluralStringResource(R.plurals.planner_average, d.tage, wert, d.tage),
                             style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }

@@ -279,4 +279,19 @@ class SyncLocalStoreTest {
         assertNull(state.serverUrl)
         assertNull(state.householdId)
     }
+
+    @Test fun tagebuchZaehltAlsNutzerdatenUndWirdKomplettVorgemerkt() = runTest {
+        db.syncDao().clearOutbox()
+        assertFalse(db.syncDao().hasUserData())
+        db.tagebuchDao().upsert(
+            de.foody.app.data.db.TagebuchEintragEntity(
+                id = "t", datum = java.time.LocalDate.of(2026, 10, 10), mahlzeit = "SNACK",
+                art = de.foody.domain.TagebuchArt.FREI, name = "Apfel", createdAt = 1, updatedAt = 1,
+            ),
+        )
+        assertTrue(db.syncDao().hasUserData(), "Ein Gerät nur mit Tagebuch hat eigene Daten (Zusammenführen anbieten)")
+        db.syncDao().clearOutbox()
+        db.syncDao().enqueueAllRoots(5)
+        assertTrue(db.syncDao().outbox().any { it.type == "tagebuch_eintrag" && it.recordId == "t" && !it.deleted })
+    }
 }

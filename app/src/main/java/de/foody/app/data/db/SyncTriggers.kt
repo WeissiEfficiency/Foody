@@ -24,7 +24,7 @@ object SyncTriggers {
     /** Pflege-Trigger: nicht bei angewendeten Server-Daten; fehlt die Zeile, gilt „nicht anwenden“. */
     private const val NOT_APPLYING = "COALESCE((SELECT applyingRemote FROM sync_state WHERE id = 1), 0) = 0"
 
-    private val roots = listOf("ingredient", "recipe", "meal_slot", "pantry_item", "shopping_list", "shopping_item")
+    private val roots = listOf("ingredient", "recipe", "meal_slot", "pantry_item", "shopping_list", "shopping_item", "tagebuch_eintrag")
 
     /** Kindtabelle, Elterntabelle (= Typ), Fremdschlüsselspalte. */
     private val children = listOf(
@@ -123,9 +123,20 @@ object SyncTriggers {
         names.forEach { db.execSQL("DROP TRIGGER IF EXISTS $it") }
     }
 
-    /** Legt die Sync-Trigger an (idempotent). */
+    private val triggerTable = Regex(""" ON (\w+) WHEN """)
+
+    /** Tabelle, an der ein Trigger hängt. */
+    fun tableOf(name: String): String = triggerTable.find(statements[names.indexOf(name)])!!.groupValues[1]
+
+    /**
+     * Legt die Sync-Trigger an (idempotent) – nur für Tabellen, die es schon gibt: Ältere Migrationen rufen das
+     * auf einem Stand auf, dem spätere Tabellen (z. B. `tagebuch_eintrag`, v8) noch fehlen.
+     */
     fun create(db: SupportSQLiteDatabase) {
-        statements.forEach(db::execSQL)
+        val tables = db.query("SELECT name FROM sqlite_master WHERE type = 'table'").use { c ->
+            buildSet { while (c.moveToNext()) add(c.getString(0)) }
+        }
+        statements.filter { triggerTable.find(it)!!.groupValues[1] in tables }.forEach(db::execSQL)
     }
 }
 

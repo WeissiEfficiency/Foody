@@ -21,6 +21,9 @@ import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import de.foody.app.data.db.MealSlotEntity
+import de.foody.app.data.db.TagebuchEintragEntity
+import de.foody.domain.MeasureUnit
+import de.foody.domain.TagebuchArt
 import de.foody.domain.Mahlzeit
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -157,5 +160,29 @@ class BackupZipTest {
         assertNull(recipes.get(id)?.gaenge)
         assertNull(recipes.get(ohne)?.mahlzeiten)
         assertEquals("FRUEHSTUECK", db.mealPlanDao().get("s")?.slotType)
+    }
+
+    @Test fun tagebuchImBackup() = runTest {
+        val e = TagebuchEintragEntity(
+            id = "t1", datum = java.time.LocalDate.of(2026, 10, 10), mahlzeit = "SNACK", art = TagebuchArt.ZUTAT, name = "Joghurt",
+            zutatId = "z", menge = java.math.BigDecimal("150"), einheit = MeasureUnit.GRAM, energieKj = java.math.BigDecimal("380.5"),
+            vollstaendig = false, createdAt = 1, updatedAt = 2,
+        )
+        db.tagebuchDao().upsert(e)
+        val zip = File(work, "t.zip")
+        backup.export(zip.toUri())
+        backup.deleteAll()
+        assertNull(db.tagebuchDao().get("t1"))
+        backup.import(zip.toUri())
+        assertEquals(e, db.tagebuchDao().get("t1"))
+
+        // Ältere Sicherung ohne Tagebuch bleibt lesbar
+        val json = File(work, "alt.json")
+        val text = java.util.zip.ZipFile(zip).use { z -> z.getInputStream(z.getEntry("backup.json")).readBytes().decodeToString() }
+        json.writeText(text.replace(Regex(""",\s*"tagebuch"\s*:\s*\[[^\]]*\]"""), ""))
+        assertFalse("tagebuch" in json.readText())
+        backup.deleteAll()
+        backup.import(json.toUri())
+        assertNull(db.tagebuchDao().get("t1"))
     }
 }

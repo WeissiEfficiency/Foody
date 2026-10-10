@@ -1,5 +1,7 @@
 package de.foody.app.sync
 
+import de.foody.app.data.db.TagebuchEintragEntity
+import de.foody.sync.protocol.TagebuchPayload
 import android.database.SQLException
 import androidx.room.withTransaction
 import de.foody.app.data.db.FoodyDatabase
@@ -72,6 +74,7 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
         data class Pantry(val entity: PantryItemEntity) : Mapped
         data class ShoppingList(val entity: ShoppingListEntity) : Mapped
         data class ShoppingItem(val parts: ShoppingItemParts) : Mapped
+        data class Tagebuch(val entity: TagebuchEintragEntity) : Mapped
     }
 
     /**
@@ -188,6 +191,8 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
                 Mapped.ShoppingList(SyncMapper.shoppingList(r.id, decoded, updatedAt, db.shoppingDao().getList(r.id)))
             is ShoppingItemPayload ->
                 Mapped.ShoppingItem(SyncMapper.shoppingItem(r.id, decoded, updatedAt, db.shoppingDao().getItem(r.id)))
+            is TagebuchPayload ->
+                Mapped.Tagebuch(SyncMapper.tagebuch(r.id, decoded, updatedAt, db.tagebuchDao().get(r.id)))
             else -> throw IllegalArgumentException("Unbekannter Payload-Typ")
         }
         mapped to PayloadValidator.references(r)
@@ -206,6 +211,7 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
         RecordType.PANTRY_ITEM -> db.pantryDao().get(id) != null
         RecordType.SHOPPING_LIST -> db.shoppingDao().getList(id) != null
         RecordType.SHOPPING_ITEM -> db.shoppingDao().getItem(id) != null
+        RecordType.TAGEBUCH_EINTRAG -> db.tagebuchDao().get(id) != null
     }
 
     private suspend fun applyLive(r: SyncRecord, now: Long, c: Counters, selfQueued: MutableMap<Pair<String, String>, Long>) {
@@ -234,6 +240,7 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
                 sd.deleteSources(r.id)
                 sd.insertSources(mapped.parts.sources)
             }
+            is Mapped.Tagebuch -> db.tagebuchDao().upsert(mapped.entity)
         }
         dao.setRev(SyncRecordRevEntity(r.type.wire, r.id, r.rev ?: 0L))
         // Das Problem „Foto nicht übertragbar“ bleibt, solange der Server-Stand kein Foto hat
@@ -312,6 +319,7 @@ class SyncApplier @Inject constructor(private val db: FoodyDatabase, private val
             RecordType.PANTRY_ITEM -> db.pantryDao().delete(r.id)
             RecordType.SHOPPING_LIST -> db.shoppingDao().deleteList(r.id)
             RecordType.SHOPPING_ITEM -> db.shoppingDao().deleteItem(r.id)
+            RecordType.TAGEBUCH_EINTRAG -> db.tagebuchDao().delete(r.id)
         }
         dao.setRev(rev)
         dao.clearProblem(r.type.wire, r.id)

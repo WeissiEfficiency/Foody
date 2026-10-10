@@ -220,6 +220,7 @@ class SyncLocalStore @Inject constructor(private val db: FoodyDatabase, private 
             RecordType.SHOPPING_ITEM -> db.shoppingDao().getItem(id)?.let {
                 it.updatedAt to SyncMapper.shoppingItem(it, db.shoppingDao().getSources(id))
             }
+            RecordType.TAGEBUCH_EINTRAG -> db.tagebuchDao().get(id)?.let { it.updatedAt to SyncMapper.tagebuch(it) }
         } ?: return Built.Gone
         return Built.Record(
             SyncRecord(

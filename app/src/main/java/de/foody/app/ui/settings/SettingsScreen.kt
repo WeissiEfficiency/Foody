@@ -53,6 +53,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(
     onManageIngredients: () -> Unit,
+    onOpenPantry: () -> Unit,
     onConnectSync: (reconnect: Boolean) -> Unit,
     notice: Int? = null,
     onNoticeShown: () -> Unit = {},
@@ -115,6 +116,11 @@ fun SettingsScreen(
                         singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                     )
+                }
+                SettingsCard(stringResource(R.string.nav_pantry)) {
+                    OutlinedButton(onOpenPantry, Modifier.fillMaxWidth(), shape = RoundedCornerShape(50)) {
+                        Text(stringResource(R.string.settings_vorrat))
+                    }
                 }
                 SettingsCard(stringResource(R.string.ingredients_title)) {
                     OutlinedButton(onManageIngredients, Modifier.fillMaxWidth(), shape = RoundedCornerShape(50)) {
