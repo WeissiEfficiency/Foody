@@ -93,7 +93,14 @@ class NaehrwertScanTest {
     @Test fun leereEingabe() {
         val e = NaehrwertScan.auswerten(emptyList())
         assertTrue(e.werte.isEmpty())
-        assertEquals(NutrientBasis.PER_100_G, e.basis)
+        assertEquals<NutrientBasis?>(null, e.basis)
+    }
+
+    /** Ohne „100 g“/„100 ml“ im Bild bleibt die Basis offen – ein Getränk würde sonst still auf Gramm gesetzt. */
+    @Test fun basisOhneAngabeBleibtOffen() {
+        val e = NaehrwertScan.auswerten(listOf(zeile("Fett 1,5 g"), zeile("Kohlenhydrate 4,8 g")))
+        assertEquals<NutrientBasis?>(null, e.basis)
+        assertEquals("1.5", e.werte.wert(Nutrient.FAT_G))
     }
 
     /** Echte ML-Kit-Ausgabe eines leicht schiefen Fotos (Emulator): „ß“ → „s“ und „g“ → „9“ sind typische Lesefehler. */

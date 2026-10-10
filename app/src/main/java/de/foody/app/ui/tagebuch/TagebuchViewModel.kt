@@ -4,6 +4,7 @@ import de.foody.app.scan.Packung
 import de.foody.app.scan.PackungScan
 import de.foody.domain.Ingredient
 import de.foody.domain.Nutrient
+import de.foody.domain.NutrientBasis
 import de.foody.domain.NutrientProfile
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -199,7 +200,7 @@ class TagebuchViewModel @Inject constructor(
      */
     suspend fun packungEintragen(m: Mahlzeit, name: String, menge: BigDecimal, einheit: MeasureUnit, packung: Packung, alsZutat: Boolean): Boolean {
         val n = name.trim()
-        val profil = NutrientProfile(packung.basis, packung.werte)
+        val profil = NutrientProfile(packung.basis ?: NutrientBasis.PER_100_G, packung.werte)
         val w = Tagebuch.naehrwerteZutat(Ingredient("", n, nutrients = profil), menge, einheit) ?: return false
         val datum = tag
         if (!alsZutat) {
@@ -210,7 +211,7 @@ class TagebuchViewModel @Inject constructor(
         val basis = ingredients.findByName(n) ?: IngredientEntity(id = newId(), canonicalName = n, createdAt = jetzt, updatedAt = jetzt, version = 0)
         fun wert(x: Nutrient, alt: BigDecimal?) = packung.werte[x] ?: alt
         val zutat = basis.copy(
-            nutrientBasis = packung.basis,
+            nutrientBasis = packung.basis ?: NutrientBasis.PER_100_G,
             energyKj = wert(Nutrient.ENERGY_KJ, basis.energyKj), protein = wert(Nutrient.PROTEIN_G, basis.protein),
             carbs = wert(Nutrient.CARBS_G, basis.carbs), fat = wert(Nutrient.FAT_G, basis.fat), fiber = wert(Nutrient.FIBER_G, basis.fiber),
             sugar = wert(Nutrient.SUGAR_G, basis.sugar), salt = wert(Nutrient.SALT_G, basis.salt),

@@ -10,8 +10,11 @@ data class OcrElement(val text: String, val links: Int, val oben: Int, val unten
     val hoehe: Int get() = unten - oben
 }
 
-/** Erkannte Nährwerte je 100 g bzw. 100 ml; fehlende Nährwerte fehlen in [werte]. */
-data class ScanErgebnis(val basis: NutrientBasis, val werte: Map<Nutrient, BigDecimal>)
+/**
+ * Erkannte Nährwerte je 100 g bzw. 100 ml; fehlende Nährwerte fehlen in [werte]. [basis] ist `null`, wenn das Bild
+ * weder „100 g“ noch „100 ml“ zeigt – dann bleibt die Basis, die der Nutzer schon gewählt hat.
+ */
+data class ScanErgebnis(val basis: NutrientBasis?, val werte: Map<Nutrient, BigDecimal>)
 
 /**
  * Liest eine Nährwerttabelle aus erkanntem Text. Nährwerttabellen sind Tabellen: Was auf einer Höhe steht, gehört
@@ -47,7 +50,11 @@ object NaehrwertScan {
     fun auswerten(elemente: List<OcrElement>): ScanErgebnis {
         val zeilen = zeilen(elemente)
         val gesamt = zeilen.joinToString(" ").lowercase()
-        val ml = Regex("""100\s*ml""").containsMatchIn(gesamt) && !Regex("""100\s*g\b""").containsMatchIn(gesamt)
+        val basis = when {
+            Regex("""100\s*g\b""").containsMatchIn(gesamt) -> NutrientBasis.PER_100_G
+            Regex("""100\s*ml""").containsMatchIn(gesamt) -> NutrientBasis.PER_100_ML
+            else -> null
+        }
         val werte = mutableMapOf<Nutrient, BigDecimal>()
         for (zeile in zeilen) {
             val klein = zeile.lowercase()
@@ -56,7 +63,7 @@ object NaehrwertScan {
             val ab = treffer.stichwoerter.mapNotNull { s -> klein.indexOf(s).takeIf { it >= 0 } }.min()
             wert(zeile.substring(ab), treffer.naehrwert)?.let { werte[treffer.naehrwert] = it }
         }
-        return ScanErgebnis(if (ml) NutrientBasis.PER_100_ML else NutrientBasis.PER_100_G, plausibel(werte))
+        return ScanErgebnis(basis, plausibel(werte))
     }
 
     /** Verwirft Unsinniges: Energie über 4000 kJ, Gramm über 100, Zucker über Kohlenhydraten. */
