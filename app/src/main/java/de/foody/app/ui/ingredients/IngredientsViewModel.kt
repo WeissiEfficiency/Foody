@@ -1,5 +1,6 @@
 package de.foody.app.ui.ingredients
 
+import de.foody.app.scan.PackungScan
 import androidx.compose.material3.Text
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,7 +17,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class IngredientsViewModel @Inject constructor(private val repo: IngredientRepository) : ViewModel() {
+class IngredientsViewModel @Inject constructor(
+    private val repo: IngredientRepository,
+    /** „Von Packung scannen“ im Dialog. */
+    val scan: PackungScan,
+) : ViewModel() {
     val ingredients = repo.observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** Einmalige Meldung (Text-Ressource + Zahl für Platzhalter); wird von der UI nach Anzeige quittiert. */

@@ -1,5 +1,6 @@
 package de.foody.app.ui.common
 
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -108,15 +109,22 @@ fun ServingsStepper(value: Int, onChange: (Int) -> Unit, modifier: Modifier = Mo
 }
 
 @Composable
-fun DecimalField(value: String, onChange: (String) -> Unit, label: String, modifier: Modifier = Modifier) {
+fun DecimalField(value: String, onChange: (String) -> Unit, label: String, modifier: Modifier = Modifier, markiert: Boolean = false) {
     val invalid = value.isNotBlank() && parseDecimal(value) == null
+    val primary = MaterialTheme.colorScheme.primary
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
         label = { Text(label) },
         singleLine = true,
         isError = invalid,
-        supportingText = if (invalid) ({ Text(stringResource(R.string.error_number)) }) else null,
+        supportingText = when {
+            invalid -> ({ Text(stringResource(R.string.error_number)) })
+            // Vom Scan vorausgefüllt: sichtbar machen, damit der Wert geprüft wird
+            markiert -> ({ Text(stringResource(R.string.scan_erkannt), color = primary) })
+            else -> null
+        },
+        colors = if (markiert) OutlinedTextFieldDefaults.colors(unfocusedBorderColor = primary) else OutlinedTextFieldDefaults.colors(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         modifier = modifier,
     )

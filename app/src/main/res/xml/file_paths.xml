@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Nur der Fotoordner ist für die Kamera-App freigegeben, nichts sonst aus dem App-Speicher -->
+<!-- Nur die Foto-Ordner sind für die Kamera-App freigegeben, nichts sonst aus dem App-Speicher -->
 <paths>
     <files-path name="recipe_images" path="recipe_images/" />
+    <!-- Packungsfotos zum Scannen; werden nach der Erkennung gelöscht -->
+    <cache-path name="scan" path="scan/" />
 </paths>
