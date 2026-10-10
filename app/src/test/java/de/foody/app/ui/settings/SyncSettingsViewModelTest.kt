@@ -231,7 +231,8 @@ class SyncSettingsViewModelTest {
         val vm = vm()
         vm.state.await { it.connected }
         vm.disconnect()
-        val s = vm.state.await { !it.connected }
+        // Der Zustand „getrennt“ kommt aus der DB, die Meldung erst danach: auf beides warten (sonst flakey in der CI).
+        val s = vm.state.await { !it.connected && it.message != null }
         assertEquals(1, fake.disconnects)
         assertNull(s.householdName)
         assertEquals(R.string.sync_disconnected, s.message)
