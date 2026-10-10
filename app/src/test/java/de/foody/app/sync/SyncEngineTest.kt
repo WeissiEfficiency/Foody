@@ -398,6 +398,39 @@ class SyncEngineTest {
     }
 
     @Test
+    fun oversizedDownloadDoesNotBlockOtherWishesOrFailTheRun() = runTest {
+        activate()
+        val bigHash = PhotoHash.of(jpeg(1, 1))
+        val goodBytes = jpeg(2, 2)
+        // Wünsche laufen nach Rezept-ID: der zu große kommt zuerst.
+        val big = recipe("r1", null)
+        val good = RecipeRepository(db.recipeDao()).save(
+            RecipeDraft(
+                id = "r2", name = "G", defaultServings = 2,
+                ingredients = listOf(RecipeDraft.Line("i", BigDecimal.ONE, MeasureUnit.GRAM, null, false)),
+            ),
+        )
+        db.syncDao().clearOutbox()
+        db.syncDao().upsertPhotoWanted(SyncPhotoWantedEntity(big, bigHash))
+        db.syncDao().upsertPhotoWanted(SyncPhotoWantedEntity(good, PhotoHash.of(goodBytes)))
+        api.serverPhotos[PhotoHash.of(goodBytes)] = goodBytes
+        val proxy = object : SyncApi by api {
+            override suspend fun downloadPhoto(sha256: String): ByteArray? {
+                // z. B. eine falsche Content-Length eines Proxys
+                if (sha256 == bigHash) throw SyncApiException.TooLarge(200, null)
+                return api.downloadPhoto(sha256)
+            }
+        }
+        val photoIndex = PhotoIndex(db, photoStore)
+        val e = SyncEngine(db, SyncLocalStore(db, photoIndex), SyncApplier(db, photoIndex), proxy, Clock.systemUTC(), photoIndex, photoStore)
+        val outcome = e.run()
+        assertTrue(outcome is SyncOutcome.Success, outcome.toString())
+        assertNull(db.syncDao().getState()!!.lastError)
+        assertNotNull(db.recipeDao().get(good)!!.imageUri, "der zweite Wunsch wird trotzdem geladen")
+        assertEquals(listOf(big), db.syncDao().photosWanted().map { it.recipeId })
+    }
+
+    @Test
     fun orphanWishIsDropped() = runTest {
         activate()
         db.syncDao().upsertPhotoWanted(SyncPhotoWantedEntity("gone", PhotoHash.of(jpeg(3))))

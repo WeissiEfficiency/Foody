@@ -311,6 +311,8 @@ class SyncEngine(
                 continue
             } catch (_: SyncApiException.ClientError) {
                 continue // dieser Wunsch bleibt, blockiert aber die anderen nicht
+            } catch (_: SyncApiException.TooLarge) {
+                continue // ebenso: Antwort über MAX_PHOTO_BYTES (etwa falsche Länge eines Proxys)
             } ?: continue
             db.withTransaction {
                 if (dao.photoWanted(wish.recipeId)?.sha256 != wish.sha256) return@withTransaction
