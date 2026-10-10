@@ -1,5 +1,6 @@
 package de.foody.server
 
+import de.foody.sync.protocol.Protocol
 import de.foody.server.db.Database
 import de.foody.server.db.Migrations
 import io.ktor.client.request.get
@@ -66,7 +67,7 @@ class DatabaseTest {
         assertEquals(HttpStatusCode.Conflict, missing.status)
         assertEquals("""{"code":"protocol_too_old"}""", missing.bodyAsText())
 
-        val newer = client.get("/api/v1/households") { header("X-Foody-Protocol", "2") }
+        val newer = client.get("/api/v1/households") { header("X-Foody-Protocol", (Protocol.VERSION + 1).toString()) }
         assertEquals(HttpStatusCode.Conflict, newer.status)
         assertEquals("""{"code":"server_too_old"}""", newer.bodyAsText())
     }

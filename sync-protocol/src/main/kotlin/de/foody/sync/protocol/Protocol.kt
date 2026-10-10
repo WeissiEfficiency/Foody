@@ -4,8 +4,12 @@ import kotlinx.serialization.json.Json
 
 /** Konstanten und gemeinsame JSON-Konfiguration des Sync-Protokolls (Server und App). */
 object Protocol {
-    const val VERSION = 1
-    const val MIN_VERSION = 1
+    /**
+     * 2: Typ `tagebuch_eintrag`. Eine App mit Version 1 kennt ihn nicht und könnte die Daten nicht lesen –
+     * der Server lehnt sie deshalb mit `protocol_too_old` ab („Bitte App aktualisieren“) statt sie scheitern zu lassen.
+     */
+    const val VERSION = 2
+    const val MIN_VERSION = 2
 
     /** Header, den jede `/api/v1`-Anfrage mit der Protokollversion des Clients trägt. */
     const val HEADER = "X-Foody-Protocol"
