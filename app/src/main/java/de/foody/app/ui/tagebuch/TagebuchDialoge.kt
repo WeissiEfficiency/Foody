@@ -180,12 +180,14 @@ internal fun HinzufuegenDialog(mahlzeit: Mahlzeit, s: TagebuchUiState, vm: Tageb
         pMengeZahl?.let { m -> Tagebuch.naehrwerteZutat(Ingredient("", name, nutrients = NutrientProfile(p.basis, p.werte)), m, pEinheit) }
     }
     var geprueft by remember { mutableStateOf(false) }
+    // Hat der Nutzer das Häkchen selbst gesetzt, gilt seine Wahl – auch wenn die Namensprüfung erst danach fertig wird
+    var vomNutzer by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(name, packung) {
         if (packung != null) {
             val neu = vm.zutatMitNamen(name)?.canonicalName
-            // Nur beim ersten Mal und wenn sich „gibt es schon“ ändert: sonst überschriebe jeder Tastendruck die Wahl.
+            // Vorschlag nur beim ersten Mal und wenn sich „gibt es schon“ ändert, nicht bei jedem Tastendruck.
             // Vorhandene Zutat nicht still überschreiben: dann ist „aktualisieren“ standardmäßig aus.
-            if (!geprueft || neu != vorhanden) alsZutat = neu == null
+            if (!vomNutzer && (!geprueft || neu != vorhanden)) alsZutat = neu == null
             vorhanden = neu
             geprueft = true
         }
@@ -268,7 +270,7 @@ internal fun HinzufuegenDialog(mahlzeit: Mahlzeit, s: TagebuchUiState, vm: Tageb
                                 style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                         }
                         Row(
-                            Modifier.fillMaxWidth().toggleable(alsZutat, role = Role.Checkbox) { alsZutat = it },
+                            Modifier.fillMaxWidth().toggleable(alsZutat, role = Role.Checkbox) { alsZutat = it; vomNutzer = true },
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Checkbox(alsZutat, null)
