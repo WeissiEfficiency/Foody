@@ -175,4 +175,11 @@ class PayloadValidatorTest {
         // Lose Referenzen: Rezept und Plan-Eintrag dürfen fehlen, ohne dass der Datensatz zurückgehalten wird
         assertEquals(emptyList(), PayloadValidator.references(rec(RecordType.TAGEBUCH_EINTRAG, tagebuch())))
     }
+
+    @Test
+    fun strichcodeNurZiffernHoechstens14() {
+        assertNull(PayloadValidator.validate(rec(RecordType.INGREDIENT, IngredientPayload(name = "J", barcode = "4006040002031"))))
+        assertEquals(ErrorCode.INVALID_PAYLOAD, PayloadValidator.validate(rec(RecordType.INGREDIENT, IngredientPayload(name = "J", barcode = "123456789012345"))))
+        assertEquals(ErrorCode.INVALID_PAYLOAD, PayloadValidator.validate(rec(RecordType.INGREDIENT, IngredientPayload(name = "J", barcode = "40060x"))))
+    }
 }

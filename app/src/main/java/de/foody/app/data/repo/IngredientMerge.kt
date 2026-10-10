@@ -30,5 +30,6 @@ fun IngredientEntity.fillFrom(other: IngredientEntity): IngredientEntity {
         category = category ?: other.category,
         densityGPerMl = densityGPerMl ?: other.densityGPerMl,
         pieceWeightG = pieceWeightG ?: other.pieceWeightG,
+        barcode = barcode ?: other.barcode,
     )
 }

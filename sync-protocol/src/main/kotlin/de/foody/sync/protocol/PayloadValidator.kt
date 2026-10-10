@@ -16,6 +16,7 @@ object PayloadValidator {
         "MILLIGRAM", "GRAM", "KILOGRAM", "MILLILITER", "CENTILITER", "LITER", "TEASPOON", "TABLESPOON", "PIECE", "PACKAGE", "CAN",
     )
     private val BASES = setOf("PER_100_G", "PER_100_ML")
+    private val BARCODE = Regex("^[0-9]{1,14}$")
     private val MAHLZEITEN = setOf("FRUEHSTUECK", "MITTAGESSEN", "ABENDESSEN", "SNACK")
     private val TAGEBUCH_ARTEN = setOf("REZEPT", "ZUTAT", "FREI")
 
@@ -74,6 +75,7 @@ object PayloadValidator {
                 name(payload.name)
                 optText(payload.category, MAX_NAME)
                 optText(payload.source, MAX_NAME)
+                ensure(payload.barcode == null || BARCODE.matches(payload.barcode))
                 ensure(payload.basis == null || payload.basis in BASES)
                 with(payload) {
                     listOf(density, pieceWeight, energyKj, protein, carbs, fat, fiber, sugar, salt).forEach { optNumber(it) }

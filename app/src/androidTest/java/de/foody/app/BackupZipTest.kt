@@ -185,4 +185,13 @@ class BackupZipTest {
         backup.import(json.toUri())
         assertNull(db.tagebuchDao().get("t1"))
     }
+
+    @Test fun strichcodeImBackup() = runTest {
+        db.ingredientDao().upsert(de.foody.app.data.db.IngredientEntity(id = "j", canonicalName = "Joghurt", barcode = "4006040002031", createdAt = 1, updatedAt = 1))
+        val zip = File(work, "b.zip")
+        backup.export(zip.toUri())
+        backup.deleteAll()
+        backup.import(zip.toUri())
+        assertEquals("4006040002031", db.ingredientDao().get("j")?.barcode)
+    }
 }

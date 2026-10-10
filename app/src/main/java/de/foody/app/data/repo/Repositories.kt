@@ -42,6 +42,8 @@ class IngredientRepository @Inject constructor(
 
     suspend fun get(id: String) = dao.get(id)
 
+    suspend fun zutatMitStrichcode(code: String) = dao.findByBarcode(code)
+
     suspend fun save(e: IngredientEntity) = dao.upsert(e.copy(updatedAt = System.currentTimeMillis(), version = e.version + 1))
 
     /**

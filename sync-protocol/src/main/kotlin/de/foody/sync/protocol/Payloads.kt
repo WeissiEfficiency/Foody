@@ -21,6 +21,8 @@ data class IngredientPayload(
     val sugar: String? = null,
     val salt: String? = null,
     val source: String? = null,
+    /** Strichcode der Packung; seit App-DB v9 (optional, ältere Apps ignorieren ihn). */
+    val barcode: String? = null,
 )
 
 @Serializable
