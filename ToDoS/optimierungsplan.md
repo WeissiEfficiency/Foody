@@ -74,6 +74,21 @@ Die Abschluss-Reviews deckten nur die neuen Features ab. Älterer Code wurde nie
 
 Vorgehen je Bereich: `/code-review` auf den Ordner, Funde wie bisher mit Test, der vorher fehlschlägt.
 
+**Ergebnis Sync (2026-10-10), 10 Funde:**
+
+| Fund | Stand |
+|---|---|
+| Vom Server abgelehntes Foto (4xx/413, z. B. Proxy-Limit) hielt das Rezept für immer in der Outbox, jeder Lauf lud die Bytes erneut hoch | behoben: Rezept geht ohne Foto mit `photo_unsyncable` raus |
+| `missing_reference` löste sich nie, wenn das Verweisziel nur lokal existiert (z. B. Startzutat nach „nur herunterladen“) | behoben: lokale Ziele werden nachgereicht |
+| „Trennen“ während eines Laufs: der Lauf schrieb nach dem Aufräumen Revisionen/Probleme zurück | behoben: gemeinsame Lauf-Sperre im `SyncLocalStore`, `deactivate` wartet |
+| Foto-Wünsche überlebten das Trennen, beim Verbinden mit anderem Server ging ein fremder Hash raus | behoben: `deactivate` leert `sync_photo_wanted` |
+| `TooLarge` beim Foto-Download brach den Lauf dauerhaft ab | behoben |
+| Token wurde je HTTP-Anfrage per Keystore entschlüsselt | behoben: Cache solange der gespeicherte Wert gleich ist |
+| `isStillNeeded`/Löschen je Typ doppelt in Engine und Applier; Rezept-Payload doppelt dekodiert; Problemtabelle je Rezept geladen | behoben |
+| Pull puffert alle Seiten vor dem Anwenden | bewusst so (Eltern vor Kindern über Seitengrenzen), Test `pullIsAppliedOnceAfterAllPages`; erst bei großen Haushalten angehen |
+| `hashRecipePhotos` läuft je Batch über die ganze Outbox | geringer Nutzen (Hash-Cache greift), offen |
+| Test „Voll-Abgleich mit ungesendeten Änderungen“ | war schon da (`fullResyncKeeps…`, `cursorExpiredTriggersFullResync`) |
+
 ## Phase 2 – Logik bewerten (1 Tag)
 
 1. **Rechenregeln gegeneinander prüfen:** Nährwerte erscheinen an vier Stellen (Rezeptdetail, Rezeptliste,
