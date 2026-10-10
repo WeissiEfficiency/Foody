@@ -208,8 +208,8 @@ class RecipeRepository @Inject constructor(private val dao: RecipeDao) {
                 favorite = existing?.favorite ?: false,
                 sourceUrl = d.sourceUrl ?: existing?.sourceUrl,
                 rating = existing?.rating,
-                mahlzeiten = if (d.einordnungUebernehmen) alsText(d.mahlzeiten) else existing?.mahlzeiten,
-                gaenge = if (d.einordnungUebernehmen) alsText(d.gaenge) else existing?.gaenge,
+                mahlzeiten = if (d.einordnungUebernehmen) alsText(d.mahlzeiten, existing?.mahlzeiten, Mahlzeit.entries) else existing?.mahlzeiten,
+                gaenge = if (d.einordnungUebernehmen) alsText(d.gaenge, existing?.gaenge, Gang.entries) else existing?.gaenge,
             )
             val lines = d.ingredients.mapIndexed { i, l ->
                 RecipeIngredientEntity(newId(), id, l.ingredientId, l.amount, l.unit, i, l.note, l.optional)

@@ -143,6 +143,17 @@ object RezeptEinordnung {
 /** Kommagetrennte Enum-Namen in Enum-Reihenfolge; `null` bleibt `null`, leere Menge wird `""`. */
 fun <E : Enum<E>> alsText(menge: Set<E>?): String? = menge?.sortedBy { it.ordinal }?.joinToString(",") { it.name }
 
+/**
+ * Wie [alsText], hängt aber Einträge aus [bisher] an, die diese App-Version nicht kennt (etwa per Sync von einer neueren
+ * Version) – sonst gingen sie beim Speichern verloren. `null` (= vermuten) bleibt `null`.
+ */
+fun <E : Enum<E>> alsText(menge: Set<E>?, bisher: String?, alle: List<E>): String? {
+    if (menge == null) return null
+    val bekannt = alle.map { it.name }.toSet()
+    val unbekannt = bisher.orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() && it !in bekannt }
+    return (listOfNotNull(alsText(menge).takeIf { !it.isNullOrEmpty() }) + unbekannt).joinToString(",")
+}
+
 /** Unbekannte oder beschädigte Einträge werden übersprungen, nicht gemeldet. */
 private fun <E : Enum<E>> mengeAus(text: String?, alle: List<E>): Set<E>? {
     if (text == null) return null
