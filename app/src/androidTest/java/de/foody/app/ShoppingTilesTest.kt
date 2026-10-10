@@ -4,6 +4,7 @@ import de.foody.app.data.ShoppingPreferences
 import android.content.Context
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -66,6 +67,17 @@ class ShoppingTilesTest {
         compose.onAllNodes(hasText("Bananen") and state("nicht auf der Liste")).onFirst().performClick()
         waitForOpen(listOf("Bananen"))
         assertEquals(1, runBlocking { db.shoppingDao().getAllItems().size }, "kein doppelter Eintrag")
+    }
+
+    @Test fun sectionCollapsesAgainWithoutOpeningAnother() {
+        val header = compose.onNode(hasText("Obst & Gemüse"))
+        header.performClick()
+        compose.onAllNodes(hasText("Bananen")).onFirst().assertExists()
+        // Früher blieb die Abteilung offen, bis man eine andere aufklappte
+        header.performClick()
+        compose.onAllNodes(hasText("Bananen")).assertCountEquals(0)
+        header.performClick()
+        compose.onAllNodes(hasText("Bananen")).onFirst().assertExists()
     }
 
     @Test fun searchAddsOwnItemOrKnownCatalogItem() {

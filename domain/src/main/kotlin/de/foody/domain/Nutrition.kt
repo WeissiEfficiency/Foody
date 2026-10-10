@@ -27,6 +27,12 @@ data class NutritionResult(
         return totals[n]?.divide(BigDecimal(servings), MATH_SCALE, RoundingMode.HALF_UP)
     }
 
+    /** Energie (kJ) einer Zeile je Portion; die Summe über alle Zeilen ergibt [perServing] der Energie. */
+    fun lineEnergyPerServingKj(lineId: String): BigDecimal? {
+        if (servings <= 0) return null
+        return lineEnergyKj[lineId]?.divide(BigDecimal(servings), MATH_SCALE, RoundingMode.HALF_UP)
+    }
+
     companion object {
         fun kjToKcal(kj: BigDecimal): BigDecimal = kj.divide(BigDecimal("4.184"), 1, RoundingMode.HALF_UP)
     }

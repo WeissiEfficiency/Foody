@@ -202,6 +202,20 @@ Mittel bis hoch.
 
 ---
 
+## 7) Kalorienanzeige
+
+### Erledigt (Branch `fix/einkauf-zuklappen-kcal-zeilen`)
+- Rezeptdetail: Die kcal neben den Zutaten galten für das ganze Rezept, oben stand aber kcal pro Portion – die
+  Zeilen passten daher nicht zur Summe. Jetzt zeigen die Zeilen kcal je Portion (gerundet statt abgeschnitten).
+- Einkaufsliste: Aufgeklappte Abteilungen ließen sich nicht wieder zuklappen, außer man öffnete vorher eine andere.
+
+### Offen
+- Planer, „Ø kcal pro Tag“ oben: Tage mit nur einer geplanten Mahlzeit zählen als voller Tag und drücken den
+  Schnitt; Rezepte ohne Nährwerte zählen mit 0 kcal, ohne dass die Zeile „≥“ zeigt. Mit dem Essenstracking
+  (Frühstück/Mittag/Abend/Snack) zusammen neu denken.
+
+---
+
 ## Umsetzungsempfehlung
 
 ### MVP-Reihenfolge
