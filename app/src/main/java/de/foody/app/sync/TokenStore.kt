@@ -1,5 +1,6 @@
 package de.foody.app.sync
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
@@ -27,6 +28,9 @@ private class MissingKeyException : Exception()
  * Das Token wird nie geloggt. Die API liest das Token bei jeder Anfrage; damit nicht jedes Mal der Keystore entschlüsselt,
  * bleibt das zuletzt entschlüsselte Paar (gespeicherter Wert → Token) im Speicher, solange der gespeicherte Wert gleich ist.
  */
+// commit() statt apply() und ohne KTX-`edit {}`: Das Ergebnis wird gebraucht – ein Token darf nach dem Anmelden
+// nicht still verloren gehen (siehe save).
+@SuppressLint("UseKtx", "ApplySharedPref")
 @Singleton
 open class TokenStore @Inject constructor(@ApplicationContext context: Context) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

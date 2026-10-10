@@ -1,7 +1,7 @@
 package de.foody.app.scan
 
 import android.content.Context
-import android.net.Uri
+import androidx.core.net.toUri
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.api.OptionalModuleApi
@@ -66,7 +66,7 @@ class MlKitTabellenScanner @Inject constructor(@ApplicationContext private val c
     private val erkenner by lazy { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
 
     override suspend fun scan(bildUri: String): ScanStatus = try {
-        val text = erkenner.process(InputImage.fromFilePath(context, Uri.parse(bildUri))).await()
+        val text = erkenner.process(InputImage.fromFilePath(context, bildUri.toUri())).await()
         val elemente = text.textBlocks.flatMap { block ->
             block.lines.mapNotNull { zeile -> zeile.boundingBox?.let { OcrElement(zeile.text, it.left, it.top, it.bottom, zeile.angle) } }
         }

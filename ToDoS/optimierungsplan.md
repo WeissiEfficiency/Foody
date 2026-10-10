@@ -191,6 +191,9 @@ Vorgehen je Bereich: `/code-review` auf den Ordner, Funde wie bisher mit Test, d
 
 ## Phase 5 – Absichern (laufend)
 
+**Zurückgestellt (2026-10-11):** Phase 5 kommt später. Start-Messung lieber einmal auf dem echten Gerät vor einem
+Release als in der CI (auf dem Emulator stürzte der Macrobenchmark ab, Messwerte schwanken stark).
+
 - Macrobenchmark in der CI (oder manuell vor Releases) mit Grenzwerten aus Phase 0.
 - Test-Emulator dauerhaft klären (eigene AVD oder Gerät) – sonst fehlen lokale Instrumentation-Läufe.
 - Ein PR je Phase/Bereich, wie bisher mit Auto-Merge.

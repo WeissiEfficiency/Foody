@@ -9,6 +9,7 @@ import kotlinx.coroutines.withContext
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
+import androidx.core.content.edit
 import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.foody.app.data.db.RecipeDao
@@ -86,7 +87,7 @@ class RecipePhotoStore @Inject constructor(
         val prefs = context.getSharedPreferences("foody", Context.MODE_PRIVATE)
         if (prefs.getInt(PREF_VERKLEINERT, 0) >= SHRINK_VERSION) return 0
         val n = shrinkAll()
-        prefs.edit().putInt(PREF_VERKLEINERT, SHRINK_VERSION).apply()
+        prefs.edit { putInt(PREF_VERKLEINERT, SHRINK_VERSION) }
         return n
     }
 
