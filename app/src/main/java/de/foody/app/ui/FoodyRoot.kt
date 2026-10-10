@@ -28,7 +28,9 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaul
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -78,7 +80,12 @@ private enum class TopLevel(val route: Any, @param:StringRes val label: Int, val
 fun FoodyRoot() {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
-    val dest = backStack?.destination
+    // Hervorgehoben wird der nächste Tab im Back-Stack: Unterseiten (Vorrat und Zutaten unter „Mehr“, ein aus dem
+    // Planer geöffnetes Rezept) gehören zu dem Tab, von dem aus sie geöffnet wurden.
+    val stapel by nav.currentBackStack.collectAsState()
+    val aktiverTab = remember(backStack, stapel) {
+        stapel.asReversed().firstNotNullOfOrNull { e -> TopLevel.entries.firstOrNull { e.destination.hasRoute(it.route::class) } }
+    }
     // Ab „expanded“ (≥ 840 dp) passen Raster und Rezept nebeneinander; darunter bleibt die Ein-Spalten-Navigation.
     val twoPane = currentWindowAdaptiveInfoV2().windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)
 
@@ -108,7 +115,7 @@ fun FoodyRoot() {
         navigationSuiteItems = {
             TopLevel.entries.forEach { item ->
                 item(
-                    selected = dest?.hasRoute(item.route::class) == true,
+                    selected = item == aktiverTab,
                     onClick = {
                         nav.navigate(item.route) {
                             popUpTo(nav.graph.findStartDestination().id) { saveState = true }
