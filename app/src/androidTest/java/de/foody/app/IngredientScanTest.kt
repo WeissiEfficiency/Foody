@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.app.data.db.IngredientEntity
 import de.foody.app.scan.OpenFoodFacts
@@ -60,5 +61,41 @@ class IngredientScanTest {
         assertEquals(OpenFoodFacts.QUELLE, e.nutrientSource)
         assertEquals(0, BigDecimal(1234).compareTo(e.energyKj))
         assertEquals("Naturjoghurt", e.canonicalName)
+    }
+
+    /** Strichcode gehört schon zu „Joghurt“: Der Dialog zeigt Joghurt mit dessen Werten – nicht den halb ausgefüllten neuen. */
+    @Test fun strichcodeImKatalogOeffnetZutatMitIhrenWerten() {
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        val db = androidx.room.Room.inMemoryDatabaseBuilder(context, de.foody.app.data.db.FoodyDatabase::class.java).build()
+        val joghurt = IngredientEntity(
+            id = "j", canonicalName = "Joghurt", category = "Milch & Käse", nutrientBasis = NutrientBasis.PER_100_G,
+            energyKj = BigDecimal(276), barcode = code, createdAt = 1, updatedAt = 1,
+        )
+        kotlinx.coroutines.runBlocking { db.ingredientDao().upsert(joghurt) }
+        val repo = de.foody.app.data.repo.IngredientRepository(db, db.ingredientDao(), context)
+        val vm = de.foody.app.ui.ingredients.IngredientsViewModel(
+            repo,
+            PackungScan(
+                leser = { StrichcodeStatus.Gelesen(code) }, tabelle = { ScanStatus.Fehler }, suche = { ProduktSuche.Antwort.Unbekannt },
+                katalog = { repo.zutatMitStrichcode(it) }, play = { true }, online = { true },
+            ),
+        )
+        compose.setContent { FoodyTheme { de.foody.app.ui.ingredients.IngredientsScreen(onBack = {}, vm = vm) } }
+        compose.onNode(androidx.compose.ui.test.hasContentDescription("Neue Zutat")).performClick()
+        compose.onNode(hasSetTextAction() and hasText("Name")).performTextInput("Halb getippt")
+        compose.onNodeWithText("Von Packung scannen").performScrollTo().performClick()
+        compose.onNodeWithText("Strichcode scannen").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Zutat bearbeiten")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasSetTextAction() and hasText("Joghurt")).assertExists()
+        compose.onNode(hasSetTextAction() and hasText("276")).assertExists()
+        compose.onNodeWithText("Speichern").performClick()
+        compose.waitForIdle()
+        val danach = kotlinx.coroutines.runBlocking { kotlinx.coroutines.delay(300); db.ingredientDao().get("j") }!!
+        assertEquals("Joghurt", danach.canonicalName)
+        assertEquals(code, danach.barcode)
+        assertEquals("Milch & Käse", danach.category)
+        assertEquals(0, BigDecimal(276).compareTo(danach.energyKj))
+        vm.aufraeumen()
+        db.close()
     }
 }

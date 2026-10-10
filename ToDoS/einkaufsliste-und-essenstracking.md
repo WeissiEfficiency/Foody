@@ -72,6 +72,9 @@ Mittel bis hoch, sobald die Planner- und Rezeptfunktionen stabil sind.
 
 ## 3) Einlesen der Nährwerte per Foto
 
+**Erledigt** (Spec `docs/superpowers/specs/2026-10-10-naehrwerte-scan-design.md`, ADR 0008): Strichcode (eigener Katalog,
+Open Food Facts) und Foto der Nährwerttabelle (ML Kit); Werte nur vorausgefüllt und markiert.
+
 ### Problem
 Die App soll bereits Rezept-Nährwerte verwalten, aber die Erfassung kann aufwendig sein.
 

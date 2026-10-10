@@ -7,13 +7,14 @@ werden und welche Restrisiken bewusst bleiben. Bei Änderungen an Import, Sicher
 
 | Bereich | Stand |
 |---|---|
-| Netzwerk | `INTERNET` nur für die optionale Synchronisation: ausschließlich HTTPS zum selbst gehosteten Sync-Server (Klartext per `network_security_config` verboten, nur System-CAs und keine Nutzer-Zertifikate – einzige Ausnahme: die mitgelieferte lokale CA [`foody_local_ca.crt`](../app/src/main/res/raw/foody_local_ca.crt) gilt ausschließlich für `foody.homeserver.lan` ohne Subdomains; `ServerUrl` lehnt andere Schemata sowie Zugangsdaten und Query in der Adresse ab), kein Coil-Netzwerkmodul. Ohne eingerichtetes Konto baut die App keine Verbindung auf |
+| Netzwerk | `INTERNET` für die optionale Synchronisation und die abschaltbare Online-Produktsuche (siehe unten). Sync: ausschließlich HTTPS zum selbst gehosteten Sync-Server (Klartext per `network_security_config` verboten, nur System-CAs und keine Nutzer-Zertifikate – einzige Ausnahme: die mitgelieferte lokale CA [`foody_local_ca.crt`](../app/src/main/res/raw/foody_local_ca.crt) gilt ausschließlich für `foody.homeserver.lan` ohne Subdomains; `ServerUrl` lehnt andere Schemata sowie Zugangsdaten und Query in der Adresse ab), kein Coil-Netzwerkmodul. Ohne eingerichtetes Konto baut die App keine Verbindung auf |
 | Sync-Token | Gerätetoken: AES-256/GCM-Schlüssel im Android Keystore (Alias `foody_sync_token`, nicht auslesbar), nur das Chiffrat (`IV:Chiffrat`, Base64) liegt in den SharedPreferences `foody_sync`; nicht in Backups (Preferences sind ausgeschlossen), nie im Log. Nicht entschlüsselbar (z. B. Gerätewechsel) → Token gilt als nicht vorhanden, neue Anmeldung nötig |
 | Debug-Ausnahme | Nur der Debug-Build (`app/src/debug`) erlaubt Klartext-`http://`, und nur für `10.0.2.2` und `localhost` (Emulator → Entwicklungsrechner); `ServerUrl` akzeptiert `http` nur mit diesem Schalter. Der Release-Build enthält die Ausnahme nicht |
 | Berechtigungen | Nur für Kochtimer: `POST_NOTIFICATIONS` (ab Android 13 abgefragt, ablehnbar), `FOREGROUND_SERVICE(_SPECIAL_USE)`, `WAKE_LOCK`. Bilder über Photo Picker, Dateien über SAF, Fotos über die System-Kamera (`TakePicture`) – ohne Berechtigung |
 | Dienst | `CookTimerService`: nicht exportiert, läuft nur solange ein Timer läuft; Wakelock mit Zeitlimit (nächstes Timer-Ende + 1 min) |
 | Exportierte Komponenten | Nur `MainActivity` (Launcher). Keine Intent-Filter für fremde Daten, keine WebView. Einziger PendingIntent: Öffnen der App aus der Timer-Meldung (`FLAG_IMMUTABLE`, explizit) |
-| FileProvider | Nicht exportiert, gibt nur `files/recipe_images/` frei, Schreibrecht nur befristet an die Kamera-App |
+| FileProvider | Nicht exportiert, gibt nur `files/recipe_images/` und `cache/scan/` frei, Schreibrecht nur befristet an die Kamera-App |
+| Packung scannen | Strichcode über den Google Code Scanner, Texterkennung über ML Kit – beides Play-Dienste, auf dem Gerät, ohne Kamera-Berechtigung. Packungsfotos liegen nur kurz in `cache/scan/` und werden nach der Erkennung gelöscht. Online-Produktsuche: HTTPS-GET an `world.openfoodfacts.org` mit **nur der Produktnummer** (kein Konto, keine Gerätekennung, `User-Agent: Foody/<Version>`), eigener HTTP-Client ohne die lokale CA des Sync-Servers; abschaltbar unter „Mehr“ (ADR 0008) |
 | Datenbank | Room mit gebundenen Parametern; `LIKE`-Suche maskiert `%`/`_`; rohes SQL nur in Migrationen |
 | Backup | Kein Cloud-Backup. Gerät-zu-Gerät-Umzug (Android 12+) nimmt Datenbank und eigene Fotos mit |
 
@@ -67,6 +68,8 @@ Server und Protokoll (`:server`, `:sync-protocol`); Fremdeingaben sind hier alle
 
 ## Bewusste Restrisiken
 
+- **Produktnummer an Open Food Facts:** Verrät, welches Produkt gescannt wurde (und die IP-Adresse). Abschaltbar;
+  dann wird nur im eigenen Katalog gesucht und sonst die Nährwerttabelle fotografiert.
 - **Datenbank unverschlüsselt:** liegt in der App-Sandbox, enthält keine sensiblen Daten (Rezepte, Vorrat).
 - **Sicherungsdatei unverschlüsselt:** Die ZIP-Datei liegt dort, wo der Nutzer sie speichert (z. B. Cloud-Ordner).
 - **Gradle-Abhängigkeiten ohne Prüfsummen-Verifikation** (`verification-metadata.xml`): Aufwand bei jedem Update
