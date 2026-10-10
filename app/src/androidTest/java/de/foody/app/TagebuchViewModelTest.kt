@@ -135,4 +135,17 @@ class TagebuchViewModelTest {
         vm.bearbeiten(db.tagebuchDao().get(e.id)!!.copy(portionen = BigDecimal("2")))
         assertEquals(700, await { it.bilanz.tag.kcal != 350 }.bilanz.tag.kcal, "doppelte Portionen = doppelte festgehaltene Werte")
     }
+
+    @Test fun verschobenerPlanEintragBleibtUebernommen() = runBlocking {
+        plan.add(today, Mahlzeit.ABENDESSEN.name, curryId, 2)
+        val slot = await { it.vorschlaege[Mahlzeit.ABENDESSEN].orEmpty().size == 1 }.vorschlaege.getValue(Mahlzeit.ABENDESSEN).single().first
+        vm.gegessen(slot)
+        await { eintraege(it).size == 1 }
+        // Nach dem Essen 8 Tage später eingeplant: außerhalb der Wochenleiste des neuen Tages
+        plan.update(slot.copy(date = today.plusDays(8)))
+        vm.zeigeTag(today.plusDays(8))
+        await { it.tag == today.plusDays(8) }
+        kotlinx.coroutines.delay(500)
+        assertTrue(vm.state.value.vorschlaege.isEmpty(), "schon gegessen – kein Vorschlag, dessen „Gegessen“ nichts täte")
+    }
 }

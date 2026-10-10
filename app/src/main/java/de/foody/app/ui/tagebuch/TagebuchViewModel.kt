@@ -76,11 +76,13 @@ class TagebuchViewModel @Inject constructor(
         recipes.observeAll(),
         ingredients.observeAll(),
         goals.dailyKcal,
-    ) { (t, wocheEintraege, tagSlots), alleRezepte, alleZutaten, ziel ->
+        // Alle übernommenen Plan-Einträge, nicht nur die der Woche: auch ein später verschobener bleibt erledigt
+        tagebuch.observeUebernommenePlanIds(),
+    ) { (t, wocheEintraege, tagSlots), alleRezepte, alleZutaten, ziel, uebernommenIds ->
         val tag = LocalDate.ofEpochDay(t)
         val heute = wocheEintraege.filter { it.datum == tag }
         val rezepte = alleRezepte.associateBy { it.id }
-        val uebernommen = wocheEintraege.mapNotNull { it.planEintragId }.toSet()
+        val uebernommen = uebernommenIds.toSet()
         TagebuchUiState(
             tag = tag,
             woche = (6L downTo 0L).map { d ->

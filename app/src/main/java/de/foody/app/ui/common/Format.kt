@@ -21,6 +21,15 @@ fun BigDecimal.display(scale: Int = 2): String =
 fun parseDecimal(text: String): BigDecimal? =
     text.trim().replace(',', '.').takeIf { it.isNotEmpty() }?.toBigDecimalOrNull()
 
+/**
+ * Wie [parseDecimal], aber nur Zahlen, die auch der Sync-Server annimmt: nicht negativ, ohne Exponent,
+ * höchstens 20 Nachkommastellen und 30 Stellen insgesamt. Sonst würde ein lokal gespeicherter Wert zum dauerhaften Sync-Problem.
+ */
+fun parseNichtNegativ(text: String): BigDecimal? {
+    if (text.contains('e', ignoreCase = true)) return null
+    return parseDecimal(text)?.takeIf { it.signum() >= 0 && it.scale() <= 20 && it.precision() <= 30 }
+}
+
 fun formatAmount(amount: BigDecimal, unit: MeasureUnit): String = "${amount.display()} ${unit.symbol}"
 
 fun formatQuantity(q: Quantity): String = QuantityFormatter.format(q)

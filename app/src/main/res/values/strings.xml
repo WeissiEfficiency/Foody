@@ -417,6 +417,7 @@
     <string name="sync_type_pantry_item">Vorrat</string>
     <string name="sync_type_shopping_list">Einkaufsliste</string>
     <string name="sync_type_shopping_item">Einkaufseintrag</string>
+    <string name="sync_type_tagebuch">Tagebuch-Eintrag</string>
     <string name="sync_problem_too_large">Zu groß für den Server.</string>
     <string name="sync_problem_photo_unsyncable">Das Foto lässt sich nicht übertragen.</string>
     <string name="sync_problem_invalid_payload">Der Server hat die Daten nicht akzeptiert.</string>
