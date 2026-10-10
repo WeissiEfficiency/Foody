@@ -21,7 +21,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.foody.app.data.db.IngredientEntity
 import de.foody.app.data.db.RecipeEntity
+import de.foody.app.data.db.RecipeIngredientEntity
 import de.foody.app.data.repo.ImportResult
 import de.foody.app.data.repo.PantryRepository
 import de.foody.app.data.repo.RecipeImportRepository
@@ -35,6 +37,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -70,7 +73,7 @@ data class RecipeListUiState(
 
 private fun RecipeEntity.tagList() = tags.split(',').map { it.trim() }.filter { it.isNotEmpty() }
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
 @HiltViewModel
 class RecipeListViewModel @Inject constructor(
     repo: RecipeRepository,
@@ -114,18 +117,36 @@ class RecipeListViewModel @Inject constructor(
 
     // Ohne Suchbegriff und ohne Archiv ist das Suchergebnis gleich den aktiven Rezepten:
     // dann dieselbe Abfrage teilen statt eine zweite (mit Zutaten-Unterabfrage) zu beobachten.
+    // Beim Tippen erst nach einer kurzen Pause abfragen (jeder Buchstabe wäre eine LIKE-Abfrage mit Unterabfrage);
+    // das Eingabefeld selbst zeigt `query` sofort. Leeren und Archiv-Umschalten wirken ohne Verzögerung.
     private val filtered = combine(query, archived) { q, a -> q.trim() to a }
         .distinctUntilChanged()
+        .debounce { (q, _) -> if (q.isEmpty()) 0L else SEARCH_DEBOUNCE_MS }
         .flatMapLatest { (q, a) -> if (q.isEmpty() && !a) active else repo.observe(q, a) }
 
+    /** Alles, wovon das Profil eines Rezepts abhängt; gleich → das gemerkte Profil gilt weiter. */
+    private data class ProfilSchluessel(
+        val recipe: RecipeEntity, val lines: List<RecipeIngredientEntity>, val zutaten: List<IngredientEntity?>,
+    )
+    private val profilCache = HashMap<String, Pair<ProfilSchluessel, RecipeProfile>>()
+
     /**
-     * Kurzprofil (kcal je Portion, Ernährungsform) aller aktiven Rezepte. Bei rund hundert Rezepten ein paar
-     * Millisekunden – im Hintergrund-Thread, und nur neu, wenn sich Rezepte, Zeilen oder Zutaten ändern.
+     * Kurzprofil (kcal je Portion, Ernährungsform) aller aktiven Rezepte, im Hintergrund-Thread. Neu berechnet wird
+     * nur, was sich geändert hat (Rezept, seine Zeilen oder seine Zutaten) – ein Sync-Lauf oder Import, der eine Zutat
+     * ändert, rechnet so nicht jedes Mal alle Rezepte durch.
      */
     private val profiles = combine(active, repo.observeAllLines(), ingredients.observeAll()) { recipes, lines, all ->
-        val ingMap = all.associate { it.id to it.toDomain() }
+        val byId = all.associateBy { it.id }
         val byRecipe = lines.groupBy { it.recipeId }
-        recipes.associate { r -> r.id to RecipeProfiles.profile(r.toDomain(byRecipe[r.id].orEmpty()), ingMap) }
+        val domain by lazy { all.associate { it.id to it.toDomain() } }
+        val profile = recipes.associate { r ->
+            val rLines = byRecipe[r.id].orEmpty()
+            val key = ProfilSchluessel(r, rLines, rLines.map { byId[it.ingredientId] })
+            val hit = profilCache[r.id]?.takeIf { it.first == key }?.second
+            r.id to (hit ?: RecipeProfiles.profile(r.toDomain(rLines), domain).also { profilCache[r.id] = key to it })
+        }
+        profilCache.keys.retainAll(profile.keys)
+        profile
     }.flowOn(Dispatchers.Default).shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
 
     // Vorratsabgleich nur berechnen, solange der Filter an ist
@@ -227,6 +248,7 @@ class RecipeListViewModel @Inject constructor(
         const val DEFAULT_IMPORT_SERVINGS = 4
         /** Eine fehlende Zutat ist meist schnell besorgt; strenger bliebe die Liste fast immer leer. */
         const val MAX_MISSING = 1
+        private const val SEARCH_DEBOUNCE_MS = 150L
     }
 }
 
