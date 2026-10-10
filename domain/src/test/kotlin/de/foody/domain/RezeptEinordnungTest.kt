@@ -48,6 +48,28 @@ class RezeptEinordnungTest {
         }
     }
 
+    /** Titel aus der Chefkoch-Testsammlung, die die Start-Wortliste nicht erkannte. */
+    @Test fun titelAusDerSammlung() {
+        val mittagAbend = setOf(Mahlzeit.MITTAGESSEN, Mahlzeit.ABENDESSEN)
+        listOf(
+            "Hähnchenbrustfilet mit Country-Kartoffeln", "Lachs aus dem Backofen", "Butter Chicken Masala",
+            "Rinderrouladen klassisch", "Gnocchi aus dem Ofen in Paprika-Tomaten-Sauce", "Pulled Pork - aus dem Ofen ohne Grill",
+        ).forEach { name ->
+            val r = e(name)
+            assertEquals(mittagAbend, r.mahlzeiten, name)
+            assertEquals(setOf(Gang.HAUPTSPEISE), r.gaenge, name)
+        }
+        val knoedel = e("Semmelknödel mit Pfifferling - Rahmsauce")
+        assertEquals(setOf(Gang.HAUPTSPEISE), knoedel.gaenge, "Semmelknödel sind keine Brotzeit")
+        val semmeln = e("Kaisersemmeln / Kaiserbrötchen")
+        assertEquals(setOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.ABENDESSEN), semmeln.mahlzeiten)
+        assertEquals(setOf(Gang.BROTZEIT), semmeln.gaenge)
+        assertEquals(setOf(Gang.BROTZEIT), e("Michis superknuspriges Bauernbrot").gaenge)
+        assertEquals(setOf(Mahlzeit.SNACK), e("Vanillekipferl").mahlzeiten)
+        assertEquals(setOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.SNACK), e("Uromas Hefezopf").mahlzeiten)
+        assertEquals(setOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.ABENDESSEN), e("Shakshuka").mahlzeiten)
+    }
+
     @Test fun ohneTrefferPasstUeberall() {
         val r = e("Käsespätzle")
         assertTrue(r.mahlzeiten.isEmpty() && !r.eingeordnet && Mahlzeit.entries.all(r::passtZu))

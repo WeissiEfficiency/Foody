@@ -85,7 +85,15 @@ object RezeptEinordnung {
 | vorspeise, suppe, salat | Mittagessen, Abendessen | Vorspeise, Hauptspeise |
 | brotzeit, brot, aufstrich, dip | Abendessen | Brotzeit |
 | snack, riegel, smoothie, joghurt | Frühstück, Snack | – |
-| curry, pasta, nudel, spaghetti, lasagne, auflauf, risotto, eintopf, gulasch, pfanne, burger, pizza, braten, schnitzel, hauptgericht, flammkuchen, zwiebelkuchen, tortellini, tortelloni | Mittagessen, Abendessen | Hauptspeise |
+| curry, pasta, nudel, spaghetti, lasagne, auflauf, risotto, eintopf, gulasch, pfanne, burger, pizza, braten, schnitzel, hauptgericht, flammkuchen, zwiebelkuchen, tortellini, tortelloni, hähnchen, chicken, hühner, fleisch, filet, steak, keule, roulade, klopse, meatballs, wurst, würste, pulled, ragout, masala, carne, fisch, lachs, knödel, semmelknödel, gnocchi, kartoffel, erdäpfel, polenta, ramen, carbonara, cordon, pide, bäckchen, saté | Mittagessen, Abendessen | Hauptspeise |
+| brötchen, semmel, laugen, brezen, brezel, bauernbrot, weizenbrot | Frühstück, Abendessen | Brotzeit |
+| hefezopf | Frühstück, Snack | – |
+| waffel, grießbrei, milchreis | Frühstück, Snack | Nachspeise |
+| biskuit, tarte | Snack | Nachspeise |
+| plätzchen, gebäck, kipferl | Snack | – |
+| pommes, wedges | Mittagessen, Abendessen, Snack | – |
+| frühlingsrolle | Mittagessen, Abendessen, Snack | Vorspeise |
+| shakshuka | Frühstück, Mittagessen, Abendessen | Hauptspeise |
 
 - Kein Treffer → leere Mengen (Mahlzeit: passt überall; nicht eingeordnet).
 - Die Vermutung wird **nie gespeichert**, sondern bei jedem Lesen berechnet. Regeländerungen wirken sofort auf

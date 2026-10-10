@@ -85,12 +85,28 @@ object RezeptEinordnung {
         Regel(listOf("vorspeise", "suppe", "salat"), mittagAbend, setOf(Gang.VORSPEISE, Gang.HAUPTSPEISE)),
         Regel(listOf("brotzeit", "brot", "aufstrich", "dip"), setOf(Mahlzeit.ABENDESSEN), setOf(Gang.BROTZEIT)),
         Regel(listOf("snack", "riegel", "smoothie", "joghurt"), setOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.SNACK), emptySet()),
+        // Ergänzt nach der Chefkoch-Testsammlung (61 von 113 Rezepten blieben anfangs ohne Treffer)
+        Regel(
+            listOf("brötchen", "semmel", "laugen", "brezen", "brezel", "bauernbrot", "weizenbrot"),
+            setOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.ABENDESSEN), setOf(Gang.BROTZEIT),
+        ),
+        Regel(listOf("hefezopf"), setOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.SNACK), emptySet()),
+        Regel(listOf("waffel", "grießbrei", "milchreis"), setOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.SNACK), setOf(Gang.NACHSPEISE)),
+        Regel(listOf("biskuit", "tarte"), setOf(Mahlzeit.SNACK), setOf(Gang.NACHSPEISE)),
+        Regel(listOf("plätzchen", "gebäck", "kipferl"), setOf(Mahlzeit.SNACK), emptySet()),
+        Regel(listOf("pommes", "wedges"), setOf(Mahlzeit.MITTAGESSEN, Mahlzeit.ABENDESSEN, Mahlzeit.SNACK), emptySet()),
+        Regel(listOf("frühlingsrolle"), setOf(Mahlzeit.MITTAGESSEN, Mahlzeit.ABENDESSEN, Mahlzeit.SNACK), setOf(Gang.VORSPEISE)),
+        Regel(listOf("shakshuka"), setOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.ABENDESSEN), setOf(Gang.HAUPTSPEISE)),
         Regel(
             listOf(
                 "curry", "pasta", "nudel", "spaghetti", "lasagne", "auflauf", "risotto", "eintopf", "gulasch", "pfanne",
                 "burger", "pizza", "braten", "schnitzel", "hauptgericht",
                 // Herzhaftes mit „kuchen“/„torte“ im Wort: das längere Stichwort verdrängt die Nachspeise
                 "flammkuchen", "zwiebelkuchen", "tortellini", "tortelloni",
+                // Fleisch, Fisch und Beilagen-Klassiker; „Semmelknödel“ verdrängt die Brotzeit-„Semmel“
+                "hähnchen", "chicken", "hühner", "fleisch", "filet", "steak", "keule", "roulade", "klopse", "meatballs",
+                "wurst", "würste", "pulled", "ragout", "masala", "carne", "fisch", "lachs", "knödel", "semmelknödel",
+                "gnocchi", "kartoffel", "erdäpfel", "polenta", "ramen", "carbonara", "cordon", "pide", "bäckchen", "saté",
             ),
             mittagAbend, setOf(Gang.HAUPTSPEISE),
         ),
