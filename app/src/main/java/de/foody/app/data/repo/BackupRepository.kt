@@ -158,6 +158,8 @@ class BackupRepository @Inject constructor(
             throw e
         }
         photos.pruneUnused()
+        // Fotos aus älteren Sicherungen können noch in voller Kameraauflösung sein (der Start prüft nur einmal)
+        photos.shrinkAll()
     }
 
     suspend fun deleteAll() {

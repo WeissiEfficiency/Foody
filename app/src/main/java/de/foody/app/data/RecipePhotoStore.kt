@@ -75,8 +75,20 @@ class RecipePhotoStore @Inject constructor(
         }.getOrDefault(false)
     }
 
-    /** Einmalig beim Start: früher gespeicherte, zu große Fotos verkleinern. Gibt die Zahl verkleinerter Fotos zurück. */
+    /** Alle eigenen Fotos prüfen und zu große verkleinern; gibt die Zahl verkleinerter Fotos zurück. */
     suspend fun shrinkAll(): Int = dir.listFiles { f -> f.isFile && f.name.endsWith(".jpg") }.orEmpty().count { shrink(it) }
+
+    /**
+     * Beim Start: [shrinkAll] nur einmal je [SHRINK_VERSION]. Neue Fotos verkleinern Editor und Detailansicht schon beim
+     * Speichern, Fotos aus einer Sicherung der Import – ein Durchlauf bei jedem Start läse sonst jedes Mal alle Dateien.
+     */
+    suspend fun shrinkAllEinmal(): Int {
+        val prefs = context.getSharedPreferences("foody", Context.MODE_PRIVATE)
+        if (prefs.getInt(PREF_VERKLEINERT, 0) >= SHRINK_VERSION) return 0
+        val n = shrinkAll()
+        prefs.edit().putInt(PREF_VERKLEINERT, SHRINK_VERSION).apply()
+        return n
+    }
 
     /** Link, der am Rezept gespeichert wird. */
     fun storedUri(file: File): String = file.toUri().toString()
@@ -110,10 +122,14 @@ class RecipePhotoStore @Inject constructor(
         return file.takeIf { it.parentFile == dir.canonicalFile }
     }
 
-    private companion object {
-        const val DIR = "recipe_images"
-        const val MAX_EDGE = 1600
-        const val MAX_BYTES = 600L * 1024
-        const val JPEG_QUALITY = 85
+    companion object {
+        /** Merker in den Prefs `foody`: bis zu welcher [SHRINK_VERSION] der Start schon verkleinert hat. */
+        const val PREF_VERKLEINERT = "fotosVerkleinert"
+        /** Erhöhen, wenn sich [MAX_EDGE]/[MAX_BYTES] ändern: dann prüft der nächste Start alle Fotos erneut. */
+        private const val SHRINK_VERSION = 1
+        private const val DIR = "recipe_images"
+        private const val MAX_EDGE = 1600
+        private const val MAX_BYTES = 600L * 1024
+        private const val JPEG_QUALITY = 85
     }
 }
