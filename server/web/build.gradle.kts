@@ -19,4 +19,14 @@ kotlin {
 dependencies {
     implementation(project(":server-sync"))
     implementation(project(":domain"))
+    implementation(libs.ktor.server.html.builder)
+    implementation(libs.webjars.htmx)
+
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.ktor.server.test.host)
+    testImplementation(libs.coroutines.test)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
