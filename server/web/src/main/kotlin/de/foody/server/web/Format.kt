@@ -24,7 +24,9 @@ internal suspend fun ApplicationCall.nichtGefunden(s: Sitzung, text: String) =
 
 /** 303 nach einem POST: die Zielseite per GET laden (kein erneutes Absenden beim Aktualisieren). */
 internal suspend fun ApplicationCall.weiterleiten(ziel: String) {
-    response.headers.append(io.ktor.http.HttpHeaders.Location, ziel)
+    // Absicherung: nur Pfade dieser Seite und keine Steuerzeichen (sonst Header-Fehler bzw. fremdes Ziel)
+    val sicher = ziel.takeIf { z -> z.startsWith("/") && !z.startsWith("//") && z.none { it < ' ' } } ?: "/"
+    response.headers.append(io.ktor.http.HttpHeaders.Location, sicher)
     respond(HttpStatusCode.SeeOther)
 }
 

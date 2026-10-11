@@ -124,6 +124,18 @@ class ListeBearbeitenTest {
         assertNull(eintraege(env, h).single().payload.note)
     }
 
+    /** Kleinigkeiten 11: Weiterleitung nur mit geprüfter Listen-ID (kaputtes Feld → keine 500, keine fremde Liste). */
+    @Test fun weiterleitungNurMitGepruefterListe() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        env.push(h, liste())
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val kaputt = c.post(cookie, "/einkauf/eingabe", "liste" to "L\r\nX-Boese: 1", "text" to "")
+        assertEquals(HttpStatusCode.SeeOther, kaputt.status)
+        assertEquals("/einkauf", kaputt.headers[HttpHeaders.Location])
+        assertEquals("/einkauf?liste=L", c.post(cookie, "/einkauf/eingabe", "liste" to "L", "text" to " ").headers[HttpHeaders.Location])
+    }
+
     @Test fun listeLoeschenMitBestaetigung() = webServer { env ->
         val (benutzer, _, h) = env.haushalt()
         env.push(h, liste(), artikel("e1", "Milch"), artikel("e2", "Brot"))

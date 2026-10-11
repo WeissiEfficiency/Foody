@@ -230,7 +230,10 @@ internal object EinkaufSeite {
         val (s, form) = call.formMitCsrf(deps) ?: return
         val text = form["text"].orEmpty().trim()
         val listId = form["liste"].orEmpty()
-        if (text.isEmpty()) return call.weiterleiten(if (listId.isEmpty()) "/einkauf" else "/einkauf?liste=$listId")
+        // Nur eine Liste des Haushalts kommt in die Weiterleitung – ein rohes Formularfeld könnte Zeilenumbrüche enthalten
+        if (text.isEmpty()) return call.weiterleiten(
+            daten.fuer(s.haushalt!!).listen.firstOrNull { it.id == listId }?.let { "/einkauf?liste=${it.id}" } ?: "/einkauf",
+        )
         if (text.length > MAX_TEXT) return zeigen(call, s, daten.fuer(s.haushalt!!), "Höchstens $MAX_TEXT Zeichen.", listeId = listId, eingaben = form)
         val (ergebnis, ziel) = EinkaufSchreiber(deps, daten).eingabe(s.haushalt!!, listId, text)
         when (ergebnis) {
