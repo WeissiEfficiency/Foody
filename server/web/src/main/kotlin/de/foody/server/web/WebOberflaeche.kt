@@ -94,7 +94,16 @@ object WebOberflaeche {
             ListeAusPlanSeiten.abgleich(call, deps, s, daten, call.parameters["liste"].orEmpty())
         }
         webPost("/einkauf/{liste}/abgleich") { ListeAusPlanSeiten.abgleichUebernehmen(call, deps, daten, call.parameters["liste"].orEmpty()) }
+        webPost("/einkauf/abhaken") { EinkaufSeite.abhaken(call, deps, daten, pfadId = null) }
         webPost("/einkauf/{id}/abhaken") { EinkaufSeite.abhaken(call, deps, daten, call.parameters["id"].orEmpty()) }
+        webPost("/einkauf/eingabe") { EinkaufSeite.eingabe(call, deps, daten) }
+        webPost("/einkauf/rezept") { EinkaufSeite.rezeptAufListe(call, deps, daten, deps.heute(zone)) }
+        webPost("/einkauf/{liste}/bearbeiten") { EinkaufSeite.bearbeitenSpeichern(call, deps, daten, call.parameters["liste"].orEmpty()) }
+        webGet("/einkauf/{liste}/loeschen") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            EinkaufSeite.loeschenBestaetigen(call, s, daten.fuer(s.haushalt!!), call.parameters["liste"].orEmpty())
+        }
+        webPost("/einkauf/{liste}/loeschen") { EinkaufSeite.listeLoeschen(call, deps, daten, call.parameters["liste"].orEmpty()) }
         webGet("/import") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             ImportSeite.zeigen(call, s)

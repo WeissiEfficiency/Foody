@@ -147,6 +147,7 @@ internal object RezeptSeiten {
                 }
             }
             if (r.payload.archivedAt == null) with(PlanSeiten) { einplanenFormular(s, r, heute.toString(), null, "") }
+            with(EinkaufSeite) { aufListeFormular(s, h, r) }
             h2 { +"Zutaten" }
             ul("liste karte") {
                 for (z in r.domain.ingredients) {

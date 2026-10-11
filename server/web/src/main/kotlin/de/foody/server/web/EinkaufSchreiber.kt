@@ -3,12 +3,14 @@ package de.foody.server.web
 import de.foody.domain.DateRange
 import de.foody.domain.Dimension
 import de.foody.domain.DiffType
+import de.foody.domain.EinkaufEingabe
 import de.foody.domain.EinkaufsAbgleich
 import de.foody.domain.EinkaufsBedarf
 import de.foody.domain.MealSlot
 import de.foody.domain.MeasureUnit
 import de.foody.domain.PantryItem
 import de.foody.domain.Quantity
+import de.foody.domain.RezeptAufListe
 import de.foody.domain.ShoppingDiff
 import de.foody.domain.ShoppingDiffEntry
 import de.foody.domain.ShoppingNeed
@@ -106,6 +108,138 @@ internal class EinkaufSchreiber(private val deps: ServerDeps, private val daten:
         return push(household, records)
     }
 
+    // --- Liste bearbeiten ---
+
+    /** Liste des Haushalts oder – ohne [listId] – eine neue „Einkauf“; null = [listId] gehört nicht zum Haushalt. */
+    private fun zielListe(household: String, listId: String?, records: MutableList<SyncRecord>, jetzt: Long): String? {
+        if (!listId.isNullOrEmpty()) return listId.takeIf { id -> daten.fuer(household).listen.any { it.id == id } }
+        val neu = UUID.randomUUID().toString()
+        records += SyncRecord(
+            id = neu, type = RecordType.SHOPPING_LIST, updatedAt = jetzt,
+            payload = Protocol.json.encodeToJsonElement(ShoppingListPayload.serializer(), ShoppingListPayload(NEUE_LISTE, version = 1)) as JsonObject,
+        )
+        return neu
+    }
+
+    private fun naechsteReihenfolge(household: String, listId: String) =
+        daten.fuer(household).eintraege.filter { it.listId == listId }.maxOfOrNull { it.payload.sortOrder + 1 } ?: 0
+
+    /** Freitext wie in der App ([EinkaufEingabe]); liefert das Ergebnis und die Liste, auf der es gelandet ist. */
+    fun eingabe(household: String, listId: String?, text: String): Pair<Schreiben, String?> {
+        val jetzt = deps.clock.millis()
+        val records = mutableListOf<SyncRecord>()
+        val ziel = zielListe(household, listId, records, jetzt) ?: return Schreiben.NichtGefunden to null
+        val aufListe = daten.fuer(household).eintraege.filter { it.listId == ziel }
+        val aktion = EinkaufEingabe.entscheiden(text, aufListe.map { EinkaufEingabe.Eintrag(it.id, it.payload.name, it.payload.checked) })
+            ?: return Schreiben.Ok to ziel
+        records += when (aktion) {
+            is EinkaufEingabe.Aktion.Abhaken -> abhakenRecord(household, aktion.id, true, jetzt) ?: return Schreiben.Weg to ziel
+            is EinkaufEingabe.Aktion.Zurueck -> abhakenRecord(household, aktion.id, false, jetzt) ?: return Schreiben.Weg to ziel
+            is EinkaufEingabe.Aktion.Neu -> neuerManuellerEintrag(ziel, null, aktion.name, null, aktion.abteilung, naechsteReihenfolge(household, ziel), jetzt)
+        }
+        return push(household, records) to ziel
+    }
+
+    /** Wie `setChecked` der App: Häkchen setzen und ans Ende rücken (Reihenfolge der Erledigten = zuletzt gekauft). */
+    private fun abhakenRecord(household: String, id: String, erledigt: Boolean, jetzt: Long): SyncRecord? {
+        val roh = gespeichert(household, RecordType.SHOPPING_ITEM, id) ?: return null
+        val listId = (roh.payload!!["listId"] as? JsonPrimitive)?.content.orEmpty()
+        val felder = mapOf(
+            "checked" to JsonPrimitive(erledigt), "checkedChangedAt" to JsonPrimitive(jetzt),
+            "sortOrder" to JsonPrimitive(naechsteReihenfolge(household, listId)),
+        )
+        return SyncRecord(id = id, type = RecordType.SHOPPING_ITEM, updatedAt = jetzt, baseRev = roh.rev, payload = JsonObject(roh.payload!! + felder))
+    }
+
+    private fun neuerManuellerEintrag(listId: String, zutatId: String?, name: String, menge: Quantity?, kategorie: String?, reihenfolge: Int, jetzt: Long): SyncRecord {
+        val basis = menge?.let { MeasureUnit.baseOf(it.dimension) }
+        val p = ShoppingItemPayload(
+            listId = listId, ingredientId = zutatId, name = name, amount = basis?.let { menge.amountIn(it).toPlainString() }, unit = basis?.name,
+            checked = false, checkedChangedAt = 0, manual = true, category = kategorie, sortOrder = reihenfolge, sources = emptyList(),
+        )
+        return SyncRecord(
+            id = UUID.randomUUID().toString(), type = RecordType.SHOPPING_ITEM, updatedAt = jetzt,
+            payload = Protocol.json.encodeToJsonElement(ShoppingItemPayload.serializer(), p) as JsonObject,
+        )
+    }
+
+    /**
+     * Bearbeiten-Modus: geänderte Notizen ([notizen] = Eintrag → Text, leer = entfernen) und optional ein Eintrag zum
+     * Löschen. Fremde IDs → [Schreiben.NichtGefunden]; inzwischen gelöschter Eintrag → [Schreiben.Weg].
+     */
+    fun bearbeiten(household: String, listId: String, notizen: Map<String, String>, loeschen: String?): Schreiben {
+        val h = daten.fuer(household)
+        if (h.listen.none { it.id == listId }) return Schreiben.NichtGefunden
+        val jetzt = deps.clock.millis()
+        val records = mutableListOf<SyncRecord>()
+        for ((id, text) in notizen) {
+            val e = h.eintraege.firstOrNull { it.id == id && it.listId == listId } ?: continue
+            val neu = text.trim().ifEmpty { null }
+            if (neu == e.payload.note || id == loeschen) continue
+            val roh = gespeichert(household, RecordType.SHOPPING_ITEM, id) ?: continue
+            val wert = neu?.let { JsonPrimitive(it) } ?: kotlinx.serialization.json.JsonNull
+            records += SyncRecord(id = id, type = RecordType.SHOPPING_ITEM, updatedAt = jetzt, baseRev = roh.rev, payload = JsonObject(roh.payload!! + ("note" to wert)))
+        }
+        if (loeschen != null) {
+            val roh = deps.db.tx { c -> store.get(c, household, RecordType.SHOPPING_ITEM, loeschen) }
+            val listeDesEintrags = (roh?.payload?.get("listId") as? JsonPrimitive)?.content
+            when {
+                roh == null || (!roh.deleted && listeDesEintrags != listId) -> return Schreiben.NichtGefunden
+                roh.deleted -> {
+                    // Notizen trotzdem speichern; der Hinweis gilt dem schon gelöschten Eintrag
+                    if (records.isNotEmpty()) push(household, records)
+                    return Schreiben.Weg
+                }
+                else -> records += SyncRecord(id = loeschen, type = RecordType.SHOPPING_ITEM, deleted = true, updatedAt = jetzt, baseRev = roh.rev)
+            }
+        }
+        return if (records.isEmpty()) Schreiben.Ok else push(household, records)
+    }
+
+    /** Liste samt Einträgen löschen – erst die Einträge, dann die Liste (keine lebenden Einträge ohne Liste). */
+    fun listeLoeschen(household: String, listId: String): Schreiben {
+        val roh = deps.db.tx { c -> store.get(c, household, RecordType.SHOPPING_LIST, listId) } ?: return Schreiben.NichtGefunden
+        if (roh.deleted) return Schreiben.Weg
+        val jetzt = deps.clock.millis()
+        val records = daten.fuer(household).eintraege.filter { it.listId == listId }.map {
+            SyncRecord(id = it.id, type = RecordType.SHOPPING_ITEM, deleted = true, updatedAt = jetzt, baseRev = it.rev)
+        } + SyncRecord(id = listId, type = RecordType.SHOPPING_LIST, deleted = true, updatedAt = jetzt, baseRev = roh.rev)
+        return push(household, records)
+    }
+
+    /**
+     * Rezept auf eine Liste ([RezeptAufListe]); ohne [listId] auf eine neue „Einkauf“. Liefert (Anzahl Zutaten, Liste)
+     * oder null, wenn Rezept oder Liste nicht zum Haushalt gehören.
+     */
+    fun rezeptAufListe(household: String, rezeptId: String, portionen: Int, listId: String?, heute: LocalDate): Pair<Int, String>? {
+        val h = daten.fuer(household)
+        val rezept = h.rezepte[rezeptId] ?: return null
+        val jetzt = deps.clock.millis()
+        val records = mutableListOf<SyncRecord>()
+        val ziel = zielListe(household, listId, records, jetzt) ?: return null
+        val bedarf = RezeptAufListe.bedarf(rezept.domain, portionen, h.zutaten, heute)
+        val bestand = h.eintraege.filter { it.listId == ziel }
+        var reihenfolge = naechsteReihenfolge(household, ziel)
+        val aenderungen = RezeptAufListe.zusammenfuehren(bedarf, bestand.map {
+            RezeptAufListe.Bestand(it.id, it.payload.ingredientId, it.payload.amount?.let { _ -> menge(it) }, it.payload.manual, it.payload.checked)
+        })
+        for (a in aenderungen) records += when (a) {
+            is RezeptAufListe.Aenderung.Erhoehen -> {
+                val roh = gespeichert(household, RecordType.SHOPPING_ITEM, a.id) ?: continue
+                val basis = MeasureUnit.baseOf(a.neu.dimension)
+                SyncRecord(id = a.id, type = RecordType.SHOPPING_ITEM, updatedAt = jetzt, baseRev = roh.rev, payload = JsonObject(roh.payload!! + mapOf(
+                    "amount" to JsonPrimitive(a.neu.amountIn(basis).toPlainString()), "unit" to JsonPrimitive(basis.name),
+                )))
+            }
+            is RezeptAufListe.Aenderung.Neu -> {
+                val z = h.zutaten[a.bedarf.ingredientId]
+                neuerManuellerEintrag(ziel, a.bedarf.ingredientId, z?.name ?: a.bedarf.ingredientId, a.bedarf.toBuy, z?.category, reihenfolge++, jetzt)
+            }
+        }
+        if (push(household, records) != Schreiben.Ok) return null
+        return bedarf.size to ziel
+    }
+
     private fun neuerEintrag(household: String, listId: String, n: ShoppingNeed, reihenfolge: Int, jetzt: Long): SyncRecord {
         val zutat = daten.fuer(household).zutaten[n.ingredientId]
         val basis = MeasureUnit.baseOf(n.toBuy.dimension)
@@ -143,6 +277,8 @@ internal class EinkaufSchreiber(private val deps: ServerDeps, private val daten:
         if (deps.sync.push(household, records).results.any { it.status == PushStatus.REJECTED }) Schreiben.Abgelehnt else Schreiben.Ok
 
     companion object {
+        const val NEUE_LISTE = "Einkauf"
+
         fun menge(e: WebEintrag): Quantity {
             val einheit = e.payload.unit?.let { u -> MeasureUnit.entries.firstOrNull { it.name == u } }
             val wert = e.payload.amount?.toBigDecimalOrNull()
