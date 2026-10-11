@@ -192,6 +192,19 @@ class TagebuchSchreibenTest {
         assertTrue(tagebuch(env, h).isEmpty() && HaushaltsDaten(env.deps.db).fuer(h).plan.isEmpty())
     }
 
+    /** Kleinigkeiten 8: ohne Suche höchstens 50 Rezepte zur Auswahl, mit Hinweis; die Suche findet alle. */
+    @Test fun rezeptauswahlBegrenzt() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        env.push(h, reis(), *(1..60).map { rezept("r$it", "Rezept %02d".format(it)) }.toTypedArray())
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val html = c.get("/tagebuch/neu?tag=2026-10-11&mahlzeit=ABENDESSEN") { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
+        assertEquals(50, Regex("type=\"radio\"").findAll(html).count())
+        assertTrue("10 weitere – bitte suchen" in html, html.takeLast(800))
+        val suche = c.get("/tagebuch/neu/liste?q=Rezept 6") { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
+        assertTrue("Rezept 60" in suche)
+    }
+
     @Test fun loeschen() = webServer { env ->
         val (benutzer, _, h) = env.haushalt()
         env.push(h, reis(), rezept("r1", "Curry"), eintrag("t1"))

@@ -60,6 +60,7 @@ internal object TagebuchSeiten {
     private const val MAX_PORTIONEN = 99
     private const val MAX_KCAL = 10_000
     private const val MAX_NAME = 200
+    private const val MAX_AUSWAHL = 50
 
     private fun datum(text: String?): LocalDate? = text?.let { try { LocalDate.parse(it.trim()) } catch (_: DateTimeParseException) { null } }
 
@@ -169,9 +170,12 @@ internal object TagebuchSeiten {
             p("leise") { +"Keine Rezepte gefunden." }
             return
         }
+        // Ohne Suche nur die ersten [MAX_AUSWAHL]: die Seite bleibt auch mit vielen Rezepten klein
+        val gezeigt = if (q.isEmpty()) treffer.take(MAX_AUSWAHL) else treffer
         ul("liste") {
-            for (r in treffer) li { label { input(InputType.radio, name = "rezept") { value = r.id; required = true }; +" ${r.payload.name}" } }
+            for (r in gezeigt) li { label { input(InputType.radio, name = "rezept") { value = r.id; required = true }; +" ${r.payload.name}" } }
         }
+        if (gezeigt.size < treffer.size) p("leise") { +"${treffer.size - gezeigt.size} weitere – bitte suchen." }
     }
 
     suspend fun neuListe(call: ApplicationCall, h: Haushalt) {
