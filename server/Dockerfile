@@ -6,8 +6,7 @@ ENV FOODY_SERVER_ONLY=1
 WORKDIR /src
 COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY gradle/ gradle/
-COPY domain/ domain/
-COPY sync-protocol/ sync-protocol/
+COPY shared/ shared/
 COPY server/ server/
 RUN ./gradlew --no-daemon :server:installDist
 
