@@ -149,6 +149,16 @@ Hinweis mit „Aktuellen Stand laden“/„Trotzdem speichern“. Die Import-Rec
 teilen App und Server. Login/Registrierung nehmen nur Anfragen derselben Website an; alle Web-Routen laufen durch
 einen Rahmen mit Fehlerseite im Layout. Spec: `docs/superpowers/specs/2026-10-11-web-oberflaeche-teil2-design.md`.
 
+**Planen und Einkaufen (Teil 3):** Die Regeln, die vorher nur in den App-Repositories standen, liegen als reine
+Funktionen in `shared/domain` und werden von App und Server aufgerufen: `EinkaufsBedarf` (Bedarf inkl. „nie kaufen“),
+`EinkaufsAbgleich` (abgehakt bleibt nur bei weniger Bedarf; Entfällt löscht nur offene), `RezeptAufListe`
+(Aufaddieren auf offene manuelle Einträge), `EinkaufEingabe` (Freitext wie Katalog-Kachel), `Kochen` (Vorratsabzug bei
+„gekocht“) und `PlanVorschlag` (Eingaben für `MealSuggestions`). Im Server schreiben `PlanSchreiber` und
+`EinkaufSchreiber` über `SyncService.push`, immer auf dem gerade gespeicherten Roh-JSON. Plan- und Einkaufsseite sind je
+ein Formular für die ganze Seite (CSRF nur einmal, Knopf trägt `<id> <aktion>`), damit 14 Plantage bzw. 75 Einträge
+unter 30 KB bleiben; Änderungsknöpfe stehen im Bearbeiten-Modus. „Heute“ rechnet die Web-Oberfläche in
+`FOODY_ZEITZONE` (Standard Europe/Berlin). Spec: `docs/superpowers/specs/2026-10-11-web-oberflaeche-teil3-design.md`.
+
 ## Packung scannen (seit DB v9)
 
 `PackungScan` (`android/app/.../scan`) steuert den Ablauf hinter Schnittstellen, die Hilt in `ScanModule` bindet und Tests durch

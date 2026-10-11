@@ -36,7 +36,8 @@ Weitere Admin-Befehle: `reset-password`, `compact` (siehe `foody-admin` ohne Arg
 
 Unter der Server-Adresse im Browser (z. B. `https://foody.example.org/`): mit demselben Konto wie in der App anmelden
 oder mit einem Einladungscode registrieren. Rezepte ansehen, anlegen, bearbeiten, archivieren und als Markdown-Dateien
-importieren; Wochenplan, Einkaufsliste (Abhaken) und Tagebuch ansehen.
+importieren; Wochenplan bearbeiten (einplanen, Portionen, verschieben, gekocht, Vorschläge), Einkaufslisten aus dem
+Plan erzeugen, neu berechnen und bearbeiten (Freitext, Notizen, Löschen, Rezept auf die Liste); Tagebuch ansehen.
 Der Browser erscheint in der App unter den Geräten und lässt sich dort abmelden. Das Sitzungs-Cookie ist `Secure`:
 die Seite also über HTTPS (Traefik) öffnen.
 
