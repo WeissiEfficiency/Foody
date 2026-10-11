@@ -9,7 +9,8 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.Parameters
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.contentType
-import io.ktor.server.request.receiveParameters
+import de.foody.server.readBoundedBytes
+import io.ktor.http.parseQueryString
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
 import java.security.MessageDigest
@@ -77,9 +78,18 @@ internal suspend fun ApplicationCall.sitzungMitHaushalt(deps: ServerDeps): Sitzu
     return s
 }
 
-/** Formularfelder, wenn die Anfrage ein Formular ist; sonst leer (statt 415 – so greift die CSRF-Prüfung). */
-internal suspend fun ApplicationCall.formular(): Parameters =
-    if (request.contentType().match(ContentType.Application.FormUrlEncoded)) receiveParameters() else Parameters.Empty
+/** Größte Formular-Anfrage (lange Rezepte passen bequem hinein; die API nimmt 64 KB). */
+internal const val MAX_FORMULAR_BYTES = 256L * 1024
+
+/**
+ * Formularfelder, wenn die Anfrage ein Formular ist; sonst leer (statt 415 – so greift die CSRF-Prüfung). Gezählt
+ * gelesen: größer als [MAX_FORMULAR_BYTES] → 413, bevor mehr im Speicher landet.
+ */
+internal suspend fun ApplicationCall.formular(): Parameters {
+    if (!request.contentType().match(ContentType.Application.FormUrlEncoded)) return Parameters.Empty
+    val text = readBoundedBytes(MAX_FORMULAR_BYTES).decodeToString()
+    return parseQueryString(text)
+}
 
 /** CSRF aus Formularfeld `_csrf` oder Header `X-Foody-CSRF` (htmx). */
 internal fun ApplicationCall.csrfAus(form: Parameters?): String? =

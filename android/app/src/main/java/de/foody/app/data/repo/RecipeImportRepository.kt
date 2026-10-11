@@ -1,15 +1,6 @@
 package de.foody.app.data.repo
 
-import de.foody.domain.NutritionCalculator
-import de.foody.domain.NutritionResult
-import de.foody.domain.Nutrient
-import de.foody.domain.Recipe
-import de.foody.domain.RecipeIngredient
 import de.foody.domain.Ingredient
-import de.foody.domain.Quantity
-import de.foody.domain.Dimension
-import de.foody.domain.UnitConverter
-import de.foody.domain.ServingsEstimator
 import java.io.InputStream
 import java.io.ByteArrayOutputStream
 import de.foody.app.util.runSuspendCatching
@@ -22,10 +13,9 @@ import de.foody.app.data.db.FoodyDatabase
 import de.foody.domain.ImportedRecipe
 import de.foody.domain.IngredientCatalog
 import de.foody.domain.MarkdownRecipeImporter
-import de.foody.domain.MeasureUnit
+import de.foody.domain.RezeptImport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.math.BigDecimal
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -140,34 +130,10 @@ class RecipeImportRepository @Inject constructor(
                 ingredients.getOrCreate(ing.name).toDomain()
             }
         }
-        // Gewicht der festen Pflichtzutaten (ohne Flüssigkeiten) für die Portionen-Schätzung
-        val solidGrams = resolved.filter { (ing, _) -> !ing.optional && (ing.amount?.signum() ?: 0) > 0 }.sumOf { (ing, known) ->
-            val q = Quantity.of(ing.amount!!, ing.unit ?: MeasureUnit.PIECE)
-            if (q.dimension == Dimension.VOLUME) 0.0
-            else UnitConverter.convert(q, Dimension.MASS, known.conversion)?.baseAmount?.toDouble() ?: 0.0
-        }
-        val kcal = NutritionCalculator.calculate(
-            Recipe("import", parsed.name, 1, resolved.mapIndexed { i, (ing, known) ->
-                RecipeIngredient("l$i", known.id, ing.amount ?: BigDecimal.ZERO, ing.unit ?: MeasureUnit.PIECE, ing.optional)
-            }),
-            resolved.associate { (_, known) -> known.id to known },
-        ).totals[Nutrient.ENERGY_KJ]?.let(NutritionResult::kjToKcal)?.toDouble() ?: 0.0
-        // Fleisch oder Fisch in Stück (größte Anzahl), z. B. „4 Rindersteaks“ → 4 Portionen
-        val meatPieces = resolved.filter { (ing, known) ->
-            known.category == MEAT_CATEGORY && (ing.unit ?: MeasureUnit.PIECE) == MeasureUnit.PIECE && ing.amount != null
-        }.maxOfOrNull { (ing, _) -> ing.amount!!.toInt() }
-        val estimate = ServingsEstimator.estimate(parsed.name, solidGrams, kcal, meatPieces)
-        val servings = estimate ?: defaultServings
-        val lines = resolved.map { (ing, known) ->
-            RecipeDraft.Line(
-                ingredientId = known.id,
-                // Ohne Zahl → 0 = „nach Bedarf“
-                amount = ing.amount ?: BigDecimal.ZERO,
-                unit = ing.unit ?: MeasureUnit.PIECE,
-                note = listOfNotNull(ing.group, ing.note).joinToString(" · ").ifBlank { null },
-                optional = ing.optional,
-            )
-        }
+        // Portionen schätzen und Zeilen bilden – gemeinsam mit dem Import der Web-Oberfläche (shared/domain)
+        val ergebnis = RezeptImport.vorbereiten(parsed, resolved.map { it.second }, defaultServings)
+        val servings = ergebnis.portionen
+        val lines = ergebnis.zeilen.map { RecipeDraft.Line(it.zutatId, it.menge, it.einheit, it.hinweis, it.optional) }
         return recipes.save(
             RecipeDraft(
                 id = null,
@@ -176,7 +142,7 @@ class RecipeImportRepository @Inject constructor(
                 prepMinutes = null,
                 cookMinutes = null,
                 imageUri = null,
-                notes = notesTemplate(parsed.sourceUrl, servings, estimate != null),
+                notes = notesTemplate(parsed.sourceUrl, servings, ergebnis.geschaetzt),
                 tags = tag,
                 ingredients = lines,
                 steps = parsed.steps,
@@ -188,7 +154,6 @@ class RecipeImportRepository @Inject constructor(
     private companion object {
         /** Rezepte pro Transaktion – groß genug für wenige Listen-Aktualisierungen, klein genug für flüssigen Fortschritt. */
         const val CHUNK_SIZE = 25
-        const val MEAT_CATEGORY = "Fleisch & Fisch"
         /** Rezepttexte sind wenige KB groß; größere Dateien (versehentlich gewählt) zählen als fehlgeschlagen statt den Speicher zu füllen. */
         const val MAX_FILE_BYTES = 1 shl 20
     }

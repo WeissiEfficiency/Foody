@@ -6,6 +6,7 @@ import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
 import de.foody.server.web.geraeteName
+import de.foody.server.web.gleicheWebsite
 import de.foody.server.web.loescheSitzung
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.setzeSitzung
@@ -53,6 +54,8 @@ internal object LoginSeite {
         }
 
     suspend fun anmelden(call: ApplicationCall, deps: ServerDeps) {
+        // Login-CSRF: eine fremde Website darf den Browser nicht mit einem fremden Konto anmelden
+        if (!call.gleicheWebsite()) return call.respond(HttpStatusCode.Forbidden)
         val form = call.formular()
         val benutzer = form["benutzer"].orEmpty().trim()
         val passwort = form["passwort"].orEmpty()
@@ -94,6 +97,7 @@ internal object LoginSeite {
         }
 
     suspend fun registrieren(call: ApplicationCall, deps: ServerDeps) {
+        if (!call.gleicheWebsite()) return call.respond(HttpStatusCode.Forbidden)
         val form = call.formular()
         val code = form["code"].orEmpty().trim()
         val benutzer = form["benutzer"].orEmpty().trim()
@@ -119,12 +123,12 @@ internal object LoginSeite {
     }
 
     suspend fun abmelden(call: ApplicationCall, deps: ServerDeps) {
-        val form = call.formular()
         val s = call.sitzung(deps)
         if (s == null) {
             call.respondRedirect("/login")
             return
         }
+        val form = call.formular()
         if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
         deps.accounts.revokeDevice(s.principal.userId, s.principal.deviceId)
         call.loescheSitzung()

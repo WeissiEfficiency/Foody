@@ -36,6 +36,12 @@ button.leise { background: transparent; color: var(--mu); border: 1px solid var(
 .anmeldung label { display: block; margin: 12px 0 4px; }
 .anmeldung input { width: 100%; }
 .anmeldung button { margin-top: 16px; width: 100%; }
+.breit { width: 100%; }
+input.menge { width: 6em; }
+input.einheit { width: 5em; }
+label { display: inline-flex; flex-direction: column; gap: 2px; margin: 4px 8px 4px 0; }
+fieldset label { flex-direction: row; gap: 6px; align-items: center; }
+fieldset { border: 1px solid var(--li); }
 .erledigt { color: var(--mu); text-decoration: line-through; }
 .wochenleiste { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .wochenleiste a { text-align: center; padding: 6px 0; border-radius: 10px; text-decoration: none; color: var(--tx); background: var(--fl); border: 1px solid var(--li); font-size: 14px; }

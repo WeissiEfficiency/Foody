@@ -140,6 +140,15 @@ nur über `SyncService.push` mit `baseRev` – gleiche Validierung, Revisionen u
 Seiten: Rezepte (Suche, Filter, kcal), Rezept (Portionen ±), Wochenplan (kcal je Tag, Ø), Einkauf (Abhaken), Tagebuch.
 Spec: `docs/superpowers/specs/2026-10-11-web-oberflaeche-teil1-design.md`.
 
+**Rezeptpflege (Teil 2):** Editor (`/rezept/neu`, `/rezept/{id}/bearbeiten`) und Markdown-Import (`/import`) schreiben
+über `RezeptSchreiber`: Zutaten nach Namen, Katalog-Vereinheitlichung oder neu (neue zuerst gesendet; vom Server
+zusammengeführte durch die vorhandene ID ersetzt); das Rezept wird auf dem gespeicherten rohen JSON aufgebaut, sodass
+Foto, Favorit, Bewertung und Felder neuerer App-Versionen erhalten bleiben. Da der Server Rezepte ohne
+Konfliktprüfung übernimmt, prüft der Browser die gesehene Revision selbst: geändert oder gelöscht → nichts schreiben,
+Hinweis mit „Aktuellen Stand laden“/„Trotzdem speichern“. Die Import-Rechnung (`RezeptImport` in `shared/domain`)
+teilen App und Server. Login/Registrierung nehmen nur Anfragen derselben Website an; alle Web-Routen laufen durch
+einen Rahmen mit Fehlerseite im Layout. Spec: `docs/superpowers/specs/2026-10-11-web-oberflaeche-teil2-design.md`.
+
 ## Packung scannen (seit DB v9)
 
 `PackungScan` (`android/app/.../scan`) steuert den Ablauf hinter Schnittstellen, die Hilt in `ScanModule` bindet und Tests durch
