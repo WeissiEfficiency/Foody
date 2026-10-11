@@ -127,7 +127,7 @@ internal object EditorSeite {
                     feld("Tags (mit Komma getrennt)", "tags", f.tags, fehler)
                     feld("Quelle (Link)", "quelle", f.quelle, fehler)
                 }
-                h2 { +"Zutaten" }
+                h2 { +"Zutaten"; a(href = "/zutaten", classes = "leise") { +"  Zutatenkatalog" } }
                 // Einheiten einmal je Seite statt einer Auswahlliste je Zeile (spart ~350 Bytes je Zeile)
                 dataList { id = "einheiten"; for (u in MeasureUnit.entries) option { value = u.symbol } }
                 // Vorschläge aus dem Katalog: per htmx nachgeladen

@@ -159,6 +159,15 @@ ein Formular für die ganze Seite (CSRF nur einmal, Knopf trägt `<id> <aktion>`
 unter 30 KB bleiben; Änderungsknöpfe stehen im Bearbeiten-Modus. „Heute“ rechnet die Web-Oberfläche in
 `FOODY_ZEITZONE` (Standard Europe/Berlin). Spec: `docs/superpowers/specs/2026-10-11-web-oberflaeche-teil3-design.md`.
 
+**Vorrat, Zutatenkatalog, Tagebuch (Teil 4):** `VorratSchreiber`, `ZutatSchreiber` und `TagebuchSchreiber` schreiben über
+`SyncService.push`. Tagebuch-Werte rechnen App und Server mit `Tagebuch` aus `shared/domain` (`naehrwerteRezept`,
+`naehrwerteZutat`, `freiWerte`); Ändern skaliert die festgehaltenen Werte mit `Tagebuch.skaliert` (auf 6 Nachkommastellen,
+damit wiederholtes Ändern die Sync-Grenze von 20 Stellen nicht sprengt). „Gegessen“ prüft unter der `Haushaltssperre`,
+ob der Planeintrag schon übernommen ist. Zutaten löscht der Browser nur, wenn kein Rezept, Vorrat oder Einkaufseintrag
+sie nutzt (der Server hat keine Fremdschlüssel); Namen werden wie in der App vereinheitlicht, Dubletten abgelehnt.
+Zusammenführen und Vereinheitlichen bleiben in der App. Seiten werden ohne Einrückung ausgeliefert (kleiner).
+Spec: `docs/superpowers/specs/2026-10-11-web-oberflaeche-teil4-design.md`.
+
 ## Packung scannen (seit DB v9)
 
 `PackungScan` (`android/app/.../scan`) steuert den Ablauf hinter Schnittstellen, die Hilt in `ScanModule` bindet und Tests durch

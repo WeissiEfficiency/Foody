@@ -28,6 +28,9 @@ data class TagesBilanz(val tag: Summe, val jeMahlzeit: Map<Mahlzeit, Summe>)
 
 /** Rechenregeln des Tagebuchs. Gerechnet wird pro Person: eine Portion je Eintrag ist, was eine Person isst. */
 object Tagebuch {
+    /** Nachkommastellen beim Skalieren festgehaltener Werte. */
+    private const val NACHKOMMA = 6
+
     fun naehrwerteRezept(rezept: Recipe, zutaten: Map<String, Ingredient>, portionen: BigDecimal): Naehrwerte {
         val n = NutritionCalculator.calculate(rezept, zutaten)
         fun mal(x: Nutrient) = n.perServing(x)?.multiply(portionen)
@@ -44,6 +47,23 @@ object Tagebuch {
         val w = naehrwerteRezept(rezept, mapOf(zutat.id to zutat), BigDecimal.ONE)
         return w.takeIf { it.energieKj != null }
     }
+
+    /**
+     * Ändern eines Eintrags: Die Werte bleiben festgehalten. Ändern sich Portionen (Rezept) bzw. Menge (Zutat), werden
+     * sie im Verhältnis [neu] ÷ [alt] skaliert – nie aus dem heutigen Rezept neu berechnet (ADR 0007). Unverändert ohne
+     * Änderung, ohne brauchbaren alten Wert (> 0) und bei freien Einträgen.
+     */
+    fun skaliert(art: TagebuchArt, werte: Naehrwerte, alt: BigDecimal?, neu: BigDecimal?): Naehrwerte {
+        if (art == TagebuchArt.FREI || neu == null || alt == null || alt.signum() <= 0 || neu.compareTo(alt) == 0) return werte
+        // Wert × neu ÷ alt in einem Schritt, auf 6 Stellen: kein gerundeter Zwischenfaktor, und wiederholtes Ändern
+        // bläht die Nachkommastellen nicht auf (der Abgleich erlaubt höchstens 20)
+        fun BigDecimal?.mal() = this?.multiply(neu)?.divide(alt, NACHKOMMA, RoundingMode.HALF_UP)?.stripTrailingZeros()
+        return werte.copy(energieKj = werte.energieKj.mal(), eiweiss = werte.eiweiss.mal(), kohlenhydrate = werte.kohlenhydrate.mal(), fett = werte.fett.mal())
+    }
+
+    /** Freier Eintrag: kcal wie eingegeben (als kJ gespeichert), Werte gelten als vollständig. */
+    fun freiWerte(kcal: Int, eiweiss: BigDecimal?, kohlenhydrate: BigDecimal?, fett: BigDecimal?): Naehrwerte =
+        Naehrwerte(BigDecimal(kcal).multiply(NutritionResult.KJ_JE_KCAL), eiweiss, kohlenhydrate, fett, vollstaendig = true)
 
     fun bilanz(eintraege: List<EintragWerte>): TagesBilanz =
         TagesBilanz(summe(eintraege.map { it.werte }), eintraege.groupBy { it.mahlzeit }.mapValues { (_, e) -> summe(e.map { it.werte }) })

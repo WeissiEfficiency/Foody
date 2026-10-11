@@ -10,6 +10,7 @@ import de.foody.app.data.repo.PlanRepository
 import de.foody.app.data.repo.RecipeDraft
 import de.foody.app.data.repo.RecipeRepository
 import de.foody.app.data.repo.ShoppingRepository
+import de.foody.app.data.repo.toDomain
 import de.foody.domain.DateRange
 import de.foody.domain.MeasureUnit
 import de.foody.sync.protocol.LoginRequest
@@ -361,6 +362,42 @@ class SyncEndToEndTest {
         assertEquals("Rote Linsensuppe", lokal.name)
         assertTrue(lokal.favorite, "Favorit vom Handy bleibt")
         assertEquals(0, BigDecimal(300).compareTo(a.db.recipeDao().getIngredients(rid).single().amount))
+    }
+
+    /** Vorrat und Tagebuch-Eintrag aus dem Browser kommen aufs Handy – mit den Werten, die das Handy selbst rechnen würde. */
+    @Test
+    fun vorratUndTagebuchAusDemBrowserKommenAufsHandy() = syncServerTest { _, clock ->
+        val (a, _) = pair(clock)
+        val reis = a.ingredients.getOrCreate("Reis")
+        a.ingredients.save(reis.copy(nutrientBasis = de.foody.domain.NutrientBasis.PER_100_G, energyKj = BigDecimal(1464), protein = BigDecimal("2.7")))
+        val rid = a.recipes.save(RecipeDraft(id = null, name = "Reisschale", defaultServings = 2, ingredients = listOf(line(reis.id, 200))))
+        a.runOk()
+        val browser = createClient { followRedirects = false }
+        val login = browser.submitForm("/login", parameters { append("benutzer", TEST_ADMIN_USER); append("passwort", TEST_ADMIN_PASSWORD) })
+        val cookie = login.headers.getAll(HttpHeaders.SetCookie)!!.first { it.startsWith("foody_sitzung=") }.substringBefore(';')
+        val csrf = Regex("""name="csrf" content="([0-9a-f]+)"""").find(browser.get("/vorrat") { header(HttpHeaders.Cookie, cookie) }.bodyAsText())!!.groupValues[1]
+        // Testuhr: 4.10.2026
+        val tag = LocalDate.of(2026, 10, 4)
+        val vorrat = browser.submitForm("/vorrat", parameters {
+            append("_csrf", csrf); append("zutat", "Reis"); append("menge", "500"); append("einheit", "g"); append("mhd", "")
+        }) { header(HttpHeaders.Cookie, cookie) }
+        assertEquals(HttpStatusCode.SeeOther, vorrat.status)
+        val eintrag = browser.submitForm("/tagebuch/rezept", parameters {
+            append("_csrf", csrf); append("tag", tag.toString()); append("mahlzeit", "MITTAGESSEN"); append("rezept", rid); append("portionen", "1,5")
+        }) { header(HttpHeaders.Cookie, cookie) }
+        assertEquals(HttpStatusCode.SeeOther, eintrag.status)
+        a.runOk()
+
+        val lokalerVorrat = a.db.pantryDao().getAll().single()
+        assertEquals(reis.id, lokalerVorrat.ingredientId)
+        assertEquals(0, BigDecimal(500).compareTo(lokalerVorrat.amount))
+        assertEquals(MeasureUnit.GRAM, lokalerVorrat.unit)
+        val lokal = a.db.tagebuchDao().getAll().single()
+        assertEquals(tag, lokal.datum)
+        val zutaten = a.db.ingredientDao().getAll().associate { it.id to it.toDomain() }
+        val handy = de.foody.domain.Tagebuch.naehrwerteRezept(a.db.recipeDao().get(rid)!!.toDomain(a.db.recipeDao().getIngredients(rid)), zutaten, BigDecimal("1.5"))
+        assertEquals(0, handy.energieKj!!.compareTo(lokal.energieKj), "${handy.energieKj} ≠ ${lokal.energieKj}")
+        assertEquals(0, handy.eiweiss!!.compareTo(lokal.eiweiss))
     }
 
     /** Plan und Liste aus dem Browser kommen aufs Handy – mit denselben Mengen, die das Handy selbst rechnen würde. */

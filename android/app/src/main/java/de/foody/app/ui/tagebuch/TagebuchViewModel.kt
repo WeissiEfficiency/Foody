@@ -166,32 +166,24 @@ class TagebuchViewModel @Inject constructor(
 
     fun freiEintragen(m: Mahlzeit, name: String, kcal: Int, eiweiss: BigDecimal?, kohlenhydrate: BigDecimal?, fett: BigDecimal?) =
         viewModelScope.launch {
-            val w = Naehrwerte(BigDecimal(kcal).multiply(KJ_JE_KCAL), eiweiss, kohlenhydrate, fett, vollstaendig = true)
-            tagebuch.save(eintrag(tag, m, TagebuchArt.FREI, name.trim(), w))
+            tagebuch.save(eintrag(tag, m, TagebuchArt.FREI, name.trim(), Tagebuch.freiWerte(kcal, eiweiss, kohlenhydrate, fett)))
         }
 
     /**
      * Speichert Änderungen. Die Werte bleiben festgehalten: Ändern sich Portionen bzw. Menge, werden sie im selben
-     * Verhältnis skaliert – nie aus dem heutigen Rezept neu berechnet (ADR 0007). Nur die Mahlzeit zu ändern lässt sie unberührt.
+     * Verhältnis skaliert ([Tagebuch.skaliert], wie in der Web-Oberfläche). Nur die Mahlzeit zu ändern lässt sie unberührt.
      */
     fun bearbeiten(e: TagebuchEintragEntity) = viewModelScope.launch {
         val alt = tagebuch.get(e.id) ?: return@launch
-        val faktor = when (e.art) {
-            TagebuchArt.REZEPT -> verhaeltnis(e.portionen, alt.portionen)
-            TagebuchArt.ZUTAT -> verhaeltnis(e.menge, alt.menge)
-            TagebuchArt.FREI -> null
+        val (vorher, nachher) = when (e.art) {
+            TagebuchArt.REZEPT -> alt.portionen to e.portionen
+            TagebuchArt.ZUTAT -> alt.menge to e.menge
+            TagebuchArt.FREI -> null to null
         }
-        fun BigDecimal?.mal() = this?.let { v -> faktor?.let { v.multiply(it) } ?: v }
-        tagebuch.save(
-            if (faktor == null) e
-            else e.copy(energieKj = alt.energieKj.mal(), eiweiss = alt.eiweiss.mal(), kohlenhydrate = alt.kohlenhydrate.mal(), fett = alt.fett.mal()),
-        )
-    }
-
-    /** neu ÷ alt; `null` ohne Änderung oder ohne brauchbaren alten Wert (dann bleiben die Werte, wie sie sind). */
-    private fun verhaeltnis(neu: BigDecimal?, alt: BigDecimal?): BigDecimal? {
-        if (neu == null || alt == null || alt.signum() <= 0 || neu.compareTo(alt) == 0) return null
-        return neu.divide(alt, 10, java.math.RoundingMode.HALF_UP)
+        // Frei: Name und Werte kommen so, wie sie im Dialog geändert wurden
+        if (e.art == TagebuchArt.FREI) return@launch tagebuch.save(e)
+        val w = Tagebuch.skaliert(e.art, Naehrwerte(alt.energieKj, alt.eiweiss, alt.kohlenhydrate, alt.fett, alt.vollstaendig), vorher, nachher)
+        tagebuch.save(e.copy(energieKj = w.energieKj, eiweiss = w.eiweiss, kohlenhydrate = w.kohlenhydrate, fett = w.fett))
     }
 
     /**

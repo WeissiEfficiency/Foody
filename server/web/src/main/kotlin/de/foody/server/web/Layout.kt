@@ -4,7 +4,10 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.html.respondHtml
+import io.ktor.http.withCharset
+import io.ktor.server.response.respondText
+import kotlinx.html.html
+import kotlinx.html.stream.createHTML
 import io.ktor.server.response.respondBytes
 import java.security.MessageDigest
 import kotlinx.html.FlowContent
@@ -26,7 +29,7 @@ import kotlinx.html.script
 import kotlinx.html.title
 
 internal enum class Navi(val pfad: String, val text: String) {
-    REZEPTE("/", "Rezepte"), PLAN("/plan", "Plan"), EINKAUF("/einkauf", "Einkauf"), TAGEBUCH("/tagebuch", "Tagebuch")
+    REZEPTE("/", "Rezepte"), PLAN("/plan", "Plan"), EINKAUF("/einkauf", "Einkauf"), VORRAT("/vorrat", "Vorrat"), TAGEBUCH("/tagebuch", "Tagebuch")
 }
 
 /** Statische Dateien: Stylesheet aus den Ressourcen, htmx aus dem WebJar. Version = Inhalts-Prüfsumme (Cache-Bust). */
@@ -86,10 +89,15 @@ private fun FlowContent.abmeldeKnopf(sitzung: Sitzung) {
     }
 }
 
+/**
+ * Seite ohne Einrückung ausliefern: Leerzeichen und Zeilenumbrüche der „schönen“ Ausgabe machten bei langen Listen
+ * (Katalog, Einkauf) den größten Teil der Bytes aus. Das Aussehen ändert sich nicht – kotlinx.html bricht ohnehin nur
+ * Blockelemente um, zwischen denen Leerraum keine Rolle spielt.
+ */
 internal suspend fun ApplicationCall.seiteAntworten(
     titel: String,
     sitzung: Sitzung?,
     aktiv: Navi?,
     status: HttpStatusCode = HttpStatusCode.OK,
     inhalt: MAIN.() -> Unit,
-) = respondHtml(status) { seite(titel, sitzung, aktiv, inhalt) }
+) = respondText("<!DOCTYPE html>" + createHTML(prettyPrint = false).html { seite(titel, sitzung, aktiv, inhalt) }, ContentType.Text.Html.withCharset(Charsets.UTF_8), status)

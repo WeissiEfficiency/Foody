@@ -14,6 +14,7 @@ import de.foody.domain.NutrientProfile
 import de.foody.domain.Recipe
 import de.foody.domain.RecipeIngredient
 import de.foody.domain.RezeptEinordnung
+import de.foody.domain.TagebuchArt
 import de.foody.sync.protocol.IngredientPayload
 import de.foody.sync.protocol.MealSlotPayload
 import de.foody.sync.protocol.RecipePayload
@@ -51,11 +52,35 @@ internal data class WebEinkaufsliste(
     val bis: LocalDate? = null,
 )
 
-internal data class WebVorrat(val id: String, val rev: Long, val zutatId: String, val menge: BigDecimal, val einheit: MeasureUnit)
+internal data class WebVorrat(
+    val id: String,
+    val rev: Long,
+    val zutatId: String,
+    val menge: BigDecimal,
+    val einheit: MeasureUnit,
+    val haltbarBis: LocalDate? = null,
+)
 
 internal data class WebEintrag(val id: String, val rev: Long, val listId: String, val payload: ShoppingItemPayload)
 
-internal data class WebTagebuch(val id: String, val datum: LocalDate, val mahlzeit: Mahlzeit, val name: String, val werte: Naehrwerte)
+internal data class WebTagebuch(
+    val id: String,
+    val datum: LocalDate,
+    val mahlzeit: Mahlzeit,
+    val name: String,
+    val werte: Naehrwerte,
+    val rev: Long = 0,
+    val art: TagebuchArt = TagebuchArt.FREI,
+    val rezeptId: String? = null,
+    val zutatId: String? = null,
+    val portionen: BigDecimal? = null,
+    val menge: BigDecimal? = null,
+    val einheit: MeasureUnit? = null,
+    val planEintragId: String? = null,
+)
+
+/** Zutat mit Roh-Payload – für das Formular und zum Schreiben auf dem gespeicherten Stand. */
+internal data class WebZutat(val id: String, val rev: Long, val payload: IngredientPayload)
 
 /**
  * Sync-Payloads → `domain`-Typen, mit denselben Regeln wie die App (`Mappers.kt`): So rechnet die Web-Oberfläche mit
@@ -110,12 +135,14 @@ internal object PayloadZuDomain {
         WebPlanEintrag(r.id, r.rev ?: 0, LocalDate.parse(p.date), p.slotType, p.recipeId, p.servings, p.cookedAt)
     }
 
+    fun zutatRoh(r: SyncRecord): WebZutat? = lesen(r, RecordType.INGREDIENT) { p: IngredientPayload -> WebZutat(r.id, r.rev ?: 0, p) }
+
     fun liste(r: SyncRecord): WebEinkaufsliste? = lesen(r, RecordType.SHOPPING_LIST) { p: ShoppingListPayload ->
         WebEinkaufsliste(r.id, p.name, r.updatedAt, r.rev ?: 0, p.start?.let(LocalDate::parse), p.end?.let(LocalDate::parse))
     }
 
     fun vorrat(r: SyncRecord): WebVorrat? = lesen(r, RecordType.PANTRY_ITEM) { p: PantryItemPayload ->
-        WebVorrat(r.id, r.rev ?: 0, p.ingredientId, BigDecimal(p.amount), MeasureUnit.valueOf(p.unit))
+        WebVorrat(r.id, r.rev ?: 0, p.ingredientId, BigDecimal(p.amount), MeasureUnit.valueOf(p.unit), p.bestBefore?.let(LocalDate::parse))
     }
 
     fun eintrag(r: SyncRecord): WebEintrag? = lesen(r, RecordType.SHOPPING_ITEM) { p: ShoppingItemPayload ->
@@ -133,6 +160,15 @@ internal object PayloadZuDomain {
                 p.energieKj?.let(::BigDecimal), p.eiweiss?.let(::BigDecimal), p.kohlenhydrate?.let(::BigDecimal),
                 p.fett?.let(::BigDecimal), p.vollstaendig,
             ),
+            rev = r.rev ?: 0,
+            // Unbekannte Art (neuere App) gilt als frei: dann wird beim Ändern nichts skaliert
+            art = TagebuchArt.entries.firstOrNull { it.name == p.art } ?: TagebuchArt.FREI,
+            rezeptId = p.rezeptId,
+            zutatId = p.zutatId,
+            portionen = p.portionen?.let(::BigDecimal),
+            menge = p.menge?.let(::BigDecimal),
+            einheit = p.einheit?.let { e -> MeasureUnit.entries.firstOrNull { it.name == e } },
+            planEintragId = p.planEintragId,
         )
     }
 

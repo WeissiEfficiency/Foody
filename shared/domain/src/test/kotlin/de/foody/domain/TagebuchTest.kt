@@ -91,4 +91,47 @@ class TagebuchTest {
         assertEquals(200, b.tag.kcal)
         assertEquals(200, b.jeMahlzeit.getValue(Mahlzeit.SNACK).kcal)
     }
+
+    private val w = Naehrwerte(bd("400"), bd("10"), null, bd("2"), vollstaendig = false)
+
+    @Test fun skaliertImVerhaeltnis() {
+        val s = Tagebuch.skaliert(TagebuchArt.REZEPT, w, bd("1"), bd("1.5"))
+        assertBd("600", s.energieKj)
+        assertBd("15", s.eiweiss)
+        assertNull(s.kohlenhydrate)
+        assertBd("3", s.fett)
+        assertFalse(s.vollstaendig, "vollständig bleibt, wie es war")
+    }
+
+    @Test fun skaliertNichtOhneAenderung() {
+        assertEquals(w, Tagebuch.skaliert(TagebuchArt.ZUTAT, w, bd("150"), bd("150.0")))
+        assertEquals(w, Tagebuch.skaliert(TagebuchArt.ZUTAT, w, null, bd("200")))
+        assertEquals(w, Tagebuch.skaliert(TagebuchArt.ZUTAT, w, bd("0"), bd("200")))
+        assertEquals(w, Tagebuch.skaliert(TagebuchArt.REZEPT, w, bd("1"), null))
+    }
+
+    @Test fun freiWirdNieSkaliert() {
+        assertEquals(w, Tagebuch.skaliert(TagebuchArt.FREI, w, bd("1"), bd("2")))
+    }
+
+    @Test fun freiWerteKcalInKj() {
+        val f = Tagebuch.freiWerte(100, bd("5"), null, null)
+        assertBd(bd("100").multiply(NutritionResult.KJ_JE_KCAL).toPlainString(), f.energieKj)
+        assertEquals(100, f.kcal)
+        assertTrue(f.vollstaendig)
+        assertBd("5", f.eiweiss)
+    }
+
+    /** Mehrfaches Ändern darf die Nachkommastellen nicht aufblähen (Sync erlaubt höchstens 20). */
+    @Test fun mehrfachSkaliertBleibtImRahmen() {
+        var werte = Naehrwerte(bd("1464"), bd("2.7"), null, null, vollstaendig = true)
+        var portionen = bd("1")
+        for (neu in listOf("1.5", "0.75", "3", "1.25", "0.5")) {
+            werte = Tagebuch.skaliert(TagebuchArt.REZEPT, werte, portionen, bd(neu))
+            portionen = bd(neu)
+        }
+        assertTrue(werte.energieKj!!.scale() <= 6 && werte.eiweiss!!.scale() <= 6, "${werte.energieKj} / ${werte.eiweiss}")
+        assertBd("732", werte.energieKj)
+        assertBd("1.35", werte.eiweiss)
+    }
 }
