@@ -120,4 +120,37 @@ class EinkaufTest {
         val c = ohneWeiterleitung()
         assertTrue("Keine Einkaufsliste" in c.get("/einkauf") { header(HttpHeaders.Cookie, c.anmelden(benutzer)) }.bodyAsText())
     }
+
+    /** Fremde Eintrags-ID: 404, und der Eintrag des anderen Haushalts bleibt unverändert. */
+    @Test fun eintragAusFremdemHaushaltIst404() = webServer { env ->
+        val (benutzer, _, _) = env.haushalt("Meins")
+        val (_, _, fremd) = env.haushalt("Fremd")
+        env.push(fremd, liste("L", "Fremde Liste", 1), artikel("m", "L", "Milch", null))
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val token = c.csrf(cookie)
+        val antwort = c.submitForm("/einkauf/m/abhaken", parameters { append("_csrf", token); append("erledigt", "1"); append("rev", "1") }) {
+            header(HttpHeaders.Cookie, cookie)
+        }
+        assertEquals(HttpStatusCode.NotFound, antwort.status)
+        assertFalse(gespeichert(env, fremd, "m").checked)
+    }
+
+    /** Abhaken behält Felder, die nur eine neuere App kennt. */
+    @Test fun abhakenBehaeltUnbekannteFelder() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        val mitZukunft = artikel("m", "L", "Milch", null).let { r ->
+            r.copy(payload = kotlinx.serialization.json.JsonObject(r.payload!! + ("zukunft" to kotlinx.serialization.json.JsonPrimitive(1))))
+        }
+        env.push(h, liste("L", "Woche", 1), mitZukunft)
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val token = c.csrf(cookie)
+        c.submitForm("/einkauf/m/abhaken", parameters { append("_csrf", token); append("erledigt", "1"); append("rev", rev(env, h, "m").toString()) }) {
+            header(HttpHeaders.Cookie, cookie)
+        }
+        val roh = env.deps.db.tx { cn -> RecordStore().get(cn, h, RecordType.SHOPPING_ITEM, "m")!!.payload!! }
+        assertEquals("1", roh["zukunft"].toString())
+        assertEquals("true", roh["checked"].toString())
+    }
 }

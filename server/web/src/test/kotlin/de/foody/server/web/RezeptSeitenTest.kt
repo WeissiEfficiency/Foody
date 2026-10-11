@@ -83,4 +83,21 @@ class RezeptSeitenTest {
         val bytes = c.get("/") { header(HttpHeaders.Cookie, c.anmelden(benutzer)) }.bodyAsBytes().size
         assertTrue(bytes < 30_000, "$bytes Bytes")
     }
+
+    /** Wie die App: kcal nur bei verlässlichem Profil (≥ 80 % der Zutaten mit Energie), sonst „–“. */
+    @Test fun unzuverlaessigeKcalWieInDerAppAusgeblendet() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        val ohneWerte = (1..3).map { datensatz("z$it", de.foody.sync.protocol.RecordType.INGREDIENT, de.foody.sync.protocol.IngredientPayload(name = "Zutat $it")) }
+        val r = datensatz("r1", de.foody.sync.protocol.RecordType.RECIPE, de.foody.sync.protocol.RecipePayload(
+            name = "Eintopf", servings = 2, tags = "", favorite = false,
+            lines = listOf(de.foody.sync.protocol.RecipePayload.Line("l0", "reis", "200", "GRAM", 0, null, false)) +
+                (1..3).map { de.foody.sync.protocol.RecipePayload.Line("l$it", "z$it", "100", "GRAM", it, null, false) },
+            steps = emptyList(),
+        ))
+        env.push(h, reis(), *ohneWerte.toTypedArray(), r)
+        val c = ohneWeiterleitung()
+        val html = c.get("/") { header(HttpHeaders.Cookie, c.anmelden(benutzer)) }.bodyAsText()
+        assertTrue("Eintopf" in html)
+        assertFalse("kcal" in html.substringAfter("Eintopf").substringBefore("</li>"), "nur 1 von 4 Zutaten mit Werten")
+    }
 }

@@ -40,6 +40,7 @@ internal object LoginSeite {
             div("anmeldung karte") {
                 h1 { +"Foody" }
                 if (fehler != null) p("fehler") { +fehler }
+                else if (call.request.queryParameters["abgelaufen"] == "1") p("hinweis") { +"Bitte erneut anmelden." }
                 form(action = "/login", method = FormMethod.post) {
                     label { attributes["for"] = "benutzer"; +"Benutzername" }
                     input(InputType.text, name = "benutzer") { id = "benutzer"; value = benutzer; required = true; attributes["autocomplete"] = "username" }
@@ -65,6 +66,9 @@ internal object LoginSeite {
         }
         val userId = deps.accounts.authenticate(benutzer, passwort) ?: return zeigen(call, falsch, benutzer)
         deps.throttle.success(ip, benutzer)
+        // Erneute Anmeldung im selben Browser: das bisherige Browser-Gerät widerrufen (keine Karteileichen,
+        // ein alter Cookie gilt danach nicht mehr)
+        call.sitzung(deps)?.let { alt -> runCatching { deps.accounts.revokeDevice(alt.principal.userId, alt.principal.deviceId) } }
         val haushalt = deps.accounts.soleHouseholdOf(userId)
         val token = deps.accounts.createDevice(userId, haushalt, geraeteName(call.userAgent()))
         call.setzeSitzung(token)

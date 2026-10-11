@@ -11,6 +11,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.contentType
 import io.ktor.server.request.receiveParameters
 import io.ktor.server.response.respondRedirect
+import io.ktor.server.response.respondText
 import java.security.MessageDigest
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
@@ -36,16 +37,35 @@ internal fun csrfToken(geraeteToken: String): String {
 internal fun Sitzung.csrfGueltig(gesendet: String?): Boolean =
     gesendet != null && MessageDigest.isEqual(gesendet.toByteArray(), csrf.toByteArray())
 
-/** Sitzung aus dem Cookie, oder `null` (abgelaufen, widerrufen, fehlt). */
+/**
+ * Sitzung aus dem Cookie, oder `null` (abgelaufen, widerrufen, fehlt). Antworten mit Sitzung tragen
+ * `Cache-Control: no-store`: Haushaltsdaten bleiben nicht im Browser-Cache (Zurück nach dem Abmelden).
+ */
 internal fun ApplicationCall.sitzung(deps: ServerDeps): Sitzung? {
     val token = request.cookies[SITZUNGS_COOKIE] ?: return null
     val principal = deps.accounts.deviceForToken(token) ?: return null
+    response.headers.append(HttpHeaders.CacheControl, "no-store")
     return Sitzung(principal, token)
 }
 
-/** Sitzung oder Weiterleitung zum Login (dann `null`). */
-internal suspend fun ApplicationCall.sitzungOderLogin(deps: ServerDeps): Sitzung? =
-    sitzung(deps) ?: run { respondRedirect("/login"); null }
+/**
+ * Sitzung oder Weiterleitung zum Login (dann `null`). War ein Cookie da, das nicht mehr gilt (abgelaufen, in der App
+ * abgemeldet), wird es gelöscht und die Login-Seite zeigt „Bitte erneut anmelden“. Bei htmx-Anfragen wechselt
+ * `HX-Redirect` die ganze Seite – sonst setzte htmx die Login-Seite in die Liste oder Zeile ein.
+ */
+internal suspend fun ApplicationCall.sitzungOderLogin(deps: ServerDeps): Sitzung? {
+    sitzung(deps)?.let { return it }
+    val abgelaufen = request.cookies[SITZUNGS_COOKIE] != null
+    if (abgelaufen) loescheSitzung()
+    val ziel = if (abgelaufen) "/login?abgelaufen=1" else "/login"
+    if (request.headers["HX-Request"] == "true") {
+        response.headers.append("HX-Redirect", ziel)
+        respondText("")
+    } else {
+        respondRedirect(ziel)
+    }
+    return null
+}
 
 /** Sitzung mit gewähltem Haushalt; sonst Weiterleitung zu Login bzw. Haushaltswahl (dann `null`). */
 internal suspend fun ApplicationCall.sitzungMitHaushalt(deps: ServerDeps): Sitzung? {

@@ -86,7 +86,7 @@ class SitzungTest {
         val token = client.csrf(cookie)
         val logout = client.submitForm("/logout", parameters { append("_csrf", token) }) { header(HttpHeaders.Cookie, cookie) }
         assertEquals(HttpStatusCode.Found, logout.status)
-        assertEquals("/login", client.get("/") { header(HttpHeaders.Cookie, cookie) }.headers[HttpHeaders.Location])
+        assertEquals("/login?abgelaufen=1", client.get("/") { header(HttpHeaders.Cookie, cookie) }.headers[HttpHeaders.Location])
     }
 
     @Test fun widerrufenesGeraetMussNeuAnmelden() = webServer { env ->
@@ -95,7 +95,7 @@ class SitzungTest {
         val cookie = client.anmelden(benutzer)
         val principal = env.deps.accounts.deviceForToken(cookie.substringAfter('='))!!
         env.deps.accounts.revokeDevice(principal.userId, principal.deviceId)
-        assertEquals("/login", client.get("/") { header(HttpHeaders.Cookie, cookie) }.headers[HttpHeaders.Location])
+        assertEquals("/login?abgelaufen=1", client.get("/") { header(HttpHeaders.Cookie, cookie) }.headers[HttpHeaders.Location])
     }
 
     @Test fun postOhneCsrfIst403() = webServer { env ->
@@ -134,5 +134,46 @@ class SitzungTest {
         assertEquals(HttpStatusCode.Found, antwort.status, antwort.bodyAsText())
         assertEquals("/haushalt", antwort.headers[HttpHeaders.Location])
         sitzungsCookie(antwort)
+    }
+
+    /** Erneutes Anmelden im selben Browser widerruft das alte Gerät – keine Karteileichen in der Geräteliste. */
+    @Test fun erneuteAnmeldungWiderruftAltesGeraet() = webServer { env ->
+        val (benutzer, appToken, _) = env.haushalt()
+        val client = ohneWeiterleitung()
+        val alt = client.anmelden(benutzer)
+        val neu = client.submitForm("/login", parameters { append("benutzer", benutzer); append("passwort", "geheimgeheim") }) {
+            header(HttpHeaders.Cookie, alt); header(HttpHeaders.UserAgent, FIREFOX)
+        }
+        assertEquals(HttpStatusCode.Found, neu.status)
+        assertEquals(null, env.deps.accounts.deviceForToken(alt.substringAfter('=')), "altes Gerät widerrufen")
+        val p = env.deps.accounts.deviceForToken(appToken)!!
+        assertEquals(1, env.deps.accounts.devices(p.userId, p.deviceId).count { it.name.startsWith("Browser") })
+    }
+
+    /** Angemeldete Seiten nicht im Browser-Cache: nach dem Abmelden zeigt „Zurück“ keine Haushaltsdaten mehr. */
+    @Test fun angemeldeteSeitenNichtCachen() = webServer { env ->
+        val (benutzer, _, _) = env.haushalt()
+        val client = ohneWeiterleitung()
+        val cookie = client.anmelden(benutzer)
+        for (pfad in listOf("/", "/plan", "/einkauf", "/tagebuch", "/rezepte/liste", "/haushalt")) {
+            val cc = client.get(pfad) { header(HttpHeaders.Cookie, cookie) }.headers[HttpHeaders.CacheControl].orEmpty()
+            assertTrue("no-store" in cc, "$pfad: $cc")
+        }
+    }
+
+    /** Abgelaufene/widerrufene Sitzung: Hinweis auf der Login-Seite, Cookie gelöscht; htmx lädt die ganze Seite neu. */
+    @Test fun abgelaufeneSitzungMitHinweisUndHtmxUmleitung() = webServer { env ->
+        val (benutzer, _, _) = env.haushalt()
+        val client = ohneWeiterleitung()
+        val cookie = client.anmelden(benutzer)
+        val p = env.deps.accounts.deviceForToken(cookie.substringAfter('='))!!
+        env.deps.accounts.revokeDevice(p.userId, p.deviceId)
+        val normal = client.get("/") { header(HttpHeaders.Cookie, cookie) }
+        assertEquals("/login?abgelaufen=1", normal.headers[HttpHeaders.Location])
+        assertTrue(normal.headers.getAll(HttpHeaders.SetCookie).orEmpty().any { it.startsWith("foody_sitzung=;") || it.startsWith("foody_sitzung=\"\"") || "Max-Age=0" in it })
+        val htmx = client.get("/rezepte/liste") { header(HttpHeaders.Cookie, cookie); header("HX-Request", "true") }
+        assertEquals("/login?abgelaufen=1", htmx.headers["HX-Redirect"], "htmx soll die Seite wechseln statt die Login-Seite einzusetzen")
+        assertTrue("Bitte erneut anmelden" in client.get("/login?abgelaufen=1").bodyAsText())
+        assertEquals("/login", client.get("/").headers[HttpHeaders.Location], "ohne Cookie kein Hinweis")
     }
 }

@@ -88,7 +88,8 @@ internal object RezeptSeiten {
         }
         ul("liste karte") {
             for (r in treffer) {
-                val kcal = RecipeProfiles.profile(r.domain, h.zutaten).kcalPerServing
+                // Wie die App: nur bei verlässlichem Profil (≥ 80 % der Zutaten mit Energie), sonst „–“
+                val kcal = RecipeProfiles.profile(r.domain, h.zutaten).takeIf { it.reliable }?.kcalPerServing
                 li {
                     a(href = "/rezept/${r.id}") { +r.payload.name }
                     span("leise") { +(kcal?.let { "$it kcal" } ?: "–") }
