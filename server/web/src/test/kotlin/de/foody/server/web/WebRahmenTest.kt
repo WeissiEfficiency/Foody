@@ -59,4 +59,34 @@ class WebRahmenTest {
         val html = c.get("/") { header(HttpHeaders.Cookie, c.anmelden(benutzer)) }.bodyAsText()
         assertTrue(html.indexOf("href=\"/einkauf\"") < html.indexOf("href=\"/vorrat\"") && html.indexOf("href=\"/vorrat\"") < html.indexOf("href=\"/tagebuch\""))
     }
+
+    /** Kleinigkeiten 9: abgelehntes Formular (CSRF) zeigt eine Seite statt einer leeren 403-Antwort. */
+    @Test fun veraltetesFormularZeigtSeite() = webServer { env ->
+        val (benutzer, _, _) = env.haushalt()
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        for (pfad in listOf("/plan/einplanen", "/einkauf/eingabe", "/tagebuch/frei", "/logout")) {
+            val antwort = c.submitForm(pfad, parameters { append("_csrf", "falsch") }) { header(HttpHeaders.Cookie, cookie) }
+            assertEquals(HttpStatusCode.Forbidden, antwort.status, pfad)
+            assertTrue("Formular veraltet" in antwort.bodyAsText(), pfad)
+        }
+        val htmx = c.submitForm("/einkauf/abhaken", parameters { append("a", "x 1 1") }) { header(HttpHeaders.Cookie, cookie); header("HX-Request", "true") }
+        assertEquals("true", htmx.headers["HX-Refresh"], "htmx lädt die Seite neu statt nichts zu tun")
+    }
+
+    /** Kleinigkeiten 12: Fehlermeldungen in Formularen werden von Screenreadern vorgelesen. */
+    @Test fun fehlermeldungenMitRoleAlert() = webServer { env ->
+        val (benutzer, _, _) = env.haushalt()
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val token = c.csrf(cookie)
+        for ((pfad, felder) in listOf(
+            "/vorrat" to mapOf("zutat" to "", "menge" to "1", "einheit" to "g", "mhd" to ""),
+            "/rezept/speichern" to mapOf("name" to "", "portionen" to "2"),
+            "/tagebuch/frei" to mapOf("tag" to "2026-10-11", "mahlzeit" to "SNACK", "name" to "", "kcal" to "1"),
+        )) {
+            val html = c.submitForm(pfad, parameters { append("_csrf", token); for ((k, v) in felder) append(k, v) }) { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
+            assertTrue(Regex("class=\"hinweis fehler\"[^>]*role=\"alert\"|role=\"alert\"[^>]*class=\"hinweis fehler\"").containsMatchIn(html), pfad)
+        }
+    }
 }

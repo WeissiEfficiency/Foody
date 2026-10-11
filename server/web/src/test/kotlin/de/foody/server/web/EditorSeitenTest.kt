@@ -14,6 +14,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.ParametersBuilder
 import io.ktor.http.parameters
 import kotlin.test.Test
+import kotlinx.coroutines.async
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -162,5 +163,44 @@ class EditorSeitenTest {
         assertEquals(HttpStatusCode.NotFound, c.submitForm("/rezept/geheim/archivieren", parameters { append("_csrf", token) }) { header(HttpHeaders.Cookie, cookie) }.status)
         assertEquals(null, HaushaltsDaten(env.deps.db).fuer(fremd).rezepte.getValue("geheim").payload.archivedAt)
         assertFalse("Reis" in c.get("/rezept/zutatenliste") { header(HttpHeaders.Cookie, cookie) }.bodyAsText(), "Zutaten des fremden Haushalts")
+    }
+
+    /** Kleinigkeiten 10: am Handy gelöscht → eigener Hinweis und „Als neues Rezept speichern“ (neue ID). */
+    @Test fun konfliktNachLoeschung() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        env.push(h, reis(), rezept("r1", "Curry"))
+        val rev = HaushaltsDaten(env.deps.db).fuer(h).rezepte.getValue("r1").rev
+        env.push(h, de.foody.sync.protocol.SyncRecord(id = "r1", type = RecordType.RECIPE, deleted = true, updatedAt = 9))
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val html = c.speichern(cookie) { rezeptFelder(name = "Curry neu", id = "r1", rev = rev.toString()) }.bodyAsText()
+        assertTrue("Am Handy gelöscht" in html && "Als neues Rezept speichern" in html, html.take(1500))
+        assertTrue("name=\"id\" value=\"\"" in html || "value=\"\" name=\"id\"" in html, "neue ID beim Speichern")
+        assertFalse("Trotzdem speichern" in html)
+        val neu = c.speichern(cookie) { rezeptFelder(name = "Curry neu") }
+        assertEquals(HttpStatusCode.SeeOther, neu.status)
+        val rezepte = HaushaltsDaten(env.deps.db).fuer(h).rezepte.values
+        assertEquals(listOf("Curry neu"), rezepte.map { it.payload.name })
+        assertFalse("r1" in rezepte.map { it.id }, "gelöschtes Rezept bleibt gelöscht")
+    }
+
+    /** Kleinigkeiten 3: gleichzeitige Speichern-Anfragen mit derselben gesehenen Revision – nur eine gewinnt. */
+    @Test fun gleichzeitigSpeichernNurEinerGewinnt() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        env.push(h, reis(), rezept("r1", "Curry"))
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val token = c.csrf(cookie)
+        repeat(3) { runde ->
+            val rev = HaushaltsDaten(env.deps.db).fuer(h).rezepte.getValue("r1").rev.toString()
+            val antworten = kotlinx.coroutines.coroutineScope {
+                (1..8).map { n ->
+                    async(kotlinx.coroutines.Dispatchers.IO) {
+                        c.submitForm("/rezept/speichern", parameters { append("_csrf", token); rezeptFelder(name = "Curry $runde-$n", id = "r1", rev = rev) }) { header(HttpHeaders.Cookie, cookie) }.status
+                    }
+                }.map { it.await() }
+            }
+            assertEquals(1, antworten.count { it == HttpStatusCode.SeeOther }, "Runde $runde: $antworten")
+        }
     }
 }

@@ -16,6 +16,9 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.vorgangFeld
+import de.foody.server.web.Vorgaenge
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.sitzungMitHaushalt
@@ -26,7 +29,6 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.http.ContentType
 import io.ktor.server.response.respondText
 import kotlinx.html.stream.createHTML
-import io.ktor.server.response.respond
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -72,7 +74,7 @@ internal object PlanSeiten {
     suspend fun aktion(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate, pfadId: String?) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val household = s.haushalt!!
         val (id, aktion) = if (pfadId != null) pfadId to form["aktion"].orEmpty()
         else form["a"].orEmpty().split(' ', limit = 2).let { it[0] to it.getOrElse(1) { "" } }
@@ -105,8 +107,10 @@ internal object PlanSeiten {
     suspend fun einplanen(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val household = s.haushalt!!
+        // Keine Auswahl (alter Browser, `required` umgangen): Hinweis auf der Auswahlseite statt „nicht gefunden“
+        if (form["rezept"].isNullOrBlank()) return neu(call, s, daten.fuer(household), heute, form, "Bitte ein Rezept auswählen.")
         val rezept = daten.fuer(household).rezepte[form["rezept"].orEmpty()]
             ?: return call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
         val e = Eingabe(form["tag"].orEmpty().trim(), form["mahlzeit"].orEmpty(), form["portionen"].orEmpty().trim())
@@ -118,8 +122,13 @@ internal object PlanSeiten {
         val portionen = if (e.portionen.isEmpty()) rezept.domain.defaultServings else e.portionen.toIntOrNull()
         if (portionen == null || portionen !in 1..MAX_PORTIONEN) fehler += "Portionen: 1 bis $MAX_PORTIONEN."
         if (fehler.isNotEmpty()) return einplanenSeite(call, s, rezept, e, fehler)
-        when (PlanSchreiber(deps, daten).einplanen(household, tag!!, mahlzeit!!, rezept.id, portionen!!)) {
-            Schreiben.Ok -> call.weiterleiten(planUrl(tag, 7, tag))
+        // Doppelklick: zweites Absenden derselben Vorgangsnummer schreibt nicht noch einmal
+        val datum = tag!!
+        val ergebnis = Vorgaenge.einmal(household, "einplanen", form["vorgang"], deps.clock.millis(), { it == Schreiben.Ok }) {
+            PlanSchreiber(deps, daten).einplanen(household, datum, mahlzeit!!, rezept.id, portionen!!)
+        } ?: return call.weiterleiten(planUrl(datum, 7, datum))
+        when (ergebnis) {
+            Schreiben.Ok -> call.weiterleiten(planUrl(datum, 7, datum))
             Schreiben.NichtGefunden -> call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
             Schreiben.Weg -> einplanenSeite(call, s, rezept, e, listOf("Das Rezept ist archiviert."))
             Schreiben.Abgelehnt -> call.abgelehnt(s)
@@ -129,7 +138,7 @@ internal object PlanSeiten {
     private suspend fun einplanenSeite(call: ApplicationCall, s: Sitzung, r: WebRezept, e: Eingabe, fehler: List<String>) =
         call.seiteAntworten("Einplanen", s, Navi.PLAN) {
             h1 { +"Einplanen: ${r.payload.name}" }
-            for (f in fehler) p("hinweis fehler") { +f }
+            for (f in fehler) p("hinweis fehler") { attributes["role"] = "alert"; +f }
             einplanenFormular(s, r, e.tag, Mahlzeit.entries.firstOrNull { it.name == e.mahlzeit }, e.portionen)
         }
 
@@ -137,6 +146,7 @@ internal object PlanSeiten {
     fun FlowContent.einplanenFormular(s: Sitzung, r: WebRezept, tag: String, mahlzeit: Mahlzeit?, portionen: String) {
         form(action = "/plan/einplanen", method = FormMethod.post, classes = "karte zeile") {
             hiddenInput(name = "_csrf") { value = s.csrf }
+            vorgangFeld()
             hiddenInput(name = "rezept") { value = r.id }
             label { +"Tag"; input(InputType.date, name = "tag") { value = tag; required = true } }
             mahlzeitAuswahl(mahlzeit ?: Mahlzeit.ABENDESSEN)
@@ -158,8 +168,7 @@ internal object PlanSeiten {
 
     private data class Auswahl(val tag: LocalDate, val mahlzeit: Mahlzeit, val alle: Boolean, val q: String)
 
-    private fun ApplicationCall.auswahl(h: Haushalt, heute: LocalDate): Auswahl {
-        val q = request.queryParameters
+    private fun ApplicationCall.auswahl(h: Haushalt, heute: LocalDate, q: io.ktor.http.Parameters = request.queryParameters): Auswahl {
         val tag = q["tag"]?.let(::datumOderNull)?.takeIf { datumErlaubt(it, heute) } ?: heute
         val belegt = h.plan.filter { it.datum == tag }.mapNotNull { Mahlzeit.ausText(it.mahlzeit) }.toSet()
         val mahlzeit = Mahlzeit.entries.firstOrNull { it.name == q["mahlzeit"] }
@@ -167,9 +176,10 @@ internal object PlanSeiten {
         return Auswahl(tag, mahlzeit, q["alle"] == "1", q["q"].orEmpty().trim().take(100))
     }
 
-    suspend fun neu(call: ApplicationCall, s: Sitzung, h: Haushalt, heute: LocalDate) {
-        val a = call.auswahl(h, heute)
+    suspend fun neu(call: ApplicationCall, s: Sitzung, h: Haushalt, heute: LocalDate, werte: io.ktor.http.Parameters? = null, fehler: String? = null) {
+        val a = if (werte == null) call.auswahl(h, heute) else call.auswahl(h, heute, werte)
         call.seiteAntworten("Einplanen", s, Navi.PLAN) {
+            fehler?.let { p("hinweis fehler") { attributes["role"] = "alert"; +it } }
             h1 { +"Einplanen · ${a.tag.format(TAG)}" }
             // Filter per GET (ohne JS „Anzeigen“); mit htmx wird nur die Liste ersetzt
             form(action = "/plan/neu", method = FormMethod.get, classes = "zeile karte") {
@@ -184,6 +194,7 @@ internal object PlanSeiten {
             }
             form(action = "/plan/einplanen", method = FormMethod.post) {
                 hiddenInput(name = "_csrf") { value = s.csrf }
+                vorgangFeld()
                 hiddenInput(name = "tag") { value = a.tag.toString() }
                 div("zeile") {
                     label { +"Portionen"; input(InputType.number, name = "portionen", classes = "menge") {
@@ -261,6 +272,7 @@ internal object PlanSeiten {
             }
             form(action = "/plan/vorschlag", method = FormMethod.post) {
                 hiddenInput(name = "_csrf") { value = s.csrf }
+                vorgangFeld()
                 hiddenInput(name = "mahlzeit") { value = mahlzeit.name }
                 hiddenInput(name = "ab") { value = ab.toString() }
                 if (tage == 14) hiddenInput(name = "tage") { value = "14" }
@@ -286,7 +298,7 @@ internal object PlanSeiten {
     suspend fun vorschlagUebernehmen(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val ab = form["ab"]?.let(::datumOderNull)
         val tage = if (form["tage"] == "14") 14 else 7
         val mahlzeit = Mahlzeit.entries.firstOrNull { it.name == form["mahlzeit"] }
@@ -294,8 +306,11 @@ internal object PlanSeiten {
             val tag = form["tag_$i"] ?: return@mapNotNull null
             (datumOderNull(tag) ?: LocalDate.MIN) to form["rezept_$i"].orEmpty()
         }
-        val ergebnis = if (ab == null || mahlzeit == null || paare.isEmpty() || !datumErlaubt(ab, heute)) Schreiben.NichtGefunden
-        else PlanSchreiber(deps, daten).vorschlagUebernehmen(s.haushalt!!, mahlzeit, paare, ab, ab.plusDays(tage - 1L))
+        val gueltig = ab != null && mahlzeit != null && paare.isNotEmpty() && datumErlaubt(ab, heute)
+        val ergebnis = if (!gueltig) Schreiben.NichtGefunden
+        else Vorgaenge.einmal(s.haushalt!!, "vorschlag", form["vorgang"], deps.clock.millis(), { it == Schreiben.Ok }) {
+            PlanSchreiber(deps, daten).vorschlagUebernehmen(s.haushalt!!, mahlzeit, paare, ab, ab.plusDays(tage - 1L))
+        } ?: return call.weiterleiten(planUrl(ab, tage))
         when (ergebnis) {
             Schreiben.Ok -> call.weiterleiten(planUrl(ab!!, tage))
             Schreiben.Abgelehnt -> call.abgelehnt(s)

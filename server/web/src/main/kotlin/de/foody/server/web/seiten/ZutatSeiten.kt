@@ -6,23 +6,22 @@ import de.foody.server.web.Eingaben
 import de.foody.server.web.Haushalt
 import de.foody.server.web.HaushaltsDaten
 import de.foody.server.web.Navi
-import de.foody.server.web.Schreiben
 import de.foody.server.web.Sitzung
 import de.foody.server.web.ZutatFormular
+import de.foody.server.web.ZutatLoeschen
 import de.foody.server.web.ZutatSchreiber
 import de.foody.server.web.ZutatSpeichern
 import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.sitzungMitHaushalt
 import de.foody.server.web.weiterleiten
 import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import kotlinx.html.FlowContent
 import kotlinx.html.FormMethod
@@ -103,7 +102,7 @@ internal object ZutatSeiten {
     private suspend fun formularSeite(call: ApplicationCall, s: Sitzung, f: ZutatFormular, meldungen: List<String>, gibtEsSchon: ZutatSpeichern.GibtEsSchon? = null) =
         call.seiteAntworten(if (f.id == null) "Neue Zutat" else "Zutat bearbeiten", s, Navi.VORRAT) {
             h1 { +(if (f.id == null) "Neue Zutat" else f.name) }
-            for (m in meldungen) p("hinweis fehler") { +m }
+            for (m in meldungen) p("hinweis fehler") { attributes["role"] = "alert"; +m }
             gibtEsSchon?.let { g -> p("hinweis") { +"Gibt es schon: "; a(href = "/zutat/${g.id}") { +g.name } } }
             form(action = "/zutat/speichern", method = FormMethod.post, classes = "karte") {
                 hiddenInput(name = "_csrf") { value = s.csrf }
@@ -144,7 +143,7 @@ internal object ZutatSeiten {
     suspend fun speichern(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val f = ZutatFormular.aus(form)
         when (val r = ZutatSchreiber(deps, daten).speichern(s.haushalt!!, f)) {
             is ZutatSpeichern.Ok -> call.weiterleiten("/zutat/${r.id}")
@@ -159,23 +158,18 @@ internal object ZutatSeiten {
     suspend fun loeschen(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, id: String) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val household = s.haushalt!!
-        val h = daten.fuer(household)
-        val schreiber = ZutatSchreiber(deps, daten)
-        val z = h.zutatenRoh[id]
-        if (z != null) {
-            val wo = schreiber.verwendungen(household, id)
-            if (wo.isNotEmpty()) {
-                val text = wo.take(MAX_VERWENDUNGEN).joinToString(", ") + if (wo.size > MAX_VERWENDUNGEN) " und ${wo.size - MAX_VERWENDUNGEN} weitere" else ""
-                return formularSeite(call, s, ZutatFormular.aus(z), listOf("Wird noch verwendet in: $text. Erst dort entfernen, dann löschen."))
+        when (val r = ZutatSchreiber(deps, daten).loeschenWennUnbenutzt(household, id)) {
+            ZutatLoeschen.Ok -> call.weiterleiten("/zutaten")
+            ZutatLoeschen.Weg -> call.weiterleiten("/zutaten?hinweis=weg")
+            ZutatLoeschen.NichtGefunden -> call.nichtGefunden(s, "Diese Zutat gibt es nicht (mehr).")
+            ZutatLoeschen.Abgelehnt -> call.abgelehnt(s)
+            is ZutatLoeschen.Verwendet -> {
+                val z = daten.fuer(household).zutatenRoh[id] ?: return call.nichtGefunden(s, "Diese Zutat gibt es nicht (mehr).")
+                val text = r.wo.take(MAX_VERWENDUNGEN).joinToString(", ") + if (r.wo.size > MAX_VERWENDUNGEN) " und ${r.wo.size - MAX_VERWENDUNGEN} weitere" else ""
+                formularSeite(call, s, ZutatFormular.aus(z), listOf("Wird noch verwendet in: $text. Erst dort entfernen, dann löschen."))
             }
-        }
-        when (schreiber.loeschen(household, id)) {
-            Schreiben.Ok -> call.weiterleiten("/zutaten")
-            Schreiben.Weg -> call.weiterleiten("/zutaten?hinweis=weg")
-            Schreiben.NichtGefunden -> call.nichtGefunden(s, "Diese Zutat gibt es nicht (mehr).")
-            Schreiben.Abgelehnt -> call.abgelehnt(s)
         }
     }
 }

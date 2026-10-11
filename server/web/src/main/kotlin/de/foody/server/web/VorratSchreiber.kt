@@ -20,7 +20,11 @@ internal class VorratSchreiber(private val deps: ServerDeps, private val daten: 
     private val store = RecordStore()
 
     /** Unbekannte Zutat wird wie im Rezept-Editor angelegt (Name vereinheitlicht, Abteilung geschätzt). */
-    fun anlegen(household: String, zutatName: String, menge: BigDecimal, einheit: MeasureUnit, haltbarBis: LocalDate?): Schreiben {
+    /** Unter der [Haushaltssperre]: Eine gleichzeitig gelöschte Zutat kann nicht zwischen Auflösen und Anlegen verschwinden. */
+    fun anlegen(household: String, zutatName: String, menge: BigDecimal, einheit: MeasureUnit, haltbarBis: LocalDate?): Schreiben =
+        Haushaltssperre.mit(household) { anlegenGesperrt(household, zutatName, menge, einheit, haltbarBis) }
+
+    private fun anlegenGesperrt(household: String, zutatName: String, menge: BigDecimal, einheit: MeasureUnit, haltbarBis: LocalDate?): Schreiben {
         val zutatId = RezeptSchreiber(deps, daten).zutatenAufloesen(household, listOf(zutatName)).singleOrNull() ?: return Schreiben.Abgelehnt
         val p = PantryItemPayload(zutatId, menge.toPlainString(), einheit.name, haltbarBis?.toString())
         return push(household, SyncRecord(

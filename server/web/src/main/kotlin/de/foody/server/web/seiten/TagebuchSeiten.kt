@@ -18,16 +18,17 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.vorgangFeld
+import de.foody.server.web.Vorgaenge
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.sitzungMitHaushalt
 import de.foody.server.web.text
 import de.foody.server.web.weiterleiten
 import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -61,6 +62,7 @@ internal object TagebuchSeiten {
     private const val MAX_PORTIONEN = 99
     private const val MAX_KCAL = 10_000
     private const val MAX_NAME = 200
+    private const val MAX_AUSWAHL = 50
 
     private fun datum(text: String?): LocalDate? = text?.let { try { LocalDate.parse(it.trim()) } catch (_: DateTimeParseException) { null } }
 
@@ -111,7 +113,7 @@ internal object TagebuchSeiten {
         val q = call.request.queryParameters["q"].orEmpty().trim().take(100)
         call.seiteAntworten("Eintragen", s, Navi.TAGEBUCH) {
             h1 { +"Eintragen · ${mahlzeit.text()} · ${tag.format(TAG)}" }
-            for (f in fehler) p("hinweis fehler") { +f }
+            for (f in fehler) p("hinweis fehler") { attributes["role"] = "alert"; +f }
             h2 { +"Rezept" }
             form(action = "/tagebuch/neu", method = FormMethod.get, classes = "zeile") {
                 attributes["hx-get"] = "/tagebuch/neu/liste"
@@ -150,6 +152,7 @@ internal object TagebuchSeiten {
 
     private fun FlowContent.kopf(s: Sitzung, tag: LocalDate, mahlzeit: Mahlzeit) {
         hiddenInput(name = "_csrf") { value = s.csrf }
+        vorgangFeld()
         hiddenInput(name = "tag") { value = tag.toString() }
         hiddenInput(name = "mahlzeit") { value = mahlzeit.name }
     }
@@ -170,9 +173,12 @@ internal object TagebuchSeiten {
             p("leise") { +"Keine Rezepte gefunden." }
             return
         }
+        // Ohne Suche nur die ersten [MAX_AUSWAHL]: die Seite bleibt auch mit vielen Rezepten klein
+        val gezeigt = if (q.isEmpty()) treffer.take(MAX_AUSWAHL) else treffer
         ul("liste") {
-            for (r in treffer) li { label { input(InputType.radio, name = "rezept") { value = r.id; required = true }; +" ${r.payload.name}" } }
+            for (r in gezeigt) li { label { input(InputType.radio, name = "rezept") { value = r.id; required = true }; +" ${r.payload.name}" } }
         }
+        if (gezeigt.size < treffer.size) p("leise") { +"${treffer.size - gezeigt.size} weitere – bitte suchen." }
     }
 
     suspend fun neuListe(call: ApplicationCall, h: Haushalt) {
@@ -183,7 +189,7 @@ internal object TagebuchSeiten {
     private suspend fun ApplicationCall.formularMitCsrf(deps: ServerDeps): Pair<Sitzung, Parameters>? {
         val s = sitzungMitHaushalt(deps) ?: return null
         val form = formular()
-        if (!s.csrfGueltig(csrfAus(form))) { respond(HttpStatusCode.Forbidden); return null }
+        if (!s.csrfGueltig(csrfAus(form))) { formularVeraltet(); return null }
         return s to form
     }
 
@@ -204,13 +210,18 @@ internal object TagebuchSeiten {
     suspend fun rezept(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate) {
         val (s, form) = call.formularMitCsrf(deps) ?: return
         val h = daten.fuer(s.haushalt!!)
-        if (h.rezepte[form["rezept"].orEmpty()] == null) return call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
         val p = Pruefung()
+        // Keine Auswahl → Hinweis im Formular; nur eine unbekannte ID ist „nicht gefunden“
+        if (form["rezept"].isNullOrBlank()) p.fehler += "Bitte ein Rezept auswählen."
+        else if (h.rezepte[form["rezept"]!!] == null) return call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
         val tag = p.tag(form["tag"], heute)
         val mahlzeit = p.mahlzeit(form["mahlzeit"])
         val portionen = p.portionen(form["portionen"])
         if (p.fehler.isNotEmpty()) return neu(call, s, h, heute, form, p.fehler)
-        antwort(call, s, TagebuchSchreiber(deps, daten).rezept(s.haushalt!!, tag!!, mahlzeit!!, form["rezept"]!!, portionen!!), tag)
+        val r = Vorgaenge.einmal(s.haushalt!!, "tagebuch-rezept", form["vorgang"], deps.clock.millis(), { it == Schreiben.Ok }) {
+            TagebuchSchreiber(deps, daten).rezept(s.haushalt!!, tag!!, mahlzeit!!, form["rezept"]!!, portionen!!)
+        } ?: return call.weiterleiten(tagUrl(tag!!))
+        antwort(call, s, r, tag)
     }
 
     suspend fun zutat(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate) {
@@ -223,7 +234,10 @@ internal object TagebuchSeiten {
         val menge = p.menge(form["menge"])
         val einheit = p.einheit(form["einheit"])
         if (p.fehler.isNotEmpty()) return neu(call, s, h, heute, form, p.fehler)
-        when (val r = TagebuchSchreiber(deps, daten).zutat(s.haushalt!!, tag!!, mahlzeit!!, name!!, menge!!, einheit!!)) {
+        val r = Vorgaenge.einmal(s.haushalt!!, "tagebuch-zutat", form["vorgang"], deps.clock.millis(), { it == ZutatEintragen.Ergebnis(Schreiben.Ok) }) {
+            TagebuchSchreiber(deps, daten).zutat(s.haushalt!!, tag!!, mahlzeit!!, name!!, menge!!, einheit!!)
+        } ?: return call.weiterleiten(tagUrl(tag!!))
+        when (r) {
             is ZutatEintragen.Ergebnis -> antwort(call, s, r.schreiben, tag)
             ZutatEintragen.Unbekannt -> neu(call, s, h, heute, form, listOf("„$name“ gibt es nicht im Zutatenkatalog – bitte dort anlegen oder frei eintragen."))
             ZutatEintragen.NichtBerechenbar -> neu(call, s, h, heute, form, listOf("Keine Nährwerte oder Einheit nicht umrechenbar – bitte frei eintragen."))
@@ -241,7 +255,10 @@ internal object TagebuchSeiten {
         val kh = p.gramm("Kohlenhydrate", form["kh"])
         val fett = p.gramm("Fett", form["fett"])
         if (p.fehler.isNotEmpty()) return neu(call, s, daten.fuer(s.haushalt!!), heute, form, p.fehler)
-        antwort(call, s, TagebuchSchreiber(deps, daten).frei(s.haushalt!!, tag!!, mahlzeit!!, name!!, kcal!!, eiweiss, kh, fett), tag)
+        val r = Vorgaenge.einmal(s.haushalt!!, "tagebuch-frei", form["vorgang"], deps.clock.millis(), { it == Schreiben.Ok }) {
+            TagebuchSchreiber(deps, daten).frei(s.haushalt!!, tag!!, mahlzeit!!, name!!, kcal!!, eiweiss, kh, fett)
+        } ?: return call.weiterleiten(tagUrl(tag!!))
+        antwort(call, s, r, tag)
     }
 
     // --- Ändern ---
@@ -252,7 +269,7 @@ internal object TagebuchSeiten {
         call.seiteAntworten(e.name, s, Navi.TAGEBUCH) {
             h1 { +e.name }
             p("leise") { +"${e.datum.format(TAG)} · ${e.werte.kcal?.let { "$it kcal" } ?: "–"}" }
-            for (f in fehler) p("hinweis fehler") { +f }
+            for (f in fehler) p("hinweis fehler") { attributes["role"] = "alert"; +f }
             form(action = "/tagebuch/${e.id}", method = FormMethod.post, classes = "karte") {
                 hiddenInput(name = "_csrf") { value = s.csrf }
                 label {

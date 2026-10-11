@@ -16,6 +16,9 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.vorgangFeld
+import de.foody.server.web.Vorgaenge
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.menge
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
@@ -27,7 +30,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -69,22 +71,30 @@ internal object EinkaufSeite {
     private const val MAX_NOTIZ = 1000
     private val DATUM = DateTimeFormatter.ofPattern("EE dd.MM.", Locale.GERMAN)
 
-    suspend fun zeigen(call: ApplicationCall, s: Sitzung, h: Haushalt, fehler: String? = null, bearbeitenErzwingen: Boolean = false) {
+    /**
+     * [listeId]/[eingaben]: nach einem Formularfehler die Liste, auf der man war, und das Eingegebene (ein POST hat
+     * keine Query-Parameter).
+     */
+    suspend fun zeigen(
+        call: ApplicationCall, s: Sitzung, h: Haushalt, fehler: String? = null, bearbeitenErzwingen: Boolean = false,
+        listeId: String? = null, eingaben: Parameters? = null,
+    ) {
         val q = call.request.queryParameters
         val listen = h.listen.sortedByDescending { it.geaendert }
-        val gewaehlt = q["liste"]?.let { id -> listen.firstOrNull { it.id == id } } ?: listen.firstOrNull()
+        val gewaehlt = (listeId ?: q["liste"])?.let { id -> listen.firstOrNull { it.id == id } } ?: listen.firstOrNull()
         val bearbeiten = bearbeitenErzwingen || q["bearbeiten"] == "1"
         call.seiteAntworten("Einkauf", s, Navi.EINKAUF) {
             h1 { +"Einkauf" }
-            fehler?.let { p("hinweis fehler") { +it } }
+            fehler?.let { p("hinweis fehler") { attributes["role"] = "alert"; +it } }
             if (q["hinweis"] == "weg") p("hinweis") { +"Eintrag gibt es nicht mehr." }
             q["hinzu"]?.toIntOrNull()?.let { n ->
                 p("hinweis") { +(when (n) { 0 -> "Nichts hinzugefügt (nur Zutaten nach Bedarf)."; 1 -> "1 Zutat hinzugefügt."; else -> "$n Zutaten hinzugefügt." }) }
             }
             form(action = "/einkauf/eingabe", method = FormMethod.post, classes = "zeile") {
                 hiddenInput(name = "_csrf") { value = s.csrf }
+                vorgangFeld()
                 hiddenInput(name = "liste") { value = gewaehlt?.id.orEmpty() }
-                input(InputType.text, name = "text") { placeholder = "Was willst du einkaufen?"; attributes["aria-label"] = "Was willst du einkaufen?"; maxLength = "$MAX_TEXT" }
+                input(InputType.text, name = "text") { eingaben?.get("text")?.let { value = it }; placeholder = "Was willst du einkaufen?"; attributes["aria-label"] = "Was willst du einkaufen?"; maxLength = "$MAX_TEXT" }
                 button { +"Hinzufügen" }
             }
             if (gewaehlt == null) {
@@ -121,7 +131,7 @@ internal object EinkaufSeite {
                     div("karte") {
                         h2 { +abteilung }
                         ul("liste") {
-                            for (e in zeilen.sortedBy { it.payload.sortOrder }) if (bearbeiten) bearbeitenZeile(e) else zeile(e)
+                            for (e in zeilen.sortedBy { it.payload.sortOrder }) if (bearbeiten) bearbeitenZeile(e, eingaben?.get("n_${e.id}")) else zeile(e)
                         }
                     }
                 }
@@ -153,7 +163,7 @@ internal object EinkaufSeite {
         }
     }
 
-    private fun UL.bearbeitenZeile(e: WebEintrag) {
+    private fun UL.bearbeitenZeile(e: WebEintrag, notizEingabe: String? = null) {
         val p = e.payload
         li {
             span {
@@ -167,7 +177,7 @@ internal object EinkaufSeite {
                 }
             }
             span("knoepfe") {
-                input(InputType.text, name = "n_${e.id}") { value = p.note.orEmpty(); placeholder = "Notiz"; attributes["aria-label"] = "Notiz zu ${p.name}" }
+                input(InputType.text, name = "n_${e.id}") { value = notizEingabe ?: p.note.orEmpty(); placeholder = "Notiz"; attributes["aria-label"] = "Notiz zu ${p.name}" }
                 // Angezeigter Wert: nur wirklich im Formular geänderte Notizen werden geschrieben (Handy-Änderung bleibt)
                 hiddenInput(name = "o_${e.id}") { value = p.note.orEmpty() }
                 button { name = "weg"; value = e.id; attributes["aria-label"] = "${p.name} löschen"; +"✕" }
@@ -181,7 +191,7 @@ internal object EinkaufSeite {
     suspend fun abhaken(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, pfadId: String?) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val haushalt = s.haushalt!!
         val teile = form["a"]?.split(' ')
         val id = pfadId ?: teile?.getOrNull(0).orEmpty()
@@ -215,7 +225,7 @@ internal object EinkaufSeite {
     private suspend fun ApplicationCall.formMitCsrf(deps: ServerDeps): Pair<Sitzung, Parameters>? {
         val s = sitzungMitHaushalt(deps) ?: return null
         val form = formular()
-        if (!s.csrfGueltig(csrfAus(form))) { respond(HttpStatusCode.Forbidden); return null }
+        if (!s.csrfGueltig(csrfAus(form))) { formularVeraltet(); return null }
         return s to form
     }
 
@@ -223,9 +233,17 @@ internal object EinkaufSeite {
         val (s, form) = call.formMitCsrf(deps) ?: return
         val text = form["text"].orEmpty().trim()
         val listId = form["liste"].orEmpty()
-        if (text.isEmpty()) return call.weiterleiten(if (listId.isEmpty()) "/einkauf" else "/einkauf?liste=$listId")
-        if (text.length > MAX_TEXT) return zeigen(call, s, daten.fuer(s.haushalt!!), "Höchstens $MAX_TEXT Zeichen.")
-        val (ergebnis, ziel) = EinkaufSchreiber(deps, daten).eingabe(s.haushalt!!, listId, text)
+        // Nur eine Liste des Haushalts kommt in die Weiterleitung – ein rohes Formularfeld könnte Zeilenumbrüche enthalten
+        if (text.isEmpty()) return call.weiterleiten(
+            daten.fuer(s.haushalt!!).listen.firstOrNull { it.id == listId }?.let { "/einkauf?liste=${it.id}" } ?: "/einkauf",
+        )
+        if (text.length > MAX_TEXT) return zeigen(call, s, daten.fuer(s.haushalt!!), "Höchstens $MAX_TEXT Zeichen.", listeId = listId, eingaben = form)
+        // Doppelklick: „Milch“ zweimal hieße hinzufügen und gleich wieder abhaken
+        val (ergebnis, ziel) = Vorgaenge.einmal(s.haushalt!!, "eingabe", form["vorgang"], deps.clock.millis(), { it.first == Schreiben.Ok }) {
+            EinkaufSchreiber(deps, daten).eingabe(s.haushalt!!, listId, text)
+        } ?: return call.weiterleiten(
+            daten.fuer(s.haushalt!!).listen.firstOrNull { it.id == listId }?.let { "/einkauf?liste=${it.id}" } ?: "/einkauf",
+        )
         when (ergebnis) {
             Schreiben.Ok -> call.weiterleiten("/einkauf?liste=$ziel")
             Schreiben.Weg -> call.weiterleiten("/einkauf?liste=$ziel&hinweis=weg")
@@ -240,7 +258,7 @@ internal object EinkaufSeite {
             .associate { it.removePrefix("n_") to form[it].orEmpty() }
             .filter { (id, text) -> form["o_$id"]?.let { it.trim() != text.trim() } ?: true }
         if (notizen.values.any { it.trim().length > MAX_NOTIZ }) {
-            return zeigen(call, s, daten.fuer(s.haushalt!!), "Notiz höchstens $MAX_NOTIZ Zeichen.", bearbeitenErzwingen = true)
+            return zeigen(call, s, daten.fuer(s.haushalt!!), "Notiz höchstens $MAX_NOTIZ Zeichen.", bearbeitenErzwingen = true, listeId = listId, eingaben = form)
         }
         val zurueck = "/einkauf?liste=$listId&bearbeiten=1"
         when (EinkaufSchreiber(deps, daten).bearbeiten(s.haushalt!!, listId, notizen, form["weg"]?.takeIf { it.isNotEmpty() })) {
@@ -283,11 +301,13 @@ internal object EinkaufSeite {
         if (portionen == null || portionen !in 1..PlanSeiten.MAX_PORTIONEN) {
             return call.seiteAntworten("Auf die Einkaufsliste", s, Navi.REZEPTE, HttpStatusCode.BadRequest) {
                 h1 { +"Auf die Einkaufsliste" }
-                p("hinweis fehler") { +"Portionen: 1 bis ${PlanSeiten.MAX_PORTIONEN}." }
+                p("hinweis fehler") { attributes["role"] = "alert"; +"Portionen: 1 bis ${PlanSeiten.MAX_PORTIONEN}." }
                 a(href = "/rezept/${rezept.id}") { +"Zurück zum Rezept" }
             }
         }
-        val (ergebnis, hinzu) = EinkaufSchreiber(deps, daten).rezeptAufListe(household, rezept.id, portionen, form["liste"], heute)
+        val (ergebnis, hinzu) = Vorgaenge.einmal(household, "rezept-liste", form["vorgang"], deps.clock.millis(), { it.second != null }) {
+            EinkaufSchreiber(deps, daten).rezeptAufListe(household, rezept.id, portionen, form["liste"], heute)
+        } ?: return call.weiterleiten("/einkauf")
         when {
             hinzu != null -> call.weiterleiten("/einkauf?liste=${hinzu.second}&hinzu=${hinzu.first}")
             ergebnis == Schreiben.Abgelehnt -> call.abgelehnt(s)
@@ -300,6 +320,7 @@ internal object EinkaufSeite {
         val listen = h.listen.sortedByDescending { it.rev }
         form(action = "/einkauf/rezept", method = FormMethod.post, classes = "karte zeile") {
             hiddenInput(name = "_csrf") { value = s.csrf }
+            vorgangFeld()
             hiddenInput(name = "rezept") { value = r.id }
             label { +"Portionen"; input(InputType.number, name = "portionen", classes = "menge") {
                 placeholder = r.domain.defaultServings.toString(); min = "1"; max = "${PlanSeiten.MAX_PORTIONEN}"

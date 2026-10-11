@@ -25,8 +25,8 @@ import kotlinx.serialization.json.jsonPrimitive
 
 internal sealed interface Speichern {
     data class Ok(val id: String) : Speichern
-    /** Gespeicherter Stand hat eine andere Revision als die gesehene (geändert oder gelöscht); nichts geschrieben. */
-    data class Konflikt(val aktuelleRev: Long?) : Speichern
+    /** Gespeicherter Stand hat eine andere Revision als die gesehene ([geloescht]: inzwischen gelöscht); nichts geschrieben. */
+    data class Konflikt(val aktuelleRev: Long?, val geloescht: Boolean = false) : Speichern
     data class Fehler(val meldungen: Map<String, String>) : Speichern
     /** Die ID gab es im eigenen Haushalt nie. */
     data object NichtGefunden : Speichern
@@ -40,13 +40,18 @@ internal sealed interface Speichern {
 internal class RezeptSchreiber(private val deps: ServerDeps, private val daten: HaushaltsDaten) {
     private val store = RecordStore()
 
-    fun speichern(household: String, f: RezeptFormular): Speichern {
+    /** Prüfen und Schreiben unter der [Haushaltssperre]: zwei gleichzeitige Speichervorgänge sehen nie denselben Stand. */
+    fun speichern(household: String, f: RezeptFormular): Speichern = Haushaltssperre.mit(household) { speichernGesperrt(household, f) }
+
+    private fun speichernGesperrt(household: String, f: RezeptFormular): Speichern {
         val fehler = f.pruefen()
         if (fehler.isNotEmpty()) return Speichern.Fehler(fehler)
         val gespeichert = f.id?.let { id -> deps.db.tx { c -> store.get(c, household, RecordType.RECIPE, id) } }
         if (f.id != null && gespeichert == null) return Speichern.NichtGefunden
         // Gleichzeitige Änderung (z. B. am Handy) oder Löschung: nichts überschreiben, außer der Nutzer will es
-        if (gespeichert != null && (gespeichert.rev != f.rev || gespeichert.deleted) && !(f.erzwingen && gespeichert.rev == f.rev)) {
+        // Gelöscht: nie unter der alten ID wiederbeleben – der Nutzer kann als neues Rezept speichern
+        if (gespeichert != null && gespeichert.deleted) return Speichern.Konflikt(gespeichert.rev, geloescht = true)
+        if (gespeichert != null && gespeichert.rev != f.rev && !(f.erzwingen && gespeichert.rev == f.rev)) {
             return Speichern.Konflikt(gespeichert.rev)
         }
         val ids = zutatenAufloesen(household, f.zeilen.map { it.zutat })

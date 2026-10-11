@@ -15,6 +15,7 @@ import de.foody.server.web.Speichern
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.sitzungMitHaushalt
@@ -57,26 +58,30 @@ internal object EditorSeite {
 
     private fun leer() = RezeptFormular(null, null, false, "", "2", "", "", "", "", "", "", false, emptySet(), emptySet(), emptyList())
 
-    suspend fun neu(call: ApplicationCall, s: Sitzung) = zeigen(call, s, leer(), emptyMap(), konflikt = false)
+    suspend fun neu(call: ApplicationCall, s: Sitzung) = zeigen(call, s, leer(), emptyMap(), konflikt = null)
 
     suspend fun bearbeiten(call: ApplicationCall, s: Sitzung, h: Haushalt, id: String) {
         val r = h.rezepte[id] ?: return call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
-        zeigen(call, s, RezeptFormular.aus(r, h), emptyMap(), konflikt = false)
+        zeigen(call, s, RezeptFormular.aus(r, h), emptyMap(), konflikt = null)
     }
 
     suspend fun speichern(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val f = RezeptFormular.aus(form)
         when (val e = RezeptSchreiber(deps, daten).speichern(s.haushalt!!, f)) {
             is Speichern.Ok -> {
                 call.response.headers.append(HttpHeaders.Location, "/rezept/${e.id}")
                 call.respond(HttpStatusCode.SeeOther)
             }
-            is Speichern.Fehler -> zeigen(call, s, f, e.meldungen, konflikt = false)
+            is Speichern.Fehler -> zeigen(call, s, f, e.meldungen, konflikt = null)
             // Mit der neuen Revision: „Trotzdem speichern“ schickt dasselbe Formular erzwungen
-            is Speichern.Konflikt -> zeigen(call, s, f.copy(rev = e.aktuelleRev, erzwingen = true), emptyMap(), konflikt = true)
+            // Gelöscht: als neues Rezept anbieten (leere ID); geändert: mit der neuen Revision „Trotzdem speichern“
+            is Speichern.Konflikt -> zeigen(
+                call, s, if (e.geloescht) f.copy(id = null, rev = null, erzwingen = false) else f.copy(rev = e.aktuelleRev, erzwingen = true),
+                emptyMap(), konflikt = e,
+            )
             Speichern.NichtGefunden -> call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
         }
     }
@@ -84,7 +89,7 @@ internal object EditorSeite {
     suspend fun archivieren(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, id: String, archiviert: Boolean) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         if (!RezeptSchreiber(deps, daten).archivieren(s.haushalt!!, id, archiviert)) return call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
         call.response.headers.append(HttpHeaders.Location, "/rezept/$id")
         call.respond(HttpStatusCode.SeeOther)
@@ -102,21 +107,23 @@ internal object EditorSeite {
             for (n in h.zutaten.values.map { it.name }.sorted()) option { value = n }
         }, ContentType.Text.Html)
 
-    private suspend fun zeigen(call: ApplicationCall, s: Sitzung, f: RezeptFormular, fehler: Map<String, String>, konflikt: Boolean) =
+    private suspend fun zeigen(call: ApplicationCall, s: Sitzung, f: RezeptFormular, fehler: Map<String, String>, konflikt: Speichern.Konflikt?) =
         call.seiteAntworten(if (f.id == null) "Neues Rezept" else "Rezept bearbeiten", s, Navi.REZEPTE) {
             h1 { +(if (f.id == null) "Neues Rezept" else "Rezept bearbeiten") }
-            if (konflikt) div("hinweis") {
+            if (konflikt?.geloescht == true) div("hinweis") {
+                p { +"Am Handy gelöscht. Deine Eingaben sind unten noch da – du kannst sie als neues Rezept speichern." }
+            } else if (konflikt != null) div("hinweis") {
                 p { +"Inzwischen geändert (z. B. am Handy). Deine Eingaben sind unten noch da." }
                 div("zeile") {
                     a(href = "/rezept/${f.id}/bearbeiten", classes = "knopf") { +"Aktuellen Stand laden" }
                 }
             }
-            if (fehler.isNotEmpty()) div("hinweis fehler") { for (m in fehler.values) p { +m } }
+            if (fehler.isNotEmpty()) div("hinweis fehler") { attributes["role"] = "alert"; for (m in fehler.values) p { +m } }
             form(action = "/rezept/speichern", method = FormMethod.post) {
                 hiddenInput(name = "_csrf") { value = s.csrf }
                 hiddenInput(name = "id") { value = f.id.orEmpty() }
                 hiddenInput(name = "rev") { value = f.rev?.toString().orEmpty() }
-                if (konflikt) hiddenInput(name = "erzwingen") { value = "1" }
+                if (konflikt != null && !konflikt.geloescht) hiddenInput(name = "erzwingen") { value = "1" }
                 div("karte") {
                     feld("Name", "name", f.name, fehler)
                     div("zeile") {
@@ -160,7 +167,7 @@ internal object EditorSeite {
                 h2 { +"Notizen" }
                 textArea(rows = "4", classes = "breit") { name = "notizen"; attributes["aria-label"] = "Notizen"; +f.notizen }
                 div("zeile") {
-                    button { +(if (konflikt) "Trotzdem speichern" else "Speichern") }
+                    button { +(when { konflikt?.geloescht == true -> "Als neues Rezept speichern"; konflikt != null -> "Trotzdem speichern"; else -> "Speichern" }) }
                     a(href = if (f.id == null) "/" else "/rezept/${f.id}") { +"Abbrechen" }
                 }
             }

@@ -14,15 +14,16 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.vorgangFeld
+import de.foody.server.web.Vorgaenge
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.menge
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.sitzungMitHaushalt
 import de.foody.server.web.weiterleiten
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -80,10 +81,11 @@ internal object VorratSeiten {
             h1 { +"Vorrat" }
             div("zeile") { a(href = "/zutaten") { +"Zutatenkatalog" } }
             if (call.request.queryParameters["hinweis"] == "weg") p("hinweis") { +"Eintrag gibt es nicht mehr." }
-            for (f in fehler) p("hinweis fehler") { +f }
+            for (f in fehler) p("hinweis fehler") { attributes["role"] = "alert"; +f }
             val e = eingabe ?: Eingabe("", "", MeasureUnit.GRAM.symbol, "")
             form(action = "/vorrat", method = FormMethod.post, classes = "karte zeile") {
                 hiddenInput(name = "_csrf") { value = s.csrf }
+                vorgangFeld()
                 input(InputType.text, name = "zutat") { value = e.zutat; placeholder = "Zutat"; attributes["list"] = "zutaten"; attributes["aria-label"] = "Zutat" }
                 mengeFelder(e.menge, e.einheit)
                 input(InputType.date, name = "mhd") { value = e.mhd; attributes["aria-label"] = "Haltbar bis" }
@@ -117,14 +119,14 @@ internal object VorratSeiten {
     suspend fun anlegen(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val e = form.eingabe()
         val (g, fehler) = pruefen(e, heute, mitZutat = true)
         if (g == null) return liste(call, s, daten.fuer(s.haushalt!!), heute, e, fehler)
-        when (VorratSchreiber(deps, daten).anlegen(s.haushalt!!, e.zutat.trim(), g.menge, g.einheit, g.mhd)) {
-            Schreiben.Ok -> call.weiterleiten("/vorrat")
-            else -> call.abgelehnt(s)
-        }
+        val ergebnis = Vorgaenge.einmal(s.haushalt!!, "vorrat", form["vorgang"], deps.clock.millis(), { it == Schreiben.Ok }) {
+            VorratSchreiber(deps, daten).anlegen(s.haushalt!!, e.zutat.trim(), g.menge, g.einheit, g.mhd)
+        } ?: return call.weiterleiten("/vorrat")
+        if (ergebnis == Schreiben.Ok) call.weiterleiten("/vorrat") else call.abgelehnt(s)
     }
 
     // --- Ein Eintrag ---
@@ -134,7 +136,7 @@ internal object VorratSeiten {
         val e = eingabe ?: Eingabe("", Eingaben.anzeigen(v.menge), v.einheit.symbol, v.haltbarBis?.toString().orEmpty())
         call.seiteAntworten("Vorrat", s, Navi.VORRAT) {
             h1 { +(h.zutaten[v.zutatId]?.name ?: "Unbekannte Zutat") }
-            for (f in fehler) p("hinweis fehler") { +f }
+            for (f in fehler) p("hinweis fehler") { attributes["role"] = "alert"; +f }
             form(action = "/vorrat/$id", method = FormMethod.post, classes = "karte zeile") {
                 hiddenInput(name = "_csrf") { value = s.csrf }
                 mengeFelder(e.menge, e.einheit)
@@ -153,7 +155,7 @@ internal object VorratSeiten {
     suspend fun aendern(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate, id: String) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val e = form.eingabe()
         val (g, fehler) = pruefen(e, heute, mitZutat = false)
         // Ungültige Eingabe: Formular mit Meldung (bzw. 404, wenn es den Eintrag nicht gibt)
@@ -164,7 +166,7 @@ internal object VorratSeiten {
     suspend fun loeschen(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, id: String) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         antworten(call, s, VorratSchreiber(deps, daten).loeschen(s.haushalt!!, id))
     }
 

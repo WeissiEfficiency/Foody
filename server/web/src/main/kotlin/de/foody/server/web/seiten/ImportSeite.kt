@@ -2,6 +2,7 @@ package de.foody.server.web.seiten
 
 import de.foody.domain.MarkdownRecipeImporter
 import de.foody.server.ServerDeps
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.HaushaltsDaten
 import de.foody.server.web.Navi
 import de.foody.server.web.RezeptSchreiber
@@ -9,12 +10,10 @@ import de.foody.server.web.Sitzung
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.sitzungMitHaushalt
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.receiveMultipart
-import io.ktor.server.response.respond
 import io.ktor.utils.io.readRemaining
 import kotlinx.html.FormEncType
 import kotlinx.html.FormMethod
@@ -42,7 +41,7 @@ internal object ImportSeite {
     suspend fun zeigen(call: ApplicationCall, s: Sitzung, fehler: String? = null) = call.seiteAntworten("Import", s, Navi.REZEPTE) {
         h1 { +"Rezepte importieren" }
         p("leise") { +"Markdown-Dateien (z. B. von Web-Clippern): höchstens $MAX_DATEIEN Dateien, je bis 1 MB. Rezepte mit schon vorhandener Quelle werden übersprungen." }
-        if (fehler != null) p("hinweis fehler") { +fehler }
+        if (fehler != null) p("hinweis fehler") { attributes["role"] = "alert"; +fehler }
         form(action = "/import", method = FormMethod.post, encType = FormEncType.multipartFormData, classes = "karte") {
             // CSRF zuerst: der Server liest Dateien erst nach gültigem Token
             hiddenInput(name = "_csrf") { value = s.csrf }
@@ -84,7 +83,7 @@ internal object ImportSeite {
             }
             part.release()
         }
-        if (verweigert || !csrfOk) return call.respond(HttpStatusCode.Forbidden)
+        if (verweigert || !csrfOk) return call.formularVeraltet()
         if (fehler != null) return zeigen(call, s, "$fehler Es wurde nichts importiert.")
         if (dateien.isEmpty()) return zeigen(call, s, "Bitte mindestens eine Datei auswählen.")
 

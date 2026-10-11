@@ -5,6 +5,7 @@ import de.foody.server.ServerDeps
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.geraeteName
 import de.foody.server.web.gleicheWebsite
 import de.foody.server.web.loescheSitzung
@@ -13,10 +14,8 @@ import de.foody.server.web.setzeSitzung
 import de.foody.server.web.sitzung
 import de.foody.server.web.userAgent
 import de.foody.sync.protocol.ErrorCode
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.plugins.origin
-import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
 import kotlinx.html.FormMethod
 import kotlinx.html.InputType
@@ -40,7 +39,7 @@ internal object LoginSeite {
         call.seiteAntworten("Anmelden", null, null) {
             div("anmeldung karte") {
                 h1 { +"Foody" }
-                if (fehler != null) p("fehler") { +fehler }
+                if (fehler != null) p("fehler") { attributes["role"] = "alert"; +fehler }
                 else if (call.request.queryParameters["abgelaufen"] == "1") p("hinweis") { +"Bitte erneut anmelden." }
                 form(action = "/login", method = FormMethod.post) {
                     label { attributes["for"] = "benutzer"; +"Benutzername" }
@@ -55,7 +54,7 @@ internal object LoginSeite {
 
     suspend fun anmelden(call: ApplicationCall, deps: ServerDeps) {
         // Login-CSRF: eine fremde Website darf den Browser nicht mit einem fremden Konto anmelden
-        if (!call.gleicheWebsite()) return call.respond(HttpStatusCode.Forbidden)
+        if (!call.gleicheWebsite()) return call.formularVeraltet()
         val form = call.formular()
         val benutzer = form["benutzer"].orEmpty().trim()
         val passwort = form["passwort"].orEmpty()
@@ -82,7 +81,7 @@ internal object LoginSeite {
         call.seiteAntworten("Registrieren", null, null) {
             div("anmeldung karte") {
                 h1 { +"Registrieren" }
-                if (fehler != null) p("fehler") { +fehler }
+                if (fehler != null) p("fehler") { attributes["role"] = "alert"; +fehler }
                 form(action = "/registrieren", method = FormMethod.post) {
                     label { attributes["for"] = "code"; +"Einladungscode" }
                     input(InputType.text, name = "code") { id = "code"; required = true }
@@ -97,7 +96,7 @@ internal object LoginSeite {
         }
 
     suspend fun registrieren(call: ApplicationCall, deps: ServerDeps) {
-        if (!call.gleicheWebsite()) return call.respond(HttpStatusCode.Forbidden)
+        if (!call.gleicheWebsite()) return call.formularVeraltet()
         val form = call.formular()
         val code = form["code"].orEmpty().trim()
         val benutzer = form["benutzer"].orEmpty().trim()
@@ -129,7 +128,7 @@ internal object LoginSeite {
             return
         }
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         deps.accounts.revokeDevice(s.principal.userId, s.principal.deviceId)
         call.loescheSitzung()
         call.respondRedirect("/login")

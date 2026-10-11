@@ -15,13 +15,14 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.vorgangFeld
+import de.foody.server.web.Vorgaenge
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.sitzungMitHaushalt
 import de.foody.server.web.weiterleiten
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -85,7 +86,7 @@ internal object ListeAusPlanSeiten {
         val bedarf = if (zeitraumFehler(von, bis, heute).isEmpty()) EinkaufSchreiber(deps, daten).bedarf(household, von!!, bis!!, e.vorrat) else null
         call.seiteAntworten("Neue Liste", s, Navi.EINKAUF) {
             h1 { +"Neue Liste aus dem Plan" }
-            for (f in alleFehler) p("hinweis fehler") { +f }
+            for (f in alleFehler) p("hinweis fehler") { attributes["role"] = "alert"; +f }
             form(action = "/einkauf/neu", method = FormMethod.get, classes = "karte zeile") {
                 label { +"Von"; input(InputType.date, name = "von") { value = e.von } }
                 label { +"Bis"; input(InputType.date, name = "bis") { value = e.bis } }
@@ -99,6 +100,7 @@ internal object ListeAusPlanSeiten {
             }
             form(action = "/einkauf/neu", method = FormMethod.post) {
                 hiddenInput(name = "_csrf") { value = s.csrf }
+                vorgangFeld()
                 hiddenInput(name = "von") { value = e.von }
                 hiddenInput(name = "bis") { value = e.bis }
                 hiddenInput(name = "vorrat") { value = if (e.vorrat) "1" else "0" }
@@ -136,7 +138,7 @@ internal object ListeAusPlanSeiten {
     suspend fun anlegen(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val e = Eingabe(form["von"].orEmpty(), form["bis"].orEmpty(), form["vorrat"] != "0", form["name"].orEmpty().trim())
         val von = datum(e.von)
         val bis = datum(e.bis)
@@ -147,7 +149,9 @@ internal object ListeAusPlanSeiten {
         val schreiber = EinkaufSchreiber(deps, daten)
         val mit = form.getAll("mit").orEmpty().toSet()
         val ausgeschlossen = schreiber.bedarf(household, von!!, bis!!, e.vorrat).map { it.ingredientId }.toSet() - mit
-        val (ergebnis, id) = schreiber.anlegen(household, e.name!!, von, bis, e.vorrat, ausgeschlossen)
+        val (ergebnis, id) = Vorgaenge.einmal(household, "liste", form["vorgang"], deps.clock.millis(), { it.first == Schreiben.Ok && it.second != null }) {
+            schreiber.anlegen(household, e.name!!, von, bis, e.vorrat, ausgeschlossen)
+        } ?: return call.weiterleiten("/einkauf")
         if (ergebnis != Schreiben.Ok) return call.abgelehnt(s)
         if (id == null) return call.seiteAntworten("Neue Liste", s, Navi.EINKAUF) {
             h1 { +"Nichts zu kaufen" }
@@ -220,7 +224,7 @@ internal object ListeAusPlanSeiten {
     suspend fun abgleichUebernehmen(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, listId: String) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         when (EinkaufSchreiber(deps, daten).abgleichAnwenden(s.haushalt!!, listId, form["vorrat"] != "0")) {
             Schreiben.Ok -> call.weiterleiten("/einkauf?liste=$listId")
             Schreiben.NichtGefunden -> call.nichtGefunden(s, "Diese Liste gibt es nicht (mehr).")

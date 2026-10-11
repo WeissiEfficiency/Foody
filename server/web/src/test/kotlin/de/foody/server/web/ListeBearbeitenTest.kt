@@ -107,6 +107,35 @@ class ListeBearbeitenTest {
         assertEquals("2 Liter", eintraege(env, h).single().payload.note)
     }
 
+    /** Kleinigkeiten 5: Fehler bleiben auf der gewählten (nicht der neuesten) Liste, Eingaben bleiben stehen. */
+    @Test fun fehlerBehaltenListeUndEingaben() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        env.push(h, datensatz("alt", RecordType.SHOPPING_LIST, ShoppingListPayload("Alte Liste", version = 1), updatedAt = 1),
+            datensatz("neu", RecordType.SHOPPING_LIST, ShoppingListPayload("Neue Liste", version = 1), updatedAt = 50),
+            artikel("e1", "Milch", liste = "alt"))
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val langerText = "y".repeat(201)
+        val eingabe = c.post(cookie, "/einkauf/eingabe", "liste" to "alt", "text" to langerText).bodyAsText()
+        assertTrue("Höchstens 200 Zeichen." in eingabe && "<h2>Alte Liste</h2>" in eingabe && "value=\"$langerText\"" in eingabe, eingabe.take(1500))
+        val langeNotiz = "z".repeat(1001)
+        val notiz = c.post(cookie, "/einkauf/alt/bearbeiten", "n_e1" to langeNotiz, "o_e1" to "").bodyAsText()
+        assertTrue("Notiz höchstens 1000 Zeichen." in notiz && "<h2>Alte Liste</h2>" in notiz && "value=\"$langeNotiz\"" in notiz, notiz.take(1500))
+        assertNull(eintraege(env, h).single().payload.note)
+    }
+
+    /** Kleinigkeiten 11: Weiterleitung nur mit geprüfter Listen-ID (kaputtes Feld → keine 500, keine fremde Liste). */
+    @Test fun weiterleitungNurMitGepruefterListe() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        env.push(h, liste())
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val kaputt = c.post(cookie, "/einkauf/eingabe", "liste" to "L\r\nX-Boese: 1", "text" to "")
+        assertEquals(HttpStatusCode.SeeOther, kaputt.status)
+        assertEquals("/einkauf", kaputt.headers[HttpHeaders.Location])
+        assertEquals("/einkauf?liste=L", c.post(cookie, "/einkauf/eingabe", "liste" to "L", "text" to " ").headers[HttpHeaders.Location])
+    }
+
     @Test fun listeLoeschenMitBestaetigung() = webServer { env ->
         val (benutzer, _, h) = env.haushalt()
         env.push(h, liste(), artikel("e1", "Milch"), artikel("e2", "Brot"))

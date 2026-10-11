@@ -233,6 +233,18 @@ class PlanSchreibenTest {
         assertTrue(HaushaltsDaten(env.deps.db).fuer(h).plan.isEmpty())
     }
 
+    /** Kleinigkeiten 4: −/+ an der Grenze (1 bzw. 99 Portionen) schreibt keinen unveränderten Datensatz. */
+    @Test fun grenzeSchreibtNichts() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        env.push(h, reis(), rezept("r1", "Curry"), slot("s1", "2026-10-12", portionen = 1), slot("s2", "2026-10-12", portionen = 99))
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val vorher = env.deps.db.tx { cn -> de.foody.server.sync.RecordStore().hoechsteRevision(cn, h) }
+        assertEquals(HttpStatusCode.SeeOther, c.post(cookie, "/plan/s1", "aktion" to "minus").status)
+        assertEquals(HttpStatusCode.SeeOther, c.post(cookie, "/plan/s2", "aktion" to "plus").status)
+        assertEquals(vorher, env.deps.db.tx { cn -> de.foody.server.sync.RecordStore().hoechsteRevision(cn, h) }, "keine neue Revision")
+    }
+
     @Test fun planVierzehnTageUnter30KB() = webServer { env ->
         val (benutzer, _, h) = env.haushalt()
         val slots = (0L until 14L).flatMap { d ->

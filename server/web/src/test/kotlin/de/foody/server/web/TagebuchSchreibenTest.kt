@@ -176,6 +176,35 @@ class TagebuchSchreibenTest {
         assertEquals(200, tagebuch(env, h).single().werte.kcal, "geänderte kcal werden umgerechnet")
     }
 
+    /** Kleinigkeiten 6: kein Rezept gewählt → Hinweis im Formular, Eingaben bleiben (Tagebuch und Einplanen). */
+    @Test fun keinRezeptGewaehlt() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        env.push(h, reis(), rezept("r1", "Curry"))
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val tagebuch = c.post(cookie, "/tagebuch/rezept", "tag" to "2026-10-11", "mahlzeit" to "ABENDESSEN", "portionen" to "2,5")
+        assertEquals(HttpStatusCode.OK, tagebuch.status)
+        val html = tagebuch.bodyAsText()
+        assertTrue("Bitte ein Rezept auswählen." in html && "value=\"2,5\"" in html, html.take(1500))
+        val plan = c.post(cookie, "/plan/einplanen", "tag" to "2026-10-12", "mahlzeit" to "ABENDESSEN", "portionen" to "3")
+        assertEquals(HttpStatusCode.OK, plan.status)
+        assertTrue("Bitte ein Rezept auswählen." in plan.bodyAsText())
+        assertTrue(tagebuch(env, h).isEmpty() && HaushaltsDaten(env.deps.db).fuer(h).plan.isEmpty())
+    }
+
+    /** Kleinigkeiten 8: ohne Suche höchstens 50 Rezepte zur Auswahl, mit Hinweis; die Suche findet alle. */
+    @Test fun rezeptauswahlBegrenzt() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        env.push(h, reis(), *(1..60).map { rezept("r$it", "Rezept %02d".format(it)) }.toTypedArray())
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val html = c.get("/tagebuch/neu?tag=2026-10-11&mahlzeit=ABENDESSEN") { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
+        assertEquals(50, Regex("type=\"radio\"").findAll(html).count())
+        assertTrue("10 weitere – bitte suchen" in html, html.takeLast(800))
+        val suche = c.get("/tagebuch/neu/liste?q=Rezept 6") { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
+        assertTrue("Rezept 60" in suche)
+    }
+
     @Test fun loeschen() = webServer { env ->
         val (benutzer, _, h) = env.haushalt()
         env.push(h, reis(), rezept("r1", "Curry"), eintrag("t1"))

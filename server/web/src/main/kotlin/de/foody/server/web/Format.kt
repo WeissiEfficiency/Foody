@@ -24,8 +24,23 @@ internal suspend fun ApplicationCall.nichtGefunden(s: Sitzung, text: String) =
 
 /** 303 nach einem POST: die Zielseite per GET laden (kein erneutes Absenden beim Aktualisieren). */
 internal suspend fun ApplicationCall.weiterleiten(ziel: String) {
-    response.headers.append(io.ktor.http.HttpHeaders.Location, ziel)
+    // Absicherung: nur Pfade dieser Seite und keine Steuerzeichen (sonst Header-Fehler bzw. fremdes Ziel)
+    val sicher = ziel.takeIf { z -> z.startsWith("/") && !z.startsWith("//") && z.none { it < ' ' } } ?: "/"
+    response.headers.append(io.ktor.http.HttpHeaders.Location, sicher)
     respond(HttpStatusCode.SeeOther)
+}
+
+/**
+ * Formular abgelehnt (CSRF ungültig, z. B. nach neuer Anmeldung in einem anderen Tab, oder Anfrage einer fremden Seite):
+ * eine Seite im Layout statt einer leeren 403-Antwort. htmx tauscht Fehlerantworten nicht ein – dort lädt `HX-Refresh`
+ * die Seite neu.
+ */
+internal suspend fun ApplicationCall.formularVeraltet() {
+    if (request.headers["HX-Request"] == "true") response.headers.append("HX-Refresh", "true")
+    seiteAntworten("Formular veraltet", null, null, HttpStatusCode.Forbidden) {
+        h1 { +"Formular veraltet" }
+        p { +"Das Formular ist abgelaufen oder kam nicht von dieser Seite. Bitte die Seite neu laden und es noch einmal versuchen." }
+    }
 }
 
 /** Der Server hat einen Datensatz abgelehnt (z. B. weil ein Rezept inzwischen gelöscht ist). */
