@@ -7,6 +7,7 @@ import de.foody.server.web.seiten.EinkaufSeite
 import de.foody.server.web.seiten.HaushaltSeite
 import de.foody.server.web.seiten.ImportSeite
 import de.foody.server.web.seiten.LoginSeite
+import de.foody.server.web.seiten.PlanSeiten
 import de.foody.server.web.seiten.PlanTagebuchSeiten
 import de.foody.server.web.seiten.RezeptSeiten
 import io.ktor.http.ContentType
@@ -58,6 +59,17 @@ object WebOberflaeche {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             PlanTagebuchSeiten.plan(call, s, daten.fuer(s.haushalt!!), deps.heute(zone))
         }
+        webPost("/plan/aktion") { PlanSeiten.aktion(call, deps, daten, deps.heute(zone), pfadId = null) }
+        webPost("/plan/einplanen") { PlanSeiten.einplanen(call, deps, daten, deps.heute(zone)) }
+        webGet("/plan/neu") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            PlanSeiten.neu(call, s, daten.fuer(s.haushalt!!), deps.heute(zone))
+        }
+        webGet("/plan/neu/liste") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            PlanSeiten.neuListe(call, daten.fuer(s.haushalt!!), deps.heute(zone))
+        }
+        webPost("/plan/{id}") { PlanSeiten.aktion(call, deps, daten, deps.heute(zone), call.parameters["id"].orEmpty()) }
         webGet("/tagebuch") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             PlanTagebuchSeiten.tagebuch(call, s, daten.fuer(s.haushalt!!), deps.heute(zone))
@@ -93,7 +105,7 @@ object WebOberflaeche {
         webPost("/rezept/{id}/wiederherstellen") { EditorSeite.archivieren(call, deps, daten, call.parameters["id"].orEmpty(), archiviert = false) }
         webGet("/rezept/{id}") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
-            RezeptSeiten.rezept(call, s, daten.fuer(s.haushalt!!), call.parameters["id"].orEmpty())
+            RezeptSeiten.rezept(call, s, daten.fuer(s.haushalt!!), call.parameters["id"].orEmpty(), deps.heute(zone))
         }
     }
 }
