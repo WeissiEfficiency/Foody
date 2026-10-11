@@ -16,7 +16,7 @@ RUN groupadd --gid 10001 foody \
     && useradd --uid 10001 --gid 10001 --no-create-home --shell /usr/sbin/nologin foody \
     && mkdir -p /data/photos \
     && chown -R 10001:10001 /data
-COPY --from=build /src/server/build/install/foody-server /opt/foody
+COPY --from=build /src/server/start/build/install/foody-server /opt/foody
 RUN printf '#!/bin/sh\nexec /opt/foody/bin/foody-server admin "$@"\n' > /usr/local/bin/foody-admin \
     && chmod 755 /usr/local/bin/foody-admin
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75"
