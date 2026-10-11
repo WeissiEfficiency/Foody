@@ -157,6 +157,25 @@ class TagebuchSchreibenTest {
         assertEquals(300, t2.werte.kcal)
     }
 
+    /** Final-Review 2: nur die Mahlzeit ändern lässt genaue kJ und „vollständig“ eines freien Eintrags stehen (wie die App). */
+    @Test fun freiOhneKcalAenderungBleibtGenau() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        env.push(h, datensatz("t1", RecordType.TAGEBUCH_EINTRAG, TagebuchPayload(
+            datum = heute.toString(), mahlzeit = "ABENDESSEN", art = "FREI", name = "Müsliriegel", energieKj = "523.7", eiweiss = "2.5", vollstaendig = false,
+        )))
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val seite = c.get("/tagebuch/t1") { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
+        val kcal = Regex("name=\"kcal\"[^>]*value=\"([0-9]+)\"|value=\"([0-9]+)\"[^>]*name=\"kcal\"").find(seite)!!.groupValues.drop(1).first { it.isNotEmpty() }
+        c.post(cookie, "/tagebuch/t1", "mahlzeit" to "SNACK", "name" to "Müsliriegel", "kcal" to kcal, "eiweiss" to "2,5", "kh" to "", "fett" to "")
+        val e = tagebuch(env, h).single()
+        assertEquals(de.foody.domain.Mahlzeit.SNACK, e.mahlzeit)
+        assertEquals(0, e.werte.energieKj!!.compareTo(BigDecimal("523.7")), "genauer kJ-Wert bleibt")
+        assertEquals(false, e.werte.vollstaendig, "„≥“ bleibt erhalten")
+        c.post(cookie, "/tagebuch/t1", "mahlzeit" to "SNACK", "name" to "Müsliriegel", "kcal" to "200", "eiweiss" to "2,5", "kh" to "", "fett" to "")
+        assertEquals(200, tagebuch(env, h).single().werte.kcal, "geänderte kcal werden umgerechnet")
+    }
+
     @Test fun loeschen() = webServer { env ->
         val (benutzer, _, h) = env.haushalt()
         env.push(h, reis(), rezept("r1", "Curry"), eintrag("t1"))

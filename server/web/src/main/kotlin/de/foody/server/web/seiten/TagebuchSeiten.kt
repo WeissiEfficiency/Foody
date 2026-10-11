@@ -301,7 +301,9 @@ internal object TagebuchSeiten {
                 val eiweiss = p.gramm("Eiweiß", form["eiweiss"])
                 val kh = p.gramm("Kohlenhydrate", form["kh"])
                 val fett = p.gramm("Fett", form["fett"])
-                if (kcal != null) frei = Tagebuch.freiWerte(kcal, eiweiss, kh, fett)
+                // Wie die App: nur geänderte kcal neu umrechnen (sonst bleibt der genaue kJ-Wert); „vollständig“ bleibt
+                if (kcal != null) frei = if (kcal == e.werte.kcal) e.werte.copy(eiweiss = eiweiss, kohlenhydrate = kh, fett = fett)
+                else Tagebuch.freiWerte(kcal, eiweiss, kh, fett).copy(vollstaendig = e.werte.vollstaendig)
             }
         }
         if (p.fehler.isNotEmpty()) return eintrag(call, s, h, id, form, p.fehler)

@@ -2,6 +2,7 @@ package de.foody.server.web.seiten
 
 import de.foody.domain.NutritionResult
 import de.foody.server.ServerDeps
+import de.foody.server.web.Eingaben
 import de.foody.server.web.Haushalt
 import de.foody.server.web.HaushaltsDaten
 import de.foody.server.web.Navi
@@ -121,7 +122,8 @@ internal object ZutatSeiten {
                 }
                 div("zeile") {
                     zahlFeld("Energie (kJ)", "kj", f.kj)
-                    f.kj.replace(',', '.').toBigDecimalOrNull()?.let { span("leise") { +"≈ ${NutritionResult.kcal(it)} kcal" } }
+                    // Nur über Eingaben.zahl (Grenzen, keine Exponenten): „1e999999999“ würde sonst minutenlang gerechnet
+                    Eingaben.zahl(f.kj)?.let { span("leise") { +"≈ ${NutritionResult.kcal(it)} kcal" } }
                 }
                 div("zeile") { zahlFeld("Eiweiß (g)", "eiweiss", f.eiweiss); zahlFeld("Kohlenhydrate (g)", "kh", f.kh); zahlFeld("Fett (g)", "fett", f.fett) }
                 div("zeile") { zahlFeld("Ballaststoffe (g)", "ballaststoffe", f.ballaststoffe); zahlFeld("Zucker (g)", "zucker", f.zucker); zahlFeld("Salz (g)", "salz", f.salz) }

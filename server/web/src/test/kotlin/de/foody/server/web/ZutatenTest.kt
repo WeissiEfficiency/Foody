@@ -156,4 +156,17 @@ class ZutatenTest {
         val suche = c.get("/zutaten/liste?q=nummer 12") { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
         assertTrue("Zutat Nummer 12" in suche && "Zutat Nummer 7<" !in suche && "<html" !in suche)
     }
+
+    /** Final-Review 1: riesige Exponentenzahl im kJ-Feld darf den Server nicht blockieren. */
+    @Test fun riesigeZahlBlockiertNicht() = webServer { env ->
+        val (benutzer, _, _) = env.haushalt()
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val start = System.nanoTime()
+        val antwort = c.speichern(cookie, "name" to "X", "basis" to "PER_100_G", "kj" to "1e30000000")
+        val ms = (System.nanoTime() - start) / 1_000_000
+        assertEquals(HttpStatusCode.OK, antwort.status)
+        assertTrue("Energie: bitte eine Zahl ≥ 0" in antwort.bodyAsText())
+        assertTrue(ms < 2_000, "$ms ms")
+    }
 }
