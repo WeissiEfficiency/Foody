@@ -52,7 +52,14 @@ internal data class WebEinkaufsliste(
     val bis: LocalDate? = null,
 )
 
-internal data class WebVorrat(val id: String, val rev: Long, val zutatId: String, val menge: BigDecimal, val einheit: MeasureUnit)
+internal data class WebVorrat(
+    val id: String,
+    val rev: Long,
+    val zutatId: String,
+    val menge: BigDecimal,
+    val einheit: MeasureUnit,
+    val haltbarBis: LocalDate? = null,
+)
 
 internal data class WebEintrag(val id: String, val rev: Long, val listId: String, val payload: ShoppingItemPayload)
 
@@ -135,7 +142,7 @@ internal object PayloadZuDomain {
     }
 
     fun vorrat(r: SyncRecord): WebVorrat? = lesen(r, RecordType.PANTRY_ITEM) { p: PantryItemPayload ->
-        WebVorrat(r.id, r.rev ?: 0, p.ingredientId, BigDecimal(p.amount), MeasureUnit.valueOf(p.unit))
+        WebVorrat(r.id, r.rev ?: 0, p.ingredientId, BigDecimal(p.amount), MeasureUnit.valueOf(p.unit), p.bestBefore?.let(LocalDate::parse))
     }
 
     fun eintrag(r: SyncRecord): WebEintrag? = lesen(r, RecordType.SHOPPING_ITEM) { p: ShoppingItemPayload ->

@@ -3,24 +3,15 @@ package de.foody.server.web
 import de.foody.domain.Gang
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
-import de.foody.sync.protocol.ZahlGrenzen
 import io.ktor.http.Parameters
 import java.math.BigDecimal
 
 /** Eine Zutatenzeile, wie sie im Formular steht (Texte; geprüft wird in [RezeptFormular.pruefen]). */
 internal data class FormZeile(val menge: String, val einheit: String, val zutat: String, val hinweis: String, val optional: Boolean) {
     /** Leere Menge = „nach Bedarf“ = 0; ungültig = `null`. */
-    fun mengeZahl(): BigDecimal? = when {
-        menge.isBlank() -> BigDecimal.ZERO
-        // Wie `parseNichtNegativ` der App: keine Exponent-Schreibweise („1e5“) in Eingabefeldern
-        menge.contains('e', ignoreCase = true) -> null
-        else -> ZahlGrenzen.lesen(menge.trim().replace(',', '.'))?.takeIf { it.signum() >= 0 }
-    }
+    fun mengeZahl(): BigDecimal? = if (menge.isBlank()) BigDecimal.ZERO else Eingaben.zahl(menge)
 
-    /** Einheit als Symbol („g“, „EL“, „Stk.“, Groß-/Kleinschreibung egal) oder interner Name („GRAM“). */
-    fun einheitWert(): MeasureUnit? = einheit.trim().let { e ->
-        MeasureUnit.entries.firstOrNull { it.name == e } ?: MeasureUnit.entries.firstOrNull { it.symbol.equals(e, ignoreCase = true) }
-    }
+    fun einheitWert(): MeasureUnit? = Eingaben.einheit(einheit)
 }
 
 /** Inhalt des Rezept-Editors; liest Formulardaten, prüft sie und lässt sich aus einem gespeicherten Rezept füllen. */
@@ -116,7 +107,7 @@ internal data class RezeptFormular(
                     val menge = BigDecimal(l.amount)
                     FormZeile(
                         // Ungerundet: sonst würde jedes Speichern im Browser z. B. 0,0625 zu 0,063 machen
-                        menge = if (menge.signum() == 0) "" else menge.stripTrailingZeros().toPlainString().replace('.', ','),
+                        menge = if (menge.signum() == 0) "" else Eingaben.anzeigen(menge),
                         einheit = MeasureUnit.entries.firstOrNull { it.name == l.unit }?.symbol ?: l.unit,
                         zutat = h.zutaten[l.ingredientId]?.name ?: "",
                         hinweis = l.note.orEmpty(),
