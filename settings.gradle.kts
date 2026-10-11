@@ -24,4 +24,7 @@ project(":sync-protocol").projectDir = file("shared/sync-protocol")
 if (System.getenv("FOODY_SERVER_ONLY") == null) {
     include(":app")
     include(":baselineprofile")
+    // Handy-App unter android/ (Gradle-Namen bleiben gleich)
+    project(":app").projectDir = file("android/app")
+    project(":baselineprofile").projectDir = file("android/baselineprofile")
 }
