@@ -25,7 +25,7 @@ h2 { font-size: 18px; margin: 20px 0 8px; }
 .leise { color: var(--mu); font-size: 14px; }
 .hinweis { background: var(--ok); border-radius: 10px; padding: 10px 14px; }
 .fehler { color: var(--wa); }
-form.zeile { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.zeile { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 input, select, button { font: inherit; color: inherit; }
 input[type=text], input[type=password], input[type=search], input[type=number], select {
   padding: 9px 12px; border: 1px solid var(--li); border-radius: 10px; background: var(--fl); min-width: 0;

@@ -32,6 +32,13 @@ Admin an. Danach beide Variablen leeren und mit `docker compose up -d` neu anwen
 
 Weitere Admin-Befehle: `reset-password`, `compact` (siehe `foody-admin` ohne Argumente).
 
+## Web-Oberfläche
+
+Unter der Server-Adresse im Browser (z. B. `https://foody.example.org/`): mit demselben Konto wie in der App anmelden
+oder mit einem Einladungscode registrieren. Teil 1: Rezepte, Wochenplan, Einkaufsliste (Abhaken) und Tagebuch ansehen.
+Der Browser erscheint in der App unter den Geräten und lässt sich dort abmelden. Das Sitzungs-Cookie ist `Secure`:
+die Seite also über HTTPS (Traefik) öffnen.
+
 ## Fotos
 
 Rezeptfotos liegen als `<FOODY_PHOTO_DIR>/<Haushalt>/<sha256>.jpg` (Standard `/data/photos`, eigenes Docker-Volume

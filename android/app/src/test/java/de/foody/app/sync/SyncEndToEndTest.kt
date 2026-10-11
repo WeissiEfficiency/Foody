@@ -15,6 +15,13 @@ import de.foody.sync.protocol.LoginRequest
 import de.foody.sync.protocol.PhotoHash
 import de.foody.sync.protocol.RegisterRequest
 import io.ktor.client.HttpClient
+import io.ktor.client.request.forms.submitForm
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.parameters
 import io.ktor.server.testing.ApplicationTestBuilder
 import java.math.BigDecimal
 import java.time.Clock
@@ -308,5 +315,22 @@ class SyncEndToEndTest {
         a.runOk()
         // Ausnahme: B bleibt absichtlich unberührt (kein Aufräumen nötig, Outbox/Probleme dort ohne Aussage).
         a.assertClean()
+    }
+
+    /** Ein vom Handy synchronisiertes Rezept erscheint in der Web-Oberfläche desselben Servers (gleiche Datensätze). */
+    @Test
+    fun rezeptVomHandyErscheintImBrowser() = syncServerTest { _, clock ->
+        val (a, _) = pair(clock)
+        val linsen = a.ingredients.getOrCreate("Linsen")
+        a.recipes.save(RecipeDraft(id = null, name = "Linsensuppe", defaultServings = 2, ingredients = listOf(line(linsen.id, 250))))
+        a.runOk()
+        val browser = createClient { followRedirects = false }
+        val login = browser.submitForm("/login", parameters {
+            append("benutzer", TEST_ADMIN_USER); append("passwort", TEST_ADMIN_PASSWORD)
+        })
+        assertEquals(HttpStatusCode.Found, login.status)
+        val cookie = login.headers.getAll(HttpHeaders.SetCookie)!!.first { it.startsWith("foody_sitzung=") }.substringBefore(';')
+        val html = browser.get("/") { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
+        assertTrue("Linsensuppe" in html, html.take(500))
     }
 }

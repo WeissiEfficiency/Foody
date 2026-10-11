@@ -42,6 +42,9 @@ Foody funktioniert ohne Server. Wer mehrere Geräte oder einen Haushalt teilen m
 Sync-Server (Docker, hinter Traefik/HTTPS) und verbindet die App unter Einstellungen → Synchronisierung. Aufbau und
 Betrieb: [`server/README.md`](server/README.md); Entscheidung: [`docs/adr/0006-optional-self-hosted-sync.md`](docs/adr/0006-optional-self-hosted-sync.md).
 
+Der Server bringt eine schlanke **Web-Oberfläche** mit (im Server gerendert, ohne Build-Werkzeug): Rezepte, Wochenplan,
+Einkaufsliste (abhaken) und Tagebuch im Browser – mit demselben Konto und denselben Zahlen wie in der App.
+
 ## Projektstruktur
 
 | Ordner | Modul | Inhalt |
