@@ -7,11 +7,11 @@ import de.foody.app.data.db.ShoppingItemSourceEntity
 import de.foody.app.data.db.ShoppingListEntity
 import de.foody.domain.DateRange
 import de.foody.domain.DiffType
-import de.foody.domain.GenerateShoppingListUseCase
-import de.foody.domain.IngredientCatalog
-import de.foody.domain.MealSlot
+import de.foody.domain.EinkaufsAbgleich
+import de.foody.domain.EinkaufsBedarf
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Quantity
+import de.foody.domain.RezeptAufListe
 import de.foody.domain.ShoppingDiff
 import de.foody.domain.ShoppingDiffEntry
 import de.foody.domain.ShoppingListSnapshot
@@ -33,7 +33,6 @@ data class AddRecipeResult(val listId: String, val listName: String, val added: 
 @Singleton
 class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
     private val dao = db.shoppingDao()
-    private val generate = GenerateShoppingListUseCase()
 
     fun observeLists() = dao.observeLists()
     fun observeItems(listId: String) = dao.observeItems(listId)
@@ -51,9 +50,8 @@ class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
         val ingredientEntities = db.ingredientDao().getAll().associateBy { it.id }
         val ingredients = ingredientEntities.mapValues { it.value.toDomain() }
         val pantry = if (usePantry) db.pantryDao().getAll().map { it.toDomain() } else emptyList()
-        // Leitungswasser & Co. nie einkaufen
-        val neverBuy = ingredientEntities.values.filter { IngredientCatalog.neverBuy(it.canonicalName) }.map { it.id }
-        val needs = generate(range, slots.map { it.toDomain() }, recipes, ingredients, pantry, excludedIngredientIds = excluded + neverBuy)
+        // Gleiche Eingaben wie die Web-Oberfläche (inkl. „nie einkaufen“ wie Leitungswasser)
+        val needs = EinkaufsBedarf.berechnen(range, slots.map { it.toDomain() }, recipes, ingredients, pantry, excluded)
         val slotById = slots.associateBy { it.id }
         return needs.map { n ->
             val ing = ingredientEntities[n.ingredientId]
@@ -144,14 +142,13 @@ class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
             val sourcesByItem = freshSources.groupBy { it.shoppingItemId }
             for ((e, fresh) in changed.zip(freshItems)) {
                 val old = e.old!!
-                val needsMore = old.quantity().dimension != fresh.quantity().dimension ||
-                    fresh.quantity().baseAmount > old.quantity().baseAmount
-                dao.upsertItem(old.copy(amount = fresh.amount, unit = fresh.unit, checked = old.checked && !needsMore))
+                val checked = EinkaufsAbgleich.bleibtAbgehakt(old.checked, old.quantity(), fresh.quantity())
+                dao.upsertItem(old.copy(amount = fresh.amount, unit = fresh.unit, checked = checked))
                 dao.deleteSources(old.id)
                 dao.insertSources(sourcesByItem[fresh.id].orEmpty().map { it.copy(shoppingItemId = old.id) })
             }
 
-            for (e in entries) if (e.type == DiffType.REMOVED && !e.old!!.checked) dao.deleteItem(e.old!!.id)
+            for (e in entries) if (e.type == DiffType.REMOVED && EinkaufsAbgleich.entfaelltLoeschen(e.old!!.checked)) dao.deleteItem(e.old!!.id)
             dao.upsertList(list.copy(generationVersion = list.generationVersion + 1, updatedAt = System.currentTimeMillis()))
         }
 
@@ -166,30 +163,26 @@ class ShoppingRepository @Inject constructor(private val db: FoodyDatabase) {
         val recipeDao = db.recipeDao()
         val recipe = recipeDao.get(recipeId) ?: error("Rezept $recipeId nicht gefunden")
         val ingredientEntities = db.ingredientDao().getAll().associateBy { it.id }
-        val today = java.time.LocalDate.now()
-        val neverBuy = ingredientEntities.values.filter { IngredientCatalog.neverBuy(it.canonicalName) }.map { it.id }.toSet()
-        val needs = generate(
-            DateRange.ofDays(today, 1),
-            listOf(MealSlot("recipe:$recipeId", today, "", recipeId, servings)),
-            mapOf(recipeId to recipe.toDomain(recipeDao.getIngredients(recipeId))),
-            ingredientEntities.mapValues { it.value.toDomain() },
-            excludedIngredientIds = neverBuy,
-        ).filter { !it.toBuy.isZero() }
+        val needs = RezeptAufListe.bedarf(
+            recipe.toDomain(recipeDao.getIngredients(recipeId)), servings, ingredientEntities.mapValues { it.value.toDomain() }, java.time.LocalDate.now(),
+        )
 
         val now = System.currentTimeMillis()
         val list = dao.getLists().maxByOrNull { it.createdAt }
             ?: ShoppingListEntity(id = newId(), name = defaultListName, createdAt = now, updatedAt = now).also { dao.upsertList(it) }
         val existing = dao.getItems(list.id)
         var order = existing.maxOfOrNull { it.sortOrder + 1 } ?: 0
-        for (n in needs) {
-            val base = MeasureUnit.baseOf(n.toBuy.dimension)
-            val match = existing.firstOrNull {
-                it.manual && !it.checked && it.ingredientId == n.ingredientId && it.amount != null && it.unit?.dimension == n.toBuy.dimension
-            }
-            if (match != null) {
-                val sum = Quantity.of(match.amount!!, match.unit!!) + n.toBuy
-                dao.upsertItem(match.copy(amount = sum.amountIn(base), unit = base))
+        val bestand = existing.map {
+            RezeptAufListe.Bestand(it.id, it.ingredientId, it.amount?.let { a -> it.unit?.let { u -> Quantity.of(a, u) } }, it.manual, it.checked)
+        }
+        val byId = existing.associateBy { it.id }
+        for (aenderung in RezeptAufListe.zusammenfuehren(needs, bestand)) {
+            if (aenderung is RezeptAufListe.Aenderung.Erhoehen) {
+                val base = MeasureUnit.baseOf(aenderung.neu.dimension)
+                dao.upsertItem(byId.getValue(aenderung.id).copy(amount = aenderung.neu.amountIn(base), unit = base))
             } else {
+                val n = (aenderung as RezeptAufListe.Aenderung.Neu).bedarf
+                val base = MeasureUnit.baseOf(n.toBuy.dimension)
                 val ing = ingredientEntities[n.ingredientId]
                 dao.upsertItem(
                     ShoppingItemEntity(

@@ -1,6 +1,7 @@
 package de.foody.app.ui.shopping
 
 import de.foody.app.data.ShoppingPreferences
+import de.foody.domain.EinkaufEingabe
 import de.foody.domain.ShoppingCatalog
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -145,24 +146,24 @@ class ShoppingViewModel @Inject constructor(
      * zuletzt gekauft → wieder auf die Liste. Verglichen wird über den Artikel, nicht den genauen Namen.
      */
     fun tapCatalog(name: String, section: String, defaultListName: String) = viewModelScope.launch {
-        val existing = state.value.items.filter { ShoppingCatalog.sameItem(it.name, name) }
-        val open = existing.firstOrNull { !it.checked }
-        val bought = existing.firstOrNull { it.checked }
-        when {
-            open != null -> repo.setChecked(open, true)
-            bought != null -> repo.setChecked(bought, false)
+        val items = state.value.items
+        val existing = items.filter { ShoppingCatalog.sameItem(it.name, name) }
+        // Kachel = bekannter Artikel: gleiche Entscheidung wie beim Freitext (und in der Web-Oberfläche)
+        when (val a = EinkaufEingabe.entscheiden(name, existing.map { EinkaufEingabe.Eintrag(it.id, it.name, it.checked) })) {
+            is EinkaufEingabe.Aktion.Abhaken -> repo.setChecked(existing.first { it.id == a.id }, true)
+            is EinkaufEingabe.Aktion.Zurueck -> repo.setChecked(existing.first { it.id == a.id }, false)
             else -> repo.addManual(ensureList(defaultListName), name, section)
         }
     }
 
     /** Freitext aus „Was willst du einkaufen?“: bekannter Artikel wie seine Kachel, sonst als eigener Artikel. */
     fun addFromSearch(text: String, defaultListName: String) {
-        val name = text.trim().takeIf { it.isNotEmpty() } ?: return
-        val known = ShoppingCatalog.find(name)
-        if (known != null) {
-            tapCatalog(known.name, ShoppingCatalog.sectionFor(null, known.name), defaultListName)
-        } else {
-            viewModelScope.launch { repo.addManual(ensureList(defaultListName), name, ShoppingCatalog.OWN_ITEMS) }
+        val items = state.value.items
+        when (val a = EinkaufEingabe.entscheiden(text, items.map { EinkaufEingabe.Eintrag(it.id, it.name, it.checked) })) {
+            null -> return
+            is EinkaufEingabe.Aktion.Abhaken -> viewModelScope.launch { repo.setChecked(items.first { it.id == a.id }, true) }
+            is EinkaufEingabe.Aktion.Zurueck -> viewModelScope.launch { repo.setChecked(items.first { it.id == a.id }, false) }
+            is EinkaufEingabe.Aktion.Neu -> viewModelScope.launch { repo.addManual(ensureList(defaultListName), a.name, a.abteilung) }
         }
     }
     fun delete(item: ShoppingItemEntity) = viewModelScope.launch {
