@@ -15,14 +15,13 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.sitzungMitHaushalt
 import de.foody.server.web.weiterleiten
 import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import kotlinx.html.FlowContent
 import kotlinx.html.FormMethod
@@ -144,7 +143,7 @@ internal object ZutatSeiten {
     suspend fun speichern(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val f = ZutatFormular.aus(form)
         when (val r = ZutatSchreiber(deps, daten).speichern(s.haushalt!!, f)) {
             is ZutatSpeichern.Ok -> call.weiterleiten("/zutat/${r.id}")
@@ -159,7 +158,7 @@ internal object ZutatSeiten {
     suspend fun loeschen(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, id: String) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val household = s.haushalt!!
         val h = daten.fuer(household)
         val schreiber = ZutatSchreiber(deps, daten)

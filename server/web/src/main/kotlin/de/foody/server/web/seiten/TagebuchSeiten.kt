@@ -18,16 +18,15 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.sitzungMitHaushalt
 import de.foody.server.web.text
 import de.foody.server.web.weiterleiten
 import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -183,7 +182,7 @@ internal object TagebuchSeiten {
     private suspend fun ApplicationCall.formularMitCsrf(deps: ServerDeps): Pair<Sitzung, Parameters>? {
         val s = sitzungMitHaushalt(deps) ?: return null
         val form = formular()
-        if (!s.csrfGueltig(csrfAus(form))) { respond(HttpStatusCode.Forbidden); return null }
+        if (!s.csrfGueltig(csrfAus(form))) { formularVeraltet(); return null }
         return s to form
     }
 

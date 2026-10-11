@@ -5,11 +5,10 @@ import de.foody.server.ServerDeps
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.sitzungOderLogin
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
 import kotlinx.html.FormMethod
 import kotlinx.html.InputType
@@ -55,7 +54,7 @@ internal object HaushaltSeite {
     suspend fun waehlen(call: ApplicationCall, deps: ServerDeps) {
         val s = call.sitzungOderLogin(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val id = form["haushalt"].orEmpty()
         try {
             deps.accounts.selectHousehold(s.principal.deviceId, s.principal.userId, id)
@@ -68,7 +67,7 @@ internal object HaushaltSeite {
     suspend fun anlegen(call: ApplicationCall, deps: ServerDeps) {
         val s = call.sitzungOderLogin(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         try {
             deps.accounts.createHousehold(s.principal.userId, s.principal.deviceId, form["name"].orEmpty())
         } catch (_: ApiException) {

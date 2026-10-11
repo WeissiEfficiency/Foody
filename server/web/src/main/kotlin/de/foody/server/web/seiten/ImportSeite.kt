@@ -2,6 +2,7 @@ package de.foody.server.web.seiten
 
 import de.foody.domain.MarkdownRecipeImporter
 import de.foody.server.ServerDeps
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.HaushaltsDaten
 import de.foody.server.web.Navi
 import de.foody.server.web.RezeptSchreiber
@@ -9,12 +10,10 @@ import de.foody.server.web.Sitzung
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.sitzungMitHaushalt
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.receiveMultipart
-import io.ktor.server.response.respond
 import io.ktor.utils.io.readRemaining
 import kotlinx.html.FormEncType
 import kotlinx.html.FormMethod
@@ -84,7 +83,7 @@ internal object ImportSeite {
             }
             part.release()
         }
-        if (verweigert || !csrfOk) return call.respond(HttpStatusCode.Forbidden)
+        if (verweigert || !csrfOk) return call.formularVeraltet()
         if (fehler != null) return zeigen(call, s, "$fehler Es wurde nichts importiert.")
         if (dateien.isEmpty()) return zeigen(call, s, "Bitte mindestens eine Datei auswählen.")
 

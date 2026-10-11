@@ -16,6 +16,7 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.sitzungMitHaushalt
@@ -26,7 +27,6 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.http.ContentType
 import io.ktor.server.response.respondText
 import kotlinx.html.stream.createHTML
-import io.ktor.server.response.respond
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -72,7 +72,7 @@ internal object PlanSeiten {
     suspend fun aktion(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate, pfadId: String?) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val household = s.haushalt!!
         val (id, aktion) = if (pfadId != null) pfadId to form["aktion"].orEmpty()
         else form["a"].orEmpty().split(' ', limit = 2).let { it[0] to it.getOrElse(1) { "" } }
@@ -105,7 +105,7 @@ internal object PlanSeiten {
     suspend fun einplanen(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val household = s.haushalt!!
         val rezept = daten.fuer(household).rezepte[form["rezept"].orEmpty()]
             ?: return call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
@@ -286,7 +286,7 @@ internal object PlanSeiten {
     suspend fun vorschlagUebernehmen(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val ab = form["ab"]?.let(::datumOderNull)
         val tage = if (form["tage"] == "14") 14 else 7
         val mahlzeit = Mahlzeit.entries.firstOrNull { it.name == form["mahlzeit"] }

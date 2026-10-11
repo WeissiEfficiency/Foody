@@ -15,6 +15,7 @@ import de.foody.server.web.Speichern
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.sitzungMitHaushalt
@@ -67,7 +68,7 @@ internal object EditorSeite {
     suspend fun speichern(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val f = RezeptFormular.aus(form)
         when (val e = RezeptSchreiber(deps, daten).speichern(s.haushalt!!, f)) {
             is Speichern.Ok -> {
@@ -84,7 +85,7 @@ internal object EditorSeite {
     suspend fun archivieren(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, id: String, archiviert: Boolean) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         if (!RezeptSchreiber(deps, daten).archivieren(s.haushalt!!, id, archiviert)) return call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
         call.response.headers.append(HttpHeaders.Location, "/rezept/$id")
         call.respond(HttpStatusCode.SeeOther)

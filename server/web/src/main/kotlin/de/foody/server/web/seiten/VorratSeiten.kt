@@ -14,15 +14,14 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.menge
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.sitzungMitHaushalt
 import de.foody.server.web.weiterleiten
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -117,7 +116,7 @@ internal object VorratSeiten {
     suspend fun anlegen(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val e = form.eingabe()
         val (g, fehler) = pruefen(e, heute, mitZutat = true)
         if (g == null) return liste(call, s, daten.fuer(s.haushalt!!), heute, e, fehler)
@@ -153,7 +152,7 @@ internal object VorratSeiten {
     suspend fun aendern(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate, id: String) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val e = form.eingabe()
         val (g, fehler) = pruefen(e, heute, mitZutat = false)
         // Ungültige Eingabe: Formular mit Meldung (bzw. 404, wenn es den Eintrag nicht gibt)
@@ -164,7 +163,7 @@ internal object VorratSeiten {
     suspend fun loeschen(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, id: String) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         antworten(call, s, VorratSchreiber(deps, daten).loeschen(s.haushalt!!, id))
     }
 

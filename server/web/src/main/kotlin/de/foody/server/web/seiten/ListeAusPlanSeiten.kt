@@ -15,13 +15,12 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
 import de.foody.server.web.sitzungMitHaushalt
 import de.foody.server.web.weiterleiten
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -136,7 +135,7 @@ internal object ListeAusPlanSeiten {
     suspend fun anlegen(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val e = Eingabe(form["von"].orEmpty(), form["bis"].orEmpty(), form["vorrat"] != "0", form["name"].orEmpty().trim())
         val von = datum(e.von)
         val bis = datum(e.bis)
@@ -220,7 +219,7 @@ internal object ListeAusPlanSeiten {
     suspend fun abgleichUebernehmen(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, listId: String) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         when (EinkaufSchreiber(deps, daten).abgleichAnwenden(s.haushalt!!, listId, form["vorrat"] != "0")) {
             Schreiben.Ok -> call.weiterleiten("/einkauf?liste=$listId")
             Schreiben.NichtGefunden -> call.nichtGefunden(s, "Diese Liste gibt es nicht (mehr).")

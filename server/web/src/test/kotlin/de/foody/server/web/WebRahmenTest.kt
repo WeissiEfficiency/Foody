@@ -59,4 +59,18 @@ class WebRahmenTest {
         val html = c.get("/") { header(HttpHeaders.Cookie, c.anmelden(benutzer)) }.bodyAsText()
         assertTrue(html.indexOf("href=\"/einkauf\"") < html.indexOf("href=\"/vorrat\"") && html.indexOf("href=\"/vorrat\"") < html.indexOf("href=\"/tagebuch\""))
     }
+
+    /** Kleinigkeiten 9: abgelehntes Formular (CSRF) zeigt eine Seite statt einer leeren 403-Antwort. */
+    @Test fun veraltetesFormularZeigtSeite() = webServer { env ->
+        val (benutzer, _, _) = env.haushalt()
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        for (pfad in listOf("/plan/einplanen", "/einkauf/eingabe", "/tagebuch/frei", "/logout")) {
+            val antwort = c.submitForm(pfad, parameters { append("_csrf", "falsch") }) { header(HttpHeaders.Cookie, cookie) }
+            assertEquals(HttpStatusCode.Forbidden, antwort.status, pfad)
+            assertTrue("Formular veraltet" in antwort.bodyAsText(), pfad)
+        }
+        val htmx = c.submitForm("/einkauf/abhaken", parameters { append("a", "x 1 1") }) { header(HttpHeaders.Cookie, cookie); header("HX-Request", "true") }
+        assertEquals("true", htmx.headers["HX-Refresh"], "htmx lädt die Seite neu statt nichts zu tun")
+    }
 }

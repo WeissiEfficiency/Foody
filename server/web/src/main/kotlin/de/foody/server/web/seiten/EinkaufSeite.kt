@@ -16,6 +16,7 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.formularVeraltet
 import de.foody.server.web.menge
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
@@ -27,7 +28,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -181,7 +181,7 @@ internal object EinkaufSeite {
     suspend fun abhaken(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, pfadId: String?) {
         val s = call.sitzungMitHaushalt(deps) ?: return
         val form = call.formular()
-        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val haushalt = s.haushalt!!
         val teile = form["a"]?.split(' ')
         val id = pfadId ?: teile?.getOrNull(0).orEmpty()
@@ -215,7 +215,7 @@ internal object EinkaufSeite {
     private suspend fun ApplicationCall.formMitCsrf(deps: ServerDeps): Pair<Sitzung, Parameters>? {
         val s = sitzungMitHaushalt(deps) ?: return null
         val form = formular()
-        if (!s.csrfGueltig(csrfAus(form))) { respond(HttpStatusCode.Forbidden); return null }
+        if (!s.csrfGueltig(csrfAus(form))) { formularVeraltet(); return null }
         return s to form
     }
 
