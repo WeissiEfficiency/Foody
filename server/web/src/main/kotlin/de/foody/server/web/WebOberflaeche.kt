@@ -12,6 +12,7 @@ import de.foody.server.web.seiten.PlanSeiten
 import de.foody.server.web.seiten.PlanTagebuchSeiten
 import de.foody.server.web.seiten.RezeptSeiten
 import de.foody.server.web.seiten.VorratSeiten
+import de.foody.server.web.seiten.ZutatSeiten
 import io.ktor.http.ContentType
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
@@ -88,6 +89,24 @@ object WebOberflaeche {
         }
         webPost("/vorrat/{id}") { VorratSeiten.aendern(call, deps, daten, deps.heute(zone), call.parameters["id"].orEmpty()) }
         webPost("/vorrat/{id}/loeschen") { VorratSeiten.loeschen(call, deps, daten, call.parameters["id"].orEmpty()) }
+        webGet("/zutaten") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            ZutatSeiten.liste(call, s, daten.fuer(s.haushalt!!))
+        }
+        webGet("/zutaten/liste") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            ZutatSeiten.listenTeil(call, daten.fuer(s.haushalt!!))
+        }
+        webGet("/zutat/neu") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            ZutatSeiten.neu(call, s)
+        }
+        webPost("/zutat/speichern") { ZutatSeiten.speichern(call, deps, daten) }
+        webGet("/zutat/{id}") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            ZutatSeiten.bearbeiten(call, s, daten.fuer(s.haushalt!!), call.parameters["id"].orEmpty())
+        }
+        webPost("/zutat/{id}/loeschen") { ZutatSeiten.loeschen(call, deps, daten, call.parameters["id"].orEmpty()) }
         webGet("/tagebuch") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             PlanTagebuchSeiten.tagebuch(call, s, daten.fuer(s.haushalt!!), deps.heute(zone))
