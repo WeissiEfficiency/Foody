@@ -37,7 +37,7 @@ private fun startServer(config: ServerConfig) {
     val deps = ServerDeps.create(config, Database("jdbc:sqlite:${config.dbPath}"))
     if (!bootstrapAdmin(config, deps)) exitProcess(1)
     embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
-        foodyModule(deps, WebOberflaeche.routen)
+        foodyModule(deps, WebOberflaeche.routen(deps))
         launchCompaction(deps)
     }.start(wait = true)
 }
