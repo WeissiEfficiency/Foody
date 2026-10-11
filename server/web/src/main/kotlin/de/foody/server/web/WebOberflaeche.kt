@@ -33,40 +33,40 @@ object WebOberflaeche {
     }
 
     private fun Route.anmeldung(deps: ServerDeps) {
-        get("/login") { LoginSeite.zeigen(call) }
-        post("/login") { LoginSeite.anmelden(call, deps) }
-        get("/registrieren") { LoginSeite.registrierenZeigen(call) }
-        post("/registrieren") { LoginSeite.registrieren(call, deps) }
-        post("/logout") { LoginSeite.abmelden(call, deps) }
-        get("/haushalt") { HaushaltSeite.zeigen(call, deps) }
-        post("/haushalt") { HaushaltSeite.waehlen(call, deps) }
-        post("/haushalt/neu") { HaushaltSeite.anlegen(call, deps) }
+        webGet("/login") { LoginSeite.zeigen(call) }
+        webPost("/login") { LoginSeite.anmelden(call, deps) }
+        webGet("/registrieren") { LoginSeite.registrierenZeigen(call) }
+        webPost("/registrieren") { LoginSeite.registrieren(call, deps) }
+        webPost("/logout") { LoginSeite.abmelden(call, deps) }
+        webGet("/haushalt") { HaushaltSeite.zeigen(call, deps) }
+        webPost("/haushalt") { HaushaltSeite.waehlen(call, deps) }
+        webPost("/haushalt/neu") { HaushaltSeite.anlegen(call, deps) }
     }
 
     private fun Route.seiten(deps: ServerDeps, daten: HaushaltsDaten) {
-        get("/") {
-            val s = call.sitzungMitHaushalt(deps) ?: return@get
+        webGet("/") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             RezeptSeiten.liste(call, s, daten.fuer(s.haushalt!!))
         }
-        get("/rezepte/liste") {
-            val s = call.sitzungMitHaushalt(deps) ?: return@get
+        webGet("/rezepte/liste") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             RezeptSeiten.listenTeil(call, daten.fuer(s.haushalt!!))
         }
-        get("/plan") {
-            val s = call.sitzungMitHaushalt(deps) ?: return@get
+        webGet("/plan") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             PlanTagebuchSeiten.plan(call, s, daten.fuer(s.haushalt!!), LocalDate.now(deps.clock))
         }
-        get("/tagebuch") {
-            val s = call.sitzungMitHaushalt(deps) ?: return@get
+        webGet("/tagebuch") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             PlanTagebuchSeiten.tagebuch(call, s, daten.fuer(s.haushalt!!), LocalDate.now(deps.clock))
         }
-        get("/einkauf") {
-            val s = call.sitzungMitHaushalt(deps) ?: return@get
+        webGet("/einkauf") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             EinkaufSeite.zeigen(call, s, daten.fuer(s.haushalt!!))
         }
-        post("/einkauf/{id}/abhaken") { EinkaufSeite.abhaken(call, deps, daten, call.parameters["id"].orEmpty()) }
-        get("/rezept/{id}") {
-            val s = call.sitzungMitHaushalt(deps) ?: return@get
+        webPost("/einkauf/{id}/abhaken") { EinkaufSeite.abhaken(call, deps, daten, call.parameters["id"].orEmpty()) }
+        webGet("/rezept/{id}") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             RezeptSeiten.rezept(call, s, daten.fuer(s.haushalt!!), call.parameters["id"].orEmpty())
         }
     }
