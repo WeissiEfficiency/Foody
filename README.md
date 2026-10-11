@@ -78,7 +78,7 @@ Nach größeren UI-Änderungen neu erzeugen (Emulator/Gerät mit Android 13+ ver
 ```
 
 Unter Windows scheitert dabei mitunter das Kopieren vom Gerät (Pfad mit „(AVD)“). Dann die Datei
-`baselineprofile\build\outputs\connected_android_test_additional_output\nonMinifiedRelease\connected\*\BaselineProfileGenerator_generate-startup-prof.txt`
+`android\baselineprofile\build\outputs\connected_android_test_additional_output\nonMinifiedRelease\connected\*\BaselineProfileGenerator_generate-startup-prof.txt`
 als `baseline-prof.txt` an die obige Stelle kopieren. Startzeit messen (am aussagekräftigsten auf dem Handy):
 
 ```powershell
@@ -101,11 +101,11 @@ Die Datei ist in `.gitignore` und landet nie im Repository. **Schlüssel und Pas
 Passwortmanager): Ohne sie lassen sich Updates nicht mehr installieren, ohne die App samt Daten zu entfernen.
 
 ```powershell
-.\gradlew :app:assembleRelease   # → app\build\outputs\apk\release\app-release.apk
+.\gradlew :app:assembleRelease   # → android\app\build\outputs\apk\release\app-release.apk
 ```
 
 Die APK aufs Handy kopieren und öffnen (einmalig „Installation aus dieser Quelle zulassen“) oder per Kabel:
-`adb install -r app\build\outputs\apk\release\app-release.apk`. Ohne `keystore.properties` entsteht
+`adb install -r android\app\build\outputs\apk\release\app-release.apk`. Ohne `keystore.properties` entsteht
 `app-release-unsigned.apk`, die sich nicht installieren lässt – so baut auch die CI.
 
 ## Datenschutz

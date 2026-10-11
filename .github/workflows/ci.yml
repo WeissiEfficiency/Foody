@@ -29,7 +29,7 @@ jobs:
       - name: Release-Build (R8)
         run: ./gradlew :app:assembleRelease
 
-  # Room-, Migrations- und End-to-End-Tests auf einem Emulator (Gradle Managed Device, siehe app/build.gradle.kts).
+  # Room-, Migrations- und End-to-End-Tests auf einem Emulator (Gradle Managed Device, siehe android/app/build.gradle.kts).
   # Schützt vor allem die Datenbank-Migrationen: ein Fehler dort bedeutet Datenverlust beim App-Update.
   instrumented:
     runs-on: ubuntu-latest
