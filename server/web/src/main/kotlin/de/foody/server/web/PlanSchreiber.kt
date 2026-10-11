@@ -11,6 +11,7 @@ import de.foody.sync.protocol.RecordType
 import de.foody.sync.protocol.SyncRecord
 import java.time.LocalDate
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -26,6 +27,16 @@ internal sealed interface Schreiben {
 
     /** Server hat einen Datensatz abgelehnt (z. B. fehlende Referenz). */
     data object Abgelehnt : Schreiben
+}
+
+/**
+ * Sperre je Haushalt für Schreibaktionen, die erst lesen und dann mehrere Datensätze schreiben („gekocht“, Neu
+ * berechnen): Zwei gleichzeitige Anfragen (Doppelklick) sähen sonst beide den alten Stand und schrieben doppelt.
+ */
+internal object Haushaltssperre {
+    private val sperren = ConcurrentHashMap<String, Any>()
+
+    fun <T> mit(household: String, block: () -> T): T = synchronized(sperren.computeIfAbsent(household) { Any() }) { block() }
 }
 
 /**
@@ -82,33 +93,36 @@ internal class PlanSchreiber(private val deps: ServerDeps, private val daten: Ha
         ))
     }
 
-    /** Schon gekocht → nichts tun (kein zweiter Abzug). Fehlt das Rezept, wird nur der Status gesetzt. */
-    fun gekocht(household: String, id: String): Schreiben {
-        val gespeichert = gespeichert(household, id) ?: return Schreiben.NichtGefunden
-        if (gespeichert.deleted || gespeichert.payload == null) return Schreiben.Weg
+    /**
+     * Schon gekocht → nichts tun (kein zweiter Abzug). Erst wird der Eintrag als gekocht gespeichert, dann der Vorrat
+     * abgezogen (Reihenfolge laut Spec): Scheitert der Abzug, zieht ein erneuter Klick nicht noch einmal ab.
+     */
+    fun gekocht(household: String, id: String): Schreiben = Haushaltssperre.mit(household) {
+        val gespeichert = gespeichert(household, id) ?: return@mit Schreiben.NichtGefunden
+        if (gespeichert.deleted || gespeichert.payload == null) return@mit Schreiben.Weg
         val p = Protocol.json.decodeFromJsonElement(MealSlotPayload.serializer(), gespeichert.payload!!)
-        if (p.cookedAt != null) return Schreiben.Ok
+        if (p.cookedAt != null) return@mit Schreiben.Ok
         val h = daten.fuer(household)
         val jetzt = deps.clock.millis()
-        val rezept = h.rezepte[p.recipeId]
-        if (rezept != null) {
-            val neu = Kochen.vorratAbziehen(
-                rezept.domain, p.servings, h.zutaten.mapValues { it.value.conversion },
-                h.vorrat.map { Kochen.Vorrat(it.id, it.zutatId, it.menge, it.einheit) },
-            )
-            for ((vorratId, menge) in neu) {
-                val v = gespeichert(household, vorratId, RecordType.PANTRY_ITEM)?.takeIf { !it.deleted && it.payload != null } ?: continue
-                val r = push(household, SyncRecord(
-                    id = vorratId, type = RecordType.PANTRY_ITEM, updatedAt = jetzt, baseRev = v.rev,
-                    payload = JsonObject(v.payload!! + mapOf("amount" to JsonPrimitive(menge.toPlainString()))),
-                ))
-                if (r != Schreiben.Ok) return r
-            }
-        }
-        return push(household, SyncRecord(
+        val slot = push(household, SyncRecord(
             id = id, type = RecordType.MEAL_SLOT, updatedAt = jetzt, baseRev = gespeichert.rev,
             payload = JsonObject(gespeichert.payload!! + mapOf("cookedAt" to JsonPrimitive(jetzt))),
         ))
+        if (slot != Schreiben.Ok) return@mit slot
+        val rezept = h.rezepte[p.recipeId] ?: return@mit Schreiben.Ok
+        val neu = Kochen.vorratAbziehen(
+            rezept.domain, p.servings, h.zutaten.mapValues { it.value.conversion },
+            h.vorrat.map { Kochen.Vorrat(it.id, it.zutatId, it.menge, it.einheit) },
+        )
+        for ((vorratId, menge) in neu) {
+            val v = gespeichert(household, vorratId, RecordType.PANTRY_ITEM)?.takeIf { !it.deleted && it.payload != null } ?: continue
+            val r = push(household, SyncRecord(
+                id = vorratId, type = RecordType.PANTRY_ITEM, updatedAt = jetzt, baseRev = v.rev,
+                payload = JsonObject(v.payload!! + mapOf("amount" to JsonPrimitive(menge.toPlainString()))),
+            ))
+            if (r != Schreiben.Ok) return@mit r
+        }
+        Schreiben.Ok
     }
 
     private fun gespeichert(household: String, id: String, typ: RecordType = RecordType.MEAL_SLOT) =

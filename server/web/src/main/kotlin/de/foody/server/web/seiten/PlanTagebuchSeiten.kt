@@ -97,11 +97,14 @@ internal object PlanTagebuchSeiten {
                                     span("leise") { +" ${(Mahlzeit.ausText(e.mahlzeit)?.text() ?: e.mahlzeit)} · ${e.portionen} P.${if (e.gekochtAm != null) " · gekocht" else ""}" }
                                 }
                                 if (bearbeiten) span("knoepfe") {
-                                    knopf(e.id, "minus", "Portion weniger", "−")
-                                    knopf(e.id, "plus", "Portion mehr", "+")
-                                    knopf(e.id, "frueher", "Einen Tag früher", "‹")
-                                    knopf(e.id, "spaeter", "Einen Tag später", "›")
-                                    if (e.gekochtAm == null) knopf(e.id, "gekocht", "Gekocht", "✓")
+                                    // Ohne Rezept lehnt der Server jede Änderung ab (fehlende Referenz) – nur Löschen geht
+                                    if (e.rezeptId in h.rezepte) {
+                                        knopf(e.id, "minus", "Portion weniger", "−")
+                                        knopf(e.id, "plus", "Portion mehr", "+")
+                                        knopf(e.id, "frueher", "Einen Tag früher", "‹")
+                                        knopf(e.id, "spaeter", "Einen Tag später", "›")
+                                        if (e.gekochtAm == null) knopf(e.id, "gekocht", "Gekocht", "✓")
+                                    }
                                     knopf(e.id, "loeschen", "Löschen", "✕")
                                 }
                             }

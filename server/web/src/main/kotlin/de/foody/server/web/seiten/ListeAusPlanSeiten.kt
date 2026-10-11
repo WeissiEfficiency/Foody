@@ -147,12 +147,13 @@ internal object ListeAusPlanSeiten {
         val schreiber = EinkaufSchreiber(deps, daten)
         val mit = form.getAll("mit").orEmpty().toSet()
         val ausgeschlossen = schreiber.bedarf(household, von!!, bis!!, e.vorrat).map { it.ingredientId }.toSet() - mit
-        val id = schreiber.anlegen(household, e.name!!, von, bis, e.vorrat, ausgeschlossen)
-            ?: return call.seiteAntworten("Neue Liste", s, Navi.EINKAUF) {
-                h1 { +"Nichts zu kaufen" }
-                p { +"Für den Zeitraum ist nichts zu kaufen (nichts geplant, alles abgewählt oder aus dem Vorrat gedeckt)." }
-                a(href = "/einkauf/neu?von=${e.von}&bis=${e.bis}") { +"Zurück" }
-            }
+        val (ergebnis, id) = schreiber.anlegen(household, e.name!!, von, bis, e.vorrat, ausgeschlossen)
+        if (ergebnis != Schreiben.Ok) return call.abgelehnt(s)
+        if (id == null) return call.seiteAntworten("Neue Liste", s, Navi.EINKAUF) {
+            h1 { +"Nichts zu kaufen" }
+            p { +"Für den Zeitraum ist nichts zu kaufen (nichts geplant, alles abgewählt oder aus dem Vorrat gedeckt)." }
+            a(href = "/einkauf/neu?von=${e.von}&bis=${e.bis}") { +"Zurück" }
+        }
         call.weiterleiten("/einkauf?liste=$id")
     }
 

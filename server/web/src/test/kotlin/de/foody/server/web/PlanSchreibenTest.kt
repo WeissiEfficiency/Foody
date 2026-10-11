@@ -19,6 +19,7 @@ import io.ktor.http.parameters
 import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.test.Test
+import kotlinx.coroutines.async
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -94,6 +95,27 @@ class PlanSchreibenTest {
         assertEquals(0, daten.fuer(h).vorrat.single().menge.compareTo(BigDecimal(800)), "nur einmal abgezogen")
         val html = c.get("/plan?ab=2026-10-11&bearbeiten=1") { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
         assertTrue(" · gekocht" in html && "s1 gekocht" !in html && "s1 loeschen" in html, "Knopf verschwindet, Status sichtbar")
+    }
+
+    /** Final-Review 2: gleichzeitige „gekocht“-Klicks (Doppelklick) ziehen den Vorrat nur einmal ab. */
+    @Test fun gleichzeitigGekochtZiehtEinmalAb() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        // Vorrat reicht für 10 Durchgänge à 200 g; jeder Durchgang klickt 8× gleichzeitig „gekocht“
+        env.push(h, reis(), rezept("r1", "Curry"), datensatz("v1", RecordType.PANTRY_ITEM, PantryItemPayload("reis", "2000", "GRAM")))
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val token = c.csrf(cookie)
+        for (runde in 1..5) {
+            env.push(h, slot("s$runde", "2026-10-11"))
+            kotlinx.coroutines.coroutineScope {
+                (1..8).map {
+                    async(kotlinx.coroutines.Dispatchers.IO) {
+                        c.submitForm("/plan/s$runde", parameters { append("_csrf", token); append("aktion", "gekocht") }) { header(HttpHeaders.Cookie, cookie) }
+                    }
+                }.forEach { it.await() }
+            }
+            assertEquals(0, HaushaltsDaten(env.deps.db).fuer(h).vorrat.single().menge.compareTo(BigDecimal(2000 - 200 * runde)), "Runde $runde")
+        }
     }
 
     @Test fun auswahlseiteFiltertNachMahlzeit() = webServer { env ->
@@ -195,6 +217,20 @@ class PlanSchreibenTest {
         val antwort = c.post(cookie, "/plan/aktion", "a" to "s1 plus", "ab" to "2026-10-12", "bearbeiten" to "1")
         assertEquals("/plan?ab=2026-10-12&bearbeiten=1#tag-2026-10-12", antwort.headers[HttpHeaders.Location])
         assertEquals(3, HaushaltsDaten(env.deps.db).fuer(h).plan.single().portionen)
+    }
+
+    /** Final-Review 4: Eintrag mit gelöschtem Rezept – nur Löschen geht (alles andere lehnt der Server ab). */
+    @Test fun geloeschtesRezeptNurLoeschen() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        env.push(h, reis(), rezept("r1", "Curry"), slot("s1", "2026-10-12"))
+        env.push(h, SyncRecord(id = "r1", type = RecordType.RECIPE, deleted = true, updatedAt = 9))
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val html = c.get("/plan?ab=2026-10-12&bearbeiten=1") { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
+        assertTrue("Gelöschtes Rezept" in html && "s1 loeschen" in html, html.take(3000))
+        assertFalse("s1 plus" in html || "s1 gekocht" in html || "s1 spaeter" in html)
+        assertEquals(HttpStatusCode.SeeOther, c.post(cookie, "/plan/s1", "aktion" to "loeschen").status)
+        assertTrue(HaushaltsDaten(env.deps.db).fuer(h).plan.isEmpty())
     }
 
     @Test fun planVierzehnTageUnter30KB() = webServer { env ->

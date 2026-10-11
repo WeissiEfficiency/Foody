@@ -44,10 +44,10 @@ internal class EinkaufSchreiber(private val deps: ServerDeps, private val daten:
         return EinkaufsBedarf.berechnen(DateRange(von, bis), slots, h.rezepte.mapValues { it.value.domain }, h.zutaten, pantry, ausgeschlossen)
     }
 
-    /** Neue Liste aus dem Plan; null, wenn nichts zu kaufen ist (dann wird auch keine Liste angelegt). */
-    fun anlegen(household: String, name: String, von: LocalDate, bis: LocalDate, vorrat: Boolean, ausgeschlossen: Set<String>): String? {
+    /** Neue Liste aus dem Plan; (Ok, null), wenn nichts zu kaufen ist (dann wird auch keine Liste angelegt). */
+    fun anlegen(household: String, name: String, von: LocalDate, bis: LocalDate, vorrat: Boolean, ausgeschlossen: Set<String>): Pair<Schreiben, String?> {
         val bedarf = bedarf(household, von, bis, vorrat, ausgeschlossen).filter { !it.toBuy.isZero() }
-        if (bedarf.isEmpty()) return null
+        if (bedarf.isEmpty()) return Schreiben.Ok to null
         val listId = UUID.randomUUID().toString()
         val jetzt = deps.clock.millis()
         val liste = ShoppingListPayload(name, von.toString(), bis.toString(), 1)
@@ -56,7 +56,7 @@ internal class EinkaufSchreiber(private val deps: ServerDeps, private val daten:
             id = listId, type = RecordType.SHOPPING_LIST, updatedAt = jetzt,
             payload = Protocol.json.encodeToJsonElement(ShoppingListPayload.serializer(), liste) as JsonObject,
         )) + bedarf.mapIndexed { i, n -> neuerEintrag(household, listId, n, i, jetzt) }
-        return if (push(household, records) == Schreiben.Ok) listId else null
+        return push(household, records) to listId
     }
 
     /** Vergleich der generierten Einträge mit einer Neuberechnung; null = Liste fremd, gelöscht oder ohne Zeitraum. */
@@ -70,7 +70,10 @@ internal class EinkaufSchreiber(private val deps: ServerDeps, private val daten:
         return ShoppingDiff.diff(alt, ::schluessel, ::menge, neu)
     }
 
-    fun abgleichAnwenden(household: String, listId: String, vorrat: Boolean): Schreiben {
+    /** Unter [Haushaltssperre]: ein doppeltes „Übernehmen“ legt neue Einträge nicht zweimal an. */
+    fun abgleichAnwenden(household: String, listId: String, vorrat: Boolean): Schreiben = Haushaltssperre.mit(household) { abgleichAnwendenGesperrt(household, listId, vorrat) }
+
+    private fun abgleichAnwendenGesperrt(household: String, listId: String, vorrat: Boolean): Schreiben {
         val eintraege = abgleich(household, listId, vorrat) ?: return Schreiben.NichtGefunden
         val gespeicherteListe = gespeichert(household, RecordType.SHOPPING_LIST, listId) ?: return Schreiben.Weg
         val jetzt = deps.clock.millis()
@@ -208,15 +211,15 @@ internal class EinkaufSchreiber(private val deps: ServerDeps, private val daten:
     }
 
     /**
-     * Rezept auf eine Liste ([RezeptAufListe]); ohne [listId] auf eine neue „Einkauf“. Liefert (Anzahl Zutaten, Liste)
-     * oder null, wenn Rezept oder Liste nicht zum Haushalt gehören.
+     * Rezept auf eine Liste ([RezeptAufListe]); ohne [listId] auf eine neue „Einkauf“. Liefert das Ergebnis und bei Erfolg
+     * (Anzahl Zutaten, Liste); [Schreiben.NichtGefunden], wenn Rezept oder Liste nicht zum Haushalt gehören.
      */
-    fun rezeptAufListe(household: String, rezeptId: String, portionen: Int, listId: String?, heute: LocalDate): Pair<Int, String>? {
+    fun rezeptAufListe(household: String, rezeptId: String, portionen: Int, listId: String?, heute: LocalDate): Pair<Schreiben, Pair<Int, String>?> {
         val h = daten.fuer(household)
-        val rezept = h.rezepte[rezeptId] ?: return null
+        val rezept = h.rezepte[rezeptId] ?: return Schreiben.NichtGefunden to null
         val jetzt = deps.clock.millis()
         val records = mutableListOf<SyncRecord>()
-        val ziel = zielListe(household, listId, records, jetzt) ?: return null
+        val ziel = zielListe(household, listId, records, jetzt) ?: return Schreiben.NichtGefunden to null
         val bedarf = RezeptAufListe.bedarf(rezept.domain, portionen, h.zutaten, heute)
         val bestand = h.eintraege.filter { it.listId == ziel }
         var reihenfolge = naechsteReihenfolge(household, ziel)
@@ -236,8 +239,8 @@ internal class EinkaufSchreiber(private val deps: ServerDeps, private val daten:
                 neuerManuellerEintrag(ziel, a.bedarf.ingredientId, z?.name ?: a.bedarf.ingredientId, a.bedarf.toBuy, z?.category, reihenfolge++, jetzt)
             }
         }
-        if (push(household, records) != Schreiben.Ok) return null
-        return bedarf.size to ziel
+        val ergebnis = push(household, records)
+        return ergebnis to (bedarf.size to ziel).takeIf { ergebnis == Schreiben.Ok }
     }
 
     private fun neuerEintrag(household: String, listId: String, n: ShoppingNeed, reihenfolge: Int, jetzt: Long): SyncRecord {

@@ -146,12 +146,14 @@ class ShoppingViewModel @Inject constructor(
      * zuletzt gekauft → wieder auf die Liste. Verglichen wird über den Artikel, nicht den genauen Namen.
      */
     fun tapCatalog(name: String, section: String, defaultListName: String) = viewModelScope.launch {
-        val items = state.value.items
-        val existing = items.filter { ShoppingCatalog.sameItem(it.name, name) }
-        // Kachel = bekannter Artikel: gleiche Entscheidung wie beim Freitext (und in der Web-Oberfläche)
-        when (val a = EinkaufEingabe.entscheiden(name, existing.map { EinkaufEingabe.Eintrag(it.id, it.name, it.checked) })) {
-            is EinkaufEingabe.Aktion.Abhaken -> repo.setChecked(existing.first { it.id == a.id }, true)
-            is EinkaufEingabe.Aktion.Zurueck -> repo.setChecked(existing.first { it.id == a.id }, false)
+        // Eine Kachel ist schon ein bestimmter Artikel (auch ein eigener, den der Katalog nicht kennt) – deshalb kein
+        // Katalog-Nachschlagen wie beim Freitext, sondern direkt umschalten
+        val existing = state.value.items.filter { ShoppingCatalog.sameItem(it.name, name) }
+        val open = existing.firstOrNull { !it.checked }
+        val bought = existing.firstOrNull { it.checked }
+        when {
+            open != null -> repo.setChecked(open, true)
+            bought != null -> repo.setChecked(bought, false)
             else -> repo.addManual(ensureList(defaultListName), name, section)
         }
     }

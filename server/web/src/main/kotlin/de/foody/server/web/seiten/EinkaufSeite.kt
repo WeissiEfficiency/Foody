@@ -168,6 +168,8 @@ internal object EinkaufSeite {
             }
             span("knoepfe") {
                 input(InputType.text, name = "n_${e.id}") { value = p.note.orEmpty(); placeholder = "Notiz"; attributes["aria-label"] = "Notiz zu ${p.name}" }
+                // Angezeigter Wert: nur wirklich im Formular geänderte Notizen werden geschrieben (Handy-Änderung bleibt)
+                hiddenInput(name = "o_${e.id}") { value = p.note.orEmpty() }
                 button { name = "weg"; value = e.id; attributes["aria-label"] = "${p.name} löschen"; +"✕" }
             }
         }
@@ -234,7 +236,9 @@ internal object EinkaufSeite {
 
     suspend fun bearbeitenSpeichern(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, listId: String) {
         val (s, form) = call.formMitCsrf(deps) ?: return
-        val notizen = form.names().filter { it.startsWith("n_") }.associate { it.removePrefix("n_") to form[it].orEmpty() }
+        val notizen = form.names().filter { it.startsWith("n_") }
+            .associate { it.removePrefix("n_") to form[it].orEmpty() }
+            .filter { (id, text) -> form["o_$id"]?.let { it.trim() != text.trim() } ?: true }
         if (notizen.values.any { it.trim().length > MAX_NOTIZ }) {
             return zeigen(call, s, daten.fuer(s.haushalt!!), "Notiz höchstens $MAX_NOTIZ Zeichen.", bearbeitenErzwingen = true)
         }
@@ -283,9 +287,12 @@ internal object EinkaufSeite {
                 a(href = "/rezept/${rezept.id}") { +"Zurück zum Rezept" }
             }
         }
-        val (anzahl, ziel) = EinkaufSchreiber(deps, daten).rezeptAufListe(household, rezept.id, portionen, form["liste"], heute)
-            ?: return call.nichtGefunden(s, "Diese Liste gibt es nicht (mehr).")
-        call.weiterleiten("/einkauf?liste=$ziel&hinzu=$anzahl")
+        val (ergebnis, hinzu) = EinkaufSchreiber(deps, daten).rezeptAufListe(household, rezept.id, portionen, form["liste"], heute)
+        when {
+            hinzu != null -> call.weiterleiten("/einkauf?liste=${hinzu.second}&hinzu=${hinzu.first}")
+            ergebnis == Schreiben.Abgelehnt -> call.abgelehnt(s)
+            else -> call.nichtGefunden(s, "Diese Liste gibt es nicht (mehr).")
+        }
     }
 
     /** Formular „Auf die Einkaufsliste“ für die Rezeptseite; Vorgabe ist die zuletzt geänderte Liste (höchste Revision). */

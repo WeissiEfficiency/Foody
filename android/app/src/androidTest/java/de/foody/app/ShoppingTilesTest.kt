@@ -1,5 +1,6 @@
 package de.foody.app
 
+import de.foody.domain.ShoppingCatalog
 import de.foody.app.data.ShoppingPreferences
 import android.content.Context
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -9,6 +10,9 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
@@ -81,6 +85,25 @@ class ShoppingTilesTest {
         compose.onAllNodes(hasText("Bananen")).assertCountEquals(0)
         header.performClick()
         compose.onAllNodes(hasText("Bananen")).onFirst().assertExists()
+    }
+
+    /** Final-Review 1: Kachel eines eigenen Artikels (nicht im Katalog) hakt ab, statt ihn doppelt anzulegen. */
+    @Test fun ownItemTileTogglesInsteadOfDuplicating() {
+        val field = compose.onNode(hasSetTextAction())
+        field.performTextInput("Grillkohle XL")
+        field.performImeAction()
+        waitForOpen(listOf("Grillkohle XL"))
+        // Die Kachel in der Abteilung „Eigene Artikel“ (nicht die rote Kachel oben) geht über tapCatalog
+        val grid = compose.onNode(hasScrollAction())
+        grid.performScrollToNode(hasText(ShoppingCatalog.OWN_ITEMS))
+        compose.onNode(hasText(ShoppingCatalog.OWN_ITEMS)).performClick()
+        grid.performScrollToNode(hasText("Grillkohle XL") and state("auf der Liste"))
+        compose.onAllNodes(hasText("Grillkohle XL") and state("auf der Liste")).onLast().performClick()
+        waitForOpen(emptyList())
+        grid.performScrollToNode(hasText("Grillkohle XL") and state("nicht auf der Liste"))
+        compose.onAllNodes(hasText("Grillkohle XL") and state("nicht auf der Liste")).onLast().performClick()
+        waitForOpen(listOf("Grillkohle XL"))
+        assertEquals(1, runBlocking { db.shoppingDao().getAllItems().size }, "kein doppelter Eintrag")
     }
 
     @Test fun searchAddsOwnItemOrKnownCatalogItem() {

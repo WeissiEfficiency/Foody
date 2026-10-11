@@ -181,6 +181,25 @@ class ListeAusPlanTest {
         assertEquals(0, menge(eintraege(env, h).single()).compareTo(BigDecimal(200)), "nur das archivierte Curry zählt")
     }
 
+    /** Final-Review 5: lehnt der Server einen Eintrag ab, heißt das „Das ging nicht“, nicht „Nichts zu kaufen“. */
+    @Test fun abgelehnterEintragWirdGemeldet() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        val geist = datensatz("geist", RecordType.INGREDIENT, de.foody.sync.protocol.IngredientPayload(name = "Geisterzutat"))
+        val r = datensatz("r2", RecordType.RECIPE, de.foody.sync.protocol.RecipePayload(
+            name = "Spuk", servings = 2, tags = "", favorite = false,
+            lines = listOf(de.foody.sync.protocol.RecipePayload.Line("r2-l1", "geist", "100", "GRAM", 0, null, false)), steps = emptyList(),
+        ))
+        env.push(h, geist, r, slot("s1", "2026-10-12", rezept = "r2"))
+        env.push(h, SyncRecord(id = "geist", type = RecordType.INGREDIENT, deleted = true, updatedAt = 9))
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val antwort = c.post(cookie, "/einkauf/neu", anlegenFelder("geist"))
+        assertEquals(HttpStatusCode.Conflict, antwort.status, antwort.bodyAsText().take(400))
+        assertTrue("Das ging nicht" in antwort.bodyAsText())
+        val rezeptAufListe = c.post(cookie, "/einkauf/rezept", listOf("rezept" to "r2", "portionen" to "2", "liste" to ""))
+        assertEquals(HttpStatusCode.Conflict, rezeptAufListe.status)
+    }
+
     @Test fun zeitraumGrenzen() = webServer { env ->
         val (benutzer, _, h) = env.haushalt()
         env.push(h, reis(), rezept("r1", "Curry"), slot("s1", "2026-10-12"))

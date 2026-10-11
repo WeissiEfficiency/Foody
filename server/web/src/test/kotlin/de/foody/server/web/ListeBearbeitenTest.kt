@@ -92,6 +92,21 @@ class ListeBearbeitenTest {
         assertEquals(listOf("e2"), eintraege(env, h).map { it.id })
     }
 
+    /** Final-Review 3: Notiz, die das Handy inzwischen geändert hat, wird durch ein altes Formular nicht überschrieben. */
+    @Test fun notizVomHandyBleibtBeiAltemFormular() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        env.push(h, liste(), artikel("e1", "Milch"), artikel("e2", "Brot"))
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val seite = c.get("/einkauf?liste=L&bearbeiten=1") { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
+        assertTrue("name=\"o_e1\"" in seite, "ursprünglicher Wert wird mitgeschickt")
+        // Handy setzt inzwischen eine Notiz
+        val rev = env.deps.db.tx { cn -> RecordStore().get(cn, h, RecordType.SHOPPING_ITEM, "e1")!!.rev }
+        env.push(h, artikel("e1", "Milch", notiz = "2 Liter").copy(baseRev = rev, updatedAt = 50))
+        c.post(cookie, "/einkauf/L/bearbeiten", "n_e1" to "", "o_e1" to "", "n_e2" to "", "o_e2" to "", "weg" to "e2")
+        assertEquals("2 Liter", eintraege(env, h).single().payload.note)
+    }
+
     @Test fun listeLoeschenMitBestaetigung() = webServer { env ->
         val (benutzer, _, h) = env.haushalt()
         env.push(h, liste(), artikel("e1", "Milch"), artikel("e2", "Brot"))
