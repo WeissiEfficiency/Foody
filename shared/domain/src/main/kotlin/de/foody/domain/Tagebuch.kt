@@ -45,6 +45,22 @@ object Tagebuch {
         return w.takeIf { it.energieKj != null }
     }
 
+    /**
+     * Ändern eines Eintrags: Die Werte bleiben festgehalten. Ändern sich Portionen (Rezept) bzw. Menge (Zutat), werden
+     * sie im Verhältnis [neu] ÷ [alt] skaliert – nie aus dem heutigen Rezept neu berechnet (ADR 0007). Unverändert ohne
+     * Änderung, ohne brauchbaren alten Wert (> 0) und bei freien Einträgen.
+     */
+    fun skaliert(art: TagebuchArt, werte: Naehrwerte, alt: BigDecimal?, neu: BigDecimal?): Naehrwerte {
+        if (art == TagebuchArt.FREI || neu == null || alt == null || alt.signum() <= 0 || neu.compareTo(alt) == 0) return werte
+        val faktor = neu.divide(alt, 10, RoundingMode.HALF_UP)
+        fun BigDecimal?.mal() = this?.multiply(faktor)
+        return werte.copy(energieKj = werte.energieKj.mal(), eiweiss = werte.eiweiss.mal(), kohlenhydrate = werte.kohlenhydrate.mal(), fett = werte.fett.mal())
+    }
+
+    /** Freier Eintrag: kcal wie eingegeben (als kJ gespeichert), Werte gelten als vollständig. */
+    fun freiWerte(kcal: Int, eiweiss: BigDecimal?, kohlenhydrate: BigDecimal?, fett: BigDecimal?): Naehrwerte =
+        Naehrwerte(BigDecimal(kcal).multiply(NutritionResult.KJ_JE_KCAL), eiweiss, kohlenhydrate, fett, vollstaendig = true)
+
     fun bilanz(eintraege: List<EintragWerte>): TagesBilanz =
         TagesBilanz(summe(eintraege.map { it.werte }), eintraege.groupBy { it.mahlzeit }.mapValues { (_, e) -> summe(e.map { it.werte }) })
 
