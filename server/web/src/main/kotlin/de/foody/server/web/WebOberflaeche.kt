@@ -2,6 +2,7 @@ package de.foody.server.web
 
 import de.foody.server.ServerDeps
 import de.foody.server.web.Statisch.liefere
+import de.foody.server.web.seiten.EinkaufSeite
 import de.foody.server.web.seiten.HaushaltSeite
 import de.foody.server.web.seiten.LoginSeite
 import de.foody.server.web.seiten.PlanTagebuchSeiten
@@ -59,6 +60,11 @@ object WebOberflaeche {
             val s = call.sitzungMitHaushalt(deps) ?: return@get
             PlanTagebuchSeiten.tagebuch(call, s, daten.fuer(s.haushalt!!), LocalDate.now(deps.clock))
         }
+        get("/einkauf") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@get
+            EinkaufSeite.zeigen(call, s, daten.fuer(s.haushalt!!))
+        }
+        post("/einkauf/{id}/abhaken") { EinkaufSeite.abhaken(call, deps, daten, call.parameters["id"].orEmpty()) }
         get("/rezept/{id}") {
             val s = call.sitzungMitHaushalt(deps) ?: return@get
             RezeptSeiten.rezept(call, s, daten.fuer(s.haushalt!!), call.parameters["id"].orEmpty())
