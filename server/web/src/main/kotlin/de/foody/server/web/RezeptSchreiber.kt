@@ -1,8 +1,10 @@
 package de.foody.server.web
 
 import de.foody.domain.Gang
+import de.foody.domain.ImportedRecipe
 import de.foody.domain.IngredientCatalog
 import de.foody.domain.Mahlzeit
+import de.foody.domain.RezeptImport
 import de.foody.domain.alsText
 import de.foody.server.ServerDeps
 import de.foody.server.sync.RecordStore
@@ -90,6 +92,30 @@ internal class RezeptSchreiber(private val deps: ServerDeps, private val daten: 
     }
 
     /**
+     * Legt ein importiertes Rezept an (Rechnung wie in der App: `RezeptImport`); liefert die neue ID oder `null`, wenn der
+     * Server es ablehnt.
+     */
+    fun importieren(household: String, rezept: ImportedRecipe, tag: String): String? {
+        val ids = zutatenAufloesen(household, rezept.ingredients.map { it.name })
+        val zutaten = daten.fuer(household).zutaten
+        val ergebnis = RezeptImport.vorbereiten(rezept, ids.map { zutaten.getValue(it) }, VORGABE_PORTIONEN)
+        val id = UUID.randomUUID().toString()
+        val payload = RecipePayload(
+            name = rezept.name, servings = ergebnis.portionen, tags = tag, favorite = false, sourceUrl = rezept.sourceUrl,
+            notes = RezeptImport.hinweis(rezept.sourceUrl, ergebnis.portionen, ergebnis.geschaetzt),
+            lines = ergebnis.zeilen.mapIndexed { i, z ->
+                RecipePayload.Line(UUID.randomUUID().toString(), z.zutatId, z.menge.stripTrailingZeros().toPlainString(), z.einheit.name, i, z.hinweis, z.optional)
+            },
+            steps = rezept.steps.mapIndexed { i, text -> RecipePayload.Step(UUID.randomUUID().toString(), i, text) },
+        )
+        val antwort = push(household, SyncRecord(
+            id = id, type = RecordType.RECIPE, updatedAt = deps.clock.millis(),
+            payload = Protocol.json.encodeToJsonElement(RecipePayload.serializer(), payload) as JsonObject,
+        ))
+        return id.takeIf { antwort.status != PushStatus.REJECTED }
+    }
+
+    /**
      * Zutaten-IDs zu [namen] (gleiche Reihenfolge): exakter Name (ohne Groß-/Kleinschreibung), sonst über den Katalog
      * vereinheitlicht („Mehl“ → „Weizenmehl“), sonst neue Zutat. Neue werden zuerst gesendet; führt der Server sie mit
      * einer vorhandenen zusammen, gilt deren ID.
@@ -114,6 +140,11 @@ internal class RezeptSchreiber(private val deps: ServerDeps, private val daten: 
         }).results.associateBy { it.id }
         val ersetzt = ergebnisse.values.filter { it.status == PushStatus.MERGED && it.canonicalId != null }.associate { it.id to it.canonicalId!! }
         return ids.map { ersetzt[it] ?: it }
+    }
+
+    private companion object {
+        /** Wie `DEFAULT_IMPORT_SERVINGS` der App. */
+        const val VORGABE_PORTIONEN = 4
     }
 
     private fun push(household: String, record: SyncRecord) = deps.sync.push(household, listOf(record)).results.single()

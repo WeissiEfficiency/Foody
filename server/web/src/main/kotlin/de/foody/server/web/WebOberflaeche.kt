@@ -5,6 +5,7 @@ import de.foody.server.web.Statisch.liefere
 import de.foody.server.web.seiten.EditorSeite
 import de.foody.server.web.seiten.EinkaufSeite
 import de.foody.server.web.seiten.HaushaltSeite
+import de.foody.server.web.seiten.ImportSeite
 import de.foody.server.web.seiten.LoginSeite
 import de.foody.server.web.seiten.PlanTagebuchSeiten
 import de.foody.server.web.seiten.RezeptSeiten
@@ -66,6 +67,11 @@ object WebOberflaeche {
             EinkaufSeite.zeigen(call, s, daten.fuer(s.haushalt!!))
         }
         webPost("/einkauf/{id}/abhaken") { EinkaufSeite.abhaken(call, deps, daten, call.parameters["id"].orEmpty()) }
+        webGet("/import") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            ImportSeite.zeigen(call, s)
+        }
+        webPost("/import") { ImportSeite.importieren(call, deps, daten) }
         webGet("/rezept/neu") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             EditorSeite.neu(call, s)
