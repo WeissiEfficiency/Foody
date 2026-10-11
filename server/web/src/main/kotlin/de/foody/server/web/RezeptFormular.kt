@@ -17,7 +17,10 @@ internal data class FormZeile(val menge: String, val einheit: String, val zutat:
         else -> ZahlGrenzen.lesen(menge.trim().replace(',', '.'))?.takeIf { it.signum() >= 0 }
     }
 
-    fun einheitWert(): MeasureUnit? = MeasureUnit.entries.firstOrNull { it.name == einheit }
+    /** Einheit als Symbol („g“, „EL“, „Stk.“, Groß-/Kleinschreibung egal) oder interner Name („GRAM“). */
+    fun einheitWert(): MeasureUnit? = einheit.trim().let { e ->
+        MeasureUnit.entries.firstOrNull { it.name == e } ?: MeasureUnit.entries.firstOrNull { it.symbol.equals(e, ignoreCase = true) }
+    }
 }
 
 /** Inhalt des Rezept-Editors; liest Formulardaten, prüft sie und lässt sich aus einem gespeicherten Rezept füllen. */
@@ -113,7 +116,7 @@ internal data class RezeptFormular(
                     val menge = BigDecimal(l.amount)
                     FormZeile(
                         menge = if (menge.signum() == 0) "" else zahl(menge, 3),
-                        einheit = l.unit,
+                        einheit = MeasureUnit.entries.firstOrNull { it.name == l.unit }?.symbol ?: l.unit,
                         zutat = h.zutaten[l.ingredientId]?.name ?: "",
                         hinweis = l.note.orEmpty(),
                         optional = l.optional,

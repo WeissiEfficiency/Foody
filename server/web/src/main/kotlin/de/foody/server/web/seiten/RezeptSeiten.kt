@@ -21,6 +21,8 @@ import kotlinx.html.FlowContent
 import kotlinx.html.FormMethod
 import kotlinx.html.InputType
 import kotlinx.html.a
+import kotlinx.html.button
+import kotlinx.html.hiddenInput
 import kotlinx.html.body
 import kotlinx.html.div
 import kotlinx.html.form
@@ -38,18 +40,24 @@ import kotlinx.html.ul
 
 /** Rezeptliste mit Suche und Filter sowie die Rezeptansicht – Zahlen aus `domain` wie in der App. */
 internal object RezeptSeiten {
-    private data class Filter(val q: String, val mahlzeit: Mahlzeit?, val gang: Gang?)
+    private data class Filter(val q: String, val mahlzeit: Mahlzeit?, val gang: Gang?, val archiv: Boolean)
 
     private fun ApplicationCall.filter() = Filter(
         q = request.queryParameters["q"].orEmpty().trim().take(100),
         mahlzeit = request.queryParameters["mahlzeit"]?.let { m -> Mahlzeit.entries.firstOrNull { it.name == m } },
         gang = request.queryParameters["gang"]?.let { g -> Gang.entries.firstOrNull { it.name == g } },
+        archiv = request.queryParameters["archiv"] == "1",
     )
 
     suspend fun liste(call: ApplicationCall, s: Sitzung, h: Haushalt) {
         val f = call.filter()
         call.seiteAntworten("Rezepte", s, Navi.REZEPTE) {
-            h1 { +"Rezepte" }
+            h1 { +(if (f.archiv) "Archiv" else "Rezepte") }
+            div("zeile") {
+                a(href = "/rezept/neu", classes = "knopf") { +"Neues Rezept" }
+                a(href = "/import", classes = "knopf") { +"Import" }
+                a(href = if (f.archiv) "/" else "/?archiv=1") { +(if (f.archiv) "Zu den Rezepten" else "Archiv") }
+            }
             // Ohne JavaScript ein normales GET-Formular; mit htmx wird nur die Liste ersetzt
             form(action = "/", method = FormMethod.get, classes = "zeile karte") {
                 attributes["hx-get"] = "/rezepte/liste"
@@ -58,6 +66,7 @@ internal object RezeptSeiten {
                 input(InputType.search, name = "q") { value = f.q; placeholder = "Name, Tag oder Zutat"; attributes["aria-label"] = "Suche" }
                 auswahl("mahlzeit", "Alle Mahlzeiten", Mahlzeit.entries.map { it.name to it.text() }, f.mahlzeit?.name)
                 auswahl("gang", "Alle Gänge", Gang.entries.map { it.name to it.text() }, f.gang?.name)
+                if (f.archiv) hiddenInput(name = "archiv") { value = "1" }
             }
             div { id = "liste"; rezeptListe(h, f) }
         }
@@ -76,9 +85,9 @@ internal object RezeptSeiten {
     }
 
     private fun FlowContent.rezeptListe(h: Haushalt, f: Filter) {
-        val aktive = h.rezepte.values.filter { it.payload.archivedAt == null }
+        val aktive = h.rezepte.values.filter { (it.payload.archivedAt != null) == f.archiv }
         if (aktive.isEmpty()) {
-            p("hinweis") { +"Noch keine Rezepte. Lege sie in der App an – die Bearbeitung im Browser folgt." }
+            p("hinweis") { +(if (f.archiv) "Keine archivierten Rezepte." else "Noch keine Rezepte. Lege eines an oder importiere Markdown-Dateien.") }
             return
         }
         val treffer = aktive.filter { passt(it, f, h) }.sortedBy { it.payload.name.lowercase() }
@@ -114,6 +123,15 @@ internal object RezeptSeiten {
         val ergebnis = NutritionCalculator.calculate(r.domain, h.zutaten)
         call.seiteAntworten(r.payload.name, s, Navi.REZEPTE) {
             h1 { +r.payload.name }
+            div("zeile") {
+                a(href = "/rezept/$id/bearbeiten", classes = "knopf") { +"Bearbeiten" }
+                val archiviert = r.payload.archivedAt != null
+                form(action = "/rezept/$id/${if (archiviert) "wiederherstellen" else "archivieren"}", method = FormMethod.post) {
+                    hiddenInput(name = "_csrf") { value = s.csrf }
+                    button(classes = "leise") { +(if (archiviert) "Wiederherstellen" else "Archivieren") }
+                }
+                if (archiviert) span("leise") { +"archiviert" }
+            }
             div("karte zeile") {
                 a(href = "/rezept/$id?portionen=${(portionen - 1).coerceAtLeast(1)}", classes = "knopf") { attributes["aria-label"] = "Eine Portion weniger"; +"−" }
                 span { +"$portionen ${if (portionen == 1) "Portion" else "Portionen"}" }

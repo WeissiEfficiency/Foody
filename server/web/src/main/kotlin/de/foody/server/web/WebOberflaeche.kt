@@ -2,6 +2,7 @@ package de.foody.server.web
 
 import de.foody.server.ServerDeps
 import de.foody.server.web.Statisch.liefere
+import de.foody.server.web.seiten.EditorSeite
 import de.foody.server.web.seiten.EinkaufSeite
 import de.foody.server.web.seiten.HaushaltSeite
 import de.foody.server.web.seiten.LoginSeite
@@ -65,6 +66,25 @@ object WebOberflaeche {
             EinkaufSeite.zeigen(call, s, daten.fuer(s.haushalt!!))
         }
         webPost("/einkauf/{id}/abhaken") { EinkaufSeite.abhaken(call, deps, daten, call.parameters["id"].orEmpty()) }
+        webGet("/rezept/neu") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            EditorSeite.neu(call, s)
+        }
+        webGet("/rezept/zeile") {
+            call.sitzungMitHaushalt(deps) ?: return@webGet
+            EditorSeite.zeile(call)
+        }
+        webGet("/rezept/zutatenliste") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            EditorSeite.zutatenliste(call, daten.fuer(s.haushalt!!))
+        }
+        webPost("/rezept/speichern") { EditorSeite.speichern(call, deps, daten) }
+        webGet("/rezept/{id}/bearbeiten") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            EditorSeite.bearbeiten(call, s, daten.fuer(s.haushalt!!), call.parameters["id"].orEmpty())
+        }
+        webPost("/rezept/{id}/archivieren") { EditorSeite.archivieren(call, deps, daten, call.parameters["id"].orEmpty(), archiviert = true) }
+        webPost("/rezept/{id}/wiederherstellen") { EditorSeite.archivieren(call, deps, daten, call.parameters["id"].orEmpty(), archiviert = false) }
         webGet("/rezept/{id}") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             RezeptSeiten.rezept(call, s, daten.fuer(s.haushalt!!), call.parameters["id"].orEmpty())
