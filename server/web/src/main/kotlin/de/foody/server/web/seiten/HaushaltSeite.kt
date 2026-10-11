@@ -28,7 +28,7 @@ internal object HaushaltSeite {
         val haushalte = deps.accounts.households(s.principal.userId)
         call.seiteAntworten("Haushalt", s, null) {
             h1 { +"Haushalt wählen" }
-            if (fehler != null) p("fehler") { +fehler }
+            if (fehler != null) p("fehler") { attributes["role"] = "alert"; +fehler }
             if (haushalte.isEmpty()) {
                 p("hinweis") { +"Du gehörst noch zu keinem Haushalt. Lege einen an oder lass dich in der App einladen." }
             }

@@ -79,7 +79,7 @@ internal object VorratSeiten {
             h1 { +"Vorrat" }
             div("zeile") { a(href = "/zutaten") { +"Zutatenkatalog" } }
             if (call.request.queryParameters["hinweis"] == "weg") p("hinweis") { +"Eintrag gibt es nicht mehr." }
-            for (f in fehler) p("hinweis fehler") { +f }
+            for (f in fehler) p("hinweis fehler") { attributes["role"] = "alert"; +f }
             val e = eingabe ?: Eingabe("", "", MeasureUnit.GRAM.symbol, "")
             form(action = "/vorrat", method = FormMethod.post, classes = "karte zeile") {
                 hiddenInput(name = "_csrf") { value = s.csrf }
@@ -133,7 +133,7 @@ internal object VorratSeiten {
         val e = eingabe ?: Eingabe("", Eingaben.anzeigen(v.menge), v.einheit.symbol, v.haltbarBis?.toString().orEmpty())
         call.seiteAntworten("Vorrat", s, Navi.VORRAT) {
             h1 { +(h.zutaten[v.zutatId]?.name ?: "Unbekannte Zutat") }
-            for (f in fehler) p("hinweis fehler") { +f }
+            for (f in fehler) p("hinweis fehler") { attributes["role"] = "alert"; +f }
             form(action = "/vorrat/$id", method = FormMethod.post, classes = "karte zeile") {
                 hiddenInput(name = "_csrf") { value = s.csrf }
                 mengeFelder(e.menge, e.einheit)

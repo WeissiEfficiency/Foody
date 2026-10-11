@@ -111,7 +111,7 @@ internal object TagebuchSeiten {
         val q = call.request.queryParameters["q"].orEmpty().trim().take(100)
         call.seiteAntworten("Eintragen", s, Navi.TAGEBUCH) {
             h1 { +"Eintragen · ${mahlzeit.text()} · ${tag.format(TAG)}" }
-            for (f in fehler) p("hinweis fehler") { +f }
+            for (f in fehler) p("hinweis fehler") { attributes["role"] = "alert"; +f }
             h2 { +"Rezept" }
             form(action = "/tagebuch/neu", method = FormMethod.get, classes = "zeile") {
                 attributes["hx-get"] = "/tagebuch/neu/liste"
@@ -257,7 +257,7 @@ internal object TagebuchSeiten {
         call.seiteAntworten(e.name, s, Navi.TAGEBUCH) {
             h1 { +e.name }
             p("leise") { +"${e.datum.format(TAG)} · ${e.werte.kcal?.let { "$it kcal" } ?: "–"}" }
-            for (f in fehler) p("hinweis fehler") { +f }
+            for (f in fehler) p("hinweis fehler") { attributes["role"] = "alert"; +f }
             form(action = "/tagebuch/${e.id}", method = FormMethod.post, classes = "karte") {
                 hiddenInput(name = "_csrf") { value = s.csrf }
                 label {

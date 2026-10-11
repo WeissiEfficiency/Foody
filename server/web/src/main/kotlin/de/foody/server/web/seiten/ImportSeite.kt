@@ -41,7 +41,7 @@ internal object ImportSeite {
     suspend fun zeigen(call: ApplicationCall, s: Sitzung, fehler: String? = null) = call.seiteAntworten("Import", s, Navi.REZEPTE) {
         h1 { +"Rezepte importieren" }
         p("leise") { +"Markdown-Dateien (z. B. von Web-Clippern): höchstens $MAX_DATEIEN Dateien, je bis 1 MB. Rezepte mit schon vorhandener Quelle werden übersprungen." }
-        if (fehler != null) p("hinweis fehler") { +fehler }
+        if (fehler != null) p("hinweis fehler") { attributes["role"] = "alert"; +fehler }
         form(action = "/import", method = FormMethod.post, encType = FormEncType.multipartFormData, classes = "karte") {
             // CSRF zuerst: der Server liest Dateien erst nach gültigem Token
             hiddenInput(name = "_csrf") { value = s.csrf }

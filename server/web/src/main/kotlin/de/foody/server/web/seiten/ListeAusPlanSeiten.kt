@@ -84,7 +84,7 @@ internal object ListeAusPlanSeiten {
         val bedarf = if (zeitraumFehler(von, bis, heute).isEmpty()) EinkaufSchreiber(deps, daten).bedarf(household, von!!, bis!!, e.vorrat) else null
         call.seiteAntworten("Neue Liste", s, Navi.EINKAUF) {
             h1 { +"Neue Liste aus dem Plan" }
-            for (f in alleFehler) p("hinweis fehler") { +f }
+            for (f in alleFehler) p("hinweis fehler") { attributes["role"] = "alert"; +f }
             form(action = "/einkauf/neu", method = FormMethod.get, classes = "karte zeile") {
                 label { +"Von"; input(InputType.date, name = "von") { value = e.von } }
                 label { +"Bis"; input(InputType.date, name = "bis") { value = e.bis } }

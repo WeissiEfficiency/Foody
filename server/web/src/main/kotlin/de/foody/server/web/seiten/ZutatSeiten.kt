@@ -102,7 +102,7 @@ internal object ZutatSeiten {
     private suspend fun formularSeite(call: ApplicationCall, s: Sitzung, f: ZutatFormular, meldungen: List<String>, gibtEsSchon: ZutatSpeichern.GibtEsSchon? = null) =
         call.seiteAntworten(if (f.id == null) "Neue Zutat" else "Zutat bearbeiten", s, Navi.VORRAT) {
             h1 { +(if (f.id == null) "Neue Zutat" else f.name) }
-            for (m in meldungen) p("hinweis fehler") { +m }
+            for (m in meldungen) p("hinweis fehler") { attributes["role"] = "alert"; +m }
             gibtEsSchon?.let { g -> p("hinweis") { +"Gibt es schon: "; a(href = "/zutat/${g.id}") { +g.name } } }
             form(action = "/zutat/speichern", method = FormMethod.post, classes = "karte") {
                 hiddenInput(name = "_csrf") { value = s.csrf }

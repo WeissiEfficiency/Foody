@@ -131,7 +131,7 @@ internal object PlanSeiten {
     private suspend fun einplanenSeite(call: ApplicationCall, s: Sitzung, r: WebRezept, e: Eingabe, fehler: List<String>) =
         call.seiteAntworten("Einplanen", s, Navi.PLAN) {
             h1 { +"Einplanen: ${r.payload.name}" }
-            for (f in fehler) p("hinweis fehler") { +f }
+            for (f in fehler) p("hinweis fehler") { attributes["role"] = "alert"; +f }
             einplanenFormular(s, r, e.tag, Mahlzeit.entries.firstOrNull { it.name == e.mahlzeit }, e.portionen)
         }
 
@@ -171,7 +171,7 @@ internal object PlanSeiten {
     suspend fun neu(call: ApplicationCall, s: Sitzung, h: Haushalt, heute: LocalDate, werte: io.ktor.http.Parameters? = null, fehler: String? = null) {
         val a = if (werte == null) call.auswahl(h, heute) else call.auswahl(h, heute, werte)
         call.seiteAntworten("Einplanen", s, Navi.PLAN) {
-            fehler?.let { p("hinweis fehler") { +it } }
+            fehler?.let { p("hinweis fehler") { attributes["role"] = "alert"; +it } }
             h1 { +"Einplanen · ${a.tag.format(TAG)}" }
             // Filter per GET (ohne JS „Anzeigen“); mit htmx wird nur die Liste ersetzt
             form(action = "/plan/neu", method = FormMethod.get, classes = "zeile karte") {

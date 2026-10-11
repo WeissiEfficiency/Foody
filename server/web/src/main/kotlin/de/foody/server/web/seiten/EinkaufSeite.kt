@@ -83,7 +83,7 @@ internal object EinkaufSeite {
         val bearbeiten = bearbeitenErzwingen || q["bearbeiten"] == "1"
         call.seiteAntworten("Einkauf", s, Navi.EINKAUF) {
             h1 { +"Einkauf" }
-            fehler?.let { p("hinweis fehler") { +it } }
+            fehler?.let { p("hinweis fehler") { attributes["role"] = "alert"; +it } }
             if (q["hinweis"] == "weg") p("hinweis") { +"Eintrag gibt es nicht mehr." }
             q["hinzu"]?.toIntOrNull()?.let { n ->
                 p("hinweis") { +(when (n) { 0 -> "Nichts hinzugefügt (nur Zutaten nach Bedarf)."; 1 -> "1 Zutat hinzugefügt."; else -> "$n Zutaten hinzugefügt." }) }
@@ -293,7 +293,7 @@ internal object EinkaufSeite {
         if (portionen == null || portionen !in 1..PlanSeiten.MAX_PORTIONEN) {
             return call.seiteAntworten("Auf die Einkaufsliste", s, Navi.REZEPTE, HttpStatusCode.BadRequest) {
                 h1 { +"Auf die Einkaufsliste" }
-                p("hinweis fehler") { +"Portionen: 1 bis ${PlanSeiten.MAX_PORTIONEN}." }
+                p("hinweis fehler") { attributes["role"] = "alert"; +"Portionen: 1 bis ${PlanSeiten.MAX_PORTIONEN}." }
                 a(href = "/rezept/${rezept.id}") { +"Zurück zum Rezept" }
             }
         }

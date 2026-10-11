@@ -39,7 +39,7 @@ internal object LoginSeite {
         call.seiteAntworten("Anmelden", null, null) {
             div("anmeldung karte") {
                 h1 { +"Foody" }
-                if (fehler != null) p("fehler") { +fehler }
+                if (fehler != null) p("fehler") { attributes["role"] = "alert"; +fehler }
                 else if (call.request.queryParameters["abgelaufen"] == "1") p("hinweis") { +"Bitte erneut anmelden." }
                 form(action = "/login", method = FormMethod.post) {
                     label { attributes["for"] = "benutzer"; +"Benutzername" }
@@ -81,7 +81,7 @@ internal object LoginSeite {
         call.seiteAntworten("Registrieren", null, null) {
             div("anmeldung karte") {
                 h1 { +"Registrieren" }
-                if (fehler != null) p("fehler") { +fehler }
+                if (fehler != null) p("fehler") { attributes["role"] = "alert"; +fehler }
                 form(action = "/registrieren", method = FormMethod.post) {
                     label { attributes["for"] = "code"; +"Einladungscode" }
                     input(InputType.text, name = "code") { id = "code"; required = true }

@@ -112,7 +112,7 @@ internal object EditorSeite {
                     a(href = "/rezept/${f.id}/bearbeiten", classes = "knopf") { +"Aktuellen Stand laden" }
                 }
             }
-            if (fehler.isNotEmpty()) div("hinweis fehler") { for (m in fehler.values) p { +m } }
+            if (fehler.isNotEmpty()) div("hinweis fehler") { attributes["role"] = "alert"; for (m in fehler.values) p { +m } }
             form(action = "/rezept/speichern", method = FormMethod.post) {
                 hiddenInput(name = "_csrf") { value = s.csrf }
                 hiddenInput(name = "id") { value = f.id.orEmpty() }

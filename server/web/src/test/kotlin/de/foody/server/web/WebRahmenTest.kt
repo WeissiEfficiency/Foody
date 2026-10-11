@@ -73,4 +73,20 @@ class WebRahmenTest {
         val htmx = c.submitForm("/einkauf/abhaken", parameters { append("a", "x 1 1") }) { header(HttpHeaders.Cookie, cookie); header("HX-Request", "true") }
         assertEquals("true", htmx.headers["HX-Refresh"], "htmx lädt die Seite neu statt nichts zu tun")
     }
+
+    /** Kleinigkeiten 12: Fehlermeldungen in Formularen werden von Screenreadern vorgelesen. */
+    @Test fun fehlermeldungenMitRoleAlert() = webServer { env ->
+        val (benutzer, _, _) = env.haushalt()
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val token = c.csrf(cookie)
+        for ((pfad, felder) in listOf(
+            "/vorrat" to mapOf("zutat" to "", "menge" to "1", "einheit" to "g", "mhd" to ""),
+            "/rezept/speichern" to mapOf("name" to "", "portionen" to "2"),
+            "/tagebuch/frei" to mapOf("tag" to "2026-10-11", "mahlzeit" to "SNACK", "name" to "", "kcal" to "1"),
+        )) {
+            val html = c.submitForm(pfad, parameters { append("_csrf", token); for ((k, v) in felder) append(k, v) }) { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
+            assertTrue(Regex("class=\"hinweis fehler\"[^>]*role=\"alert\"|role=\"alert\"[^>]*class=\"hinweis fehler\"").containsMatchIn(html), pfad)
+        }
+    }
 }
