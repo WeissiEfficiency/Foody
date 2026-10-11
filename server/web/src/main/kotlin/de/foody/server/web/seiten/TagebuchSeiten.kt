@@ -18,6 +18,8 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.vorgangFeld
+import de.foody.server.web.Vorgaenge
 import de.foody.server.web.formularVeraltet
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
@@ -150,6 +152,7 @@ internal object TagebuchSeiten {
 
     private fun FlowContent.kopf(s: Sitzung, tag: LocalDate, mahlzeit: Mahlzeit) {
         hiddenInput(name = "_csrf") { value = s.csrf }
+        vorgangFeld()
         hiddenInput(name = "tag") { value = tag.toString() }
         hiddenInput(name = "mahlzeit") { value = mahlzeit.name }
     }
@@ -215,7 +218,10 @@ internal object TagebuchSeiten {
         val mahlzeit = p.mahlzeit(form["mahlzeit"])
         val portionen = p.portionen(form["portionen"])
         if (p.fehler.isNotEmpty()) return neu(call, s, h, heute, form, p.fehler)
-        antwort(call, s, TagebuchSchreiber(deps, daten).rezept(s.haushalt!!, tag!!, mahlzeit!!, form["rezept"]!!, portionen!!), tag)
+        if (!Vorgaenge.erstmals(s.haushalt!!, "tagebuch-rezept", form["vorgang"], deps.clock.millis())) return call.weiterleiten(tagUrl(tag!!))
+        val r = TagebuchSchreiber(deps, daten).rezept(s.haushalt!!, tag!!, mahlzeit!!, form["rezept"]!!, portionen!!)
+        if (r != Schreiben.Ok) Vorgaenge.freigeben(s.haushalt!!, "tagebuch-rezept", form["vorgang"])
+        antwort(call, s, r, tag)
     }
 
     suspend fun zutat(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate) {
@@ -228,7 +234,10 @@ internal object TagebuchSeiten {
         val menge = p.menge(form["menge"])
         val einheit = p.einheit(form["einheit"])
         if (p.fehler.isNotEmpty()) return neu(call, s, h, heute, form, p.fehler)
-        when (val r = TagebuchSchreiber(deps, daten).zutat(s.haushalt!!, tag!!, mahlzeit!!, name!!, menge!!, einheit!!)) {
+        if (!Vorgaenge.erstmals(s.haushalt!!, "tagebuch-zutat", form["vorgang"], deps.clock.millis())) return call.weiterleiten(tagUrl(tag!!))
+        val r = TagebuchSchreiber(deps, daten).zutat(s.haushalt!!, tag!!, mahlzeit!!, name!!, menge!!, einheit!!)
+        if (r != ZutatEintragen.Ergebnis(Schreiben.Ok)) Vorgaenge.freigeben(s.haushalt!!, "tagebuch-zutat", form["vorgang"])
+        when (r) {
             is ZutatEintragen.Ergebnis -> antwort(call, s, r.schreiben, tag)
             ZutatEintragen.Unbekannt -> neu(call, s, h, heute, form, listOf("„$name“ gibt es nicht im Zutatenkatalog – bitte dort anlegen oder frei eintragen."))
             ZutatEintragen.NichtBerechenbar -> neu(call, s, h, heute, form, listOf("Keine Nährwerte oder Einheit nicht umrechenbar – bitte frei eintragen."))
@@ -246,7 +255,10 @@ internal object TagebuchSeiten {
         val kh = p.gramm("Kohlenhydrate", form["kh"])
         val fett = p.gramm("Fett", form["fett"])
         if (p.fehler.isNotEmpty()) return neu(call, s, daten.fuer(s.haushalt!!), heute, form, p.fehler)
-        antwort(call, s, TagebuchSchreiber(deps, daten).frei(s.haushalt!!, tag!!, mahlzeit!!, name!!, kcal!!, eiweiss, kh, fett), tag)
+        if (!Vorgaenge.erstmals(s.haushalt!!, "tagebuch-frei", form["vorgang"], deps.clock.millis())) return call.weiterleiten(tagUrl(tag!!))
+        val r = TagebuchSchreiber(deps, daten).frei(s.haushalt!!, tag!!, mahlzeit!!, name!!, kcal!!, eiweiss, kh, fett)
+        if (r != Schreiben.Ok) Vorgaenge.freigeben(s.haushalt!!, "tagebuch-frei", form["vorgang"])
+        antwort(call, s, r, tag)
     }
 
     // --- Ändern ---

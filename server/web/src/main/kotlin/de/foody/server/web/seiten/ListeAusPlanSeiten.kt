@@ -15,6 +15,8 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.vorgangFeld
+import de.foody.server.web.Vorgaenge
 import de.foody.server.web.formularVeraltet
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
@@ -98,6 +100,7 @@ internal object ListeAusPlanSeiten {
             }
             form(action = "/einkauf/neu", method = FormMethod.post) {
                 hiddenInput(name = "_csrf") { value = s.csrf }
+                vorgangFeld()
                 hiddenInput(name = "von") { value = e.von }
                 hiddenInput(name = "bis") { value = e.bis }
                 hiddenInput(name = "vorrat") { value = if (e.vorrat) "1" else "0" }
@@ -146,7 +149,9 @@ internal object ListeAusPlanSeiten {
         val schreiber = EinkaufSchreiber(deps, daten)
         val mit = form.getAll("mit").orEmpty().toSet()
         val ausgeschlossen = schreiber.bedarf(household, von!!, bis!!, e.vorrat).map { it.ingredientId }.toSet() - mit
+        if (!Vorgaenge.erstmals(household, "liste", form["vorgang"], deps.clock.millis())) return call.weiterleiten("/einkauf")
         val (ergebnis, id) = schreiber.anlegen(household, e.name!!, von, bis, e.vorrat, ausgeschlossen)
+        if (ergebnis != Schreiben.Ok || id == null) Vorgaenge.freigeben(household, "liste", form["vorgang"])
         if (ergebnis != Schreiben.Ok) return call.abgelehnt(s)
         if (id == null) return call.seiteAntworten("Neue Liste", s, Navi.EINKAUF) {
             h1 { +"Nichts zu kaufen" }

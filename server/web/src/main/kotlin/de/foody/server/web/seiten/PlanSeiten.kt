@@ -16,6 +16,8 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.vorgangFeld
+import de.foody.server.web.Vorgaenge
 import de.foody.server.web.formularVeraltet
 import de.foody.server.web.nichtGefunden
 import de.foody.server.web.seiteAntworten
@@ -120,7 +122,11 @@ internal object PlanSeiten {
         val portionen = if (e.portionen.isEmpty()) rezept.domain.defaultServings else e.portionen.toIntOrNull()
         if (portionen == null || portionen !in 1..MAX_PORTIONEN) fehler += "Portionen: 1 bis $MAX_PORTIONEN."
         if (fehler.isNotEmpty()) return einplanenSeite(call, s, rezept, e, fehler)
-        when (PlanSchreiber(deps, daten).einplanen(household, tag!!, mahlzeit!!, rezept.id, portionen!!)) {
+        // Doppelklick: zweites Absenden derselben Vorgangsnummer schreibt nicht noch einmal
+        if (!Vorgaenge.erstmals(household, "einplanen", form["vorgang"], deps.clock.millis())) return call.weiterleiten(planUrl(tag!!, 7, tag))
+        val ergebnis = PlanSchreiber(deps, daten).einplanen(household, tag!!, mahlzeit!!, rezept.id, portionen!!)
+        if (ergebnis != Schreiben.Ok) Vorgaenge.freigeben(household, "einplanen", form["vorgang"])
+        when (ergebnis) {
             Schreiben.Ok -> call.weiterleiten(planUrl(tag, 7, tag))
             Schreiben.NichtGefunden -> call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
             Schreiben.Weg -> einplanenSeite(call, s, rezept, e, listOf("Das Rezept ist archiviert."))
@@ -139,6 +145,7 @@ internal object PlanSeiten {
     fun FlowContent.einplanenFormular(s: Sitzung, r: WebRezept, tag: String, mahlzeit: Mahlzeit?, portionen: String) {
         form(action = "/plan/einplanen", method = FormMethod.post, classes = "karte zeile") {
             hiddenInput(name = "_csrf") { value = s.csrf }
+            vorgangFeld()
             hiddenInput(name = "rezept") { value = r.id }
             label { +"Tag"; input(InputType.date, name = "tag") { value = tag; required = true } }
             mahlzeitAuswahl(mahlzeit ?: Mahlzeit.ABENDESSEN)
@@ -186,6 +193,7 @@ internal object PlanSeiten {
             }
             form(action = "/plan/einplanen", method = FormMethod.post) {
                 hiddenInput(name = "_csrf") { value = s.csrf }
+                vorgangFeld()
                 hiddenInput(name = "tag") { value = a.tag.toString() }
                 div("zeile") {
                     label { +"Portionen"; input(InputType.number, name = "portionen", classes = "menge") {
@@ -263,6 +271,7 @@ internal object PlanSeiten {
             }
             form(action = "/plan/vorschlag", method = FormMethod.post) {
                 hiddenInput(name = "_csrf") { value = s.csrf }
+                vorgangFeld()
                 hiddenInput(name = "mahlzeit") { value = mahlzeit.name }
                 hiddenInput(name = "ab") { value = ab.toString() }
                 if (tage == 14) hiddenInput(name = "tage") { value = "14" }
@@ -296,8 +305,11 @@ internal object PlanSeiten {
             val tag = form["tag_$i"] ?: return@mapNotNull null
             (datumOderNull(tag) ?: LocalDate.MIN) to form["rezept_$i"].orEmpty()
         }
-        val ergebnis = if (ab == null || mahlzeit == null || paare.isEmpty() || !datumErlaubt(ab, heute)) Schreiben.NichtGefunden
+        val gueltig = ab != null && mahlzeit != null && paare.isNotEmpty() && datumErlaubt(ab, heute)
+        if (gueltig && !Vorgaenge.erstmals(s.haushalt!!, "vorschlag", form["vorgang"], deps.clock.millis())) return call.weiterleiten(planUrl(ab, tage))
+        val ergebnis = if (!gueltig) Schreiben.NichtGefunden
         else PlanSchreiber(deps, daten).vorschlagUebernehmen(s.haushalt!!, mahlzeit, paare, ab, ab.plusDays(tage - 1L))
+        if (gueltig && ergebnis != Schreiben.Ok) Vorgaenge.freigeben(s.haushalt!!, "vorschlag", form["vorgang"])
         when (ergebnis) {
             Schreiben.Ok -> call.weiterleiten(planUrl(ab!!, tage))
             Schreiben.Abgelehnt -> call.abgelehnt(s)

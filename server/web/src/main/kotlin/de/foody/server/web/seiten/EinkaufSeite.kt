@@ -16,6 +16,8 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.vorgangFeld
+import de.foody.server.web.Vorgaenge
 import de.foody.server.web.formularVeraltet
 import de.foody.server.web.menge
 import de.foody.server.web.nichtGefunden
@@ -90,6 +92,7 @@ internal object EinkaufSeite {
             }
             form(action = "/einkauf/eingabe", method = FormMethod.post, classes = "zeile") {
                 hiddenInput(name = "_csrf") { value = s.csrf }
+                vorgangFeld()
                 hiddenInput(name = "liste") { value = gewaehlt?.id.orEmpty() }
                 input(InputType.text, name = "text") { eingaben?.get("text")?.let { value = it }; placeholder = "Was willst du einkaufen?"; attributes["aria-label"] = "Was willst du einkaufen?"; maxLength = "$MAX_TEXT" }
                 button { +"Hinzufügen" }
@@ -235,7 +238,12 @@ internal object EinkaufSeite {
             daten.fuer(s.haushalt!!).listen.firstOrNull { it.id == listId }?.let { "/einkauf?liste=${it.id}" } ?: "/einkauf",
         )
         if (text.length > MAX_TEXT) return zeigen(call, s, daten.fuer(s.haushalt!!), "Höchstens $MAX_TEXT Zeichen.", listeId = listId, eingaben = form)
+        // Doppelklick: „Milch“ zweimal hieße hinzufügen und gleich wieder abhaken
+        if (!Vorgaenge.erstmals(s.haushalt!!, "eingabe", form["vorgang"], deps.clock.millis())) return call.weiterleiten(
+            daten.fuer(s.haushalt!!).listen.firstOrNull { it.id == listId }?.let { "/einkauf?liste=${it.id}" } ?: "/einkauf",
+        )
         val (ergebnis, ziel) = EinkaufSchreiber(deps, daten).eingabe(s.haushalt!!, listId, text)
+        if (ergebnis != Schreiben.Ok) Vorgaenge.freigeben(s.haushalt!!, "eingabe", form["vorgang"])
         when (ergebnis) {
             Schreiben.Ok -> call.weiterleiten("/einkauf?liste=$ziel")
             Schreiben.Weg -> call.weiterleiten("/einkauf?liste=$ziel&hinweis=weg")
@@ -297,7 +305,9 @@ internal object EinkaufSeite {
                 a(href = "/rezept/${rezept.id}") { +"Zurück zum Rezept" }
             }
         }
+        if (!Vorgaenge.erstmals(household, "rezept-liste", form["vorgang"], deps.clock.millis())) return call.weiterleiten("/einkauf")
         val (ergebnis, hinzu) = EinkaufSchreiber(deps, daten).rezeptAufListe(household, rezept.id, portionen, form["liste"], heute)
+        if (hinzu == null) Vorgaenge.freigeben(household, "rezept-liste", form["vorgang"])
         when {
             hinzu != null -> call.weiterleiten("/einkauf?liste=${hinzu.second}&hinzu=${hinzu.first}")
             ergebnis == Schreiben.Abgelehnt -> call.abgelehnt(s)
@@ -310,6 +320,7 @@ internal object EinkaufSeite {
         val listen = h.listen.sortedByDescending { it.rev }
         form(action = "/einkauf/rezept", method = FormMethod.post, classes = "karte zeile") {
             hiddenInput(name = "_csrf") { value = s.csrf }
+            vorgangFeld()
             hiddenInput(name = "rezept") { value = r.id }
             label { +"Portionen"; input(InputType.number, name = "portionen", classes = "menge") {
                 placeholder = r.domain.defaultServings.toString(); min = "1"; max = "${PlanSeiten.MAX_PORTIONEN}"

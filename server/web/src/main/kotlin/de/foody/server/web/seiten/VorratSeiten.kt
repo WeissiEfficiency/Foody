@@ -14,6 +14,8 @@ import de.foody.server.web.abgelehnt
 import de.foody.server.web.csrfAus
 import de.foody.server.web.csrfGueltig
 import de.foody.server.web.formular
+import de.foody.server.web.vorgangFeld
+import de.foody.server.web.Vorgaenge
 import de.foody.server.web.formularVeraltet
 import de.foody.server.web.menge
 import de.foody.server.web.nichtGefunden
@@ -83,6 +85,7 @@ internal object VorratSeiten {
             val e = eingabe ?: Eingabe("", "", MeasureUnit.GRAM.symbol, "")
             form(action = "/vorrat", method = FormMethod.post, classes = "karte zeile") {
                 hiddenInput(name = "_csrf") { value = s.csrf }
+                vorgangFeld()
                 input(InputType.text, name = "zutat") { value = e.zutat; placeholder = "Zutat"; attributes["list"] = "zutaten"; attributes["aria-label"] = "Zutat" }
                 mengeFelder(e.menge, e.einheit)
                 input(InputType.date, name = "mhd") { value = e.mhd; attributes["aria-label"] = "Haltbar bis" }
@@ -120,9 +123,13 @@ internal object VorratSeiten {
         val e = form.eingabe()
         val (g, fehler) = pruefen(e, heute, mitZutat = true)
         if (g == null) return liste(call, s, daten.fuer(s.haushalt!!), heute, e, fehler)
+        if (!Vorgaenge.erstmals(s.haushalt!!, "vorrat", form["vorgang"], deps.clock.millis())) return call.weiterleiten("/vorrat")
         when (VorratSchreiber(deps, daten).anlegen(s.haushalt!!, e.zutat.trim(), g.menge, g.einheit, g.mhd)) {
             Schreiben.Ok -> call.weiterleiten("/vorrat")
-            else -> call.abgelehnt(s)
+            else -> {
+                Vorgaenge.freigeben(s.haushalt!!, "vorrat", form["vorgang"])
+                call.abgelehnt(s)
+            }
         }
     }
 
