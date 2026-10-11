@@ -123,11 +123,12 @@ internal object PlanSeiten {
         if (portionen == null || portionen !in 1..MAX_PORTIONEN) fehler += "Portionen: 1 bis $MAX_PORTIONEN."
         if (fehler.isNotEmpty()) return einplanenSeite(call, s, rezept, e, fehler)
         // Doppelklick: zweites Absenden derselben Vorgangsnummer schreibt nicht noch einmal
-        if (!Vorgaenge.erstmals(household, "einplanen", form["vorgang"], deps.clock.millis())) return call.weiterleiten(planUrl(tag!!, 7, tag))
-        val ergebnis = PlanSchreiber(deps, daten).einplanen(household, tag!!, mahlzeit!!, rezept.id, portionen!!)
-        if (ergebnis != Schreiben.Ok) Vorgaenge.freigeben(household, "einplanen", form["vorgang"])
+        val datum = tag!!
+        val ergebnis = Vorgaenge.einmal(household, "einplanen", form["vorgang"], deps.clock.millis(), { it == Schreiben.Ok }) {
+            PlanSchreiber(deps, daten).einplanen(household, datum, mahlzeit!!, rezept.id, portionen!!)
+        } ?: return call.weiterleiten(planUrl(datum, 7, datum))
         when (ergebnis) {
-            Schreiben.Ok -> call.weiterleiten(planUrl(tag, 7, tag))
+            Schreiben.Ok -> call.weiterleiten(planUrl(datum, 7, datum))
             Schreiben.NichtGefunden -> call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
             Schreiben.Weg -> einplanenSeite(call, s, rezept, e, listOf("Das Rezept ist archiviert."))
             Schreiben.Abgelehnt -> call.abgelehnt(s)
@@ -306,10 +307,10 @@ internal object PlanSeiten {
             (datumOderNull(tag) ?: LocalDate.MIN) to form["rezept_$i"].orEmpty()
         }
         val gueltig = ab != null && mahlzeit != null && paare.isNotEmpty() && datumErlaubt(ab, heute)
-        if (gueltig && !Vorgaenge.erstmals(s.haushalt!!, "vorschlag", form["vorgang"], deps.clock.millis())) return call.weiterleiten(planUrl(ab, tage))
         val ergebnis = if (!gueltig) Schreiben.NichtGefunden
-        else PlanSchreiber(deps, daten).vorschlagUebernehmen(s.haushalt!!, mahlzeit, paare, ab, ab.plusDays(tage - 1L))
-        if (gueltig && ergebnis != Schreiben.Ok) Vorgaenge.freigeben(s.haushalt!!, "vorschlag", form["vorgang"])
+        else Vorgaenge.einmal(s.haushalt!!, "vorschlag", form["vorgang"], deps.clock.millis(), { it == Schreiben.Ok }) {
+            PlanSchreiber(deps, daten).vorschlagUebernehmen(s.haushalt!!, mahlzeit, paare, ab, ab.plusDays(tage - 1L))
+        } ?: return call.weiterleiten(planUrl(ab, tage))
         when (ergebnis) {
             Schreiben.Ok -> call.weiterleiten(planUrl(ab!!, tage))
             Schreiben.Abgelehnt -> call.abgelehnt(s)

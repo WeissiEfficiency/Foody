@@ -30,6 +30,24 @@ internal object Vorgaenge {
         return true
     }
 
+    /**
+     * Schreibt nur beim ersten Absenden ([schreiben]); ein doppeltes Absenden liefert `null` (nur weiterleiten). Beides
+     * läuft unter der [Haushaltssperre]: Das doppelte wartet, bis das erste fertig ist – die Seite danach zeigt also den
+     * neuen Stand. Ist das Ergebnis nicht [ok] oder fliegt eine Ausnahme, wird die Nummer wieder freigegeben.
+     */
+    fun <T> einmal(household: String, weg: String, nummer: String?, jetzt: Long, ok: (T) -> Boolean, schreiben: () -> T): T? =
+        Haushaltssperre.mit(household) {
+            if (!erstmals(household, weg, nummer, jetzt)) return@mit null
+            val ergebnis = try {
+                schreiben()
+            } catch (t: Throwable) {
+                freigeben(household, weg, nummer)
+                throw t
+            }
+            if (!ok(ergebnis)) freigeben(household, weg, nummer)
+            ergebnis
+        }
+
     /** Schreiben ist gescheitert: Die Nummer darf noch einmal verwendet werden (korrigiertes Formular). */
     fun freigeben(household: String, weg: String, nummer: String?) {
         if (!nummer.isNullOrBlank()) gesehen.remove(schluessel(household, weg, nummer))

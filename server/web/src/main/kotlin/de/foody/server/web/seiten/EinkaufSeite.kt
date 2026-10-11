@@ -239,11 +239,11 @@ internal object EinkaufSeite {
         )
         if (text.length > MAX_TEXT) return zeigen(call, s, daten.fuer(s.haushalt!!), "Höchstens $MAX_TEXT Zeichen.", listeId = listId, eingaben = form)
         // Doppelklick: „Milch“ zweimal hieße hinzufügen und gleich wieder abhaken
-        if (!Vorgaenge.erstmals(s.haushalt!!, "eingabe", form["vorgang"], deps.clock.millis())) return call.weiterleiten(
+        val (ergebnis, ziel) = Vorgaenge.einmal(s.haushalt!!, "eingabe", form["vorgang"], deps.clock.millis(), { it.first == Schreiben.Ok }) {
+            EinkaufSchreiber(deps, daten).eingabe(s.haushalt!!, listId, text)
+        } ?: return call.weiterleiten(
             daten.fuer(s.haushalt!!).listen.firstOrNull { it.id == listId }?.let { "/einkauf?liste=${it.id}" } ?: "/einkauf",
         )
-        val (ergebnis, ziel) = EinkaufSchreiber(deps, daten).eingabe(s.haushalt!!, listId, text)
-        if (ergebnis != Schreiben.Ok) Vorgaenge.freigeben(s.haushalt!!, "eingabe", form["vorgang"])
         when (ergebnis) {
             Schreiben.Ok -> call.weiterleiten("/einkauf?liste=$ziel")
             Schreiben.Weg -> call.weiterleiten("/einkauf?liste=$ziel&hinweis=weg")
@@ -305,9 +305,9 @@ internal object EinkaufSeite {
                 a(href = "/rezept/${rezept.id}") { +"Zurück zum Rezept" }
             }
         }
-        if (!Vorgaenge.erstmals(household, "rezept-liste", form["vorgang"], deps.clock.millis())) return call.weiterleiten("/einkauf")
-        val (ergebnis, hinzu) = EinkaufSchreiber(deps, daten).rezeptAufListe(household, rezept.id, portionen, form["liste"], heute)
-        if (hinzu == null) Vorgaenge.freigeben(household, "rezept-liste", form["vorgang"])
+        val (ergebnis, hinzu) = Vorgaenge.einmal(household, "rezept-liste", form["vorgang"], deps.clock.millis(), { it.second != null }) {
+            EinkaufSchreiber(deps, daten).rezeptAufListe(household, rezept.id, portionen, form["liste"], heute)
+        } ?: return call.weiterleiten("/einkauf")
         when {
             hinzu != null -> call.weiterleiten("/einkauf?liste=${hinzu.second}&hinzu=${hinzu.first}")
             ergebnis == Schreiben.Abgelehnt -> call.abgelehnt(s)

@@ -218,9 +218,9 @@ internal object TagebuchSeiten {
         val mahlzeit = p.mahlzeit(form["mahlzeit"])
         val portionen = p.portionen(form["portionen"])
         if (p.fehler.isNotEmpty()) return neu(call, s, h, heute, form, p.fehler)
-        if (!Vorgaenge.erstmals(s.haushalt!!, "tagebuch-rezept", form["vorgang"], deps.clock.millis())) return call.weiterleiten(tagUrl(tag!!))
-        val r = TagebuchSchreiber(deps, daten).rezept(s.haushalt!!, tag!!, mahlzeit!!, form["rezept"]!!, portionen!!)
-        if (r != Schreiben.Ok) Vorgaenge.freigeben(s.haushalt!!, "tagebuch-rezept", form["vorgang"])
+        val r = Vorgaenge.einmal(s.haushalt!!, "tagebuch-rezept", form["vorgang"], deps.clock.millis(), { it == Schreiben.Ok }) {
+            TagebuchSchreiber(deps, daten).rezept(s.haushalt!!, tag!!, mahlzeit!!, form["rezept"]!!, portionen!!)
+        } ?: return call.weiterleiten(tagUrl(tag!!))
         antwort(call, s, r, tag)
     }
 
@@ -234,9 +234,9 @@ internal object TagebuchSeiten {
         val menge = p.menge(form["menge"])
         val einheit = p.einheit(form["einheit"])
         if (p.fehler.isNotEmpty()) return neu(call, s, h, heute, form, p.fehler)
-        if (!Vorgaenge.erstmals(s.haushalt!!, "tagebuch-zutat", form["vorgang"], deps.clock.millis())) return call.weiterleiten(tagUrl(tag!!))
-        val r = TagebuchSchreiber(deps, daten).zutat(s.haushalt!!, tag!!, mahlzeit!!, name!!, menge!!, einheit!!)
-        if (r != ZutatEintragen.Ergebnis(Schreiben.Ok)) Vorgaenge.freigeben(s.haushalt!!, "tagebuch-zutat", form["vorgang"])
+        val r = Vorgaenge.einmal(s.haushalt!!, "tagebuch-zutat", form["vorgang"], deps.clock.millis(), { it == ZutatEintragen.Ergebnis(Schreiben.Ok) }) {
+            TagebuchSchreiber(deps, daten).zutat(s.haushalt!!, tag!!, mahlzeit!!, name!!, menge!!, einheit!!)
+        } ?: return call.weiterleiten(tagUrl(tag!!))
         when (r) {
             is ZutatEintragen.Ergebnis -> antwort(call, s, r.schreiben, tag)
             ZutatEintragen.Unbekannt -> neu(call, s, h, heute, form, listOf("„$name“ gibt es nicht im Zutatenkatalog – bitte dort anlegen oder frei eintragen."))
@@ -255,9 +255,9 @@ internal object TagebuchSeiten {
         val kh = p.gramm("Kohlenhydrate", form["kh"])
         val fett = p.gramm("Fett", form["fett"])
         if (p.fehler.isNotEmpty()) return neu(call, s, daten.fuer(s.haushalt!!), heute, form, p.fehler)
-        if (!Vorgaenge.erstmals(s.haushalt!!, "tagebuch-frei", form["vorgang"], deps.clock.millis())) return call.weiterleiten(tagUrl(tag!!))
-        val r = TagebuchSchreiber(deps, daten).frei(s.haushalt!!, tag!!, mahlzeit!!, name!!, kcal!!, eiweiss, kh, fett)
-        if (r != Schreiben.Ok) Vorgaenge.freigeben(s.haushalt!!, "tagebuch-frei", form["vorgang"])
+        val r = Vorgaenge.einmal(s.haushalt!!, "tagebuch-frei", form["vorgang"], deps.clock.millis(), { it == Schreiben.Ok }) {
+            TagebuchSchreiber(deps, daten).frei(s.haushalt!!, tag!!, mahlzeit!!, name!!, kcal!!, eiweiss, kh, fett)
+        } ?: return call.weiterleiten(tagUrl(tag!!))
         antwort(call, s, r, tag)
     }
 

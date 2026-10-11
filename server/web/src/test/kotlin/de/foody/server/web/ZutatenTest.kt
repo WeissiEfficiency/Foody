@@ -17,6 +17,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.parameters
 import java.util.UUID
 import kotlin.test.Test
+import kotlinx.coroutines.async
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -183,5 +184,26 @@ class ZutatenTest {
         val html = c.post(c.anmelden(benutzer), "/zutat/x/loeschen").bodyAsText()
         assertTrue("Wird noch verwendet in" in html && "Zukunftsrezept" in html, html.take(1500))
         assertTrue("x" in roh(env, h), "nicht gelöscht")
+    }
+
+    /** Final-Review: Zutat löschen und gleichzeitig Vorrat mit dieser Zutat anlegen – nie Vorrat auf eine gelöschte Zutat. */
+    @Test fun loeschenUndVorratGleichzeitig() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val token = c.csrf(cookie)
+        repeat(10) { runde ->
+            val id = "z$runde"
+            env.push(h, datensatz(id, RecordType.INGREDIENT, IngredientPayload(name = "Zutat $runde")))
+            kotlinx.coroutines.coroutineScope {
+                val a = async(kotlinx.coroutines.Dispatchers.IO) { c.submitForm("/zutat/$id/loeschen", parameters { append("_csrf", token) }) { header(HttpHeaders.Cookie, cookie) } }
+                val b = async(kotlinx.coroutines.Dispatchers.IO) {
+                    c.submitForm("/vorrat", parameters { append("_csrf", token); append("zutat", "Zutat $runde"); append("menge", "1"); append("einheit", "g"); append("mhd", "") }) { header(HttpHeaders.Cookie, cookie) }
+                }
+                a.await(); b.await()
+            }
+            val d = HaushaltsDaten(env.deps.db).fuer(h)
+            for (v in d.vorrat) assertTrue(v.zutatId in d.zutaten, "Runde $runde: Vorrat zeigt auf gelöschte Zutat ${v.zutatId}")
+        }
     }
 }

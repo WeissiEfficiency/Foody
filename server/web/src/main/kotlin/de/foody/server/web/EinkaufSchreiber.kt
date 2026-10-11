@@ -214,7 +214,11 @@ internal class EinkaufSchreiber(private val deps: ServerDeps, private val daten:
      * Rezept auf eine Liste ([RezeptAufListe]); ohne [listId] auf eine neue „Einkauf“. Liefert das Ergebnis und bei Erfolg
      * (Anzahl Zutaten, Liste); [Schreiben.NichtGefunden], wenn Rezept oder Liste nicht zum Haushalt gehören.
      */
-    fun rezeptAufListe(household: String, rezeptId: String, portionen: Int, listId: String?, heute: LocalDate): Pair<Schreiben, Pair<Int, String>?> {
+    fun rezeptAufListe(household: String, rezeptId: String, portionen: Int, listId: String?, heute: LocalDate): Pair<Schreiben, Pair<Int, String>?> =
+        // Unter der Sperre: eine gleichzeitig gelöschte Zutat landet nicht auf der Liste
+        Haushaltssperre.mit(household) { rezeptAufListeGesperrt(household, rezeptId, portionen, listId, heute) }
+
+    private fun rezeptAufListeGesperrt(household: String, rezeptId: String, portionen: Int, listId: String?, heute: LocalDate): Pair<Schreiben, Pair<Int, String>?> {
         val h = daten.fuer(household)
         val rezept = h.rezepte[rezeptId] ?: return Schreiben.NichtGefunden to null
         val jetzt = deps.clock.millis()

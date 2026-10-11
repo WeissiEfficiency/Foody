@@ -149,9 +149,9 @@ internal object ListeAusPlanSeiten {
         val schreiber = EinkaufSchreiber(deps, daten)
         val mit = form.getAll("mit").orEmpty().toSet()
         val ausgeschlossen = schreiber.bedarf(household, von!!, bis!!, e.vorrat).map { it.ingredientId }.toSet() - mit
-        if (!Vorgaenge.erstmals(household, "liste", form["vorgang"], deps.clock.millis())) return call.weiterleiten("/einkauf")
-        val (ergebnis, id) = schreiber.anlegen(household, e.name!!, von, bis, e.vorrat, ausgeschlossen)
-        if (ergebnis != Schreiben.Ok || id == null) Vorgaenge.freigeben(household, "liste", form["vorgang"])
+        val (ergebnis, id) = Vorgaenge.einmal(household, "liste", form["vorgang"], deps.clock.millis(), { it.first == Schreiben.Ok && it.second != null }) {
+            schreiber.anlegen(household, e.name!!, von, bis, e.vorrat, ausgeschlossen)
+        } ?: return call.weiterleiten("/einkauf")
         if (ergebnis != Schreiben.Ok) return call.abgelehnt(s)
         if (id == null) return call.seiteAntworten("Neue Liste", s, Navi.EINKAUF) {
             h1 { +"Nichts zu kaufen" }

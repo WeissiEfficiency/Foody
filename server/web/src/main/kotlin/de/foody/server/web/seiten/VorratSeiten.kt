@@ -123,14 +123,10 @@ internal object VorratSeiten {
         val e = form.eingabe()
         val (g, fehler) = pruefen(e, heute, mitZutat = true)
         if (g == null) return liste(call, s, daten.fuer(s.haushalt!!), heute, e, fehler)
-        if (!Vorgaenge.erstmals(s.haushalt!!, "vorrat", form["vorgang"], deps.clock.millis())) return call.weiterleiten("/vorrat")
-        when (VorratSchreiber(deps, daten).anlegen(s.haushalt!!, e.zutat.trim(), g.menge, g.einheit, g.mhd)) {
-            Schreiben.Ok -> call.weiterleiten("/vorrat")
-            else -> {
-                Vorgaenge.freigeben(s.haushalt!!, "vorrat", form["vorgang"])
-                call.abgelehnt(s)
-            }
-        }
+        val ergebnis = Vorgaenge.einmal(s.haushalt!!, "vorrat", form["vorgang"], deps.clock.millis(), { it == Schreiben.Ok }) {
+            VorratSchreiber(deps, daten).anlegen(s.haushalt!!, e.zutat.trim(), g.menge, g.einheit, g.mhd)
+        } ?: return call.weiterleiten("/vorrat")
+        if (ergebnis == Schreiben.Ok) call.weiterleiten("/vorrat") else call.abgelehnt(s)
     }
 
     // --- Ein Eintrag ---
