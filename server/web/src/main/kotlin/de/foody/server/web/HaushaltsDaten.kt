@@ -15,6 +15,7 @@ internal class Haushalt(
     val eintraege: List<WebEintrag>,
     val tagebuch: List<WebTagebuch>,
     val vorrat: List<WebVorrat> = emptyList(),
+    val zutatenRoh: Map<String, WebZutat> = emptyMap(),
 )
 
 /**
@@ -43,6 +44,7 @@ internal class HaushaltsDaten(private val db: Database, private val store: Recor
             eintraege = records.mapNotNull(PayloadZuDomain::eintrag),
             tagebuch = records.mapNotNull(PayloadZuDomain::tagebuch),
             vorrat = records.mapNotNull(PayloadZuDomain::vorrat),
+            zutatenRoh = records.mapNotNull(PayloadZuDomain::zutatRoh).associateBy { it.id },
         )
         cache[household] = haushalt
         return haushalt

@@ -52,4 +52,11 @@ class WebRahmenTest {
         assertTrue("<html" in html && "Nicht gefunden" in html, html)
         assertFalse("\"code\"" in html, "kein JSON")
     }
+
+    @Test fun navigationHatVorrat() = webServer { env ->
+        val (benutzer, _, _) = env.haushalt()
+        val c = ohneWeiterleitung()
+        val html = c.get("/") { header(HttpHeaders.Cookie, c.anmelden(benutzer)) }.bodyAsText()
+        assertTrue(html.indexOf("href=\"/einkauf\"") < html.indexOf("href=\"/vorrat\"") && html.indexOf("href=\"/vorrat\"") < html.indexOf("href=\"/tagebuch\""))
+    }
 }

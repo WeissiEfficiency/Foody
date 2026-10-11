@@ -26,7 +26,7 @@ import kotlinx.html.script
 import kotlinx.html.title
 
 internal enum class Navi(val pfad: String, val text: String) {
-    REZEPTE("/", "Rezepte"), PLAN("/plan", "Plan"), EINKAUF("/einkauf", "Einkauf"), TAGEBUCH("/tagebuch", "Tagebuch")
+    REZEPTE("/", "Rezepte"), PLAN("/plan", "Plan"), EINKAUF("/einkauf", "Einkauf"), VORRAT("/vorrat", "Vorrat"), TAGEBUCH("/tagebuch", "Tagebuch")
 }
 
 /** Statische Dateien: Stylesheet aus den Ressourcen, htmx aus dem WebJar. Version = Inhalts-Prüfsumme (Cache-Bust). */

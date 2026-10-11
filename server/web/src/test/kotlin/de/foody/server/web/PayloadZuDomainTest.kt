@@ -95,6 +95,29 @@ class PayloadZuDomainTest {
         assertEquals(9, l.rev)
     }
 
+    @Test fun tagebuchEintragMitDetails() {
+        val t = assertNotNull(PayloadZuDomain.tagebuch(record("t", RecordType.TAGEBUCH_EINTRAG, TagebuchPayload(
+            datum = "2026-10-11", mahlzeit = "MITTAGESSEN", art = "ZUTAT", name = "Reis", zutatId = "reis", menge = "150", einheit = "GRAM",
+            planEintragId = "p1", energieKj = "100",
+        ), rev = 6)))
+        assertEquals(6, t.rev)
+        assertEquals(de.foody.domain.TagebuchArt.ZUTAT, t.art)
+        assertEquals("reis", t.zutatId)
+        assertEquals(0, t.menge!!.compareTo(bd("150")))
+        assertEquals(de.foody.domain.MeasureUnit.GRAM, t.einheit)
+        assertEquals("p1", t.planEintragId)
+        val unbekannt = assertNotNull(PayloadZuDomain.tagebuch(record("u", RecordType.TAGEBUCH_EINTRAG, TagebuchPayload(
+            datum = "2026-10-11", mahlzeit = "SNACK", art = "NEUE_ART", name = "x",
+        ))))
+        assertEquals(de.foody.domain.TagebuchArt.FREI, unbekannt.art, "unbekannte Art gilt als frei")
+    }
+
+    @Test fun zutatRohMitRev() {
+        val z = assertNotNull(PayloadZuDomain.zutatRoh(record("z", RecordType.INGREDIENT, IngredientPayload(name = "Hafer", barcode = "4001"), rev = 3)))
+        assertEquals(3, z.rev)
+        assertEquals("4001", z.payload.barcode)
+    }
+
     @Test fun tagebuchEintrag() {
         val t = assertNotNull(PayloadZuDomain.tagebuch(record("t", RecordType.TAGEBUCH_EINTRAG, TagebuchPayload(
             datum = "2026-10-11", mahlzeit = "Abendbrot", art = "FREI", name = "Brot", energieKj = "418.4",
