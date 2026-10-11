@@ -55,13 +55,18 @@ internal object EinkaufSeite {
         call.seiteAntworten("Einkauf", s, Navi.EINKAUF) {
             h1 { +"Einkauf" }
             if (gewaehlt == null) {
-                p("hinweis") { +"Keine Einkaufsliste. Erzeuge sie in der App aus dem Wochenplan." }
+                p("hinweis") { +"Keine Einkaufsliste." }
+                a(href = "/einkauf/neu", classes = "knopf") { +"Neue Liste aus Plan" }
                 return@seiteAntworten
             }
             if (listen.size > 1) nav("zeile") {
                 for (l in listen) a(href = "/einkauf?liste=${l.id}", classes = if (l == gewaehlt) "knopf" else null) { +l.name }
             }
             h2 { +gewaehlt.name }
+            div("zeile") {
+                if (gewaehlt.von != null) a(href = "/einkauf/${gewaehlt.id}/abgleich", classes = "knopf") { +"Neu berechnen" }
+                a(href = "/einkauf/neu") { +"Neue Liste aus Plan" }
+            }
             val eintraege = h.eintraege.filter { it.listId == gewaehlt.id }
             if (eintraege.isEmpty()) p("leise") { +"Die Liste ist leer." }
             // Offene Einträge nach Abteilung in Laufreihenfolge, erledigte gesammelt am Ende

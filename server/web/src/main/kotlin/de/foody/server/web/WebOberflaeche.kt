@@ -6,6 +6,7 @@ import de.foody.server.web.seiten.EditorSeite
 import de.foody.server.web.seiten.EinkaufSeite
 import de.foody.server.web.seiten.HaushaltSeite
 import de.foody.server.web.seiten.ImportSeite
+import de.foody.server.web.seiten.ListeAusPlanSeiten
 import de.foody.server.web.seiten.LoginSeite
 import de.foody.server.web.seiten.PlanSeiten
 import de.foody.server.web.seiten.PlanTagebuchSeiten
@@ -83,6 +84,16 @@ object WebOberflaeche {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             EinkaufSeite.zeigen(call, s, daten.fuer(s.haushalt!!))
         }
+        webGet("/einkauf/neu") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            ListeAusPlanSeiten.neu(call, deps, s, daten, deps.heute(zone))
+        }
+        webPost("/einkauf/neu") { ListeAusPlanSeiten.anlegen(call, deps, daten, deps.heute(zone)) }
+        webGet("/einkauf/{liste}/abgleich") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            ListeAusPlanSeiten.abgleich(call, deps, s, daten, call.parameters["liste"].orEmpty())
+        }
+        webPost("/einkauf/{liste}/abgleich") { ListeAusPlanSeiten.abgleichUebernehmen(call, deps, daten, call.parameters["liste"].orEmpty()) }
         webPost("/einkauf/{id}/abhaken") { EinkaufSeite.abhaken(call, deps, daten, call.parameters["id"].orEmpty()) }
         webGet("/import") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
