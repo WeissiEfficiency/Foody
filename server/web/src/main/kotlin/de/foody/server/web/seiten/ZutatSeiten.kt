@@ -6,9 +6,9 @@ import de.foody.server.web.Eingaben
 import de.foody.server.web.Haushalt
 import de.foody.server.web.HaushaltsDaten
 import de.foody.server.web.Navi
-import de.foody.server.web.Schreiben
 import de.foody.server.web.Sitzung
 import de.foody.server.web.ZutatFormular
+import de.foody.server.web.ZutatLoeschen
 import de.foody.server.web.ZutatSchreiber
 import de.foody.server.web.ZutatSpeichern
 import de.foody.server.web.abgelehnt
@@ -160,21 +160,16 @@ internal object ZutatSeiten {
         val form = call.formular()
         if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val household = s.haushalt!!
-        val h = daten.fuer(household)
-        val schreiber = ZutatSchreiber(deps, daten)
-        val z = h.zutatenRoh[id]
-        if (z != null) {
-            val wo = schreiber.verwendungen(household, id)
-            if (wo.isNotEmpty()) {
-                val text = wo.take(MAX_VERWENDUNGEN).joinToString(", ") + if (wo.size > MAX_VERWENDUNGEN) " und ${wo.size - MAX_VERWENDUNGEN} weitere" else ""
-                return formularSeite(call, s, ZutatFormular.aus(z), listOf("Wird noch verwendet in: $text. Erst dort entfernen, dann löschen."))
+        when (val r = ZutatSchreiber(deps, daten).loeschenWennUnbenutzt(household, id)) {
+            ZutatLoeschen.Ok -> call.weiterleiten("/zutaten")
+            ZutatLoeschen.Weg -> call.weiterleiten("/zutaten?hinweis=weg")
+            ZutatLoeschen.NichtGefunden -> call.nichtGefunden(s, "Diese Zutat gibt es nicht (mehr).")
+            ZutatLoeschen.Abgelehnt -> call.abgelehnt(s)
+            is ZutatLoeschen.Verwendet -> {
+                val z = daten.fuer(household).zutatenRoh[id] ?: return call.nichtGefunden(s, "Diese Zutat gibt es nicht (mehr).")
+                val text = r.wo.take(MAX_VERWENDUNGEN).joinToString(", ") + if (r.wo.size > MAX_VERWENDUNGEN) " und ${r.wo.size - MAX_VERWENDUNGEN} weitere" else ""
+                formularSeite(call, s, ZutatFormular.aus(z), listOf("Wird noch verwendet in: $text. Erst dort entfernen, dann löschen."))
             }
-        }
-        when (schreiber.loeschen(household, id)) {
-            Schreiben.Ok -> call.weiterleiten("/zutaten")
-            Schreiben.Weg -> call.weiterleiten("/zutaten?hinweis=weg")
-            Schreiben.NichtGefunden -> call.nichtGefunden(s, "Diese Zutat gibt es nicht (mehr).")
-            Schreiben.Abgelehnt -> call.abgelehnt(s)
         }
     }
 }

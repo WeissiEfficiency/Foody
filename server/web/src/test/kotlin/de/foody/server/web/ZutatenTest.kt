@@ -169,4 +169,19 @@ class ZutatenTest {
         assertTrue("Energie: bitte eine Zahl ≥ 0" in antwort.bodyAsText())
         assertTrue(ms < 2_000, "$ms ms")
     }
+
+    /** Kleinigkeiten 2: Verwendung auch in Datensätzen, die der Server nicht lesen kann (neuere App), zählt beim Löschen. */
+    @Test fun verwendungInUnlesbaremRezept() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        env.push(h, datensatz("x", RecordType.INGREDIENT, IngredientPayload(name = "Sternfrucht")))
+        // Rezept mit einer Einheit, die diese Server-Version nicht kennt – direkt abgelegt wie von einer neueren App
+        val roh = """{"name":"Zukunftsrezept","servings":2,"tags":"","favorite":false,"lines":[{"id":"l1","ingredientId":"x","amount":"1","unit":"SCHEFFEL","sortOrder":0,"optional":false}],"steps":[]}"""
+        env.deps.db.tx { cn ->
+            de.foody.server.sync.RecordStore().put(cn, h, de.foody.sync.protocol.SyncRecord(id = "zr", type = RecordType.RECIPE, updatedAt = 5), roh, null)
+        }
+        val c = ohneWeiterleitung()
+        val html = c.post(c.anmelden(benutzer), "/zutat/x/loeschen").bodyAsText()
+        assertTrue("Wird noch verwendet in" in html && "Zukunftsrezept" in html, html.take(1500))
+        assertTrue("x" in roh(env, h), "nicht gelöscht")
+    }
 }

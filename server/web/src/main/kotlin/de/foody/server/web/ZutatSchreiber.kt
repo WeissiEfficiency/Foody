@@ -68,6 +68,14 @@ internal data class ZutatFormular(
     }
 }
 
+internal sealed interface ZutatLoeschen {
+    data object Ok : ZutatLoeschen
+    data class Verwendet(val wo: List<String>) : ZutatLoeschen
+    data object NichtGefunden : ZutatLoeschen
+    data object Weg : ZutatLoeschen
+    data object Abgelehnt : ZutatLoeschen
+}
+
 internal sealed interface ZutatSpeichern {
     data class Ok(val id: String) : ZutatSpeichern
     data class GibtEsSchon(val id: String, val name: String) : ZutatSpeichern
@@ -117,21 +125,33 @@ internal class ZutatSchreiber(private val deps: ServerDeps, private val daten: H
         }
     }
 
-    /** Wo die Zutat noch verwendet wird: Rezeptnamen, „Vorrat“, Namen von Einkaufslisten. */
+    /**
+     * Wo die Zutat noch verwendet wird: Rezeptnamen, „Vorrat“, Namen von Einkaufslisten. Gelesen aus den Rohdaten, damit
+     * auch Datensätze zählen, die diese Server-Version nicht in `domain` umwandeln kann (z. B. von einer neueren App).
+     */
     fun verwendungen(household: String, id: String): List<String> {
-        val h = daten.fuer(household)
-        val rezepte = h.rezepte.values.filter { r -> r.domain.ingredients.any { it.ingredientId == id } }.map { it.payload.name }.sorted()
-        val vorrat = listOfNotNull("Vorrat".takeIf { h.vorrat.any { it.zutatId == id } })
-        val listenIds = h.eintraege.filter { it.payload.ingredientId == id }.map { it.listId }.toSet()
-        val listen = h.listen.filter { it.id in listenIds }.map { it.name }.sorted()
+        val (records, _) = deps.db.tx { c -> store.lebende(c, household) }
+        fun JsonObject.text(feld: String) = (this[feld] as? JsonPrimitive)?.takeIf { it !is JsonNull }?.content
+        val rezepte = records.filter { it.type == RecordType.RECIPE }.mapNotNull { r ->
+            val zeilen = r.payload?.get("lines") as? kotlinx.serialization.json.JsonArray ?: return@mapNotNull null
+            if (zeilen.none { (it as? JsonObject)?.text("ingredientId") == id }) null else r.payload!!.text("name") ?: "Rezept"
+        }.sorted()
+        val vorrat = listOfNotNull("Vorrat".takeIf { records.any { it.type == RecordType.PANTRY_ITEM && it.payload?.text("ingredientId") == id } })
+        val listenNamen = daten.fuer(household).listen.associate { it.id to it.name }
+        val listen = records.filter { it.type == RecordType.SHOPPING_ITEM && it.payload?.text("ingredientId") == id }
+            .map { r -> r.payload!!.text("listId")?.let(listenNamen::get) ?: "Einkaufsliste" }.distinct().sorted()
         return rezepte + vorrat + listen
     }
 
-    /** Nur aufrufen, wenn [verwendungen] leer ist – der Server prüft beim Löschen keine Verweise. */
-    fun loeschen(household: String, id: String): Schreiben {
-        val roh = deps.db.tx { c -> store.get(c, household, RecordType.INGREDIENT, id) } ?: return Schreiben.NichtGefunden
-        if (roh.deleted) return Schreiben.Weg
+    /**
+     * Löscht nur, wenn nichts die Zutat nutzt – Prüfen und Löschen unter der [Haushaltssperre], damit kein Vorrat
+     * dazwischen hinzukommt. Der Server prüft beim Löschen keine Verweise.
+     */
+    fun loeschenWennUnbenutzt(household: String, id: String): ZutatLoeschen = Haushaltssperre.mit(household) {
+        val roh = deps.db.tx { c -> store.get(c, household, RecordType.INGREDIENT, id) } ?: return@mit ZutatLoeschen.NichtGefunden
+        if (roh.deleted) return@mit ZutatLoeschen.Weg
+        verwendungen(household, id).takeIf { it.isNotEmpty() }?.let { return@mit ZutatLoeschen.Verwendet(it) }
         val r = deps.sync.push(household, listOf(SyncRecord(id = id, type = RecordType.INGREDIENT, deleted = true, updatedAt = deps.clock.millis(), baseRev = roh.rev)))
-        return if (r.results.single().status == PushStatus.REJECTED) Schreiben.Abgelehnt else Schreiben.Ok
+        if (r.results.single().status == PushStatus.REJECTED) ZutatLoeschen.Abgelehnt else ZutatLoeschen.Ok
     }
 }
