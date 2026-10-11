@@ -135,15 +135,31 @@ internal object PlanTagebuchSeiten {
                 }
             }
             p("karte") { +"${if (bilanz.tag.vollstaendig) "" else "≥ "}${bilanz.tag.kcal} kcal · Eiweiß ${bilanz.tag.eiweiss} g · KH ${bilanz.tag.kohlenhydrate} g · Fett ${bilanz.tag.fett} g" }
-            if (eintraege.isEmpty()) p("hinweis") { +"Noch nichts eingetragen. Einträge legst du in der App an – im Browser folgt das später." }
+            if (call.request.queryParameters["hinweis"] == "weg") p("hinweis") { +"Eintrag gibt es nicht mehr." }
+            if (eintraege.isEmpty()) p("hinweis") { +"Noch nichts eingetragen." }
+            // Wie die App: geplante Gerichte des Tages, die noch nicht als gegessen übernommen sind (nur mit Rezept)
+            val uebernommen = h.tagebuch.mapNotNull { it.planEintragId }.toSet()
+            val vorschlaege = Tagebuch.offeneVorschlaege(h.plan.filter { it.datum == tag && it.rezeptId in h.rezepte }, { it.id }, uebernommen)
+            if (vorschlaege.isNotEmpty()) div("karte") {
+                h2 { +"Geplant, noch nicht eingetragen" }
+                form(action = "/tagebuch/gegessen", method = FormMethod.post) {
+                    hiddenInput(name = "_csrf") { value = s.csrf }
+                    ul("liste") {
+                        for (v in vorschlaege.sortedBy { Mahlzeit.reihenfolge(it.mahlzeit) }) li {
+                            span { +h.rezepte.getValue(v.rezeptId).payload.name; span("leise") { +" · ${Mahlzeit.ausText(v.mahlzeit)?.text() ?: v.mahlzeit}" } }
+                            button { name = "plan"; value = v.id; +"Gegessen" }
+                        }
+                    }
+                }
+            }
             for (m in Mahlzeit.entries) {
                 val liste = eintraege.filter { it.mahlzeit == m }
-                if (liste.isEmpty()) continue
                 div("karte") {
                     h2 { +m.text(); bilanz.jeMahlzeit[m]?.let { span("leise") { +"  ${it.kcal} kcal" } } }
-                    ul("liste") {
-                        for (e in liste) li { span { +e.name }; span("leise") { +(e.werte.kcal?.let { "$it kcal" } ?: "–") } }
+                    if (liste.isNotEmpty()) ul("liste") {
+                        for (e in liste) li { a(href = "/tagebuch/${e.id}") { +e.name }; span("leise") { +(e.werte.kcal?.let { "$it kcal" } ?: "–") } }
                     }
+                    a(href = "/tagebuch/neu?tag=$tag&mahlzeit=${m.name}", classes = "leise") { +"+ Eintragen" }
                 }
             }
         }
