@@ -22,6 +22,7 @@ import kotlinx.html.h1
 import kotlinx.html.h2
 import kotlinx.html.li
 import kotlinx.html.nav
+import kotlinx.html.id
 import kotlinx.html.p
 import kotlinx.html.span
 import kotlinx.html.ul
@@ -36,7 +37,9 @@ internal object PlanTagebuchSeiten {
 
     suspend fun plan(call: ApplicationCall, s: Sitzung, h: Haushalt, heute: LocalDate) {
         val ab = call.datum("ab", heute)
-        val tage = (0L until 7L).map { ab.plusDays(it) }
+        val anzahl = if (call.request.queryParameters["tage"] == "14") 14 else 7
+        val tage = (0L until anzahl.toLong()).map { ab.plusDays(it) }
+        val t = if (anzahl == 14) "&tage=14" else ""
         val jeTag = h.plan.filter { it.datum in tage }.groupBy { it.datum }
         val naehrwerte = jeTag.mapNotNull { (tag, eintraege) ->
             DayNutrition.of(eintraege.mapNotNull { h.rezepte[it.rezeptId]?.domain }, h.zutaten)?.let { tag to it }
@@ -45,14 +48,16 @@ internal object PlanTagebuchSeiten {
         call.seiteAntworten("Plan", s, Navi.PLAN) {
             h1 { +"Wochenplan" }
             nav("zeile") {
-                a(href = "/plan?ab=${ab.minusDays(7)}", classes = "knopf") { attributes["aria-label"] = "Vorige Woche"; +"‹" }
-                a(href = "/plan?ab=$heute", classes = "knopf") { +"Heute" }
-                a(href = "/plan?ab=${ab.plusDays(7)}", classes = "knopf") { attributes["aria-label"] = "Nächste Woche"; +"›" }
+                a(href = "/plan?ab=${ab.minusDays(7)}$t", classes = "knopf") { attributes["aria-label"] = "Vorige Woche"; +"‹" }
+                a(href = "/plan?ab=$heute$t", classes = "knopf") { +"Heute" }
+                a(href = "/plan?ab=${ab.plusDays(7)}$t", classes = "knopf") { attributes["aria-label"] = "Nächste Woche"; +"›" }
+                a(href = "/plan?ab=$ab${if (anzahl == 14) "" else "&tage=14"}") { +(if (anzahl == 14) "7 Tage" else "14 Tage") }
                 schnitt?.let { d -> span("leise") { +"${if (d.vollstaendig) "" else "≥ "}Ø ${d.kcal} kcal pro Tag" } }
             }
-            if (jeTag.isEmpty()) p("hinweis") { +"Nichts geplant in dieser Woche." }
+            if (jeTag.isEmpty()) p("hinweis") { +"Nichts geplant in diesem Zeitraum." }
             for (tag in tage) {
                 div("karte") {
+                    id = "tag-$tag"
                     h2 {
                         +tag.format(TAG)
                         naehrwerte[tag]?.let { n -> span("leise") { +"  ${if (n.complete) "" else "≥ "}${n.kcal} kcal" } }

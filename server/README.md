@@ -40,6 +40,9 @@ importieren; Wochenplan, Einkaufsliste (Abhaken) und Tagebuch ansehen.
 Der Browser erscheint in der App unter den Geräten und lässt sich dort abmelden. Das Sitzungs-Cookie ist `Secure`:
 die Seite also über HTTPS (Traefik) öffnen.
 
+„Heute“ (Wochenplan, Tagebuch, Vorschläge) rechnet die Web-Oberfläche in `Europe/Berlin`; eine andere Zeitzone setzt
+`FOODY_ZEITZONE` in `.env` (z. B. `FOODY_ZEITZONE=Europe/Vienna`).
+
 ## Fotos
 
 Rezeptfotos liegen als `<FOODY_PHOTO_DIR>/<Haushalt>/<sha256>.jpg` (Standard `/data/photos`, eigenes Docker-Volume

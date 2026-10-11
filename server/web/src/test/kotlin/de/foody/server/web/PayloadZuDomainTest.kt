@@ -6,6 +6,7 @@ import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
 import de.foody.sync.protocol.IngredientPayload
 import de.foody.sync.protocol.MealSlotPayload
+import de.foody.sync.protocol.PantryItemPayload
 import de.foody.sync.protocol.Protocol
 import de.foody.sync.protocol.RecipePayload
 import de.foody.sync.protocol.RecordType
@@ -74,6 +75,24 @@ class PayloadZuDomainTest {
         ), rev = 4)))
         assertEquals("L", e.listId)
         assertEquals(4, e.rev)
+    }
+
+    @Test fun vorratWirdGelesen() {
+        val v = assertNotNull(PayloadZuDomain.vorrat(record("v", RecordType.PANTRY_ITEM, PantryItemPayload("reis", "0.5", "KILOGRAM"), rev = 7)))
+        assertEquals("reis", v.zutatId)
+        assertEquals(0, v.menge.compareTo(bd("0.5")))
+        assertEquals(MeasureUnit.KILOGRAM, v.einheit)
+        assertEquals(7, v.rev)
+    }
+
+    @Test fun planStatusUndListenZeitraum() {
+        val p = assertNotNull(PayloadZuDomain.planEintrag(record("p", RecordType.MEAL_SLOT, MealSlotPayload("2026-10-12", "ABENDESSEN", "r", 3, cookedAt = 55), rev = 3)))
+        assertEquals(55, p.gekochtAm)
+        assertEquals(3, p.rev)
+        val l = assertNotNull(PayloadZuDomain.liste(record("L", RecordType.SHOPPING_LIST, ShoppingListPayload("Woche", "2026-10-12", "2026-10-18", 2), rev = 9)))
+        assertEquals(LocalDate.of(2026, 10, 12), l.von)
+        assertEquals(LocalDate.of(2026, 10, 18), l.bis)
+        assertEquals(9, l.rev)
     }
 
     @Test fun tagebuchEintrag() {

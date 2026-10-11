@@ -13,19 +13,19 @@ import io.ktor.http.ContentType
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
-import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Web-Oberfläche des Servers: die Routen, die `:server` (server/start) in `foodyModule` einhängt
  * (außerhalb von `/api/v1`). Lesen über [HaushaltsDaten], Schreiben nur über `SyncService.push`.
  */
 object WebOberflaeche {
-    fun routen(deps: ServerDeps): List<Route.() -> Unit> {
+    fun routen(deps: ServerDeps, zone: ZoneId = standardZone()): List<Route.() -> Unit> {
         val daten = HaushaltsDaten(deps.db)
         return listOf(
             { statisch() },
             { anmeldung(deps) },
-            { seiten(deps, daten) },
+            { seiten(deps, daten, zone) },
         )
     }
 
@@ -45,7 +45,7 @@ object WebOberflaeche {
         webPost("/haushalt/neu") { HaushaltSeite.anlegen(call, deps) }
     }
 
-    private fun Route.seiten(deps: ServerDeps, daten: HaushaltsDaten) {
+    private fun Route.seiten(deps: ServerDeps, daten: HaushaltsDaten, zone: ZoneId) {
         webGet("/") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             RezeptSeiten.liste(call, s, daten.fuer(s.haushalt!!))
@@ -56,11 +56,11 @@ object WebOberflaeche {
         }
         webGet("/plan") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
-            PlanTagebuchSeiten.plan(call, s, daten.fuer(s.haushalt!!), LocalDate.now(deps.clock))
+            PlanTagebuchSeiten.plan(call, s, daten.fuer(s.haushalt!!), deps.heute(zone))
         }
         webGet("/tagebuch") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
-            PlanTagebuchSeiten.tagebuch(call, s, daten.fuer(s.haushalt!!), LocalDate.now(deps.clock))
+            PlanTagebuchSeiten.tagebuch(call, s, daten.fuer(s.haushalt!!), deps.heute(zone))
         }
         webGet("/einkauf") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
