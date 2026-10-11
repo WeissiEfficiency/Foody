@@ -4,12 +4,11 @@ import de.foody.server.ServerDeps
 import de.foody.server.web.Statisch.liefere
 import de.foody.server.web.seiten.HaushaltSeite
 import de.foody.server.web.seiten.LoginSeite
+import de.foody.server.web.seiten.RezeptSeiten
 import io.ktor.http.ContentType
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
-import kotlinx.html.h1
-import kotlinx.html.p
 
 /**
  * Web-Oberfläche des Servers: die Routen, die `:server` (server/start) in `foodyModule` einhängt
@@ -41,14 +40,18 @@ object WebOberflaeche {
         post("/haushalt/neu") { HaushaltSeite.anlegen(call, deps) }
     }
 
-    @Suppress("UNUSED_PARAMETER") // daten: ab den Inhaltsseiten (Rezepte, Plan, Einkauf, Tagebuch)
     private fun Route.seiten(deps: ServerDeps, daten: HaushaltsDaten) {
         get("/") {
             val s = call.sitzungMitHaushalt(deps) ?: return@get
-            call.seiteAntworten("Rezepte", s, Navi.REZEPTE) {
-                h1 { +"Rezepte" }
-                p("leise") { +"Die Rezeptliste folgt." }
-            }
+            RezeptSeiten.liste(call, s, daten.fuer(s.haushalt!!))
+        }
+        get("/rezepte/liste") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@get
+            RezeptSeiten.listenTeil(call, daten.fuer(s.haushalt!!))
+        }
+        get("/rezept/{id}") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@get
+            RezeptSeiten.rezept(call, s, daten.fuer(s.haushalt!!), call.parameters["id"].orEmpty())
         }
     }
 }
