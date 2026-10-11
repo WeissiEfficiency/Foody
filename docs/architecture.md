@@ -128,6 +128,18 @@ zu einem gelöschten Rezept wird also trotzdem angewendet. **Ausrollen: erst den
 einer neuen App an einem alten Server antwortet er `server_too_old` („Server aktualisieren“) – statt Dekodierfehlern. Die Sicherung enthält `tagebuch`
 (fehlt in älteren Dateien → leer).
 
+## Web-Oberfläche (Server)
+
+`:server-web` rendert HTML im Server (kotlinx.html, htmx 2.0.4 als WebJar, eigenes `foody.css`) und hängt sich über
+`WebOberflaeche.routen(deps)` in `foodyModule` ein (außerhalb von `/api/v1`). Der Browser meldet sich wie ein Gerät an
+(`AccountStore.createDevice`, Name „Browser (Firefox)“ …); das Token steht im Cookie `foody_sitzung`
+(`HttpOnly; Secure; SameSite=Strict`, 30 Tage), Formulare und htmx tragen ein CSRF-Token (HMAC des Gerätetokens).
+**Lesen:** `HaushaltsDaten` lädt alle lebenden Datensätze (`RecordStore.lebende`), wandelt sie mit `PayloadZuDomain`
+wie die App in `domain`-Objekte und merkt sie je Haushalt bis zur nächsten Revision. **Schreiben** (Teil 1: Abhaken)
+nur über `SyncService.push` mit `baseRev` – gleiche Validierung, Revisionen und Konfliktregeln wie vom Handy.
+Seiten: Rezepte (Suche, Filter, kcal), Rezept (Portionen ±), Wochenplan (kcal je Tag, Ø), Einkauf (Abhaken), Tagebuch.
+Spec: `docs/superpowers/specs/2026-10-11-web-oberflaeche-teil1-design.md`.
+
 ## Packung scannen (seit DB v9)
 
 `PackungScan` (`android/app/.../scan`) steuert den Ablauf hinter Schnittstellen, die Hilt in `ScanModule` bindet und Tests durch

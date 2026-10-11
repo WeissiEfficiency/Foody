@@ -4,6 +4,7 @@ import de.foody.server.ServerConfig
 import de.foody.server.ServerDeps
 import de.foody.server.db.Database
 import de.foody.server.foodyModule
+import de.foody.server.web.WebOberflaeche
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import java.time.Clock
@@ -45,7 +46,8 @@ fun syncServerTest(
             val deps = ServerDeps.create(config, db, clock)
             check(deps.accounts.bootstrapAdmin(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)) { "Admin-Bootstrap fehlgeschlagen" }
             testApplication {
-                application { foodyModule(deps) }
+                // Wie in server/start: Sync-Server mit eingehängter Web-Oberfläche
+                application { foodyModule(deps, WebOberflaeche.routen(deps)) }
                 block(deps, clock)
             }
         }
