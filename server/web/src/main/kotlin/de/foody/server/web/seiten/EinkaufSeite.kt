@@ -69,10 +69,17 @@ internal object EinkaufSeite {
     private const val MAX_NOTIZ = 1000
     private val DATUM = DateTimeFormatter.ofPattern("EE dd.MM.", Locale.GERMAN)
 
-    suspend fun zeigen(call: ApplicationCall, s: Sitzung, h: Haushalt, fehler: String? = null, bearbeitenErzwingen: Boolean = false) {
+    /**
+     * [listeId]/[eingaben]: nach einem Formularfehler die Liste, auf der man war, und das Eingegebene (ein POST hat
+     * keine Query-Parameter).
+     */
+    suspend fun zeigen(
+        call: ApplicationCall, s: Sitzung, h: Haushalt, fehler: String? = null, bearbeitenErzwingen: Boolean = false,
+        listeId: String? = null, eingaben: Parameters? = null,
+    ) {
         val q = call.request.queryParameters
         val listen = h.listen.sortedByDescending { it.geaendert }
-        val gewaehlt = q["liste"]?.let { id -> listen.firstOrNull { it.id == id } } ?: listen.firstOrNull()
+        val gewaehlt = (listeId ?: q["liste"])?.let { id -> listen.firstOrNull { it.id == id } } ?: listen.firstOrNull()
         val bearbeiten = bearbeitenErzwingen || q["bearbeiten"] == "1"
         call.seiteAntworten("Einkauf", s, Navi.EINKAUF) {
             h1 { +"Einkauf" }
@@ -84,7 +91,7 @@ internal object EinkaufSeite {
             form(action = "/einkauf/eingabe", method = FormMethod.post, classes = "zeile") {
                 hiddenInput(name = "_csrf") { value = s.csrf }
                 hiddenInput(name = "liste") { value = gewaehlt?.id.orEmpty() }
-                input(InputType.text, name = "text") { placeholder = "Was willst du einkaufen?"; attributes["aria-label"] = "Was willst du einkaufen?"; maxLength = "$MAX_TEXT" }
+                input(InputType.text, name = "text") { eingaben?.get("text")?.let { value = it }; placeholder = "Was willst du einkaufen?"; attributes["aria-label"] = "Was willst du einkaufen?"; maxLength = "$MAX_TEXT" }
                 button { +"Hinzufügen" }
             }
             if (gewaehlt == null) {
@@ -121,7 +128,7 @@ internal object EinkaufSeite {
                     div("karte") {
                         h2 { +abteilung }
                         ul("liste") {
-                            for (e in zeilen.sortedBy { it.payload.sortOrder }) if (bearbeiten) bearbeitenZeile(e) else zeile(e)
+                            for (e in zeilen.sortedBy { it.payload.sortOrder }) if (bearbeiten) bearbeitenZeile(e, eingaben?.get("n_${e.id}")) else zeile(e)
                         }
                     }
                 }
@@ -153,7 +160,7 @@ internal object EinkaufSeite {
         }
     }
 
-    private fun UL.bearbeitenZeile(e: WebEintrag) {
+    private fun UL.bearbeitenZeile(e: WebEintrag, notizEingabe: String? = null) {
         val p = e.payload
         li {
             span {
@@ -167,7 +174,7 @@ internal object EinkaufSeite {
                 }
             }
             span("knoepfe") {
-                input(InputType.text, name = "n_${e.id}") { value = p.note.orEmpty(); placeholder = "Notiz"; attributes["aria-label"] = "Notiz zu ${p.name}" }
+                input(InputType.text, name = "n_${e.id}") { value = notizEingabe ?: p.note.orEmpty(); placeholder = "Notiz"; attributes["aria-label"] = "Notiz zu ${p.name}" }
                 // Angezeigter Wert: nur wirklich im Formular geänderte Notizen werden geschrieben (Handy-Änderung bleibt)
                 hiddenInput(name = "o_${e.id}") { value = p.note.orEmpty() }
                 button { name = "weg"; value = e.id; attributes["aria-label"] = "${p.name} löschen"; +"✕" }
@@ -224,7 +231,7 @@ internal object EinkaufSeite {
         val text = form["text"].orEmpty().trim()
         val listId = form["liste"].orEmpty()
         if (text.isEmpty()) return call.weiterleiten(if (listId.isEmpty()) "/einkauf" else "/einkauf?liste=$listId")
-        if (text.length > MAX_TEXT) return zeigen(call, s, daten.fuer(s.haushalt!!), "Höchstens $MAX_TEXT Zeichen.")
+        if (text.length > MAX_TEXT) return zeigen(call, s, daten.fuer(s.haushalt!!), "Höchstens $MAX_TEXT Zeichen.", listeId = listId, eingaben = form)
         val (ergebnis, ziel) = EinkaufSchreiber(deps, daten).eingabe(s.haushalt!!, listId, text)
         when (ergebnis) {
             Schreiben.Ok -> call.weiterleiten("/einkauf?liste=$ziel")
@@ -240,7 +247,7 @@ internal object EinkaufSeite {
             .associate { it.removePrefix("n_") to form[it].orEmpty() }
             .filter { (id, text) -> form["o_$id"]?.let { it.trim() != text.trim() } ?: true }
         if (notizen.values.any { it.trim().length > MAX_NOTIZ }) {
-            return zeigen(call, s, daten.fuer(s.haushalt!!), "Notiz höchstens $MAX_NOTIZ Zeichen.", bearbeitenErzwingen = true)
+            return zeigen(call, s, daten.fuer(s.haushalt!!), "Notiz höchstens $MAX_NOTIZ Zeichen.", bearbeitenErzwingen = true, listeId = listId, eingaben = form)
         }
         val zurueck = "/einkauf?liste=$listId&bearbeiten=1"
         when (EinkaufSchreiber(deps, daten).bearbeiten(s.haushalt!!, listId, notizen, form["weg"]?.takeIf { it.isNotEmpty() })) {
