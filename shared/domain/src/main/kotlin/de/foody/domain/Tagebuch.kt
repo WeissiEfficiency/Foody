@@ -28,6 +28,9 @@ data class TagesBilanz(val tag: Summe, val jeMahlzeit: Map<Mahlzeit, Summe>)
 
 /** Rechenregeln des Tagebuchs. Gerechnet wird pro Person: eine Portion je Eintrag ist, was eine Person isst. */
 object Tagebuch {
+    /** Nachkommastellen beim Skalieren festgehaltener Werte. */
+    private const val NACHKOMMA = 6
+
     fun naehrwerteRezept(rezept: Recipe, zutaten: Map<String, Ingredient>, portionen: BigDecimal): Naehrwerte {
         val n = NutritionCalculator.calculate(rezept, zutaten)
         fun mal(x: Nutrient) = n.perServing(x)?.multiply(portionen)
@@ -52,8 +55,9 @@ object Tagebuch {
      */
     fun skaliert(art: TagebuchArt, werte: Naehrwerte, alt: BigDecimal?, neu: BigDecimal?): Naehrwerte {
         if (art == TagebuchArt.FREI || neu == null || alt == null || alt.signum() <= 0 || neu.compareTo(alt) == 0) return werte
-        val faktor = neu.divide(alt, 10, RoundingMode.HALF_UP)
-        fun BigDecimal?.mal() = this?.multiply(faktor)
+        // Wert × neu ÷ alt in einem Schritt, auf 6 Stellen: kein gerundeter Zwischenfaktor, und wiederholtes Ändern
+        // bläht die Nachkommastellen nicht auf (der Abgleich erlaubt höchstens 20)
+        fun BigDecimal?.mal() = this?.multiply(neu)?.divide(alt, NACHKOMMA, RoundingMode.HALF_UP)?.stripTrailingZeros()
         return werte.copy(energieKj = werte.energieKj.mal(), eiweiss = werte.eiweiss.mal(), kohlenhydrate = werte.kohlenhydrate.mal(), fett = werte.fett.mal())
     }
 

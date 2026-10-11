@@ -121,4 +121,17 @@ class TagebuchTest {
         assertTrue(f.vollstaendig)
         assertBd("5", f.eiweiss)
     }
+
+    /** Mehrfaches Ändern darf die Nachkommastellen nicht aufblähen (Sync erlaubt höchstens 20). */
+    @Test fun mehrfachSkaliertBleibtImRahmen() {
+        var werte = Naehrwerte(bd("1464"), bd("2.7"), null, null, vollstaendig = true)
+        var portionen = bd("1")
+        for (neu in listOf("1.5", "0.75", "3", "1.25", "0.5")) {
+            werte = Tagebuch.skaliert(TagebuchArt.REZEPT, werte, portionen, bd(neu))
+            portionen = bd(neu)
+        }
+        assertTrue(werte.energieKj!!.scale() <= 6 && werte.eiweiss!!.scale() <= 6, "${werte.energieKj} / ${werte.eiweiss}")
+        assertBd("732", werte.energieKj)
+        assertBd("1.35", werte.eiweiss)
+    }
 }
