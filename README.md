@@ -44,12 +44,17 @@ Betrieb: [`server/README.md`](server/README.md); Entscheidung: [`docs/adr/0006-o
 
 ## Projektstruktur
 
-| Modul | Inhalt |
-|---|---|
-| `:domain` | Reines Kotlin (keine Android-Abhängigkeiten): Einheiten, Skalierung, Nährwerte, Einkaufsaggregation, Diff, Export-Schnittstelle |
-| `:sync-protocol` | Gemeinsame DTOs und Protokollversion von App und Server |
-| `:server` | Optionaler Sync-Server (Ktor + SQLite) |
-| `:app` | Compose-UI, ViewModels, Room, Hilt, Repositories, Backup |
+| Ordner | Modul | Inhalt |
+|---|---|---|
+| `android/app/` | `:app` | Handy-App: Compose-UI, ViewModels, Room, Hilt, Repositories, Backup |
+| `android/baselineprofile/` | `:baselineprofile` | Generator für das Baseline-Profil (schnellerer Start) |
+| `shared/domain/` | `:domain` | Reines Kotlin (keine Android-Abhängigkeiten): Einheiten, Skalierung, Nährwerte, Einkaufsaggregation, Diff, Import, Einordnung – von App und Server genutzt |
+| `shared/sync-protocol/` | `:sync-protocol` | Gemeinsame DTOs, Validierung und Protokollversion von App und Server |
+| `server/sync/` | `:server-sync` | Optionaler Sync-Server (Ktor + SQLite): API, Konten, Datenbank, Sync, Fotos, Admin-CLI |
+| `server/web/` | `:server-web` | Web-Oberfläche des Servers (im Aufbau) |
+| `server/start/` | `:server` | Startpunkt (`main`), verbindet Sync-Server und Web-Oberfläche; Docker-Image |
+
+Änderungen unter `shared/` betreffen App **und** Server: danach den Server neu bauen (`server/README.md`, Update).
 
 Details: [`docs/architecture.md`](docs/architecture.md), fachliche Invarianten: [`docs/domain-rules.md`](docs/domain-rules.md), Sicherheit: [`docs/security.md`](docs/security.md).
 
@@ -65,7 +70,7 @@ Voraussetzungen: JDK 17+ (z. B. das JBR von Android Studio), Android SDK (compil
 ```
 
 **Baseline-Profil** (schnellerer App-Start): liegt erzeugt unter
-`app/src/release/generated/baselineProfiles/baseline-prof.txt` und kommt automatisch in jeden Release-Build.
+`android/app/src/release/generated/baselineProfiles/baseline-prof.txt` und kommt automatisch in jeden Release-Build.
 Nach größeren UI-Änderungen neu erzeugen (Emulator/Gerät mit Android 13+ verbunden):
 
 ```powershell
@@ -73,7 +78,7 @@ Nach größeren UI-Änderungen neu erzeugen (Emulator/Gerät mit Android 13+ ver
 ```
 
 Unter Windows scheitert dabei mitunter das Kopieren vom Gerät (Pfad mit „(AVD)“). Dann die Datei
-`baselineprofile\build\outputs\connected_android_test_additional_output\nonMinifiedRelease\connected\*\BaselineProfileGenerator_generate-startup-prof.txt`
+`android\baselineprofile\build\outputs\connected_android_test_additional_output\nonMinifiedRelease\connected\*\BaselineProfileGenerator_generate-startup-prof.txt`
 als `baseline-prof.txt` an die obige Stelle kopieren. Startzeit messen (am aussagekräftigsten auf dem Handy):
 
 ```powershell
@@ -96,11 +101,11 @@ Die Datei ist in `.gitignore` und landet nie im Repository. **Schlüssel und Pas
 Passwortmanager): Ohne sie lassen sich Updates nicht mehr installieren, ohne die App samt Daten zu entfernen.
 
 ```powershell
-.\gradlew :app:assembleRelease   # → app\build\outputs\apk\release\app-release.apk
+.\gradlew :app:assembleRelease   # → android\app\build\outputs\apk\release\app-release.apk
 ```
 
 Die APK aufs Handy kopieren und öffnen (einmalig „Installation aus dieser Quelle zulassen“) oder per Kabel:
-`adb install -r app\build\outputs\apk\release\app-release.apk`. Ohne `keystore.properties` entsteht
+`adb install -r android\app\build\outputs\apk\release\app-release.apk`. Ohne `keystore.properties` entsteht
 `app-release-unsigned.apk`, die sich nicht installieren lässt – so baut auch die CI.
 
 ## Datenschutz

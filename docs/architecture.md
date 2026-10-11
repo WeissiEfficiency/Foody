@@ -1,6 +1,14 @@
 # Architektur
 
-- **UI-Schicht** (`app/.../ui`): Compose-Screens + `@HiltViewModel`. Jeder Screen rendert einen unveränderlichen
+**Module und Ordner:** Handy-App unter `android/` (`:app`, `:baselineprofile`), gemeinsamer Code unter `shared/`
+(`:domain`, `:sync-protocol`), Server unter `server/` – `:server-sync` (API, Konten, Datenbank, Sync), `:server-web`
+(Web-Oberfläche) und `:server` (nur `main`). Abhängigkeiten laufen nur in eine Richtung:
+`:server` → `:server-web` → `:server-sync` → `:sync-protocol`, `:server-web` → `:domain`, `:app` → `:domain`,
+`:sync-protocol`. Die Web-Oberfläche dockt über `foodyModule(deps, erweiterungen)` an; der Sync-Server kennt sie nicht.
+Gradle-Namen sind unabhängig von den Ordnern (`projectDir` in `settings.gradle.kts`). Spec:
+`docs/superpowers/specs/2026-10-11-projektstruktur-design.md`.
+
+- **UI-Schicht** (`android/app/.../ui`): Compose-Screens + `@HiltViewModel`. Jeder Screen rendert einen unveränderlichen
   `UiState` aus `StateFlow`; Nutzeraktionen sind Methodenaufrufe am ViewModel (Unidirectional Data Flow).
   Einmalige Meldungen (Snackbar) sind Zustand, der nach Anzeige quittiert wird (`messageShown()`).
   Bildschirmzustand, der einen Prozessneustart überleben muss (Suche, Filter, Zeitraum, Editor-Entwurf), liegt im
@@ -13,7 +21,7 @@
   - Kochmodus: `StepIngredientMatcher` (Zutaten + Teilmengen im Schritt), `StepTimerParser` (Zeitangaben);
     laufende Timer hält `CookTimerRepository` (App-weit), `CookTimerService` meldet das Ende auch im Hintergrund
   - Startseite: `DailyPicks` (Rezepte des Tages)
-- **Data** (`app/.../data`): Room als Single Source of Truth, Repositories mappen Entities ↔ Domain.
+- **Data** (`android/app/.../data`): Room als Single Source of Truth, Repositories mappen Entities ↔ Domain.
   Schreibvorgänge über mehrere Tabellen laufen in Transaktionen (Rezept speichern, Listen-Snapshot,
   Diff anwenden, „gekocht“, Rezept auf Einkaufsliste, Zutaten zusammenführen/vereinheitlichen).
 
@@ -25,7 +33,7 @@ Bottom Bar (Telefon) oder Navigation Rail (Tablet). Jeder Hauptbereich behält s
 
 ## Datenbank
 
-Version **6**, Schema-Export nach `app/schemas` (eingecheckt). Jede Schemaänderung benötigt eine `Migration`
+Version **6**, Schema-Export nach `android/app/schemas` (eingecheckt). Jede Schemaänderung benötigt eine `Migration`
 in `ALL_MIGRATIONS` (`FoodyDatabase.kt`) und einen Migrationstest (`MigrationTestHelper`, `MigrationTest`);
 `fallbackToDestructiveMigration()` ist verboten.
 
@@ -122,7 +130,7 @@ einer neuen App an einem alten Server antwortet er `server_too_old` („Server a
 
 ## Packung scannen (seit DB v9)
 
-`PackungScan` (`app/scan`) steuert den Ablauf hinter Schnittstellen, die Hilt in `ScanModule` bindet und Tests durch
+`PackungScan` (`android/app/.../scan`) steuert den Ablauf hinter Schnittstellen, die Hilt in `ScanModule` bindet und Tests durch
 Fakes ersetzen: `StrichcodeLeser` (Google Code Scanner) → `KatalogSuche` (`ingredient.barcode`) → `ProduktSuche`
 (`OffProduktSuche`, Open Food Facts, nur wenn `ScanPreferences.onlineSuche`) → sonst `TabellenScanner` (ML Kit).
 Fehlende Play-Dienste-Module werden über `ModuleInstallClient` nachgeladen. Die Auswertung ist rein: `NaehrwertScan`

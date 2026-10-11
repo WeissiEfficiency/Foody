@@ -173,7 +173,7 @@ Vorgehen je Bereich: `/code-review` auf den Ordner, Funde wie bisher mit Test, d
   ohne). Auf einem echten Gerät mit langsamem Speicher erneut messen.
 - **Stolperstein Erzeugung:** Benchmark 1.5 schreibt nur `…-startup-prof.txt`, und AGP 9.4 löscht ihn beim
   Deinstallieren, bevor er geholt wird – `generateReleaseBaselineProfile` endet „erfolgreich“, das Profil fehlt aber.
-  Ablauf steht in `baselineprofile/build.gradle.kts`.
+  Ablauf steht in `android/baselineprofile/build.gradle.kts`.
 3. **Datenbank früh öffnen:** Room im App-Start auf einem Hintergrund-Thread anstoßen (erste Abfrage), damit der
    erste Bildschirm nicht auf das Öffnen wartet.
 4. **Play-Dienste-Module vorladen:** Beim ersten Öffnen des Zutaten-Dialogs bzw. Reiters „Frei“ `ModuleInstall`

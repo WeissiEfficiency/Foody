@@ -1,8 +1,11 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
-    application
+    `java-library`
 }
+
+// Sync-Server als Bibliothek: API, Konten, Datenbank, Sync, Fotos, Admin-CLI. Gestartet wird er von :server
+// (server/start), der auch die Web-Oberfläche (:server-web) einhängt.
 
 // Kein jvmToolchain: kompiliert mit dem vorhandenen JDK, erzeugt Java-17-Bytecode.
 java {
@@ -17,23 +20,18 @@ kotlin {
     }
 }
 
-application {
-    mainClass = "de.foody.server.MainKt"
-    applicationName = "foody-server"
-}
-
 dependencies {
-    implementation(project(":sync-protocol"))
-    implementation(libs.ktor.server.core)
-    implementation(libs.ktor.server.netty)
-    implementation(libs.ktor.server.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.ktor.server.status.pages)
-    implementation(libs.ktor.server.auth)
-    implementation(libs.ktor.server.forwarded.header)
+    api(project(":sync-protocol"))
+    api(libs.ktor.server.core)
+    api(libs.ktor.server.netty)
+    api(libs.ktor.server.content.negotiation)
+    api(libs.ktor.serialization.kotlinx.json)
+    api(libs.ktor.server.status.pages)
+    api(libs.ktor.server.auth)
+    api(libs.ktor.server.forwarded.header)
     implementation(libs.sqlite.jdbc)
     implementation(libs.bcprov)
-    implementation(libs.logback.classic)
+    api(libs.logback.classic)
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.ktor.server.test.host)

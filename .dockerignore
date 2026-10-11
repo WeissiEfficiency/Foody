@@ -1,8 +1,10 @@
 **/build
 .gradle
 .git
-app/
-baselineprofile/
+# Handy-App gehört nicht in den Server-Build
+android/
+# Zugangsdaten (Admin-Passwort) nie in den Build-Kontext
+server/.env
 local.properties
 *.jks
 *.keystore

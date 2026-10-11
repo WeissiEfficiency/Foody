@@ -53,7 +53,7 @@
 
 ## Tests je Regel
 
-Jede Regel ist durch mindestens einen Test belegt (Domain: `domain/src/test`, App: `app/src/androidTest`).
+Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/test`, App: `android/app/src/androidTest`).
 
 | Regel | Tests |
 |---|---|

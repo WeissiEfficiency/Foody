@@ -29,7 +29,7 @@ jobs:
       - name: Release-Build (R8)
         run: ./gradlew :app:assembleRelease
 
-  # Room-, Migrations- und End-to-End-Tests auf einem Emulator (Gradle Managed Device, siehe app/build.gradle.kts).
+  # Room-, Migrations- und End-to-End-Tests auf einem Emulator (Gradle Managed Device, siehe android/app/build.gradle.kts).
   # Schützt vor allem die Datenbank-Migrationen: ein Fehler dort bedeutet Datenverlust beim App-Update.
   instrumented:
     runs-on: ubuntu-latest
@@ -55,7 +55,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: instrumented-test-reports
-          path: app/build/reports/androidTests/managedDevice/
+          path: android/app/build/reports/androidTests/managedDevice/
           if-no-files-found: ignore
 
   # Sync-Server: Tests, Docker-Image (ohne Android-SDK) und ein Smoke-Test des laufenden Containers.
@@ -70,7 +70,7 @@ jobs:
           java-version: 17
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
       - name: Server- und Protokoll-Tests
-        run: ./gradlew :sync-protocol:test :server:test
+        run: ./gradlew :sync-protocol:test :server-sync:test :server:installDist
       - name: Docker-Image bauen
         run: docker build -f server/Dockerfile -t foody-server:ci .
       - name: Smoke-Test des Containers

@@ -3,6 +3,10 @@
 ## Ziel
 Die Projektstruktur soll sauber, verständlich und langlebig bleiben. Sie darf nicht zu groß, zu tief verschachtelt oder zu „kreativ“ werden. Die Hauptregel ist: Ordnung durch Verantwortlichkeiten, nicht durch reine Ordnerzahl.
 
+**Aktuelle Struktur (2026-10-11):** `android/` (Handy-App), `shared/` (von App und Server genutzt), `server/` mit
+`sync/`, `web/` und `start/` – Begründung und Abhängigkeitsrichtung in
+`docs/superpowers/specs/2026-10-11-projektstruktur-design.md`.
+
 ## Grundprinzip
 Ein Ordner oder ein Modul sollte immer eine klare Aufgabe haben.
 
@@ -137,7 +141,7 @@ Domain sollte fachlich sauber und möglichst unabhängig von Android oder Server
 ## Was nicht gut ist
 
 ### 1. Alles in einen großen Ordner
-Wenn `app/src/main/java/de/foody/app` zu viele Themen enthält, wird es schnell unübersichtlich.
+Wenn `android/app/src/main/java/de/foody/app` zu viele Themen enthält, wird es schnell unübersichtlich.
 
 ### 2. Zu viele Sub-Sub-Ordner
 Wenn jeder kleine Bereich ein eigener Unterordner ist, entsteht hoher Navigationsaufwand.
