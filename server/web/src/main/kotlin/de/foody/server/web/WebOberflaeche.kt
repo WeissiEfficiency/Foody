@@ -4,11 +4,13 @@ import de.foody.server.ServerDeps
 import de.foody.server.web.Statisch.liefere
 import de.foody.server.web.seiten.HaushaltSeite
 import de.foody.server.web.seiten.LoginSeite
+import de.foody.server.web.seiten.PlanTagebuchSeiten
 import de.foody.server.web.seiten.RezeptSeiten
 import io.ktor.http.ContentType
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import java.time.LocalDate
 
 /**
  * Web-Oberfläche des Servers: die Routen, die `:server` (server/start) in `foodyModule` einhängt
@@ -48,6 +50,14 @@ object WebOberflaeche {
         get("/rezepte/liste") {
             val s = call.sitzungMitHaushalt(deps) ?: return@get
             RezeptSeiten.listenTeil(call, daten.fuer(s.haushalt!!))
+        }
+        get("/plan") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@get
+            PlanTagebuchSeiten.plan(call, s, daten.fuer(s.haushalt!!), LocalDate.now(deps.clock))
+        }
+        get("/tagebuch") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@get
+            PlanTagebuchSeiten.tagebuch(call, s, daten.fuer(s.haushalt!!), LocalDate.now(deps.clock))
         }
         get("/rezept/{id}") {
             val s = call.sitzungMitHaushalt(deps) ?: return@get
