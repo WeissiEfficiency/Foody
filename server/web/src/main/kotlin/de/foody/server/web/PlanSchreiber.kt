@@ -45,6 +45,21 @@ internal class PlanSchreiber(private val deps: ServerDeps, private val daten: Ha
         ))
     }
 
+    /**
+     * Übernimmt genau die angezeigten Paare (Tag → Rezept) mit den Portionen des Rezepts. Erst wird jedes Paar geprüft
+     * (aktives Rezept des Haushalts, Tag in [von]..[bis]); ist eines ungültig, wird nichts geschrieben → [Schreiben.NichtGefunden].
+     */
+    fun vorschlagUebernehmen(household: String, mahlzeit: Mahlzeit, paare: List<Pair<LocalDate, String>>, von: LocalDate, bis: LocalDate): Schreiben {
+        val rezepte = daten.fuer(household).rezepte
+        val gueltig = paare.all { (tag, id) -> tag in von..bis && rezepte[id]?.payload?.archivedAt == null && id in rezepte }
+        if (!gueltig) return Schreiben.NichtGefunden
+        for ((tag, id) in paare) {
+            val r = einplanen(household, tag, mahlzeit, id, rezepte.getValue(id).domain.defaultServings)
+            if (r != Schreiben.Ok) return r
+        }
+        return Schreiben.Ok
+    }
+
     /** [aktion]: `minus`, `plus` (Portionen 1–99), `frueher`, `spaeter` (± 1 Tag), `loeschen`. */
     fun aendern(household: String, id: String, aktion: String): Schreiben {
         val gespeichert = gespeichert(household, id) ?: return Schreiben.NichtGefunden

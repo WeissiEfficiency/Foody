@@ -69,6 +69,11 @@ object WebOberflaeche {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             PlanSeiten.neuListe(call, daten.fuer(s.haushalt!!), deps.heute(zone))
         }
+        webGet("/plan/vorschlag") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            PlanSeiten.vorschlag(call, deps, s, daten.fuer(s.haushalt!!), deps.heute(zone))
+        }
+        webPost("/plan/vorschlag") { PlanSeiten.vorschlagUebernehmen(call, deps, daten, deps.heute(zone)) }
         webPost("/plan/{id}") { PlanSeiten.aktion(call, deps, daten, deps.heute(zone), call.parameters["id"].orEmpty()) }
         webGet("/tagebuch") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet

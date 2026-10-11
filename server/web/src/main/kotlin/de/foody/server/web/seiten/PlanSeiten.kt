@@ -1,7 +1,9 @@
 package de.foody.server.web.seiten
 
 import de.foody.domain.Mahlzeit
+import de.foody.domain.PantryCoverage
 import de.foody.domain.PlanAuswahl
+import de.foody.domain.PlanVorschlag
 import de.foody.server.ServerDeps
 import de.foody.server.web.Haushalt
 import de.foody.server.web.HaushaltsDaten
@@ -45,6 +47,7 @@ import kotlinx.html.li
 import kotlinx.html.option
 import kotlinx.html.p
 import kotlinx.html.select
+import kotlinx.html.span
 import kotlinx.html.ul
 
 /** Einplanen und Planeinträge ändern; Anzeige des Plans in [PlanTagebuchSeiten]. */
@@ -218,6 +221,88 @@ internal object PlanSeiten {
                     input(InputType.radio, name = "rezept") { value = r.id; required = true }
                     +" ${r.payload.name}"
                 }
+            }
+        }
+    }
+
+    // --- Vorschläge ---
+
+    private const val MAX_PAARE = 31
+
+    suspend fun vorschlag(call: ApplicationCall, deps: ServerDeps, s: Sitzung, h: Haushalt, heute: LocalDate) {
+        val q = call.request.queryParameters
+        val ab = q["ab"]?.let(::datumOderNull)?.takeIf { datumErlaubt(it, heute) } ?: heute
+        val tage = if (q["tage"] == "14") 14 else 7
+        val mahlzeit = Mahlzeit.entries.firstOrNull { it.name == q["mahlzeit"] } ?: Mahlzeit.ABENDESSEN
+        val seed = q["seed"]?.toLongOrNull() ?: deps.clock.millis()
+        val zeitraum = (0L until tage.toLong()).map { ab.plusDays(it) }
+        val belegt = h.plan.groupBy({ it.datum }, { it.mahlzeit })
+        val leer = PlanVorschlag.leereTage(zeitraum, heute, belegt, mahlzeit)
+        val aktive = h.rezepte.values.filter { it.payload.archivedAt == null }
+        val rezepte = aktive.map { r ->
+            val pflicht = r.domain.ingredients.filter { !it.optional }.map {
+                PantryCoverage.Requirement(r.id, it.ingredientId, h.zutaten[it.ingredientId]?.name.orEmpty())
+            }
+            PlanVorschlag.Rezept(r.id, r.payload.favorite, r.einordnung.mahlzeiten, pflicht)
+        }
+        val imVorrat = h.vorrat.filter { it.menge.signum() > 0 }.map { it.zutatId }.toSet()
+        val paare = PlanVorschlag.vorschlagen(rezepte, leer, imVorrat, h.plan.map { it.rezeptId to it.datum }, zeitraum.last(), seed, mahlzeit)
+            .toList().sortedBy { it.first }
+        val zurueck = planUrl(ab, tage)
+        call.seiteAntworten("Vorschlag", s, Navi.PLAN) {
+            h1 { +"Vorschlag: ${mahlzeit.text()}" }
+            if (paare.isEmpty()) {
+                p("hinweis") {
+                    +(if (aktive.isEmpty()) "Nichts vorzuschlagen – es gibt noch keine Rezepte."
+                    else "Nichts vorzuschlagen – ab heute ist ${mahlzeit.text()} an allen Tagen geplant oder es passt kein Rezept.")
+                }
+                a(href = zurueck) { +"Zurück zum Plan" }
+                return@seiteAntworten
+            }
+            form(action = "/plan/vorschlag", method = FormMethod.post) {
+                hiddenInput(name = "_csrf") { value = s.csrf }
+                hiddenInput(name = "mahlzeit") { value = mahlzeit.name }
+                hiddenInput(name = "ab") { value = ab.toString() }
+                if (tage == 14) hiddenInput(name = "tage") { value = "14" }
+                ul("liste karte") {
+                    paare.forEachIndexed { i, (tag, id) ->
+                        li {
+                            hiddenInput(name = "tag_$i") { value = tag.toString() }
+                            hiddenInput(name = "rezept_$i") { value = id }
+                            span { +tag.format(TAG) }
+                            a(href = "/rezept/$id") { +h.rezepte.getValue(id).payload.name }
+                        }
+                    }
+                }
+                div("zeile") {
+                    button { +"Übernehmen" }
+                    a(href = "/plan/vorschlag?ab=$ab${if (tage == 14) "&tage=14" else ""}&mahlzeit=${mahlzeit.name}&seed=${seed + 1}", classes = "knopf") { +"Neu mischen" }
+                    a(href = zurueck) { +"Abbrechen" }
+                }
+            }
+        }
+    }
+
+    suspend fun vorschlagUebernehmen(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate) {
+        val s = call.sitzungMitHaushalt(deps) ?: return
+        val form = call.formular()
+        if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
+        val ab = form["ab"]?.let(::datumOderNull)
+        val tage = if (form["tage"] == "14") 14 else 7
+        val mahlzeit = Mahlzeit.entries.firstOrNull { it.name == form["mahlzeit"] }
+        val paare = (0 until MAX_PAARE).mapNotNull { i ->
+            val tag = form["tag_$i"] ?: return@mapNotNull null
+            (datumOderNull(tag) ?: LocalDate.MIN) to form["rezept_$i"].orEmpty()
+        }
+        val ergebnis = if (ab == null || mahlzeit == null || paare.isEmpty() || !datumErlaubt(ab, heute)) Schreiben.NichtGefunden
+        else PlanSchreiber(deps, daten).vorschlagUebernehmen(s.haushalt!!, mahlzeit, paare, ab, ab.plusDays(tage - 1L))
+        when (ergebnis) {
+            Schreiben.Ok -> call.weiterleiten(planUrl(ab!!, tage))
+            Schreiben.Abgelehnt -> call.abgelehnt(s)
+            else -> call.seiteAntworten("Vorschlag", s, Navi.PLAN, HttpStatusCode.BadRequest) {
+                h1 { +"Vorschlag passt nicht mehr" }
+                p { +"Ein Rezept oder Tag aus dem Vorschlag gibt es so nicht mehr. Es wurde nichts eingeplant – bitte neu vorschlagen." }
+                a(href = ab?.let { planUrl(it, tage) } ?: "/plan") { +"Zurück zum Plan" }
             }
         }
     }

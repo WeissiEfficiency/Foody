@@ -23,6 +23,8 @@ import kotlinx.html.FormMethod
 import kotlinx.html.button
 import kotlinx.html.form
 import kotlinx.html.hiddenInput
+import kotlinx.html.select
+import kotlinx.html.option
 import kotlinx.html.h1
 import kotlinx.html.h2
 import kotlinx.html.li
@@ -61,6 +63,15 @@ internal object PlanTagebuchSeiten {
                 a(href = "/plan?ab=$ab${if (anzahl == 14) "" else "&tage=14"}${if (bearbeiten) "&bearbeiten=1" else ""}") { +(if (anzahl == 14) "7 Tage" else "14 Tage") }
                 a(href = "/plan?ab=$ab$t${if (bearbeiten) "" else "&bearbeiten=1"}") { +(if (bearbeiten) "Fertig" else "Bearbeiten") }
                 schnitt?.let { d -> span("leise") { +"${if (d.vollstaendig) "" else "≥ "}Ø ${d.kcal} kcal pro Tag" } }
+            }
+            form(action = "/plan/vorschlag", method = FormMethod.get, classes = "zeile") {
+                hiddenInput(name = "ab") { value = ab.toString() }
+                if (anzahl == 14) hiddenInput(name = "tage") { value = "14" }
+                select {
+                    name = "mahlzeit"; attributes["aria-label"] = "Mahlzeit für den Vorschlag"
+                    for (m in Mahlzeit.entries) option { value = m.name; selected = m == Mahlzeit.ABENDESSEN; +m.text() }
+                }
+                button(classes = "leise") { +"Vorschlagen" }
             }
             if (call.request.queryParameters["hinweis"] == "weg") p("hinweis") { +"Eintrag gibt es nicht mehr." }
             if (jeTag.isEmpty()) p("hinweis") { +"Nichts geplant in diesem Zeitraum." }
