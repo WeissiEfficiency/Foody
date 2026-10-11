@@ -333,4 +333,32 @@ class SyncEndToEndTest {
         val html = browser.get("/") { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
         assertTrue("Linsensuppe" in html, html.take(500))
     }
+
+    /** Im Browser bearbeitet, per Abgleich auf dem Handy: Name und Menge neu, der am Handy gesetzte Favorit bleibt. */
+    @Test
+    fun rezeptImBrowserBearbeitetKommtAufsHandy() = syncServerTest { _, clock ->
+        val (a, _) = pair(clock)
+        val linsen = a.ingredients.getOrCreate("Linsen")
+        val rid = a.recipes.save(RecipeDraft(id = null, name = "Linsensuppe", defaultServings = 2, ingredients = listOf(line(linsen.id, 250))))
+        a.recipes.setFavorite(rid, true)
+        a.runOk()
+        val browser = createClient { followRedirects = false }
+        val login = browser.submitForm("/login", parameters { append("benutzer", TEST_ADMIN_USER); append("passwort", TEST_ADMIN_PASSWORD) })
+        val cookie = login.headers.getAll(HttpHeaders.SetCookie)!!.first { it.startsWith("foody_sitzung=") }.substringBefore(';')
+        val editor = browser.get("/rezept/$rid/bearbeiten") { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
+        val csrf = Regex("""name="csrf" content="([0-9a-f]+)"""").find(editor)!!.groupValues[1]
+        val rev = Regex("""name="rev" value="(\d+)"""").find(editor)!!.groupValues[1]
+        val gespeichert = browser.submitForm("/rezept/speichern", parameters {
+            append("_csrf", csrf); append("id", rid); append("rev", rev); append("name", "Rote Linsensuppe"); append("portionen", "2")
+            append("vorbereitung", ""); append("kochzeit", ""); append("tags", ""); append("quelle", ""); append("notizen", ""); append("schritte", "")
+            append("einordnung", "vermuten")
+            append("zeile_menge", "300"); append("zeile_einheit", "g"); append("zeile_zutat", "Linsen"); append("zeile_hinweis", ""); append("zeile_optional", "0")
+        }) { header(HttpHeaders.Cookie, cookie) }
+        assertEquals(HttpStatusCode.SeeOther, gespeichert.status)
+        a.runOk()
+        val lokal = assertNotNull(a.db.recipeDao().get(rid))
+        assertEquals("Rote Linsensuppe", lokal.name)
+        assertTrue(lokal.favorite, "Favorit vom Handy bleibt")
+        assertEquals(0, BigDecimal(300).compareTo(a.db.recipeDao().getIngredients(rid).single().amount))
+    }
 }
