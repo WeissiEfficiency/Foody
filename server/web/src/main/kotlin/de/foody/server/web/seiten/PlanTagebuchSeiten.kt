@@ -18,10 +18,18 @@ import java.time.format.DateTimeParseException
 import java.util.Locale
 import kotlinx.html.a
 import kotlinx.html.div
+import kotlinx.html.FlowContent
+import kotlinx.html.FormMethod
+import kotlinx.html.button
+import kotlinx.html.form
+import kotlinx.html.hiddenInput
+import kotlinx.html.select
+import kotlinx.html.option
 import kotlinx.html.h1
 import kotlinx.html.h2
 import kotlinx.html.li
 import kotlinx.html.nav
+import kotlinx.html.id
 import kotlinx.html.p
 import kotlinx.html.span
 import kotlinx.html.ul
@@ -36,7 +44,11 @@ internal object PlanTagebuchSeiten {
 
     suspend fun plan(call: ApplicationCall, s: Sitzung, h: Haushalt, heute: LocalDate) {
         val ab = call.datum("ab", heute)
-        val tage = (0L until 7L).map { ab.plusDays(it) }
+        val anzahl = if (call.request.queryParameters["tage"] == "14") 14 else 7
+        val tage = (0L until anzahl.toLong()).map { ab.plusDays(it) }
+        val t = if (anzahl == 14) "&tage=14" else ""
+        // Knöpfe je Eintrag nur im Bearbeiten-Modus – so bleibt die normale Ansicht auch mit 14 vollen Tagen klein
+        val bearbeiten = call.request.queryParameters["bearbeiten"] == "1"
         val jeTag = h.plan.filter { it.datum in tage }.groupBy { it.datum }
         val naehrwerte = jeTag.mapNotNull { (tag, eintraege) ->
             DayNutrition.of(eintraege.mapNotNull { h.rezepte[it.rezeptId]?.domain }, h.zutaten)?.let { tag to it }
@@ -45,32 +57,67 @@ internal object PlanTagebuchSeiten {
         call.seiteAntworten("Plan", s, Navi.PLAN) {
             h1 { +"Wochenplan" }
             nav("zeile") {
-                a(href = "/plan?ab=${ab.minusDays(7)}", classes = "knopf") { attributes["aria-label"] = "Vorige Woche"; +"‹" }
-                a(href = "/plan?ab=$heute", classes = "knopf") { +"Heute" }
-                a(href = "/plan?ab=${ab.plusDays(7)}", classes = "knopf") { attributes["aria-label"] = "Nächste Woche"; +"›" }
+                a(href = "/plan?ab=${ab.minusDays(7)}$t", classes = "knopf") { attributes["aria-label"] = "Vorige Woche"; +"‹" }
+                a(href = "/plan?ab=$heute$t", classes = "knopf") { +"Heute" }
+                a(href = "/plan?ab=${ab.plusDays(7)}$t", classes = "knopf") { attributes["aria-label"] = "Nächste Woche"; +"›" }
+                a(href = "/plan?ab=$ab${if (anzahl == 14) "" else "&tage=14"}${if (bearbeiten) "&bearbeiten=1" else ""}") { +(if (anzahl == 14) "7 Tage" else "14 Tage") }
+                a(href = "/plan?ab=$ab$t${if (bearbeiten) "" else "&bearbeiten=1"}") { +(if (bearbeiten) "Fertig" else "Bearbeiten") }
                 schnitt?.let { d -> span("leise") { +"${if (d.vollstaendig) "" else "≥ "}Ø ${d.kcal} kcal pro Tag" } }
             }
-            if (jeTag.isEmpty()) p("hinweis") { +"Nichts geplant in dieser Woche." }
-            for (tag in tage) {
-                div("karte") {
-                    h2 {
-                        +tag.format(TAG)
-                        naehrwerte[tag]?.let { n -> span("leise") { +"  ${if (n.complete) "" else "≥ "}${n.kcal} kcal" } }
-                    }
-                    val eintraege = jeTag[tag].orEmpty().sortedBy { Mahlzeit.reihenfolge(it.mahlzeit) }
-                    if (eintraege.isEmpty()) p("leise") { +"—" } else ul("liste") {
-                        for (e in eintraege) li {
-                            span {
-                                val r = h.rezepte[e.rezeptId]
-                                if (r != null) a(href = "/rezept/${r.id}?portionen=${e.portionen}") { +r.payload.name } else +"Gelöschtes Rezept"
-                            }
-                            span("leise") { +"${(Mahlzeit.ausText(e.mahlzeit)?.text() ?: e.mahlzeit)} · ${e.portionen} P." }
+            form(action = "/plan/vorschlag", method = FormMethod.get, classes = "zeile") {
+                hiddenInput(name = "ab") { value = ab.toString() }
+                if (anzahl == 14) hiddenInput(name = "tage") { value = "14" }
+                select {
+                    name = "mahlzeit"; attributes["aria-label"] = "Mahlzeit für den Vorschlag"
+                    for (m in Mahlzeit.entries) option { value = m.name; selected = m == Mahlzeit.ABENDESSEN; +m.text() }
+                }
+                button(classes = "leise") { +"Vorschlagen" }
+            }
+            if (call.request.queryParameters["hinweis"] == "weg") p("hinweis") { +"Eintrag gibt es nicht mehr." }
+            if (jeTag.isEmpty()) p("hinweis") { +"Nichts geplant in diesem Zeitraum." }
+            // Ein Formular für alle Einträge: CSRF und Zeitraum nur einmal statt je Eintrag (Seite bleibt klein)
+            form(action = "/plan/aktion", method = FormMethod.post) {
+                hiddenInput(name = "_csrf") { value = s.csrf }
+                hiddenInput(name = "ab") { value = ab.toString() }
+                if (anzahl == 14) hiddenInput(name = "tage") { value = "14" }
+                if (bearbeiten) hiddenInput(name = "bearbeiten") { value = "1" }
+                for (tag in tage) {
+                    div("karte") {
+                        id = "tag-$tag"
+                        h2 {
+                            +tag.format(TAG)
+                            naehrwerte[tag]?.let { n -> span("leise") { +"  ${if (n.complete) "" else "≥ "}${n.kcal} kcal" } }
                         }
+                        val eintraege = jeTag[tag].orEmpty().sortedBy { Mahlzeit.reihenfolge(it.mahlzeit) }
+                        if (eintraege.isNotEmpty()) ul("liste") {
+                            for (e in eintraege) li {
+                                span {
+                                    val r = h.rezepte[e.rezeptId]
+                                    if (r != null) a(href = "/rezept/${r.id}?portionen=${e.portionen}") { +r.payload.name } else +"Gelöschtes Rezept"
+                                    span("leise") { +" ${(Mahlzeit.ausText(e.mahlzeit)?.text() ?: e.mahlzeit)} · ${e.portionen} P.${if (e.gekochtAm != null) " · gekocht" else ""}" }
+                                }
+                                if (bearbeiten) span("knoepfe") {
+                                    // Ohne Rezept lehnt der Server jede Änderung ab (fehlende Referenz) – nur Löschen geht
+                                    if (e.rezeptId in h.rezepte) {
+                                        knopf(e.id, "minus", "Portion weniger", "−")
+                                        knopf(e.id, "plus", "Portion mehr", "+")
+                                        knopf(e.id, "frueher", "Einen Tag früher", "‹")
+                                        knopf(e.id, "spaeter", "Einen Tag später", "›")
+                                        if (e.gekochtAm == null) knopf(e.id, "gekocht", "Gekocht", "✓")
+                                    }
+                                    knopf(e.id, "loeschen", "Löschen", "✕")
+                                }
+                            }
+                        }
+                        a(href = "/plan/neu?tag=$tag", classes = "leise") { +"+ Hinzufügen" }
                     }
                 }
             }
         }
     }
+
+    private fun FlowContent.knopf(id: String, aktion: String, beschreibung: String, zeichen: String) =
+        button { name = "a"; value = "$id $aktion"; attributes["aria-label"] = beschreibung; +zeichen }
 
     suspend fun tagebuch(call: ApplicationCall, s: Sitzung, h: Haushalt, heute: LocalDate) {
         val tag = call.datum("tag", heute)

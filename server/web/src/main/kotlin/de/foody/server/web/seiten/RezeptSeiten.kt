@@ -110,13 +110,17 @@ internal object RezeptSeiten {
     private fun passt(r: WebRezept, f: Filter, h: Haushalt): Boolean {
         if (f.mahlzeit != null && !r.einordnung.passtZu(f.mahlzeit)) return false
         if (f.gang != null && f.gang !in r.einordnung.gaenge) return false
-        if (f.q.isEmpty()) return true
-        val q = f.q.lowercase()
+        return f.q.isEmpty() || trifft(r, f.q, h)
+    }
+
+    /** Suchtext in Name, Tags oder Zutatennamen (auch für die Auswahl beim Einplanen). */
+    fun trifft(r: WebRezept, suche: String, h: Haushalt): Boolean {
+        val q = suche.lowercase()
         return q in r.payload.name.lowercase() || q in r.payload.tags.lowercase() ||
             r.domain.ingredients.any { z -> h.zutaten[z.ingredientId]?.name?.lowercase()?.contains(q) == true }
     }
 
-    suspend fun rezept(call: ApplicationCall, s: Sitzung, h: Haushalt, id: String) {
+    suspend fun rezept(call: ApplicationCall, s: Sitzung, h: Haushalt, id: String, heute: java.time.LocalDate) {
         val r = h.rezepte[id] ?: return call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
         val standard = r.domain.defaultServings
         val portionen = call.request.queryParameters["portionen"]?.toIntOrNull()?.coerceIn(1, 99) ?: standard
@@ -142,6 +146,8 @@ internal object RezeptSeiten {
                     }
                 }
             }
+            if (r.payload.archivedAt == null) with(PlanSeiten) { einplanenFormular(s, r, heute.toString(), null, "") }
+            with(EinkaufSeite) { aufListeFormular(s, h, r) }
             h2 { +"Zutaten" }
             ul("liste karte") {
                 for (z in r.domain.ingredients) {

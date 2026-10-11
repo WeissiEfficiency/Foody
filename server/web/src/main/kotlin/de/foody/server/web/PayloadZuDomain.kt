@@ -22,6 +22,7 @@ import de.foody.sync.protocol.ShoppingItemPayload
 import de.foody.sync.protocol.ShoppingListPayload
 import de.foody.sync.protocol.SyncRecord
 import de.foody.sync.protocol.TagebuchPayload
+import de.foody.sync.protocol.PantryItemPayload
 import de.foody.sync.protocol.decode
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -30,10 +31,27 @@ import kotlinx.serialization.SerializationException
 
 internal data class WebRezept(val id: String, val rev: Long, val payload: RecipePayload, val domain: Recipe, val einordnung: Einordnung)
 
-internal data class WebPlanEintrag(val id: String, val datum: LocalDate, val mahlzeit: String, val rezeptId: String, val portionen: Int)
+internal data class WebPlanEintrag(
+    val id: String,
+    val rev: Long,
+    val datum: LocalDate,
+    val mahlzeit: String,
+    val rezeptId: String,
+    val portionen: Int,
+    val gekochtAm: Long? = null,
+)
 
-/** [geaendert] = `SyncRecord.updatedAt`; die neueste Liste hat den größten Wert. */
-internal data class WebEinkaufsliste(val id: String, val name: String, val geaendert: Long)
+/** [geaendert] = `SyncRecord.updatedAt`; die neueste Liste hat den größten Wert. [von]/[bis] nur bei Listen aus dem Plan. */
+internal data class WebEinkaufsliste(
+    val id: String,
+    val name: String,
+    val geaendert: Long,
+    val rev: Long = 0,
+    val von: LocalDate? = null,
+    val bis: LocalDate? = null,
+)
+
+internal data class WebVorrat(val id: String, val rev: Long, val zutatId: String, val menge: BigDecimal, val einheit: MeasureUnit)
 
 internal data class WebEintrag(val id: String, val rev: Long, val listId: String, val payload: ShoppingItemPayload)
 
@@ -89,11 +107,15 @@ internal object PayloadZuDomain {
     }
 
     fun planEintrag(r: SyncRecord): WebPlanEintrag? = lesen(r, RecordType.MEAL_SLOT) { p: MealSlotPayload ->
-        WebPlanEintrag(r.id, LocalDate.parse(p.date), p.slotType, p.recipeId, p.servings)
+        WebPlanEintrag(r.id, r.rev ?: 0, LocalDate.parse(p.date), p.slotType, p.recipeId, p.servings, p.cookedAt)
     }
 
     fun liste(r: SyncRecord): WebEinkaufsliste? = lesen(r, RecordType.SHOPPING_LIST) { p: ShoppingListPayload ->
-        WebEinkaufsliste(r.id, p.name, r.updatedAt)
+        WebEinkaufsliste(r.id, p.name, r.updatedAt, r.rev ?: 0, p.start?.let(LocalDate::parse), p.end?.let(LocalDate::parse))
+    }
+
+    fun vorrat(r: SyncRecord): WebVorrat? = lesen(r, RecordType.PANTRY_ITEM) { p: PantryItemPayload ->
+        WebVorrat(r.id, r.rev ?: 0, p.ingredientId, BigDecimal(p.amount), MeasureUnit.valueOf(p.unit))
     }
 
     fun eintrag(r: SyncRecord): WebEintrag? = lesen(r, RecordType.SHOPPING_ITEM) { p: ShoppingItemPayload ->

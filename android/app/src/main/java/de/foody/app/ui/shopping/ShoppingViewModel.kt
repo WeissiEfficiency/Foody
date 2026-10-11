@@ -1,6 +1,7 @@
 package de.foody.app.ui.shopping
 
 import de.foody.app.data.ShoppingPreferences
+import de.foody.domain.EinkaufEingabe
 import de.foody.domain.ShoppingCatalog
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -145,6 +146,8 @@ class ShoppingViewModel @Inject constructor(
      * zuletzt gekauft → wieder auf die Liste. Verglichen wird über den Artikel, nicht den genauen Namen.
      */
     fun tapCatalog(name: String, section: String, defaultListName: String) = viewModelScope.launch {
+        // Eine Kachel ist schon ein bestimmter Artikel (auch ein eigener, den der Katalog nicht kennt) – deshalb kein
+        // Katalog-Nachschlagen wie beim Freitext, sondern direkt umschalten
         val existing = state.value.items.filter { ShoppingCatalog.sameItem(it.name, name) }
         val open = existing.firstOrNull { !it.checked }
         val bought = existing.firstOrNull { it.checked }
@@ -157,12 +160,12 @@ class ShoppingViewModel @Inject constructor(
 
     /** Freitext aus „Was willst du einkaufen?“: bekannter Artikel wie seine Kachel, sonst als eigener Artikel. */
     fun addFromSearch(text: String, defaultListName: String) {
-        val name = text.trim().takeIf { it.isNotEmpty() } ?: return
-        val known = ShoppingCatalog.find(name)
-        if (known != null) {
-            tapCatalog(known.name, ShoppingCatalog.sectionFor(null, known.name), defaultListName)
-        } else {
-            viewModelScope.launch { repo.addManual(ensureList(defaultListName), name, ShoppingCatalog.OWN_ITEMS) }
+        val items = state.value.items
+        when (val a = EinkaufEingabe.entscheiden(text, items.map { EinkaufEingabe.Eintrag(it.id, it.name, it.checked) })) {
+            null -> return
+            is EinkaufEingabe.Aktion.Abhaken -> viewModelScope.launch { repo.setChecked(items.first { it.id == a.id }, true) }
+            is EinkaufEingabe.Aktion.Zurueck -> viewModelScope.launch { repo.setChecked(items.first { it.id == a.id }, false) }
+            is EinkaufEingabe.Aktion.Neu -> viewModelScope.launch { repo.addManual(ensureList(defaultListName), a.name, a.abteilung) }
         }
     }
     fun delete(item: ShoppingItemEntity) = viewModelScope.launch {

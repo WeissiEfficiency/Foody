@@ -6,26 +6,28 @@ import de.foody.server.web.seiten.EditorSeite
 import de.foody.server.web.seiten.EinkaufSeite
 import de.foody.server.web.seiten.HaushaltSeite
 import de.foody.server.web.seiten.ImportSeite
+import de.foody.server.web.seiten.ListeAusPlanSeiten
 import de.foody.server.web.seiten.LoginSeite
+import de.foody.server.web.seiten.PlanSeiten
 import de.foody.server.web.seiten.PlanTagebuchSeiten
 import de.foody.server.web.seiten.RezeptSeiten
 import io.ktor.http.ContentType
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
-import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Web-Oberfläche des Servers: die Routen, die `:server` (server/start) in `foodyModule` einhängt
  * (außerhalb von `/api/v1`). Lesen über [HaushaltsDaten], Schreiben nur über `SyncService.push`.
  */
 object WebOberflaeche {
-    fun routen(deps: ServerDeps): List<Route.() -> Unit> {
+    fun routen(deps: ServerDeps, zone: ZoneId = standardZone()): List<Route.() -> Unit> {
         val daten = HaushaltsDaten(deps.db)
         return listOf(
             { statisch() },
             { anmeldung(deps) },
-            { seiten(deps, daten) },
+            { seiten(deps, daten, zone) },
         )
     }
 
@@ -45,7 +47,7 @@ object WebOberflaeche {
         webPost("/haushalt/neu") { HaushaltSeite.anlegen(call, deps) }
     }
 
-    private fun Route.seiten(deps: ServerDeps, daten: HaushaltsDaten) {
+    private fun Route.seiten(deps: ServerDeps, daten: HaushaltsDaten, zone: ZoneId) {
         webGet("/") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             RezeptSeiten.liste(call, s, daten.fuer(s.haushalt!!))
@@ -56,17 +58,52 @@ object WebOberflaeche {
         }
         webGet("/plan") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
-            PlanTagebuchSeiten.plan(call, s, daten.fuer(s.haushalt!!), LocalDate.now(deps.clock))
+            PlanTagebuchSeiten.plan(call, s, daten.fuer(s.haushalt!!), deps.heute(zone))
         }
+        webPost("/plan/aktion") { PlanSeiten.aktion(call, deps, daten, deps.heute(zone), pfadId = null) }
+        webPost("/plan/einplanen") { PlanSeiten.einplanen(call, deps, daten, deps.heute(zone)) }
+        webGet("/plan/neu") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            PlanSeiten.neu(call, s, daten.fuer(s.haushalt!!), deps.heute(zone))
+        }
+        webGet("/plan/neu/liste") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            PlanSeiten.neuListe(call, daten.fuer(s.haushalt!!), deps.heute(zone))
+        }
+        webGet("/plan/vorschlag") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            PlanSeiten.vorschlag(call, deps, s, daten.fuer(s.haushalt!!), deps.heute(zone))
+        }
+        webPost("/plan/vorschlag") { PlanSeiten.vorschlagUebernehmen(call, deps, daten, deps.heute(zone)) }
+        webPost("/plan/{id}") { PlanSeiten.aktion(call, deps, daten, deps.heute(zone), call.parameters["id"].orEmpty()) }
         webGet("/tagebuch") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
-            PlanTagebuchSeiten.tagebuch(call, s, daten.fuer(s.haushalt!!), LocalDate.now(deps.clock))
+            PlanTagebuchSeiten.tagebuch(call, s, daten.fuer(s.haushalt!!), deps.heute(zone))
         }
         webGet("/einkauf") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             EinkaufSeite.zeigen(call, s, daten.fuer(s.haushalt!!))
         }
+        webGet("/einkauf/neu") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            ListeAusPlanSeiten.neu(call, deps, s, daten, deps.heute(zone))
+        }
+        webPost("/einkauf/neu") { ListeAusPlanSeiten.anlegen(call, deps, daten, deps.heute(zone)) }
+        webGet("/einkauf/{liste}/abgleich") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            ListeAusPlanSeiten.abgleich(call, deps, s, daten, call.parameters["liste"].orEmpty())
+        }
+        webPost("/einkauf/{liste}/abgleich") { ListeAusPlanSeiten.abgleichUebernehmen(call, deps, daten, call.parameters["liste"].orEmpty()) }
+        webPost("/einkauf/abhaken") { EinkaufSeite.abhaken(call, deps, daten, pfadId = null) }
         webPost("/einkauf/{id}/abhaken") { EinkaufSeite.abhaken(call, deps, daten, call.parameters["id"].orEmpty()) }
+        webPost("/einkauf/eingabe") { EinkaufSeite.eingabe(call, deps, daten) }
+        webPost("/einkauf/rezept") { EinkaufSeite.rezeptAufListe(call, deps, daten, deps.heute(zone)) }
+        webPost("/einkauf/{liste}/bearbeiten") { EinkaufSeite.bearbeitenSpeichern(call, deps, daten, call.parameters["liste"].orEmpty()) }
+        webGet("/einkauf/{liste}/loeschen") {
+            val s = call.sitzungMitHaushalt(deps) ?: return@webGet
+            EinkaufSeite.loeschenBestaetigen(call, s, daten.fuer(s.haushalt!!), call.parameters["liste"].orEmpty())
+        }
+        webPost("/einkauf/{liste}/loeschen") { EinkaufSeite.listeLoeschen(call, deps, daten, call.parameters["liste"].orEmpty()) }
         webGet("/import") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
             ImportSeite.zeigen(call, s)
@@ -93,7 +130,7 @@ object WebOberflaeche {
         webPost("/rezept/{id}/wiederherstellen") { EditorSeite.archivieren(call, deps, daten, call.parameters["id"].orEmpty(), archiviert = false) }
         webGet("/rezept/{id}") {
             val s = call.sitzungMitHaushalt(deps) ?: return@webGet
-            RezeptSeiten.rezept(call, s, daten.fuer(s.haushalt!!), call.parameters["id"].orEmpty())
+            RezeptSeiten.rezept(call, s, daten.fuer(s.haushalt!!), call.parameters["id"].orEmpty(), deps.heute(zone))
         }
     }
 }

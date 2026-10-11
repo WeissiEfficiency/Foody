@@ -40,6 +40,27 @@ class PlanTagebuchTest {
         assertTrue("Ø 700 kcal pro Tag" in html, html)
     }
 
+    /** 23:30 UTC am 11.10. ist in Berlin schon der 12.10. */
+    @Test fun heuteInBerlin() = webServer { env ->
+        val (benutzer, _, _) = env.haushalt()
+        env.uhr.jetzt = java.time.Instant.parse("2026-10-11T23:30:00Z")
+        val c = ohneWeiterleitung()
+        val html = c.get("/plan") { header(HttpHeaders.Cookie, c.anmelden(benutzer)) }.bodyAsText()
+        assertTrue("Mo., 12.10." in html && "So., 11.10." !in html, html.take(800))
+    }
+
+    @Test fun planMitVierzehnTagen() = webServer { env ->
+        val (benutzer, _, _) = env.haushalt()
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val vierzehn = c.get("/plan?ab=2026-10-12&tage=14") { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
+        assertTrue("So., 25.10." in vierzehn && "Mo., 26.10." !in vierzehn)
+        assertTrue("tage=14" in vierzehn, "Navigation behält die Tageszahl")
+        assertTrue("id=\"tag-2026-10-12\"" in vierzehn)
+        val unsinn = c.get("/plan?ab=2026-10-12&tage=99") { header(HttpHeaders.Cookie, cookie) }.bodyAsText()
+        assertTrue("So., 18.10." in unsinn && "Mo., 19.10." !in unsinn, "anderes als 7/14 → 7")
+    }
+
     @Test fun tagebuchSummeWieInDerApp() = webServer { env ->
         val (benutzer, _, h) = env.haushalt()
         // 100,4 kcal je Eintrag: Zeilen 100 + 100, Summe 200 (nicht 201) – wie Tagebuch.bilanz

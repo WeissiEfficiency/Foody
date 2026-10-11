@@ -23,10 +23,8 @@ import de.foody.domain.Gang
 import de.foody.domain.Mahlzeit
 import de.foody.domain.alsText
 import de.foody.domain.IngredientCatalog
+import de.foody.domain.Kochen
 import de.foody.domain.MeasureUnit
-import de.foody.domain.Quantity
-import de.foody.domain.RecipeScaler
-import de.foody.domain.UnitConverter
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import javax.inject.Inject
@@ -287,27 +285,16 @@ class PlanRepository @Inject constructor(
         val slot = dao.get(slotId) ?: return@withTransaction
         if (slot.cookedAt != null) return@withTransaction
         val recipe = recipeDao.get(slot.recipeId) ?: return@withTransaction
-        val pantry = pantryDao.getAll().toMutableList()
+        val pantry = pantryDao.getAll()
         val lines = recipeDao.getIngredients(recipe.id)
         // Eine Abfrage für alle Zutaten statt einer je Rezeptzeile
         val infoById = ingredientDao.getByIds(lines.map { it.ingredientId }.distinct()).associate { it.id to it.toDomain().conversion }
-        for (line in lines) {
-            if (line.optional) continue
-            val info = infoById[line.ingredientId] ?: continue
-            var need = Quantity.of(RecipeScaler.scale(line.amount, recipe.defaultServings, slot.servings), line.unit)
-            for ((idx, p) in pantry.withIndex()) {
-                if (p.ingredientId != line.ingredientId || need.isZero()) continue
-                val stock = Quantity.of(p.amount, p.unit)
-                val needInStockDim = UnitConverter.convert(need, stock.dimension, info) ?: continue
-                val take = if (stock.baseAmount <= needInStockDim.baseAmount) stock else needInStockDim
-                val rest = stock.minusClamped(take)
-                val updated = p.copy(amount = rest.amountIn(p.unit), updatedAt = System.currentTimeMillis())
-                pantry[idx] = updated
-                pantryDao.upsert(updated)
-                val takenInNeedDim = UnitConverter.convert(take, need.dimension, info) ?: take
-                need = need.minusClamped(takenInNeedDim)
-            }
-        }
+        // Gleiche Regel wie in der Web-Oberfläche
+        val neu = Kochen.vorratAbziehen(
+            recipe.toDomain(lines), slot.servings, infoById, pantry.map { Kochen.Vorrat(it.id, it.ingredientId, it.amount, it.unit) },
+        )
+        val jetzt = System.currentTimeMillis()
+        for (p in pantry) neu[p.id]?.let { pantryDao.upsert(p.copy(amount = it, updatedAt = jetzt)) }
         dao.upsert(slot.copy(cookedAt = System.currentTimeMillis()))
     }
 }

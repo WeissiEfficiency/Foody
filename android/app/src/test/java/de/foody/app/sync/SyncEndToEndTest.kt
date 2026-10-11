@@ -10,6 +10,7 @@ import de.foody.app.data.repo.PlanRepository
 import de.foody.app.data.repo.RecipeDraft
 import de.foody.app.data.repo.RecipeRepository
 import de.foody.app.data.repo.ShoppingRepository
+import de.foody.domain.DateRange
 import de.foody.domain.MeasureUnit
 import de.foody.sync.protocol.LoginRequest
 import de.foody.sync.protocol.PhotoHash
@@ -360,5 +361,48 @@ class SyncEndToEndTest {
         assertEquals("Rote Linsensuppe", lokal.name)
         assertTrue(lokal.favorite, "Favorit vom Handy bleibt")
         assertEquals(0, BigDecimal(300).compareTo(a.db.recipeDao().getIngredients(rid).single().amount))
+    }
+
+    /** Plan und Liste aus dem Browser kommen aufs Handy – mit denselben Mengen, die das Handy selbst rechnen würde. */
+    @Test
+    fun planUndListeAusDemBrowserKommenAufsHandy() = syncServerTest { _, clock ->
+        val (a, _) = pair(clock)
+        val reis = a.ingredients.getOrCreate("Reis")
+        val zwiebel = a.ingredients.getOrCreate("Zwiebel")
+        val rid = a.recipes.save(RecipeDraft(
+            id = null, name = "Reispfanne", defaultServings = 2,
+            ingredients = listOf(line(reis.id, 200), line(zwiebel.id, 1).copy(unit = MeasureUnit.PIECE)),
+        ))
+        a.runOk()
+        val browser = createClient { followRedirects = false }
+        val login = browser.submitForm("/login", parameters { append("benutzer", TEST_ADMIN_USER); append("passwort", TEST_ADMIN_PASSWORD) })
+        val cookie = login.headers.getAll(HttpHeaders.SetCookie)!!.first { it.startsWith("foody_sitzung=") }.substringBefore(';')
+        val csrf = Regex("""name="csrf" content="([0-9a-f]+)"""").find(browser.get("/plan") { header(HttpHeaders.Cookie, cookie) }.bodyAsText())!!.groupValues[1]
+        // Testuhr: 4.10.2026 → morgen
+        val tag = LocalDate.of(2026, 10, 5)
+        val eingeplant = browser.submitForm("/plan/einplanen", parameters {
+            append("_csrf", csrf); append("tag", tag.toString()); append("mahlzeit", "ABENDESSEN"); append("rezept", rid); append("portionen", "3")
+        }) { header(HttpHeaders.Cookie, cookie) }
+        assertEquals(HttpStatusCode.SeeOther, eingeplant.status)
+        val liste = browser.submitForm("/einkauf/neu", parameters {
+            append("_csrf", csrf); append("name", "Einkauf"); append("von", tag.toString()); append("bis", tag.toString()); append("vorrat", "1")
+            append("mit", reis.id); append("mit", zwiebel.id)
+        }) { header(HttpHeaders.Cookie, cookie) }
+        assertEquals(HttpStatusCode.SeeOther, liste.status)
+        a.runOk()
+
+        val slot = a.db.mealPlanDao().getRange(tag, tag).single()
+        assertEquals(rid to 3, slot.recipeId to slot.servings)
+        val lokal = a.db.shoppingDao().getLists().single()
+        assertEquals(tag to tag, lokal.rangeStart to lokal.rangeEnd)
+        val eintraege = a.db.shoppingDao().getItems(lokal.id)
+        val handy = a.shopping.preview(DateRange(tag, tag), usePantry = true).filter { !it.need.toBuy.isZero() }
+        fun schluessel(id: String?, menge: BigDecimal?, einheit: MeasureUnit?) = Triple(id, menge?.stripTrailingZeros()?.toPlainString(), einheit)
+        assertEquals(
+            handy.map { p -> MeasureUnit.baseOf(p.need.toBuy.dimension).let { schluessel(p.need.ingredientId, p.need.toBuy.amountIn(it), it) } }.toSet(),
+            eintraege.map { schluessel(it.ingredientId, it.amount, it.unit) }.toSet(),
+        )
+        assertEquals(setOf("300", "2"), eintraege.map { it.amount!!.stripTrailingZeros().toPlainString() }.toSet(), "3 Portionen; 1,5 Zwiebeln aufgerundet")
+        assertTrue(eintraege.all { a.shopping.getSources(it.id).single().mealSlotId == slot.id }, "Herkunft zeigt auf den Planeintrag")
     }
 }

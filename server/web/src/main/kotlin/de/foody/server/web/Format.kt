@@ -3,6 +3,7 @@ package de.foody.server.web
 import de.foody.domain.MeasureUnit
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.response.respond
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlinx.html.h1
@@ -19,6 +20,19 @@ internal suspend fun ApplicationCall.nichtGefunden(s: Sitzung, text: String) =
     seiteAntworten("Nicht gefunden", s, null, HttpStatusCode.NotFound) {
         h1 { +"Nicht gefunden" }
         p { +text }
+    }
+
+/** 303 nach einem POST: die Zielseite per GET laden (kein erneutes Absenden beim Aktualisieren). */
+internal suspend fun ApplicationCall.weiterleiten(ziel: String) {
+    response.headers.append(io.ktor.http.HttpHeaders.Location, ziel)
+    respond(HttpStatusCode.SeeOther)
+}
+
+/** Der Server hat einen Datensatz abgelehnt (z. B. weil ein Rezept inzwischen gelöscht ist). */
+internal suspend fun ApplicationCall.abgelehnt(s: Sitzung) =
+    seiteAntworten("Das ging nicht", s, null, HttpStatusCode.Conflict) {
+        h1 { +"Das ging nicht" }
+        p { +"Das ging nicht – bitte neu laden." }
     }
 
 /** Anzeigetexte der Mahlzeiten (wie die String-Ressourcen der App). */

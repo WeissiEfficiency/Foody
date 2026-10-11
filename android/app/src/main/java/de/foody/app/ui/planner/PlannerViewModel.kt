@@ -13,7 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOn
 import de.foody.app.data.repo.PantryRepository
 import de.foody.domain.MealSuggestions
-import de.foody.domain.PantryCoverage
+import de.foody.domain.PlanVorschlag
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -103,22 +103,20 @@ class PlannerViewModel @Inject constructor(
 
     fun suggest(mahlzeit: Mahlzeit = Mahlzeit.ABENDESSEN, seed: Long = System.currentTimeMillis()) = viewModelScope.launch {
         val s = state.value
-        val today = LocalDate.now()
-        val empty = s.range.days.filter { day ->
-            day >= today && s.slotsByDay[day].orEmpty().none { Mahlzeit.ausText(it.slotType) == mahlzeit }
-        }
+        val empty = PlanVorschlag.leereTage(s.range.days, LocalDate.now(), s.slotsByDay.mapValues { (_, v) -> v.map { it.slotType } }, mahlzeit)
         if (empty.isEmpty() || s.activeRecipes.isEmpty()) {
             _proposal.value = Proposal(seed, mahlzeit, emptyList())
             return@launch
         }
         val inPantry = pantry.observeAll().first().filter { it.amount.signum() > 0 }.map { it.ingredientId }.toSet()
-        val missing = PantryCoverage.missingByRecipe(recipes.observeRequired().first(), inPantry)
+        val required = recipes.observeRequired().first().groupBy { it.recipeId }
         // Auch die schon geplanten Tage des Zeitraums zählen: Was diese Woche dran ist, wird nicht noch einmal vorgeschlagen
         val lastPlanned = plan.lastPlannedByRecipe(empty.min().minusDays(MealSuggestions.REPEAT_GAP_DAYS), s.range.endInclusive)
-        val candidates = s.activeRecipes.map {
-            MealSuggestions.Candidate(it.id, it.favorite, missing[it.id], lastPlanned[it.id], it.einordnung().mahlzeiten)
+        val rezepte = s.activeRecipes.map {
+            PlanVorschlag.Rezept(it.id, it.favorite, it.einordnung().mahlzeiten, required[it.id].orEmpty())
         }
-        val picks = MealSuggestions.suggest(candidates, empty, seed, mahlzeit)
+        // Gleiche Eingabebildung wie in der Web-Oberfläche
+        val picks = PlanVorschlag.vorschlagen(rezepte, empty, inPantry, lastPlanned.map { it.key to it.value }, s.range.endInclusive, seed, mahlzeit)
         _proposal.value = Proposal(seed, mahlzeit, picks.entries.sortedBy { it.key }.mapNotNull { (day, id) -> s.recipes[id]?.let { day to it } })
     }
 
