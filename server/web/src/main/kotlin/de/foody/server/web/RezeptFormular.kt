@@ -115,7 +115,8 @@ internal data class RezeptFormular(
                 zeilen = p.lines.sortedBy { it.sortOrder }.map { l ->
                     val menge = BigDecimal(l.amount)
                     FormZeile(
-                        menge = if (menge.signum() == 0) "" else zahl(menge, 3),
+                        // Ungerundet: sonst würde jedes Speichern im Browser z. B. 0,0625 zu 0,063 machen
+                        menge = if (menge.signum() == 0) "" else menge.stripTrailingZeros().toPlainString().replace('.', ','),
                         einheit = MeasureUnit.entries.firstOrNull { it.name == l.unit }?.symbol ?: l.unit,
                         zutat = h.zutaten[l.ingredientId]?.name ?: "",
                         hinweis = l.note.orEmpty(),

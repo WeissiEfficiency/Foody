@@ -125,4 +125,42 @@ class EditorSeitenTest {
         val bytes = c.get("/rezept/gross/bearbeiten") { header(HttpHeaders.Cookie, c.anmelden(benutzer)) }.bodyAsBytes().size
         assertTrue(bytes < 30_000, "$bytes Bytes")
     }
+
+    /** Formulare haben eine Größengrenze; ohne Anmeldung wird der Body gar nicht erst gelesen. */
+    @Test fun zuGrossesFormularAbgelehnt() = webServer { env ->
+        val (benutzer, _, _) = env.haushalt()
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val token = c.csrf(cookie)
+        val riesig = c.submitForm("/rezept/speichern", parameters { append("_csrf", token); rezeptFelder(); append("notizen", "x".repeat(300_000)) }) {
+            header(HttpHeaders.Cookie, cookie)
+        }
+        assertEquals(HttpStatusCode.PayloadTooLarge, riesig.status)
+        val ohneSitzung = c.submitForm("/rezept/speichern", parameters { rezeptFelder(); append("notizen", "x".repeat(300_000)) })
+        assertEquals("/login", ohneSitzung.headers[HttpHeaders.Location])
+    }
+
+    /** Bearbeiten lässt Mengen genau so, wie sie gespeichert sind (keine Rundung beim Speichern unveränderter Zeilen). */
+    @Test fun mengenBleibenGenau() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        env.push(h, reis(), datensatz("r1", RecordType.RECIPE, RecipePayload(name = "Prise", servings = 1, tags = "", favorite = false,
+            lines = listOf(RecipePayload.Line("l", "reis", "0.0625", "TEASPOON", 0, null, false)), steps = emptyList())))
+        val c = ohneWeiterleitung()
+        val html = c.get("/rezept/r1/bearbeiten") { header(HttpHeaders.Cookie, c.anmelden(benutzer)) }.bodyAsText()
+        assertTrue("value=\"0,0625\"" in html, "keine Rundung auf 3 Stellen")
+    }
+
+    /** Fremde IDs auf den Schreib-Routen: 404, nichts geändert. */
+    @Test fun fremdeIdsBeimSchreibenSind404() = webServer { env ->
+        val (benutzer, _, _) = env.haushalt("Meins")
+        val (_, _, fremd) = env.haushalt("Fremd")
+        env.push(fremd, reis(), rezept("geheim", "Geheimrezept"))
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        assertEquals(HttpStatusCode.NotFound, c.speichern(cookie) { rezeptFelder(id = "geheim", rev = "1") }.status)
+        val token = c.csrf(cookie)
+        assertEquals(HttpStatusCode.NotFound, c.submitForm("/rezept/geheim/archivieren", parameters { append("_csrf", token) }) { header(HttpHeaders.Cookie, cookie) }.status)
+        assertEquals(null, HaushaltsDaten(env.deps.db).fuer(fremd).rezepte.getValue("geheim").payload.archivedAt)
+        assertFalse("Reis" in c.get("/rezept/zutatenliste") { header(HttpHeaders.Cookie, cookie) }.bodyAsText(), "Zutaten des fremden Haushalts")
+    }
 }

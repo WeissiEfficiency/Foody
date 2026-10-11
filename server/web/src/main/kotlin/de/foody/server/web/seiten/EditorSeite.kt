@@ -65,8 +65,8 @@ internal object EditorSeite {
     }
 
     suspend fun speichern(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten) {
-        val form = call.formular()
         val s = call.sitzungMitHaushalt(deps) ?: return
+        val form = call.formular()
         if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
         val f = RezeptFormular.aus(form)
         when (val e = RezeptSchreiber(deps, daten).speichern(s.haushalt!!, f)) {
@@ -82,8 +82,8 @@ internal object EditorSeite {
     }
 
     suspend fun archivieren(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, id: String, archiviert: Boolean) {
-        val form = call.formular()
         val s = call.sitzungMitHaushalt(deps) ?: return
+        val form = call.formular()
         if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
         if (!RezeptSchreiber(deps, daten).archivieren(s.haushalt!!, id, archiviert)) return call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
         call.response.headers.append(HttpHeaders.Location, "/rezept/$id")

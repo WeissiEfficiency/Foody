@@ -96,9 +96,13 @@ internal class RezeptSchreiber(private val deps: ServerDeps, private val daten: 
      * Server es ablehnt.
      */
     fun importieren(household: String, rezept: ImportedRecipe, tag: String): String? {
+        // Leerer Zutatenname (z. B. Zeile „, gehackt“) wäre für den Server ungültig: Datei gilt als nicht erkannt
+        if (rezept.ingredients.any { it.name.isBlank() || it.name.trim().length > RezeptFormular.MAX_NAME }) return null
         val ids = zutatenAufloesen(household, rezept.ingredients.map { it.name })
         val zutaten = daten.fuer(household).zutaten
-        val ergebnis = RezeptImport.vorbereiten(rezept, ids.map { zutaten.getValue(it) }, VORGABE_PORTIONEN)
+        // Vom Server abgelehnte neue Zutat: nicht anlegen statt Fehlerseite
+        val aufgeloest = ids.map { zutaten[it] ?: return null }
+        val ergebnis = RezeptImport.vorbereiten(rezept, aufgeloest, VORGABE_PORTIONEN)
         val id = UUID.randomUUID().toString()
         val payload = RecipePayload(
             name = rezept.name, servings = ergebnis.portionen, tags = tag, favorite = false, sourceUrl = rezept.sourceUrl,

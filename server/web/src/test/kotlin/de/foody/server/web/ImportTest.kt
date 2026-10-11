@@ -114,4 +114,17 @@ class ImportTest {
         val antwort = c.importieren(c.anmelden(benutzer), null, "a.md" to linsensuppe.toByteArray())
         assertEquals(HttpStatusCode.Forbidden, antwort.status)
     }
+
+    /** Eine Datei mit unbrauchbarer Zutatenzeile (leerer Name) ist „nicht erkannt“ – die übrigen werden importiert, keine Fehlerseite. */
+    @Test fun dateiMitLeeremZutatennamenBrichtNichtAb() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        val kaputt = listOf("# Kaputt", "", "## Zutaten", "", "1", "", ", gehackt", "", "## Zubereitung", "", "Kochen.").joinToString("\n")
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val antwort = c.importieren(cookie, c.csrf(cookie), "kaputt.md" to kaputt.toByteArray(), "gut.md" to linsensuppe.toByteArray())
+        assertEquals(HttpStatusCode.OK, antwort.status)
+        val html = antwort.bodyAsText()
+        assertTrue("1 importiert" in html && "nicht erkannt" in html.lowercase(), html.take(600))
+        assertEquals(listOf("Linsensuppe"), HaushaltsDaten(env.deps.db).fuer(h).rezepte.values.map { it.payload.name })
+    }
 }

@@ -53,8 +53,8 @@ internal object HaushaltSeite {
     }
 
     suspend fun waehlen(call: ApplicationCall, deps: ServerDeps) {
-        val form = call.formular()
         val s = call.sitzungOderLogin(deps) ?: return
+        val form = call.formular()
         if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
         val id = form["haushalt"].orEmpty()
         try {
@@ -66,8 +66,8 @@ internal object HaushaltSeite {
     }
 
     suspend fun anlegen(call: ApplicationCall, deps: ServerDeps) {
-        val form = call.formular()
         val s = call.sitzungOderLogin(deps) ?: return
+        val form = call.formular()
         if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
         try {
             deps.accounts.createHousehold(s.principal.userId, s.principal.deviceId, form["name"].orEmpty())

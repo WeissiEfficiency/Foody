@@ -32,6 +32,7 @@ private suspend fun RoutingContext.rahmen(block: suspend RoutingContext.() -> Un
             HttpStatusCode.NotFound -> "Nicht gefunden"
             HttpStatusCode.Forbidden -> "Keine Berechtigung"
             HttpStatusCode.TooManyRequests -> "Zu viele Versuche"
+            HttpStatusCode.PayloadTooLarge -> "Zu groß"
             else -> "Das ging nicht"
         }
         call.seiteAntworten(titel, null, null, e.status) {

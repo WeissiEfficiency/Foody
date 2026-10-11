@@ -106,8 +106,8 @@ internal object EinkaufSeite {
     }
 
     suspend fun abhaken(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, id: String) {
-        val form = call.formular()
         val s = call.sitzungMitHaushalt(deps) ?: return
+        val form = call.formular()
         if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
         val haushalt = s.haushalt!!
         val erledigt = form["erledigt"] == "1"

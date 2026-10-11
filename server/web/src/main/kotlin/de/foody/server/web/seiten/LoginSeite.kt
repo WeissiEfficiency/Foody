@@ -123,12 +123,12 @@ internal object LoginSeite {
     }
 
     suspend fun abmelden(call: ApplicationCall, deps: ServerDeps) {
-        val form = call.formular()
         val s = call.sitzung(deps)
         if (s == null) {
             call.respondRedirect("/login")
             return
         }
+        val form = call.formular()
         if (!s.csrfGueltig(call.csrfAus(form))) return call.respond(HttpStatusCode.Forbidden)
         deps.accounts.revokeDevice(s.principal.userId, s.principal.deviceId)
         call.loescheSitzung()
