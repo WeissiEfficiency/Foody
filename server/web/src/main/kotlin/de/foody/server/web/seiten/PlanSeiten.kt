@@ -107,6 +107,8 @@ internal object PlanSeiten {
         val form = call.formular()
         if (!s.csrfGueltig(call.csrfAus(form))) return call.formularVeraltet()
         val household = s.haushalt!!
+        // Keine Auswahl (alter Browser, `required` umgangen): Hinweis auf der Auswahlseite statt „nicht gefunden“
+        if (form["rezept"].isNullOrBlank()) return neu(call, s, daten.fuer(household), heute, form, "Bitte ein Rezept auswählen.")
         val rezept = daten.fuer(household).rezepte[form["rezept"].orEmpty()]
             ?: return call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
         val e = Eingabe(form["tag"].orEmpty().trim(), form["mahlzeit"].orEmpty(), form["portionen"].orEmpty().trim())
@@ -158,8 +160,7 @@ internal object PlanSeiten {
 
     private data class Auswahl(val tag: LocalDate, val mahlzeit: Mahlzeit, val alle: Boolean, val q: String)
 
-    private fun ApplicationCall.auswahl(h: Haushalt, heute: LocalDate): Auswahl {
-        val q = request.queryParameters
+    private fun ApplicationCall.auswahl(h: Haushalt, heute: LocalDate, q: io.ktor.http.Parameters = request.queryParameters): Auswahl {
         val tag = q["tag"]?.let(::datumOderNull)?.takeIf { datumErlaubt(it, heute) } ?: heute
         val belegt = h.plan.filter { it.datum == tag }.mapNotNull { Mahlzeit.ausText(it.mahlzeit) }.toSet()
         val mahlzeit = Mahlzeit.entries.firstOrNull { it.name == q["mahlzeit"] }
@@ -167,9 +168,10 @@ internal object PlanSeiten {
         return Auswahl(tag, mahlzeit, q["alle"] == "1", q["q"].orEmpty().trim().take(100))
     }
 
-    suspend fun neu(call: ApplicationCall, s: Sitzung, h: Haushalt, heute: LocalDate) {
-        val a = call.auswahl(h, heute)
+    suspend fun neu(call: ApplicationCall, s: Sitzung, h: Haushalt, heute: LocalDate, werte: io.ktor.http.Parameters? = null, fehler: String? = null) {
+        val a = if (werte == null) call.auswahl(h, heute) else call.auswahl(h, heute, werte)
         call.seiteAntworten("Einplanen", s, Navi.PLAN) {
+            fehler?.let { p("hinweis fehler") { +it } }
             h1 { +"Einplanen · ${a.tag.format(TAG)}" }
             // Filter per GET (ohne JS „Anzeigen“); mit htmx wird nur die Liste ersetzt
             form(action = "/plan/neu", method = FormMethod.get, classes = "zeile karte") {

@@ -176,6 +176,22 @@ class TagebuchSchreibenTest {
         assertEquals(200, tagebuch(env, h).single().werte.kcal, "geänderte kcal werden umgerechnet")
     }
 
+    /** Kleinigkeiten 6: kein Rezept gewählt → Hinweis im Formular, Eingaben bleiben (Tagebuch und Einplanen). */
+    @Test fun keinRezeptGewaehlt() = webServer { env ->
+        val (benutzer, _, h) = env.haushalt()
+        env.push(h, reis(), rezept("r1", "Curry"))
+        val c = ohneWeiterleitung()
+        val cookie = c.anmelden(benutzer)
+        val tagebuch = c.post(cookie, "/tagebuch/rezept", "tag" to "2026-10-11", "mahlzeit" to "ABENDESSEN", "portionen" to "2,5")
+        assertEquals(HttpStatusCode.OK, tagebuch.status)
+        val html = tagebuch.bodyAsText()
+        assertTrue("Bitte ein Rezept auswählen." in html && "value=\"2,5\"" in html, html.take(1500))
+        val plan = c.post(cookie, "/plan/einplanen", "tag" to "2026-10-12", "mahlzeit" to "ABENDESSEN", "portionen" to "3")
+        assertEquals(HttpStatusCode.OK, plan.status)
+        assertTrue("Bitte ein Rezept auswählen." in plan.bodyAsText())
+        assertTrue(tagebuch(env, h).isEmpty() && HaushaltsDaten(env.deps.db).fuer(h).plan.isEmpty())
+    }
+
     @Test fun loeschen() = webServer { env ->
         val (benutzer, _, h) = env.haushalt()
         env.push(h, reis(), rezept("r1", "Curry"), eintrag("t1"))

@@ -203,8 +203,10 @@ internal object TagebuchSeiten {
     suspend fun rezept(call: ApplicationCall, deps: ServerDeps, daten: HaushaltsDaten, heute: LocalDate) {
         val (s, form) = call.formularMitCsrf(deps) ?: return
         val h = daten.fuer(s.haushalt!!)
-        if (h.rezepte[form["rezept"].orEmpty()] == null) return call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
         val p = Pruefung()
+        // Keine Auswahl → Hinweis im Formular; nur eine unbekannte ID ist „nicht gefunden“
+        if (form["rezept"].isNullOrBlank()) p.fehler += "Bitte ein Rezept auswählen."
+        else if (h.rezepte[form["rezept"]!!] == null) return call.nichtGefunden(s, "Dieses Rezept gibt es nicht (mehr).")
         val tag = p.tag(form["tag"], heute)
         val mahlzeit = p.mahlzeit(form["mahlzeit"])
         val portionen = p.portionen(form["portionen"])
