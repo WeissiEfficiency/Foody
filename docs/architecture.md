@@ -1,5 +1,13 @@
 # Architektur
 
+**Module und Ordner:** Handy-App unter `android/` (`:app`, `:baselineprofile`), gemeinsamer Code unter `shared/`
+(`:domain`, `:sync-protocol`), Server unter `server/` – `:server-sync` (API, Konten, Datenbank, Sync), `:server-web`
+(Web-Oberfläche) und `:server` (nur `main`). Abhängigkeiten laufen nur in eine Richtung:
+`:server` → `:server-web` → `:server-sync` → `:sync-protocol`, `:server-web` → `:domain`, `:app` → `:domain`,
+`:sync-protocol`. Die Web-Oberfläche dockt über `foodyModule(deps, erweiterungen)` an; der Sync-Server kennt sie nicht.
+Gradle-Namen sind unabhängig von den Ordnern (`projectDir` in `settings.gradle.kts`). Spec:
+`docs/superpowers/specs/2026-10-11-projektstruktur-design.md`.
+
 - **UI-Schicht** (`app/.../ui`): Compose-Screens + `@HiltViewModel`. Jeder Screen rendert einen unveränderlichen
   `UiState` aus `StateFlow`; Nutzeraktionen sind Methodenaufrufe am ViewModel (Unidirectional Data Flow).
   Einmalige Meldungen (Snackbar) sind Zustand, der nach Anzeige quittiert wird (`messageShown()`).

@@ -2,6 +2,10 @@
 
 Selbst gehosteter Sync-Server (Ktor + SQLite) für die Foody-App, gedacht für den Betrieb hinter Traefik.
 
+**Aufbau:** `sync/` (API, Konten, Datenbank, Sync, Admin-CLI), `web/` (Web-Oberfläche), `start/` (`main`, aus dem das
+Docker-Image entsteht). Der Server nutzt außerdem `../shared/` (gemeinsam mit der App) – Änderungen dort brauchen
+ebenfalls ein Update des Servers.
+
 ## Voraussetzungen
 
 - Docker mit Compose und ein laufender Traefik in einem externen Docker-Netzwerk (Name in `TRAEFIK_NETWORK`).
@@ -38,7 +42,7 @@ löscht die tägliche Kompaktierung (und `foody-admin compact`) nach 30 Tagen.
 ## Lokale Entwicklung unter Windows
 
 Das erzeugte `foody-server.bat` (`FOODY_SERVER_ONLY=1 ./gradlew :server:installDist`) scheitert dort mit „Zeile zu lang“.
-Stattdessen im Installationsordner (`server/build/install/foody-server`) starten:
+Stattdessen im Installationsordner (`server/start/build/install/foody-server`) starten:
 
 ```sh
 java -cp "lib/*" de.foody.server.MainKt

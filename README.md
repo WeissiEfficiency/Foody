@@ -44,12 +44,17 @@ Betrieb: [`server/README.md`](server/README.md); Entscheidung: [`docs/adr/0006-o
 
 ## Projektstruktur
 
-| Modul | Inhalt |
-|---|---|
-| `:domain` | Reines Kotlin (keine Android-Abhängigkeiten): Einheiten, Skalierung, Nährwerte, Einkaufsaggregation, Diff, Export-Schnittstelle |
-| `:sync-protocol` | Gemeinsame DTOs und Protokollversion von App und Server |
-| `:server` | Optionaler Sync-Server (Ktor + SQLite) |
-| `:app` | Compose-UI, ViewModels, Room, Hilt, Repositories, Backup |
+| Ordner | Modul | Inhalt |
+|---|---|---|
+| `android/app/` | `:app` | Handy-App: Compose-UI, ViewModels, Room, Hilt, Repositories, Backup |
+| `android/baselineprofile/` | `:baselineprofile` | Generator für das Baseline-Profil (schnellerer Start) |
+| `shared/domain/` | `:domain` | Reines Kotlin (keine Android-Abhängigkeiten): Einheiten, Skalierung, Nährwerte, Einkaufsaggregation, Diff, Import, Einordnung – von App und Server genutzt |
+| `shared/sync-protocol/` | `:sync-protocol` | Gemeinsame DTOs, Validierung und Protokollversion von App und Server |
+| `server/sync/` | `:server-sync` | Optionaler Sync-Server (Ktor + SQLite): API, Konten, Datenbank, Sync, Fotos, Admin-CLI |
+| `server/web/` | `:server-web` | Web-Oberfläche des Servers (im Aufbau) |
+| `server/start/` | `:server` | Startpunkt (`main`), verbindet Sync-Server und Web-Oberfläche; Docker-Image |
+
+Änderungen unter `shared/` betreffen App **und** Server: danach den Server neu bauen (`server/README.md`, Update).
 
 Details: [`docs/architecture.md`](docs/architecture.md), fachliche Invarianten: [`docs/domain-rules.md`](docs/domain-rules.md), Sicherheit: [`docs/security.md`](docs/security.md).
 
@@ -65,7 +70,7 @@ Voraussetzungen: JDK 17+ (z. B. das JBR von Android Studio), Android SDK (compil
 ```
 
 **Baseline-Profil** (schnellerer App-Start): liegt erzeugt unter
-`app/src/release/generated/baselineProfiles/baseline-prof.txt` und kommt automatisch in jeden Release-Build.
+`android/app/src/release/generated/baselineProfiles/baseline-prof.txt` und kommt automatisch in jeden Release-Build.
 Nach größeren UI-Änderungen neu erzeugen (Emulator/Gerät mit Android 13+ verbunden):
 
 ```powershell
