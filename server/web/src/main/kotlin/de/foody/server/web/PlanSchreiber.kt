@@ -82,8 +82,9 @@ internal class PlanSchreiber(private val deps: ServerDeps, private val daten: Ha
         val p = Protocol.json.decodeFromJsonElement(MealSlotPayload.serializer(), gespeichert.payload!!)
         val datum = LocalDate.parse(p.date)
         val felder: Map<String, JsonPrimitive> = when (aktion) {
-            "minus" -> mapOf("servings" to JsonPrimitive((p.servings - 1).coerceIn(1, 99)))
-            "plus" -> mapOf("servings" to JsonPrimitive((p.servings + 1).coerceIn(1, 99)))
+            // An der Grenze (1 bzw. 99) nichts schreiben – sonst eine neue Revision, die jedes Handy umsonst abholt
+            "minus" -> if (p.servings <= 1) return Schreiben.Ok else mapOf("servings" to JsonPrimitive((p.servings - 1).coerceIn(1, 99)))
+            "plus" -> if (p.servings >= 99) return Schreiben.Ok else mapOf("servings" to JsonPrimitive((p.servings + 1).coerceIn(1, 99)))
             "frueher" -> mapOf("date" to JsonPrimitive(datum.minusDays(1).toString()))
             "spaeter" -> mapOf("date" to JsonPrimitive(datum.plusDays(1).toString()))
             else -> return Schreiben.Ok
