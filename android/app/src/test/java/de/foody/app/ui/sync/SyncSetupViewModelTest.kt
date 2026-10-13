@@ -91,7 +91,7 @@ private class FakeBackup(private val log: MutableList<String>) : SetupBackup {
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(sdk = [36], application = Application::class)
 class SyncSetupViewModelTest {
     private val app: Application get() = RuntimeEnvironment.getApplication()
     private lateinit var db: FoodyDatabase

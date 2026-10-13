@@ -51,6 +51,8 @@ Einkaufsliste (abhaken) und Tagebuch im Browser – mit demselben Konto und dens
 |---|---|---|
 | `android/app/` | `:app` | Handy-App: Compose-UI, ViewModels, Room, Hilt, Repositories, Backup |
 | `android/baselineprofile/` | `:baselineprofile` | Generator für das Baseline-Profil (schnellerer Start) |
+| `android/feature/heute/` | `:feature:heute` | v2 im Aufbau: Startseite „Heute“ (noch nicht in der App eingebunden) |
+| `build-logic/` | – | Convention-Plugins (`foody.android.application`, `.library`, `.feature`): SDK-Stände, Java 17, Kotlin ohne Warnungen |
 | `shared/domain/` | `:domain` | Reines Kotlin (keine Android-Abhängigkeiten): Einheiten, Skalierung, Nährwerte, Einkaufsaggregation, Diff, Import, Einordnung – von App und Server genutzt |
 | `shared/sync-protocol/` | `:sync-protocol` | Gemeinsame DTOs, Validierung und Protokollversion von App und Server |
 | `server/sync/` | `:server-sync` | Optionaler Sync-Server (Ktor + SQLite): API, Konten, Datenbank, Sync, Fotos, Admin-CLI |
@@ -63,7 +65,8 @@ Details: [`docs/architecture.md`](docs/architecture.md), fachliche Invarianten: 
 
 ## Bauen & Testen
 
-Voraussetzungen: JDK 17+ (z. B. das JBR von Android Studio), Android SDK (compileSdk 37). AGP 9, Gradle 9.
+Voraussetzungen: JDK 21+ (z. B. das JBR von Android Studio; Robolectric braucht es für Android 16), Android SDK (compileSdk 37). AGP 9, Gradle 9.
+Die App läuft ab **Android 16** (`minSdk` 36, `targetSdk` 37; ADR 0009).
 
 ```bash
 ./gradlew :domain:test            # schnelle JVM-Tests des Rechenkerns

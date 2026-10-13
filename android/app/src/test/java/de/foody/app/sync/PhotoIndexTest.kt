@@ -18,7 +18,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = android.app.Application::class)
+@Config(sdk = [36], application = android.app.Application::class)
 class PhotoIndexTest {
     private lateinit var db: FoodyDatabase
     private lateinit var store: RecipePhotoStore

@@ -61,11 +61,15 @@ einen Test-Server. Phase 5 und 6 können parallel laufen. Aufwände: grobe Schä
 
 ### Phase 0 – Fundament (≈ 2–3 Tage)
 - [x] ADR 0009, ADR 0010, dieser Plan, Abnahmeliste
-- [ ] `build-logic/` mit Convention-Plugins (`foody.android.feature`, `foody.android.library`)
-- [ ] `minSdk` 36, `targetSdk` 37
-- [ ] Emulator mit Android 17; zweiter Docker-Container als Test-Server
+- [x] `build-logic/` mit Convention-Plugins (`foody.android.application`, `.library`, `.feature`)
+- [x] `minSdk` 36, `targetSdk` 37; Versionsabfragen für Android 13/14 entfernt; Robolectric-Tests und Managed Device
+      auf API 36
+- [x] Leeres `:feature:heute` mit Compose-Test (Robolectric)
+- [ ] Emulator mit Android 17 (lokal sind nur Abbilder für API 36/36.1 installiert); zweiter Docker-Container als
+      Test-Server
 
-**Fertig, wenn** ein leeres `:feature:heute` mit dem neuen Build baut und auf dem Emulator startet.
+**Fertig, wenn** ein leeres `:feature:heute` mit dem neuen Build baut und getestet ist. In der App eingebunden wird
+es erst in Phase 4 mit der neuen Navigation.
 
 ### Phase 1 – Haushaltsdienst und Sync v2 (Server, ≈ 1,5–2 Wochen)
 - [ ] Feld-Merge mit Hybrid Logical Clock in `:domain` (JVM-Tests)

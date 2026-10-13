@@ -1,4 +1,6 @@
 pluginManagement {
+    // Convention-Plugins der Android-Module; der Docker-Build des Servers braucht sie nicht
+    if (System.getenv("FOODY_SERVER_ONLY") == null) includeBuild("build-logic")
     repositories {
         google()
         mavenCentral()
@@ -33,4 +35,8 @@ if (System.getenv("FOODY_SERVER_ONLY") == null) {
     // Handy-App unter android/ (Gradle-Namen bleiben gleich)
     project(":app").projectDir = file("android/app")
     project(":baselineprofile").projectDir = file("android/baselineprofile")
+    // v2: ein Modul je Bereich unter android/feature/ (ADR 0009)
+    include(":feature:heute")
+    project(":feature").projectDir = file("android/feature")
+    project(":feature:heute").projectDir = file("android/feature/heute")
 }

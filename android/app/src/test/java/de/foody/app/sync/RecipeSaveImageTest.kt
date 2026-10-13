@@ -18,7 +18,7 @@ import org.robolectric.annotation.Config
 
 /** Editor-Speichern darf ein zwischenzeitlich (per Sync) verlinktes Foto nicht überschreiben. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = android.app.Application::class)
+@Config(sdk = [36], application = android.app.Application::class)
 class RecipeSaveImageTest {
     private lateinit var db: FoodyDatabase
     private lateinit var recipes: RecipeRepository

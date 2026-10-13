@@ -69,7 +69,7 @@ private class ThrowingApi(private val failure: Exception?) : SyncApi {
 }
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = android.app.Application::class)
+@Config(sdk = [36], application = android.app.Application::class)
 class SyncWorkerTest {
     private lateinit var context: Context
     private lateinit var db: FoodyDatabase
@@ -186,7 +186,7 @@ class SyncWorkerTest {
 }
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = android.app.Application::class)
+@Config(sdk = [36], application = android.app.Application::class)
 class SyncSchedulerTest {
     private lateinit var context: Context
     private lateinit var db: FoodyDatabase

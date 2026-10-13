@@ -88,7 +88,7 @@ private class FakeAccounts(private val db: FoodyDatabase) : SyncAccounts {
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(sdk = [36], application = Application::class)
 class SyncSettingsViewModelTest {
     private val app: Application get() = RuntimeEnvironment.getApplication()
     private lateinit var db: FoodyDatabase

@@ -108,9 +108,14 @@ sqlite-jdbc-legacy = { module = "org.xerial:sqlite-jdbc", version.ref = "sqliteJ
 bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
+# Für die Convention-Plugins in build-logic/ (nur zum Kompilieren, die Plugins selbst kommen über [plugins])
+android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-test = { id = "com.android.test", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 baselineprofile = { id = "androidx.baselineprofile", version.ref = "baselineprofile" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
@@ -118,3 +123,7 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 room = { id = "androidx.room", version.ref = "room" }
+# Eigene Convention-Plugins (build-logic/, ADR 0009)
+foody-android-application = { id = "foody.android.application" }
+foody-android-library = { id = "foody.android.library" }
+foody-android-feature = { id = "foody.android.feature" }
