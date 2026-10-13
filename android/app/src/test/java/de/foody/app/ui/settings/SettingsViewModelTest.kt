@@ -36,7 +36,7 @@ import org.robolectric.annotation.Config
 /** Löschen und Import sind bei verbundener Synchronisierung gesperrt (sonst würde der Haushalt auf dem Server geleert). */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(sdk = [36], application = Application::class)
 class SettingsViewModelTest {
     private val app: Application get() = RuntimeEnvironment.getApplication()
     private lateinit var db: FoodyDatabase

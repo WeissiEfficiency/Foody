@@ -44,7 +44,7 @@ import org.robolectric.annotation.Config
  * in-process per `testApplication` läuft. „Offline“ heißt: auf diesem Gerät wird `run()` nicht aufgerufen.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(sdk = [36], application = Application::class)
 class SyncEndToEndTest {
     private val app: Application get() = RuntimeEnvironment.getApplication()
     private val opened = ArrayList<FoodyDatabase>()

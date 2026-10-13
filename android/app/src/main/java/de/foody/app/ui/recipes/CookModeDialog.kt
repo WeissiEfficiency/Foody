@@ -4,7 +4,6 @@ import de.foody.app.timer.RunningTimer
 import de.foody.domain.StepTimer
 import android.Manifest
 import android.content.pm.PackageManager
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
@@ -86,14 +85,12 @@ fun CookModeDialog(
         }
         val pager = rememberPagerState { steps.size }
         val scope = rememberCoroutineScope()
-        // Ab Android 13 braucht die „Timer abgelaufen“-Meldung eine Freigabe – gefragt wird beim ersten Timer.
+        // Die „Timer abgelaufen“-Meldung braucht eine Freigabe – gefragt wird beim ersten Timer.
         // Abgelehnt läuft der Timer trotzdem; dann piept die App selbst, solange sie offen ist.
         val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
         val context = LocalContext.current
         val startTimer: (StepTimer) -> Unit = { t ->
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-            ) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
             onStartTimer(t)

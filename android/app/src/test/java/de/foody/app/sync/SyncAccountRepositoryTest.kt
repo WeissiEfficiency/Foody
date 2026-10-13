@@ -49,7 +49,7 @@ private class MemoryTokenStore(context: Context) : TokenStore(context) {
 
 /** Konto-Funktionen gegen den echten `:server` (in-process) mit In-Memory-Room-DB. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(sdk = [36], application = Application::class)
 class SyncAccountRepositoryTest {
     private val app: Application get() = RuntimeEnvironment.getApplication()
     private lateinit var db: FoodyDatabase

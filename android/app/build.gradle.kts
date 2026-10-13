@@ -1,7 +1,7 @@
 import java.util.Properties
 
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.foody.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
@@ -18,12 +18,10 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "de.foody.app"
-    compileSdk = 37
 
     defaultConfig {
         applicationId = "de.foody.app"
-        minSdk = 26
-        targetSdk = 36
+        // compileSdk, minSdk, targetSdk: FoodySdk in build-logic
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -60,21 +58,16 @@ android {
         }
     }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
     testOptions {
         // Gradle Managed Device: Gradle lädt das Systemabbild und startet den Emulator selbst –
         // so laufen die Room-/Migrationstests auch in der CI (./gradlew ciDeviceDebugAndroidTest).
-        // ATD = schlankes, auf automatisierte Tests optimiertes Abbild.
+        // Abbild mit Google-APIs, weil es für Android 16 kein schlankes ATD-Abbild gibt.
         managedDevices {
             localDevices {
                 create("ciDevice") {
                     device = "Pixel 6"
-                    apiLevel = 34
-                    systemImageSource = "aosp-atd"
+                    apiLevel = 36
+                    systemImageSource = "google"
                 }
             }
         }
@@ -89,14 +82,6 @@ android {
     sourceSets {
         // Room-Schemata für Migrationstests
         getByName("androidTest").assets.directories.add("$projectDir/schemas")
-    }
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        // Der Code ist warnungsfrei – so bleibt er es (z. B. neue Deprecations nach Bibliotheks-Updates).
-        allWarningsAsErrors.set(true)
     }
 }
 

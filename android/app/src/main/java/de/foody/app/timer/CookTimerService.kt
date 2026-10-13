@@ -12,7 +12,6 @@ import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.media.AudioAttributes
 import android.media.RingtoneManager
-import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
@@ -77,7 +76,7 @@ class CookTimerService : Service() {
         val running = timers.timers.value.filterNot { it.isDone(System.currentTimeMillis()) }
         ServiceCompat.startForeground(
             this, ONGOING_ID, ongoingNotification(running, running.minOfOrNull { it.endAt } ?: System.currentTimeMillis()),
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0,
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
         )
         // Ohne Timer nicht neu starten, falls das System den Dienst beendet
         return START_NOT_STICKY
@@ -124,9 +123,7 @@ class CookTimerService : Service() {
 
     private fun notify(id: Int, notification: Notification) {
         // Ohne Benachrichtigungs-Freigabe läuft der Timer trotzdem; die App piept dann selbst, solange sie offen ist
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-        ) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
             NotificationManagerCompat.from(this).notify(id, notification)
         }
     }
