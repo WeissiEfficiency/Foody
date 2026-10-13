@@ -65,7 +65,7 @@ Details: [`docs/architecture.md`](docs/architecture.md), fachliche Invarianten: 
 
 ## Bauen & Testen
 
-Voraussetzungen: JDK 17+ (z. B. das JBR von Android Studio), Android SDK (compileSdk 37). AGP 9, Gradle 9.
+Voraussetzungen: JDK 21+ (z. B. das JBR von Android Studio; Robolectric braucht es für Android 16), Android SDK (compileSdk 37). AGP 9, Gradle 9.
 Die App läuft ab **Android 16** (`minSdk` 36, `targetSdk` 37; ADR 0009).
 
 ```bash

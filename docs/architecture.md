@@ -191,7 +191,8 @@ Einträge, die noch unverändert aus den Startdaten stammen (`nutrientSource` = 
 ## Build
 
 AGP 9 mit eingebautem Kotlin (kein `org.jetbrains.kotlin.android`-Plugin) und neuer DSL, ohne
-Kompatibilitäts-Flags in `gradle.properties`. Gradle braucht JDK 17+ (z. B. das JBR von Android Studio).
+Kompatibilitäts-Flags in `gradle.properties`. Gradle braucht JDK 21+ (z. B. das JBR von Android Studio): Robolectric startet Android-SDK 35+ nur
+unter Java 21. Der Bytecode bleibt Java 17.
 
 **Convention-Plugins** (`build-logic/`, eingebunden über `pluginManagement { includeBuild(...) }`; der Docker-Build des
 Servers lässt sie mit `FOODY_SERVER_ONLY` weg): `foody.android.application` (`:app`), `foody.android.library`
