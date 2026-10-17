@@ -53,6 +53,8 @@
 27. Import: Nennt die Datei ihre Portionen („Portionen: 4 · …“ in der Kopfzeile), gilt diese Zahl; geschätzt wird nur
     ohne Angabe und bei Backwaren mit „Portionen: 1“ (ganzer Kuchen, ganzes Blech – gegessen wird ein Stück). Alle
     Anzeigen (Rezept, Liste, Planer, Tagebuch) zeigen dieselben kcal je Portion.
+    Früher geschätzte Rezepte bekommen die Portionen der Datei nachgetragen, aber nur, solange ihre Notiz noch
+    „aus den Mengen auf N geschätzt“ für genau die aktuellen Portionen nennt; die Mengen bleiben, wie sie sind.
 
 ## Tests je Regel
 
@@ -86,4 +88,4 @@ Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/te
 | 24 | `TagebuchTest.rezeptPortionenSkalieren`, `TagebuchViewModelTest.festgehaltenNachRezeptAenderung` |
 | 25 | `PlanDurchschnittTest` |
 | 26 | `IngredientScanTest.strichcodeFuelltFelderUndMerktSichCode`, `TagebuchScreenTest.packungImReiterFrei` |
-| 27 | `MarkdownImportTest.servingsFromHeaderLine`, `RezeptImportTest.portionenAusDerDateiStattSchaetzung`, `RezeptImportTest.eineGanzeBackwareWirdGeschaetzt`, `KcalJePortionTest` |
+| 27 | `MarkdownImportTest.servingsFromHeaderLine`, `RezeptImportTest.portionenAusDerDateiStattSchaetzung`, `RezeptImportTest.eineGanzeBackwareWirdGeschaetzt`, `KcalJePortionTest`, `PortionenNachtragenTest` |
