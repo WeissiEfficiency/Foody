@@ -1,6 +1,6 @@
 # ADR 0009: Neubau v2 – Module, Navigation, Designsystem
 
-Status: angenommen (2026-10-13). Plan: `ToDoS/v2-plan.md`, Abnahme: `ToDoS/v2-abnahme.md`.
+Status: angenommen (2026-10-13), teilweise abgelöst durch ADR 0011 (Umfang, Web-App, Navigation, Tokens). Plan: `ToDoS/v2-plan.md`, Abnahme: `ToDoS/v2-abnahme.md`.
 
 **Kontext:** Die Handy-App ist ein einziges Modul `:app` (13.319 Zeilen, 84 Dateien); einzelne Screens haben über
 500 Zeilen. Vorrat und Zutaten liegen versteckt unter „Mehr“, das Tagebuch hat einen eigenen Tab. Web-Oberfläche
