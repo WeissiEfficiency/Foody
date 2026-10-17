@@ -1,0 +1,16 @@
+# Test-Server für die Entwicklung (V3), neben dem echten Server auf demselben Host. Nur zusammen mit docker-compose.yml:
+#
+#   docker compose -p foody-test -f docker-compose.yml -f docker-compose.test.yml up -d --build
+#
+# Eigener Projektname → eigene Volumes (foody-test_foody-data, …); eigenes Image-Tag, damit ein Build aus einem
+# Entwicklungsstand nie das Image des echten Servers ersetzt. Kein Traefik: nur auf dem Host selbst erreichbar
+# (127.0.0.1:8081). Vom PC per SSH-Tunnel `ssh -N -L 8081:127.0.0.1:8081 homeserver.lan`; der Emulator erreicht
+# ihn dann als http://10.0.2.2:8081 (erlaubt die Debug-App).
+services:
+  foody-server:
+    image: foody-server:test
+    mem_limit: 384m
+    labels: !reset []
+    networks: !reset []
+    ports:
+      - "127.0.0.1:8081:8080"
