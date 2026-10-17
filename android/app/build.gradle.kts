@@ -11,11 +11,16 @@ plugins {
     alias(libs.plugins.baselineprofile)
 }
 
+// Rechnerspezifisches aus local.properties (nicht im Repository), UTF-8 gelesen: Pfade können Umlaute enthalten.
+fun propertiesAus(datei: File) = Properties().apply { datei.takeIf { it.exists() }?.reader(Charsets.UTF_8)?.use(::load) }
+val localProperties = propertiesAus(rootProject.file("local.properties"))
+
 // Signaturschlüssel für Release-Builds: Pfade und Passwörter liegen in keystore.properties (nicht im Repository,
-// Vorlage: keystore.properties.example). Fehlt die Datei – etwa in der CI –, bleibt der Release-Build unsigniert.
-val keystoreProperties = Properties().apply {
-    rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
-}
+// Vorlage: keystore.properties.example) – neben dem Projekt oder dort, wohin `foody.keystoreProperties` in
+// local.properties zeigt. Fehlt die Datei – etwa in der CI –, bleibt der Release-Build unsigniert.
+val keystoreProperties = propertiesAus(
+    localProperties.getProperty("foody.keystoreProperties")?.let(::File) ?: rootProject.file("keystore.properties"),
+)
 
 android {
     namespace = "de.foody.app"
@@ -108,10 +113,8 @@ tasks.withType<Test>().configureEach {
 }
 
 // Signierte Release-APK dorthin kopieren, von wo sie aufs Handy kommt: `./gradlew :app:apkNachOpenCloud`.
-// Ziel je Rechner in local.properties, z. B. `foody.apkZiel=E:/OpenCloud/Persönlich (2)/foody.apk` (UTF-8 gelesen).
-val apkZiel: String? = Properties().apply {
-    rootProject.file("local.properties").takeIf { it.exists() }?.reader(Charsets.UTF_8)?.use(::load)
-}.getProperty("foody.apkZiel")
+// Ziel je Rechner in local.properties, z. B. `foody.apkZiel=E:/OpenCloud/Persönlich (2)/foody.apk`.
+val apkZiel: String? = localProperties.getProperty("foody.apkZiel")
 val releaseSigniert = keystoreProperties.isNotEmpty()
 
 val apkNachOpenCloud = tasks.register("apkNachOpenCloud") {
