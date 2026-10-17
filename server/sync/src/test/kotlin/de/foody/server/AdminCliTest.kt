@@ -2,6 +2,7 @@ package de.foody.server
 
 import de.foody.server.admin.AdminCli
 import de.foody.server.db.Database
+import de.foody.server.db.Migrations
 import de.foody.api.protocol.AuthResponse
 import de.foody.api.protocol.LoginRequest
 import de.foody.api.protocol.Protocol
@@ -18,6 +19,9 @@ import io.ktor.http.contentType
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.file.Files
+import java.nio.file.Path
+import java.sql.DriverManager
+import kotlin.io.path.listDirectoryEntries
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -134,6 +138,79 @@ class AdminCliTest {
         val (code, output) = cli(env.deps, listOf("compact"))
         assertEquals(0, code)
         assertEquals("0", output.trim())
+    }
+
+    /** Legt eine Datenbank auf Version 1 (vor dem Umstieg auf Konten) an und liefert die Konfiguration dazu. */
+    private fun v1Datenbank(ordner: Path): ServerConfig {
+        val config = ServerConfig(dbPath = ordner.resolve("foody.db").toString(), port = 0, adminUser = null, adminPassword = null,
+            photoDir = ordner.resolve("photos").toString())
+        Database("jdbc:sqlite:${config.dbPath}", migrationen = listOf(Migrations.all[0])).close()
+        return config
+    }
+
+    private fun userVersion(datei: String): Int =
+        DriverManager.getConnection("jdbc:sqlite:$datei").use { c ->
+            c.createStatement().use { s -> s.executeQuery("PRAGMA user_version").use { it.next(); it.getInt(1) } }
+        }
+
+    /** Wie [cliErr], aber über [AdminCli.ausfuehren] gegen die Datei aus [config]. */
+    private fun admin(config: ServerConfig, args: List<String>): Triple<Int, String, String> {
+        val out = ByteArrayOutputStream()
+        val err = ByteArrayOutputStream()
+        val code = PrintStream(out, true, Charsets.UTF_8).use { o ->
+            PrintStream(err, true, Charsets.UTF_8).use { e -> AdminCli.ausfuehren(config, args, o, e) }
+        }
+        return Triple(code, out.toString(Charsets.UTF_8), err.toString(Charsets.UTF_8))
+    }
+
+    @Test
+    fun adminMigriertNicht() {
+        val ordner = Files.createTempDirectory("foody-admin-alt")
+        try {
+            val config = v1Datenbank(ordner)
+            for (args in listOf(listOf("compact"), listOf("konto-anlegen", "ben"))) {
+                val (code, out, err) = admin(config, args)
+                assertEquals(1, code, args.toString())
+                assertEquals("", out)
+                assertEquals("Datenbank auf Version 1 – erst den Server mit V3 starten (er sichert und wandelt um).", err.trim())
+                assertEquals(1, userVersion(config.dbPath))
+                assertEquals(emptyList(), ordner.listDirectoryEntries("vor-migration-*"))
+            }
+        } finally {
+            ordner.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun adminBackupAufAlterVersion() {
+        val ordner = Files.createTempDirectory("foody-admin-alt")
+        try {
+            val config = v1Datenbank(ordner)
+            val ziel = ordner.resolve("vor-neustart.db").toString()
+            val (code, out, _) = admin(config, listOf("backup", ziel))
+            assertEquals(0, code)
+            assertEquals(ziel, out.trim())
+            assertEquals(1, userVersion(ziel))
+            assertEquals(1, userVersion(config.dbPath))
+            assertEquals(emptyList(), ordner.listDirectoryEntries("vor-migration-*"))
+        } finally {
+            ordner.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun adminAufAktuellerVersion() {
+        val ordner = Files.createTempDirectory("foody-admin-neu")
+        try {
+            val config = ServerConfig(dbPath = ordner.resolve("foody.db").toString(), port = 0, adminUser = null, adminPassword = null,
+                photoDir = ordner.resolve("photos").toString())
+            Database("jdbc:sqlite:${config.dbPath}").close()
+            val (code, out, _) = admin(config, listOf("compact"))
+            assertEquals(0, code)
+            assertEquals("0", out.trim())
+        } finally {
+            ordner.toFile().deleteRecursively()
+        }
     }
 
     @Test

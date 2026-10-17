@@ -2,6 +2,7 @@ package de.foody.server
 
 import de.foody.server.admin.AdminCli
 import de.foody.server.db.Database
+import de.foody.server.db.MigrationAbgebrochen
 import de.foody.server.photos.FotoUmzug
 import de.foody.server.sync.Compactor
 import io.ktor.server.application.Application
@@ -25,7 +26,7 @@ fun main(args: Array<String>) {
     val config = ServerConfig.fromEnv()
     when (args.firstOrNull()) {
         null -> startServer(config)
-        "admin" -> exitProcess(runAdmin(config, args.drop(1)))
+        "admin" -> exitProcess(AdminCli.ausfuehren(config, args.drop(1)))
         "healthcheck" -> exitProcess(if (healthcheck(config.port)) 0 else 1)
         else -> {
             System.err.println("Unbekannter Befehl: ${args.first()}")
@@ -35,9 +36,16 @@ fun main(args: Array<String>) {
 }
 
 private fun startServer(config: ServerConfig) {
-    val deps = ServerDeps.create(config, Database("jdbc:sqlite:${config.dbPath}"))
+    val db = try {
+        Database("jdbc:sqlite:${config.dbPath}")
+    } catch (e: MigrationAbgebrochen) {
+        // Eine klare Zeile statt Stacktrace; die Datenbank ist unverändert.
+        LoggerFactory.getLogger("de.foody.server").error("Start abgebrochen: {}", e.message)
+        exitProcess(1)
+    }
+    val deps = ServerDeps.create(config, db)
     if (!bootstrapAdmin(config, deps)) exitProcess(1)
-    // Vor der Kompaktierung: sonst räumt sie evtl. Fotos weg, die noch im alten Haushaltsordner liegen.
+    // Vor dem Start des HTTP-Servers, damit die Fotos im Konto-Ordner liegen, bevor Geräte sie anfragen.
     val umgezogen = FotoUmzug(deps.db, Path.of(config.photoDir)).ausfuehren()
     if (umgezogen > 0) LoggerFactory.getLogger("de.foody.server.photos").info("Fotoumzug: {} Haushaltsordner erledigt", umgezogen)
     embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
@@ -45,10 +53,6 @@ private fun startServer(config: ServerConfig) {
         launchCompaction(deps)
     }.start(wait = true)
 }
-
-/** Führt einen Admin-Befehl direkt gegen die Datenbankdatei aus (ohne Netty); läuft auch parallel zum Server (WAL). */
-private fun runAdmin(config: ServerConfig, args: List<String>): Int =
-    Database("jdbc:sqlite:${config.dbPath}").use { db -> AdminCli(ServerDeps.create(config, db), System.out).run(args) }
 
 /** Kompaktiert Löschmarkierungen beim Start und danach alle 24 Stunden; Fehler werden protokolliert, nie geworfen. */
 private fun Application.launchCompaction(deps: ServerDeps) {

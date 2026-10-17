@@ -15,19 +15,21 @@ import java.time.Duration
  * SQLite-Datenbank mit einer einzigen, synchronisierten Verbindung.
  * Beim Öffnen werden die Pragmas gesetzt und die Migrationen angewendet;
  * steht eine Migration aus, wird vorher eine Sicherung neben die Datenbankdatei geschrieben.
+ * Mit `migrieren = false` (Admin-Befehle) bleibt das Schema unverändert und es entsteht keine Sicherung.
  */
 class Database(
     url: String,
     clock: Clock = Clock.systemUTC(),
     migrationen: List<String> = Migrations.all,
+    migrieren: Boolean = true,
 ) : AutoCloseable {
-    private val connection: Connection = oeffne(url, clock, migrationen)
+    private val connection: Connection = oeffne(url, clock, migrationen, migrieren)
 
     private companion object {
         private val ZEIT = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm")
         private val BERLIN = ZoneId.of("Europe/Berlin")
 
-        fun oeffne(url: String, clock: Clock, migrationen: List<String>): Connection {
+        fun oeffne(url: String, clock: Clock, migrationen: List<String>, migrieren: Boolean): Connection {
             // Vor dem Verbinden prüfen: sqlite-jdbc legt eine fehlende Datei beim Verbinden leer an.
             val datei: Path? = if (url.contains(":memory:")) null else Path.of(url.removePrefix("jdbc:sqlite:"))
             val bestand = datei != null && Files.exists(datei) && Files.size(datei) > 0
@@ -38,8 +40,10 @@ class Database(
                     s.execute("PRAGMA foreign_keys=ON")
                     s.execute("PRAGMA busy_timeout=5000")
                 }
-                if (bestand && Migrations.aktuell(c) < migrationen.size && !hatSicherung(datei, migrationen.size, clock)) sichere(c, datei, clock, migrationen.size)
-                Migrations.apply(c, migrationen)
+                if (migrieren) {
+                    if (bestand && Migrations.aktuell(c) < migrationen.size && !hatSicherung(datei, migrationen.size, clock)) sichere(c, datei, clock, migrationen.size)
+                    Migrations.apply(c, migrationen)
+                }
             } catch (e: Throwable) {
                 c.close()
                 throw e

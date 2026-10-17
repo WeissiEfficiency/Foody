@@ -1,8 +1,11 @@
 package de.foody.server.admin
 
 import de.foody.server.ApiException
+import de.foody.server.ServerConfig
 import de.foody.server.ServerDeps
 import de.foody.server.auth.KontoExistiert
+import de.foody.server.db.Database
+import de.foody.server.db.Migrations
 import de.foody.server.sync.Compactor
 import java.io.File
 import java.io.PrintStream
@@ -94,8 +97,24 @@ class AdminCli(
         return 2
     }
 
-    private companion object {
-        const val PASSWORD_LENGTH = 20
-        const val ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    companion object {
+        private const val PASSWORD_LENGTH = 20
+        private const val ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+
+        /**
+         * Führt einen Admin-Befehl direkt gegen die Datenbankdatei aus `config` aus (für `foody-admin`, ohne Netty; läuft
+         * auch parallel zum Server, WAL). Migriert nie: Steht eine Migration aus, geht nur `backup`, alles andere bricht mit
+         * Exit-Code 1 ab – Sicherung und Umwandlung sind Sache des Serverstarts.
+         */
+        fun ausfuehren(config: ServerConfig, args: List<String>, out: PrintStream = System.out, err: PrintStream = System.err): Int =
+            Database("jdbc:sqlite:${config.dbPath}", migrieren = false).use { db ->
+                val version = db.outsideTx { Migrations.aktuell(it) }
+                if (version < Migrations.all.size && args.firstOrNull() != "backup") {
+                    err.println("Datenbank auf Version $version – erst den Server mit V3 starten (er sichert und wandelt um).")
+                    1
+                } else {
+                    AdminCli(ServerDeps.create(config, db), out, err).run(args)
+                }
+            }
     }
 }
