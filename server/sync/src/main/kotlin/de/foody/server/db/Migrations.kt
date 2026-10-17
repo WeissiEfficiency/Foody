@@ -68,17 +68,20 @@ object Migrations {
         """.trimIndent(),
     )
 
-    /** Wendet alle noch fehlenden Migrationen an, jede in einer eigenen Transaktion. */
-    fun apply(c: Connection) {
-        val current = c.createStatement().use { s ->
-            s.executeQuery("PRAGMA user_version").use { it.next(); it.getInt(1) }
-        }
-        for (index in current until all.size) {
+    /** Aktuelle Schemaversion (`PRAGMA user_version`). */
+    fun aktuell(c: Connection): Int = c.createStatement().use { s ->
+        s.executeQuery("PRAGMA user_version").use { it.next(); it.getInt(1) }
+    }
+
+    /** Wendet alle noch fehlenden Migrationen aus [liste] an, jede in einer eigenen Transaktion. */
+    fun apply(c: Connection, liste: List<String> = all) {
+        val current = aktuell(c)
+        for (index in current until liste.size) {
             val wasAuto = c.autoCommit
             c.autoCommit = false
             try {
                 c.createStatement().use { s ->
-                    all[index].split(";").map { it.trim() }.filter { it.isNotEmpty() }.forEach { s.execute(it) }
+                    liste[index].split(";").map { it.trim() }.filter { it.isNotEmpty() }.forEach { s.execute(it) }
                     s.execute("PRAGMA user_version = ${index + 1}")
                 }
                 c.commit()
@@ -91,3 +94,6 @@ object Migrations {
         }
     }
 }
+
+/** Die Sicherung vor einer Migration ist fehlgeschlagen; es wurde nicht migriert. */
+class MigrationAbgebrochen(message: String) : IllegalStateException(message)
