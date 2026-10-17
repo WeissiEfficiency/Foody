@@ -70,7 +70,7 @@ class PhotoStore(private val root: Path) {
         Files.deleteIfExists(fileOf(konto, sha))
     }
 
-    private companion object {
+    internal companion object {
         val KONTO_REGEX = Regex("^[A-Za-z0-9_-]{1,64}$")
     }
 }

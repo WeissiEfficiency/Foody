@@ -77,6 +77,14 @@ class FotoUmzugTest {
         assertEquals(1, offen())
     }
 
+    @Test fun gleicheIdsBehaltenFotos() {
+        eintrag("x", "x")
+        datei("x", "a.jpg")
+        assertEquals(1, FotoUmzug(db, root).ausfuehren())
+        assertTrue(root.resolve("x/a.jpg").exists())
+        assertEquals(0, offen())
+    }
+
     @Test fun ohneEintraegeNichtsZuTun() {
         assertEquals(0, FotoUmzug(db, root).ausfuehren())
     }

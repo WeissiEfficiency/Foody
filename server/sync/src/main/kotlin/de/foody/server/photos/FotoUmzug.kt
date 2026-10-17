@@ -26,7 +26,7 @@ class FotoUmzug(private val db: Database, private val root: Path) {
         for ((haushalt, konto) in eintraege) {
             try {
                 // Gleiche Absicherung gegen Pfad-Tricks wie im PhotoStore.
-                require(NAME_REGEX.matches(haushalt) && NAME_REGEX.matches(konto)) { "ungültiger Ordnername" }
+                require(PhotoStore.KONTO_REGEX.matches(haushalt) && PhotoStore.KONTO_REGEX.matches(konto)) { "ungültiger Ordnername" }
                 umziehen(root.resolve(haushalt), root.resolve(konto), haushalt)
                 db.tx { c ->
                     c.prepareStatement("DELETE FROM haushalt_umzug WHERE household_id = ?").use {
@@ -42,6 +42,11 @@ class FotoUmzug(private val db: Database, private val root: Path) {
     }
 
     private fun umziehen(alt: Path, neu: Path, haushalt: String) {
+        if (haushalt == neu.fileName.toString()) {
+            // Gleiche ID: Der Ordner liegt schon richtig; Verschieben/Löschen würde alle Fotos vernichten.
+            log.info("Fotoordner {} bleibt (Haushalt- und Konto-ID gleich)", haushalt)
+            return
+        }
         if (!Files.isDirectory(alt)) {
             log.warn("Fotoordner {} fehlt", haushalt)
             return
@@ -57,9 +62,5 @@ class FotoUmzug(private val db: Database, private val root: Path) {
             if (Files.exists(ziel)) Files.delete(datei) else Files.move(datei, ziel)
         }
         Files.delete(alt)
-    }
-
-    private companion object {
-        val NAME_REGEX = Regex("^[A-Za-z0-9_-]{1,64}$")
     }
 }
