@@ -27,16 +27,19 @@ class MutableClock(var now: Instant = Instant.parse("2026-10-04T10:00:00Z")) : C
 /** Testumgebung: Abhängigkeiten (Datenbank, Uhr) für direkte Zugriffe aus Tests. */
 class TestEnv(val deps: ServerDeps, val clock: MutableClock, val photoDir: java.nio.file.Path)
 
-/** Startet das Server-Modul mit `:memory:`-Datenbank und führt [block] aus. */
+/** Startet das Server-Modul mit `:memory:`-Datenbank und führt [block] aus; [anpassen] ändert die Konfiguration. */
 fun testServer(
     clock: MutableClock = MutableClock(),
+    anpassen: (ServerConfig) -> ServerConfig = { it },
     extraSetup: Application.() -> Unit = {},
     block: suspend ApplicationTestBuilder.(TestEnv) -> Unit,
 ) {
     // Eigener Wurzelordner, damit Tests auch Dateien neben dem Foto-Ordner erkennen können.
     val tempRoot = java.nio.file.Files.createTempDirectory("foody-test")
     val photoDir = tempRoot.resolve("photos")
-    val config = ServerConfig(dbPath = ":memory:", port = 0, adminUser = null, adminPassword = null, photoDir = photoDir.toString())
+    val config = anpassen(
+        ServerConfig(dbPath = ":memory:", port = 0, adminUser = null, adminPassword = null, photoDir = photoDir.toString()),
+    )
     try {
         Database("jdbc:sqlite::memory:").use { db ->
             val deps = ServerDeps.create(config, db, clock)

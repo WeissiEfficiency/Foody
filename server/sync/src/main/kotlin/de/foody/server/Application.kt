@@ -3,6 +3,7 @@ package de.foody.server
 import de.foody.server.auth.DevicePrincipal
 import de.foody.server.auth.deviceAuthRoutes
 import de.foody.server.auth.publicAuthRoutes
+import de.foody.server.ki.kiRoutes
 import de.foody.server.photos.photoRoutes
 import de.foody.server.sync.syncRoutes
 import de.foody.api.protocol.ErrorCode
@@ -107,6 +108,7 @@ fun Application.foodyModule(deps: ServerDeps) {
                 deviceAuthRoutes(deps)
                 syncRoutes(deps)
                 photoRoutes(deps)
+                kiRoutes(deps)
             }
         }
     }

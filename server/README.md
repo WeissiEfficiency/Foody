@@ -34,6 +34,8 @@ erste Konto an (ohne Sonderrechte). Danach beide Variablen leeren und mit `docke
 - Nur die Datenbank, von Hand: `docker compose exec foody-server foody-admin backup /data/backup-$(date +%F).db`
 - Update: `git pull && docker compose up -d --build`
 - Speicher: Der Container ist auf 512 MB begrenzt (die JVM nimmt davon 75 %); anders mit `FOODY_MEM_LIMIT` in `.env`.
+- KI-Hilfe (ab Phase 7): `FOODY_KI_KEY` in `.env` setzen (leer = aus), Kontingent je Konto und Stunde mit
+  `FOODY_KI_PRO_STUNDE` (Standard 30). Bisher meldet der Server nur, ob ein Schlüssel eingerichtet ist.
 
 Weitere Admin-Befehle: `reset-password`, `compact` (siehe `foody-admin` ohne Argumente).
 

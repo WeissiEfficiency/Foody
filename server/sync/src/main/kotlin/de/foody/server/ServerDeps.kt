@@ -4,6 +4,7 @@ import de.foody.server.auth.AccountStore
 import de.foody.server.auth.LoginThrottle
 import de.foody.server.auth.PasswordHasher
 import de.foody.server.db.Database
+import de.foody.server.ki.KiKontingent
 import de.foody.server.photos.PhotoStore
 import de.foody.server.sync.RecordStore
 import de.foody.server.sync.SyncService
@@ -20,6 +21,8 @@ class ServerDeps(
     val throttle: LoginThrottle,
     val sync: SyncService,
     val photos: PhotoStore,
+    /** Kontingent für KI-Anfragen je Konto. */
+    val ki: KiKontingent,
 ) {
     companion object {
         /** Einzige Konstruktionsstelle, genutzt von `main` und der Testhilfe. */
@@ -28,6 +31,7 @@ class ServerDeps(
             return ServerDeps(
                 config, db, clock, hasher, AccountStore(db, clock, hasher), LoginThrottle(clock),
                 SyncService(db, RecordStore(), clock), PhotoStore(Path.of(config.photoDir)),
+                KiKontingent(clock, config.kiProStunde),
             )
         }
     }
