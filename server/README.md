@@ -43,7 +43,7 @@ Ein zweiter Server mit eigenen Daten für die Entwicklung, auf demselben Host. E
 damit ein Entwicklungs-Branch nie den echten Server berührt, und ist nur auf dem Host selbst erreichbar (kein Traefik).
 
 ```sh
-git -C ~/docker/foody worktree add ~/docker/foody-test main   # einmalig; Branch später mit git switch wechseln
+git -C ~/docker/foody worktree add --detach ~/docker/foody-test main   # einmalig; Stand später mit git switch/checkout wechseln
 cd ~/docker/foody-test/server
 cp .env.example .env          # eigene .env des Test-Checkouts: FOODY_ADMIN_USER/-PASSWORD für den ersten Start
 docker compose -p foody-test -f docker-compose.yml -f docker-compose.test.yml up -d --build
