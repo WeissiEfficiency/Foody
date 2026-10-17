@@ -58,7 +58,28 @@ object RezeptImport {
     fun hinweis(quelle: String?, portionen: Int, geschaetzt: Boolean, ausDatei: Boolean = false): String = listOfNotNull(
         quelle?.let { "Quelle: $it" },
         if (ausDatei) null
-        else if (geschaetzt) "Portionenzahl war in der Datei nicht angegeben – aus den Mengen auf $portionen geschätzt, bitte prüfen."
+        else if (geschaetzt) schaetzHinweis(portionen)
         else "Portionenzahl war in der Datei nicht angegeben – auf $portionen gesetzt, bitte prüfen.",
     ).joinToString("\n")
+
+    private fun schaetzHinweis(portionen: Int) =
+        "Portionenzahl war in der Datei nicht angegeben – aus den Mengen auf $portionen geschätzt, bitte prüfen."
+
+    data class Nachtrag(val portionen: Int, val notiz: String?)
+
+    /**
+     * Für Rezepte, die vor Regel 27 importiert wurden: Portionen aus der Datei statt der alten Schätzung. Nur wenn die
+     * Notiz den Schätzhinweis noch genau für [aktuellePortionen] enthält – hat der Nutzer die Portionen geändert oder den
+     * Hinweis gelöscht, bleibt alles, wie es ist (null). Die Mengen der Zeilen ändern sich nicht, sie gehören zur Datei.
+     * Gleiche Regel wie [vorbereiten]: „Portionen: 1“ bei Backwaren wird weiter geschätzt, also nichts nachzutragen.
+     */
+    fun portionenNachtragen(alteNotiz: String?, aktuellePortionen: Int, datei: ImportedRecipe): Nachtrag? {
+        val hinweis = schaetzHinweis(aktuellePortionen)
+        val zeilen = alteNotiz?.lines() ?: return null
+        if (zeilen.none { it.trim() == hinweis }) return null
+        val portionen = datei.servings?.takeIf { it > 1 || ServingsEstimator.kindOf(datei.name) != ServingsEstimator.Kind.BAKED }
+            ?: return null
+        val notiz = zeilen.filterNot { it.trim() == hinweis }.joinToString("\n").trim().ifEmpty { null }
+        return Nachtrag(portionen, notiz)
+    }
 }

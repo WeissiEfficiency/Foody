@@ -94,6 +94,11 @@ Aufwände: grobe Schätzung für eine Person.
 - [ ] `:core:sync`: Client für Protokoll v3; Sync beim Öffnen/Fortsetzen und nach Änderungen (entprellt), kein
       periodischer Worker
 - [ ] ZIP-Sicherung: liest v1-Dateien (Vorrat wird übersprungen)
+- [ ] Portionen nachtragen: Rezepte, die vor Regel 27 importiert wurden, haben noch die geschätzte Portionenzahl
+      (oft 2–5× daneben). Die Migration selbst hat die Dateien nicht; nach Migration 9 → 10 einmalig anbieten,
+      den Rezeptordner zu wählen, je Datei das Rezept über `sourceUrl` suchen und `RezeptImport.portionenNachtragen`
+      anwenden (nur `defaultServings` und Notiz ändern, Mengen nie). Rezepte mit geänderten Portionen oder gelöschtem
+      Schätzhinweis bleiben unverändert.
 
 **Fertig, wenn** eine Kopie der echten v1-Datenbank migriert und mit dem Test-Server synchronisiert.
 
