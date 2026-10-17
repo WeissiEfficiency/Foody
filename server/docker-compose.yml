@@ -6,6 +6,9 @@ services:
     image: foody-server:local
     restart: unless-stopped
     env_file: .env
+    # Obergrenze für den ganzen Container; die JVM nimmt davon 75 % (JAVA_OPTS im Dockerfile). Ohne Grenze dürfte sie
+    # bis zu 75 % des gesamten Host-Speichers belegen.
+    mem_limit: ${FOODY_MEM_LIMIT:-512m}
     volumes:
       - foody-data:/data
       - foody-photos:/data/photos

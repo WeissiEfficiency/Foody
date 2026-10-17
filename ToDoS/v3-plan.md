@@ -65,10 +65,14 @@ Aufwände: grobe Schätzung für eine Person.
 ### Phase 0 – Fundament und schnelle Gewinne (≈ 2 Tage, teils erledigt)
 - [x] `build-logic/`, `minSdk` 36 / `targetSdk` 37, leeres `:feature:heute` (#89)
 - [ ] Zweiter Docker-Container als Test-Server
-- [ ] Server: `mem_limit` in `docker-compose.yml` (z. B. 512 MB; die JVM nimmt davon 75 %)
-- [ ] Server: nächtliche Sicherung per Cron (`foody-admin backup` + Fotos) mit Kopie nach OpenCloud
-- [ ] Release-Aufgabe: signierte APK in den OpenCloud-Ordner kopieren
-- [ ] `docs/roadmap.md` auf den echten Stand bringen
+- [x] Server: `mem_limit` in `docker-compose.yml` (512 MB, `FOODY_MEM_LIMIT`; die JVM nimmt davon 75 %)
+- [x] Server: `server/backup.sh` – Datenbank datiert (14 Tage) und Fotos gespiegelt in einen Ordner, den ein
+      OpenCloud-Client abgleicht; Cron-Zeile im `server/README.md`. Auf dem Server noch einzurichten.
+- [x] Release-Aufgabe `./gradlew :app:apkNachOpenCloud` (Ziel `foody.apkZiel` in `local.properties`)
+- [ ] **Alltags-App auf Release umstellen:** Im Alltag lief bisher „Foody Debug“ (Debug-Schlüssel, 24,7 MB, ohne R8
+      und Baseline-Profil). Release-Schlüssel anlegen (`keystore.properties`), „Foody“ installieren, anmelden, Sync
+      holt die Daten, „Foody Debug“ deinstallieren. Erst danach ist „Foody Debug“ frei für die V3.
+- [x] `docs/roadmap.md` auf den echten Stand bringen (#90)
 
 ### Phase 1 – Rechenkern korrigieren (`:domain`, ≈ 3–4 Tage)
 - [x] **kcal je Portion:** Der Import überlas die Portionenzahl der Datei und schätzte (#91); alte Rezepte bekommen
@@ -77,7 +81,8 @@ Aufwände: grobe Schätzung für eine Person.
       Hauptspeisen, Favoriten ×3 und „Oft gekocht“ bis ×2 gewichtet statt sortiert, nicht zweimal hintereinander
       dieselbe Grundlage/Eiweißquelle, 14 Tage ohne Wiederholung. Wird in Phase 6 (Woche) eingebunden; v1 behält
       `MealSuggestions`/`PlanVorschlag` bis zum Entfernen in Phase 8. Tagesziel bewusst nicht berücksichtigt.
-- [ ] Vorrats-Regeln aus `docs/domain-rules.md` und `:domain` entfernen (8, 17, 21 anpassen), Tests nachziehen
+- Vorrats-Regeln entfernen: verschoben nach Phase 8 – v1-App und Server nutzen die Vorratslogik aus `:domain` bis
+  zum Umstieg (Sync, Sicherung, Einkauf, Vorrat-Screen); vorher entfernen hieße die v1 umbauen.
 
 **Fertig, wenn** die Szenarien „Sonntag: Woche planen“ mit echten Daten plausible kcal und Vorschläge liefert.
 
@@ -140,6 +145,8 @@ Aufwände: grobe Schätzung für eine Person.
 - [ ] TalkBack-Durchlauf, Schriftgröße 200 %
 - [ ] Probelauf mit Kopien, dann Umstieg: Sicherungen → Server v3 → Umwandlung → beide Geräte auf V3
 - [ ] v1-Code entfernen (`ui/`-Pakete, alte Routen); `README.md`, `docs/architecture.md` aktualisieren
+- [ ] Vorrats-Regeln aus `docs/domain-rules.md` und `:domain` entfernen (8, 17, 21 anpassen), dazu
+      `MealSuggestions`/`PlanVorschlag`/`PantryCoverage`; Tests nachziehen
 
 ## Leitplanken
 

@@ -27,8 +27,13 @@ Admin an. Danach beide Variablen leeren und mit `docker compose up -d` neu anwen
 
 - Einladung für ein neues **Konto ohne Haushalt**: `docker compose exec foody-server foody-admin invite`
   (keine Haushalts-Einladung; die erzeugen Mitglieder in der App über `POST /api/v1/invites`)
-- Sicherung: `docker compose exec foody-server foody-admin backup /data/backup-$(date +%F).db`
+- Sicherung von Datenbank und Fotos: `FOODY_BACKUP_DIR=/pfad ./backup.sh` (im Ordner `server/`). Legt
+  `foody-<Datum>.db` an, behält die letzten 14 Tage (`FOODY_BACKUP_KEEP`) und spiegelt die Fotos nach `fotos/`.
+  Gedacht für einen Ordner, den ein OpenCloud-Client abgleicht. Nächtlich per Cron (`crontab -e`):
+  `15 3 * * * cd /pfad/zu/Foody/server && FOODY_BACKUP_DIR=/pfad ./backup.sh >> /var/log/foody-backup.log 2>&1`
+- Nur die Datenbank, von Hand: `docker compose exec foody-server foody-admin backup /data/backup-$(date +%F).db`
 - Update: `git pull && docker compose up -d --build`
+- Speicher: Der Container ist auf 512 MB begrenzt (die JVM nimmt davon 75 %); anders mit `FOODY_MEM_LIMIT` in `.env`.
 
 Weitere Admin-Befehle: `reset-password`, `compact` (siehe `foody-admin` ohne Argumente).
 
