@@ -2,7 +2,7 @@
 
 Selbst gehosteter Sync-Server (Ktor + SQLite) für die Foody-App, gedacht für den Betrieb hinter Traefik.
 
-**Aufbau:** `sync/` (API, Konten, Datenbank, Sync, Admin-CLI), `web/` (Web-Oberfläche), `start/` (`main`, aus dem das
+**Aufbau:** `sync/` (API, Konten, Datenbank, Sync, Admin-CLI), `start/` (`main`, aus dem das
 Docker-Image entsteht). Der Server nutzt außerdem `../shared/` (gemeinsam mit der App) – Änderungen dort brauchen
 ebenfalls ein Update des Servers.
 
@@ -54,17 +54,7 @@ Vom PC: `ssh -N -L 8081:127.0.0.1:8081 homeserver.lan`, dann in der Debug-App (E
 
 ## Web-Oberfläche
 
-Unter der Server-Adresse im Browser (z. B. `https://foody.example.org/`): mit demselben Konto wie in der App anmelden
-oder mit einem Einladungscode registrieren. Rezepte ansehen, anlegen, bearbeiten, archivieren und als Markdown-Dateien
-importieren; Wochenplan bearbeiten (einplanen, Portionen, verschieben, gekocht, Vorschläge), Einkaufslisten aus dem
-Plan erzeugen, neu berechnen und bearbeiten (Freitext, Notizen, Löschen, Rezept auf die Liste); Vorrat pflegen;
-Zutatenkatalog bearbeiten (Zusammenführen/Vereinheitlichen nur in der App); Tagebuch führen (gegessen, Rezept, Zutat,
-frei eintragen, ändern, löschen).
-Der Browser erscheint in der App unter den Geräten und lässt sich dort abmelden. Das Sitzungs-Cookie ist `Secure`:
-die Seite also über HTTPS (Traefik) öffnen.
-
-„Heute“ (Wochenplan, Tagebuch, Vorschläge) rechnet die Web-Oberfläche in `Europe/Berlin`; eine andere Zeitzone setzt
-`FOODY_ZEITZONE` in `.env` (z. B. `FOODY_ZEITZONE=Europe/Vienna`).
+Die Web-Oberfläche ist mit V3 entfallen (ADR 0011).
 
 ## Fotos
 

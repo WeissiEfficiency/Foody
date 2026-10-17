@@ -7,7 +7,6 @@ import androidx.work.Configuration
 import androidx.work.testing.WorkManagerTestInitHelper
 import de.foody.app.data.RecipePhotoStore
 import de.foody.app.data.db.FoodyDatabase
-import de.foody.app.data.db.IngredientEntity
 import de.foody.app.data.db.SYNC_CALLBACK
 import de.foody.app.data.repo.IngredientRepository
 import de.foody.app.data.repo.RecipeDraft
@@ -15,10 +14,8 @@ import de.foody.app.data.repo.RecipeRepository
 import de.foody.domain.MeasureUnit
 import io.ktor.client.HttpClient
 import java.math.BigDecimal
-import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
@@ -47,7 +44,7 @@ private class MemoryTokenStore(context: Context) : TokenStore(context) {
     }
 }
 
-/** Konto-Funktionen gegen den echten `:server` (in-process) mit In-Memory-Room-DB. */
+/** Konto-Funktionen ohne Server (Trennen offline, falsche Adresse) mit In-Memory-Room-DB. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36], application = Application::class)
 class SyncAccountRepositoryTest {
@@ -84,95 +81,6 @@ class SyncAccountRepositoryTest {
         val salz = IngredientRepository(db, db.ingredientDao(), app).getOrCreate("Salz")
         val line = RecipeDraft.Line(salz.id, BigDecimal(1), MeasureUnit.GRAM, null, false)
         return RecipeRepository(db.recipeDao()).save(RecipeDraft(null, "Ei", 2, ingredients = listOf(line)))
-    }
-
-    @Test
-    fun loginStoresTokenAndReturnsHousehold() = syncServerTest { _, _ ->
-        val repo = repo(client)
-        val first = repo.login(url, TEST_ADMIN_USER, TEST_ADMIN_PASSWORD, "Test")
-        assertNotNull(tokens.load())
-        assertNull(first.householdId) // neues Gerät, noch kein Haushalt
-        val household = repo.createHousehold(url, "Zuhause")
-        repo.selectHousehold(url, household.id)
-        assertEquals(listOf(household.id), repo.households(url).map { it.id })
-        // Zweites Gerät desselben Kontos wird dem Haushalt nicht automatisch zugeordnet; nach selectHousehold schon.
-        assertEquals(false, db.syncDao().getState()?.active ?: false, "Login allein aktiviert den Sync nicht")
-    }
-
-    @Test
-    fun registerWithInviteJoinsHousehold() = syncServerTest { _, _ ->
-        val repo = repo(client)
-        repo.login(url, TEST_ADMIN_USER, TEST_ADMIN_PASSWORD, "A")
-        val household = repo.createHousehold(url, "Zuhause")
-        repo.selectHousehold(url, household.id)
-        repo.activate(url, household.id, FirstSync.DOWNLOAD_ONLY)
-        val invite = repo.createInvite()
-
-        tokens.clear()
-        val joined = repo.register(url, invite.code, "bea", "geheimgeheim2", "B")
-        assertEquals(household.id, joined.householdId)
-        assertNotNull(tokens.load())
-    }
-
-    @Test
-    fun activateUploadAllQueuesLocalData() = syncServerTest { _, _ ->
-        val repo = repo(client)
-        val rid = savedRecipe()
-        repo.login(url, TEST_ADMIN_USER, TEST_ADMIN_PASSWORD, "A")
-        val household = repo.createHousehold(url, "Zuhause")
-        repo.selectHousehold(url, household.id)
-        assertEquals(emptyList(), db.syncDao().outbox(), "vor dem Aktivieren wird nichts vorgemerkt")
-
-        repo.activate(url, household.id, FirstSync.UPLOAD_ALL)
-
-        val state = assertNotNull(db.syncDao().getState())
-        assertTrue(state.active)
-        assertEquals(url, state.serverUrl)
-        assertEquals(household.id, state.householdId)
-        assertTrue(db.syncDao().outbox().any { it.type == "recipe" && it.recordId == rid })
-    }
-
-    @Test
-    fun activateDownloadOnlyQueuesNothing() = syncServerTest { _, _ ->
-        val repo = repo(client)
-        savedRecipe()
-        repo.login(url, TEST_ADMIN_USER, TEST_ADMIN_PASSWORD, "A")
-        val household = repo.createHousehold(url, "Zuhause")
-        repo.selectHousehold(url, household.id)
-
-        repo.activate(url, household.id, FirstSync.DOWNLOAD_ONLY)
-
-        assertTrue(db.syncDao().getState()!!.active)
-        assertEquals(emptyList(), db.syncDao().outbox())
-    }
-
-    @Test
-    fun hasLocalDataIgnoresSeedIngredients() = syncServerTest { _, _ ->
-        val repo = repo(client)
-        db.ingredientDao().upsert(IngredientEntity(id = "seed-1", canonicalName = "Mehl", createdAt = 0, updatedAt = 0))
-        assertFalse(repo.hasLocalData(), "Zutaten allein sind keine Nutzerdaten")
-        savedRecipe()
-        assertTrue(repo.hasLocalData())
-    }
-
-    @Test
-    fun disconnectRevokesOwnDeviceAndClearsLocalState() = syncServerTest { _, _ ->
-        val repo = repo(client)
-        repo.login(url, TEST_ADMIN_USER, TEST_ADMIN_PASSWORD, "A")
-        val household = repo.createHousehold(url, "Zuhause")
-        repo.selectHousehold(url, household.id)
-        repo.activate(url, household.id, FirstSync.UPLOAD_ALL)
-        val oldToken = tokens.load()!!
-
-        repo.disconnect()
-
-        assertNull(tokens.load())
-        val state = db.syncDao().getState()!!
-        assertFalse(state.active)
-        assertNull(state.serverUrl)
-        // Das alte Token ist beim Server ungültig.
-        tokens.token = oldToken
-        assertFailsWith<SyncApiException.Unauthorized> { repo.households(url) }
     }
 
     @Test

@@ -5,7 +5,7 @@ plugins {
 }
 
 // Sync-Server als Bibliothek: API, Konten, Datenbank, Sync, Fotos, Admin-CLI. Gestartet wird er von :server
-// (server/start), der auch die Web-Oberfläche (:server-web) einhängt.
+// (server/start).
 
 // Kein jvmToolchain: kompiliert mit dem vorhandenen JDK, erzeugt Java-17-Bytecode.
 java {

@@ -3,7 +3,6 @@ package de.foody.server
 import de.foody.server.admin.AdminCli
 import de.foody.server.db.Database
 import de.foody.server.sync.Compactor
-import de.foody.server.web.WebOberflaeche
 import io.ktor.server.application.Application
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -37,7 +36,7 @@ private fun startServer(config: ServerConfig) {
     val deps = ServerDeps.create(config, Database("jdbc:sqlite:${config.dbPath}"))
     if (!bootstrapAdmin(config, deps)) exitProcess(1)
     embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
-        foodyModule(deps, WebOberflaeche.routen(deps))
+        foodyModule(deps)
         launchCompaction(deps)
     }.start(wait = true)
 }

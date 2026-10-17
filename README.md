@@ -42,8 +42,7 @@ Foody funktioniert ohne Server. Wer mehrere Geräte oder einen Haushalt teilen m
 Sync-Server (Docker, hinter Traefik/HTTPS) und verbindet die App unter Einstellungen → Synchronisierung. Aufbau und
 Betrieb: [`server/README.md`](server/README.md); Entscheidung: [`docs/adr/0006-optional-self-hosted-sync.md`](docs/adr/0006-optional-self-hosted-sync.md).
 
-Der Server bringt eine schlanke **Web-Oberfläche** mit (im Server gerendert, ohne Build-Werkzeug): Rezepte, Wochenplan,
-Einkaufsliste (abhaken) und Tagebuch im Browser – mit demselben Konto und denselben Zahlen wie in der App.
+Die Web-Oberfläche ist mit V3 entfallen (ADR 0011).
 
 ## Projektstruktur
 
@@ -56,8 +55,7 @@ Einkaufsliste (abhaken) und Tagebuch im Browser – mit demselben Konto und dens
 | `shared/domain/` | `:domain` | Reines Kotlin (keine Android-Abhängigkeiten): Einheiten, Skalierung, Nährwerte, Einkaufsaggregation, Diff, Import, Einordnung – von App und Server genutzt |
 | `shared/sync-protocol/` | `:sync-protocol` | Gemeinsame DTOs, Validierung und Protokollversion von App und Server |
 | `server/sync/` | `:server-sync` | Optionaler Sync-Server (Ktor + SQLite): API, Konten, Datenbank, Sync, Fotos, Admin-CLI |
-| `server/web/` | `:server-web` | Web-Oberfläche des Servers (im Aufbau) |
-| `server/start/` | `:server` | Startpunkt (`main`), verbindet Sync-Server und Web-Oberfläche; Docker-Image |
+| `server/start/` | `:server` | Startpunkt (`main`), startet den Sync-Server; Docker-Image |
 
 Änderungen unter `shared/` betreffen App **und** Server: danach den Server neu bauen (`server/README.md`, Update).
 

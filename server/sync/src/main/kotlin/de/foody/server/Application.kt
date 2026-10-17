@@ -26,7 +26,6 @@ import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.forwardedheaders.XForwardedHeaders
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
-import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
@@ -56,11 +55,8 @@ private val ProtocolCheck = createRouteScopedPlugin("ProtocolCheck") {
     }
 }
 
-/**
- * Das Server-Modul. [erweiterungen] sind zusätzliche Routen außerhalb von `/api/v1` – z. B. die Web-Oberfläche, die
- * `:server` (server/start) übergibt. Der Sync-Server selbst kennt sie nicht; ohne Erweiterungen verhält er sich wie immer.
- */
-fun Application.foodyModule(deps: ServerDeps, erweiterungen: List<Route.() -> Unit> = emptyList()) {
+/** Das Server-Modul. */
+fun Application.foodyModule(deps: ServerDeps) {
     val log = LoggerFactory.getLogger("de.foody.server")
     install(ContentNegotiation) { json(Protocol.json) }
     install(XForwardedHeaders) { useLastProxy() }
@@ -111,6 +107,5 @@ fun Application.foodyModule(deps: ServerDeps, erweiterungen: List<Route.() -> Un
                 photoRoutes(deps)
             }
         }
-        erweiterungen.forEach { it() }
     }
 }
