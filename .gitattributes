@@ -1,0 +1,2 @@
+# Shell-Skripte laufen auf dem Linux-Server: immer mit LF auschecken
+*.sh text eol=lf

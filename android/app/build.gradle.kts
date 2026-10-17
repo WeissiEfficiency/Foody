@@ -106,6 +106,36 @@ tasks.withType<Test>().configureEach {
     systemProperty("foody.legacySqliteJar", legacySqlite.singleFile.absolutePath)
 }
 
+// Signierte Release-APK dorthin kopieren, von wo sie aufs Handy kommt: `./gradlew :app:apkNachOpenCloud`.
+// Ziel je Rechner in local.properties, z. B. `foody.apkZiel=E:/OpenCloud/Persönlich (2)/foody.apk` (UTF-8 gelesen).
+val apkZiel: String? = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.reader(Charsets.UTF_8)?.use(::load)
+}.getProperty("foody.apkZiel")
+val releaseSigniert = keystoreProperties.isNotEmpty()
+
+tasks.register<Copy>("apkNachOpenCloud") {
+    group = "foody"
+    description = "Baut die signierte Release-APK und kopiert sie nach foody.apkZiel (local.properties)."
+    dependsOn("assembleRelease")
+    // Lokale Kopien: Der Konfigurations-Cache darf keine Verweise auf das Build-Skript speichern
+    val ziel = apkZiel?.let(::File)
+    val signiert = releaseSigniert
+    from(layout.buildDirectory.dir("outputs/apk/release")) {
+        include("*.apk")
+        exclude("*-unsigned.apk")
+    }
+    // Ohne Ziel ein Platzhalter, damit doFirst mit einer verständlichen Meldung abbricht
+    into(ziel?.parentFile ?: temporaryDir)
+    if (ziel != null) {
+        val name = ziel.name
+        rename { name }
+    }
+    doFirst {
+        if (ziel == null) throw GradleException("foody.apkZiel fehlt in local.properties (Ziel der APK).")
+        if (!signiert) throw GradleException("Kein Release-Schlüssel: keystore.properties anlegen (Vorlage keystore.properties.example).")
+    }
+}
+
 dependencies {
     legacySqlite(libs.sqlite.jdbc.legacy)
 
