@@ -88,6 +88,8 @@ Aufwände: grobe Schätzung für eine Person.
 **Fertig, wenn** die Szenarien „Sonntag: Woche planen“ mit echten Daten plausible kcal und Vorschläge liefert.
 
 ### Phase 2 – Server schlank (≈ 1 Woche)
+Spec: [`2026-10-17-v3-phase2-server-schlank-design.md`](../docs/superpowers/specs/2026-10-17-v3-phase2-server-schlank-design.md)
+(harter Schnitt: echter Server bleibt bis Phase 8 auf `v1-server`; `:sync-protocol` eingefroren, neu `:api-protocol`).
 - [ ] Protokoll v3 in `:sync-protocol`: ein Konto, keine Haushalte; Typ „Vorrat“ entfällt
 - [ ] `:server-web` entfernen; Haushalts-, Einladungs- und Geräte-Routen entfernen; Anmeldung bleibt (Argon2id)
 - [ ] Einmalige Umwandlung der Server-Datenbank (Haushalt → Konto, Vorrat löschen), wiederholbar, getestet auf einer
