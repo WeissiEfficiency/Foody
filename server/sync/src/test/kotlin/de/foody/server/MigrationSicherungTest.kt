@@ -65,9 +65,23 @@ class MigrationSicherungTest {
     fun sicherungScheitertKeineMigration() {
         val (ordner, url) = neueDb()
         Database(url, migrationen = ersteMigration).close()
-        Files.writeString(ordner.resolve("vor-migration-2-2026-10-17-1200.db"), "belegt")
+        Files.createDirectory(ordner.resolve("vor-migration-2-2026-10-17-1200.db"))
         assertFailsWith<MigrationAbgebrochen> { Database(url, uhr, zweiMigrationen) }
         assertEquals(1, userVersion(ordner.resolve("foody.db")))
+    }
+
+    @Test
+    fun keineZweiteSicherungNachGescheiterterMigration() {
+        val (ordner, url) = neueDb()
+        Database(url, migrationen = ersteMigration).close()
+        val kaputt = listOf(Migrations.all[0], "SELECT * FROM gibt_es_nicht")
+        val e1 = assertFailsWith<Exception> { Database(url, uhr, kaputt) }
+        assertTrue(e1 !is MigrationAbgebrochen)
+        assertEquals(1, sicherungen(ordner).size)
+        val spaeter = Clock.fixed(Instant.parse("2026-10-17T10:05:00Z"), ZoneOffset.UTC)
+        val e2 = assertFailsWith<Exception> { Database(url, spaeter, kaputt) }
+        assertTrue(e2 !is MigrationAbgebrochen)
+        assertEquals(1, sicherungen(ordner).size)
     }
 
     @Test

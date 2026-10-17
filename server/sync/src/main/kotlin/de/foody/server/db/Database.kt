@@ -35,13 +35,24 @@ class Database(
                     s.execute("PRAGMA foreign_keys=ON")
                     s.execute("PRAGMA busy_timeout=5000")
                 }
-                if (bestand && Migrations.aktuell(c) < migrationen.size) sichere(c, datei, clock, migrationen.size)
+                if (bestand && Migrations.aktuell(c) < migrationen.size && !hatSicherung(datei, migrationen.size)) sichere(c, datei, clock, migrationen.size)
                 Migrations.apply(c, migrationen)
             } catch (e: Throwable) {
                 c.close()
                 throw e
             }
             return c
+        }
+
+        /**
+         * Gibt es für [ziel] schon eine Sicherung (Datei `vor-migration-<ziel>-*.db`), ist die Datenbank seit dem
+         * gescheiterten Versuch unverändert; ein Neustart-Schleife soll keine weitere Sicherung anhäufen.
+         */
+        private fun hatSicherung(datei: Path, ziel: Int): Boolean {
+            val ordner = datei.toAbsolutePath().parent ?: return false
+            return Files.newDirectoryStream(ordner, "vor-migration-$ziel-*.db").use { strom ->
+                strom.any { Files.isRegularFile(it) }
+            }
         }
 
         private fun sichere(c: Connection, datei: Path, clock: Clock, ziel: Int) {
