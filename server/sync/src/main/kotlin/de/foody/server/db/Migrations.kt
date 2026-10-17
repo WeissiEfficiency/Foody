@@ -125,14 +125,27 @@ object Migrations {
     )
 
     /**
-     * Vorprüfung für Migration 1 → 2: Jeder Haushalt hat genau ein Mitglied, und kein Konto ist Mitglied mehrerer
-     * Haushalte. Sonst [MigrationAbgebrochen] – vor jeder Änderung, die Datenbank bleibt auf Version 1.
+     * Vorprüfung für Migration 1 → 2: Jedes Mitglied zeigt auf ein existierendes Konto, jeder Haushalt hat genau ein
+     * Mitglied, kein Konto ist Mitglied mehrerer Haushalte, und jeder Datensatz gehört zu einem existierenden Haushalt.
+     * Sonst [MigrationAbgebrochen] – vor jeder Änderung, die Datenbank bleibt auf Version 1.
      */
     fun vorpruefenKonto(c: Connection) {
         c.createStatement().use { s ->
             s.executeQuery(
-                "SELECT h.id, COUNT(m.user_id) FROM household h LEFT JOIN membership m ON m.household_id = h.id " +
-                    "GROUP BY h.id HAVING COUNT(m.user_id) <> 1 ORDER BY h.id LIMIT 1",
+                "SELECT m.household_id, m.user_id FROM membership m LEFT JOIN user u ON u.id = m.user_id " +
+                    "WHERE u.id IS NULL ORDER BY m.household_id, m.user_id LIMIT 1",
+            ).use { rs ->
+                if (rs.next()) {
+                    throw MigrationAbgebrochen(
+                        "Haushalt ${rs.getString(1)} hat ein Mitglied ohne Konto (${rs.getString(2)}) – Umwandlung auf Konten abgebrochen",
+                    )
+                }
+            }
+            s.executeQuery(
+                "SELECT h.id, (SELECT COUNT(*) FROM membership m JOIN user u ON u.id = m.user_id WHERE m.household_id = h.id) " +
+                    "FROM household h " +
+                    "WHERE (SELECT COUNT(*) FROM membership m JOIN user u ON u.id = m.user_id WHERE m.household_id = h.id) <> 1 " +
+                    "ORDER BY h.id LIMIT 1",
             ).use { rs ->
                 if (rs.next()) {
                     throw MigrationAbgebrochen("Haushalt ${rs.getString(1)} hat ${rs.getInt(2)} Mitglieder – Umwandlung auf Konten abgebrochen")
@@ -140,7 +153,7 @@ object Migrations {
             }
             s.executeQuery(
                 "SELECT m.user_id, COUNT(*) FROM membership m JOIN household h ON h.id = m.household_id " +
-                    "GROUP BY m.user_id HAVING COUNT(*) > 1 ORDER BY m.user_id LIMIT 1",
+                    "JOIN user u ON u.id = m.user_id GROUP BY m.user_id HAVING COUNT(*) > 1 ORDER BY m.user_id LIMIT 1",
             ).use { rs ->
                 if (rs.next()) {
                     throw MigrationAbgebrochen(
@@ -148,6 +161,32 @@ object Migrations {
                     )
                 }
             }
+            val verwaist = s.executeQuery(
+                "SELECT household_id, COUNT(*) FROM sync_record WHERE household_id NOT IN (SELECT id FROM household) " +
+                    "GROUP BY household_id ORDER BY household_id",
+            ).use { rs -> buildList { while (rs.next()) add(rs.getString(1) to rs.getLong(2)) } }
+            if (verwaist.isNotEmpty()) {
+                val ids = verwaist.take(MAX_GENANNT).joinToString(", ") { it.first } + if (verwaist.size > MAX_GENANNT) ", …" else ""
+                throw MigrationAbgebrochen(
+                    "${verwaist.sumOf { it.second }} Datensätze ohne existierenden Haushalt ($ids) – Umwandlung auf Konten abgebrochen",
+                )
+            }
+        }
+    }
+
+    /** Höchstens so viele Haushalts-IDs nennt die Meldung der Vorprüfung. */
+    private const val MAX_GENANNT = 5
+
+    /** Datensätze, die Migration 1 → 2 übernehmen muss (alle außer Vorrat); Grundlage des Gegenchecks. */
+    private fun zuUebernehmen(c: Connection): Long = c.createStatement().use { s ->
+        s.executeQuery("SELECT COUNT(*) FROM sync_record WHERE type <> 'pantry_item'").use { it.next(); it.getLong(1) }
+    }
+
+    /** Gegencheck nach Migration 1 → 2, noch in der Transaktion: keine Datensätze verloren oder hinzugekommen. */
+    private fun gegenpruefenKonto(c: Connection, vorher: Long) {
+        val nachher = c.createStatement().use { s -> s.executeQuery("SELECT COUNT(*) FROM sync_record").use { it.next(); it.getLong(1) } }
+        if (nachher != vorher) {
+            throw MigrationAbgebrochen("$vorher Datensätze vorher, $nachher nachher – Umwandlung abgebrochen")
         }
     }
 
@@ -163,11 +202,17 @@ object Migrations {
             val wasAuto = c.autoCommit
             c.autoCommit = false
             try {
-                if (index == 1) vorpruefenKonto(c)
+                val vorher = if (index == 1) {
+                    vorpruefenKonto(c)
+                    zuUebernehmen(c)
+                } else {
+                    null
+                }
                 c.createStatement().use { s ->
                     liste[index].split(";").map { it.trim() }.filter { it.isNotEmpty() }.forEach { s.execute(it) }
                     s.execute("PRAGMA user_version = ${index + 1}")
                 }
+                if (vorher != null) gegenpruefenKonto(c, vorher)
                 c.commit()
             } catch (e: Throwable) {
                 c.rollback()

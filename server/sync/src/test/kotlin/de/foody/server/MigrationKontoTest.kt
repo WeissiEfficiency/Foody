@@ -235,6 +235,46 @@ class MigrationKontoTest {
     }
 
     @Test
+    fun vorpruefungDatensatzOhneHaushalt() {
+        v1Datenbank { c ->
+            c.createStatement().use { s ->
+                s.executeUpdate(
+                    "INSERT INTO sync_record (household_id, type, id, rev, deleted, payload, updated_at) " +
+                        "VALUES ('h-weg', 'ingredient', 'x1', 1, 0, '{}', 1), ('h-weg', 'ingredient', 'x2', 2, 0, '{}', 1)",
+                )
+            }
+        }
+        val e = assertFailsWith<MigrationAbgebrochen> { Database(url) }
+        assertTrue(e.message!!.contains("h-weg"), e.message)
+        assertTrue(e.message!!.contains("2 Datensätze"), e.message)
+        assertEquals(listOf(1L, 1L, 1L, 7L, 3L, 2L), zaehleV1())
+    }
+
+    @Test
+    fun vorpruefungMitgliedOhneKonto() {
+        v1Datenbank { c ->
+            c.createStatement().use { s ->
+                s.executeUpdate("INSERT INTO household (id, name, created_by, created_at) VALUES ('h2', 'Geist', 'u-geist', 0)")
+                s.executeUpdate("INSERT INTO membership (user_id, household_id, role, created_at) VALUES ('u-geist', 'h2', 'owner', 0)")
+            }
+        }
+        val e = assertFailsWith<MigrationAbgebrochen> { Database(url) }
+        assertTrue(e.message!!.contains("h2"), e.message)
+        assertTrue(e.message!!.contains("ohne Konto"), e.message)
+        assertEquals(listOf(1L, 2L, 2L, 5L, 3L, 2L), zaehleV1())
+    }
+
+    @Test
+    fun gegencheckBrichtBeiDatenverlustAb() {
+        // Ersatz für Eintrag 1, der Datensätze verliert: der Gegencheck muss das vor dem Commit erkennen.
+        v1Datenbank()
+        val verlust = listOf(Migrations.all[0], "DELETE FROM sync_record WHERE id IN ('i1', 'p1')")
+        val e = assertFailsWith<MigrationAbgebrochen> { Database(url, migrationen = verlust) }
+        assertTrue(e.message!!.contains("4 Datensätze vorher, 3 nachher"), e.message)
+        assertEquals(listOf(1L, 1L, 1L, 5L, 3L, 2L), zaehleV1())
+    }
+
+    @Test
     fun pullNachMigrationNahtlos() {
         // Kompaktierungsgrenze 2, damit der Cursor 2 (wie vor der Migration) gültig bleibt.
         v1Datenbank(compactedBefore = 2)
