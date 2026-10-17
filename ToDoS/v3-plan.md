@@ -71,11 +71,12 @@ Aufwände: grobe Schätzung für eine Person.
 - [ ] `docs/roadmap.md` auf den echten Stand bringen
 
 ### Phase 1 – Rechenkern korrigieren (`:domain`, ≈ 3–4 Tage)
-- [ ] **kcal je Portion:** Ursache finden (Portionszahl beim Import? Skalierung im Planer? Einheiten?), mit
-      fehlschlagendem Test belegen, beheben; ein Test je Anzeigeort, dass dieselbe Zahl herauskommt
-- [ ] **„Leere Tage füllen“ neu:** Regeln ohne Vorrat – Einordnung (Abendessen, Hauptgang), Favoriten und „Oft
-      gekocht“ gewichtet, Abwechslung (keine Wiederholung in 14 Tagen, nicht zweimal dieselbe Hauptzutat
-      hintereinander), optional Tagesziel; testbar als reine Funktion
+- [x] **kcal je Portion:** Der Import überlas die Portionenzahl der Datei und schätzte (#91); alte Rezepte bekommen
+      sie bei der V3-Migration nachgetragen (#92, Einbau in Phase 3)
+- [x] **„Leere Tage füllen“ neu:** `LeereTageFuellen` + `Abwechslung` in `:domain` (Regel 28) – zu Mittag/Abend nur
+      Hauptspeisen, Favoriten ×3 und „Oft gekocht“ bis ×2 gewichtet statt sortiert, nicht zweimal hintereinander
+      dieselbe Grundlage/Eiweißquelle, 14 Tage ohne Wiederholung. Wird in Phase 6 (Woche) eingebunden; v1 behält
+      `MealSuggestions`/`PlanVorschlag` bis zum Entfernen in Phase 8. Tagesziel bewusst nicht berücksichtigt.
 - [ ] Vorrats-Regeln aus `docs/domain-rules.md` und `:domain` entfernen (8, 17, 21 anpassen), Tests nachziehen
 
 **Fertig, wenn** die Szenarien „Sonntag: Woche planen“ mit echten Daten plausible kcal und Vorschläge liefert.

@@ -55,6 +55,12 @@
     Anzeigen (Rezept, Liste, Planer, Tagebuch) zeigen dieselben kcal je Portion.
     Früher geschätzte Rezepte bekommen die Portionen der Datei nachgetragen, aber nur, solange ihre Notiz noch
     „aus den Mengen auf N geschätzt“ für genau die aktuellen Portionen nennt; die Mengen bleiben, wie sie sind.
+28. „Leere Tage füllen“ (V3, ohne Vorrat): Zu Mittag- und Abendessen kommen nur Hauptspeisen in Frage, nie Brotzeit,
+    Dips oder Nachspeisen; eingeordnete Rezepte vor solchen ohne bekannten Gang, uneingeordnete nur als Lückenfüller.
+    Favoriten (×3) und „Oft gekocht“ (bis ×2) werden gewichtet gezogen, nicht vorangestellt. Gleiche Grundlage oder
+    Eiweißquelle wie am Vortag, am selben Tag oder am Folgetag fällt weg, solange es Alternativen gibt; Würzzutaten
+    („Fischsauce“, „Hühnerbrühe“) zählen dafür nicht. Nichts, was 14 Tage vor dem ersten leeren Tag oder später
+    eingeplant ist; lieber eine Lücke als ein unpassendes Gericht.
 
 ## Tests je Regel
 
@@ -89,3 +95,4 @@ Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/te
 | 25 | `PlanDurchschnittTest` |
 | 26 | `IngredientScanTest.strichcodeFuelltFelderUndMerktSichCode`, `TagebuchScreenTest.packungImReiterFrei` |
 | 27 | `MarkdownImportTest.servingsFromHeaderLine`, `RezeptImportTest.portionenAusDerDateiStattSchaetzung`, `RezeptImportTest.eineGanzeBackwareWirdGeschaetzt`, `KcalJePortionTest`, `PortionenNachtragenTest` |
+| 28 | `LeereTageFuellenTest`, `AbwechslungTest` |
