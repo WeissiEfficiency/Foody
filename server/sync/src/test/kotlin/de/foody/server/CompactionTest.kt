@@ -1,9 +1,9 @@
 package de.foody.server
 
 import de.foody.server.sync.Compactor
-import de.foody.sync.protocol.ErrorCode
-import de.foody.sync.protocol.RecordType
-import de.foody.sync.protocol.SyncRecord
+import de.foody.api.protocol.ErrorCode
+import de.foody.api.protocol.RecordType
+import de.foody.api.protocol.SyncRecord
 import io.ktor.http.HttpStatusCode
 import java.time.Duration
 import kotlin.test.Test
@@ -15,7 +15,7 @@ class CompactionTest {
 
     @Test
     fun oldTombstonesAreRemovedAndCursorExpires() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(ingredient("i1", "Mehl"), ingredient("i2", "Salz")))
         client.pushOk(token, listOf(deletion("i1")))
         env.clock.advance(Duration.ofDays(91))
@@ -31,7 +31,7 @@ class CompactionTest {
 
     @Test
     fun cursorAtCompactedRevisionStaysValid() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(ingredient("i1", "Mehl")))
         client.pushOk(token, listOf(deletion("i1")))
         env.clock.advance(Duration.ofDays(91))
@@ -42,7 +42,7 @@ class CompactionTest {
 
     @Test
     fun recentTombstonesStay() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(ingredient("i1", "Mehl")))
         client.pushOk(token, listOf(deletion("i1")))
         env.clock.advance(Duration.ofDays(89))

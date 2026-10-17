@@ -1,6 +1,6 @@
 package de.foody.server
 
-import de.foody.sync.protocol.Protocol
+import de.foody.api.protocol.Protocol
 import de.foody.server.db.Database
 import de.foody.server.db.Migrations
 import io.ktor.client.request.get
@@ -13,7 +13,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.post as routePost
 import io.ktor.server.routing.routing
-import de.foody.sync.protocol.ErrorDto
+import de.foody.api.protocol.ErrorDto
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import kotlin.test.Test
@@ -26,8 +26,8 @@ class DatabaseTest {
         c.createStatement().use { s -> s.executeQuery("PRAGMA user_version").use { it.next(); it.getInt(1) } }
     }
 
-    private fun Database.householdCount(): Int = tx { c ->
-        c.createStatement().use { s -> s.executeQuery("SELECT COUNT(*) FROM household").use { it.next(); it.getInt(1) } }
+    private fun Database.userCount(): Int = tx { c ->
+        c.createStatement().use { s -> s.executeQuery("SELECT COUNT(*) FROM user").use { it.next(); it.getInt(1) } }
     }
 
     @Test
@@ -45,12 +45,15 @@ class DatabaseTest {
             assertFailsWith<IllegalStateException> {
                 db.tx { c ->
                     c.createStatement().use {
-                        it.executeUpdate("INSERT INTO household(id, name, created_by, created_at) VALUES ('h', 'n', 'u', 0)")
+                        it.executeUpdate(
+                            "INSERT INTO user(id, username, username_lower, password_hash, display_name, created_at) " +
+                                "VALUES ('u', 'u', 'u', 'x', 'u', 0)",
+                        )
                     }
                     error("boom")
                 }
             }
-            assertEquals(0, db.householdCount())
+            assertEquals(0, db.userCount())
         }
     }
 
@@ -63,11 +66,11 @@ class DatabaseTest {
 
     @Test
     fun apiWithoutHeaderIsProtocolTooOld() = testServer {
-        val missing = client.get("/api/v1/households")
+        val missing = client.get("/api/v3/sync/pull")
         assertEquals(HttpStatusCode.Conflict, missing.status)
         assertEquals("""{"code":"protocol_too_old"}""", missing.bodyAsText())
 
-        val newer = client.get("/api/v1/households") { header("X-Foody-Protocol", (Protocol.VERSION + 1).toString()) }
+        val newer = client.get("/api/v3/sync/pull") { header("X-Foody-Protocol", (Protocol.VERSION + 1).toString()) }
         assertEquals(HttpStatusCode.Conflict, newer.status)
         assertEquals("""{"code":"server_too_old"}""", newer.bodyAsText())
     }

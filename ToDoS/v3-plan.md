@@ -47,7 +47,8 @@ android/feature/<bereich>   :feature:heute, :feature:rezepte, :feature:kochen, :
                             :feature:einkauf, :feature:einstellungen
 android/core/<bereich>      :core:designsystem, :core:data, :core:sync, :core:ki
 shared/domain               :domain              bleibt, wird ergänzt und korrigiert
-shared/sync-protocol        :sync-protocol       bleibt (Protokoll v3: ohne Haushalte)
+shared/sync-protocol        :sync-protocol       Protokoll 2, eingefroren für die v1-App, entfällt in Phase 8
+shared/api-protocol         :api-protocol        Protokoll 3: ein Konto, ohne Haushalte und Vorrat
 server/sync                 :server-sync         Konto, Push/Pull, Fotos, KI-Endpunkte
 server/start                :server              main, Docker
 build-logic/                                     Convention-Plugins
@@ -88,11 +89,19 @@ Aufwände: grobe Schätzung für eine Person.
 **Fertig, wenn** die Szenarien „Sonntag: Woche planen“ mit echten Daten plausible kcal und Vorschläge liefert.
 
 ### Phase 2 – Server schlank (≈ 1 Woche)
-- [ ] Protokoll v3 in `:sync-protocol`: ein Konto, keine Haushalte; Typ „Vorrat“ entfällt
-- [ ] `:server-web` entfernen; Haushalts-, Einladungs- und Geräte-Routen entfernen; Anmeldung bleibt (Argon2id)
-- [ ] Einmalige Umwandlung der Server-Datenbank (Haushalt → Konto, Vorrat löschen), wiederholbar, getestet auf einer
-      Kopie der echten Daten
-- [ ] Gerüst `POST /ki/*` mit Grenzen (Größe, Anzahl je Stunde), Schlüssel nur aus der Server-Umgebung
+Spec: [`2026-10-17-v3-phase2-server-schlank-design.md`](../docs/superpowers/specs/2026-10-17-v3-phase2-server-schlank-design.md)
+(harter Schnitt: echter Server bleibt bis Phase 8 auf `v1-server`; `:sync-protocol` eingefroren, neu `:api-protocol`).
+- [x] Protokoll 3: ein Konto, keine Haushalte; Typ „Vorrat“ entfällt – als neues Modul `:api-protocol`
+      (`/api/v3`), `:sync-protocol` bleibt eingefroren (Spec, Abschnitt 1)
+- [x] `:server-web` entfernen; Haushalts-, Einladungs-, Registrier- und Geräte-Routen entfernen; Anmeldung bleibt
+      (Argon2id), Konten über `foody-admin konto-anlegen` (Spec, Abschnitt 2)
+- [x] Einmalige Umwandlung der Server-Datenbank (Haushalt → Konto, Vorrat löschen) mit Sicherung vorher,
+      Vorprüfung, einer Transaktion und Fotoumzug; JVM-getestet (Spec, Abschnitt 2; `server/README.md`, „Umstieg auf V3“)
+- [x] Probelauf mit Kopie der echten Daten auf dem Test-Server (370 lebende Datensätze, 3 Geräte) – Kopie der echten
+      DB vom 17.10.: 370 = 370 lebende, 384 = 384 gesamt, `last_rev` 413 = 413, 3 = 3 aktive Geräte; Fotoumzug mit
+      echten Fotos noch nicht erprobt (0 Fotos)
+- [x] KI-Gerüst: `FOODY_KI_KEY` nur aus der Server-Umgebung, `KiKontingent` (Anzahl je Konto und Stunde),
+      `GET /ki/status`; `POST /ki/*` mit Größengrenzen folgt mit den Funktionen in Phase 7 (Spec, Abschnitt 3)
 
 **Fertig, wenn** zwei Test-Geräte mit demselben Konto vollständig synchronisieren.
 

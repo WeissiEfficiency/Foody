@@ -1,11 +1,11 @@
 package de.foody.server
 
+import de.foody.server.auth.KontoExistiert
 import de.foody.server.auth.PasswordHasher
 import de.foody.server.auth.Tokens
-import de.foody.sync.protocol.AuthResponse
-import de.foody.sync.protocol.DeviceDto
-import de.foody.sync.protocol.ErrorCode
-import de.foody.sync.protocol.Protocol
+import de.foody.api.protocol.AuthResponse
+import de.foody.api.protocol.ErrorCode
+import de.foody.api.protocol.Protocol
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
@@ -22,8 +22,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
-import de.foody.sync.protocol.LoginRequest
-import de.foody.sync.protocol.PasswordChangeRequest
+import de.foody.api.protocol.LoginRequest
+import de.foody.api.protocol.PasswordChangeRequest
 import java.time.Duration
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,13 +37,14 @@ class AuthTest {
     private val pw = "geheimgeheim"
 
     private suspend fun HttpClient.login(user: String, password: String, device: String = "Handy"): HttpResponse =
-        post("/api/v1/auth/login") {
+        post("/api/v3/auth/login") {
             protocol()
             contentType(ContentType.Application.Json)
             setBody(Protocol.json.encodeToString(LoginRequest(user, password, device)))
         }
 
-    private suspend fun HttpClient.devices(token: String?): HttpResponse = get("/api/v1/devices") {
+    /** Authentifizierter Aufruf zum Prüfen eines Tokens (Pull ohne Datensätze). */
+    private suspend fun HttpClient.probe(token: String?): HttpResponse = get("/api/v3/sync/pull") {
         protocol()
         if (token != null) bearerAuth(token)
     }
@@ -73,25 +74,20 @@ class AuthTest {
 
     @Test
     fun loginReturnsTokenAndTokenAuthenticates() = testServer { env ->
-        val userId = env.deps.accounts.createUser("stefan", pw)
+        val kontoId = env.deps.accounts.createUser("stefan", pw)
         val response = client.login("stefan", pw)
         assertEquals(HttpStatusCode.OK, response.status)
         val auth = Protocol.json.decodeFromString<AuthResponse>(response.bodyAsText())
-        assertEquals(userId, auth.userId)
-        assertNull(auth.householdId)
+        assertEquals(kontoId, auth.kontoId)
         assertTrue(auth.token.isNotEmpty())
+        assertEquals(kontoId, env.deps.accounts.deviceForToken(auth.token)!!.kontoId)
 
-        val ok = client.devices(auth.token)
-        assertEquals(HttpStatusCode.OK, ok.status)
-        val list = Protocol.json.decodeFromString<List<DeviceDto>>(ok.bodyAsText())
-        assertEquals(1, list.size)
-        assertTrue(list.single().current)
-        assertEquals("Handy", list.single().name)
+        assertEquals(HttpStatusCode.OK, client.probe(auth.token).status)
 
-        val denied = client.devices(null)
+        val denied = client.probe(null)
         assertEquals(HttpStatusCode.Unauthorized, denied.status)
         assertEquals("""{"code":"unauthorized"}""", denied.bodyAsText())
-        assertEquals(HttpStatusCode.Unauthorized, client.devices("falsch").status)
+        assertEquals(HttpStatusCode.Unauthorized, client.probe("falsch").status)
     }
 
     @Test
@@ -131,8 +127,7 @@ class AuthTest {
         val e3 = assertFailsWith<ApiException> { env.deps.accounts.createUser("ab", pw) }
         assertEquals(ErrorCode.INVALID_INPUT, e3.code)
         env.deps.accounts.createUser("stefan", pw)
-        val e4 = assertFailsWith<ApiException> { env.deps.accounts.createUser("STEFAN", pw) }
-        assertEquals(ErrorCode.USERNAME_TAKEN, e4.code)
+        assertFailsWith<KontoExistiert> { env.deps.accounts.createUser("STEFAN", pw) }
     }
 
     @Test
@@ -140,28 +135,40 @@ class AuthTest {
         env.deps.accounts.createUser("stefan", pw)
         val t1 = Protocol.json.decodeFromString<AuthResponse>(client.login("stefan", pw, "Eins").bodyAsText()).token
         val t2 = Protocol.json.decodeFromString<AuthResponse>(client.login("stefan", pw, "Zwei").bodyAsText()).token
-        val change = client.post("/api/v1/auth/password") {
+        val change = client.post("/api/v3/auth/password") {
             protocol()
             bearerAuth(t1)
             contentType(ContentType.Application.Json)
             setBody(Protocol.json.encodeToString(PasswordChangeRequest(pw, "neuesPasswort1")))
         }
         assertEquals(HttpStatusCode.NoContent, change.status)
-        assertEquals(HttpStatusCode.OK, client.devices(t1).status)
-        assertEquals(HttpStatusCode.Unauthorized, client.devices(t2).status)
+        assertEquals(HttpStatusCode.OK, client.probe(t1).status)
+        assertEquals(HttpStatusCode.Unauthorized, client.probe(t2).status)
         assertEquals(HttpStatusCode.Unauthorized, client.login("stefan", pw).status)
         assertEquals(HttpStatusCode.OK, client.login("stefan", "neuesPasswort1").status)
     }
 
     @Test
     fun tokenIsStoredOnlyAsHash() = testServer { env ->
-        val userId = env.deps.accounts.createUser("stefan", pw)
-        val token = env.deps.accounts.createDevice(userId, null, "Handy")
+        val kontoId = env.deps.accounts.createUser("stefan", pw)
+        val token = env.deps.accounts.createDevice(kontoId, "Handy")
         val stored = env.deps.db.tx { c ->
             c.createStatement().use { s -> s.executeQuery("SELECT token_hash FROM device").use { it.next(); it.getString(1) } }
         }
         assertNotEquals(token, stored)
         assertEquals(Tokens.sha256Hex(token), stored)
+    }
+
+    @Test
+    fun abmeldenWiderruft() = testServer { env ->
+        val kontoId = env.deps.accounts.createUser("stefan", pw)
+        val token = env.deps.accounts.createDevice(kontoId, "Handy")
+        val zweites = env.deps.accounts.createDevice(kontoId, "Tablet")
+        val device = env.deps.accounts.deviceForToken(token)!!
+        env.deps.accounts.abmelden(device.deviceId)
+        assertNull(env.deps.accounts.deviceForToken(token))
+        assertEquals(HttpStatusCode.Unauthorized, client.probe(token).status)
+        assertEquals(kontoId, env.deps.accounts.deviceForToken(zweites)!!.kontoId, "nur das eigene Gerät wird getrennt")
     }
 
     @Test
@@ -174,51 +181,16 @@ class AuthTest {
         assertEquals(5, statuses.count { it == HttpStatusCode.TooManyRequests })
     }
 
-    private fun addMembership(env: TestEnv, userId: String, householdId: String) = env.deps.db.tx { c ->
-        c.prepareStatement("INSERT INTO membership (user_id, household_id, role, created_at) VALUES (?, ?, 'member', 0)")
-            .use { st ->
-                st.setString(1, userId)
-                st.setString(2, householdId)
-                st.executeUpdate()
-            }
-    }
-
-    @Test
-    fun loginBindsHouseholdOnlyWithSingleMembership() = testServer { env ->
-        val userId = env.deps.accounts.createUser("stefan", pw)
-        addMembership(env, userId, "h1")
-        val one = Protocol.json.decodeFromString<AuthResponse>(client.login("stefan", pw).bodyAsText())
-        assertEquals("h1", one.householdId)
-        val stored = env.deps.db.tx { c ->
-            c.prepareStatement("SELECT household_id FROM device WHERE token_hash = ?").use { st ->
-                st.setString(1, Tokens.sha256Hex(one.token))
-                st.executeQuery().use { it.next(); it.getString(1) }
-            }
-        }
-        assertEquals("h1", stored)
-
-        addMembership(env, userId, "h2")
-        val two = Protocol.json.decodeFromString<AuthResponse>(client.login("stefan", pw).bodyAsText())
-        assertNull(two.householdId)
-        val storedTwo = env.deps.db.tx { c ->
-            c.prepareStatement("SELECT household_id FROM device WHERE token_hash = ?").use { st ->
-                st.setString(1, Tokens.sha256Hex(two.token))
-                st.executeQuery().use { it.next(); it.getString(1) }
-            }
-        }
-        assertNull(storedTwo)
-    }
-
     @Test
     fun protocolCheckRunsBeforeAuthentication() = testServer {
-        val response = client.get("/api/v1/devices")
+        val response = client.get("/api/v3/sync/pull")
         assertEquals(HttpStatusCode.Conflict, response.status)
         assertEquals("""{"code":"protocol_too_old"}""", response.bodyAsText())
     }
 
     @Test
     fun oversizedLoginBodyIsRejected() = testServer {
-        val response = client.post("/api/v1/auth/login") {
+        val response = client.post("/api/v3/auth/login") {
             protocol()
             contentType(ContentType.Application.Json)
             setBody(Protocol.json.encodeToString(LoginRequest("x".repeat(70 * 1024), "p", "Handy")))
@@ -241,7 +213,7 @@ class AuthTest {
     }
 
     private suspend fun HttpClient.changePassword(token: String, old: String): HttpResponse =
-        post("/api/v1/auth/password") {
+        post("/api/v3/auth/password") {
             protocol()
             bearerAuth(token)
             contentType(ContentType.Application.Json)
@@ -250,8 +222,8 @@ class AuthTest {
 
     @Test
     fun changePasswordWithWrongOldPasswordIs401() = testServer { env ->
-        val userId = env.deps.accounts.createUser("stefan", pw)
-        val token = env.deps.accounts.createDevice(userId, null, "Handy")
+        val kontoId = env.deps.accounts.createUser("stefan", pw)
+        val token = env.deps.accounts.createDevice(kontoId, "Handy")
         val r = client.changePassword(token, "falschfalsch")
         assertEquals(HttpStatusCode.Unauthorized, r.status)
         assertEquals("""{"code":"invalid_credentials"}""", r.bodyAsText())
@@ -259,8 +231,8 @@ class AuthTest {
 
     @Test
     fun changePasswordIsThrottled() = testServer { env ->
-        val userId = env.deps.accounts.createUser("stefan", pw)
-        val token = env.deps.accounts.createDevice(userId, null, "Handy")
+        val kontoId = env.deps.accounts.createUser("stefan", pw)
+        val token = env.deps.accounts.createDevice(kontoId, "Handy")
         repeat(5) { assertEquals(HttpStatusCode.Unauthorized, client.changePassword(token, "falschfalsch").status) }
         val locked = client.changePassword(token, pw)
         assertEquals(HttpStatusCode.TooManyRequests, locked.status)

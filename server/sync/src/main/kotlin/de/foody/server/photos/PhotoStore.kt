@@ -1,6 +1,6 @@
 package de.foody.server.photos
 
-import de.foody.sync.protocol.PhotoHash
+import de.foody.api.protocol.PhotoHash
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -9,37 +9,37 @@ import java.nio.file.attribute.FileTime
 import java.time.Instant
 
 /**
- * Fotoablage auf dem Dateisystem: `<root>/<householdId>/<sha256>.jpg`. Pfade entstehen nur aus einem
- * validierten Hash und einer Haushalts-ID aus der Datenbank; alles andere wird abgewiesen.
+ * Fotoablage auf dem Dateisystem: `<root>/<kontoId>/<sha256>.jpg`. Pfade entstehen nur aus einem
+ * validierten Hash und einer Konto-ID aus der Datenbank; alles andere wird abgewiesen.
  */
 class PhotoStore(private val root: Path) {
-    private fun householdDir(household: String): Path {
-        require(HOUSEHOLD_REGEX.matches(household)) { "ungültige Haushalts-ID" }
-        return root.resolve(household)
+    private fun kontoDir(konto: String): Path {
+        require(KONTO_REGEX.matches(konto)) { "ungültige Konto-ID" }
+        return root.resolve(konto)
     }
 
-    private fun fileOf(household: String, sha: String): Path {
+    private fun fileOf(konto: String, sha: String): Path {
         require(PhotoHash.isValid(sha)) { "ungültiger Foto-Hash" }
-        return householdDir(household).resolve("$sha.jpg")
+        return kontoDir(konto).resolve("$sha.jpg")
     }
 
-    fun exists(household: String, sha: String): Boolean = Files.isRegularFile(fileOf(household, sha))
+    fun exists(konto: String, sha: String): Boolean = Files.isRegularFile(fileOf(konto, sha))
 
-    /** Pfad der Datei oder `null`, wenn der Haushalt dieses Foto nicht hat. */
-    fun read(household: String, sha: String): Path? = fileOf(household, sha).takeIf { Files.isRegularFile(it) }
+    /** Pfad der Datei oder `null`, wenn das Konto dieses Foto nicht hat. */
+    fun read(konto: String, sha: String): Path? = fileOf(konto, sha).takeIf { Files.isRegularFile(it) }
 
     /** Setzt die Änderungszeit auf [now]: Die Schonfrist der Aufräumung beginnt neu (Foto wird gerade gebraucht). */
-    fun touch(household: String, sha: String, now: Instant) {
+    fun touch(konto: String, sha: String, now: Instant) {
         try {
-            Files.setLastModifiedTime(fileOf(household, sha), FileTime.from(now))
+            Files.setLastModifiedTime(fileOf(konto, sha), FileTime.from(now))
         } catch (_: IOException) {
             // Datei zwischenzeitlich weg: nichts zu verlängern.
         }
     }
 
     /** Schreibt über eine temporäre Datei im selben Ordner und benennt atomar um. */
-    fun write(household: String, sha: String, bytes: ByteArray) {
-        val target = fileOf(household, sha)
+    fun write(konto: String, sha: String, bytes: ByteArray) {
+        val target = fileOf(konto, sha)
         val dir = target.parent
         Files.createDirectories(dir)
         val tmp = Files.createTempFile(dir, "upload-", ".tmp")
@@ -52,9 +52,9 @@ class PhotoStore(private val root: Path) {
         }
     }
 
-    /** Alle Fotos des Haushalts mit ihrer Änderungszeit; angefangene Uploads (`.tmp`) zählen nicht. */
-    fun listHashes(household: String): List<Pair<String, Instant>> {
-        val dir = householdDir(household)
+    /** Alle Fotos des Kontos mit ihrer Änderungszeit; angefangene Uploads (`.tmp`) zählen nicht. */
+    fun listHashes(konto: String): List<Pair<String, Instant>> {
+        val dir = kontoDir(konto)
         if (!Files.isDirectory(dir)) return emptyList()
         return Files.list(dir).use { files ->
             files.toList().mapNotNull { file ->
@@ -66,11 +66,11 @@ class PhotoStore(private val root: Path) {
         }
     }
 
-    fun delete(household: String, sha: String) {
-        Files.deleteIfExists(fileOf(household, sha))
+    fun delete(konto: String, sha: String) {
+        Files.deleteIfExists(fileOf(konto, sha))
     }
 
-    private companion object {
-        val HOUSEHOLD_REGEX = Regex("^[A-Za-z0-9_-]{1,64}$")
+    internal companion object {
+        val KONTO_REGEX = Regex("^[A-Za-z0-9_-]{1,64}$")
     }
 }

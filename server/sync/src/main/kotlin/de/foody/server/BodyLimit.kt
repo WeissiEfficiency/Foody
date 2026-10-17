@@ -1,7 +1,7 @@
 package de.foody.server
 
-import de.foody.sync.protocol.ErrorCode
-import de.foody.sync.protocol.Protocol
+import de.foody.api.protocol.ErrorCode
+import de.foody.api.protocol.Protocol
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall

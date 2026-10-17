@@ -1,17 +1,17 @@
 package de.foody.server
 
-import de.foody.sync.protocol.ErrorCode
-import de.foody.sync.protocol.ErrorDto
-import de.foody.sync.protocol.IngredientPayload
-import de.foody.sync.protocol.Protocol
-import de.foody.sync.protocol.PullResponse
-import de.foody.sync.protocol.PushRequest
-import de.foody.sync.protocol.PushResponse
-import de.foody.sync.protocol.RecipePayload
-import de.foody.sync.protocol.RecordType
-import de.foody.sync.protocol.ShoppingItemPayload
-import de.foody.sync.protocol.ShoppingListPayload
-import de.foody.sync.protocol.SyncRecord
+import de.foody.api.protocol.ErrorCode
+import de.foody.api.protocol.ErrorDto
+import de.foody.api.protocol.IngredientPayload
+import de.foody.api.protocol.Protocol
+import de.foody.api.protocol.PullResponse
+import de.foody.api.protocol.PushRequest
+import de.foody.api.protocol.PushResponse
+import de.foody.api.protocol.RecipePayload
+import de.foody.api.protocol.RecordType
+import de.foody.api.protocol.ShoppingItemPayload
+import de.foody.api.protocol.ShoppingListPayload
+import de.foody.api.protocol.SyncRecord
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
@@ -75,7 +75,7 @@ internal fun shoppingItem(
 )
 
 internal suspend fun HttpClient.push(token: String, records: List<SyncRecord>): HttpResponse =
-    post("/api/v1/sync/push") {
+    post("/api/v3/sync/push") {
         protocol()
         bearerAuth(token)
         contentType(ContentType.Application.Json)
@@ -89,7 +89,7 @@ internal suspend fun HttpClient.pushOk(token: String, records: List<SyncRecord>)
 }
 
 internal suspend fun HttpClient.pullRaw(token: String, query: String): HttpResponse =
-    get("/api/v1/sync/pull$query") { protocol(); bearerAuth(token) }
+    get("/api/v3/sync/pull$query") { protocol(); bearerAuth(token) }
 
 internal suspend fun HttpClient.pull(token: String, since: Long, limit: Int? = null): PullResponse {
     val response = pullRaw(token, "?since=$since" + (limit?.let { "&limit=$it" } ?: ""))

@@ -3,12 +3,12 @@ package de.foody.server
 import de.foody.server.auth.DevicePrincipal
 import de.foody.server.auth.deviceAuthRoutes
 import de.foody.server.auth.publicAuthRoutes
-import de.foody.server.household.householdRoutes
+import de.foody.server.ki.kiRoutes
 import de.foody.server.photos.photoRoutes
 import de.foody.server.sync.syncRoutes
-import de.foody.sync.protocol.ErrorCode
-import de.foody.sync.protocol.ErrorDto
-import de.foody.sync.protocol.Protocol
+import de.foody.api.protocol.ErrorCode
+import de.foody.api.protocol.ErrorDto
+import de.foody.api.protocol.Protocol
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -26,7 +26,6 @@ import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.forwardedheaders.XForwardedHeaders
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
-import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
@@ -41,7 +40,7 @@ class ApiException(val status: HttpStatusCode, val code: ErrorCode) : RuntimeExc
 private data class HealthDto(val status: String)
 
 /**
- * Prüft die Protokollversion des Clients. Als Route-Plugin auf `/api/v1` installiert läuft es vor
+ * Prüft die Protokollversion des Clients. Als Route-Plugin auf `/api/v3` installiert läuft es vor
  * allen später darunter installierten Plugins (z. B. Authentifizierung).
  */
 private val ProtocolCheck = createRouteScopedPlugin("ProtocolCheck") {
@@ -56,11 +55,8 @@ private val ProtocolCheck = createRouteScopedPlugin("ProtocolCheck") {
     }
 }
 
-/**
- * Das Server-Modul. [erweiterungen] sind zusätzliche Routen außerhalb von `/api/v1` – z. B. die Web-Oberfläche, die
- * `:server` (server/start) übergibt. Der Sync-Server selbst kennt sie nicht; ohne Erweiterungen verhält er sich wie immer.
- */
-fun Application.foodyModule(deps: ServerDeps, erweiterungen: List<Route.() -> Unit> = emptyList()) {
+/** Das Server-Modul. */
+fun Application.foodyModule(deps: ServerDeps) {
     val log = LoggerFactory.getLogger("de.foody.server")
     install(ContentNegotiation) { json(Protocol.json) }
     install(XForwardedHeaders) { useLastProxy() }
@@ -101,16 +97,19 @@ fun Application.foodyModule(deps: ServerDeps, erweiterungen: List<Route.() -> Un
     }
     routing {
         get("/health") { call.respond(HealthDto("ok")) }
-        route("/api/v1") {
+        // Alte Clients (Protokoll 1/2): jede Methode, jeder Pfad – ohne Anmeldung und ohne den Body zu lesen.
+        route("/api/v1/{...}") {
+            handle { throw ApiException(HttpStatusCode.Conflict, ErrorCode.PROTOCOL_TOO_OLD) }
+        }
+        route("/api/v3") {
             install(ProtocolCheck)
             publicAuthRoutes(deps)
             authenticate("device") {
                 deviceAuthRoutes(deps)
-                householdRoutes(deps)
                 syncRoutes(deps)
                 photoRoutes(deps)
+                kiRoutes(deps)
             }
         }
-        erweiterungen.forEach { it() }
     }
 }

@@ -1,14 +1,14 @@
 package de.foody.server
 
 import de.foody.server.sync.Compactor
-import de.foody.sync.protocol.ErrorCode
-import de.foody.sync.protocol.PhotoHash
-import de.foody.sync.protocol.PhotosMissingRequest
-import de.foody.sync.protocol.PhotosMissingResponse
-import de.foody.sync.protocol.Protocol
-import de.foody.sync.protocol.RecipePayload
-import de.foody.sync.protocol.RecordType
-import de.foody.sync.protocol.SyncRecord
+import de.foody.api.protocol.ErrorCode
+import de.foody.api.protocol.PhotoHash
+import de.foody.api.protocol.PhotosMissingRequest
+import de.foody.api.protocol.PhotosMissingResponse
+import de.foody.api.protocol.Protocol
+import de.foody.api.protocol.RecipePayload
+import de.foody.api.protocol.RecordType
+import de.foody.api.protocol.SyncRecord
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
@@ -36,13 +36,13 @@ class PhotoTest {
         ByteArray(size) { (it * seed).toByte() }.also { it[0] = 0xFF.toByte(); it[1] = 0xD8.toByte(); it[2] = 0xFF.toByte() }
 
     private suspend fun HttpClient.upload(token: String, sha: String, bytes: ByteArray, type: ContentType = ContentType.Image.JPEG): HttpResponse =
-        put("/api/v1/photos/$sha") { protocol(); bearerAuth(token); contentType(type); setBody(bytes) }
+        put("/api/v3/photos/$sha") { protocol(); bearerAuth(token); contentType(type); setBody(bytes) }
 
     private suspend fun HttpClient.download(token: String, sha: String): HttpResponse =
-        get("/api/v1/photos/$sha") { protocol(); bearerAuth(token) }
+        get("/api/v3/photos/$sha") { protocol(); bearerAuth(token) }
 
     private suspend fun HttpClient.missing(token: String, hashes: List<String>): HttpResponse =
-        post("/api/v1/photos/missing") {
+        post("/api/v3/photos/missing") {
             protocol(); bearerAuth(token); contentType(ContentType.Application.Json)
             setBody(Protocol.json.encodeToString(PhotosMissingRequest.serializer(), PhotosMissingRequest(hashes)))
         }
@@ -56,7 +56,7 @@ class PhotoTest {
 
     @Test
     fun uploadThenDownloadRoundTrip() = testServer { env ->
-        val (token, household) = env.setupHousehold()
+        val (token, konto) = env.setupKonto()
         val bytes = jpeg()
         val sha = PhotoHash.of(bytes)
         assertEquals(HttpStatusCode.NoContent, client.upload(token, sha, bytes).status)
@@ -64,7 +64,7 @@ class PhotoTest {
         assertEquals(HttpStatusCode.OK, response.status)
         assertEquals(ContentType.Image.JPEG, response.contentType()?.withoutParameters())
         assertContentEquals(bytes, response.bodyAsBytes())
-        assertTrue(Files.isRegularFile(env.photoDir.resolve(household).resolve("$sha.jpg")))
+        assertTrue(Files.isRegularFile(env.photoDir.resolve(konto).resolve("$sha.jpg")))
         // Content-Type wird nicht vertraut: ein anderer Typ mit JPEG-Inhalt wird angenommen.
         val other = jpeg(3)
         assertEquals(HttpStatusCode.NoContent, client.upload(token, PhotoHash.of(other), other, ContentType.Application.OctetStream).status)
@@ -72,7 +72,7 @@ class PhotoTest {
 
     @Test
     fun uploadIsIdempotent() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val bytes = jpeg()
         val sha = PhotoHash.of(bytes)
         assertEquals(HttpStatusCode.NoContent, client.upload(token, sha, bytes).status)
@@ -82,7 +82,7 @@ class PhotoTest {
 
     @Test
     fun missingListsOnlyUnknownHashes() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val known = jpeg(1)
         val unknown = PhotoHash.of(jpeg(2))
         client.upload(token, PhotoHash.of(known), known)
@@ -100,7 +100,7 @@ class PhotoTest {
 
     @Test
     fun wrongHashIsRejected() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val response = client.upload(token, PhotoHash.of(jpeg(2)), jpeg(1))
         assertEquals(HttpStatusCode.BadRequest, response.status)
         assertEquals(ErrorCode.INVALID_INPUT, response.errorCode())
@@ -109,7 +109,7 @@ class PhotoTest {
 
     @Test
     fun nonJpegIsRejected() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val bytes = "kein Bild".toByteArray()
         val response = client.upload(token, PhotoHash.of(bytes), bytes)
         assertEquals(HttpStatusCode.BadRequest, response.status)
@@ -119,7 +119,7 @@ class PhotoTest {
 
     @Test
     fun tooLargeIsRejected() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val bytes = jpeg(size = (Protocol.MAX_PHOTO_BYTES + 1).toInt())
         val response = client.upload(token, PhotoHash.of(bytes), bytes)
         assertEquals(HttpStatusCode.PayloadTooLarge, response.status)
@@ -132,7 +132,7 @@ class PhotoTest {
 
     @Test
     fun invalidPathSegmentsAre400() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val bytes = jpeg()
         val upper = PhotoHash.of(bytes).uppercase()
         for (segment in listOf("..%2Fx", "..%2F..%2Fescape", "a".repeat(63), "a".repeat(65), upper, "%2E%2E")) {
@@ -150,9 +150,9 @@ class PhotoTest {
     }
 
     @Test
-    fun householdsCannotReadEachOthersPhotos() = testServer { env ->
-        val (tokenA, _) = env.setupHousehold("A")
-        val (tokenB, _) = env.setupHousehold("B")
+    fun kontenCannotReadEachOthersPhotos() = testServer { env ->
+        val (tokenA, _) = env.setupKonto()
+        val (tokenB, _) = env.setupKonto()
         val bytes = jpeg()
         val sha = PhotoHash.of(bytes)
         client.upload(tokenA, sha, bytes)
@@ -165,7 +165,7 @@ class PhotoTest {
 
     @Test
     fun compactorRemovesUnreferencedOldPhotos() = testServer { env ->
-        val (token, household) = env.setupHousehold()
+        val (token, konto) = env.setupKonto()
         val kept = jpeg(1)
         val oldUnreferenced = jpeg(2)
         val youngUnreferenced = jpeg(3)
@@ -177,7 +177,7 @@ class PhotoTest {
         client.pushOk(token, listOf(SyncRecord("r2", RecordType.RECIPE, deleted = true, updatedAt = 2)))
 
         val old = FileTime.from(env.clock.instant().minus(Duration.ofDays(31)))
-        fun file(b: ByteArray) = env.photoDir.resolve(household).resolve("${PhotoHash.of(b)}.jpg")
+        fun file(b: ByteArray) = env.photoDir.resolve(konto).resolve("${PhotoHash.of(b)}.jpg")
         for (b in listOf(kept, oldUnreferenced, deletedRecipe)) Files.setLastModifiedTime(file(b), old)
         Files.setLastModifiedTime(file(youngUnreferenced), FileTime.from(env.clock.instant().minus(Duration.ofDays(29))))
 
@@ -191,12 +191,12 @@ class PhotoTest {
 
     @Test
     fun missingAndRepeatedUploadRefreshModifiedTimeSoCompactorKeepsPhoto() = testServer { env ->
-        val (token, household) = env.setupHousehold()
+        val (token, konto) = env.setupKonto()
         val viaMissing = jpeg(2)
         val viaPut = jpeg(3)
         client.upload(token, PhotoHash.of(viaMissing), viaMissing)
         client.upload(token, PhotoHash.of(viaPut), viaPut)
-        fun file(b: ByteArray) = env.photoDir.resolve(household).resolve("${PhotoHash.of(b)}.jpg")
+        fun file(b: ByteArray) = env.photoDir.resolve(konto).resolve("${PhotoHash.of(b)}.jpg")
         val old = FileTime.from(env.clock.instant().minus(Duration.ofDays(31)))
         Files.setLastModifiedTime(file(viaMissing), old)
         Files.setLastModifiedTime(file(viaPut), old)

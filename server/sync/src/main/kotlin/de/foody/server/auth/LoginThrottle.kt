@@ -1,7 +1,7 @@
 package de.foody.server.auth
 
 import de.foody.server.ApiException
-import de.foody.sync.protocol.ErrorCode
+import de.foody.api.protocol.ErrorCode
 import io.ktor.http.HttpStatusCode
 import java.time.Clock
 import java.time.Duration

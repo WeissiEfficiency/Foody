@@ -201,10 +201,6 @@ dependencies {
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.work.testing)
-    // Echter Server im Test (testApplication) für Client- und Ende-zu-Ende-Tests
-    testImplementation(project(":server-sync"))
-    testImplementation(project(":server-web"))
-    testImplementation(libs.ktor.server.test.host)
 
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.androidx.test.ext.junit)

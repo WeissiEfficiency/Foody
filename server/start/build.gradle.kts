@@ -1,4 +1,4 @@
-// Startpunkt des Servers: main() verbindet Sync-Server (:server-sync) und Web-Oberfläche (:server-web).
+// Startpunkt des Servers: main() startet den Sync-Server (:server-sync).
 // installDist erzeugt `foody-server` (Docker: server/start/build/install/foody-server).
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -25,5 +25,4 @@ application {
 
 dependencies {
     implementation(project(":server-sync"))
-    implementation(project(":server-web"))
 }
