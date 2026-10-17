@@ -1,3 +1,4 @@
+import com.android.build.api.artifact.SingleArtifact
 import java.util.Properties
 
 plugins {
@@ -113,26 +114,30 @@ val apkZiel: String? = Properties().apply {
 }.getProperty("foody.apkZiel")
 val releaseSigniert = keystoreProperties.isNotEmpty()
 
-tasks.register<Copy>("apkNachOpenCloud") {
+val apkNachOpenCloud = tasks.register("apkNachOpenCloud") {
     group = "foody"
     description = "Baut die signierte Release-APK und kopiert sie nach foody.apkZiel (local.properties)."
-    dependsOn("assembleRelease")
     // Lokale Kopien: Der Konfigurations-Cache darf keine Verweise auf das Build-Skript speichern
     val ziel = apkZiel?.let(::File)
     val signiert = releaseSigniert
-    from(layout.buildDirectory.dir("outputs/apk/release")) {
-        include("*.apk")
-        exclude("*-unsigned.apk")
-    }
-    // Ohne Ziel ein Platzhalter, damit doFirst mit einer verständlichen Meldung abbricht
-    into(ziel?.parentFile ?: temporaryDir)
-    if (ziel != null) {
-        val name = ziel.name
-        rename { name }
-    }
-    doFirst {
+    // Kein Copy-Task: Der Zielordner ist ein geteilter OpenCloud-Ordner, Gradle soll nur die eine Datei schreiben
+    // und nicht den ganzen Ordner als eigene Ausgabe verwalten.
+    doLast {
         if (ziel == null) throw GradleException("foody.apkZiel fehlt in local.properties (Ziel der APK).")
         if (!signiert) throw GradleException("Kein Release-Schlüssel: keystore.properties anlegen (Vorlage keystore.properties.example).")
+        val apk = inputs.files.asFileTree.matching { include("*.apk"); exclude("*-unsigned.apk") }.singleOrNull()
+            ?: throw GradleException("Keine signierte Release-APK gefunden.")
+        apk.copyTo(ziel, overwrite = true)
+        logger.lifecycle("APK kopiert nach $ziel")
+    }
+}
+
+// Die APK über die Variant-API anfordern statt aus build/outputs zu lesen: So kennt Gradle die Abhängigkeit zum
+// Bau-Task (direkt aus dem Ordner zu lesen lehnt Gradle 9 als versteckte Abhängigkeit ab).
+androidComponents {
+    onVariants(selector().withBuildType("release")) { variant ->
+        val apkOrdner = variant.artifacts.get(SingleArtifact.APK)
+        apkNachOpenCloud.configure { inputs.files(apkOrdner) }
     }
 }
 
