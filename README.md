@@ -51,7 +51,7 @@ Einkaufsliste (abhaken) und Tagebuch im Browser – mit demselben Konto und dens
 |---|---|---|
 | `android/app/` | `:app` | Handy-App: Compose-UI, ViewModels, Room, Hilt, Repositories, Backup |
 | `android/baselineprofile/` | `:baselineprofile` | Generator für das Baseline-Profil (schnellerer Start) |
-| `android/feature/heute/` | `:feature:heute` | v2 im Aufbau: Startseite „Heute“ (noch nicht in der App eingebunden) |
+| `android/feature/heute/` | `:feature:heute` | V3 im Aufbau (`ToDoS/v3-plan.md`): Startseite „Heute“ (noch nicht in der App eingebunden) |
 | `build-logic/` | – | Convention-Plugins (`foody.android.application`, `.library`, `.feature`): SDK-Stände, Java 17, Kotlin ohne Warnungen |
 | `shared/domain/` | `:domain` | Reines Kotlin (keine Android-Abhängigkeiten): Einheiten, Skalierung, Nährwerte, Einkaufsaggregation, Diff, Import, Einordnung – von App und Server genutzt |
 | `shared/sync-protocol/` | `:sync-protocol` | Gemeinsame DTOs, Validierung und Protokollversion von App und Server |
