@@ -37,6 +37,21 @@ Admin an. Danach beide Variablen leeren und mit `docker compose up -d` neu anwen
 
 Weitere Admin-Befehle: `reset-password`, `compact` (siehe `foody-admin` ohne Argumente).
 
+## Test-Server (Entwicklung)
+
+Ein zweiter Server mit eigenen Daten für die Entwicklung, auf demselben Host. Er läuft aus einem eigenen Checkout,
+damit ein Entwicklungs-Branch nie den echten Server berührt, und ist nur auf dem Host selbst erreichbar (kein Traefik).
+
+```sh
+git -C ~/docker/foody worktree add ~/docker/foody-test main   # einmalig; Branch später mit git switch wechseln
+cd ~/docker/foody-test/server
+cp .env.example .env          # eigene .env des Test-Checkouts: FOODY_ADMIN_USER/-PASSWORD für den ersten Start
+docker compose -p foody-test -f docker-compose.yml -f docker-compose.test.yml up -d --build
+```
+
+Vom PC: `ssh -N -L 8081:127.0.0.1:8081 homeserver.lan`, dann in der Debug-App (Emulator) die Adresse
+`http://10.0.2.2:8081`. Admin-Befehle mit demselben `-p foody-test -f … -f …`.
+
 ## Web-Oberfläche
 
 Unter der Server-Adresse im Browser (z. B. `https://foody.example.org/`): mit demselben Konto wie in der App anmelden

@@ -64,7 +64,8 @@ Aufwände: grobe Schätzung für eine Person.
 
 ### Phase 0 – Fundament und schnelle Gewinne (≈ 2 Tage, teils erledigt)
 - [x] `build-logic/`, `minSdk` 36 / `targetSdk` 37, leeres `:feature:heute` (#89)
-- [ ] Zweiter Docker-Container als Test-Server
+- [x] Zweiter Docker-Container als Test-Server (`server/docker-compose.test.yml`, eigener Checkout `~/docker/foody-test`,
+      nur `127.0.0.1:8081`, Zugriff per SSH-Tunnel → Emulator `http://10.0.2.2:8081`)
 - [x] Server: `mem_limit` in `docker-compose.yml` (512 MB, `FOODY_MEM_LIMIT`; die JVM nimmt davon 75 %)
 - [x] Server: `server/backup.sh` – Datenbank datiert (14 Tage) und Fotos gespiegelt in einen Ordner, den ein
       OpenCloud-Client abgleicht; Cron-Zeile im `server/README.md`. Auf dem Server noch einzurichten.
