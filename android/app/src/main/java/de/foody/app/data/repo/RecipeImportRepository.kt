@@ -142,7 +142,9 @@ class RecipeImportRepository @Inject constructor(
                 prepMinutes = null,
                 cookMinutes = null,
                 imageUri = null,
-                notes = notesTemplate(parsed.sourceUrl, servings, ergebnis.geschaetzt),
+                // Portionen aus der Datei: nichts zu prüfen, nur die Quelle (Text aus shared/domain, die Vorlage kennt den Fall nicht)
+                notes = if (ergebnis.ausDatei) RezeptImport.hinweis(parsed.sourceUrl, servings, false, ausDatei = true).ifBlank { null }
+                else notesTemplate(parsed.sourceUrl, servings, ergebnis.geschaetzt),
                 tags = tag,
                 ingredients = lines,
                 steps = parsed.steps,

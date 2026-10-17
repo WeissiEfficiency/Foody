@@ -11,7 +11,8 @@ object RezeptImport {
 
     data class Zeile(val zutatId: String, val menge: BigDecimal, val einheit: MeasureUnit, val hinweis: String?, val optional: Boolean)
 
-    data class Ergebnis(val portionen: Int, val geschaetzt: Boolean, val zeilen: List<Zeile>)
+    /** [ausDatei]: Portionen stammen aus der Datei; [geschaetzt]: aus den Mengen geschätzt; beides false = Vorgabe. */
+    data class Ergebnis(val portionen: Int, val geschaetzt: Boolean, val zeilen: List<Zeile>, val ausDatei: Boolean = false)
 
     /** [zutaten]`[i]` ist die aufgelöste Zutat zu `rezept.ingredients[i]`. */
     fun vorbereiten(rezept: ImportedRecipe, zutaten: List<Ingredient>, vorgabePortionen: Int): Ergebnis {
@@ -33,7 +34,11 @@ object RezeptImport {
         val fleischStuecke = paare.filter { (ing, z) ->
             z.category == FLEISCH && (ing.unit ?: MeasureUnit.PIECE) == MeasureUnit.PIECE && ing.amount != null
         }.maxOfOrNull { (ing, _) -> ing.amount!!.toInt() }
-        val schaetzung = ServingsEstimator.estimate(rezept.name, festeGramm, kcal, fleischStuecke)
+        // Die Portionenzahl der Datei gilt vor jeder Schätzung – die Schätzung lag oft um das Zwei- bis Fünffache
+        // daneben, und mit ihr jede kcal-Angabe je Portion. Ausnahme: „1 Portion“ bei Backwaren meint den ganzen
+        // Kuchen oder das ganze Blech; gegessen und eingetragen wird ein Stück, also schätzen.
+        val ausDatei = rezept.servings?.takeIf { it > 1 || ServingsEstimator.kindOf(rezept.name) != ServingsEstimator.Kind.BAKED }
+        val schaetzung = if (ausDatei != null) null else ServingsEstimator.estimate(rezept.name, festeGramm, kcal, fleischStuecke)
         val zeilen = paare.map { (ing, z) ->
             Zeile(
                 zutatId = z.id,
@@ -44,13 +49,16 @@ object RezeptImport {
                 optional = ing.optional,
             )
         }
-        return Ergebnis(schaetzung ?: vorgabePortionen, schaetzung != null, zeilen)
+        // Backware, aber nicht schätzbar: dann doch die Angabe der Datei statt der Vorgabe
+        val portionen = ausDatei ?: schaetzung ?: rezept.servings
+        return Ergebnis(portionen ?: vorgabePortionen, schaetzung != null, zeilen, ausDatei = schaetzung == null && portionen != null)
     }
 
     /** Notiz am importierten Rezept (Texte wie in den String-Ressourcen der App). */
-    fun hinweis(quelle: String?, portionen: Int, geschaetzt: Boolean): String = listOfNotNull(
+    fun hinweis(quelle: String?, portionen: Int, geschaetzt: Boolean, ausDatei: Boolean = false): String = listOfNotNull(
         quelle?.let { "Quelle: $it" },
-        if (geschaetzt) "Portionenzahl war in der Datei nicht angegeben – aus den Mengen auf $portionen geschätzt, bitte prüfen."
+        if (ausDatei) null
+        else if (geschaetzt) "Portionenzahl war in der Datei nicht angegeben – aus den Mengen auf $portionen geschätzt, bitte prüfen."
         else "Portionenzahl war in der Datei nicht angegeben – auf $portionen gesetzt, bitte prüfen.",
     ).joinToString("\n")
 }

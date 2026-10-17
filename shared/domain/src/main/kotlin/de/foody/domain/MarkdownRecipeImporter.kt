@@ -10,6 +10,8 @@ data class ImportedRecipe(
     val sourceUrl: String?,
     val ingredients: List<ImportedIngredient>,
     val steps: List<String>,
+    /** Portionenzahl aus der Kopfzeile („Portionen: 4 · Vorbereitung: …“); null, wenn die Datei keine nennt. */
+    val servings: Int? = null,
 )
 
 data class ImportedIngredient(
@@ -27,13 +29,14 @@ data class ImportedIngredient(
 /**
  * Liest Rezepte im Markdown-Format, wie es Web-Clipper aus Rezeptseiten erzeugen:
  * `# Titel`, `_Quelle: url_`, `## Zutaten` mit abwechselnden Mengen-/Namenszeilen
- * und optionalen `###`-Gruppen, `## Zubereitung` mit Absätzen.
- * Portionen sind in diesem Format nicht enthalten.
+ * und optionalen `###`-Gruppen, `## Zubereitung` mit Absätzen. Neuere Exporte haben zusätzlich eine Kopfzeile
+ * `Portionen: 4 · Vorbereitung: … · Kalorien: … kcal`; ältere nennen keine Portionen.
  */
 object MarkdownRecipeImporter {
 
     private val numberRegex = Regex("""^(${GermanAmounts.NUMBER})\s*(.*)$""")
     private val rangeUpper = Regex("""^(?:[-–]|bis\s)\s*(${GermanAmounts.NUMBER})(?!\S)""")
+    private val servingsRegex = Regex("""^Portionen:\s*(\d{1,3})(?!\d)""")
     private val vagueAmounts = setOf("n. b.", "n.b.", "evtl.", "etwas", "nach belieben", "etwas mehr", "prise", "1 prise")
 
     fun parse(markdown: String): ImportedRecipe {
@@ -50,6 +53,8 @@ object MarkdownRecipeImporter {
             sourceUrl = source,
             ingredients = parseIngredients(ingredientLines),
             steps = stepLines.filter { it.isNotBlank() && !it.startsWith("- ") && !it.startsWith("#") },
+            // Nur die Kopfzeile zählt – „in 6 Portionen teilen“ in der Zubereitung nicht
+            servings = lines.firstNotNullOfOrNull { servingsRegex.find(it) }?.groupValues?.get(1)?.toInt()?.takeIf { it > 0 },
         )
     }
 
