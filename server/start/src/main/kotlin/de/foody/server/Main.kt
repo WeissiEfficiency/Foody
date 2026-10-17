@@ -65,7 +65,7 @@ private fun Application.launchCompaction(deps: ServerDeps) {
 
 private const val COMPACTION_INTERVAL_MS = 24L * 60 * 60 * 1000
 
-/** Legt beim ersten Start den Admin aus den Umgebungsvariablen an (nie wird das Passwort protokolliert). */
+/** Legt beim ersten Start das erste Konto aus den Umgebungsvariablen an (ohne Sonderrechte; nie wird das Passwort protokolliert). */
 private fun bootstrapAdmin(config: ServerConfig, deps: ServerDeps): Boolean {
     val log = LoggerFactory.getLogger("de.foody.server")
     val created = try {
@@ -76,10 +76,10 @@ private fun bootstrapAdmin(config: ServerConfig, deps: ServerDeps): Boolean {
         return false
     }
     if (created) {
-        log.info("Admin-Benutzer '{}' angelegt", config.adminUser)
+        log.info("Konto '{}' angelegt", config.adminUser)
     } else if (config.adminUser.isNullOrBlank() || config.adminPassword.isNullOrEmpty()) {
         if (!deps.accounts.hasUsers()) {
-            log.warn("Keine Benutzer vorhanden und FOODY_ADMIN_USER/FOODY_ADMIN_PASSWORD nicht gesetzt: Anmeldung unmöglich")
+            log.warn("Keine Konten vorhanden und FOODY_ADMIN_USER/FOODY_ADMIN_PASSWORD nicht gesetzt: Anmeldung unmöglich")
         }
     }
     return true

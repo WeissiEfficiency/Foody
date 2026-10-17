@@ -28,7 +28,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 class SyncTest {
     @Test
     fun pushThenPullReturnsRecordsWithIncreasingRevs() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val results = client.pushOk(token, listOf(ingredient("i1"), recipe("r1", listOf("i1")))).results
         assertEquals(listOf(PushStatus.ACCEPTED, PushStatus.ACCEPTED), results.map { it.status })
         assertEquals(listOf(1L, 2L), results.map { it.rev })
@@ -42,7 +42,7 @@ class SyncTest {
 
     @Test
     fun pullPagesWithLimit() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, (1..5).map { ingredient("i$it", "Zutat $it") })
         val p1 = client.pull(token, 0, 2)
         val p2 = client.pull(token, p1.nextCursor, 2)
@@ -54,7 +54,7 @@ class SyncTest {
 
     @Test
     fun sameRecordTwiceInOnePushLastWins() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val results = client.pushOk(token, listOf(ingredient("i1", "A"), ingredient("i1", "B"))).results
         assertEquals(listOf(1L, 2L), results.map { it.rev })
         assertTrue(results.all { it.status == PushStatus.ACCEPTED })
@@ -66,7 +66,7 @@ class SyncTest {
 
     @Test
     fun unknownPayloadFieldsArePreserved() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(ingredient("i1", extra = mapOf("futureField" to "x"))))
         val payload = client.pull(token, 0).records.single().payload!!
         assertEquals(JsonPrimitive("x"), payload["futureField"])
@@ -74,7 +74,7 @@ class SyncTest {
 
     @Test
     fun pullBeyondHeadIsEmpty() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(ingredient("i1"), ingredient("i2", "Salz")))
         val pulled = client.pull(token, 10)
         assertEquals(emptyList(), pulled.records)
@@ -83,20 +83,8 @@ class SyncTest {
     }
 
     @Test
-    fun deviceWithoutHouseholdGetsNoHousehold() = testServer { env ->
-        val userId = env.deps.accounts.createUser("ohnehaus", "geheimgeheim")
-        val token = env.deps.accounts.createDevice(userId, null, "Gerät")
-        val push = client.push(token, listOf(ingredient("i1")))
-        assertEquals(HttpStatusCode.Conflict, push.status)
-        assertEquals(ErrorCode.NO_HOUSEHOLD, push.errorCode())
-        val pull = client.pullRaw(token, "?since=0")
-        assertEquals(HttpStatusCode.Conflict, pull.status)
-        assertEquals(ErrorCode.NO_HOUSEHOLD, pull.errorCode())
-    }
-
-    @Test
     fun invalidRecordIsRejectedOthersAccepted() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val bad = recipe("r1", listOf("i1"), amount = "1E999999999")
         val results = client.pushOk(token, listOf(ingredient("i1"), bad, ingredient("i2", "Salz"))).results
         assertEquals(listOf(PushStatus.ACCEPTED, PushStatus.REJECTED, PushStatus.ACCEPTED), results.map { it.status })
@@ -106,7 +94,7 @@ class SyncTest {
 
     @Test
     fun duplicateChildIdsAreRejected() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val dup = recipe("r1", listOf("i1", "i1"))
         val payload = Protocol.json.decodeFromJsonElement<RecipePayload>(dup.payload!!)
         val broken = dup.copy(payload = Protocol.json.encodeToJsonElement(payload.copy(lines = payload.lines.map { it.copy(id = "same") })) as JsonObject)
@@ -117,7 +105,7 @@ class SyncTest {
 
     @Test
     fun malformedPayloadIsRejectedNotServerError() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val broken = SyncRecord("r1", RecordType.RECIPE, updatedAt = 1, payload = JsonObject(mapOf("foo" to JsonPrimitive(1))))
         val results = client.pushOk(token, listOf(broken)).results
         assertEquals(ErrorCode.INVALID_PAYLOAD, results.single().code)
@@ -125,7 +113,7 @@ class SyncTest {
 
     @Test
     fun missingReferenceIsRejected() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val alone = client.pushOk(token, listOf(recipe("r1", listOf("i1")))).results.single()
         assertEquals(PushStatus.REJECTED, alone.status)
         assertEquals(ErrorCode.MISSING_REFERENCE, alone.code)
@@ -135,7 +123,7 @@ class SyncTest {
 
     @Test
     fun shoppingItemNeedsItsListAndDeletedReferenceIsMissing() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val orphan = client.pushOk(token, listOf(shoppingItem("s1", "l1", checked = false, checkedChangedAt = 0))).results.single()
         assertEquals(ErrorCode.MISSING_REFERENCE, orphan.code)
         client.pushOk(token, listOf(shoppingList("l1")))
@@ -146,7 +134,7 @@ class SyncTest {
 
     @Test
     fun deleteStoresTombstoneWithoutPayload() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val result = client.pushOk(token, listOf(SyncRecord("never-seen", RecordType.INGREDIENT, deleted = true, updatedAt = 2)))
             .results.single()
         assertEquals(PushStatus.ACCEPTED, result.status)
@@ -157,9 +145,9 @@ class SyncTest {
     }
 
     @Test
-    fun householdsAreIsolated() = testServer { env ->
-        val (tokenA, _) = env.setupHousehold("A")
-        val (tokenB, _) = env.setupHousehold("B")
+    fun kontenAreIsolated() = testServer { env ->
+        val (tokenA, _) = env.setupKonto()
+        val (tokenB, _) = env.setupKonto()
         client.pushOk(tokenA, listOf(ingredient("x")))
         assertEquals(emptyList(), client.pull(tokenB, 0).records)
         val result = client.pushOk(tokenB, listOf(recipe("r1", listOf("x")))).results.single()
@@ -167,16 +155,16 @@ class SyncTest {
     }
 
     @Test
-    fun revsAreCountedPerHousehold() = testServer { env ->
-        val (tokenA, _) = env.setupHousehold("A")
-        val (tokenB, _) = env.setupHousehold("B")
+    fun revsAreCountedPerKonto() = testServer { env ->
+        val (tokenA, _) = env.setupKonto()
+        val (tokenB, _) = env.setupKonto()
         assertEquals(1L, client.pushOk(tokenA, listOf(ingredient("x"))).results.single().rev)
         assertEquals(1L, client.pushOk(tokenB, listOf(ingredient("x"))).results.single().rev)
     }
 
     @Test
     fun tooManyRecordsIsTooLarge() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val response = client.push(token, (1..501).map { ingredient("i$it", "Z$it") })
         assertEquals(HttpStatusCode.PayloadTooLarge, response.status)
         assertEquals(ErrorCode.TOO_LARGE, response.errorCode())
@@ -184,7 +172,7 @@ class SyncTest {
 
     @Test
     fun oversizedBodyIsTooLarge() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val response = client.post("/api/v1/sync/push") {
             protocol()
             bearerAuth(token)
@@ -197,7 +185,7 @@ class SyncTest {
 
     @Test
     fun invalidQueryAndBodyAreBadRequests() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         for (query in listOf("?since=-1", "?since=abc", "?limit=abc")) {
             val r = client.pullRaw(token, query)
             assertEquals(HttpStatusCode.BadRequest, r.status, query)
@@ -215,7 +203,7 @@ class SyncTest {
 
     @Test
     fun limitIsCoercedIntoRangeAndDefaultsToMax() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(ingredient("i1"), ingredient("i2", "Salz")))
         assertEquals(1, client.pull(token, 0, 0).records.size)
         assertEquals(2, client.pull(token, 0, 100_000).records.size)
@@ -225,7 +213,7 @@ class SyncTest {
 
     @Test
     fun tagebuchEintragRoundTrip() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val payload = TagebuchPayload(datum = "2026-10-10", mahlzeit = "SNACK", art = "FREI", name = "Apfel", energieKj = "335")
         val record = SyncRecord(id = "dddddddd-dddd-4ddd-8ddd-dddddddddddd", type = RecordType.TAGEBUCH_EINTRAG, updatedAt = 1, payload = obj(payload))
         assertEquals(listOf(PushStatus.ACCEPTED), client.pushOk(token, listOf(record)).results.map { it.status })
@@ -237,7 +225,7 @@ class SyncTest {
     /** Seit dem Tagebuch (Protokoll 2) bekommt eine App ohne Tagebuch-Typ „bitte aktualisieren“ statt eines Dekodierfehlers. */
     @Test
     fun appOhneTagebuchMussAktualisieren() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val alt = client.get("/api/v1/sync/pull?since=0") { protocol(1); bearerAuth(token) }
         assertEquals(io.ktor.http.HttpStatusCode.Conflict, alt.status)
         assertEquals(ErrorCode.PROTOCOL_TOO_OLD, alt.errorCode())

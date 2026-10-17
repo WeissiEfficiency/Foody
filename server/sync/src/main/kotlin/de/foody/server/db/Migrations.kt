@@ -4,7 +4,7 @@ import java.sql.Connection
 
 /**
  * Migrationsliste über `PRAGMA user_version` (wie Room): Eintrag *n* hebt die Version von *n* auf *n+1*.
- * Jeder Eintrag enthält mehrere durch `;` getrennte Anweisungen.
+ * Jeder Eintrag enthält mehrere durch `;` getrennte Anweisungen (deshalb kein `;` in Literalen oder Triggern).
  */
 object Migrations {
     val all: List<String> = listOf(
@@ -66,7 +66,90 @@ object Migrations {
         CREATE INDEX idx_sync_record_rev ON sync_record (household_id, rev);
         CREATE INDEX idx_sync_record_name ON sync_record (household_id, type, canonical_name)
         """.trimIndent(),
+        // 1 → 2: Konto statt Haushalt. Voraussetzung (siehe vorpruefenKonto): je Haushalt genau ein Mitglied.
+        // Zähler und Datensätze gehen aufs Konto, Vorrat (pantry_item) entfällt, Geräte verlieren den Haushalt.
+        // haushalt_umzug merkt sich die Fotoordner, die noch umbenannt werden müssen.
+        """
+        ALTER TABLE user ADD COLUMN last_rev INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE user ADD COLUMN compacted_before_rev INTEGER NOT NULL DEFAULT 0;
+        UPDATE user SET
+            last_rev = (SELECT h.last_rev FROM household h JOIN membership m ON m.household_id = h.id WHERE m.user_id = user.id),
+            compacted_before_rev = (SELECT h.compacted_before_rev FROM household h JOIN membership m ON m.household_id = h.id WHERE m.user_id = user.id)
+            WHERE id IN (SELECT m.user_id FROM membership m JOIN household h ON h.id = m.household_id);
+        CREATE TABLE sync_record_neu (
+            konto_id TEXT NOT NULL,
+            type TEXT NOT NULL,
+            id TEXT NOT NULL,
+            rev INTEGER NOT NULL,
+            deleted INTEGER NOT NULL,
+            payload TEXT,
+            updated_at INTEGER NOT NULL,
+            deleted_at INTEGER,
+            canonical_name TEXT,
+            PRIMARY KEY (konto_id, type, id)
+        );
+        INSERT INTO sync_record_neu (konto_id, type, id, rev, deleted, payload, updated_at, deleted_at, canonical_name)
+            SELECT m.user_id, r.type, r.id, r.rev, r.deleted, r.payload, r.updated_at, r.deleted_at, r.canonical_name
+            FROM sync_record r
+            JOIN household h ON h.id = r.household_id
+            JOIN membership m ON m.household_id = r.household_id
+            WHERE r.type <> 'pantry_item';
+        DROP TABLE sync_record;
+        ALTER TABLE sync_record_neu RENAME TO sync_record;
+        CREATE INDEX idx_sync_record_rev ON sync_record (konto_id, rev);
+        CREATE INDEX idx_sync_record_name ON sync_record (konto_id, type, canonical_name);
+        CREATE TABLE device_neu (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            token_hash TEXT NOT NULL UNIQUE,
+            created_at INTEGER NOT NULL,
+            last_seen_at INTEGER NOT NULL,
+            revoked_at INTEGER
+        );
+        INSERT INTO device_neu (id, user_id, name, token_hash, created_at, last_seen_at, revoked_at)
+            SELECT id, user_id, name, token_hash, created_at, last_seen_at, revoked_at FROM device;
+        DROP TABLE device;
+        ALTER TABLE device_neu RENAME TO device;
+        CREATE TABLE haushalt_umzug (
+            household_id TEXT PRIMARY KEY,
+            konto_id TEXT NOT NULL
+        );
+        INSERT INTO haushalt_umzug (household_id, konto_id)
+            SELECT m.household_id, m.user_id FROM membership m JOIN household h ON h.id = m.household_id;
+        DROP TABLE invite;
+        DROP TABLE membership;
+        DROP TABLE household;
+        ALTER TABLE user DROP COLUMN is_admin
+        """.trimIndent(),
     )
+
+    /**
+     * Vorprüfung für Migration 1 → 2: Jeder Haushalt hat genau ein Mitglied, und kein Konto ist Mitglied mehrerer
+     * Haushalte. Sonst [MigrationAbgebrochen] – vor jeder Änderung, die Datenbank bleibt auf Version 1.
+     */
+    fun vorpruefenKonto(c: Connection) {
+        c.createStatement().use { s ->
+            s.executeQuery(
+                "SELECT h.id, COUNT(m.user_id) FROM household h LEFT JOIN membership m ON m.household_id = h.id " +
+                    "GROUP BY h.id HAVING COUNT(m.user_id) <> 1 ORDER BY h.id LIMIT 1",
+            ).use { rs ->
+                if (rs.next()) {
+                    throw MigrationAbgebrochen("Haushalt ${rs.getString(1)} hat ${rs.getInt(2)} Mitglieder – Umwandlung auf Konten abgebrochen")
+                }
+            }
+            s.executeQuery(
+                "SELECT m.user_id, COUNT(*) FROM membership m JOIN household h ON h.id = m.household_id " +
+                    "GROUP BY m.user_id HAVING COUNT(*) > 1 ORDER BY m.user_id LIMIT 1",
+            ).use { rs ->
+                if (rs.next()) {
+                    throw MigrationAbgebrochen(
+                        "Konto ${rs.getString(1)} ist Mitglied von ${rs.getInt(2)} Haushalten – Umwandlung auf Konten abgebrochen",
+                    )
+                }
+            }
+        }
+    }
 
     /** Aktuelle Schemaversion (`PRAGMA user_version`). */
     fun aktuell(c: Connection): Int = c.createStatement().use { s ->
@@ -80,6 +163,7 @@ object Migrations {
             val wasAuto = c.autoCommit
             c.autoCommit = false
             try {
+                if (index == 1) vorpruefenKonto(c)
                 c.createStatement().use { s ->
                     liste[index].split(";").map { it.trim() }.filter { it.isNotEmpty() }.forEach { s.execute(it) }
                     s.execute("PRAGMA user_version = ${index + 1}")
@@ -95,5 +179,5 @@ object Migrations {
     }
 }
 
-/** Die Sicherung vor einer Migration ist fehlgeschlagen; es wurde nicht migriert. */
+/** Eine Migration wurde vor jeder Änderung abgebrochen (Sicherung fehlgeschlagen oder Vorprüfung nicht bestanden). */
 class MigrationAbgebrochen(message: String) : IllegalStateException(message)

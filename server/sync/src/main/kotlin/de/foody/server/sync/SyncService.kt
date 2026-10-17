@@ -20,30 +20,30 @@ import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
 
-/** Sync-Kern: nimmt Datensätze eines Haushalts an und liefert Änderungen seit einer Revision. */
+/** Sync-Kern: nimmt Datensätze eines Kontos an und liefert Änderungen seit einer Revision. */
 class SyncService(private val db: Database, private val store: RecordStore, private val clock: Clock) {
 
     /** Verarbeitet [records] der Reihe nach; jeder Datensatz läuft in einer eigenen Transaktion. */
-    fun push(household: String, records: List<SyncRecord>): PushResponse =
-        PushResponse(records.map { record -> db.tx { c -> applyOne(c, household, record) } })
+    fun push(konto: String, records: List<SyncRecord>): PushResponse =
+        PushResponse(records.map { record -> db.tx { c -> applyOne(c, konto, record) } })
 
     /** Liefert bis zu [limit] Datensätze mit `rev > since`; `hasMore` zeigt weitere Seiten an. */
-    fun pull(household: String, since: Long, limit: Int): PullResponse {
+    fun pull(konto: String, since: Long, limit: Int): PullResponse {
         val fetched = db.tx { c ->
             // Ein Cursor vor der Kompaktierungsgrenze hat Löschmarkierungen verpasst: Client muss neu synchronisieren.
-            if (since != 0L && since < compactedBefore(c, household)) {
+            if (since != 0L && since < compactedBefore(c, konto)) {
                 throw ApiException(HttpStatusCode.Gone, ErrorCode.CURSOR_EXPIRED)
             }
-            store.page(c, household, since, limit + 1)
+            store.page(c, konto, since, limit + 1)
         }
         val hasMore = fetched.size > limit
         val records = if (hasMore) fetched.take(limit) else fetched
         return PullResponse(records, records.lastOrNull()?.rev ?: since, hasMore)
     }
 
-    private fun compactedBefore(c: Connection, household: String): Long =
-        c.prepareStatement("SELECT compacted_before_rev FROM household WHERE id = ?").use { st ->
-            st.setString(1, household)
+    private fun compactedBefore(c: Connection, konto: String): Long =
+        c.prepareStatement("SELECT compacted_before_rev FROM user WHERE id = ?").use { st ->
+            st.setString(1, konto)
             st.executeQuery().use { if (it.next()) it.getLong(1) else 0L }
         }
 
@@ -52,13 +52,13 @@ class SyncService(private val db: Database, private val store: RecordStore, priv
      * Referenzprüfung, Einkaufseintrag-Merge, sonst Last-Writer-Wins. Jeder Pfad, der einen lebenden Datensatz speichert,
      * läuft durch die Referenzprüfung.
      */
-    private fun applyOne(c: Connection, household: String, record: SyncRecord): PushResult {
+    private fun applyOne(c: Connection, konto: String, record: SyncRecord): PushResult {
         PayloadValidator.validate(record)?.let { return rejected(record, it) }
-        val stored = store.get(c, household, record.type, record.id)
+        val stored = store.get(c, konto, record.type, record.id)
         if (!record.deleted) {
             val canonicalName = PayloadValidator.canonicalName(record)
             if (canonicalName != null) {
-                val canonical = store.findLiveByCanonicalName(c, household, canonicalName)
+                val canonical = store.findLiveByCanonicalName(c, konto, canonicalName)
                 if (canonical != null && canonical.id != record.id) {
                     return PushResult(record.id, record.type, PushStatus.MERGED, rev = canonical.rev, canonicalId = canonical.id, current = canonical)
                 }
@@ -67,19 +67,19 @@ class SyncService(private val db: Database, private val store: RecordStore, priv
                 val seenDeletion = record.baseRev != null && record.baseRev!! >= stored.rev!!
                 if (!seenDeletion) return PushResult(record.id, record.type, PushStatus.MERGED, rev = stored.rev, current = stored)
             }
-            if (PayloadValidator.references(record).any { (type, id) -> !store.exists(c, household, type, id) }) {
+            if (PayloadValidator.references(record).any { (type, id) -> !store.exists(c, konto, type, id) }) {
                 return rejected(record, ErrorCode.MISSING_REFERENCE)
             }
         }
         val payload: JsonObject? = record.payload
         if (!record.deleted && record.type == RecordType.SHOPPING_ITEM && stored != null && !stored.deleted && isConflict(record, stored)) {
-            return mergeShoppingItem(c, household, record, payload!!, stored)
+            return mergeShoppingItem(c, konto, record, payload!!, stored)
         }
         val raw = payload?.let { Protocol.json.encodeToString(JsonObject.serializer(), it) }
         val rev = if (record.deleted) {
-            store.put(c, household, record, null, null, deletedAt = clock.millis())
+            store.put(c, konto, record, null, null, deletedAt = clock.millis())
         } else {
-            store.put(c, household, record, raw, PayloadValidator.canonicalName(record))
+            store.put(c, konto, record, raw, PayloadValidator.canonicalName(record))
         }
         return PushResult(record.id, record.type, PushStatus.ACCEPTED, rev = rev)
     }
@@ -93,7 +93,7 @@ class SyncService(private val db: Database, private val store: RecordStore, priv
      * `checkedChangedAt` kommen vom Stand mit dem späteren Zeitstempel (bei Gleichstand gilt „abgehakt“).
      * Es wird nur im rohen [JsonObject] ersetzt, damit unbekannte Felder erhalten bleiben.
      */
-    private fun mergeShoppingItem(c: Connection, household: String, record: SyncRecord, incoming: JsonObject, stored: SyncRecord): PushResult {
+    private fun mergeShoppingItem(c: Connection, konto: String, record: SyncRecord, incoming: JsonObject, stored: SyncRecord): PushResult {
         val storedPayload = stored.payload!!
         val incomingAt = incoming.timestamp()
         val storedAt = storedPayload.timestamp()
@@ -104,7 +104,7 @@ class SyncService(private val db: Database, private val store: RecordStore, priv
         }
         val winnerAt = maxOf(incomingAt, storedAt)
         val merged = JsonObject(incoming + mapOf("checked" to JsonPrimitive(checked), "checkedChangedAt" to JsonPrimitive(winnerAt)))
-        val rev = store.put(c, household, record, Protocol.json.encodeToString(JsonObject.serializer(), merged), null)
+        val rev = store.put(c, konto, record, Protocol.json.encodeToString(JsonObject.serializer(), merged), null)
         val current = SyncRecord(record.id, record.type, deleted = false, updatedAt = record.updatedAt, rev = rev, payload = merged)
         return PushResult(record.id, record.type, PushStatus.MERGED, rev = rev, current = current)
     }

@@ -15,7 +15,7 @@ class CompactionTest {
 
     @Test
     fun oldTombstonesAreRemovedAndCursorExpires() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(ingredient("i1", "Mehl"), ingredient("i2", "Salz")))
         client.pushOk(token, listOf(deletion("i1")))
         env.clock.advance(Duration.ofDays(91))
@@ -31,7 +31,7 @@ class CompactionTest {
 
     @Test
     fun cursorAtCompactedRevisionStaysValid() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(ingredient("i1", "Mehl")))
         client.pushOk(token, listOf(deletion("i1")))
         env.clock.advance(Duration.ofDays(91))
@@ -42,7 +42,7 @@ class CompactionTest {
 
     @Test
     fun recentTombstonesStay() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(ingredient("i1", "Mehl")))
         client.pushOk(token, listOf(deletion("i1")))
         env.clock.advance(Duration.ofDays(89))

@@ -55,12 +55,10 @@ fun testServer(
 
 private val userCounter = java.util.concurrent.atomic.AtomicInteger()
 
-/** Legt Benutzer, Gerät und Haushalt an; liefert (Gerätetoken, Haushalts-ID). */
-fun TestEnv.setupHousehold(name: String = "Zuhause"): Pair<String, String> {
-    val userId = deps.accounts.createUser("tester${userCounter.incrementAndGet()}", "geheimgeheim")
-    val token = deps.accounts.createDevice(userId, null, "Testgerät")
-    val deviceId = deps.accounts.deviceForToken(token)!!.deviceId
-    return token to deps.accounts.createHousehold(userId, deviceId, name).id
+/** Legt ein Konto mit einem Gerät an; liefert (Gerätetoken, Konto-ID). */
+fun TestEnv.setupKonto(): Pair<String, String> {
+    val kontoId = deps.accounts.createUser("tester${userCounter.incrementAndGet()}", "geheimgeheim")
+    return deps.accounts.createDevice(kontoId, "Testgerät") to kontoId
 }
 
 /** Setzt den Protokoll-Header der aktuellen Version. */

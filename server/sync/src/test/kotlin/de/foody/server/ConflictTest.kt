@@ -21,7 +21,7 @@ class ConflictTest {
 
     @Test
     fun checkedSurvivesConcurrentAmountChange() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(shoppingList("l1"), shoppingItem("s1", "l1", checked = false, checkedChangedAt = 100)))
         val a = client.pushOk(token, listOf(shoppingItem("s1", "l1", true, 200, baseRev = 2))).results.single()
         assertEquals(PushStatus.ACCEPTED, a.status)
@@ -39,7 +39,7 @@ class ConflictTest {
 
     @Test
     fun laterUncheckWins() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(shoppingList("l1"), shoppingItem("s1", "l1", false, 100)))
         client.pushOk(token, listOf(shoppingItem("s1", "l1", true, 200, baseRev = 2)))
         val b = client.pushOk(token, listOf(shoppingItem("s1", "l1", false, 300, baseRev = 2))).results.single()
@@ -51,7 +51,7 @@ class ConflictTest {
 
     @Test
     fun checkedTieGoesToChecked() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(shoppingList("l1"), shoppingItem("s1", "l1", false, 100)))
         client.pushOk(token, listOf(shoppingItem("s1", "l1", true, 200, baseRev = 2)))
         val b = client.pushOk(token, listOf(shoppingItem("s1", "l1", false, 200, baseRev = 2))).results.single()
@@ -62,7 +62,7 @@ class ConflictTest {
 
     @Test
     fun deleteWinsOverStaleEdit() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val recipe = recipe("r1", listOf("i1"))
         client.pushOk(token, listOf(ingredient("i1"), recipe))
         client.pushOk(token, listOf(deletion(recipe, baseRev = 2)))
@@ -76,7 +76,7 @@ class ConflictTest {
 
     @Test
     fun editAfterSeenDeleteRevives() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val recipe = recipe("r1", listOf("i1"))
         client.pushOk(token, listOf(ingredient("i1"), recipe))
         client.pushOk(token, listOf(deletion(recipe, baseRev = 2)))
@@ -87,7 +87,7 @@ class ConflictTest {
 
     @Test
     fun duplicateIngredientNameMergesToOlderId() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(ingredient("a", "Zwiebel")))
         val r = client.pushOk(token, listOf(ingredient("b", " zwiebel"))).results.single()
         assertEquals(PushStatus.MERGED, r.status)
@@ -100,7 +100,7 @@ class ConflictTest {
 
     @Test
     fun renamingIngredientToSameNameAsItselfIsNoConflict() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(ingredient("a", "Zwiebel")))
         val changed = ingredient("a", "Zwiebel", mapOf("category" to "GEMUESE")).copy(baseRev = 1)
         val r = client.pushOk(token, listOf(changed)).results.single()
@@ -109,7 +109,7 @@ class ConflictTest {
 
     @Test
     fun deletedIngredientNameIsFree() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         val a = ingredient("a", "Zwiebel")
         client.pushOk(token, listOf(a, deletion(a)))
         val r = client.pushOk(token, listOf(ingredient("b", "Zwiebel"))).results.single()
@@ -118,7 +118,7 @@ class ConflictTest {
 
     @Test
     fun plainLastWriterWins() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(ingredient("i1"), recipe("r1", listOf("i1")), mealSlot("m1", "r1", 1, null)))
         val a = client.pushOk(token, listOf(mealSlot("m1", "r1", 2, baseRev = 3))).results.single()
         val b = client.pushOk(token, listOf(mealSlot("m1", "r1", 4, baseRev = 3))).results.single()
@@ -129,7 +129,7 @@ class ConflictTest {
 
     @Test
     fun mergeKeepsUnknownFields() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(shoppingList("l1"), shoppingItem("s1", "l1", false, 100)))
         client.pushOk(token, listOf(shoppingItem("s1", "l1", true, 200, baseRev = 2)))
         val b = client.pushOk(
@@ -144,7 +144,7 @@ class ConflictTest {
 
     @Test
     fun missingReferenceIsRejectedEvenInConflict() = testServer { env ->
-        val (token, _) = env.setupHousehold()
+        val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(shoppingList("l1"), shoppingItem("s1", "l1", false, 100)))
         val r = client.pushOk(token, listOf(shoppingItem("s1", "gone", false, 100, baseRev = 1))).results.single()
         assertEquals(PushStatus.REJECTED, r.status)

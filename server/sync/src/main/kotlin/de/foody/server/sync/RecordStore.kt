@@ -12,65 +12,65 @@ import kotlinx.serialization.json.JsonObject
 class RecordStore {
     private val columns = "id, type, rev, deleted, payload, updated_at"
 
-    fun get(c: Connection, household: String, type: RecordType, id: String): SyncRecord? =
-        c.prepareStatement("SELECT $columns FROM sync_record WHERE household_id = ? AND type = ? AND id = ?").use { st ->
-            st.setString(1, household)
+    fun get(c: Connection, konto: String, type: RecordType, id: String): SyncRecord? =
+        c.prepareStatement("SELECT $columns FROM sync_record WHERE konto_id = ? AND type = ? AND id = ?").use { st ->
+            st.setString(1, konto)
             st.setString(2, type.wire)
             st.setString(3, id)
             st.executeQuery().use { if (it.next()) it.toRecord() else null }
         }
 
     /** `true`, wenn der Datensatz existiert und nicht gelöscht ist. */
-    fun exists(c: Connection, household: String, type: RecordType, id: String): Boolean =
-        c.prepareStatement("SELECT 1 FROM sync_record WHERE household_id = ? AND type = ? AND id = ? AND deleted = 0").use { st ->
-            st.setString(1, household)
+    fun exists(c: Connection, konto: String, type: RecordType, id: String): Boolean =
+        c.prepareStatement("SELECT 1 FROM sync_record WHERE konto_id = ? AND type = ? AND id = ? AND deleted = 0").use { st ->
+            st.setString(1, konto)
             st.setString(2, type.wire)
             st.setString(3, id)
             st.executeQuery().use { it.next() }
         }
 
     /** Lebende Zutat mit dem Eindeutigkeitsschlüssel [name] (siehe `PayloadValidator.canonicalName`). */
-    fun findLiveByCanonicalName(c: Connection, household: String, name: String): SyncRecord? =
+    fun findLiveByCanonicalName(c: Connection, konto: String, name: String): SyncRecord? =
         c.prepareStatement(
-            "SELECT $columns FROM sync_record WHERE household_id = ? AND type = ? AND canonical_name = ? AND deleted = 0 ORDER BY rev LIMIT 1",
+            "SELECT $columns FROM sync_record WHERE konto_id = ? AND type = ? AND canonical_name = ? AND deleted = 0 ORDER BY rev LIMIT 1",
         ).use { st ->
-            st.setString(1, household)
+            st.setString(1, konto)
             st.setString(2, RecordType.INGREDIENT.wire)
             st.setString(3, name)
             st.executeQuery().use { if (it.next()) it.toRecord() else null }
         }
 
     /**
-     * Schreibt [record] mit der nächsten Revision des Haushalts und liefert diese. [rawPayload] wird unverändert abgelegt
+     * Schreibt [record] mit der nächsten Revision des Kontos und liefert diese. [rawPayload] wird unverändert abgelegt
      * (`null` bei Löschung); die Löschzeit [deletedAt] gilt nur für gelöschte Datensätze.
      */
     fun put(
         c: Connection,
-        household: String,
+        konto: String,
         record: SyncRecord,
         rawPayload: String?,
         canonicalName: String?,
         deletedAt: Long? = null,
     ): Long {
         require(!record.deleted || deletedAt != null) { "Löschung ohne Löschzeit würde nie kompaktiert" }
-        c.prepareStatement("UPDATE household SET last_rev = last_rev + 1 WHERE id = ?").use { st ->
-            st.setString(1, household)
-            check(st.executeUpdate() == 1) { "Haushalt $household unbekannt" }
+        c.prepareStatement("UPDATE user SET last_rev = last_rev + 1 WHERE id = ?").use { st ->
+            st.setString(1, konto)
+            check(st.executeUpdate() == 1) { "Konto $konto unbekannt" }
         }
-        val rev = c.prepareStatement("SELECT last_rev FROM household WHERE id = ?").use { st ->
-            st.setString(1, household)
+        val rev = c.prepareStatement("SELECT last_rev FROM user WHERE id = ?").use { st ->
+            st.setString(1, konto)
             st.executeQuery().use { it.next(); it.getLong(1) }
         }
         c.prepareStatement(
             """
-            INSERT INTO sync_record (household_id, type, id, rev, deleted, payload, updated_at, deleted_at, canonical_name)
+            INSERT INTO sync_record (konto_id, type, id, rev, deleted, payload, updated_at, deleted_at, canonical_name)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT (household_id, type, id) DO UPDATE SET
+            ON CONFLICT (konto_id, type, id) DO UPDATE SET
                 rev = excluded.rev, deleted = excluded.deleted, payload = excluded.payload,
                 updated_at = excluded.updated_at, deleted_at = excluded.deleted_at, canonical_name = excluded.canonical_name
             """.trimIndent(),
         ).use { st ->
-            st.setString(1, household)
+            st.setString(1, konto)
             st.setString(2, record.type.wire)
             st.setString(3, record.id)
             st.setLong(4, rev)
@@ -85,30 +85,29 @@ class RecordStore {
     }
 
     /** Datensätze mit `rev > since`, nach Revision aufsteigend, höchstens [limit]. */
-    fun page(c: Connection, household: String, since: Long, limit: Int): List<SyncRecord> =
-        c.prepareStatement("SELECT $columns FROM sync_record WHERE household_id = ? AND rev > ? ORDER BY rev LIMIT ?").use { st ->
-            st.setString(1, household)
+    fun page(c: Connection, konto: String, since: Long, limit: Int): List<SyncRecord> =
+        c.prepareStatement("SELECT $columns FROM sync_record WHERE konto_id = ? AND rev > ? ORDER BY rev LIMIT ?").use { st ->
+            st.setString(1, konto)
             st.setLong(2, since)
             st.setInt(3, limit)
             st.executeQuery().use { rs -> buildList { while (rs.next()) add(rs.toRecord()) } }
         }
 
     /**
-     * Alle nicht gelöschten Datensätze des Haushalts und seine höchste Revision (gelöschte zählen mit; 0 ohne Datensätze).
-     * Grundlage der Web-Oberfläche, die den ganzen Stand liest statt Seiten wie der Pull.
+     * Alle nicht gelöschten Datensätze des Kontos und seine höchste Revision (gelöschte zählen mit; 0 ohne Datensätze).
      */
-    fun lebende(c: Connection, household: String): Pair<List<SyncRecord>, Long> {
-        val records = c.prepareStatement("SELECT $columns FROM sync_record WHERE household_id = ? AND deleted = 0").use { st ->
-            st.setString(1, household)
+    fun lebende(c: Connection, konto: String): Pair<List<SyncRecord>, Long> {
+        val records = c.prepareStatement("SELECT $columns FROM sync_record WHERE konto_id = ? AND deleted = 0").use { st ->
+            st.setString(1, konto)
             st.executeQuery().use { rs -> buildList { while (rs.next()) add(rs.toRecord()) } }
         }
-        return records to hoechsteRevision(c, household)
+        return records to hoechsteRevision(c, konto)
     }
 
-    /** Höchste Revision des Haushalts (0 ohne Datensätze) – ändert sich bei jedem Schreiben. */
-    fun hoechsteRevision(c: Connection, household: String): Long =
-        c.prepareStatement("SELECT COALESCE(MAX(rev), 0) FROM sync_record WHERE household_id = ?").use { st ->
-            st.setString(1, household)
+    /** Höchste Revision des Kontos (0 ohne Datensätze) – ändert sich bei jedem Schreiben. */
+    fun hoechsteRevision(c: Connection, konto: String): Long =
+        c.prepareStatement("SELECT COALESCE(MAX(rev), 0) FROM sync_record WHERE konto_id = ?").use { st ->
+            st.setString(1, konto)
             st.executeQuery().use { if (it.next()) it.getLong(1) else 0L }
         }
 

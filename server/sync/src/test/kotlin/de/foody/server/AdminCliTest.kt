@@ -5,7 +5,6 @@ import de.foody.server.db.Database
 import de.foody.sync.protocol.AuthResponse
 import de.foody.sync.protocol.LoginRequest
 import de.foody.sync.protocol.Protocol
-import de.foody.sync.protocol.RegisterRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
@@ -21,7 +20,7 @@ import java.io.PrintStream
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class AdminCliTest {
@@ -51,9 +50,9 @@ class AdminCliTest {
 
     @Test
     fun resetPasswordPrintsWorkingPasswordAndRevokesDevices() = testServer { env ->
-        val userId = env.deps.accounts.createUser("stefan", "altaltaltalt")
-        val oldToken = env.deps.accounts.createDevice(userId, null, "Handy")
-        assertEquals(HttpStatusCode.OK, client.get("/api/v1/devices") { protocol(); bearerAuth(oldToken) }.status)
+        val kontoId = env.deps.accounts.createUser("stefan", "altaltaltalt")
+        val oldToken = env.deps.accounts.createDevice(kontoId, "Handy")
+        assertEquals(HttpStatusCode.OK, client.get("/api/v1/sync/pull") { protocol(); bearerAuth(oldToken) }.status)
 
         val (code, output) = cli(env.deps, listOf("reset-password", "STEFAN"))
         assertEquals(0, code)
@@ -61,7 +60,7 @@ class AdminCliTest {
         assertEquals(20, password.length)
         assertTrue(password.all { it in 'A'..'Z' || it in 'a'..'z' || it in '0'..'9' })
 
-        assertEquals(HttpStatusCode.Unauthorized, client.get("/api/v1/devices") { protocol(); bearerAuth(oldToken) }.status)
+        assertEquals(HttpStatusCode.Unauthorized, client.get("/api/v1/sync/pull") { protocol(); bearerAuth(oldToken) }.status)
         assertEquals(HttpStatusCode.OK, client.login("stefan", password).status)
         assertEquals(HttpStatusCode.Unauthorized, client.login("stefan", "altaltaltalt").status)
     }
@@ -74,16 +73,24 @@ class AdminCliTest {
     }
 
     @Test
-    fun inviteCreatesAccountInvite() = testServer { env ->
-        val (code, output) = cli(env.deps, listOf("invite"))
+    fun kontoAnlegenGibtPasswortAus() = testServer { env ->
+        val (code, output) = cli(env.deps, listOf("konto-anlegen", "ben"))
         assertEquals(0, code)
-        val response = client.post("/api/v1/auth/register") {
-            protocol()
-            contentType(ContentType.Application.Json)
-            setBody(Protocol.json.encodeToString(RegisterRequest.serializer(), RegisterRequest(output.trim(), "ben", "geheimgeheim", "Handy")))
-        }
+        val match = assertNotNull(Regex("^Konto ben angelegt, Passwort: ([A-Za-z0-9]{20})$").matchEntire(output.trim()), output)
+        val password = match.groupValues[1]
+        val response = client.login("ben", password)
         assertEquals(HttpStatusCode.OK, response.status)
-        assertNull(Protocol.json.decodeFromString(AuthResponse.serializer(), response.bodyAsText()).householdId)
+        val auth = Protocol.json.decodeFromString(AuthResponse.serializer(), response.bodyAsText())
+        assertEquals(env.deps.accounts.authenticate("ben", password), auth.userId)
+    }
+
+    @Test
+    fun kontoAnlegenMitVergebenemNamenScheitert() = testServer { env ->
+        env.deps.accounts.createUser("ben", "geheimgeheim")
+        val (code, output) = cliErr(env.deps, listOf("konto-anlegen", "BEN"))
+        assertEquals(1, code)
+        assertEquals(1, output.trim().lines().size)
+        assertEquals(2, cliErr(env.deps, listOf("konto-anlegen")).first)
     }
 
     @Test
@@ -133,7 +140,7 @@ class AdminCliTest {
     fun unknownCommandShowsHelp() = testServer { env ->
         val (code, output) = cliErr(env.deps, listOf("unsinn"))
         assertEquals(2, code)
-        for (name in listOf("reset-password", "invite", "backup", "compact")) assertTrue(output.contains(name), name)
+        for (name in listOf("reset-password", "konto-anlegen", "backup", "compact")) assertTrue(output.contains(name), name)
         assertEquals(2, cli(env.deps, emptyList()).first)
         assertEquals(2, cli(env.deps, listOf("backup")).first)
     }

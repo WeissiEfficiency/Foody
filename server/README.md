@@ -20,13 +20,13 @@ cp .env.example .env      # Werte anpassen (.env wird nicht eingecheckt)
 docker compose up -d --build
 ```
 
-Beim **ersten Start** müssen `FOODY_ADMIN_USER` und `FOODY_ADMIN_PASSWORD` in `.env` gesetzt sein; sie legen den
-Admin an. Danach beide Variablen leeren und mit `docker compose up -d` neu anwenden.
+Beim **ersten Start** müssen `FOODY_ADMIN_USER` und `FOODY_ADMIN_PASSWORD` in `.env` gesetzt sein; sie legen das
+erste Konto an (ohne Sonderrechte). Danach beide Variablen leeren und mit `docker compose up -d` neu anwenden.
 
 ## Betrieb
 
-- Einladung für ein neues **Konto ohne Haushalt**: `docker compose exec foody-server foody-admin invite`
-  (keine Haushalts-Einladung; die erzeugen Mitglieder in der App über `POST /api/v1/invites`)
+- Neues Konto: `docker compose exec foody-server foody-admin konto-anlegen <name>` (gibt das Zufallspasswort
+  einmal aus)
 - Sicherung von Datenbank und Fotos: `FOODY_BACKUP_DIR=/pfad ./backup.sh` (im Ordner `server/`). Legt
   `foody-<Datum>.db` an, behält die letzten 14 Tage (`FOODY_BACKUP_KEEP`) und spiegelt die Fotos nach `fotos/`.
   Gedacht für einen Ordner, den ein OpenCloud-Client abgleicht. Nächtlich per Cron (`crontab -e`):
@@ -58,7 +58,7 @@ Die Web-Oberfläche ist mit V3 entfallen (ADR 0011).
 
 ## Fotos
 
-Rezeptfotos liegen als `<FOODY_PHOTO_DIR>/<Haushalt>/<sha256>.jpg` (Standard `/data/photos`, eigenes Docker-Volume
+Rezeptfotos liegen als `<FOODY_PHOTO_DIR>/<Konto-ID>/<sha256>.jpg` (Standard `/data/photos`, eigenes Docker-Volume
 `foody-photos`; in die Sicherung der Datenbank sind sie **nicht** eingeschlossen, das Volume gesondert sichern).
 Upload nur als JPEG bis 10 MB (`PUT /api/v1/photos/{sha256}`). Fotos, die kein lebendes Rezept mehr verwendet,
 löscht die tägliche Kompaktierung (und `foody-admin compact`) nach 30 Tagen.
