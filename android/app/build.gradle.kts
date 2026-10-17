@@ -201,7 +201,6 @@ dependencies {
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.work.testing)
-    testImplementation(libs.ktor.server.test.host)
 
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.androidx.test.ext.junit)
