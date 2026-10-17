@@ -5,8 +5,11 @@ import java.sql.DriverManager
 import java.time.Clock
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.time.Duration
 
 /**
  * SQLite-Datenbank mit einer einzigen, synchronisierten Verbindung.
@@ -35,7 +38,7 @@ class Database(
                     s.execute("PRAGMA foreign_keys=ON")
                     s.execute("PRAGMA busy_timeout=5000")
                 }
-                if (bestand && Migrations.aktuell(c) < migrationen.size && !hatSicherung(datei, migrationen.size)) sichere(c, datei, clock, migrationen.size)
+                if (bestand && Migrations.aktuell(c) < migrationen.size && !hatSicherung(datei, migrationen.size, clock)) sichere(c, datei, clock, migrationen.size)
                 Migrations.apply(c, migrationen)
             } catch (e: Throwable) {
                 c.close()
@@ -44,23 +47,38 @@ class Database(
             return c
         }
 
+        /** So lange gilt eine vorhandene Sicherung als aktuell (Neustarts nach einem gescheiterten Versuch liegen darin). */
+        private val FRISCH = Duration.ofHours(24)
+
         /**
-         * Gibt es für [ziel] schon eine Sicherung (Datei `vor-migration-<ziel>-*.db`), ist die Datenbank seit dem
-         * gescheiterten Versuch unverändert; ein Neustart-Schleife soll keine weitere Sicherung anhäufen.
+         * Gibt es für [ziel] schon eine vollständige Sicherung (reguläre, nicht leere Datei `vor-migration-<ziel>-*.db`),
+         * die jünger als 24 Stunden ist, ist die Datenbank seit dem gescheiterten Versuch unverändert; eine
+         * Neustart-Schleife soll keine weitere Sicherung anhäufen. Ältere Sicherungen (z. B. vor einem Rückweg auf eine
+         * alte Version) zählen nicht.
          */
-        private fun hatSicherung(datei: Path, ziel: Int): Boolean {
+        private fun hatSicherung(datei: Path, ziel: Int, clock: Clock): Boolean {
             val ordner = datei.toAbsolutePath().parent ?: return false
+            val grenze = clock.instant().minus(FRISCH)
             return Files.newDirectoryStream(ordner, "vor-migration-$ziel-*.db").use { strom ->
-                strom.any { Files.isRegularFile(it) }
+                strom.any { Files.isRegularFile(it) && Files.size(it) > 0 && Files.getLastModifiedTime(it).toInstant().isAfter(grenze) }
             }
         }
 
+        /** Schreibt die Sicherung erst nach `<name>.tmp` und benennt sie danach um, damit nie eine Teildatei als Sicherung zählt. */
         private fun sichere(c: Connection, datei: Path, clock: Clock, ziel: Int) {
+            val name = "vor-migration-$ziel-${ZEIT.format(clock.instant().atZone(BERLIN))}.db"
+            val sicherung = (datei.toAbsolutePath().parent ?: Path.of(".")).resolve(name)
+            val tmp = sicherung.resolveSibling("$name.tmp")
             try {
-                val name = "vor-migration-$ziel-${ZEIT.format(clock.instant().atZone(BERLIN))}.db"
-                val sicherung = (datei.toAbsolutePath().parent ?: Path.of(".")).resolve(name)
-                c.prepareStatement("VACUUM INTO ?").use { it.setString(1, sicherung.toString()); it.execute() }
+                Files.deleteIfExists(tmp)
+                c.prepareStatement("VACUUM INTO ?").use { it.setString(1, tmp.toString()); it.execute() }
+                try {
+                    Files.move(tmp, sicherung, StandardCopyOption.ATOMIC_MOVE)
+                } catch (_: AtomicMoveNotSupportedException) {
+                    Files.move(tmp, sicherung, StandardCopyOption.REPLACE_EXISTING)
+                }
             } catch (e: Exception) {
+                runCatching { Files.deleteIfExists(tmp) }
                 throw MigrationAbgebrochen("Sicherung vor Migration fehlgeschlagen: ${e.message}")
             }
         }
