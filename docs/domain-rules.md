@@ -50,6 +50,9 @@
     markiert, übernommen erst beim Speichern. Unplausibles wird verworfen (Energie über 4000 kJ, Gramm über 100,
     Zucker über Kohlenhydraten). Ein Strichcode, den eine Zutat schon hat, führt zu dieser Zutat (ohne Online-Abfrage).
     Eine vorhandene Zutat wird im Tagebuch nur mit gesetztem Häkchen „Werte aktualisieren“ überschrieben.
+27. Import: Nennt die Datei ihre Portionen („Portionen: 4 · …“ in der Kopfzeile), gilt diese Zahl; geschätzt wird nur
+    ohne Angabe und bei Backwaren mit „Portionen: 1“ (ganzer Kuchen, ganzes Blech – gegessen wird ein Stück). Alle
+    Anzeigen (Rezept, Liste, Planer, Tagebuch) zeigen dieselben kcal je Portion.
 
 ## Tests je Regel
 
@@ -83,3 +86,4 @@ Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/te
 | 24 | `TagebuchTest.rezeptPortionenSkalieren`, `TagebuchViewModelTest.festgehaltenNachRezeptAenderung` |
 | 25 | `PlanDurchschnittTest` |
 | 26 | `IngredientScanTest.strichcodeFuelltFelderUndMerktSichCode`, `TagebuchScreenTest.packungImReiterFrei` |
+| 27 | `MarkdownImportTest.servingsFromHeaderLine`, `RezeptImportTest.portionenAusDerDateiStattSchaetzung`, `RezeptImportTest.eineGanzeBackwareWirdGeschaetzt`, `KcalJePortionTest` |

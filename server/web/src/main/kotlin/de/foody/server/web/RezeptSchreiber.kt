@@ -111,7 +111,7 @@ internal class RezeptSchreiber(private val deps: ServerDeps, private val daten: 
         val id = UUID.randomUUID().toString()
         val payload = RecipePayload(
             name = rezept.name, servings = ergebnis.portionen, tags = tag, favorite = false, sourceUrl = rezept.sourceUrl,
-            notes = RezeptImport.hinweis(rezept.sourceUrl, ergebnis.portionen, ergebnis.geschaetzt),
+            notes = RezeptImport.hinweis(rezept.sourceUrl, ergebnis.portionen, ergebnis.geschaetzt, ergebnis.ausDatei).ifBlank { null },
             lines = ergebnis.zeilen.mapIndexed { i, z ->
                 RecipePayload.Line(UUID.randomUUID().toString(), z.zutatId, z.menge.stripTrailingZeros().toPlainString(), z.einheit.name, i, z.hinweis, z.optional)
             },
