@@ -70,7 +70,7 @@ jobs:
           java-version: 21
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
       - name: Server- und Protokoll-Tests
-        run: ./gradlew :sync-protocol:test :server-sync:test :server:installDist
+        run: ./gradlew :api-protocol:test :server-sync:test :server:installDist
       - name: Docker-Image bauen
         run: docker build -f server/Dockerfile -t foody-server:ci .
       - name: Smoke-Test des Containers
@@ -86,10 +86,21 @@ jobs:
             if [ "$i" = 30 ]; then docker logs foody; exit 1; fi
             sleep 2
           done
-          curl -fsS -H 'X-Foody-Protocol: 2' -H 'Content-Type: application/json' \
+          # Protokoll 3: Login liefert Token und Konto-ID.
+          curl -fsS -H 'X-Foody-Protocol: 3' -H 'Content-Type: application/json' \
             -d '{"username":"admin","password":"ci-passwort-123","deviceName":"ci"}' \
-            localhost:8080/api/v1/auth/login | grep -q token || { docker logs foody; exit 1; }
-          docker exec foody foody-admin konto-anlegen ci-konto | grep -q "^Konto ci-konto angelegt, Passwort: " || { docker logs foody; exit 1; }
+            localhost:8080/api/v3/auth/login | grep -q '"kontoId"' || { docker logs foody; exit 1; }
+          # Konto über foody-admin anlegen und mit dem einmal ausgegebenen Passwort anmelden.
+          ausgabe=$(docker exec foody foody-admin konto-anlegen ci2) || { docker logs foody; exit 1; }
+          echo "$ausgabe" | grep -q "Passwort:" || { echo "$ausgabe"; exit 1; }
+          passwort=$(echo "$ausgabe" | sed -n 's/^.*Passwort: //p')
+          curl -fsS -H 'X-Foody-Protocol: 3' -H 'Content-Type: application/json' \
+            -d "{\"username\":\"ci2\",\"password\":\"$passwort\",\"deviceName\":\"ci\"}" \
+            localhost:8080/api/v3/auth/login | grep -q '"kontoId"' || { docker logs foody; exit 1; }
+          # Alte Clients (v1-App) bekommen 409 protocol_too_old.
+          status=$(curl -sS -o /dev/null -w '%{http_code}' -H 'X-Foody-Protocol: 2' -H 'Content-Type: application/json' \
+            -d '{"username":"admin","password":"ci-passwort-123","deviceName":"ci"}' localhost:8080/api/v1/auth/login)
+          [ "$status" = 409 ] || { echo "v1-Login: $status statt 409"; exit 1; }
       - name: Compose-Datei prüfen
         run: |
           cp server/.env.example server/.env

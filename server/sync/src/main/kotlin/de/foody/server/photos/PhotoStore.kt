@@ -1,6 +1,6 @@
 package de.foody.server.photos
 
-import de.foody.sync.protocol.PhotoHash
+import de.foody.api.protocol.PhotoHash
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path

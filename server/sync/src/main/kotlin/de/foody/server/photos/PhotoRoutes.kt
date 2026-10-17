@@ -5,11 +5,11 @@ import de.foody.server.ServerDeps
 import de.foody.server.auth.DevicePrincipal
 import de.foody.server.receiveJson
 import de.foody.server.readBoundedBytes
-import de.foody.sync.protocol.ErrorCode
-import de.foody.sync.protocol.PhotoHash
-import de.foody.sync.protocol.PhotosMissingRequest
-import de.foody.sync.protocol.PhotosMissingResponse
-import de.foody.sync.protocol.Protocol
+import de.foody.api.protocol.ErrorCode
+import de.foody.api.protocol.PhotoHash
+import de.foody.api.protocol.PhotosMissingRequest
+import de.foody.api.protocol.PhotosMissingResponse
+import de.foody.api.protocol.Protocol
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.principal

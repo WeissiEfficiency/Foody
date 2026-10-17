@@ -1,10 +1,11 @@
 package de.foody.server
 
+import de.foody.server.auth.KontoExistiert
 import de.foody.server.auth.PasswordHasher
 import de.foody.server.auth.Tokens
-import de.foody.sync.protocol.AuthResponse
-import de.foody.sync.protocol.ErrorCode
-import de.foody.sync.protocol.Protocol
+import de.foody.api.protocol.AuthResponse
+import de.foody.api.protocol.ErrorCode
+import de.foody.api.protocol.Protocol
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
@@ -21,8 +22,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
-import de.foody.sync.protocol.LoginRequest
-import de.foody.sync.protocol.PasswordChangeRequest
+import de.foody.api.protocol.LoginRequest
+import de.foody.api.protocol.PasswordChangeRequest
 import java.time.Duration
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,14 +37,14 @@ class AuthTest {
     private val pw = "geheimgeheim"
 
     private suspend fun HttpClient.login(user: String, password: String, device: String = "Handy"): HttpResponse =
-        post("/api/v1/auth/login") {
+        post("/api/v3/auth/login") {
             protocol()
             contentType(ContentType.Application.Json)
             setBody(Protocol.json.encodeToString(LoginRequest(user, password, device)))
         }
 
     /** Authentifizierter Aufruf zum Prüfen eines Tokens (Pull ohne Datensätze). */
-    private suspend fun HttpClient.probe(token: String?): HttpResponse = get("/api/v1/sync/pull") {
+    private suspend fun HttpClient.probe(token: String?): HttpResponse = get("/api/v3/sync/pull") {
         protocol()
         if (token != null) bearerAuth(token)
     }
@@ -77,8 +78,7 @@ class AuthTest {
         val response = client.login("stefan", pw)
         assertEquals(HttpStatusCode.OK, response.status)
         val auth = Protocol.json.decodeFromString<AuthResponse>(response.bodyAsText())
-        assertEquals(kontoId, auth.userId)
-        assertNull(auth.householdId)
+        assertEquals(kontoId, auth.kontoId)
         assertTrue(auth.token.isNotEmpty())
         assertEquals(kontoId, env.deps.accounts.deviceForToken(auth.token)!!.kontoId)
 
@@ -127,8 +127,7 @@ class AuthTest {
         val e3 = assertFailsWith<ApiException> { env.deps.accounts.createUser("ab", pw) }
         assertEquals(ErrorCode.INVALID_INPUT, e3.code)
         env.deps.accounts.createUser("stefan", pw)
-        val e4 = assertFailsWith<ApiException> { env.deps.accounts.createUser("STEFAN", pw) }
-        assertEquals(ErrorCode.USERNAME_TAKEN, e4.code)
+        assertFailsWith<KontoExistiert> { env.deps.accounts.createUser("STEFAN", pw) }
     }
 
     @Test
@@ -136,7 +135,7 @@ class AuthTest {
         env.deps.accounts.createUser("stefan", pw)
         val t1 = Protocol.json.decodeFromString<AuthResponse>(client.login("stefan", pw, "Eins").bodyAsText()).token
         val t2 = Protocol.json.decodeFromString<AuthResponse>(client.login("stefan", pw, "Zwei").bodyAsText()).token
-        val change = client.post("/api/v1/auth/password") {
+        val change = client.post("/api/v3/auth/password") {
             protocol()
             bearerAuth(t1)
             contentType(ContentType.Application.Json)
@@ -184,14 +183,14 @@ class AuthTest {
 
     @Test
     fun protocolCheckRunsBeforeAuthentication() = testServer {
-        val response = client.get("/api/v1/sync/pull")
+        val response = client.get("/api/v3/sync/pull")
         assertEquals(HttpStatusCode.Conflict, response.status)
         assertEquals("""{"code":"protocol_too_old"}""", response.bodyAsText())
     }
 
     @Test
     fun oversizedLoginBodyIsRejected() = testServer {
-        val response = client.post("/api/v1/auth/login") {
+        val response = client.post("/api/v3/auth/login") {
             protocol()
             contentType(ContentType.Application.Json)
             setBody(Protocol.json.encodeToString(LoginRequest("x".repeat(70 * 1024), "p", "Handy")))
@@ -214,7 +213,7 @@ class AuthTest {
     }
 
     private suspend fun HttpClient.changePassword(token: String, old: String): HttpResponse =
-        post("/api/v1/auth/password") {
+        post("/api/v3/auth/password") {
             protocol()
             bearerAuth(token)
             contentType(ContentType.Application.Json)

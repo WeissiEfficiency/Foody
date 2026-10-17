@@ -1,14 +1,14 @@
 package de.foody.server
 
 import de.foody.server.sync.Compactor
-import de.foody.sync.protocol.ErrorCode
-import de.foody.sync.protocol.PhotoHash
-import de.foody.sync.protocol.PhotosMissingRequest
-import de.foody.sync.protocol.PhotosMissingResponse
-import de.foody.sync.protocol.Protocol
-import de.foody.sync.protocol.RecipePayload
-import de.foody.sync.protocol.RecordType
-import de.foody.sync.protocol.SyncRecord
+import de.foody.api.protocol.ErrorCode
+import de.foody.api.protocol.PhotoHash
+import de.foody.api.protocol.PhotosMissingRequest
+import de.foody.api.protocol.PhotosMissingResponse
+import de.foody.api.protocol.Protocol
+import de.foody.api.protocol.RecipePayload
+import de.foody.api.protocol.RecordType
+import de.foody.api.protocol.SyncRecord
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
@@ -36,13 +36,13 @@ class PhotoTest {
         ByteArray(size) { (it * seed).toByte() }.also { it[0] = 0xFF.toByte(); it[1] = 0xD8.toByte(); it[2] = 0xFF.toByte() }
 
     private suspend fun HttpClient.upload(token: String, sha: String, bytes: ByteArray, type: ContentType = ContentType.Image.JPEG): HttpResponse =
-        put("/api/v1/photos/$sha") { protocol(); bearerAuth(token); contentType(type); setBody(bytes) }
+        put("/api/v3/photos/$sha") { protocol(); bearerAuth(token); contentType(type); setBody(bytes) }
 
     private suspend fun HttpClient.download(token: String, sha: String): HttpResponse =
-        get("/api/v1/photos/$sha") { protocol(); bearerAuth(token) }
+        get("/api/v3/photos/$sha") { protocol(); bearerAuth(token) }
 
     private suspend fun HttpClient.missing(token: String, hashes: List<String>): HttpResponse =
-        post("/api/v1/photos/missing") {
+        post("/api/v3/photos/missing") {
             protocol(); bearerAuth(token); contentType(ContentType.Application.Json)
             setBody(Protocol.json.encodeToString(PhotosMissingRequest.serializer(), PhotosMissingRequest(hashes)))
         }

@@ -1,6 +1,6 @@
 package de.foody.server
 
-import de.foody.sync.protocol.Protocol
+import de.foody.api.protocol.Protocol
 import de.foody.server.db.Database
 import de.foody.server.db.Migrations
 import io.ktor.client.request.get
@@ -13,7 +13,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.post as routePost
 import io.ktor.server.routing.routing
-import de.foody.sync.protocol.ErrorDto
+import de.foody.api.protocol.ErrorDto
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import kotlin.test.Test
@@ -66,11 +66,11 @@ class DatabaseTest {
 
     @Test
     fun apiWithoutHeaderIsProtocolTooOld() = testServer {
-        val missing = client.get("/api/v1/sync/pull")
+        val missing = client.get("/api/v3/sync/pull")
         assertEquals(HttpStatusCode.Conflict, missing.status)
         assertEquals("""{"code":"protocol_too_old"}""", missing.bodyAsText())
 
-        val newer = client.get("/api/v1/sync/pull") { header("X-Foody-Protocol", (Protocol.VERSION + 1).toString()) }
+        val newer = client.get("/api/v3/sync/pull") { header("X-Foody-Protocol", (Protocol.VERSION + 1).toString()) }
         assertEquals(HttpStatusCode.Conflict, newer.status)
         assertEquals("""{"code":"server_too_old"}""", newer.bodyAsText())
     }

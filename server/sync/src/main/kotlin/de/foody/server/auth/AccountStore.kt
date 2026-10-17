@@ -2,11 +2,14 @@ package de.foody.server.auth
 
 import de.foody.server.ApiException
 import de.foody.server.db.Database
-import de.foody.sync.protocol.ErrorCode
+import de.foody.api.protocol.ErrorCode
 import io.ktor.http.HttpStatusCode
 import java.sql.Connection
 import java.time.Clock
 import java.util.UUID
+
+/** Ein Konto mit diesem Namen (ohne Beachtung der Groß-/Kleinschreibung) gibt es schon; nur intern (Admin-CLI). */
+class KontoExistiert(username: String) : IllegalStateException("Konto $username existiert bereits")
 
 /** Authentifiziertes Gerät des Kontos [kontoId] (= `user.id`). */
 data class DevicePrincipal(val deviceId: String, val kontoId: String)
@@ -42,13 +45,13 @@ class AccountStore(
         return db.tx { c -> insertUser(c, username, hash) }
     }
 
-    /** Fügt ein Konto in der laufenden Transaktion ein; `409 username_taken` bei Namenskollision. */
+    /** Fügt ein Konto in der laufenden Transaktion ein; [KontoExistiert] bei Namenskollision. */
     private fun insertUser(c: Connection, username: String, hash: String): String {
         val taken = c.prepareStatement("SELECT 1 FROM user WHERE username_lower = ?").use { st ->
             st.setString(1, username.lowercase())
             st.executeQuery().use { it.next() }
         }
-        if (taken) throw ApiException(HttpStatusCode.Conflict, ErrorCode.USERNAME_TAKEN)
+        if (taken) throw KontoExistiert(username)
         val id = UUID.randomUUID().toString()
         c.prepareStatement(
             "INSERT INTO user (id, username, username_lower, password_hash, display_name, created_at) " +

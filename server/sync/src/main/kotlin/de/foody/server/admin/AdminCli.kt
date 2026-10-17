@@ -2,8 +2,8 @@ package de.foody.server.admin
 
 import de.foody.server.ApiException
 import de.foody.server.ServerDeps
+import de.foody.server.auth.KontoExistiert
 import de.foody.server.sync.Compactor
-import de.foody.sync.protocol.ErrorCode
 import java.io.File
 import java.io.PrintStream
 import java.security.SecureRandom
@@ -49,9 +49,11 @@ class AdminCli(
         val password = zufallsPasswort()
         try {
             deps.accounts.createUser(name, password)
-        } catch (e: ApiException) {
+        } catch (_: KontoExistiert) {
+            return fail("Konto existiert bereits: $name")
+        } catch (_: ApiException) {
             // Das Zufallspasswort ist immer gültig: Scheitern liegt am Namen.
-            return fail(if (e.code == ErrorCode.USERNAME_TAKEN) "Konto existiert bereits: $name" else "Ungültiger Name: $name (3–32 Zeichen A-Z a-z 0-9 . _ -)")
+            return fail("Ungültiger Name: $name (3–32 Zeichen A-Z a-z 0-9 . _ -)")
         }
         out.println("Konto $name angelegt, Passwort: $password")
         return 0

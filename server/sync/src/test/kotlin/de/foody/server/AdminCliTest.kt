@@ -2,9 +2,9 @@ package de.foody.server
 
 import de.foody.server.admin.AdminCli
 import de.foody.server.db.Database
-import de.foody.sync.protocol.AuthResponse
-import de.foody.sync.protocol.LoginRequest
-import de.foody.sync.protocol.Protocol
+import de.foody.api.protocol.AuthResponse
+import de.foody.api.protocol.LoginRequest
+import de.foody.api.protocol.Protocol
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
@@ -42,7 +42,7 @@ class AdminCliTest {
     }
 
     private suspend fun HttpClient.login(user: String, password: String): HttpResponse =
-        post("/api/v1/auth/login") {
+        post("/api/v3/auth/login") {
             protocol()
             contentType(ContentType.Application.Json)
             setBody(Protocol.json.encodeToString(LoginRequest.serializer(), LoginRequest(user, password, "Handy")))
@@ -52,7 +52,7 @@ class AdminCliTest {
     fun resetPasswordPrintsWorkingPasswordAndRevokesDevices() = testServer { env ->
         val kontoId = env.deps.accounts.createUser("stefan", "altaltaltalt")
         val oldToken = env.deps.accounts.createDevice(kontoId, "Handy")
-        assertEquals(HttpStatusCode.OK, client.get("/api/v1/sync/pull") { protocol(); bearerAuth(oldToken) }.status)
+        assertEquals(HttpStatusCode.OK, client.get("/api/v3/sync/pull") { protocol(); bearerAuth(oldToken) }.status)
 
         val (code, output) = cli(env.deps, listOf("reset-password", "STEFAN"))
         assertEquals(0, code)
@@ -60,7 +60,7 @@ class AdminCliTest {
         assertEquals(20, password.length)
         assertTrue(password.all { it in 'A'..'Z' || it in 'a'..'z' || it in '0'..'9' })
 
-        assertEquals(HttpStatusCode.Unauthorized, client.get("/api/v1/sync/pull") { protocol(); bearerAuth(oldToken) }.status)
+        assertEquals(HttpStatusCode.Unauthorized, client.get("/api/v3/sync/pull") { protocol(); bearerAuth(oldToken) }.status)
         assertEquals(HttpStatusCode.OK, client.login("stefan", password).status)
         assertEquals(HttpStatusCode.Unauthorized, client.login("stefan", "altaltaltalt").status)
     }
@@ -81,7 +81,7 @@ class AdminCliTest {
         val response = client.login("ben", password)
         assertEquals(HttpStatusCode.OK, response.status)
         val auth = Protocol.json.decodeFromString(AuthResponse.serializer(), response.bodyAsText())
-        assertEquals(env.deps.accounts.authenticate("ben", password), auth.userId)
+        assertEquals(env.deps.accounts.authenticate("ben", password), auth.kontoId)
     }
 
     @Test

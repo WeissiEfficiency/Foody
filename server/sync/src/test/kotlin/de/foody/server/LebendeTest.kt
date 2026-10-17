@@ -1,7 +1,7 @@
 package de.foody.server
 
 import de.foody.server.sync.RecordStore
-import de.foody.sync.protocol.SyncRecord
+import de.foody.api.protocol.SyncRecord
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -14,7 +14,7 @@ class LebendeTest {
         val (_, b) = env.setupKonto()
         env.deps.sync.push(a, listOf(ingredient("i1", "Mehl"), ingredient("i2", "Zucker"), ingredient("i3", "Salz")))
         env.deps.sync.push(b, listOf(ingredient("x1", "Reis")))
-        val geloescht = env.deps.db.tx { c -> store.get(c, a, de.foody.sync.protocol.RecordType.INGREDIENT, "i3")!! }
+        val geloescht = env.deps.db.tx { c -> store.get(c, a, de.foody.api.protocol.RecordType.INGREDIENT, "i3")!! }
         env.deps.sync.push(a, listOf(SyncRecord(id = "i3", type = geloescht.type, deleted = true, updatedAt = 2, baseRev = geloescht.rev)))
         val hoechste = env.deps.db.tx { c -> store.page(c, a, 0, 100).maxOf { it.rev!! } }
 

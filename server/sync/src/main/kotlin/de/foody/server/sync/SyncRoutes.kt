@@ -4,9 +4,9 @@ import de.foody.server.ApiException
 import de.foody.server.ServerDeps
 import de.foody.server.auth.DevicePrincipal
 import de.foody.server.readBoundedBytes
-import de.foody.sync.protocol.ErrorCode
-import de.foody.sync.protocol.Protocol
-import de.foody.sync.protocol.PushRequest
+import de.foody.api.protocol.ErrorCode
+import de.foody.api.protocol.Protocol
+import de.foody.api.protocol.PushRequest
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.principal
 import io.ktor.server.response.respond

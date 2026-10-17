@@ -60,7 +60,7 @@ Die Web-Oberfläche ist mit V3 entfallen (ADR 0011).
 
 Rezeptfotos liegen als `<FOODY_PHOTO_DIR>/<Konto-ID>/<sha256>.jpg` (Standard `/data/photos`, eigenes Docker-Volume
 `foody-photos`; in die Sicherung der Datenbank sind sie **nicht** eingeschlossen, das Volume gesondert sichern).
-Upload nur als JPEG bis 10 MB (`PUT /api/v1/photos/{sha256}`). Fotos, die kein lebendes Rezept mehr verwendet,
+Upload nur als JPEG bis 10 MB (`PUT /api/v3/photos/{sha256}`). Fotos, die kein lebendes Rezept mehr verwendet,
 löscht die tägliche Kompaktierung (und `foody-admin compact`) nach 30 Tagen.
 
 ## Lokale Entwicklung unter Windows
@@ -72,8 +72,9 @@ Stattdessen im Installationsordner (`server/start/build/install/foody-server`) s
 java -cp "lib/*" de.foody.server.MainKt
 ```
 
-oder Docker verwenden. Manuelle API-Aufrufe (z. B. mit `curl`) brauchen den Header `X-Foody-Protocol: 2` (aktuelle `Protocol.VERSION`),
-sonst antwortet der Server mit `protocol_too_old`.
+oder Docker verwenden. Manuelle API-Aufrufe (z. B. mit `curl`) gehen an `/api/v3/…` und brauchen den Header
+`X-Foody-Protocol: 3` (aktuelle `Protocol.VERSION`), sonst antwortet der Server mit `protocol_too_old`; `/api/v1/…`
+meldet immer `protocol_too_old`.
 
 ## Hinweis zu Traefik (wichtig)
 

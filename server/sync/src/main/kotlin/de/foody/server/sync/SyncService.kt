@@ -2,15 +2,15 @@ package de.foody.server.sync
 
 import de.foody.server.ApiException
 import de.foody.server.db.Database
-import de.foody.sync.protocol.ErrorCode
-import de.foody.sync.protocol.PayloadValidator
-import de.foody.sync.protocol.Protocol
-import de.foody.sync.protocol.PullResponse
-import de.foody.sync.protocol.PushResponse
-import de.foody.sync.protocol.PushResult
-import de.foody.sync.protocol.PushStatus
-import de.foody.sync.protocol.RecordType
-import de.foody.sync.protocol.SyncRecord
+import de.foody.api.protocol.ErrorCode
+import de.foody.api.protocol.PayloadValidator
+import de.foody.api.protocol.Protocol
+import de.foody.api.protocol.PullResponse
+import de.foody.api.protocol.PushResponse
+import de.foody.api.protocol.PushResult
+import de.foody.api.protocol.PushStatus
+import de.foody.api.protocol.RecordType
+import de.foody.api.protocol.SyncRecord
 import io.ktor.http.HttpStatusCode
 import java.sql.Connection
 import java.time.Clock

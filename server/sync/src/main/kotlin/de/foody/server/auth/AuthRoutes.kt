@@ -3,10 +3,10 @@ package de.foody.server.auth
 import de.foody.server.ApiException
 import de.foody.server.ServerDeps
 import de.foody.server.receiveJson
-import de.foody.sync.protocol.AuthResponse
-import de.foody.sync.protocol.ErrorCode
-import de.foody.sync.protocol.LoginRequest
-import de.foody.sync.protocol.PasswordChangeRequest
+import de.foody.api.protocol.AuthResponse
+import de.foody.api.protocol.ErrorCode
+import de.foody.api.protocol.LoginRequest
+import de.foody.api.protocol.PasswordChangeRequest
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.principal
 import io.ktor.server.plugins.origin
@@ -18,7 +18,7 @@ private const val MAX_DEVICE_NAME = 64
 private const val MAX_USERNAME = 32
 private const val MAX_PASSWORD = 200
 
-/** Öffentliche Auth-Routen (ohne Token); unterhalb von `/api/v1` einzuhängen. */
+/** Öffentliche Auth-Routen (ohne Token); unterhalb von `/api/v3` einzuhängen. */
 fun Route.publicAuthRoutes(deps: ServerDeps) {
     post("/auth/login") {
         val request = call.receiveJson(LoginRequest.serializer())
@@ -32,13 +32,17 @@ fun Route.publicAuthRoutes(deps: ServerDeps) {
             ?: throw ApiException(HttpStatusCode.Unauthorized, ErrorCode.INVALID_CREDENTIALS)
         deps.throttle.success(ip, request.username)
         val token = deps.accounts.createDevice(kontoId, request.deviceName.take(MAX_DEVICE_NAME))
-        // Noch das v2-DTO (zweites Feld = Konto-ID); Protokoll 3 antwortet mit kontoId.
         call.respond(AuthResponse(token, kontoId))
     }
 }
 
 /** Auth-Routen mit Token; innerhalb von `authenticate("device")` einzuhängen. */
 fun Route.deviceAuthRoutes(deps: ServerDeps) {
+    // „Trennen“: widerruft nur das eigene Token; danach antwortet der Server diesem Gerät mit 401.
+    post("/auth/abmelden") {
+        deps.accounts.abmelden(call.principal<DevicePrincipal>()!!.deviceId)
+        call.respond(HttpStatusCode.NoContent)
+    }
     post("/auth/password") {
         val device = call.principal<DevicePrincipal>()!!
         val request = call.receiveJson(PasswordChangeRequest.serializer())

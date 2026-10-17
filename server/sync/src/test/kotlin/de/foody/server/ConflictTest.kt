@@ -1,9 +1,9 @@
 package de.foody.server
 
-import de.foody.sync.protocol.MealSlotPayload
-import de.foody.sync.protocol.PushStatus
-import de.foody.sync.protocol.RecordType
-import de.foody.sync.protocol.SyncRecord
+import de.foody.api.protocol.MealSlotPayload
+import de.foody.api.protocol.PushStatus
+import de.foody.api.protocol.RecordType
+import de.foody.api.protocol.SyncRecord
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

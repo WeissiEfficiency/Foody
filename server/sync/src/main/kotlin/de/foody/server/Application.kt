@@ -5,9 +5,9 @@ import de.foody.server.auth.deviceAuthRoutes
 import de.foody.server.auth.publicAuthRoutes
 import de.foody.server.photos.photoRoutes
 import de.foody.server.sync.syncRoutes
-import de.foody.sync.protocol.ErrorCode
-import de.foody.sync.protocol.ErrorDto
-import de.foody.sync.protocol.Protocol
+import de.foody.api.protocol.ErrorCode
+import de.foody.api.protocol.ErrorDto
+import de.foody.api.protocol.Protocol
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -39,7 +39,7 @@ class ApiException(val status: HttpStatusCode, val code: ErrorCode) : RuntimeExc
 private data class HealthDto(val status: String)
 
 /**
- * Prüft die Protokollversion des Clients. Als Route-Plugin auf `/api/v1` installiert läuft es vor
+ * Prüft die Protokollversion des Clients. Als Route-Plugin auf `/api/v3` installiert läuft es vor
  * allen später darunter installierten Plugins (z. B. Authentifizierung).
  */
 private val ProtocolCheck = createRouteScopedPlugin("ProtocolCheck") {
@@ -96,7 +96,11 @@ fun Application.foodyModule(deps: ServerDeps) {
     }
     routing {
         get("/health") { call.respond(HealthDto("ok")) }
-        route("/api/v1") {
+        // Alte Clients (Protokoll 1/2): jede Methode, jeder Pfad – ohne Anmeldung und ohne den Body zu lesen.
+        route("/api/v1/{...}") {
+            handle { throw ApiException(HttpStatusCode.Conflict, ErrorCode.PROTOCOL_TOO_OLD) }
+        }
+        route("/api/v3") {
             install(ProtocolCheck)
             publicAuthRoutes(deps)
             authenticate("device") {

@@ -1,13 +1,13 @@
 package de.foody.server
 
-import de.foody.sync.protocol.ErrorCode
-import de.foody.sync.protocol.Protocol
-import de.foody.sync.protocol.PullResponse
-import de.foody.sync.protocol.RecipePayload
-import de.foody.sync.protocol.PushStatus
-import de.foody.sync.protocol.RecordType
-import de.foody.sync.protocol.SyncRecord
-import de.foody.sync.protocol.TagebuchPayload
+import de.foody.api.protocol.ErrorCode
+import de.foody.api.protocol.Protocol
+import de.foody.api.protocol.PullResponse
+import de.foody.api.protocol.RecipePayload
+import de.foody.api.protocol.PushStatus
+import de.foody.api.protocol.RecordType
+import de.foody.api.protocol.SyncRecord
+import de.foody.api.protocol.TagebuchPayload
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -173,7 +173,7 @@ class SyncTest {
     @Test
     fun oversizedBodyIsTooLarge() = testServer { env ->
         val (token, _) = env.setupKonto()
-        val response = client.post("/api/v1/sync/push") {
+        val response = client.post("/api/v3/sync/push") {
             protocol()
             bearerAuth(token)
             contentType(ContentType.Application.Json)
@@ -191,7 +191,7 @@ class SyncTest {
             assertEquals(HttpStatusCode.BadRequest, r.status, query)
             assertEquals(ErrorCode.INVALID_INPUT, r.errorCode(), query)
         }
-        val garbage = client.post("/api/v1/sync/push") {
+        val garbage = client.post("/api/v3/sync/push") {
             protocol()
             bearerAuth(token)
             contentType(ContentType.Application.Json)
@@ -222,13 +222,13 @@ class SyncTest {
         assertEquals(payload, Protocol.json.decodeFromJsonElement<TagebuchPayload>(pulled.payload!!))
     }
 
-    /** Seit dem Tagebuch (Protokoll 2) bekommt eine App ohne Tagebuch-Typ „bitte aktualisieren“ statt eines Dekodierfehlers. */
+    /** Eine App ohne Tagebuch-Typ (Protokoll 1) bekommt „bitte aktualisieren“ statt eines Dekodierfehlers. */
     @Test
     fun appOhneTagebuchMussAktualisieren() = testServer { env ->
         val (token, _) = env.setupKonto()
-        val alt = client.get("/api/v1/sync/pull?since=0") { protocol(1); bearerAuth(token) }
+        val alt = client.get("/api/v3/sync/pull?since=0") { protocol(1); bearerAuth(token) }
         assertEquals(io.ktor.http.HttpStatusCode.Conflict, alt.status)
         assertEquals(ErrorCode.PROTOCOL_TOO_OLD, alt.errorCode())
-        assertEquals(2, Protocol.MIN_VERSION)
+        assertEquals(3, Protocol.MIN_VERSION)
     }
 }

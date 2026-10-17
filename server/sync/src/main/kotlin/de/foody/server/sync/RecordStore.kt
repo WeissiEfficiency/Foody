@@ -1,8 +1,8 @@
 package de.foody.server.sync
 
-import de.foody.sync.protocol.Protocol
-import de.foody.sync.protocol.RecordType
-import de.foody.sync.protocol.SyncRecord
+import de.foody.api.protocol.Protocol
+import de.foody.api.protocol.RecordType
+import de.foody.api.protocol.SyncRecord
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.Types

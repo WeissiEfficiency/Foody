@@ -1,7 +1,7 @@
 package de.foody.server
 
 import de.foody.server.db.Database
-import de.foody.sync.protocol.Protocol
+import de.foody.api.protocol.Protocol
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.server.application.Application

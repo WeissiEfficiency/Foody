@@ -9,7 +9,7 @@ import de.foody.server.db.MigrationAbgebrochen
 import de.foody.server.db.Migrations
 import de.foody.server.sync.RecordStore
 import de.foody.server.sync.SyncService
-import de.foody.sync.protocol.ErrorCode
+import de.foody.api.protocol.ErrorCode
 import java.nio.file.Files
 import java.nio.file.Path
 import java.sql.Connection

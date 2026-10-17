@@ -21,7 +21,7 @@ kotlin {
 }
 
 dependencies {
-    api(project(":sync-protocol"))
+    api(project(":api-protocol"))
     api(libs.ktor.server.core)
     api(libs.ktor.server.netty)
     api(libs.ktor.server.content.negotiation)
