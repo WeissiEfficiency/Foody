@@ -1,11 +1,11 @@
 # Architektur
 
-**Module und Ordner:** Handy-App unter `android/` (`:app`, `:baselineprofile`), gemeinsamer Code unter `shared/`
-(`:domain`, `:sync-protocol`), Server unter `server/` – `:server-sync` (API, Konten, Datenbank, Sync), `:server-web`
-(Web-Oberfläche) und `:server` (nur `main`). Abhängigkeiten laufen nur in eine Richtung:
-`:server` → `:server-web` → `:server-sync` → `:sync-protocol`, `:server-web` → `:domain`, `:app` → `:domain`,
-`:sync-protocol`. Die Web-Oberfläche dockt über `foodyModule(deps, erweiterungen)` an; der Sync-Server kennt sie nicht.
-Gradle-Namen sind unabhängig von den Ordnern (`projectDir` in `settings.gradle.kts`). Spec:
+**Module und Ordner:** Handy-App unter `android/` (`:app`, `:baselineprofile`, `:feature:*`), gemeinsamer Code unter
+`shared/` (`:domain`, `:sync-protocol`, `:api-protocol`), Server unter `server/` – `:server-sync` (API, Konten,
+Datenbank, Sync, Fotos, KI-Gerüst) und `:server` (nur `main`). Abhängigkeiten laufen nur in eine Richtung:
+`:server` → `:server-sync` → `:api-protocol`, `:app` → `:domain`, `:sync-protocol`. `:sync-protocol` (Protokoll 2)
+ist für die v1-App eingefroren und entfällt in Phase 8; der Server nutzt nur `:api-protocol` (Protokoll 3). Gradle-Namen
+sind unabhängig von den Ordnern (`projectDir` in `settings.gradle.kts`). Spec:
 `docs/superpowers/specs/2026-10-11-projektstruktur-design.md`.
 
 - **UI-Schicht** (`android/app/.../ui`): Compose-Screens + `@HiltViewModel`. Jeder Screen rendert einen unveränderlichen
@@ -52,6 +52,8 @@ in `ALL_MIGRATIONS` (`FoodyDatabase.kt`) und einen Migrationstest (`MigrationTes
 ## Sync (optional)
 
 Entscheidung: [ADR 0006](adr/0006-optional-self-hosted-sync.md); Server und Betrieb: [`server/README.md`](../server/README.md).
+Dieser Abschnitt beschreibt die v1-App (Protokoll 2, Haushalte); sie synchronisiert bis zum Umstieg (Phase 8) mit
+dem eingefrorenen Server-Stand `v1-server`. Der Server in `main` ist unter „Server (V3)“ beschrieben.
 
 SQLite-Trigger (`SyncTriggers`, Namen `sync_*`) schreiben jede lokale Änderung der Tabellen `ingredient`, `recipe`,
 `meal_slot`, `pantry_item`, `shopping_list` und `shopping_item` (bei Kindtabellen: des Elterndatensatzes) in
@@ -128,45 +130,32 @@ zu einem gelöschten Rezept wird also trotzdem angewendet. **Ausrollen: erst den
 einer neuen App an einem alten Server antwortet er `server_too_old` („Server aktualisieren“) – statt Dekodierfehlern. Die Sicherung enthält `tagebuch`
 (fehlt in älteren Dateien → leer).
 
-## Web-Oberfläche (Server)
+## Server (V3)
 
-`:server-web` rendert HTML im Server (kotlinx.html, htmx 2.0.4 als WebJar, eigenes `foody.css`) und hängt sich über
-`WebOberflaeche.routen(deps)` in `foodyModule` ein (außerhalb von `/api/v1`). Der Browser meldet sich wie ein Gerät an
-(`AccountStore.createDevice`, Name „Browser (Firefox)“ …); das Token steht im Cookie `foody_sitzung`
-(`HttpOnly; Secure; SameSite=Strict`, 30 Tage), Formulare und htmx tragen ein CSRF-Token (HMAC des Gerätetokens).
-**Lesen:** `HaushaltsDaten` lädt alle lebenden Datensätze (`RecordStore.lebende`), wandelt sie mit `PayloadZuDomain`
-wie die App in `domain`-Objekte und merkt sie je Haushalt bis zur nächsten Revision. **Schreiben** (Teil 1: Abhaken)
-nur über `SyncService.push` mit `baseRev` – gleiche Validierung, Revisionen und Konfliktregeln wie vom Handy.
-Seiten: Rezepte (Suche, Filter, kcal), Rezept (Portionen ±), Wochenplan (kcal je Tag, Ø), Einkauf (Abhaken), Tagebuch.
-Spec: `docs/superpowers/specs/2026-10-11-web-oberflaeche-teil1-design.md`.
+Spec: `docs/superpowers/specs/2026-10-17-v3-phase2-server-schlank-design.md`. Ktor + SQLite, Routen unter
+**`/api/v3`**, Header `X-Foody-Protocol` (`Protocol.VERSION = MIN_VERSION = 3` in `:api-protocol`, Paket
+`de.foody.api.protocol`). `/api/v1/*` und Header < 3 → `409 protocol_too_old`, Header > 3 → `409 server_too_old`.
 
-**Rezeptpflege (Teil 2):** Editor (`/rezept/neu`, `/rezept/{id}/bearbeiten`) und Markdown-Import (`/import`) schreiben
-über `RezeptSchreiber`: Zutaten nach Namen, Katalog-Vereinheitlichung oder neu (neue zuerst gesendet; vom Server
-zusammengeführte durch die vorhandene ID ersetzt); das Rezept wird auf dem gespeicherten rohen JSON aufgebaut, sodass
-Foto, Favorit, Bewertung und Felder neuerer App-Versionen erhalten bleiben. Da der Server Rezepte ohne
-Konfliktprüfung übernimmt, prüft der Browser die gesehene Revision selbst: geändert oder gelöscht → nichts schreiben,
-Hinweis mit „Aktuellen Stand laden“/„Trotzdem speichern“. Die Import-Rechnung (`RezeptImport` in `shared/domain`)
-teilen App und Server. Login/Registrierung nehmen nur Anfragen derselben Website an; alle Web-Routen laufen durch
-einen Rahmen mit Fehlerseite im Layout. Spec: `docs/superpowers/specs/2026-10-11-web-oberflaeche-teil2-design.md`.
-
-**Planen und Einkaufen (Teil 3):** Die Regeln, die vorher nur in den App-Repositories standen, liegen als reine
-Funktionen in `shared/domain` und werden von App und Server aufgerufen: `EinkaufsBedarf` (Bedarf inkl. „nie kaufen“),
-`EinkaufsAbgleich` (abgehakt bleibt nur bei weniger Bedarf; Entfällt löscht nur offene), `RezeptAufListe`
-(Aufaddieren auf offene manuelle Einträge), `EinkaufEingabe` (Freitext wie Katalog-Kachel), `Kochen` (Vorratsabzug bei
-„gekocht“) und `PlanVorschlag` (Eingaben für `MealSuggestions`). Im Server schreiben `PlanSchreiber` und
-`EinkaufSchreiber` über `SyncService.push`, immer auf dem gerade gespeicherten Roh-JSON. Plan- und Einkaufsseite sind je
-ein Formular für die ganze Seite (CSRF nur einmal, Knopf trägt `<id> <aktion>`), damit 14 Plantage bzw. 75 Einträge
-unter 30 KB bleiben; Änderungsknöpfe stehen im Bearbeiten-Modus. „Heute“ rechnet die Web-Oberfläche in
-`FOODY_ZEITZONE` (Standard Europe/Berlin). Spec: `docs/superpowers/specs/2026-10-11-web-oberflaeche-teil3-design.md`.
-
-**Vorrat, Zutatenkatalog, Tagebuch (Teil 4):** `VorratSchreiber`, `ZutatSchreiber` und `TagebuchSchreiber` schreiben über
-`SyncService.push`. Tagebuch-Werte rechnen App und Server mit `Tagebuch` aus `shared/domain` (`naehrwerteRezept`,
-`naehrwerteZutat`, `freiWerte`); Ändern skaliert die festgehaltenen Werte mit `Tagebuch.skaliert` (auf 6 Nachkommastellen,
-damit wiederholtes Ändern die Sync-Grenze von 20 Stellen nicht sprengt). „Gegessen“ prüft unter der `Haushaltssperre`,
-ob der Planeintrag schon übernommen ist. Zutaten löscht der Browser nur, wenn kein Rezept, Vorrat oder Einkaufseintrag
-sie nutzt (der Server hat keine Fremdschlüssel); Namen werden wie in der App vereinheitlicht, Dubletten abgelehnt.
-Zusammenführen und Vereinheitlichen bleiben in der App. Seiten werden ohne Einrückung ausgeliefert (kleiner).
-Spec: `docs/superpowers/specs/2026-10-11-web-oberflaeche-teil4-design.md`.
+- **Konto statt Haushalt:** Konto = Zeile in `user`, Konto-ID = `user.id`; das Konto trägt `last_rev` und
+  `compacted_before_rev`. `sync_record` ist nach `(konto_id, type, id)` geschlüsselt, `device` hat keinen Haushalt,
+  `DevicePrincipal` ist `(deviceId, kontoId)`. Konten legt nur `foody-admin konto-anlegen` an (bzw. beim ersten Start
+  `FOODY_ADMIN_USER`); keine Registrierung, keine Admin-Rechte in der API, keine Haushalte, Einladungen oder Geräteliste.
+- **Routen:** `POST /auth/login` (`{token, kontoId}`), `POST /auth/abmelden` (widerruft das eigene Token),
+  `POST /auth/password`, `POST /sync/push`, `GET /sync/pull`, `POST /photos/missing`, `PUT`/`GET /photos/{sha256}`,
+  `GET /ki/status`. Push/Pull, Konfliktregeln, Validator, Anmelde-Drosselung, Body-Grenzen und Kompaktierung wie
+  bisher; den Typ `pantry_item` kennt Protokoll 3 nicht mehr.
+- **Migrationen:** `Migrations.apply` beim Start, jede in einer Transaktion, Stand in `PRAGMA user_version`. Steht eine
+  Migration aus, schreibt `Database` vorher `vor-migration-<ziel>-<JJJJ-MM-TT-HHMM>.db` per `VACUUM INTO` neben die
+  Datei; liegt für dieses Ziel schon eine Sicherung (gescheiterter Versuch), keine weitere. Migration 1 → 2
+  (Haushalt → Konto) prüft vorab (je Haushalt genau ein Mitglied, kein Konto in mehreren Haushalten, keine verwaisten
+  Datensätze), löscht Vorrats-Datensätze und zählt in der Transaktion gegen; scheitert etwas, startet der Server
+  nicht (`MigrationAbgebrochen`, Grund im Log). Gerätetokens bleiben gültig.
+- **Fotos:** `<FOODY_PHOTO_DIR>/<Konto-ID>/<sha256>.jpg`. `FotoUmzug` benennt nach Migration 2 je Zeile in
+  `haushalt_umzug` den alten Haushaltsordner in den Kontoordner um (beide vorhanden → zusammenführen, fehlt → Warnung)
+  und löscht die Zeile; läuft bei jedem Start, bis die Tabelle leer ist.
+- **KI-Gerüst:** `FOODY_KI_KEY` (fehlt → `GET /ki/status` meldet `eingerichtet: false`) und `KiKontingent` (Anfragen je
+  Konto und Stunde, `FOODY_KI_PRO_STUNDE`, Standard 30). Noch kein Modellaufruf und keine Modellwahl (Phase 7).
+- Die Web-Oberfläche (`:server-web`) ist entfallen (ADR 0011); ihre Specs vom 2026-10-11 beschreiben den alten Stand.
 
 ## Packung scannen (seit DB v9)
 

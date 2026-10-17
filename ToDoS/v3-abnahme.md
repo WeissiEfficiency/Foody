@@ -75,10 +75,14 @@ ist. Grundlage: [`v2-abnahme.md`](v2-abnahme.md), gekürzt nach dem Review vom 2
 
 ## Sync – `:core:sync`, `:server-sync`
 - [ ] Opt-in: ohne Verbindung keine Netzwerkzugriffe
-- [ ] Ein Konto, Anmeldung mit Argon2id, Geräte-Token im Keystore, nur HTTPS
+- [x] Server: ein Konto, Anmeldung mit Argon2id, nur HTTPS (Traefik), keine Haushalte (Phase 2)
+- [ ] App: Anmelden am Konto, Geräte-Token im Keystore, nur HTTPS
 - [ ] Sync beim Öffnen/Fortsetzen und nach Änderungen (entprellt), nur mit Netz
-- [ ] Last-Writer-Wins je Datensatz, Einkaufseinträge feldweise; Löschen gewinnt gegen Bearbeiten ohne Kenntnis
-- [ ] Fotos inhaltsadressiert hoch- und herunterladen, nicht übertragbare Fotos als Problem melden
+- [x] Server: Last-Writer-Wins je Datensatz, Einkaufseinträge feldweise; Löschen gewinnt gegen Bearbeiten ohne
+      Kenntnis (Phase 2, `/api/v3`)
+- [ ] App: dieselben Regeln im Sync-Client (Phase 3)
+- [x] Server: Fotos inhaltsadressiert (`/api/v3/photos/{sha256}`, je Konto) (Phase 2)
+- [ ] App: Fotos hoch- und herunterladen, nicht übertragbare Fotos als Problem melden
 
 ## Betrieb
 - [ ] Server mit Speicherlimit, nächtliche Sicherung nach OpenCloud

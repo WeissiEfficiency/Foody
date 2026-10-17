@@ -33,9 +33,9 @@ geschehen außerhalb der Datenbanktransaktion; kaputte Dateien zählen als „fe
 - Alles oder nichts: Fotos werden vorgemerkt, die Datenbank in einer Transaktion ersetzt; bei Fehlern bleiben
   Daten und Fotoordner unverändert.
 
-**Foto-Upload (Sync-Server, `PUT /api/v1/photos/{sha256}`):**
+**Foto-Upload (Sync-Server, `PUT /api/v3/photos/{sha256}`):**
 - Pfadsegment muss `^[0-9a-f]{64}$` sein, bevor irgendein Dateizugriff stattfindet; der Dateipfad entsteht nur aus
-  diesem Hash und der Haushalts-ID des Geräts (kein Path-Traversal, keine Fremdzugriffe zwischen Haushalten).
+  diesem Hash und der Konto-ID des Geräts (kein Path-Traversal, keine Fremdzugriffe zwischen Konten).
 - Größe ≤ 10 MB, beim Lesen gezählt (nicht aus dem Header übernommen); Content-Type wird nicht vertraut.
 - Inhalt muss mit der JPEG-Signatur `FF D8 FF` beginnen und seinen SHA-256 dem Pfad entsprechen (Inhaltsadressierung).
 - Schreiben über temporäre Datei im selben Ordner und atomares Umbenennen; unreferenzierte Fotos entfernt die
@@ -43,15 +43,15 @@ geschehen außerhalb der Datenbanktransaktion; kaputte Dateien zählen als „fe
 
 ## Sync
 
-Server und Protokoll (`:server`, `:sync-protocol`); Fremdeingaben sind hier alle Anfragen eines Clients.
+Server und Protokoll (`:server`, `:api-protocol`); Fremdeingaben sind hier alle Anfragen eines Clients.
 
 - **Authentifizierung:** Jede Sync- und Foto-Route verlangt `Authorization: Bearer <Gerätetoken>` (32 Zufallsbytes,
   serverseitig nur als SHA-256 gespeichert); widerrufene Geräte werden abgewiesen. Passwörter: Argon2id, Mindestlänge
-  10 Zeichen; „unbekannter Benutzer“ und „falsches Passwort“ sehen gleich aus. Keine offene Registrierung
-  (Einladungscode oder Admin).
-- **Haushalts-Trennung:** Die Haushalts-ID kommt immer aus dem Gerät, nie aus der Anfrage; Datensätze und Fotos
-  (`photos/<Haushalt>/<sha256>.jpg`) sind nur im eigenen Haushalt les- und schreibbar, auch nicht per geratener ID.
-- **Drosselung:** 5 Fehlversuche je IP und Benutzername sperren Login/Registrierung 15 Minuten (`429 throttled`, Zustand
+  10 Zeichen; „unbekannter Benutzer“ und „falsches Passwort“ sehen gleich aus. Keine Registrierung über die API;
+  Konten legt nur `foody-admin konto-anlegen` an.
+- **Konto-Trennung:** Die Konto-ID kommt immer aus dem Gerät, nie aus der Anfrage; Datensätze und Fotos
+  (`photos/<Konto>/<sha256>.jpg`) sind nur im eigenen Konto les- und schreibbar, auch nicht per geratener ID.
+- **Drosselung:** 5 Fehlversuche je IP und Benutzername sperren den Login 15 Minuten (`429 throttled`, Zustand
   nur im Speicher). Die IP stammt aus `X-Forwarded-For` des Reverse-Proxys (siehe `server/README.md`).
 - **Eingabeprüfung:** Request-Bodies werden gezählt gelesen und begrenzt (`413`), Payloads wie bei der Sicherung
   validiert (Zahlenformat, Textlängen, Enums, UUIDs); Fotos wie oben.
