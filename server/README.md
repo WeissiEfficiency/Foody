@@ -3,8 +3,8 @@
 Selbst gehosteter Sync-Server (Ktor + SQLite) für die Foody-App, gedacht für den Betrieb hinter Traefik.
 
 **Aufbau:** `sync/` (API, Konten, Datenbank, Sync, Admin-CLI), `start/` (`main`, aus dem das
-Docker-Image entsteht). Der Server nutzt außerdem `../shared/` (gemeinsam mit der App) – Änderungen dort brauchen
-ebenfalls ein Update des Servers.
+Docker-Image entsteht). Der Server nutzt außerdem `shared/api-protocol` (gemeinsam mit der App) – Änderungen dort
+brauchen einen Neubau des Servers.
 
 ## Voraussetzungen
 
@@ -70,15 +70,44 @@ Seit V3 Phase 2 kennt der Server in `main` nur noch ein Konto je Person, Push/Pu
   gehört dem Konto, Vorrats-Datensätze werden gelöscht, angemeldete Geräte bleiben angemeldet. Danach zieht er die Fotoordner von
   `<Haushalt-ID>/` nach `<Konto-ID>/` um; ein abgebrochener Umzug wird beim nächsten Start fortgesetzt, ein fehlender
   Ordner nur als Warnung gemeldet.
-- **Scheitert die Vorprüfung oder die Umwandlung,** startet der Server nicht; der Grund steht im Log
-  (`docker compose logs foody-server`), die Datenbank bleibt unverändert. Nach einer Korrektur von Hand legt der
-  nächste Start **keine** frische Sicherung an – es bleibt die von vor dem ersten Versuch. Vor dem erneuten Start
-  deshalb bei Bedarf selbst sichern, als Dateikopie bei gestopptem Server:
-  `docker compose run --rm --no-deps --entrypoint sh foody-server -c 'cp /data/foody.db /data/vor-neustart.db'`.
-  `foody-admin backup` aus dem V3-Image taugt dafür nicht: Es öffnet die Datenbank und migriert sie dabei.
+- **Scheitert die Vorprüfung oder die Umwandlung,** startet der Server nicht; der Grund steht als eine Zeile im Log
+  (`docker compose logs foody-server`), die Datenbank bleibt unverändert. Innerhalb von 24 Stunden nach der ersten
+  Sicherung legt ein erneuter Start **keine** frische Sicherung an (eine Neustart-Schleife soll keine Sicherungen
+  anhäufen) – es bleibt die von vor dem ersten Versuch; leere oder halb geschriebene Sicherungen zählen nicht. Nach einer
+  Korrektur von Hand vor dem erneuten Start deshalb bei Bedarf selbst sichern, bei gestopptem Server:
+  `docker compose run --rm --no-deps foody-server admin backup /data/vor-neustart.db`. `foody-admin` migriert nie:
+  Solange eine Migration aussteht, geht nur `backup`; die übrigen Befehle brechen mit „Datenbank auf Version …“ ab.
+  Für den Test-Server dieselben Befehle mit `-p foody-test -f docker-compose.yml -f docker-compose.test.yml`.
 - Künftige Migrationen sichern genauso vorher; ohne ausstehende Migration entsteht keine Sicherung.
 - `/api/v1/…` und Anfragen mit `X-Foody-Protocol` unter 3 beantwortet der Server mit `409 protocol_too_old` – eine
   vergessene v1-App zeigt „Bitte App aktualisieren“.
+
+### Rückweg auf v1
+
+Ein v1-Server auf einer umgewandelten Datenbank migriert nicht zurück; der Rückweg geht über die Sicherung. Alles,
+was seit dem Umstieg geschrieben wurde, ist darin nicht enthalten. Befehle im Ordner `server/` des echten Checkouts;
+die Volume-Namen (hier `foody_foody-data`, `foody_foody-photos`) vorher mit `docker volume ls` prüfen.
+
+1. Server stoppen: `docker compose stop foody-server`.
+2. Umgewandelten Stand aufheben (mit WAL, konsistent):
+   `docker compose run --rm --no-deps foody-server admin backup /data/nach-umstieg.db`.
+3. Sicherung als Datenbank einspielen und WAL-Reste entfernen (Hilfscontainer als root, danach Besitzer zurücksetzen):
+   ```sh
+   docker run --rm --user 0 --entrypoint sh -v foody_foody-data:/data foody-server:local -c \
+     'rm -f /data/foody.db-wal /data/foody.db-shm &&
+      cp /data/vor-migration-2-<JJJJ-MM-TT-HHMM>.db /data/foody.db &&
+      chown 10001:10001 /data/foody.db'
+   ```
+4. Fotoordner zurück von `<Konto-ID>/` nach `<Haushalt-ID>/`. Die Zuordnung steht in der Sicherung:
+   `SELECT household_id, user_id FROM membership` (z. B. mit `sqlite3` auf einer Kopie der Sicherung). Je Zeile:
+   ```sh
+   docker run --rm --user 0 --entrypoint sh -v foody_foody-photos:/data/photos foody-server:local -c \
+     'mv /data/photos/<Konto-ID> /data/photos/<Haushalt-ID> &&
+      chown -R 10001:10001 /data/photos/<Haushalt-ID>'
+   ```
+5. v1 starten: `git switch v1-server` (bzw. `git checkout v1-server`), dann `docker compose up -d --build`.
+6. Vor einem zweiten Umstieg muss eine frische Sicherung entstehen. Das passiert automatisch, wenn die vorhandene
+   `vor-migration-2-*.db` älter als 24 Stunden ist; sonst vorher von Hand sichern (`foody-admin backup`, siehe oben).
 
 ## Fotos
 

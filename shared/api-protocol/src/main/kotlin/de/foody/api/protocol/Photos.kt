@@ -7,7 +7,7 @@ import java.security.MessageDigest
 @Serializable
 data class PhotosMissingRequest(val hashes: List<String>)
 
-/** Antwort: die Hashes, die der Server für den Haushalt noch nicht hat. */
+/** Antwort: die Hashes, die der Server für das Konto noch nicht hat. */
 @Serializable
 data class PhotosMissingResponse(val missing: List<String>)
 

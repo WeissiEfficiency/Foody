@@ -97,7 +97,9 @@ Spec: [`2026-10-17-v3-phase2-server-schlank-design.md`](../docs/superpowers/spec
       (Argon2id), Konten über `foody-admin konto-anlegen` (Spec, Abschnitt 2)
 - [x] Einmalige Umwandlung der Server-Datenbank (Haushalt → Konto, Vorrat löschen) mit Sicherung vorher,
       Vorprüfung, einer Transaktion und Fotoumzug; JVM-getestet (Spec, Abschnitt 2; `server/README.md`, „Umstieg auf V3“)
-- [ ] Probelauf mit Kopie der echten Daten auf dem Test-Server (370 lebende Datensätze, 3 Geräte)
+- [x] Probelauf mit Kopie der echten Daten auf dem Test-Server (370 lebende Datensätze, 3 Geräte) – Kopie der echten
+      DB vom 17.10.: 370 = 370 lebende, 384 = 384 gesamt, `last_rev` 413 = 413, 3 = 3 aktive Geräte; Fotoumzug mit
+      echten Fotos noch nicht erprobt (0 Fotos)
 - [x] KI-Gerüst: `FOODY_KI_KEY` nur aus der Server-Umgebung, `KiKontingent` (Anzahl je Konto und Stunde),
       `GET /ki/status`; `POST /ki/*` mit Größengrenzen folgt mit den Funktionen in Phase 7 (Spec, Abschnitt 3)
 
