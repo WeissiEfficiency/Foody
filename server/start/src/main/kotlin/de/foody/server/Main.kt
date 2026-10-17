@@ -2,6 +2,7 @@ package de.foody.server
 
 import de.foody.server.admin.AdminCli
 import de.foody.server.db.Database
+import de.foody.server.photos.FotoUmzug
 import de.foody.server.sync.Compactor
 import io.ktor.server.application.Application
 import io.ktor.server.engine.embeddedServer
@@ -11,6 +12,7 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.nio.file.Path
 import java.time.Duration
 import kotlin.system.exitProcess
 import kotlinx.coroutines.CancellationException
@@ -35,6 +37,9 @@ fun main(args: Array<String>) {
 private fun startServer(config: ServerConfig) {
     val deps = ServerDeps.create(config, Database("jdbc:sqlite:${config.dbPath}"))
     if (!bootstrapAdmin(config, deps)) exitProcess(1)
+    // Vor der Kompaktierung: sonst räumt sie evtl. Fotos weg, die noch im alten Haushaltsordner liegen.
+    val umgezogen = FotoUmzug(deps.db, Path.of(config.photoDir)).ausfuehren()
+    if (umgezogen > 0) LoggerFactory.getLogger("de.foody.server.photos").info("Fotoumzug: {} Haushaltsordner erledigt", umgezogen)
     embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
         foodyModule(deps)
         launchCompaction(deps)
