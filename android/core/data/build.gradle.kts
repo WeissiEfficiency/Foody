@@ -56,6 +56,8 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     implementation(libs.coroutines.android)
+    // Fotoablage: Drehung aus den EXIF-Daten
+    implementation(libs.androidx.exifinterface)
 
     testImplementation(libs.junit4)
     testImplementation(libs.kotlin.test.junit)
