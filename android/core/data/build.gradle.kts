@@ -59,6 +59,11 @@ dependencies {
     testImplementation(libs.junit4)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.coroutines.test)
+    // DaoTest: In-Memory-Room unter Robolectric
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    // SchemaVergleichTest liest die exportierten Schema-JSONs
+    testImplementation(libs.serialization.json)
 
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
