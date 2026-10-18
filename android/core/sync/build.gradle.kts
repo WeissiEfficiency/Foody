@@ -20,10 +20,17 @@ dependencies {
 
     implementation(libs.coroutines.android)
     implementation(libs.serialization.json)
+    // Server-Zugang: Ktor-Client über OkHttp; Bodies werden selbst mit Protocol.json verarbeitet
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
 
     testImplementation(libs.junit4)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.coroutines.test)
     // Echter V3-Server im Test (Ende-zu-Ende-Sync gegen :server-sync)
     testImplementation(project(":server-sync"))
+    testImplementation(libs.ktor.server.test.host)
+    // TokenSpeicher: SharedPreferences und android.util.Base64 unter Robolectric
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
 }
