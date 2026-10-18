@@ -41,6 +41,10 @@ interface RezeptZutatDao {
 
     @Query("SELECT * FROM recipe_ingredient WHERE id = :id") suspend fun nachId(id: String): RezeptZutatEntity?
 
+    /** Zeilen eines Rezepts in Anzeigereihenfolge. */
+    @Query("SELECT * FROM recipe_ingredient WHERE recipeId = :recipeId ORDER BY sortOrder, id")
+    suspend fun nachRezept(recipeId: String): List<RezeptZutatEntity>
+
     @Upsert suspend fun upsert(e: RezeptZutatEntity)
 
     @Query("DELETE FROM recipe_ingredient WHERE id = :id") suspend fun loeschen(id: String)
@@ -52,6 +56,10 @@ interface ArbeitsschrittDao {
     @Query("SELECT * FROM instruction_step ORDER BY id") suspend fun alle(): List<ArbeitsschrittEntity>
 
     @Query("SELECT * FROM instruction_step WHERE id = :id") suspend fun nachId(id: String): ArbeitsschrittEntity?
+
+    /** Schritte eines Rezepts in Anzeigereihenfolge. */
+    @Query("SELECT * FROM instruction_step WHERE recipeId = :recipeId ORDER BY position, id")
+    suspend fun nachRezept(recipeId: String): List<ArbeitsschrittEntity>
 
     @Upsert suspend fun upsert(e: ArbeitsschrittEntity)
 
@@ -100,6 +108,10 @@ interface EinkaufsartikelQuelleDao {
     @Query("SELECT * FROM shopping_item_source ORDER BY id") suspend fun alle(): List<EinkaufsartikelQuelleEntity>
 
     @Query("SELECT * FROM shopping_item_source WHERE id = :id") suspend fun nachId(id: String): EinkaufsartikelQuelleEntity?
+
+    /** Herkunftszeilen eines Einkaufsartikels. */
+    @Query("SELECT * FROM shopping_item_source WHERE shoppingItemId = :shoppingItemId ORDER BY id")
+    suspend fun nachArtikel(shoppingItemId: String): List<EinkaufsartikelQuelleEntity>
 
     @Upsert suspend fun upsert(e: EinkaufsartikelQuelleEntity)
 
