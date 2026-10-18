@@ -21,10 +21,12 @@ import de.foody.core.data.db.RezeptZutatEntity
 import de.foody.core.data.db.SyncFotoGewuenschtEntity
 import de.foody.core.data.db.SyncProblemEntity
 import de.foody.core.data.db.SyncRevisionEntity
+import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.fotos.FotoIndex
 import de.foody.domain.MeasureUnit
+import de.foody.domain.TagebuchArt
 import java.io.File
 import java.math.BigDecimal
 import kotlin.test.assertEquals
@@ -271,6 +273,61 @@ class SyncSpeicherTest {
         assertEquals(0L, speicher.zustand().cursor)
     }
 
+    @Test
+    fun zusammengefuehrtInAnderenDatensatzMerktKeineRevision() = runTest {
+        aktiv()
+        db.zutatDao().upsert(zutat("z1", name = "Milch"))
+        val a = paket().single()
+
+        // Der Server hat z1 in seine z9 überführt und liefert deren Stand
+        speicher.zusammengefuehrt(a, rev = 5, kanonischeId = "z9", aktuell = zutatRecord("z9", "Milch", rev = 5))
+
+        assertNull(dao.revision("ingredient", "z1"))
+        assertEquals(5L, dao.revision("ingredient", "z9")?.rev)
+        assertNull(db.zutatDao().nachId("z1"))
+        assertEquals("Milch", db.zutatDao().nachId("z9")?.canonicalName)
+        assertTrue(dao.outbox().isEmpty())
+    }
+
+    @Test
+    fun zusammengefuehrtNachLokalerAenderungBehaeltLokalenStand() = runTest {
+        aktiv()
+        db.zutatDao().upsert(zutat("z1", name = "Milch"))
+        dao.upsertRevision(SyncRevisionEntity("ingredient", "z1", 2))
+        val a = paket().single()
+        db.zutatDao().upsert(zutat("z1", name = "Milch lokal"))
+
+        speicher.zusammengefuehrt(a, rev = 5, kanonischeId = null, aktuell = zutatRecord("z1", "Milch (Server)", rev = 5))
+
+        // Lokale Änderung gewinnt und geht im nächsten Lauf hinaus; die alte Revision bleibt
+        assertEquals("Milch lokal", db.zutatDao().nachId("z1")?.canonicalName)
+        assertEquals(listOf("z1"), dao.outbox().map { it.recordId })
+        assertEquals(2L, dao.revision("ingredient", "z1")?.rev)
+    }
+
+    @Test
+    fun ohneFotoEntferntFotoUndVermerktProblem() = runTest {
+        aktiv()
+        val link = eigeneDatei("eigen.jpg", jpeg(7))
+        db.rezeptDao().upsert(rezept("r1", bild = link))
+        db.zutatDao().upsert(zutat("z1"))
+        val paket = paket()
+        val rezept = paket.single { it.record.type == RecordType.RECIPE }
+        assertNotNull(fotoVon(rezept.record))
+
+        val ohne = rezept.ohneFoto()
+
+        assertNull(fotoVon(ohne.record))
+        assertEquals("photo_unsyncable", ohne.fotoProblem)
+        assertNull(ohne.fotoHash)
+        assertNull(ohne.fotoDatei)
+        assertEquals(rezept.vorgemerktUm, ohne.vorgemerktUm)
+        assertEquals("Rezept r1", (RecordType.RECIPE.decode(ohne.record.payload!!) as RecipePayload).name)
+        // Andere Typen bleiben unverändert
+        val zutat = paket.single { it.record.type == RecordType.INGREDIENT }
+        assertEquals(zutat, zutat.ohneFoto())
+    }
+
     // --- Anwenden ---
 
     @Test
@@ -340,6 +397,55 @@ class SyncSpeicherTest {
         // Umgehängtes Rezept und ergänzte Server-Zutat gehen hinaus, die lokale Zutat nicht
         assertEquals(
             setOf("recipe" to "r1", "ingredient" to "server"),
+            dao.outbox().map { it.type to it.recordId }.toSet(),
+        )
+    }
+
+    @Test
+    fun zusammenfuehrenSchuetztOffeneRezeptaenderung() = runTest {
+        aktiv()
+        db.zutatDao().upsert(zutat("lokal", name = "Mehl"))
+        db.rezeptDao().upsert(rezept("r1"))
+        db.rezeptZutatDao().upsert(zeile("l1", "r1", "lokal"))
+        dao.loeschenOutbox("ingredient", "lokal")
+        // Offene Nutzeränderung am Rezept
+        db.rezeptDao().upsert(db.rezeptDao().nachId("r1")!!.copy(name = "Lokal geändert"))
+        assertEquals(listOf("r1"), dao.outbox().map { it.recordId })
+
+        // Dieselbe Pull-Seite: kollidierende Zutat (Zusammenführung hängt r1 um) und ein neuerer Server-Stand von r1
+        speicher.anwenden(listOf(zutatRecord("server", "Mehl"), rezeptRecord("r1", null, listOf("server"), rev = 2)), 4)
+
+        val r1 = db.rezeptDao().nachId("r1")!!
+        assertEquals("Lokal geändert", r1.name)
+        assertEquals(listOf("l1"), db.rezeptZutatDao().nachRezept("r1").map { it.id })
+        assertEquals("server", db.rezeptZutatDao().nachId("l1")?.ingredientId)
+        assertNotNull(dao.outboxEintrag("recipe", "r1"))
+        // Der nächste Push trägt den lokalen Stand
+        assertEquals("Lokal geändert", (RecordType.RECIPE.decode(paket().single { it.record.id == "r1" }.record.payload!!) as RecipePayload).name)
+    }
+
+    @Test
+    fun zusammenfuehrenHaengtArtikelUndTagebuchUm() = runTest {
+        aktiv()
+        db.zutatDao().upsert(zutat("lokal", name = "Mehl"))
+        db.einkaufslisteDao().upsert(EinkaufslisteEntity(id = "e1", name = "Liste", createdAt = 1, updatedAt = 1))
+        db.einkaufsartikelDao().upsert(EinkaufsartikelEntity(id = "a1", listId = "e1", ingredientId = "lokal", name = "Mehl", sortOrder = 0))
+        db.tagebuchDao().upsert(
+            TagebuchEintragEntity(
+                id = "t1", datum = java.time.LocalDate.of(2026, 10, 18), mahlzeit = "DINNER", art = TagebuchArt.ZUTAT,
+                name = "Mehl", zutatId = "lokal", createdAt = 1, updatedAt = 1,
+            ),
+        )
+        dao.outbox().forEach { dao.loeschenOutbox(it.type, it.recordId) }
+
+        speicher.anwenden(listOf(zutatRecord("server", "Mehl")), 5)
+
+        assertNull(db.zutatDao().nachId("lokal"))
+        assertEquals("server", db.einkaufsartikelDao().nachId("a1")?.ingredientId)
+        assertEquals("server", db.tagebuchDao().nachId("t1")?.zutatId)
+        // Umgehängte Datensätze gehen hinaus; die Server-Zutat wurde nicht ergänzt und die lokale verschwindet still
+        assertEquals(
+            setOf("shopping_item" to "a1", "tagebuch_eintrag" to "t1"),
             dao.outbox().map { it.type to it.recordId }.toSet(),
         )
     }

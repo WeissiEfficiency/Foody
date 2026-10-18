@@ -477,9 +477,13 @@ class SyncSpeicher(
         } finally {
             dao.applyingRemoteSetzen(true)
         }
+        // Als selbst vorgemerkt gilt nur, was vorher nicht in der Outbox stand oder schon selbst vorgemerkt war. Ein
+        // Eintrag mit offener Nutzeränderung bekommt durch das Umhängen ein neues queuedAt, bleibt aber geschützt –
+        // sonst überschriebe ein späterer Server-Stand derselben Seite die lokale Änderung (bewusst strenger als v1).
         for (e in dao.outbox()) {
             val schluessel = e.type to e.recordId
-            if (vorher[schluessel] != e.queuedAt) selbstVorgemerkt[schluessel] = e.queuedAt
+            val alt = vorher[schluessel]
+            if (alt != e.queuedAt && (alt == null || selbstVorgemerkt[schluessel] == alt)) selbstVorgemerkt[schluessel] = e.queuedAt
         }
         dao.loeschenOutbox(RecordType.INGREDIENT.wire, lokal.id)
         // Hat die Zusammenführung die Server-Zutat nicht ergänzt, muss sie nicht zurückgesendet werden
