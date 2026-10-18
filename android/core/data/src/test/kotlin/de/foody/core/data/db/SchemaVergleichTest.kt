@@ -105,6 +105,14 @@ class SchemaVergleichTest {
         for (name in erwartet.keys) assertEquals(erwartet.getValue(name), zehn.getValue(name), "Tabelle $name")
     }
 
+    /** Die übernommene Grundlage des Migrationstests muss exakt das Schema 9 der v1 sein. */
+    @Test
+    fun schemaNeunIstByteGleichZurV1() {
+        val v1 = File("../../app/schemas/de.foody.app.data.db.FoodyDatabase/9.json")
+        assertTrue(v1.isFile, "v1-Schema fehlt: ${v1.absolutePath}")
+        assertTrue(File(ordner, "9.json").readBytes().contentEquals(v1.readBytes()), "9.json weicht von der v1 ab")
+    }
+
     @Test
     fun schemaZehnHatVersionZehnUndKeineViews() {
         val zehn = datenbank("10.json")

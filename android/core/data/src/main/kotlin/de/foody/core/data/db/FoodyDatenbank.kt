@@ -54,5 +54,8 @@ abstract class FoodyDatenbank : RoomDatabase() {
 
     companion object {
         const val NAME = "foody.db"
+
+        /** Pflicht beim Bauen: legt bei einer neuen Datenbank `sync_state` und die [SyncTrigger] an. */
+        val CALLBACK: RoomDatabase.Callback = SyncTrigger.Callback
     }
 }

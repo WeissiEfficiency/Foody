@@ -43,11 +43,12 @@ ksp {
 }
 
 dependencies {
-    implementation(project(":domain"))
-    implementation(project(":api-protocol"))
+    // api: Entities zeigen Typen aus :domain, FoodyDatenbank den Supertyp RoomDatabase; :core:sync braucht sie.
+    api(project(":domain"))
+    api(project(":api-protocol"))
 
     implementation(libs.androidx.core.ktx)
-    implementation(libs.room.runtime)
+    api(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
