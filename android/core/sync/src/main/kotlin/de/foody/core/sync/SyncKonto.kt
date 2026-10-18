@@ -4,8 +4,10 @@ import android.util.Log
 import androidx.room.withTransaction
 import de.foody.api.protocol.LoginRequest
 import de.foody.core.data.db.FoodyDatenbank
+import de.foody.core.data.db.SyncZustandEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.sync.SyncSpeicher
+import de.foody.core.data.sync.SyncZustand
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
@@ -41,9 +43,9 @@ enum class ErsterSync {
  *    und Konto übernimmt es nur das neue Token – und stößt einen Lauf an.
  * 3. [trennen] meldet das Gerät beim Server ab (falls erreichbar) und leert Token und Sync-Tabellen; lokale Daten bleiben.
  *
- * Nach der Migration 9 → 10 ist `kontoId` `NULL` (Haushalts- ≠ Konto-ID): Ein erneutes Aktivieren geht dann nur über
- * [anmelden] und schaltet den Sync wie neu ein (Cursor 0, Modus wie gewählt) – die Oberfläche (Phase 6) muss das so
- * anbieten. Tokens und Passwörter werden nie geloggt oder gemeldet.
+ * Nach der Migration 9 → 10 ist `kontoId` `NULL` (Haushalts- ≠ Konto-ID): Eine Anmeldung an derselben Adresse gilt
+ * dann als Wiederanmeldung – sie trägt die Konto-ID ein und ersetzt nur das Token; Cursor und ungesendete Outbox der v1
+ * bleiben. Die Oberfläche (Phase 6) braucht dafür keine Wahl „Zusammenführen/Ersetzen“. Tokens und Passwörter werden nie geloggt oder gemeldet.
  */
 @Singleton
 class SyncKonto @Inject constructor(
@@ -93,39 +95,53 @@ class SyncKonto @Inject constructor(
 
     /**
      * Schaltet den Sync für die letzte [anmelden]-Anmeldung ein (ohne sie: für die gespeicherte Verbindung) und stößt
-     * einen Lauf an. Token und Sync-Zustand wechseln gemeinsam unter der `laufSperre`: Kein Lauf sieht das neue Token mit
-     * der alten Adresse.
-     * - **Wiederanmeldung** (Sync aktiv, gleiche Adresse und Konto-ID, typisch nach „Anmeldung abgelaufen“): nur das neue
-     *   Token übernehmen und den Fehler löschen; Cursor, Outbox und Daten bleiben, [modus] wirkt nicht.
+     * einen Lauf an. Entscheidung, Token und Sync-Zustand laufen gemeinsam unter der `laufSperre`: Kein Lauf und kein
+     * Trennen kommt dazwischen, kein Lauf sieht das neue Token mit der alten Adresse.
+     * - **Wiederanmeldung** (Sync aktiv, gleiche Adresse – beide Seiten über [ServerAdresse.pruefen] vereinheitlicht – und
+     *   gleiche Konto-ID oder noch keine, wie nach der Migration 9 → 10): nur das neue Token übernehmen, die Konto-ID
+     *   eintragen und den Fehler löschen; Cursor, Outbox und Daten bleiben, [modus] wirkt nicht (sonst verwürfe
+     *   „Ersetzen“ direkt nach dem Update die ungesendete Outbox der v1).
      * - [ErsterSync.ZUSAMMENFUEHREN]: alle lokalen Datensätze zum Senden vormerken; der Server nimmt Bekanntes an bzw.
      *   führt es zusammen.
      * - [ErsterSync.ERSETZEN]: Rezepte, Plan, Einkaufslisten und Tagebuch samt eigener Fotos verwerfen, ebenso offene
      *   Änderungen; der erste Lauf holt alles. Zutaten bleiben (Startzutaten; der Server führt gleichnamige zusammen, ein
      *   fehlendes Verweisziel reicht der Sync bei Bedarf nach).
      *
-     * Liefert [TOKEN_NICHT_GESPEICHERT], wenn das Token nicht abgelegt werden kann (dann bleibt alles wie vorher).
+     * Liefert [TOKEN_NICHT_GESPEICHERT], wenn das Token nicht abgelegt werden kann. Sync-Zustand und Daten bleiben dann
+     * unverändert, die Anmeldung bleibt für einen neuen Versuch. Das alte Token nicht unbedingt: Der [TokenSpeicher]
+     * verwirft beim Fehlschlag den Keystore-Schlüssel und versucht es mit einem neuen; scheitert auch das, ist das alte
+     * Token unlesbar. Es wird dann zurückzuschreiben versucht; gelingt auch das nicht (Keystore dauerhaft gestört), meldet
+     * der nächste Lauf „Anmeldung abgelaufen“.
      *
      * @throws IllegalStateException ohne Anmeldung und ohne gespeicherte Verbindung.
      */
     suspend fun aktivieren(modus: ErsterSync): Ergebnis<Unit> {
-        val neu = anmeldung
-        val z = speicher.zustand()
-        val ergebnis = when {
-            neu == null -> {
-                val adresse = z.serverUrl
-                val kontoId = z.kontoId
-                check(adresse != null && kontoId != null && token.laden() != null) { "Nicht angemeldet" }
-                einschalten(adresse, kontoId, modus, neuesToken = null)
-            }
-            z.aktiv && z.serverUrl == neu.adresse && z.kontoId == neu.kontoId -> speicher.laufSperre.withLock {
-                if (tokenSpeichern(neu.token)) {
-                    speicher.fehler(null)
-                    Ergebnis.Erfolg(Unit)
-                } else {
-                    Ergebnis.Fehler(TOKEN_NICHT_GESPEICHERT)
+        val ergebnis = speicher.laufSperre.withLock {
+            val neu = anmeldung
+            val z = speicher.zustand()
+            when {
+                neu == null -> {
+                    val adresse = z.serverUrl
+                    val kontoId = z.kontoId
+                    check(adresse != null && kontoId != null && token.laden() != null) { "Nicht angemeldet" }
+                    einschalten(adresse, kontoId, modus, neuesToken = null)
                 }
+                wiederanmeldung(z, neu) -> {
+                    val altesToken = token.laden()
+                    if (tokenSpeichern(neu.token)) {
+                        val dao = db.syncDao()
+                        db.withTransaction {
+                            val aktuell = dao.zustand() ?: SyncZustandEntity()
+                            dao.upsertZustand(aktuell.copy(serverUrl = neu.adresse, kontoId = neu.kontoId, lastError = null))
+                        }
+                        Ergebnis.Erfolg(Unit)
+                    } else {
+                        altesTokenZurueck(altesToken)
+                        Ergebnis.Fehler(TOKEN_NICHT_GESPEICHERT)
+                    }
+                }
+                else -> einschalten(neu.adresse, neu.kontoId, modus, neu.token)
             }
-            else -> einschalten(neu.adresse, neu.kontoId, modus, neu.token)
         }
         if (ergebnis is Ergebnis.Erfolg) {
             anmeldung = null
@@ -134,28 +150,44 @@ class SyncKonto @Inject constructor(
         return ergebnis
     }
 
+    /** Aktiver Sync, dieselbe (vereinheitlichte) Adresse und dieselbe oder noch keine Konto-ID (nach der Migration). */
+    private fun wiederanmeldung(z: SyncZustand, neu: Anmeldung): Boolean {
+        val gespeichert = z.serverUrl?.let { ServerAdresse.pruefen(it, konfiguration.lokalesHttpErlaubt) }
+        return z.aktiv && gespeichert != null && gespeichert == neu.adresse && (z.kontoId == null || z.kontoId == neu.kontoId)
+    }
+
     /**
      * Speichert [neuesToken] (falls nicht `null`), verwirft bei [ErsterSync.ERSETZEN] das Lokale und schaltet den Sync für
-     * [adresse]/[kontoId] ein – alles unter der `laufSperre`. Scheitert ein Schritt nach dem Speichern, kommt das alte
-     * Token zurück.
+     * [adresse]/[kontoId] ein. Nur unter der `laufSperre` aufrufen. Scheitert ein Schritt nach dem Speichern, kommt das
+     * alte Token zurück.
      */
-    private suspend fun einschalten(adresse: String, kontoId: String, modus: ErsterSync, neuesToken: String?): Ergebnis<Unit> =
-        speicher.laufSperre.withLock {
-            val altesToken = if (neuesToken != null) token.laden() else null
-            if (neuesToken != null && !tokenSpeichern(neuesToken)) return@withLock Ergebnis.Fehler(TOKEN_NICHT_GESPEICHERT)
-            try {
-                if (modus == ErsterSync.ERSETZEN) lokalesVerwerfen()
-                speicher.aktivieren(adresse, kontoId, allesHochladen = modus == ErsterSync.ZUSAMMENFUEHREN)
-            } catch (e: Throwable) {
-                if (neuesToken != null) {
-                    withContext(NonCancellable) {
-                        if (altesToken == null || !tokenSpeichern(altesToken)) token.loeschen()
-                    }
-                }
-                throw e
-            }
-            Ergebnis.Erfolg(Unit)
+    private suspend fun einschalten(adresse: String, kontoId: String, modus: ErsterSync, neuesToken: String?): Ergebnis<Unit> {
+        val altesToken = if (neuesToken != null) token.laden() else null
+        if (neuesToken != null && !tokenSpeichern(neuesToken)) {
+            altesTokenZurueck(altesToken)
+            return Ergebnis.Fehler(TOKEN_NICHT_GESPEICHERT)
         }
+        try {
+            if (modus == ErsterSync.ERSETZEN) lokalesVerwerfen()
+            speicher.aktivieren(adresse, kontoId, allesHochladen = modus == ErsterSync.ZUSAMMENFUEHREN)
+        } catch (e: Throwable) {
+            if (neuesToken != null) {
+                withContext(NonCancellable) {
+                    if (altesToken == null || !tokenSpeichern(altesToken)) token.loeschen()
+                }
+            }
+            throw e
+        }
+        return Ergebnis.Erfolg(Unit)
+    }
+
+    /**
+     * Nach einem gescheiterten Speichern: Der [TokenSpeicher] hat dabei womöglich den Schlüssel verworfen, das alte Token
+     * wäre unlesbar. Es wird (bestmöglich) neu abgelegt.
+     */
+    private fun altesTokenZurueck(altesToken: String?) {
+        if (altesToken != null && token.laden() == null) tokenSpeichern(altesToken)
+    }
 
     /** `false`, wenn der Keystore das Token nicht annimmt; die Ausnahme könnte Einzelheiten tragen und bleibt hier. */
     private fun tokenSpeichern(wert: String): Boolean = try {

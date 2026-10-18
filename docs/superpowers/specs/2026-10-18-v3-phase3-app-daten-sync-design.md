@@ -97,9 +97,9 @@ Ungesendete Änderungen in der Outbox bleiben und gehen nach dem Update über Pr
   in die Outbox, dann holen) oder „Ersetzen“ (lokale Daten verwerfen, alles holen). „Ersetzen“ behält die Zutaten
   (Startzutaten; der Server führt gleichnamige zusammen, fehlende Verweisziele reicht der Sync nach) – Entscheidung
   bei der Umsetzung, siehe `docs/architecture.md`, „App V3: Daten und Sync“. Das Token der Anmeldung wird erst beim
-  Aktivieren gespeichert (zusammen mit Adresse und Konto, unter der Sperre der Sync-Läufe); eine Wiederanmeldung am
-  selben Server und Konto übernimmt nur das neue Token. Nach der Migration ist `kontoId` leer: erneut aktivieren nur über
-  Anmelden, wie neu verbunden (Phase 6).
+  Aktivieren gespeichert (zusammen mit Adresse und Konto, unter der Sperre der Sync-Läufe); eine Wiederanmeldung bei
+  aktivem Sync an derselben Adresse und mit derselben oder noch keiner Konto-ID (nach der Migration ist `kontoId` leer)
+  übernimmt nur das neue Token und trägt die Konto-ID ein; Cursor, Outbox und Daten bleiben.
 - **Sync-Lauf** (nur einer zur Zeit, gemeinsame Sperre mit Trennen):
   1. Outbox in Paketen senden (höchstens `Protocol.MAX_PUSH_RECORDS` = 500 Datensätze bzw. `MAX_PUSH_BYTES` = 5 MB);
      fehlende Fotos vorher hochladen (`POST /photos/missing`, `PUT /photos/{sha256}`).

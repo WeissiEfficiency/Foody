@@ -196,14 +196,18 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
   `anmeldung_abgelaufen` (`401`, kein lesbares Token – das Token wird dabei nicht gelöscht), `app_zu_alt`
   (`409 protocol_too_old`), `server_zu_alt` (`409 server_too_old` oder `404`, z. B. Server ohne `/api/v3`), `cursor_haengt`,
   `server_fehler` (5xx, unlesbare Antworten, lokale Fehler). Anmelden und Aktivieren melden der Oberfläche zusätzlich
-  `ungueltige_adresse`, `falsche_zugangsdaten`, `zu_viele_versuche` bzw. `token_nicht_gespeichert` (nicht in `lastError`).
+  `ungueltige_adresse`, `falsche_zugangsdaten`, `zu_viele_versuche` bzw. `token_nicht_gespeichert` (nicht in `lastError`;
+  Sync-Zustand und Daten bleiben dann unverändert, das alte Token aber nicht sicher: Der `TokenSpeicher` verwirft beim
+  Fehlschlag den Keystore-Schlüssel, `SyncKonto` legt das alte Token bestmöglich neu ab, sonst folgt „Anmeldung
+  abgelaufen“).
 - **Verbinden/Trennen** (`SyncKonto`): Adresse prüfen (`https`; Debug zusätzlich `http` für `10.0.2.2`/`localhost`),
   anmelden (Adresse, Konto-ID und Token nur im Speicher), erst `aktivieren` speichert das Token und schaltet den Sync
   ein (Cursor 0) – beides unter der `laufSperre`, sodass kein Lauf das neue Token mit der alten Adresse sieht; ein
-  abgebrochener Dialog lässt das gespeicherte Token unverändert. Eine Wiederanmeldung am selben Server und Konto bei
-  aktivem Sync (nach „Anmeldung abgelaufen“) übernimmt nur das neue Token; Cursor, Outbox und Daten bleiben. Nach der
-  Migration ist `kontoId` `NULL`: Erneut aktivieren geht dann nur über Anmelden und verbindet wie neu (Cursor 0, Wahl
-  „Zusammenführen“/„Ersetzen“) – so muss es die Oberfläche in Phase 6 anbieten. „Zusammenführen“ merkt alle lokalen
+  abgebrochener Dialog lässt das gespeicherte Token unverändert. Eine Wiederanmeldung bei aktivem Sync an derselben Adresse (beide
+  Seiten über `ServerAdresse.pruefen` vereinheitlicht) und mit derselben oder – wie nach der Migration – noch keiner
+  Konto-ID übernimmt nur das neue Token und trägt die Konto-ID ein; Cursor, Outbox und Daten bleiben, die Wahl
+  „Zusammenführen“/„Ersetzen“ wirkt nicht (sonst verwürfe „Ersetzen“ direkt nach dem Update die ungesendete
+  v1-Outbox). Die Entscheidung fällt unter der `laufSperre`. „Zusammenführen“ merkt alle lokalen
   Datensätze vor. „Ersetzen“ verwirft Rezepte, Plan, Einkaufslisten, Tagebuch, eigene Fotos und Sync-Vermerke, **behält
   aber die Zutaten**: Sie sind großteils Startzutaten, der Server führt gleichnamige Zutaten zusammen, und ein fehlendes
   Verweisziel reicht der Sync bei Bedarf nach. Folge: Eine nur lokal angelegte, nie gesendete Zutat bleibt lokal, bis

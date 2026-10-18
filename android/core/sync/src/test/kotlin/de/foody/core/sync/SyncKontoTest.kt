@@ -17,6 +17,7 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.PlanEintragEntity
 import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.db.RezeptZutatEntity
+import de.foody.core.data.db.SyncZustandEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.fotos.FotoIndex
@@ -399,5 +400,30 @@ class SyncKontoTest {
         assertTrue(g.konto.hatLokaleDaten())
         assertIs<SyncErgebnis.Fertig>(g.lauf.ausfuehren())
         assertTrue(RecordType.RECIPE to "r2" in serverStand(client, name))
+    }
+
+    @Test
+    fun wiederanmeldungNachDemUpdateBehaeltOutbox() = syncServerTest { server ->
+        val (name, kontoId) = server.kontoAnlegen()
+        val g = Geraet(client)
+        // Zustand nach Migration 9 → 10: aktiv, Adresse aus der v1 (mit „/“), keine Konto-ID, Cursor, ungesendete Outbox.
+        g.dao.upsertZustand(
+            SyncZustandEntity(active = true, serverUrl = "$TEST_BASIS/", kontoId = null, cursor = 5, lastError = "anmeldung_abgelaufen"),
+        )
+        g.rezeptMitZutat("r1", "salz")
+        val outboxVorher = g.dao.outbox()
+        assertTrue(outboxVorher.isNotEmpty())
+
+        assertEquals(Ergebnis.Erfolg(Unit), g.konto.anmelden(TEST_BASIS, name, TEST_PASSWORT, "Testgerät"))
+        assertEquals(Ergebnis.Erfolg(Unit), g.konto.aktivieren(ErsterSync.ERSETZEN))
+
+        assertEquals(outboxVorher, g.dao.outbox(), "ungesendete Outbox der v1 bleibt")
+        assertNotNull(g.db.rezeptDao().nachId("r1"), "„Ersetzen“ wirkt bei einer Wiederanmeldung nicht")
+        val z = g.speicher.zustand()
+        assertTrue(z.aktiv)
+        assertEquals(kontoId, z.kontoId)
+        assertEquals(5, z.cursor)
+        assertNull(z.letzterFehler)
+        assertNotNull(g.token.laden(), "neues Token gespeichert")
     }
 }

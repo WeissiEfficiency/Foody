@@ -156,7 +156,8 @@ Spec: [`2026-10-18-v3-phase3-app-daten-sync-design.md`](../docs/superpowers/spec
 - [ ] Woche (eine fortlaufende Wochenansicht)
 - [ ] Einkauf (eine Ansicht, ohne Vorratsabzug)
 - [ ] Einstellungen (Server/Anmelden/Status, Zutatenkatalog, Sicherung, Darstellung, Tagesziel); nach dem Update aus
-      der v1 ist `kontoId` leer: „Erneut verbinden“ nur über Anmelden (verbindet wie neu, Cursor 0)
+      der v1 ist `kontoId` leer: „Erneut anmelden“ an derselben Adresse übernimmt nur Token und Konto-ID (Cursor und
+      ungesendete Outbox bleiben), ohne Frage „Zusammenführen/Ersetzen“
 
 **Fertig, wenn** alle App-Abschnitte der Abnahmeliste abgehakt sind und kein Screen über 300 Zeilen hat.
 
