@@ -10,3 +10,5 @@ captures/
 *.keystore
 keystore.properties
 server/.env
+# Echte Nutzerdaten (Datenbank-Kopien) nie ins Repository
+*.foody-echt.db*

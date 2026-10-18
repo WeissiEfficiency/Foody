@@ -39,4 +39,9 @@ if (System.getenv("FOODY_SERVER_ONLY") == null) {
     include(":feature:heute")
     project(":feature").projectDir = file("android/feature")
     project(":feature:heute").projectDir = file("android/feature/heute")
+    // V3: Datenbank und Sync-Client der App unter android/core/
+    include(":core:data", ":core:sync")
+    project(":core").projectDir = file("android/core")
+    project(":core:data").projectDir = file("android/core/data")
+    project(":core:sync").projectDir = file("android/core/sync")
 }
