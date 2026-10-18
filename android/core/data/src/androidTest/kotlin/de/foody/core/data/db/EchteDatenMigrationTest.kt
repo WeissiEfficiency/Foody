@@ -18,7 +18,7 @@ import org.junit.runner.RunWith
  * kehrt er sofort zurück (gilt dann als bestanden). Ist nur eines der beiden gesetzt oder die Datei nicht lesbar, scheitert er:
  * - `echteDb`: absoluter Pfad der `foody.db` auf dem Testgerät, für die Test-App lesbar (z. B. unter
  *   `/sdcard/Android/data/de.foody.core.data.test/files/`); ein danebenliegendes `foody.db-wal`/`-shm` wird mitkopiert.
- * - `echteDbZahlen`: erwartete Zeilenzahlen nach der Migration, `tabelle=zahl,…`. `pantry_item` wird ignoriert; für
+ * - `echteDbZahlen`: erwartete Zeilenzahlen nach der Migration, `tabelle=zahl+…` (`+` oder `,`; über Gradle nur `+`: die Instrumentierung schneidet Kommas ab, `;` trennt in der Geräte-Shell). `pantry_item` wird ignoriert; für
  *   `sync_outbox`, `sync_record_rev` und `sync_problem` die Zahl ohne `type = 'pantry_item'` angeben. Die Tabellen
  *   müssen genau die der migrierten Datenbank sein (ohne Verwaltungstabellen) plus `pantry_item`.
  *
@@ -117,7 +117,7 @@ class EchteDatenMigrationTest {
     }
 
     private fun zahlenAus(text: String): Map<String, Int> =
-        text.split(',').map { it.trim() }.filter { it.isNotEmpty() }.associate { eintrag ->
+        text.split(',', '+').map { it.trim() }.filter { it.isNotEmpty() }.associate { eintrag ->
             val teile = eintrag.split('=').map { it.trim() }
             assertEquals(2, teile.size, "$ARG_ZAHLEN: Eintrag „$eintrag“ nicht im Format tabelle=zahl")
             teile[0] to assertNotNull(teile[1].toIntOrNull(), "$ARG_ZAHLEN: „${teile[1]}“ ist keine Zahl")

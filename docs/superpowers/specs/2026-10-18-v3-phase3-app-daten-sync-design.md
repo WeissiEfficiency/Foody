@@ -143,6 +143,9 @@ Ungesendete Änderungen in der Outbox bleiben und gehen nach dem Update über Pr
   `EchteDatenSyncTest` behält Sync-Zustand und Cursor der migrierten echten Datenbank, meldet sich aber mit Benutzer
   und Test-Passwort neu am Test-Server an. Die Token-Kontinuität belegen Tests (`TokenSpeicherTest`,
   `SyncLaufTest.alterTokenUndCursorReichen`); „ohne neue Anmeldung“ auf dem Gerät prüft Phase 8.
+  Nachtrag 2026-10-18: „Foody Debug“ war nicht mehr installiert (Release-Apps lassen sich nicht auslesen). Die echte
+  v1-Datenbank entstand deshalb auf einem Emulator: v1-Debug-App, synchronisiert aus einer Sicherung des echten Servers
+  (lokaler v1-Server), danach offline geändert; dieselbe Sicherung liegt migriert auf dem Test-Server.
 
 ## Nicht in Phase 3
 

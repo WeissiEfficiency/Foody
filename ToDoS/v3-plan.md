@@ -107,12 +107,12 @@ Spec: [`2026-10-17-v3-phase2-server-schlank-design.md`](../docs/superpowers/spec
 
 ### Phase 3 – App-Daten und Sync-Client (≈ 1 Woche)
 Spec: [`2026-10-18-v3-phase3-app-daten-sync-design.md`](../docs/superpowers/specs/2026-10-18-v3-phase3-app-daten-sync-design.md)
-(neu geschrieben, v1 als Vorlage; Nachweis über Tests, echte DB aus „Foody Debug“).
-- [ ] `:core:data`: Room v10, Migration 9 → 10 (Vorratstabelle entfernen, Haushalt → Konto) mit Migrationstest
-- [ ] `:core:sync`: Client für Protokoll v3; Sync beim Öffnen/Fortsetzen und nach Änderungen (entprellt), kein
+(neu geschrieben, v1 als Vorlage; Nachweis über Tests und eine echte v1-Datenbank, siehe Ergebnis).
+- [x] `:core:data`: Room v10, Migration 9 → 10 (Vorratstabelle entfernen, Haushalt → Konto) mit Migrationstest
+- [x] `:core:sync`: Client für Protokoll v3; Sync beim Öffnen/Fortsetzen und nach Änderungen (entprellt), kein
       periodischer Worker
-- [ ] ZIP-Sicherung: liest v1-Dateien (Vorrat wird übersprungen)
-- [ ] Portionen nachtragen: Rezepte, die vor Regel 27 importiert wurden, haben noch die geschätzte Portionenzahl
+- [x] ZIP-Sicherung: liest v1-Dateien (Vorrat wird übersprungen)
+- [x] Portionen nachtragen (Funktion `PortionenNachtrag` in `:core:data`; das Angebot in der App kommt in Phase 6): Rezepte, die vor Regel 27 importiert wurden, haben noch die geschätzte Portionenzahl
       (oft 2–5× daneben). Die Migration selbst hat die Dateien nicht; nach Migration 9 → 10 einmalig anbieten,
       den Rezeptordner zu wählen, je Datei das Rezept über `sourceUrl` suchen und `RezeptImport.portionenNachtragen`
       anwenden (nur `defaultServings` und Notiz ändern, Mengen nie). Rezepte mit geänderten Portionen oder gelöschtem
@@ -120,14 +120,22 @@ Spec: [`2026-10-18-v3-phase3-app-daten-sync-design.md`](../docs/superpowers/spec
 
 **Fertig, wenn** eine Kopie der echten v1-Datenbank migriert und mit dem Test-Server synchronisiert.
 
-**Ergebnis** (Stand 2026-10-18, Phase noch nicht abgehakt):
+**Ergebnis** (2026-10-18):
 - Umgesetzt und getestet: `:core:data` (Room 10, Migration 9 → 10 mit Migrationstest auf dem Emulator, Sync-Trigger,
   Sync-Speicher, Fotos, Sicherung Format 3 liest v1, Portionen-Nachtrag) und `:core:sync` (Protokoll 3, Sync-Lauf gegen
   den echten `:server-sync` im Test, Verbinden/Trennen, Auslöser ohne periodischen Auftrag, Token-Ablage wie v1);
   Überblick in `docs/architecture.md`, „App V3: Daten und Sync“.
-- Echtdaten-Migration (`EchteDatenMigrationTest`): offen
-- Echtdaten-Lauf (`EchteDatenSyncTest` gegen den Test-Server): offen. Der Test meldet sich neu an (Token des Handys
-  im Hardware-Keystore, nicht kopierbar); „ohne neue Anmeldung“ prüft Phase 8.
+- Echte Datenbank: „Foody Debug“ war auf dem Handy nicht mehr installiert, die Release-App lässt sich nicht auslesen.
+  Stattdessen: Sicherung des echten Servers (2026-10-18, 375 lebende Datensätze, Revision 423) in den Test-Server
+  eingespielt (migriert) und zusätzlich lokal in einen v1-Server geladen; die v1-Debug-App hat sich auf einem Emulator
+  daraus synchronisiert und danach offline drei Änderungen gemacht (Rezept bewertet, Rezept gelöscht, Einkaufsartikel).
+  Diese echte v1-Datenbank (Schema 9) war die Vorlage.
+- Echtdaten-Migration (`EchteDatenMigrationTest`): bestanden – 15 Tabellen, 2.645 Zeilen wie erwartet, Sync-Zustand
+  (aktiv, Cursor 423) erhalten, 33 Trigger.
+- Echtdaten-Lauf (`EchteDatenSyncTest` gegen den Test-Server): bestanden – ein Lauf, 3 gesendet (inkl. Löschung),
+  Cursor 423 → 426, Outbox leer, keine Sync-Probleme, lebende Datensätze lokal = Server (ingredient 249, recipe 112,
+  meal_slot 2, shopping_list 1, shopping_item 8, tagebuch_eintrag 2), keine doppelten IDs. Der Test meldet sich neu
+  an (Token im Hardware-Keystore, nicht kopierbar); „ohne neue Anmeldung“ auf dem Gerät prüft Phase 8.
 
 ### Phase 4 – Designsystem (≈ 4 Tage)
 - [ ] `:core:designsystem`: zwei Glasstufen, Kachel, Rezeptkarte, Nährwertbalken, Sync-Status, leere Zustände
