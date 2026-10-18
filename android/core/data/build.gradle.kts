@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.room)
+    // Sicherung: backup.json
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -56,6 +58,8 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     implementation(libs.coroutines.android)
+    // Sicherung (backup.json); kommt auch über :api-protocol, hier ausdrücklich
+    implementation(libs.serialization.json)
     // Fotoablage: Drehung aus den EXIF-Daten
     implementation(libs.androidx.exifinterface)
 

@@ -20,6 +20,9 @@ interface ZutatDao {
     @Upsert suspend fun upsert(e: ZutatEntity)
 
     @Query("DELETE FROM ingredient WHERE id = :id") suspend fun loeschen(id: String)
+
+    /** Leert die Tabelle (Sicherung: Import ersetzt alle Daten). */
+    @Query("DELETE FROM ingredient") suspend fun alleLoeschen()
 }
 
 /** Rezepte (`recipe`). */
@@ -32,6 +35,9 @@ interface RezeptDao {
     @Upsert suspend fun upsert(e: RezeptEntity)
 
     @Query("DELETE FROM recipe WHERE id = :id") suspend fun loeschen(id: String)
+
+    /** Leert die Tabelle (Sicherung: Import ersetzt alle Daten). */
+    @Query("DELETE FROM recipe") suspend fun alleLoeschen()
 }
 
 /** Zutaten der Rezepte (`recipe_ingredient`). */
@@ -48,6 +54,9 @@ interface RezeptZutatDao {
     @Upsert suspend fun upsert(e: RezeptZutatEntity)
 
     @Query("DELETE FROM recipe_ingredient WHERE id = :id") suspend fun loeschen(id: String)
+
+    /** Leert die Tabelle (Sicherung: Import ersetzt alle Daten). */
+    @Query("DELETE FROM recipe_ingredient") suspend fun alleLoeschen()
 }
 
 /** Arbeitsschritte (`instruction_step`). */
@@ -64,6 +73,9 @@ interface ArbeitsschrittDao {
     @Upsert suspend fun upsert(e: ArbeitsschrittEntity)
 
     @Query("DELETE FROM instruction_step WHERE id = :id") suspend fun loeschen(id: String)
+
+    /** Leert die Tabelle (Sicherung: Import ersetzt alle Daten). */
+    @Query("DELETE FROM instruction_step") suspend fun alleLoeschen()
 }
 
 /** Plan-Einträge (`meal_slot`). */
@@ -76,6 +88,9 @@ interface PlanEintragDao {
     @Upsert suspend fun upsert(e: PlanEintragEntity)
 
     @Query("DELETE FROM meal_slot WHERE id = :id") suspend fun loeschen(id: String)
+
+    /** Leert die Tabelle (Sicherung: Import ersetzt alle Daten). */
+    @Query("DELETE FROM meal_slot") suspend fun alleLoeschen()
 }
 
 /** Einkaufslisten (`shopping_list`). */
@@ -88,6 +103,9 @@ interface EinkaufslisteDao {
     @Upsert suspend fun upsert(e: EinkaufslisteEntity)
 
     @Query("DELETE FROM shopping_list WHERE id = :id") suspend fun loeschen(id: String)
+
+    /** Leert die Tabelle (Sicherung: Import ersetzt alle Daten). */
+    @Query("DELETE FROM shopping_list") suspend fun alleLoeschen()
 }
 
 /** Einkaufsartikel (`shopping_item`). */
@@ -100,6 +118,9 @@ interface EinkaufsartikelDao {
     @Upsert suspend fun upsert(e: EinkaufsartikelEntity)
 
     @Query("DELETE FROM shopping_item WHERE id = :id") suspend fun loeschen(id: String)
+
+    /** Leert die Tabelle (Sicherung: Import ersetzt alle Daten). */
+    @Query("DELETE FROM shopping_item") suspend fun alleLoeschen()
 }
 
 /** Herkunft der Einkaufsartikel (`shopping_item_source`). */
@@ -116,6 +137,9 @@ interface EinkaufsartikelQuelleDao {
     @Upsert suspend fun upsert(e: EinkaufsartikelQuelleEntity)
 
     @Query("DELETE FROM shopping_item_source WHERE id = :id") suspend fun loeschen(id: String)
+
+    /** Leert die Tabelle (Sicherung: Import ersetzt alle Daten). */
+    @Query("DELETE FROM shopping_item_source") suspend fun alleLoeschen()
 }
 
 /** Tagebuch-Einträge (`tagebuch_eintrag`). */
@@ -128,4 +152,7 @@ interface TagebuchDao {
     @Upsert suspend fun upsert(e: TagebuchEintragEntity)
 
     @Query("DELETE FROM tagebuch_eintrag WHERE id = :id") suspend fun loeschen(id: String)
+
+    /** Leert die Tabelle (Sicherung: Import ersetzt alle Daten). */
+    @Query("DELETE FROM tagebuch_eintrag") suspend fun alleLoeschen()
 }

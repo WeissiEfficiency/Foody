@@ -93,6 +93,18 @@ class FotoAblage(context: Context) {
         return anzahl
     }
 
+    /**
+     * Löscht alle eigenen Fotodateien, deren Link nicht in [benutzt] steht (wie `pruneUnused` der v1, nach dem
+     * Wiederherstellen einer Sicherung). Verglichen wird über die Datei, nicht die Schreibweise des Links. Gibt die
+     * Links der gelöschten Dateien zurück. Zwischendateien bleiben unberührt.
+     */
+    suspend fun unbenutzteEntfernen(benutzt: Collection<String>): List<String> = withContext(Dispatchers.IO) {
+        val dateien = benutzt.mapNotNull(::datei).toSet()
+        ordner.listFiles { f -> f.isFile && f.name.endsWith(".jpg") }.orEmpty()
+            .filter { it.canonicalFile !in dateien && it.delete() }
+            .map(::link)
+    }
+
     /** Ist [link] ein eigenes Foto (`file:`-Link auf eine Datei im Fotoordner)? Die Datei muss nicht existieren. */
     fun istEigeneDatei(link: String): Boolean = datei(link) != null
 
