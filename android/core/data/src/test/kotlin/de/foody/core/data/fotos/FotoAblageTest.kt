@@ -14,6 +14,8 @@ import androidx.room.Room
 import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.db.FoodyDatenbank
 import java.io.File
+import java.io.FilterInputStream
+import java.io.InputStream
 import java.security.MessageDigest
 import kotlin.random.Random
 import kotlin.test.assertContentEquals
@@ -30,6 +32,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.Shadows
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -102,6 +105,45 @@ class FotoAblageTest {
         assertEquals(ExifInterface.ORIENTATION_UNDEFINED, ExifInterface(gespeichert.path).getAttributeInt(ExifInterface.TAG_ORIENTATION, 0))
         assertTrue(ordner.listFiles().orEmpty().none { it.name.endsWith(".tmp") })
         assertTrue(datei.exists(), "Quelle bleibt unangetastet")
+    }
+
+    /**
+     * Während [FotoAblage.speichern] liest, liegt im Fotoordner keine unfertige `.jpg`: der Startlauf, der nur `*.jpg`
+     * anfasst, sieht die Arbeitsdatei also nie. Geprüft wird der Ordner in dem Moment, in dem die Quelle zu Ende
+     * gelesen ist (die Arbeitsdatei existiert dann schon), und noch einmal danach.
+     */
+    @Test
+    fun zwischendateienEndenNieAufJpg() = runTest {
+        val bytes = quelle(verlauf(4000, 3000), 100).readBytes()
+        val uri = Uri.parse("content://test.fotos/kamera/1")
+        val waehrendDesLesens = mutableListOf<List<String>>()
+        Shadows.shadowOf(context.contentResolver).registerInputStreamSupplier(uri) {
+            object : FilterInputStream(bytes.inputStream()) {
+                private fun merken(n: Int): Int {
+                    if (n < 0) waehrendDesLesens += ordner.listFiles().orEmpty().map { it.name }
+                    return n
+                }
+                override fun read(): Int = super.read().let { if (it < 0) merken(it) else it }
+                override fun read(b: ByteArray, off: Int, len: Int): Int = merken(super.read(b, off, len))
+            } as InputStream
+        }
+
+        val link = ablage.speichern(uri)
+
+        assertTrue(waehrendDesLesens.isNotEmpty(), "Quelle wurde bis zum Ende gelesen")
+        waehrendDesLesens.forEach { namen ->
+            assertTrue(namen.isNotEmpty(), "Arbeitsdatei liegt im Fotoordner")
+            assertTrue(namen.none { it.endsWith(".jpg") }, "keine unfertige .jpg: $namen")
+            // eindeutiger Zwischenname <ziel>.jpg.<uuid>.tmp – nie derselbe wie der des Startlaufs
+            assertTrue(namen.all { EINDEUTIGER_ZWISCHENNAME.matches(it) }, "Zwischenname: $namen")
+        }
+        val gespeichert = assertNotNull(ablage.datei(link))
+        assertEquals(listOf(gespeichert.name), ordner.listFiles().orEmpty().map { it.name }, "nur das fertige Foto")
+        assertEquals(1600, maxOf(groesse(gespeichert).outWidth, groesse(gespeichert).outHeight))
+    }
+
+    private companion object {
+        val EINDEUTIGER_ZWISCHENNAME = Regex("""[0-9a-f-]{36}\.jpg\.[0-9a-f-]{36}\.tmp""")
     }
 
     @Test

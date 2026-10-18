@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
+import android.util.Log
 import androidx.core.content.edit
 import androidx.exifinterface.media.ExifInterface
 import de.foody.core.data.Einstellungsschluessel
@@ -38,17 +39,20 @@ class FotoAblage(context: Context) {
      */
     suspend fun speichern(quelle: Uri): String = withContext(Dispatchers.IO) {
         val ziel = File(ordner, "${UUID.randomUUID()}.jpg")
-        val tmp = File(ordner, ziel.name + TMP)
+        // Arbeitsdatei endet nicht auf .jpg: der Startlauf (verkleinereAlleEinmal) sieht sie so nie halbfertig.
+        // Erst fertig kopiert und verkleinert kommt sie per atomarem Move unter den endgültigen Namen.
+        val arbeit = zwischendatei(ziel)
         try {
             val eingabe = context.contentResolver.openInputStream(quelle)
                 ?: throw IllegalArgumentException("Foto nicht lesbar")
-            eingabe.use { ein -> tmp.outputStream().use { ein.copyTo(it) } }
-            ersetzen(tmp, ziel)
-            require(laengereSeite(ziel) > 0) { "Kein Bild" }
-            verkleinern(ziel)
+            eingabe.use { ein -> arbeit.outputStream().use { ein.copyTo(it) } }
+            require(laengereSeite(arbeit) > 0) { "Kein Bild" }
+            runCatching { verkleinernOderWerfen(arbeit) }
+                .onFailure { Log.w(TAG, "Foto konnte nicht verkleinert werden, wird unverändert gespeichert", it) }
+            ersetzen(arbeit, ziel)
             link(ziel)
         } catch (e: Exception) {
-            tmp.delete()
+            arbeit.delete()
             ziel.delete()
             throw e
         }
@@ -100,19 +104,24 @@ class FotoAblage(context: Context) {
      * schrittweise weiter verringert. Ersetzt die Datei atomar, der Link bleibt gleich. Fotos, die schon in beide
      * Grenzen passen, bleiben unberührt. `true`, wenn die Datei ersetzt wurde; Fehler ergeben `false`.
      */
-    private fun verkleinern(datei: File): Boolean = runCatching {
+    private fun verkleinern(datei: File): Boolean = runCatching { verkleinernOderWerfen(datei) }.getOrDefault(false)
+
+    /** Wie [verkleinern], reicht Fehler aber weiter. */
+    private fun verkleinernOderWerfen(datei: File): Boolean {
         val laengste = laengereSeite(datei)
-        if (laengste <= 0 || (laengste <= MAX_KANTE && datei.length() <= MAX_BYTES)) return@runCatching false
+        if (laengste <= 0 || (laengste <= MAX_KANTE && datei.length() <= MAX_BYTES)) return false
 
         // Erst grob per Zweierpotenz beim Dekodieren (spart Speicher), dann exakt skalieren
         var stichprobe = 1
         while (laengste / (stichprobe * 2) >= MAX_KANTE) stichprobe *= 2
         val dekodiert = datei.inputStream().use {
             BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = stichprobe })
-        } ?: return@runCatching false
+        } ?: return false
         val drehung = datei.inputStream().use { ExifInterface(it).rotationDegrees }
 
-        var kante = MAX_KANTE
+        // Nicht über die Quellgröße hinaus beginnen: sonst kämen bei kleinen, aber schweren Bildern mehrere Durchläufe
+        // mit identischen Bytes heraus, bevor die Kante überhaupt wirkt.
+        var kante = minOf(MAX_KANTE, maxOf(dekodiert.width, dekodiert.height))
         var bytes: ByteArray
         while (true) {
             bytes = kodieren(dekodiert, kante, drehung)
@@ -121,15 +130,22 @@ class FotoAblage(context: Context) {
         }
         dekodiert.recycle()
 
-        val tmp = File(datei.parentFile, datei.name + TMP)
+        val tmp = zwischendatei(datei)
         try {
             tmp.writeBytes(bytes)
             ersetzen(tmp, datei)
         } finally {
             tmp.delete()
         }
-        true
-    }.getOrDefault(false)
+        return true
+    }
+
+    /**
+     * Eindeutige Zwischendatei neben [datei] (gleicher Ordner, damit das Ersetzen atomar bleibt). Endet auf
+     * [TMP], nie auf `.jpg`; der eindeutige Teil verhindert, dass sich [speichern] und der Startlauf gegenseitig
+     * dieselbe Zwischendatei überschreiben.
+     */
+    private fun zwischendatei(datei: File): File = File(datei.parentFile, "${datei.name}.${UUID.randomUUID()}$TMP")
 
     private fun kodieren(bild: Bitmap, kante: Int, drehung: Int): ByteArray {
         val faktor = kante.toFloat() / maxOf(bild.width, bild.height)
@@ -159,5 +175,6 @@ class FotoAblage(context: Context) {
         private const val MIN_KANTE = 400
         private const val SCHRITT = 0.8f
         private const val TMP = ".tmp"
+        private const val TAG = "FotoAblage"
     }
 }
