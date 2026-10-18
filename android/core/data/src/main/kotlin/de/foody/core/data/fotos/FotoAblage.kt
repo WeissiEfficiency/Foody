@@ -59,6 +59,25 @@ class FotoAblage(context: Context) {
     }
 
     /**
+     * Legt [bytes] unverändert als neue eigene Fotodatei ab (vom Server geladenes Foto: der Inhalt muss zum Hash passen,
+     * daher kein Verkleinern) und gibt den Link zurück. Atomar über eine Zwischendatei; bei einem Fehler bleibt nichts
+     * zurück.
+     */
+    suspend fun ablegen(bytes: ByteArray): String = withContext(Dispatchers.IO) {
+        val ziel = File(ordner, "${UUID.randomUUID()}.jpg")
+        val arbeit = zwischendatei(ziel)
+        try {
+            arbeit.writeBytes(bytes)
+            ersetzen(arbeit, ziel)
+            link(ziel)
+        } catch (e: Exception) {
+            arbeit.delete()
+            ziel.delete()
+            throw e
+        }
+    }
+
+    /**
      * Beim Start: alle eigenen Fotos prüfen und zu große verkleinern – aber nur einmal je [VERKLEINERUNG_VERSION]
      * (Merker [Einstellungsschluessel.FOTOS_VERKLEINERT] in den Prefs `foody`, wie in der v1). Neue Fotos verkleinert
      * schon [speichern]; ein Durchlauf bei jedem Start läse sonst jedes Mal alle Dateien. Gibt die Zahl verkleinerter
@@ -103,8 +122,9 @@ class FotoAblage(context: Context) {
      * als JPEG [JPEG_QUALITAET] neu. Bleibt das Ergebnis über [MAX_BYTES] (sehr detailreiche Bilder), wird die Kante
      * schrittweise weiter verringert. Ersetzt die Datei atomar, der Link bleibt gleich. Fotos, die schon in beide
      * Grenzen passen, bleiben unberührt. `true`, wenn die Datei ersetzt wurde; Fehler ergeben `false`.
+     * Blockiert (Datei-I/O); der Sync ruft es für Fotos, die der Server sonst ablehnen würde.
      */
-    private fun verkleinern(datei: File): Boolean = runCatching { verkleinernOderWerfen(datei) }.getOrDefault(false)
+    fun verkleinern(datei: File): Boolean = runCatching { verkleinernOderWerfen(datei) }.getOrDefault(false)
 
     /** Wie [verkleinern], reicht Fehler aber weiter. */
     private fun verkleinernOderWerfen(datei: File): Boolean {

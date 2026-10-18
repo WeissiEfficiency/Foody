@@ -29,6 +29,15 @@ class FotoIndex(private val dao: SyncDao, private val ablage: FotoAblage) {
         return sha
     }
 
+    /**
+     * Link einer vorhandenen eigenen Fotodatei mit diesem Hash, sonst `null`. Zählt nur, wenn der gemerkte Eintrag noch
+     * zur Datei passt (Größe und Änderungszeit) – eine inzwischen geänderte oder gelöschte Datei hat einen anderen Inhalt.
+     */
+    suspend fun link(sha256: String): String? = dao.fotosLokalNachHash(sha256).firstOrNull { eintrag ->
+        val datei = ablage.datei(eintrag.uri)
+        datei != null && datei.isFile && datei.length() == eintrag.size && datei.lastModified() == eintrag.modifiedAt
+    }?.uri
+
     private fun sha256(datei: File): String {
         val digest = MessageDigest.getInstance("SHA-256")
         datei.inputStream().use { ein ->
