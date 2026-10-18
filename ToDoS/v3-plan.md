@@ -120,6 +120,15 @@ Spec: [`2026-10-18-v3-phase3-app-daten-sync-design.md`](../docs/superpowers/spec
 
 **Fertig, wenn** eine Kopie der echten v1-Datenbank migriert und mit dem Test-Server synchronisiert.
 
+**Ergebnis** (Stand 2026-10-18, Phase noch nicht abgehakt):
+- Umgesetzt und getestet: `:core:data` (Room 10, Migration 9 → 10 mit Migrationstest auf dem Emulator, Sync-Trigger,
+  Sync-Speicher, Fotos, Sicherung Format 3 liest v1, Portionen-Nachtrag) und `:core:sync` (Protokoll 3, Sync-Lauf gegen
+  den echten `:server-sync` im Test, Verbinden/Trennen, Auslöser ohne periodischen Auftrag, Token-Ablage wie v1);
+  Überblick in `docs/architecture.md`, „App V3: Daten und Sync“.
+- Echtdaten-Migration (`EchteDatenMigrationTest`): offen
+- Echtdaten-Lauf (`EchteDatenSyncTest` gegen den Test-Server): offen. Der Test meldet sich neu an (Token des Handys
+  im Hardware-Keystore, nicht kopierbar); „ohne neue Anmeldung“ prüft Phase 8.
+
 ### Phase 4 – Designsystem (≈ 4 Tage)
 - [ ] `:core:designsystem`: zwei Glasstufen, Kachel, Rezeptkarte, Nährwertbalken, Sync-Status, leere Zustände
 - [ ] Katalog-Screen im Debug-Build, hell und dunkel, Handy und Tablet

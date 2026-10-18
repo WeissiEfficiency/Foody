@@ -8,6 +8,23 @@ plugins {
 
 android {
     namespace = "de.foody.core.sync"
+
+    defaultConfig {
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    testOptions {
+        // Wie :core:data: EchteDatenSyncTest läuft auf dem Gradle Managed Device (./gradlew :core:sync:ciDeviceDebugAndroidTest).
+        managedDevices {
+            localDevices {
+                create("ciDevice") {
+                    device = "Pixel 6"
+                    apiLevel = 36
+                    systemImageSource = "google"
+                }
+            }
+        }
+    }
 }
 
 dependencies {
@@ -39,4 +56,10 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     // SyncAusloeser/SyncAuftrag: WorkManager im Test (TestDriver, kein echtes Warten)
     testImplementation(libs.androidx.work.testing)
+
+    // EchteDatenSyncTest: echte v1-Datenbank gegen den Test-Server (nur mit Instrumentation-Argumenten)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.kotlin.test.junit)
 }

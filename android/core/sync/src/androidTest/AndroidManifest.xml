@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nur die Test-App: EchteDatenSyncTest spricht per http mit dem Test-Server (Emulator: 10.0.2.2, SSH-Tunnel). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application android:networkSecurityConfig="@xml/test_netz" />
+</manifest>

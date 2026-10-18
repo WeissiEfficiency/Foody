@@ -92,7 +92,9 @@ Ungesendete Änderungen in der Outbox bleiben und gehen nach dem Update über Pr
 
 - **Verbinden:** Server-Adresse (`https`; in Debug-Builds zusätzlich `http://10.0.2.2:<port>` und `localhost`),
   Anmelden (`POST /api/v3/auth/login` → `token`, `kontoId`), Aktivieren mit Wahl „Zusammenführen“ (alle lokalen Daten
-  in die Outbox, dann holen) oder „Ersetzen“ (lokale Daten verwerfen, alles holen).
+  in die Outbox, dann holen) oder „Ersetzen“ (lokale Daten verwerfen, alles holen). „Ersetzen“ behält die Zutaten
+  (Startzutaten; der Server führt gleichnamige zusammen, fehlende Verweisziele reicht der Sync nach) – Entscheidung
+  bei der Umsetzung, siehe `docs/architecture.md`, „App V3: Daten und Sync“.
 - **Sync-Lauf** (nur einer zur Zeit, gemeinsame Sperre mit Trennen):
   1. Outbox in Paketen senden (höchstens `Protocol.MAX_PUSH_RECORDS` = 500 Datensätze bzw. `MAX_PUSH_BYTES` = 5 MB);
      fehlende Fotos vorher hochladen (`POST /photos/missing`, `PUT /photos/{sha256}`).
@@ -137,6 +139,10 @@ Ungesendete Änderungen in der Outbox bleiben und gehen nach dem Update über Pr
 - **Fertig-Kriterium:** echte Datenbank aus „Foody Debug“ migrieren, dann gegen den Test-Server synchronisieren (er hat
   die Geräte-Tokens aus der Kopie vom 2026-10-17): alle Zeilen erhalten, Outbox leer, keine Sync-Probleme, keine
   doppelten Datensätze.
+  Umsetzung (Entscheidung 2026-10-18): Das Token des Handys liegt im Hardware-Keystore und ist nicht kopierbar.
+  `EchteDatenSyncTest` behält Sync-Zustand und Cursor der migrierten echten Datenbank, meldet sich aber mit Benutzer
+  und Test-Passwort neu am Test-Server an. Die Token-Kontinuität belegen Tests (`TokenSpeicherTest`,
+  `SyncLaufTest.alterTokenUndCursorReichen`); „ohne neue Anmeldung“ auf dem Gerät prüft Phase 8.
 
 ## Nicht in Phase 3
 
