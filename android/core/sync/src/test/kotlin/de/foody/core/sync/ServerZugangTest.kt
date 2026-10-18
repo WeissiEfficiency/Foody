@@ -13,7 +13,21 @@ import de.foody.server.sync.Compactor
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.api.createClientPlugin
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.response.header
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondBytesWriter
 import io.ktor.server.response.respondText
+import io.ktor.server.routing.route
+import io.ktor.server.routing.routing
+import io.ktor.utils.io.writeFully
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.cancellation.CancellationException
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -201,6 +215,136 @@ class ServerZugangTest {
             assertFailsWith<ServerFehler.Offline> { zugang.fotoLaden("0".repeat(64)) }
             assertFailsWith<ServerFehler.Offline> { zugang.fotoHochladen("0".repeat(64), byteArrayOf(1)) }
         }
+    }
+
+    /** Antwort aus [bytes] Bytes ohne Content-Length (chunked), damit nur das gezählte Lesen greift. */
+    private suspend fun ApplicationCall.grosseAntwort(status: HttpStatusCode, anfang: String, bytes: Long) {
+        respondBytesWriter(ContentType.Application.Json, status) {
+            val kopf = anfang.toByteArray()
+            writeFully(kopf)
+            val block = ByteArray(64 * 1024) { ' '.code.toByte() }
+            var rest = bytes - kopf.size
+            while (rest > 0) {
+                val n = minOf(rest, block.size.toLong()).toInt()
+                writeFully(block, 0, n)
+                rest -= n
+            }
+        }
+    }
+
+    @Test
+    fun antwortenWerdenBegrenztGelesen() {
+        val geheim = "GEHEIMES-TOKEN-4711"
+        val grenze = KtorServerZugang.MAX_ANTWORT_BYTES
+        ersatzServer({
+            get("/api/v3/sync/pull") {
+                when (call.request.queryParameters["since"]) {
+                    // Normale Antwort über der Obergrenze, ohne und mit Content-Length
+                    "1" -> call.grosseAntwort(HttpStatusCode.OK, """{"records":[],"nextCursor":0,"hasMore":false}""", grenze + 1)
+                    "2" -> call.respondText(" ".repeat((grenze + 1).toInt()), ContentType.Application.Json)
+                    // Genau an der Grenze: wird noch gelesen
+                    "3" -> call.grosseAntwort(HttpStatusCode.OK, """{"records":[],"nextCursor":9,"hasMore":false}""", grenze)
+                    // Große Fehler-Bodies: nur der Anfang zählt, das Token weiter hinten wird nie gelesen
+                    "4" -> call.grosseAntwort(HttpStatusCode.Conflict, """{"code":"protocol_too_old"}""" + " ".repeat(5000) + geheim, 8L * 1024 * 1024)
+                    "5" -> call.grosseAntwort(HttpStatusCode.InternalServerError, geheim, 8L * 1024 * 1024)
+                }
+            }
+            get("/api/v3/photos/{sha}") {
+                call.grosseAntwort(HttpStatusCode.OK, "", Protocol.MAX_PHOTO_BYTES + 1)
+            }
+        }) {
+            val zugang = zugang { "t" }
+            assertFailsWith<ServerFehler.ZuGross> { zugang.pull(1, 10) }
+            assertFailsWith<ServerFehler.ZuGross> { zugang.pull(2, 10) }
+            assertEquals(9, zugang.pull(3, 10).nextCursor)
+            val fehler = listOf(
+                assertFailsWith<ServerFehler.AppZuAlt> { zugang.pull(4, 10) },
+                assertFailsWith<ServerFehler.Server> { zugang.pull(5, 10) },
+            )
+            for (f in fehler) assertFalse(f.stackTraceToString().contains(geheim))
+            assertFailsWith<ServerFehler.ZuGross> { zugang.fotoLaden("0".repeat(64)) }
+        }
+    }
+
+    @Test
+    fun weiterleitungWirdNichtGefolgt() = runBlocking<Unit> {
+        // Ziel auf eigenem Port (anderer Ursprung): zählt Aufrufe und merkt sich das mitgeschickte Token
+        val zielAufrufe = AtomicInteger()
+        var zielAnmeldung: String? = null
+        val ziel = embeddedServer(Netty, host = "127.0.0.1", port = 0) {
+            routing {
+                route("{...}") {
+                    handle {
+                        zielAufrufe.incrementAndGet()
+                        zielAnmeldung = call.request.headers[HttpHeaders.Authorization]
+                        call.respondText("""{"records":[],"nextCursor":0,"hasMore":false}""", ContentType.Application.Json)
+                    }
+                }
+            }
+        }.start(wait = false)
+        try {
+            val zielPort = ziel.engine.resolvedConnectors().first().port
+            val quelle = embeddedServer(Netty, host = "127.0.0.1", port = 0) {
+                routing {
+                    get("/api/v3/sync/pull") {
+                        call.response.header(HttpHeaders.Location, "http://127.0.0.1:$zielPort/api/v3/sync/pull?since=0&limit=10")
+                        call.respond(HttpStatusCode.Found)
+                    }
+                }
+            }.start(wait = false)
+            try {
+                val basis = "http://127.0.0.1:${quelle.engine.resolvedConnectors().first().port}"
+
+                // Gegenprobe: ein Client, der Weiterleitungen folgt, erreicht das Ziel (Ktor lässt dabei das
+                // Authorization-Header bei fremdem Ursprung weg – darauf verlassen wir uns nicht).
+                HttpClient(OkHttp).use { folgend ->
+                    KtorServerZugang(basis, folgend) { "geheim" }.pull(0, 10)
+                }
+                assertEquals(1, zielAufrufe.get())
+                zielAnmeldung = null
+
+                // Die echte Konfiguration folgt nicht: 302 ist ein Fehler, das Ziel sieht nichts
+                standardHttpClient().use { client ->
+                    val fehler = assertFailsWith<ServerFehler.Abgelehnt> {
+                        KtorServerZugang(basis, client) { "geheim" }.pull(0, 10)
+                    }
+                    assertEquals(302, fehler.status)
+                }
+                assertEquals(1, zielAufrufe.get())
+                assertNull(zielAnmeldung)
+            } finally {
+                quelle.stop(0, 0)
+            }
+        } finally {
+            ziel.stop(0, 0)
+        }
+    }
+
+    @Test
+    fun unerwarteteAusnahmenWerdenServerfehler() = testApplication {
+        val geheim = "GEHEIMES-TOKEN-4711"
+        val wirft = createClient {
+            install(createClientPlugin("Wurf") { onRequest { _, _ -> throw IllegalStateException("kaputt $geheim") } })
+        }
+        val zugang = KtorServerZugang(TEST_BASIS, wirft) { geheim }
+        val fehler = listOf(
+            assertFailsWith<ServerFehler.Server> { zugang.pull(0, 10) },
+            assertFailsWith<ServerFehler.Server> { zugang.anmelden(LoginRequest("a", "b", "c")) },
+            assertFailsWith<ServerFehler.Server> { zugang.fotoLaden("0".repeat(64)) },
+            assertFailsWith<ServerFehler.Server> { zugang.fotoHochladen("0".repeat(64), byteArrayOf(1)) },
+        )
+        for (f in fehler) {
+            assertEquals(0, f.status)
+            assertEquals("server_fehler", f.kennung)
+            assertNull(f.cause)
+            assertFalse(f.stackTraceToString().contains(geheim))
+        }
+
+        // Coroutine-Abbrüche laufen unverändert durch
+        val abbruch = createClient {
+            install(createClientPlugin("Abbruch") { onRequest { _, _ -> throw CancellationException("abgebrochen") } })
+        }
+        assertFailsWith<CancellationException> { KtorServerZugang(TEST_BASIS, abbruch) { null }.pull(0, 10) }
     }
 
     @Test

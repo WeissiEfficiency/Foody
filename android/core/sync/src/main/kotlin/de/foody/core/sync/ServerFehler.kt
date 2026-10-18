@@ -31,7 +31,7 @@ sealed class ServerFehler(val kennung: String, ursache: Throwable? = null) : Exc
     /** Sonstige `3xx`/`4xx` (Weiterleitungen werden nicht verfolgt); [code] aus dem Fehler-Body, falls lesbar. */
     class Abgelehnt(val status: Int, val code: ErrorCode?) : ServerFehler(SERVER_FEHLER)
 
-    /** `5xx` oder eine Antwort, die nicht dem Protokoll entspricht. */
+    /** `5xx`, eine Antwort, die nicht dem Protokoll entspricht, oder ein unerwarteter Fehler ([status] `0`). */
     class Server(val status: Int) : ServerFehler(SERVER_FEHLER)
 
     companion object {
