@@ -43,7 +43,7 @@ object DatenModul {
     @Singleton
     fun fotoIndex(db: FoodyDatenbank, ablage: FotoAblage): FotoIndex = FotoIndex(db.syncDao(), ablage)
 
-    /** Singleton: [SyncSpeicher.laufSperre] muss für Sync-Lauf, Trennen und Sicherung dieselbe sein. */
+    /** Singleton: [SyncSpeicher.laufSperre] muss für Sync-Lauf, Trennen und das Ersetzen beim Aktivieren dieselbe sein. */
     @Provides
     @Singleton
     fun syncSpeicher(db: FoodyDatenbank, ablage: FotoAblage, index: FotoIndex): SyncSpeicher = SyncSpeicher(db, ablage, index)

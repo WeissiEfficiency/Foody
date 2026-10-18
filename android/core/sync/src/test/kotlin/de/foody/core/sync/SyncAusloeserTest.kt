@@ -28,6 +28,8 @@ import de.foody.core.data.sync.SyncSpeicher
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -149,7 +151,9 @@ class SyncAusloeserTest {
         )
         g.ausloeser.appImVordergrund().join()
         g.ausloeser.jetzt().join()
-        delay(200) // Gelegenheit für den Outbox-Flow; ohne aktiven Sync wächst die Outbox gar nicht.
+        // Die Beobachtung hat den (unveränderten, leeren) Outbox-Stand verarbeitet: ohne aktiven Sync schreiben die
+        // Trigger nichts, es kommt kein weiterer Stand.
+        warteBis { g.ausloeser.outboxStaendeGesehen.get() >= 1 }
         assertTrue(g.db.syncDao().outbox().isEmpty())
         assertTrue(auftraege().isEmpty(), "nichts eingeplant")
 
@@ -195,7 +199,8 @@ class SyncAusloeserTest {
                 if (einmal) {
                     einmal = false
                     g.zutat("spaet")
-                    delay(300) // dem Outbox-Flow Zeit lassen, während der Lauf noch die Sperre hält
+                    // Die Beobachtung hat den Zuwachs gesehen und – weil ein Auftrag läuft – zum Nachholen vermerkt.
+                    warteBis { g.ausloeser.nachLaufVermerkt }
                 }
                 return echt.pull(since, limit)
             }
@@ -208,12 +213,70 @@ class SyncAusloeserTest {
         warteBis { wartend().isNotEmpty() }
         g.ausloeser.jetzt().join()
         val erster = wartend().single { it.initialDelayMillis == 0L }
+        val vorher = auftraege().map { it.id }.toSet()
         WorkManagerTestInitHelper.getTestDriver(context)!!.setAllConstraintsMet(erster.id)
-        warteBis { workManager.getWorkInfoById(erster.id).get()!!.state == WorkInfo.State.SUCCEEDED }
+        warteBis { workManager.getWorkInfoById(erster.id).get()!!.state.isFinished }
 
-        // Der laufende Auftrag wurde nicht abgebrochen (SUCCEEDED oben), ein weiterer ist eingeplant.
+        // Der laufende Auftrag wurde nicht ersetzt (REPLACE hätte ihn abgebrochen), genau einer ist hinter ihm eingeplant.
+        assertEquals(WorkInfo.State.SUCCEEDED, workManager.getWorkInfoById(erster.id).get()!!.state)
         assertTrue(g.db.syncDao().outbox().any { it.recordId == "spaet" }, "Änderung wartet auf den nächsten Lauf")
-        warteBis { wartend().any { it.id != erster.id } }
+        val neu = auftraege().filter { it.id !in vorher }
+        assertEquals(1, neu.size)
+        assertEquals(WorkInfo.State.ENQUEUED, neu.single().state)
+        assertEquals(TimeUnit.SECONDS.toMillis(5), neu.single().initialDelayMillis)
+    }
+
+    @Test
+    fun ausloeserWaehrendAuftragWirdNachgeholt() = runBlocking {
+        val g = Geraet { null }
+        g.speicher.aktivieren("http://localhost:1", "konto", allesHochladen = false)
+        g.ausloeser.jetzt().join()
+        val laufender = wartend().single()
+
+        g.ausloeser.auftragBeginnt()
+        g.ausloeser.jetzt().join()
+        assertTrue(g.ausloeser.nachLaufVermerkt)
+        assertEquals(listOf(laufender.id), auftraege().map { it.id }, "kein neuer Auftrag während des Laufs")
+        assertEquals(WorkInfo.State.ENQUEUED, workManager.getWorkInfoById(laufender.id).get()!!.state, "nicht abgebrochen")
+
+        g.ausloeser.nachLauf(SyncErgebnis.Fertig(gesendet = 0, geholt = 0))
+        assertFalse(g.ausloeser.nachLaufVermerkt)
+        val neu = auftraege().filter { it.id != laufender.id }
+        assertEquals(1, neu.size, "genau ein Nachlauf")
+        assertEquals(TimeUnit.SECONDS.toMillis(5), neu.single().initialDelayMillis)
+        assertNotEquals(WorkInfo.State.CANCELLED, workManager.getWorkInfoById(laufender.id).get()!!.state)
+    }
+
+    @Test
+    fun gesperrterLaufOhneAuftragVerliertNichts() = runBlocking {
+        val g = Geraet { null }
+        g.speicher.aktivieren("http://localhost:1", "konto", allesHochladen = false)
+        // Die Sperre hält kein Auftrag (z. B. Ersetzen beim Aktivieren): normal einplanen, der Auftrag wartet auf sie.
+        g.speicher.laufSperre.lock()
+        try {
+            g.ausloeser.jetzt().join()
+            assertEquals(1, wartend().size)
+            assertFalse(g.ausloeser.nachLaufVermerkt)
+        } finally {
+            g.speicher.laufSperre.unlock()
+        }
+    }
+
+    @Test
+    fun erneuteAenderungEinesVorgemerktenPlantAuftrag() = runBlocking {
+        val g = Geraet { null }
+        g.speicher.aktivieren("http://localhost:1", "konto", allesHochladen = false)
+        g.zutat("a")
+        assertEquals(1, g.db.syncDao().outbox().size)
+        g.ausloeser.beimStart()
+        warteBis { wartend().isNotEmpty() }
+        workManager.cancelUniqueWork(SyncAusloeser.AUFTRAG).result.get()
+        assertTrue(wartend().isEmpty())
+
+        // Gleiche Zahl an Einträgen, aber der vorgemerkte Datensatz ändert sich erneut.
+        g.db.zutatDao().upsert(ZutatEntity(id = "a", canonicalName = "Zutat a neu", createdAt = 1, updatedAt = 2))
+        assertEquals(1, g.db.syncDao().outbox().size)
+        warteBis { wartend().isNotEmpty() }
     }
 
     @Test

@@ -5,6 +5,9 @@ import androidx.room.Query
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
+/** Stand der Outbox: [anzahl] Einträge, [neuester] das größte `queuedAt` (`null` bei leerer Outbox). */
+data class OutboxStand(val anzahl: Int, val neuester: Long?)
+
 /**
  * Zugriff auf die Sync-Tabellen. Grundoperationen je Tabelle (alle, einzeln, upsert, löschen) und die Abfragen, die
  * der `SyncSpeicher` für Pakete, Anwenden und Voll-Abgleich braucht.
@@ -36,8 +39,12 @@ interface SyncDao {
 
     @Query("DELETE FROM sync_outbox") suspend fun outboxLeeren()
 
-    /** Zahl der Outbox-Einträge, bei jeder Änderung neu (für die Sync-Auslöser). */
-    @Query("SELECT COUNT(*) FROM sync_outbox") fun outboxAnzahl(): Flow<Int>
+    /**
+     * Zahl der Outbox-Einträge und jüngstes `queuedAt`, bei jeder Änderung neu (für die Sync-Auslöser). Das jüngste
+     * `queuedAt` wächst auch, wenn ein schon vorgemerkter Datensatz erneut geändert wird (die Trigger setzen es auf
+     * `MAX(jetzt, alt + 1)`).
+     */
+    @Query("SELECT COUNT(*) AS anzahl, MAX(queuedAt) AS neuester FROM sync_outbox") fun outboxStand(): Flow<OutboxStand>
 
     // sync_record_rev
     @Query("SELECT * FROM sync_record_rev ORDER BY type, recordId") suspend fun revisionen(): List<SyncRevisionEntity>

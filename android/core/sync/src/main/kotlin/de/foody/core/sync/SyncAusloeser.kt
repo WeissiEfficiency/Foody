@@ -9,6 +9,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.foody.core.data.db.FoodyDatenbank
+import de.foody.core.data.db.OutboxStand
 import de.foody.core.data.sync.SyncSpeicher
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -27,8 +28,9 @@ import kotlinx.coroutines.launch
  * - App kommt in den Vordergrund ([appImVordergrund]) und „Jetzt synchronisieren“ ([jetzt]): sofort;
  * - die Outbox wächst (lokale Änderung): entprellt um [ENTPRELLUNG_SEKUNDEN] – jede weitere Änderung ersetzt den
  *   wartenden Auftrag (`REPLACE`).
- * Inaktiver Sync plant nichts. Läuft gerade ein Auftrag, wird er nicht ersetzt (das bräche ihn ab): Der Wunsch wird
- * vermerkt und der Auftrag plant am Ende einen weiteren hinter sich ([nachLauf]).
+ * Inaktiver Sync plant nichts. Läuft gerade ein [SyncAuftrag], wird er nicht ersetzt (das bräche ihn ab): Der Wunsch
+ * wird vermerkt und der Auftrag plant am Ende einen weiteren hinter sich ([nachLauf]). Hält nur jemand anderes die
+ * `laufSperre` (Trennen, Ersetzen), wird normal eingeplant; der Auftrag wartet dann auf die Sperre.
  */
 @Singleton
 class SyncAusloeser @Inject constructor(
@@ -46,6 +48,12 @@ class SyncAusloeser @Inject constructor(
     /** Während eines Laufs kam ein Auslöser: danach erneut. */
     private val nachLaufNoetig = AtomicBoolean(false)
     private var beobachtung: Job? = null
+
+    /** Für Tests: Während eines Auftrags kam ein Auslöser, der nach dem Lauf nachgeholt wird. */
+    internal val nachLaufVermerkt: Boolean get() = nachLaufNoetig.get()
+
+    /** Für Tests: Zahl der verarbeiteten Outbox-Stände der Beobachtung. */
+    internal val outboxStaendeGesehen = AtomicInteger()
 
     /** Beim App-Start: den periodischen Auftrag der v1 abmelden und die Outbox beobachten. */
     fun beimStart() {
@@ -71,26 +79,28 @@ class SyncAusloeser @Inject constructor(
     }
 
     /**
-     * Beobachtet die Outbox und plant bei Zuwachs entprellt einen Lauf (nur bei aktivem Sync). Ein Rückgang (Senden)
-     * löst nichts aus, sonst gäbe es eine Schleife. Der erste Wert zählt als Zuwachs gegenüber 0: Was beim Start noch
-     * offen ist, geht zeitnah hinaus. Ein zweiter Aufruf tut nichts.
+     * Beobachtet die Outbox und plant bei Zuwachs entprellt einen Lauf (nur bei aktivem Sync). Zuwachs: mehr Einträge
+     * oder ein jüngeres `queuedAt` (erneute Änderung eines schon vorgemerkten Datensatzes). Ein Rückgang (Senden) löst
+     * nichts aus, sonst gäbe es eine Schleife. Der erste Wert zählt als Zuwachs gegenüber der leeren Outbox: Was beim
+     * Start noch offen ist, geht zeitnah hinaus. Ein zweiter Aufruf tut nichts.
      */
     @Synchronized
     private fun outboxBeobachten() {
         if (beobachtung?.isActive == true) return
         beobachtung = bereich.launch {
-            var vorher = 0
-            db.syncDao().outboxAnzahl().distinctUntilChanged().collect { anzahl ->
-                val gewachsen = anzahl > vorher
-                vorher = anzahl
+            var vorher = OutboxStand(0, null)
+            db.syncDao().outboxStand().distinctUntilChanged().collect { stand ->
+                val gewachsen = stand.anzahl > vorher.anzahl || (stand.neuester ?: 0) > (vorher.neuester ?: 0)
+                vorher = stand
                 if (gewachsen && speicher.zustand().aktiv) planen(ENTPRELLUNG_SEKUNDEN)
+                outboxStaendeGesehen.incrementAndGet()
             }
         }
     }
 
     private fun planen(verzoegerungSekunden: Long) {
-        // Ein laufender Auftrag (oder ein Lauf, der die Sperre hält) würde durch REPLACE abgebrochen.
-        if (laufend.get() > 0 || speicher.laufSperre.isLocked) {
+        // Ein laufender Auftrag würde durch REPLACE abgebrochen; er holt den Wunsch in nachLauf nach.
+        if (laufend.get() > 0) {
             nachLaufNoetig.set(true)
             return
         }
@@ -120,7 +130,7 @@ class SyncAusloeser @Inject constructor(
         laufend.decrementAndGet()
         val ausgeloest = nachLaufNoetig.getAndSet(false)
         if (!speicher.zustand().aktiv) return
-        val mehr = ergebnis is SyncErgebnis.Fertig && ergebnis.gesendet > 0 && db.syncDao().outboxAnzahl().first() > 0
+        val mehr = ergebnis is SyncErgebnis.Fertig && ergebnis.gesendet > 0 && db.syncDao().outboxStand().first().anzahl > 0
         if (ausgeloest || mehr) einreihen(ExistingWorkPolicy.APPEND_OR_REPLACE, ENTPRELLUNG_SEKUNDEN)
     }
 
