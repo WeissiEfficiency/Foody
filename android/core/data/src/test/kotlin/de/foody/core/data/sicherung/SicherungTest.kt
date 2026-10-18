@@ -26,6 +26,9 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
@@ -38,6 +41,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -335,19 +339,20 @@ class SicherungTest {
      */
     @Test
     fun abbruchBeimAbschlussBehaeltFotos() = runTest {
-        var job: Job? = null
-        var tiefe = 0
-        var scharf = false
+        // Callback läuft auf dem Transaktions-Thread: Zustand threadsicher halten.
+        val jobRef = AtomicReference<Job>()
+        val tiefe = AtomicInteger(0)
+        val scharf = AtomicBoolean(false)
         @Suppress("DEPRECATION")
         val ziel = Room.inMemoryDatabaseBuilder(context, FoodyDatenbank::class.java)
             .addCallback(FoodyDatenbank.CALLBACK)
             .allowMainThreadQueries()
             .setQueryCallback({ sql, _ ->
-                if (scharf) {
-                    if (sql.startsWith("BEGIN")) tiefe++
-                    if (sql.startsWith("END TRANSACTION") && --tiefe == 0) {
-                        scharf = false
-                        job?.cancel()
+                if (scharf.get()) {
+                    if (sql.startsWith("BEGIN")) tiefe.incrementAndGet()
+                    if (sql.startsWith("END TRANSACTION") && tiefe.decrementAndGet() == 0) {
+                        scharf.set(false)
+                        jobRef.get().cancel()
                     }
                 }
             }, Runnable::run)
@@ -357,12 +362,15 @@ class SicherungTest {
         val foto = kleinesJpeg()
         val bytes = zip("photos/1.jpg" to foto, "backup.json" to vEinsJson.toByteArray())
 
-        scharf = true
-        job = launch(Dispatchers.IO) { s.lesen(ByteArrayInputStream(bytes)) }
+        scharf.set(true)
+        // Erst merken, dann starten: der Callback sieht den Job sicher.
+        val job = launch(Dispatchers.IO, start = CoroutineStart.LAZY) { s.lesen(ByteArrayInputStream(bytes)) }
+        jobRef.set(job)
+        job.start()
         job.join()
 
         assertTrue(job.isCancelled)
-        assertFalse(scharf, "Abbruch beim Abschluss der Transaktion ausgelöst")
+        assertFalse(scharf.get(), "Abbruch beim Abschluss der Transaktion ausgelöst")
         val r = assertNotNull(ziel.rezeptDao().nachId("r1"), "Import übernommen")
         val datei = assertNotNull(ablage.datei(assertNotNull(r.imageUri)))
         assertTrue(datei.isFile, "Foto des übernommenen Rezepts bleibt: ${fotodateien()}")
