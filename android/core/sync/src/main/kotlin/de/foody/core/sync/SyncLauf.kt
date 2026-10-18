@@ -249,7 +249,7 @@ class SyncLauf(
                 speicher.fotoErhalten(rezeptId, sha256, bytes)
             } catch (_: IOException) {
                 // Ablegen gescheitert (z. B. Speicher voll): vorübergehend, der Wunsch bleibt; die übrigen weiter.
-                stoerung = ServerFehler.Server(0)
+                if (stoerung == null) stoerung = ServerFehler.Server(0)
             }
         }
         stoerung?.let { throw it }
