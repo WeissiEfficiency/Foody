@@ -106,6 +106,8 @@ Spec: [`2026-10-17-v3-phase2-server-schlank-design.md`](../docs/superpowers/spec
 **Fertig, wenn** zwei Test-Geräte mit demselben Konto vollständig synchronisieren.
 
 ### Phase 3 – App-Daten und Sync-Client (≈ 1 Woche)
+Spec: [`2026-10-18-v3-phase3-app-daten-sync-design.md`](../docs/superpowers/specs/2026-10-18-v3-phase3-app-daten-sync-design.md)
+(neu geschrieben, v1 als Vorlage; Nachweis über Tests, echte DB aus „Foody Debug“).
 - [ ] `:core:data`: Room v10, Migration 9 → 10 (Vorratstabelle entfernen, Haushalt → Konto) mit Migrationstest
 - [ ] `:core:sync`: Client für Protokoll v3; Sync beim Öffnen/Fortsetzen und nach Änderungen (entprellt), kein
       periodischer Worker
