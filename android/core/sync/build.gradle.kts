@@ -23,6 +23,10 @@ dependencies {
     // Server-Zugang: Ktor-Client über OkHttp; Bodies werden selbst mit Protocol.json verarbeitet
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
+    // Auslöser: einmaliger Auftrag mit Netz-Bedingung, Worker über Hilt
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
 
     testImplementation(libs.junit4)
     testImplementation(libs.kotlin.test.junit)
@@ -33,4 +37,6 @@ dependencies {
     // TokenSpeicher: SharedPreferences und android.util.Base64 unter Robolectric
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    // SyncAusloeser/SyncAuftrag: WorkManager im Test (TestDriver, kein echtes Warten)
+    testImplementation(libs.androidx.work.testing)
 }

@@ -3,6 +3,7 @@ package de.foody.core.data.db
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Zugriff auf die Sync-Tabellen. Grundoperationen je Tabelle (alle, einzeln, upsert, löschen) und die Abfragen, die
@@ -34,6 +35,9 @@ interface SyncDao {
     suspend fun allesVormerken(jetzt: Long)
 
     @Query("DELETE FROM sync_outbox") suspend fun outboxLeeren()
+
+    /** Zahl der Outbox-Einträge, bei jeder Änderung neu (für die Sync-Auslöser). */
+    @Query("SELECT COUNT(*) FROM sync_outbox") fun outboxAnzahl(): Flow<Int>
 
     // sync_record_rev
     @Query("SELECT * FROM sync_record_rev ORDER BY type, recordId") suspend fun revisionen(): List<SyncRevisionEntity>

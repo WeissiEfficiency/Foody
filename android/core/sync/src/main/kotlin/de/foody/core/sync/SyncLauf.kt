@@ -27,12 +27,13 @@ private class CursorHaengt : Exception(ServerFehler.CURSOR_HAENGT)
  * 4. Gewünschte Fotos laden und verknüpfen.
  *
  * Alles läuft unter [SyncSpeicher.laufSperre] (ein Lauf zur Zeit; Trennen wartet). [zugang] wird erst bei aktivem Sync
- * gebaut; `null` heißt: kein (lesbares) Token. In `sync_state.lastError` landen nur die festen Kennungen aus
+ * gebaut (suspend: Adresse und Token kommen aus Datenbank und Token-Speicher, siehe [zugangFuerLauf]); `null` heißt:
+ * keine Adresse oder kein (lesbares) Token. In `sync_state.lastError` landen nur die festen Kennungen aus
  * [ServerFehler]; ein erfolgreicher Lauf setzt sie zurück. Das Token wird hier nie verworfen – auch nicht bei `401`.
  */
 class SyncLauf(
     private val speicher: SyncSpeicher,
-    private val zugang: () -> ServerZugang?,
+    private val zugang: suspend () -> ServerZugang?,
 ) {
     suspend fun ausfuehren(): SyncErgebnis = speicher.laufSperre.withLock {
         try {
