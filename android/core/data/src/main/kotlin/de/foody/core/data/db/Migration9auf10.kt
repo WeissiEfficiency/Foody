@@ -16,9 +16,16 @@ private const val VORRAT = "pantry_item"
  * 2. Vorrats-Zeilen aus `sync_outbox`, `sync_record_rev` und `sync_problem` löschen; alle anderen ungesendeten
  *    Änderungen bleiben in der Outbox.
  * 3. `sync_state` mit `kontoId` statt `householdId` neu anlegen (Spalten exakt wie Schema 10), Werte übernehmen,
- *    `kontoId = NULL` (Haushalts- ≠ Konto-ID). Cursor und Aktivierung bleiben → kein Voll-Abgleich.
+ *    `kontoId = NULL` (Haushalts- ≠ Konto-ID). Cursor und Aktivierung bleiben → kein Voll-Abgleich. `lastError` wird auf
+ *    die festen Kennungen der V3 abgebildet ([LETZTER_FEHLER_V3]); alles andere der v1 (`no_household`, Freitexte wie
+ *    `transient: …`) wird `NULL`.
  * 4. Die Sync-Trigger von Version 10 anlegen.
  */
+/** v1-`lastError` → feste Kennung der V3; sonst `NULL`. */
+private const val LETZTER_FEHLER_V3 =
+    "CASE lastError WHEN 'unauthorized' THEN 'anmeldung_abgelaufen' WHEN 'protocol_too_old' THEN 'app_zu_alt' " +
+        "WHEN 'protocol_server_too_old' THEN 'server_zu_alt' ELSE NULL END"
+
 val MIGRATION_9_10: Migration = object : Migration(9, 10) {
     override fun migrate(db: SupportSQLiteDatabase) {
         // 1.
@@ -43,7 +50,7 @@ val MIGRATION_9_10: Migration = object : Migration(9, 10) {
         )
         db.execSQL(
             "INSERT INTO `sync_state_neu` (id, active, applyingRemote, serverUrl, kontoId, cursor, lastSyncAt, lastError) " +
-                "SELECT id, active, applyingRemote, serverUrl, NULL, cursor, lastSyncAt, lastError FROM `sync_state`",
+                "SELECT id, active, applyingRemote, serverUrl, NULL, cursor, lastSyncAt, $LETZTER_FEHLER_V3 FROM `sync_state`",
         )
         db.execSQL("DROP TABLE `sync_state`")
         db.execSQL("ALTER TABLE `sync_state_neu` RENAME TO `sync_state`")

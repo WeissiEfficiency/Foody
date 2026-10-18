@@ -34,13 +34,16 @@ enum class ErsterSync {
 
 /**
  * Verbinden und Trennen des Syncs (wie `SyncAccountRepository` der v1, ohne Haushalte):
- * 1. [anmelden] prüft die Adresse, meldet das Gerät an und speichert nur das Token – **aktiv** wird der Sync erst mit
- *    [aktivieren], damit eine falsche Adresse oder ein abgebrochener Dialog nie einen Hintergrund-Sync auslöst.
- * 2. [aktivieren] schaltet den Sync ein (Cursor 0) und stößt den ersten Lauf an.
+ * 1. [anmelden] prüft die Adresse und meldet das Gerät an. Adresse, Konto-ID und Token bleiben bis [aktivieren] **nur im
+ *    Speicher**: Ein abgebrochener Dialog oder eine Anmeldung an einem anderen Server/Konto berührt weder das gespeicherte
+ *    Token noch einen laufenden Sync (sonst ginge das neue Token mit der alten Adresse hinaus).
+ * 2. [aktivieren] speichert das Token und schaltet den Sync ein (Cursor 0) – bei einer Wiederanmeldung am selben Server
+ *    und Konto übernimmt es nur das neue Token – und stößt einen Lauf an.
  * 3. [trennen] meldet das Gerät beim Server ab (falls erreichbar) und leert Token und Sync-Tabellen; lokale Daten bleiben.
  *
- * Adresse und Konto-ID der Anmeldung bleiben bis zum Aktivieren nur im Speicher (die Datenbank kennt sie erst aktiv).
- * Tokens und Passwörter werden nie geloggt oder gemeldet.
+ * Nach der Migration 9 → 10 ist `kontoId` `NULL` (Haushalts- ≠ Konto-ID): Ein erneutes Aktivieren geht dann nur über
+ * [anmelden] und schaltet den Sync wie neu ein (Cursor 0, Modus wie gewählt) – die Oberfläche (Phase 6) muss das so
+ * anbieten. Tokens und Passwörter werden nie geloggt oder gemeldet.
  */
 @Singleton
 class SyncKonto @Inject constructor(
@@ -52,14 +55,17 @@ class SyncKonto @Inject constructor(
     private val ausloeser: SyncAusloeser,
     private val konfiguration: SyncKonfiguration,
 ) {
-    private data class Anmeldung(val adresse: String, val kontoId: String)
+    /** Anmeldung bis zum Aktivieren; [token] nie in [toString] (Logs, Fehlermeldungen). */
+    private class Anmeldung(val adresse: String, val kontoId: String, val token: String) {
+        override fun toString() = "Anmeldung($adresse, $kontoId)"
+    }
 
     @Volatile private var anmeldung: Anmeldung? = null
 
     /**
-     * Meldet dieses Gerät als [geraet] beim Server unter [adresse] an und speichert das Token. Fehler kommen als
-     * [Ergebnis.Fehler] mit [UNGUELTIGE_ADRESSE], [FALSCHE_ZUGANGSDATEN], [ZU_VIELE_VERSUCHE], [TOKEN_NICHT_GESPEICHERT]
-     * oder einer Kennung aus [ServerFehler] (z. B. `offline`, `server_zu_alt`).
+     * Meldet dieses Gerät als [geraet] beim Server unter [adresse] an und merkt sich das Token im Speicher (gespeichert
+     * wird es erst von [aktivieren]). Fehler kommen als [Ergebnis.Fehler] mit [UNGUELTIGE_ADRESSE], [FALSCHE_ZUGANGSDATEN],
+     * [ZU_VIELE_VERSUCHE] oder einer Kennung aus [ServerFehler] (z. B. `offline`, `server_zu_alt`).
      */
     suspend fun anmelden(adresse: String, benutzer: String, passwort: String, geraet: String): Ergebnis<Unit> {
         val geprueft = ServerAdresse.pruefen(adresse, konfiguration.lokalesHttpErlaubt) ?: return Ergebnis.Fehler(UNGUELTIGE_ADRESSE)
@@ -76,15 +82,7 @@ class SyncKonto @Inject constructor(
                 },
             )
         }
-        try {
-            token.speichern(antwort.token)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            // Keystore gestört o. Ä.; die Ausnahme könnte Einzelheiten tragen – nur die Kennung geht hinaus.
-            return Ergebnis.Fehler(TOKEN_NICHT_GESPEICHERT)
-        }
-        anmeldung = Anmeldung(geprueft, antwort.kontoId)
+        anmeldung = Anmeldung(geprueft, antwort.kontoId, antwort.token)
         return Ergebnis.Erfolg(Unit)
     }
 
@@ -94,53 +92,101 @@ class SyncKonto @Inject constructor(
     }
 
     /**
-     * Schaltet den Sync für die letzte [anmelden]-Anmeldung ein (ohne sie: für die gespeicherte Verbindung, etwa nach
-     * „Anmeldung abgelaufen“) und stößt den ersten Lauf an.
+     * Schaltet den Sync für die letzte [anmelden]-Anmeldung ein (ohne sie: für die gespeicherte Verbindung) und stößt
+     * einen Lauf an. Token und Sync-Zustand wechseln gemeinsam unter der `laufSperre`: Kein Lauf sieht das neue Token mit
+     * der alten Adresse.
+     * - **Wiederanmeldung** (Sync aktiv, gleiche Adresse und Konto-ID, typisch nach „Anmeldung abgelaufen“): nur das neue
+     *   Token übernehmen und den Fehler löschen; Cursor, Outbox und Daten bleiben, [modus] wirkt nicht.
      * - [ErsterSync.ZUSAMMENFUEHREN]: alle lokalen Datensätze zum Senden vormerken; der Server nimmt Bekanntes an bzw.
      *   führt es zusammen.
      * - [ErsterSync.ERSETZEN]: Rezepte, Plan, Einkaufslisten und Tagebuch samt eigener Fotos verwerfen, ebenso offene
      *   Änderungen; der erste Lauf holt alles. Zutaten bleiben (Startzutaten; der Server führt gleichnamige zusammen, ein
      *   fehlendes Verweisziel reicht der Sync bei Bedarf nach).
      *
-     * @throws IllegalStateException ohne Anmeldung.
+     * Liefert [TOKEN_NICHT_GESPEICHERT], wenn das Token nicht abgelegt werden kann (dann bleibt alles wie vorher).
+     *
+     * @throws IllegalStateException ohne Anmeldung und ohne gespeicherte Verbindung.
      */
-    suspend fun aktivieren(modus: ErsterSync) {
-        val ziel = anmeldung ?: speicher.zustand().let { z ->
-            val adresse = z.serverUrl
-            val kontoId = z.kontoId
-            if (adresse != null && kontoId != null && token.laden() != null) Anmeldung(adresse, kontoId) else null
+    suspend fun aktivieren(modus: ErsterSync): Ergebnis<Unit> {
+        val neu = anmeldung
+        val z = speicher.zustand()
+        val ergebnis = when {
+            neu == null -> {
+                val adresse = z.serverUrl
+                val kontoId = z.kontoId
+                check(adresse != null && kontoId != null && token.laden() != null) { "Nicht angemeldet" }
+                einschalten(adresse, kontoId, modus, neuesToken = null)
+            }
+            z.aktiv && z.serverUrl == neu.adresse && z.kontoId == neu.kontoId -> speicher.laufSperre.withLock {
+                if (tokenSpeichern(neu.token)) {
+                    speicher.fehler(null)
+                    Ergebnis.Erfolg(Unit)
+                } else {
+                    Ergebnis.Fehler(TOKEN_NICHT_GESPEICHERT)
+                }
+            }
+            else -> einschalten(neu.adresse, neu.kontoId, modus, neu.token)
         }
-        checkNotNull(ziel) { "Nicht angemeldet" }
-        if (modus == ErsterSync.ERSETZEN) lokalesVerwerfen()
-        speicher.aktivieren(ziel.adresse, ziel.kontoId, allesHochladen = modus == ErsterSync.ZUSAMMENFUEHREN)
-        anmeldung = null
-        ausloeser.anstossen()
+        if (ergebnis is Ergebnis.Erfolg) {
+            anmeldung = null
+            ausloeser.anstossen()
+        }
+        return ergebnis
+    }
+
+    /**
+     * Speichert [neuesToken] (falls nicht `null`), verwirft bei [ErsterSync.ERSETZEN] das Lokale und schaltet den Sync für
+     * [adresse]/[kontoId] ein – alles unter der `laufSperre`. Scheitert ein Schritt nach dem Speichern, kommt das alte
+     * Token zurück.
+     */
+    private suspend fun einschalten(adresse: String, kontoId: String, modus: ErsterSync, neuesToken: String?): Ergebnis<Unit> =
+        speicher.laufSperre.withLock {
+            val altesToken = if (neuesToken != null) token.laden() else null
+            if (neuesToken != null && !tokenSpeichern(neuesToken)) return@withLock Ergebnis.Fehler(TOKEN_NICHT_GESPEICHERT)
+            try {
+                if (modus == ErsterSync.ERSETZEN) lokalesVerwerfen()
+                speicher.aktivieren(adresse, kontoId, allesHochladen = modus == ErsterSync.ZUSAMMENFUEHREN)
+            } catch (e: Throwable) {
+                if (neuesToken != null) {
+                    withContext(NonCancellable) {
+                        if (altesToken == null || !tokenSpeichern(altesToken)) token.loeschen()
+                    }
+                }
+                throw e
+            }
+            Ergebnis.Erfolg(Unit)
+        }
+
+    /** `false`, wenn der Keystore das Token nicht annimmt; die Ausnahme könnte Einzelheiten tragen und bleibt hier. */
+    private fun tokenSpeichern(wert: String): Boolean = try {
+        token.speichern(wert)
+        true
+    } catch (_: Exception) {
+        false
     }
 
     /**
      * Verwirft die lokalen Fachdaten außer Zutaten, offene Änderungen und Sync-Vermerke – ohne dass etwas davon als
-     * Löschung zum Server geht (`applyingRemote = 1`; bei inaktivem Sync schreiben die Trigger ohnehin nichts). Wartet auf
-     * einen laufenden Abgleich. Danach werden die nicht mehr benutzten eigenen Fotos entfernt.
+     * Löschung zum Server geht (`applyingRemote = 1`; bei inaktivem Sync schreiben die Trigger ohnehin nichts). Danach
+     * werden die nicht mehr benutzten eigenen Fotos entfernt. Nur unter der `laufSperre` aufrufen.
      */
     private suspend fun lokalesVerwerfen() {
         val dao = db.syncDao()
-        speicher.laufSperre.withLock {
-            db.withTransaction {
-                dao.applyingRemoteSetzen(true)
-                db.tagebuchDao().alleLoeschen()
-                db.einkaufsartikelQuelleDao().alleLoeschen()
-                db.einkaufsartikelDao().alleLoeschen()
-                db.einkaufslisteDao().alleLoeschen()
-                db.planEintragDao().alleLoeschen()
-                db.arbeitsschrittDao().alleLoeschen()
-                db.rezeptZutatDao().alleLoeschen()
-                db.rezeptDao().alleLoeschen()
-                dao.outboxLeeren()
-                dao.revisionenLeeren()
-                dao.problemeLeeren()
-                dao.fotowuenscheLeeren()
-                dao.applyingRemoteSetzen(false)
-            }
+        db.withTransaction {
+            dao.applyingRemoteSetzen(true)
+            db.tagebuchDao().alleLoeschen()
+            db.einkaufsartikelQuelleDao().alleLoeschen()
+            db.einkaufsartikelDao().alleLoeschen()
+            db.einkaufslisteDao().alleLoeschen()
+            db.planEintragDao().alleLoeschen()
+            db.arbeitsschrittDao().alleLoeschen()
+            db.rezeptZutatDao().alleLoeschen()
+            db.rezeptDao().alleLoeschen()
+            dao.outboxLeeren()
+            dao.revisionenLeeren()
+            dao.problemeLeeren()
+            dao.fotowuenscheLeeren()
+            dao.applyingRemoteSetzen(false)
         }
         try {
             val benutzt = db.rezeptDao().alle().mapNotNull { it.imageUri }
@@ -154,13 +200,14 @@ class SyncKonto @Inject constructor(
     }
 
     /**
-     * Trennt dieses Gerät: meldet es beim Server ab, falls erreichbar (höchstens [ABMELDEN_MS], Fehler werden ignoriert),
-     * dann – auch bei Abbruch – Token löschen, Aufträge abbrechen und den Sync lokal ausschalten (Outbox, Revisionen,
-     * Probleme, Fotowünsche leeren; wartet auf einen laufenden Lauf). Lokale Daten bleiben.
+     * Trennt dieses Gerät: meldet es zuerst mit dem gespeicherten Token bei der gespeicherten Adresse ab, falls erreichbar
+     * (höchstens [ABMELDEN_MS], Fehler werden ignoriert), dann – auch bei Abbruch – Token löschen, Aufträge abbrechen und
+     * erst danach auf die `laufSperre` warten und den Sync lokal ausschalten (Outbox, Revisionen, Probleme, Fotowünsche
+     * leeren). Eine nicht aktivierte Anmeldung wird nur vergessen. Lokale Daten bleiben.
      */
     suspend fun trennen() {
         try {
-            val adresse = speicher.zustand().serverUrl ?: anmeldung?.adresse
+            val adresse = speicher.zustand().serverUrl
             if (adresse != null && token.laden() != null) {
                 withTimeout(ABMELDEN_MS) { fabrik.fuer(adresse).abmelden() }
             }

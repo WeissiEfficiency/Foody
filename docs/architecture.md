@@ -173,7 +173,9 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
   dass sonst alles gleich ist. `baueDatenbank` registriert nur `MIGRATION_9_10` und den Callback für neue Datenbanken,
   **nie** einen destruktiven Fallback. Die Migration (eine Transaktion) entfernt Vorrat samt Triggern und
   `pantry_item`-Zeilen in Outbox/Revisionen/Problemen, baut `sync_state` mit `kontoId = NULL` neu (Cursor, `active`,
-  `serverUrl`, `lastSyncAt`, `lastError` bleiben) und ersetzt alle Trigger durch `SyncTrigger.anweisungen`. Ungesendete
+  `serverUrl`, `lastSyncAt` bleiben; `lastError` der v1 wird abgebildet: `unauthorized` → `anmeldung_abgelaufen`,
+  `protocol_too_old` → `app_zu_alt`, `protocol_server_too_old` → `server_zu_alt`, alles andere `NULL`) und ersetzt alle
+  Trigger durch `SyncTrigger.anweisungen`. Ungesendete
   Outbox-Einträge (auch Löschungen) bleiben und gehen danach über Protokoll 3 hinaus.
 - **Sync-Trigger:** wie v1 für `ingredient`, `recipe`, `meal_slot`, `shopping_list`, `shopping_item`,
   `tagebuch_eintrag` und die Kindtabellen (`recipe_ingredient`, `instruction_step` → Rezept; `shopping_item_source` →
@@ -188,20 +190,26 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
   (`KtorServerZugang` über OkHttp, Antworten begrenzt gelesen, keine Weiterleitungen).
 - **Auslöser** (`SyncAusloeser`, `SyncAuftrag`): einmaliger WorkManager-Auftrag mit Netz-Bedingung; sofort bei
   Vordergrund und „Jetzt synchronisieren“, nach Outbox-Änderungen entprellt um 5 s. Kein periodischer Auftrag; der
-  v1-Auftrag `foody-sync-periodic` wird beim Start abgemeldet. Ein laufender Auftrag wird nie ersetzt, sondern plant
+  v1-Aufträge `foody-sync-periodic` und `foody-sync-now` werden beim Start abgemeldet. Ein laufender Auftrag wird nie ersetzt, sondern plant
   einen Nachlauf. Nur vorübergehende Fehler werden mit Backoff wiederholt.
 - **Fehlerkennungen** in `sync_state.lastError` (nur diese festen Werte, nie Token oder Bodies): `offline`,
   `anmeldung_abgelaufen` (`401`, kein lesbares Token – das Token wird dabei nicht gelöscht), `app_zu_alt`
   (`409 protocol_too_old`), `server_zu_alt` (`409 server_too_old` oder `404`, z. B. Server ohne `/api/v3`), `cursor_haengt`,
-  `server_fehler` (5xx, unlesbare Antworten, lokale Fehler). Die Anmeldung meldet der Oberfläche zusätzlich
-  `ungueltige_adresse`, `falsche_zugangsdaten`, `zu_viele_versuche`, `token_nicht_gespeichert` (nicht in `lastError`).
+  `server_fehler` (5xx, unlesbare Antworten, lokale Fehler). Anmelden und Aktivieren melden der Oberfläche zusätzlich
+  `ungueltige_adresse`, `falsche_zugangsdaten`, `zu_viele_versuche` bzw. `token_nicht_gespeichert` (nicht in `lastError`).
 - **Verbinden/Trennen** (`SyncKonto`): Adresse prüfen (`https`; Debug zusätzlich `http` für `10.0.2.2`/`localhost`),
-  anmelden (nur Token speichern), erst `aktivieren` schaltet den Sync ein (Cursor 0). „Zusammenführen“ merkt alle lokalen
+  anmelden (Adresse, Konto-ID und Token nur im Speicher), erst `aktivieren` speichert das Token und schaltet den Sync
+  ein (Cursor 0) – beides unter der `laufSperre`, sodass kein Lauf das neue Token mit der alten Adresse sieht; ein
+  abgebrochener Dialog lässt das gespeicherte Token unverändert. Eine Wiederanmeldung am selben Server und Konto bei
+  aktivem Sync (nach „Anmeldung abgelaufen“) übernimmt nur das neue Token; Cursor, Outbox und Daten bleiben. Nach der
+  Migration ist `kontoId` `NULL`: Erneut aktivieren geht dann nur über Anmelden und verbindet wie neu (Cursor 0, Wahl
+  „Zusammenführen“/„Ersetzen“) – so muss es die Oberfläche in Phase 6 anbieten. „Zusammenführen“ merkt alle lokalen
   Datensätze vor. „Ersetzen“ verwirft Rezepte, Plan, Einkaufslisten, Tagebuch, eigene Fotos und Sync-Vermerke, **behält
   aber die Zutaten**: Sie sind großteils Startzutaten, der Server führt gleichnamige Zutaten zusammen, und ein fehlendes
   Verweisziel reicht der Sync bei Bedarf nach. Folge: Eine nur lokal angelegte, nie gesendete Zutat bleibt lokal, bis
-  sie geändert oder von einem gesendeten Datensatz gebraucht wird (Hinweis in der Oberfläche: Phase 6). Trennen wartet auf einen laufenden Lauf, meldet beim Server ab (falls erreichbar), löscht Token und
-  Sync-Tabellen; lokale Daten bleiben.
+  sie geändert oder von einem gesendeten Datensatz gebraucht wird (Hinweis in der Oberfläche: Phase 6). Trennen meldet zuerst mit dem gespeicherten Token beim Server ab (falls erreichbar, höchstens 8 s), löscht
+  das Token, bricht die Aufträge ab und wartet erst dann auf die `laufSperre`, um die Sync-Tabellen zu leeren; lokale
+  Daten bleiben.
 - **Token-Ablage** (`TokenSpeicher`) wie v1: SharedPreferences `foody_sync`, Eintrag `token`, AES/GCM-Schlüssel im
   Android-Keystore unter `foody_sync_token`. Nicht entschlüsselbar (z. B. Schlüssel nach Gerätewiederherstellung weg) →
   Token verworfen, Zustand „Anmeldung abgelaufen“; vorübergehende Keystore-Störung → Token bleibt.
@@ -221,8 +229,9 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
   `EchteDatenMigrationTest` (`:core:data`, Argumente `echteDb`, `echteDbZahlen`) und `EchteDatenSyncTest`
   (`:core:sync`, Argumente `echteDb`, `testServer`, `testBenutzer`, `testPasswort`, optional `echteFotos`). Der Sync-Test
   migriert die echte Datenbank, behält ihren Sync-Zustand und Cursor, meldet sich aber **neu** am Test-Server an: Das
-  Token des Handys liegt im Hardware-Keystore und ist nicht kopierbar. Die Token-Kontinuität belegen der Formattest
-  `TokenSpeicherTest.gleicheAblageWieVEins` und `SyncLaufTest.alterTokenUndCursorReichen`; „ohne neue Anmeldung“ auf dem Gerät prüft
+  Token des Handys liegt im Hardware-Keystore und ist nicht kopierbar. Die Token-Kontinuität belegt nur der Formattest
+  `TokenSpeicherTest.gleicheAblageWieVEins` (gleiche Ablage wie die v1), die Cursor-Kontinuität
+  `SyncLaufTest.alterTokenUndCursorReichen`; „ohne neue Anmeldung“ auf dem Gerät prüft
   erst Phase 8. Echte Datenbanken (`*.foody-echt.db*`) kommen nie ins Repo.
 
 ## Packung scannen (seit DB v9)

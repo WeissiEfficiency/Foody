@@ -69,7 +69,9 @@ Wie in der v1: SQLite-Trigger merken jede lokale Änderung der Wurzeltabellen (`
 1. Vorrats-Trigger und Tabelle `pantry_item` entfernen.
 2. Zeilen mit `type = 'pantry_item'` aus `sync_outbox`, `sync_record_rev`, `sync_problem` löschen.
 3. `sync_state` mit `kontoId` statt `householdId` neu anlegen; `id`, `active`, `applyingRemote`, `serverUrl`,
-   `cursor`, `lastSyncAt`, `lastError` übernehmen, `kontoId = NULL`.
+   `cursor`, `lastSyncAt` übernehmen, `kontoId = NULL`. `lastError` auf die festen Kennungen abbilden: `unauthorized` →
+   `anmeldung_abgelaufen`, `protocol_too_old` → `app_zu_alt`, `protocol_server_too_old` → `server_zu_alt`, alles andere
+   (`no_household`, Freitexte der v1) → `NULL`.
 4. Alle Sync-Trigger durch die Fassung für Version 10 ersetzen.
 
 Ungesendete Änderungen in der Outbox bleiben und gehen nach dem Update über Protokoll 3 hinaus. Unterstützt wird nur
@@ -94,7 +96,10 @@ Ungesendete Änderungen in der Outbox bleiben und gehen nach dem Update über Pr
   Anmelden (`POST /api/v3/auth/login` → `token`, `kontoId`), Aktivieren mit Wahl „Zusammenführen“ (alle lokalen Daten
   in die Outbox, dann holen) oder „Ersetzen“ (lokale Daten verwerfen, alles holen). „Ersetzen“ behält die Zutaten
   (Startzutaten; der Server führt gleichnamige zusammen, fehlende Verweisziele reicht der Sync nach) – Entscheidung
-  bei der Umsetzung, siehe `docs/architecture.md`, „App V3: Daten und Sync“.
+  bei der Umsetzung, siehe `docs/architecture.md`, „App V3: Daten und Sync“. Das Token der Anmeldung wird erst beim
+  Aktivieren gespeichert (zusammen mit Adresse und Konto, unter der Sperre der Sync-Läufe); eine Wiederanmeldung am
+  selben Server und Konto übernimmt nur das neue Token. Nach der Migration ist `kontoId` leer: erneut aktivieren nur über
+  Anmelden, wie neu verbunden (Phase 6).
 - **Sync-Lauf** (nur einer zur Zeit, gemeinsame Sperre mit Trennen):
   1. Outbox in Paketen senden (höchstens `Protocol.MAX_PUSH_RECORDS` = 500 Datensätze bzw. `MAX_PUSH_BYTES` = 5 MB);
      fehlende Fotos vorher hochladen (`POST /photos/missing`, `PUT /photos/{sha256}`).
@@ -108,8 +113,8 @@ Ungesendete Änderungen in der Outbox bleiben und gehen nach dem Update über Pr
 - **Fehlerzustände** (feste Kennungen in `lastError`, nie Token oder Antwort-Bodies): offline/Zeitüberschreitung →
   vorübergehend, später erneut; `401` → „Anmeldung abgelaufen“; `409 protocol_too_old` → „Bitte App aktualisieren“;
   `409 server_too_old` oder `404` auf `/api/v3` → „Server zu alt“; Cursor rückt nicht vor → vorübergehender Fehler.
-- **Trennen:** laufenden Lauf abwarten, `POST /api/v3/auth/abmelden` (falls erreichbar), dann Token, Sync-Tabellen und
-  Fotowünsche lokal leeren, `active = 0`.
+- **Trennen:** zuerst `POST /api/v3/auth/abmelden` (falls erreichbar), Token löschen und Aufträge abbrechen, dann den
+  laufenden Lauf abwarten und Sync-Tabellen und Fotowünsche lokal leeren, `active = 0`.
 
 ### Sicherung, Fotos, Portionen (`:core:data`)
 
@@ -141,8 +146,9 @@ Ungesendete Änderungen in der Outbox bleiben und gehen nach dem Update über Pr
   doppelten Datensätze.
   Umsetzung (Entscheidung 2026-10-18): Das Token des Handys liegt im Hardware-Keystore und ist nicht kopierbar.
   `EchteDatenSyncTest` behält Sync-Zustand und Cursor der migrierten echten Datenbank, meldet sich aber mit Benutzer
-  und Test-Passwort neu am Test-Server an. Die Token-Kontinuität belegen Tests (`TokenSpeicherTest`,
-  `SyncLaufTest.alterTokenUndCursorReichen`); „ohne neue Anmeldung“ auf dem Gerät prüft Phase 8.
+  und Test-Passwort neu am Test-Server an. Die Token-Kontinuität belegt nur der Formattest
+  (`TokenSpeicherTest`), die Cursor-Kontinuität `SyncLaufTest.alterTokenUndCursorReichen`; „ohne neue Anmeldung“ auf dem
+  Gerät prüft Phase 8.
   Nachtrag 2026-10-18: „Foody Debug“ war nicht mehr installiert (Release-Apps lassen sich nicht auslesen). Die echte
   v1-Datenbank entstand deshalb auf einem Emulator: v1-Debug-App, synchronisiert aus einer Sicherung des echten Servers
   (lokaler v1-Server), danach offline geändert; dieselbe Sicherung liegt migriert auf dem Test-Server.

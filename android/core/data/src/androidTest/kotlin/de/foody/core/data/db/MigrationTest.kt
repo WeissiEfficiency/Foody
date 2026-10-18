@@ -42,7 +42,8 @@ class MigrationTest {
             // active, serverUrl, kontoId, cursor
             assertEquals(listOf(1, "https://foody.homeserver.lan", null, 413L), syncState(db))
             assertEquals(
-                listOf(listOf(1L, 0L, 1_700_000_000_000L, "offline")),
+                // v1-Kennung `unauthorized` wird zur V3-Kennung (MigrationLetzterFehlerTest prüft alle Werte).
+                listOf(listOf(1L, 0L, 1_700_000_000_000L, "anmeldung_abgelaufen")),
                 zeilen(db, "SELECT id, applyingRemote, lastSyncAt, lastError FROM sync_state"),
             )
             assertEquals(SyncTrigger.namen.toSet(), triggerNamen(db))
@@ -131,7 +132,7 @@ class MigrationTest {
                 "INSERT INTO sync_photo_local (uri, sha256, size, modifiedAt) VALUES ('file:///r1.jpg', 'abc', 3, 4)",
                 "INSERT INTO sync_photo_wanted (recipeId, sha256) VALUES ('r1', 'def')",
                 "INSERT INTO sync_state (id, active, applyingRemote, serverUrl, householdId, cursor, lastSyncAt, lastError) " +
-                    "VALUES (1, 1, 0, 'https://foody.homeserver.lan', 'h1', 413, 1700000000000, 'offline')",
+                    "VALUES (1, 1, 0, 'https://foody.homeserver.lan', 'h1', 413, 1700000000000, 'unauthorized')",
             ).forEach(db::execSQL)
             v9Trigger().forEach(db::execSQL)
         }

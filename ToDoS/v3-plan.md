@@ -155,7 +155,8 @@ Spec: [`2026-10-18-v3-phase3-app-daten-sync-design.md`](../docs/superpowers/spec
 - [ ] Kochen (inkl. „Änderungen ins Rezept übernehmen“ nach dem Kochen)
 - [ ] Woche (eine fortlaufende Wochenansicht)
 - [ ] Einkauf (eine Ansicht, ohne Vorratsabzug)
-- [ ] Einstellungen (Server/Anmelden/Status, Zutatenkatalog, Sicherung, Darstellung, Tagesziel)
+- [ ] Einstellungen (Server/Anmelden/Status, Zutatenkatalog, Sicherung, Darstellung, Tagesziel); nach dem Update aus
+      der v1 ist `kontoId` leer: „Erneut verbinden“ nur über Anmelden (verbindet wie neu, Cursor 0)
 
 **Fertig, wenn** alle App-Abschnitte der Abnahmeliste abgehakt sind und kein Screen über 300 Zeilen hat.
 

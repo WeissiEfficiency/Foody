@@ -33,6 +33,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -112,7 +113,11 @@ class SyncKontoTest {
         val speicher = SyncSpeicher(db, ablage, FotoIndex(db.syncDao(), ablage))
         val schluessel = SpeicherSchluessel()
         val token = TokenSpeicher(context, schluessel)
-        val fabrik = ZugangFabrik { adresse -> KtorServerZugang(adresse, client) { token.laden() } }
+        /** (Adresse, Token) jeder Anfrage, die ein Token mitschickt. */
+        val gesendet = ArrayList<Pair<String, String?>>()
+        val fabrik = ZugangFabrik { adresse ->
+            KtorServerZugang(adresse, client) { token.laden().also { synchronized(gesendet) { gesendet += adresse to it } } }
+        }
         val ausloeser = SyncAusloeser(context, speicher, db, bereich)
         val konto = SyncKonto(db, speicher, ablage, token, fabrik, ausloeser, SyncKonfiguration(lokalesHttpErlaubt = httpErlaubt))
         val lauf = SyncLauf(speicher, zugangFuerLauf(speicher, token, fabrik))
@@ -162,10 +167,11 @@ class SyncKontoTest {
         assertTrue(g.konto.hatLokaleDaten())
 
         assertEquals(Ergebnis.Erfolg(Unit), g.konto.anmelden("$TEST_BASIS/", name, TEST_PASSWORT, "Testgerät"))
-        assertNotNull(g.token.laden(), "Token gespeichert")
+        assertNull(g.token.laden(), "Token erst beim Aktivieren gespeichert")
         assertFalse(g.speicher.zustand().aktiv, "Anmelden allein schaltet den Sync nicht ein")
 
-        g.konto.aktivieren(ErsterSync.ZUSAMMENFUEHREN)
+        assertEquals(Ergebnis.Erfolg(Unit), g.konto.aktivieren(ErsterSync.ZUSAMMENFUEHREN))
+        assertNotNull(g.token.laden(), "Token gespeichert")
         val z = g.speicher.zustand()
         assertTrue(z.aktiv)
         assertEquals(TEST_BASIS, z.serverUrl)
@@ -287,11 +293,111 @@ class SyncKontoTest {
     fun tokenNichtSpeicherbarWirdGemeldet() = syncServerTest { server ->
         val (name, _) = server.kontoAnlegen()
         val g = Geraet(client)
+        assertEquals(Ergebnis.Erfolg(Unit), g.konto.anmelden(TEST_BASIS, name, TEST_PASSWORT, "Test"))
         g.schluessel.fehler = java.security.KeyStoreException("Keystore gestört")
-        val ergebnis = g.konto.anmelden(TEST_BASIS, name, TEST_PASSWORT, "Test")
-        assertEquals(Ergebnis.Fehler(SyncKonto.TOKEN_NICHT_GESPEICHERT), ergebnis)
+        assertEquals(Ergebnis.Fehler(SyncKonto.TOKEN_NICHT_GESPEICHERT), g.konto.aktivieren(ErsterSync.ZUSAMMENFUEHREN))
         g.schluessel.fehler = null
         assertNull(g.token.laden())
-        assertFailsWith<IllegalStateException> { g.konto.aktivieren(ErsterSync.ZUSAMMENFUEHREN) }
+        assertFalse(g.speicher.zustand().aktiv, "nichts eingeschaltet")
+        // Die Anmeldung bleibt bis zum Erfolg erhalten: erneut versuchen geht ohne neue Anmeldung.
+        assertEquals(Ergebnis.Erfolg(Unit), g.konto.aktivieren(ErsterSync.ZUSAMMENFUEHREN))
+        assertNotNull(g.token.laden())
+        assertTrue(g.speicher.zustand().aktiv)
+    }
+
+    /** Verbindet [g] mit dem Konto [name] (Zusammenführen) und gleicht einmal ab; liefert das gespeicherte Token. */
+    private suspend fun verbinden(g: Geraet, name: String): String {
+        assertEquals(Ergebnis.Erfolg(Unit), g.konto.anmelden(TEST_BASIS, name, TEST_PASSWORT, "Testgerät"))
+        assertEquals(Ergebnis.Erfolg(Unit), g.konto.aktivieren(ErsterSync.ZUSAMMENFUEHREN))
+        assertIs<SyncErgebnis.Fertig>(g.lauf.ausfuehren())
+        return assertNotNull(g.token.laden())
+    }
+
+    @Test
+    fun anmeldungAnAnderemKontoVermischtNichts() = syncServerTest { server ->
+        val (nameA, kontoA) = server.kontoAnlegen()
+        val (nameB, kontoB) = server.kontoAnlegen()
+        val g = Geraet(client)
+        g.rezeptMitZutat("r1", "salz")
+        val tokenA = verbinden(g, nameA)
+
+        // Zweiter Verbinden-Dialog: Anmeldung an Konto B, noch nicht aktiviert.
+        g.rezeptMitZutat("r2", "salz")
+        assertEquals(Ergebnis.Erfolg(Unit), g.konto.anmelden(TEST_BASIS, nameB, TEST_PASSWORT, "Testgerät"))
+        assertEquals(tokenA, g.token.laden(), "Token von A bleibt")
+        g.gesendet.clear()
+        assertIs<SyncErgebnis.Fertig>(g.lauf.ausfuehren())
+        assertTrue(g.gesendet.isNotEmpty())
+        assertTrue(g.gesendet.all { it.second == tokenA }, "ein Lauf schickt nur das Token von A")
+        assertTrue(RecordType.RECIPE to "r2" in serverStand(client, nameA))
+        assertTrue(serverStand(client, nameB).isEmpty(), "nichts landet bei B")
+
+        // Erst das Aktivieren wechselt: danach geht nur noch das Token von B hinaus, ans Konto B.
+        assertEquals(Ergebnis.Erfolg(Unit), g.konto.aktivieren(ErsterSync.ZUSAMMENFUEHREN))
+        val tokenB = assertNotNull(g.token.laden())
+        assertNotEquals(tokenA, tokenB)
+        assertEquals(kontoB, g.speicher.zustand().kontoId)
+        assertNotEquals(kontoA, kontoB)
+        g.gesendet.clear()
+        assertIs<SyncErgebnis.Fertig>(g.lauf.ausfuehren())
+        assertTrue(g.gesendet.isNotEmpty())
+        assertTrue(g.gesendet.all { it.second == tokenB }, "das alte Konto bekommt das neue Token nie")
+        assertTrue(RecordType.RECIPE to "r1" in serverStand(client, nameB))
+    }
+
+    @Test
+    fun abgebrochenesAnmeldenLaesstAltesTokenUnveraendert() = syncServerTest { server ->
+        val (nameA, kontoA) = server.kontoAnlegen()
+        val (nameB, _) = server.kontoAnlegen()
+        val g = Geraet(client)
+        g.rezeptMitZutat("r1", "salz")
+        val tokenA = verbinden(g, nameA)
+        val vorher = g.speicher.zustand()
+
+        // Anmeldung an B, dann bricht der Nutzer den Dialog ab (kein aktivieren).
+        assertEquals(Ergebnis.Erfolg(Unit), g.konto.anmelden(TEST_BASIS, nameB, TEST_PASSWORT, "Testgerät"))
+
+        assertEquals(tokenA, g.token.laden())
+        assertEquals(vorher, g.speicher.zustand())
+        assertEquals(kontoA, vorher.kontoId)
+        // Trennen meldet das gespeicherte Token (A) ab, nicht die verworfene Anmeldung.
+        g.konto.trennen()
+        val alt = KtorServerZugang(TEST_BASIS, client) { tokenA }
+        assertFailsWith<ServerFehler.AnmeldungAbgelaufen> { alt.pull(0, 10) }
+    }
+
+    @Test
+    fun wiederanmeldungUebernimmtTokenCursorBleibt() = syncServerTest { server ->
+        val (name, kontoId) = server.kontoAnlegen()
+        val g = Geraet(client)
+        g.rezeptMitZutat("r1", "salz")
+        val altesToken = verbinden(g, name)
+        // Token auf dem Server widerrufen: „Anmeldung abgelaufen“.
+        KtorServerZugang(TEST_BASIS, client) { altesToken }.abmelden()
+        assertEquals(
+            SyncErgebnis.Fehlgeschlagen(ServerFehler.ANMELDUNG_ABGELAUFEN, voruebergehend = false),
+            g.lauf.ausfuehren(),
+        )
+        g.rezeptMitZutat("r2", "salz")
+        val vorher = g.speicher.zustand()
+        assertTrue(vorher.cursor > 0)
+        val outboxVorher = g.dao.outbox()
+
+        assertEquals(Ergebnis.Erfolg(Unit), g.konto.anmelden(TEST_BASIS, name, TEST_PASSWORT, "Testgerät"))
+        assertEquals(altesToken, g.token.laden(), "vor dem Aktivieren unverändert")
+        // Auch „Ersetzen“ verwirft bei einer Wiederanmeldung nichts.
+        assertEquals(Ergebnis.Erfolg(Unit), g.konto.aktivieren(ErsterSync.ERSETZEN))
+
+        val neuesToken = assertNotNull(g.token.laden())
+        assertNotEquals(altesToken, neuesToken)
+        val z = g.speicher.zustand()
+        assertEquals(vorher.cursor, z.cursor, "Cursor bleibt")
+        assertEquals(kontoId, z.kontoId)
+        assertTrue(z.aktiv)
+        assertNull(z.letzterFehler)
+        assertEquals(outboxVorher, g.dao.outbox(), "Outbox unverändert, nichts neu vorgemerkt")
+        assertTrue(g.konto.hatLokaleDaten())
+        assertIs<SyncErgebnis.Fertig>(g.lauf.ausfuehren())
+        assertTrue(RecordType.RECIPE to "r2" in serverStand(client, name))
     }
 }
