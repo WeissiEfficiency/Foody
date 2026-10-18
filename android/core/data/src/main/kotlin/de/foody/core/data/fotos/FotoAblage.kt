@@ -97,6 +97,9 @@ class FotoAblage(context: Context) {
      * Löscht alle eigenen Fotodateien, deren Link nicht in [benutzt] steht (wie `pruneUnused` der v1, nach dem
      * Wiederherstellen einer Sicherung). Verglichen wird über die Datei, nicht die Schreibweise des Links. Gibt die
      * Links der gelöschten Dateien zurück. Zwischendateien bleiben unberührt.
+     *
+     * Der Aufrufer muss das Bearbeiten von Rezeptfotos währenddessen sperren: ein gerade gespeichertes, noch mit keinem
+     * Rezept verknüpftes Foto stünde nicht in [benutzt] und würde gelöscht.
      */
     suspend fun unbenutzteEntfernen(benutzt: Collection<String>): List<String> = withContext(Dispatchers.IO) {
         val dateien = benutzt.mapNotNull(::datei).toSet()

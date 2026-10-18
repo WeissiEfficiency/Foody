@@ -3,6 +3,7 @@ package de.foody.core.data.sicherung
 import android.content.Context
 import android.database.SQLException
 import android.net.Uri
+import android.util.Log
 import androidx.room.withTransaction
 import de.foody.api.protocol.ZahlGrenzen
 import de.foody.core.data.db.ArbeitsschrittEntity
@@ -41,6 +42,7 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -181,41 +183,60 @@ class Sicherung(
     /**
      * Ersetzt alle Daten durch den Inhalt von [quelle] (ZIP oder ältere reine JSON-Sicherung). [quelle] wird nicht
      * geschlossen. Gesperrt bei aktivem Sync; bei jedem Fehler bleiben Daten und Fotoordner unverändert.
+     *
+     * Abbruch: Die Transaktion läuft nicht abbrechbar; ein Abbruch greift davor (nichts geändert, abgelegte Fotos werden
+     * entfernt) oder danach (Daten übernommen, ihre Fotos bleiben; die Nachbereitung entfällt dann).
+     *
+     * Der Aufrufer muss das Bearbeiten von Rezeptfotos während des Imports sperren: nach der Übernahme werden alle
+     * eigenen Fotos ohne Rezept gelöscht, auch ein gerade gespeichertes, noch nicht verknüpftes.
      */
     suspend fun lesen(quelle: InputStream): ImportErgebnis = withContext(Dispatchers.IO) {
         if (sync.zustand().aktiv) return@withContext ImportErgebnis.SyncAktiv
         val abgelegt = mutableMapOf<String, String>()
-        val daten: SicherungDaten
+        var uebernommen = false
         try {
-            daten = entschluesseln(einlesen(quelle, abgelegt))
+            val daten = entschluesseln(einlesen(quelle, abgelegt))
             val eintraege = abbilden(daten, abgelegt)
-            val gesperrt = db.withTransaction {
-                // Erneut in der Transaktion: der Sync könnte inzwischen verbunden worden sein.
-                if (db.syncDao().zustand()?.active == true) return@withTransaction true
-                ersetzen(eintraege)
-                false
+            // NonCancellable: ein Abbruch darf die Rückkehr aus der schon festgeschriebenen Transaktion nicht in einen
+            // Fehlschlag verwandeln; `uebernommen` wird noch im selben, nicht abbrechbaren Block gesetzt.
+            val gesperrt = withContext(NonCancellable) {
+                val gesperrt = db.withTransaction {
+                    // Erneut in der Transaktion: der Sync könnte inzwischen verbunden worden sein.
+                    if (db.syncDao().zustand()?.active == true) return@withTransaction true
+                    ersetzen(eintraege)
+                    false
+                }
+                uebernommen = !gesperrt
+                gesperrt
             }
-            if (gesperrt) {
-                verwerfen(abgelegt)
-                return@withContext ImportErgebnis.SyncAktiv
-            }
+            if (gesperrt) return@withContext ImportErgebnis.SyncAktiv
+            nachbereiten(daten, eintraege, abgelegt)
         } catch (e: CancellationException) {
-            verwerfen(abgelegt)
             throw e
         } catch (e: Exception) {
-            verwerfen(abgelegt)
-            return@withContext ImportErgebnis.Fehler(grund(e))
+            ImportErgebnis.Fehler(grund(e))
+        } finally {
+            // Auch bei Abbruch und Error: Fotos eines nicht übernommenen Imports wieder entfernen.
+            if (!uebernommen) verwerfen(abgelegt)
         }
-        nachbereiten(daten, abgelegt)
     }
 
-    /** Nach dem Import: nicht mehr benutzte eigene Fotos entfernen, importierte zu große Fotos verkleinern (wie v1). */
-    private suspend fun nachbereiten(daten: SicherungDaten, abgelegt: Map<String, String>): ImportErgebnis.Fertig {
-        val benutzt = db.rezeptDao().alle().mapNotNull { it.imageUri }
-        for (link in ablage.unbenutzteEntfernen(benutzt)) db.syncDao().loeschenFotoLokal(link)
-        val importiert = abgelegt.values.toSet().filter { it in benutzt }
-        // Nur Fotos über den Grenzen werden neu kodiert; alle anderen bleiben byte-gleich.
-        importiert.forEach { link -> ablage.datei(link)?.let(ablage::verkleinern) }
+    /**
+     * Nach dem Import: nicht mehr benutzte eigene Fotos entfernen, importierte zu große Fotos verkleinern (wie v1). Die
+     * Daten sind schon übernommen; Fehler hier werden nur protokolliert, damit der Import nicht als Fehlschlag gilt.
+     */
+    private suspend fun nachbereiten(daten: SicherungDaten, e: Eintraege, abgelegt: Map<String, String>): ImportErgebnis.Fertig {
+        val importiert = abgelegt.values.toSet().intersect(e.rezepte.mapNotNull { it.imageUri }.toSet())
+        try {
+            val benutzt = db.rezeptDao().alle().mapNotNull { it.imageUri }
+            for (link in ablage.unbenutzteEntfernen(benutzt)) db.syncDao().loeschenFotoLokal(link)
+            // Nur Fotos über den Grenzen werden neu kodiert; alle anderen bleiben byte-gleich.
+            importiert.forEach { link -> ablage.datei(link)?.let(ablage::verkleinern) }
+        } catch (ex: CancellationException) {
+            throw ex
+        } catch (ex: Exception) {
+            Log.w(TAG, "Nachbereitung nach dem Import fehlgeschlagen", ex)
+        }
         return ImportErgebnis.Fertig(
             rezepte = daten.recipes.size,
             zutaten = daten.ingredients.size,
@@ -407,6 +428,7 @@ class Sicherung(
     private class SicherungsFehler(override val message: String) : Exception(message)
 
     private companion object {
+        const val TAG = "Sicherung"
         const val GALERIE = "content://"
         const val BESCHAEDIGT = "Die Sicherung ist beschädigt oder unvollständig"
         const val ZU_GROSS = "Sicherung zu groß"

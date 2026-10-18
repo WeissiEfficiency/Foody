@@ -1,6 +1,8 @@
 package de.foody.core.data.sicherung
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Color
 import androidx.room.Room
 import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.db.ArbeitsschrittEntity
@@ -36,6 +38,9 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -120,6 +125,12 @@ class SicherungTest {
     }
 
     private fun fotodateien(): Set<String> = ordner.list().orEmpty().toSet()
+
+    /** Kleines gültiges JPEG (der Verkleinerungsversuch nach dem Import liest es ohne libjpeg-Fehler). */
+    private fun kleinesJpeg(farbe: Int = Color.RED): ByteArray {
+        val bild = Bitmap.createBitmap(8, 8, Bitmap.Config.ARGB_8888).apply { eraseColor(farbe) }
+        return ByteArrayOutputStream().also { bild.compress(Bitmap.CompressFormat.JPEG, 90, it) }.toByteArray()
+    }
 
     /** Kleiner gültiger Bestand: eine Zutat, ein Rezept mit Zeile und Schritt. */
     private suspend fun kleinerBestand() {
@@ -257,7 +268,7 @@ class SicherungTest {
 
     @Test
     fun vEinsWirdGelesenVorratUebersprungen() = runTest {
-        val foto = byteArrayOf(9, 8, 7, 6, 5)
+        val foto = kleinesJpeg()
         val bytes = zip("photos/1.jpg" to foto, "backup.json" to vEinsJson.toByteArray())
 
         val ergebnis = lesen(bytes)
@@ -286,7 +297,7 @@ class SicherungTest {
 
     @Test
     fun fotosUeberstehenSicherung() = runTest {
-        val inhalt = Random(1).nextBytes(4096)
+        val inhalt = kleinesJpeg(Color.BLUE)
         val link = ablage.ablegen(inhalt)
         val galerie = "content://media/external/images/media/7"
         db.rezeptDao().upsert(rezept("r1", link))
@@ -315,6 +326,47 @@ class SicherungTest {
         val text = vEinsJson.replace("foody-backup-photo:1.jpg", privat)
         assertIs<ImportErgebnis.Fertig>(lesen(text.toByteArray()))
         assertNull(db.rezeptDao().nachId("r1")?.imageUri, "Pfad in den privaten Speicher wird nicht übernommen")
+    }
+
+    /**
+     * Abbruch genau beim Abschluss der Import-Transaktion (deterministisch: die Abfrage-Rückmeldung von Room läuft
+     * synchron auf dem Transaktions-Thread und bricht beim äußersten `END TRANSACTION` ab). Die Daten sind dann
+     * übernommen – ihre Fotos dürfen nicht als „vorgemerkt“ wieder gelöscht werden.
+     */
+    @Test
+    fun abbruchBeimAbschlussBehaeltFotos() = runTest {
+        var job: Job? = null
+        var tiefe = 0
+        var scharf = false
+        @Suppress("DEPRECATION")
+        val ziel = Room.inMemoryDatabaseBuilder(context, FoodyDatenbank::class.java)
+            .addCallback(FoodyDatenbank.CALLBACK)
+            .allowMainThreadQueries()
+            .setQueryCallback({ sql, _ ->
+                if (scharf) {
+                    if (sql.startsWith("BEGIN")) tiefe++
+                    if (sql.startsWith("END TRANSACTION") && --tiefe == 0) {
+                        scharf = false
+                        job?.cancel()
+                    }
+                }
+            }, Runnable::run)
+            .build()
+            .also { offen += it }
+        val s = sicherungFuer(ziel)
+        val foto = kleinesJpeg()
+        val bytes = zip("photos/1.jpg" to foto, "backup.json" to vEinsJson.toByteArray())
+
+        scharf = true
+        job = launch(Dispatchers.IO) { s.lesen(ByteArrayInputStream(bytes)) }
+        job.join()
+
+        assertTrue(job.isCancelled)
+        assertFalse(scharf, "Abbruch beim Abschluss der Transaktion ausgelöst")
+        val r = assertNotNull(ziel.rezeptDao().nachId("r1"), "Import übernommen")
+        val datei = assertNotNull(ablage.datei(assertNotNull(r.imageUri)))
+        assertTrue(datei.isFile, "Foto des übernommenen Rezepts bleibt: ${fotodateien()}")
+        assertContentEquals(foto, datei.readBytes())
     }
 
     @Test
