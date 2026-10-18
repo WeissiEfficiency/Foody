@@ -422,7 +422,7 @@ class SyncKontoTest {
         val z = g.speicher.zustand()
         assertTrue(z.aktiv)
         assertEquals(kontoId, z.kontoId)
-        assertEquals(5, z.cursor)
+        assertEquals(0, z.cursor, "ohne Konto-ID einmal alles neu holen")
         assertNull(z.letzterFehler)
         assertNotNull(g.token.laden(), "neues Token gespeichert")
     }

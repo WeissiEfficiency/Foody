@@ -205,7 +205,9 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
   ein (Cursor 0) – beides unter der `laufSperre`, sodass kein Lauf das neue Token mit der alten Adresse sieht; ein
   abgebrochener Dialog lässt das gespeicherte Token unverändert. Eine Wiederanmeldung bei aktivem Sync an derselben Adresse (beide
   Seiten über `ServerAdresse.pruefen` vereinheitlicht) und mit derselben oder – wie nach der Migration – noch keiner
-  Konto-ID übernimmt nur das neue Token und trägt die Konto-ID ein; Cursor, Outbox und Daten bleiben, die Wahl
+  Konto-ID übernimmt nur das neue Token und trägt die Konto-ID ein; Outbox und Daten bleiben, der Cursor auch – außer
+  ohne Konto-ID (nach dem Update): dann holt der nächste Lauf einmal alles neu (Cursor 0), falls doch ein anderes Konto
+  gewählt wurde. Die Wahl
   „Zusammenführen“/„Ersetzen“ wirkt nicht (sonst verwürfe „Ersetzen“ direkt nach dem Update die ungesendete
   v1-Outbox). Die Entscheidung fällt unter der `laufSperre`. „Zusammenführen“ merkt alle lokalen
   Datensätze vor. „Ersetzen“ verwirft Rezepte, Plan, Einkaufslisten, Tagebuch, eigene Fotos und Sync-Vermerke, **behält

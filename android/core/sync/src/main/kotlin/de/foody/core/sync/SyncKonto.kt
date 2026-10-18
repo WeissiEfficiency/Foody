@@ -132,7 +132,10 @@ class SyncKonto @Inject constructor(
                         val dao = db.syncDao()
                         db.withTransaction {
                             val aktuell = dao.zustand() ?: SyncZustandEntity()
-                            dao.upsertZustand(aktuell.copy(serverUrl = neu.adresse, kontoId = neu.kontoId, lastError = null))
+                            // Nach dem Update (noch keine Konto-ID) ist nicht sicher, dass es dasselbe Konto ist: einmal
+                            // alles neu holen. Die Outbox bleibt und geht vorher hinaus; der Pull ist idempotent.
+                            val cursor = if (aktuell.kontoId == null) 0L else aktuell.cursor
+                            dao.upsertZustand(aktuell.copy(serverUrl = neu.adresse, kontoId = neu.kontoId, cursor = cursor, lastError = null))
                         }
                         Ergebnis.Erfolg(Unit)
                     } else {

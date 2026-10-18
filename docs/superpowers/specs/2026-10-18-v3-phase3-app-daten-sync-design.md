@@ -99,7 +99,8 @@ Ungesendete Änderungen in der Outbox bleiben und gehen nach dem Update über Pr
   bei der Umsetzung, siehe `docs/architecture.md`, „App V3: Daten und Sync“. Das Token der Anmeldung wird erst beim
   Aktivieren gespeichert (zusammen mit Adresse und Konto, unter der Sperre der Sync-Läufe); eine Wiederanmeldung bei
   aktivem Sync an derselben Adresse und mit derselben oder noch keiner Konto-ID (nach der Migration ist `kontoId` leer)
-  übernimmt nur das neue Token und trägt die Konto-ID ein; Cursor, Outbox und Daten bleiben.
+  übernimmt nur das neue Token und trägt die Konto-ID ein; Outbox und Daten bleiben, der Cursor auch (ohne Konto-ID
+  einmal alles neu holen: Cursor 0).
 - **Sync-Lauf** (nur einer zur Zeit, gemeinsame Sperre mit Trennen):
   1. Outbox in Paketen senden (höchstens `Protocol.MAX_PUSH_RECORDS` = 500 Datensätze bzw. `MAX_PUSH_BYTES` = 5 MB);
      fehlende Fotos vorher hochladen (`POST /photos/missing`, `PUT /photos/{sha256}`).

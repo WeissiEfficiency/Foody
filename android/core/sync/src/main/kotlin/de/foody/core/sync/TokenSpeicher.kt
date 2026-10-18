@@ -112,6 +112,8 @@ class TokenSpeicher internal constructor(context: Context, private val ablage: S
         } catch (_: Exception) {
             // Schlüssel unbrauchbar (z. B. ungültig geworden): neu anlegen und einmal wiederholen.
             ablage.loeschen()
+            // Ohne Schlüssel ist auch der gemerkte Eintrag nicht mehr lesbar: Zwischenstand verwerfen.
+            zwischenstand = null
             verschluesseln(token)
         }
         check(prefs.edit().putString(EINTRAG, verschluesselt).commit()) { "Token konnte nicht gespeichert werden" }
