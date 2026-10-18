@@ -32,6 +32,13 @@ interface RezeptDao {
 
     @Query("SELECT * FROM recipe WHERE id = :id") suspend fun nachId(id: String): RezeptEntity?
 
+    /** Rezepte mit der Quell-URL [url] (genauer Vergleich, wie beim Import gespeichert), nach ID sortiert. */
+    @Query("SELECT * FROM recipe WHERE sourceUrl = :url ORDER BY id") suspend fun nachQuelle(url: String): List<RezeptEntity>
+
+    /** Portionen-Nachtrag: nur Portionen und Notiz; wie jede lokale Änderung neuer Zeitstempel und Version + 1. */
+    @Query("UPDATE recipe SET defaultServings = :portionen, notes = :notiz, updatedAt = :updatedAt, version = version + 1 WHERE id = :id")
+    suspend fun portionenSetzen(id: String, portionen: Int, notiz: String?, updatedAt: Long)
+
     @Upsert suspend fun upsert(e: RezeptEntity)
 
     @Query("DELETE FROM recipe WHERE id = :id") suspend fun loeschen(id: String)
