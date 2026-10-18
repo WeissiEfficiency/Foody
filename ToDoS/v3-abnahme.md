@@ -77,7 +77,7 @@ ist. Grundlage: [`v2-abnahme.md`](v2-abnahme.md), gekürzt nach dem Review vom 2
 - [ ] Opt-in: ohne Verbindung keine Netzwerkzugriffe
 - [x] Server: ein Konto, Anmeldung mit Argon2id, nur HTTPS (Traefik), keine Haushalte (Phase 2)
 - [x] App: Anmelden am Konto, Geräte-Token im Keystore, nur HTTPS (Phase 3, `:core:sync`: `SyncKontoTest`,
-      `TokenSpeicherTest`, `ServerAdresseTest`; Oberfläche in Phase 6)
+      `TokenSpeicherTest`, `ServerAdresseTest`; Keystore auf dem Gerät und Oberfläche in Phase 6/8)
 - [ ] Sync beim Öffnen/Fortsetzen und nach Änderungen (entprellt), nur mit Netz (Auslöser in `:core:sync` getestet,
       `SyncAusloeserTest`; Einbau in die App Phase 5)
 - [x] Server: Last-Writer-Wins je Datensatz, Einkaufseinträge feldweise; Löschen gewinnt gegen Bearbeiten ohne

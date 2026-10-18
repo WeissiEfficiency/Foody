@@ -125,6 +125,9 @@ class EchteDatenSyncTest {
 
             val lokal = lokaleDatensaetze(room)
             val (serverLebend, serverGesamt) = serverDatensaetze(zugang)
+            // Ohne Daten wäre der Vergleich leer und der Test grün, obwohl nichts geprüft wurde.
+            assertTrue(lokal.values.sumOf { it.size } > 0, "Keine lebenden Datensätze in der echten Datenbank")
+            assertTrue(serverLebend.isNotEmpty(), "Server liefert keine lebenden Datensätze")
             val nurLokal = lokal.values.flatten().toSet() - serverLebend.toSet()
             val nurServer = serverLebend.toSet() - lokal.values.flatten().toSet()
             assertTrue(
@@ -176,17 +179,22 @@ class EchteDatenSyncTest {
         var zahl = 0
         db.beginTransaction()
         try {
+            // Vorherigen Wert merken und zurückschreiben: der Test soll den Zustand der echten Datenbank nicht verändern.
+            val vorher = db.query("SELECT applyingRemote FROM sync_state WHERE id = 1").use { c -> if (c.moveToFirst()) c.getInt(0) else 0 }
             db.execSQL("UPDATE sync_state SET applyingRemote = 1 WHERE id = 1")
             val links = db.query("SELECT id, imageUri FROM recipe WHERE imageUri LIKE 'file:%'").use { c ->
                 buildList { while (c.moveToNext()) add(c.getString(0) to c.getString(1)) }
             }
             for ((id, link) in links) {
-                val name = Uri.parse(link).lastPathSegment ?: continue
+                val segmente = Uri.parse(link).pathSegments
+                // Nur Fotos aus dem Fotoordner der App, nicht gleichnamige Dateien anderswo (z. B. Cache).
+                if (segmente.size < 2 || segmente[segmente.size - 2] != "recipe_images") continue
+                val name = segmente.last()
                 if (name !in namen) continue
                 db.execSQL("UPDATE recipe SET imageUri = ? WHERE id = ?", arrayOf<Any>(Uri.fromFile(File(fotoOrdner, name)).toString(), id))
                 zahl++
             }
-            db.execSQL("UPDATE sync_state SET applyingRemote = 0 WHERE id = 1")
+            db.execSQL("UPDATE sync_state SET applyingRemote = ? WHERE id = 1", arrayOf<Any>(vorher))
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()
