@@ -35,11 +35,18 @@ class SyncLauf(
     private val zugang: () -> ServerZugang?,
 ) {
     suspend fun ausfuehren(): SyncErgebnis = speicher.laufSperre.withLock {
-        if (!speicher.zustand().aktiv) return@withLock SyncErgebnis.Inaktiv
-        // Ohne Token kann nichts gehen. Ob es fehlt oder der Keystore gerade klemmt, ist hier nicht zu unterscheiden:
-        // „Anmeldung abgelaufen“ zeigt dem Nutzer den Weg, der nächste Auslöser versucht es ohnehin erneut.
-        val server = zugang() ?: return@withLock fehlgeschlagen(ServerFehler.ANMELDUNG_ABGELAUFEN, voruebergehend = false)
         try {
+            if (!speicher.zustand().aktiv) return@withLock SyncErgebnis.Inaktiv
+            // Ohne Token kann nichts gehen. Ob es fehlt oder der Keystore gerade klemmt, ist hier nicht zu unterscheiden:
+            // „Anmeldung abgelaufen“ zeigt dem Nutzer den Weg, der nächste Auslöser versucht es ohnehin erneut. Ebenso,
+            // wenn das Bauen des Zugangs scheitert (z. B. Token nicht lesbar).
+            val server = try {
+                zugang()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
+            } ?: return@withLock fehlgeschlagen(ServerFehler.ANMELDUNG_ABGELAUFEN, voruebergehend = false)
             val gesendet = pushen(server)
             val geholt = holen(server)
             fotosLaden(server)
@@ -136,8 +143,9 @@ class SyncLauf(
     /**
      * Lädt die Fotos der Rezepte in [paket] hoch, die der Server noch nicht hat, und liefert, was gesendet werden darf:
      * - Hash ohne eigene Datei (offener Fotowunsch): den hat der Server, von dem er stammt – das Rezept geht mit.
-     * - Eigene Datei nicht mehr lesbar oder seit dem Hashen geändert: nur dieses Rezept wartet in der Outbox (der nächste
-     *   Lauf prüft das Foto neu), statt mit einem Hash zu gehen, den der Server nie bekommt.
+     * - Eigene Datei nicht mehr lesbar oder seit dem Hashen geändert (dann wird ihr gemerkter Hash verworfen): nur dieses
+     *   Rezept wartet in der Outbox (der nächste Lauf prüft das Foto neu), statt mit einem Hash zu gehen, den der Server
+     *   nie bekommt.
      * - Der Server lehnt das Foto dauerhaft ab (`413`, sonstige `4xx`): das Rezept geht ohne Foto mit dem Problem
      *   `photo_unsyncable` ([Ausstehend.ohneFoto]); sonst lüde jeder Lauf dieselben Bytes erneut hoch.
      * Netz- und Serverfehler brechen den Lauf ab; nichts aus dem Paket verlässt dann die Outbox.
@@ -156,6 +164,8 @@ class SyncLauf(
                 null
             }
             if (bytes == null || PhotoHash.of(bytes) != hash) {
+                // Inhalt passt nicht mehr zum gemerkten Hash: Eintrag verwerfen, damit der nächste Lauf neu hasht.
+                if (bytes != null) speicher.fotoHashVerwerfen(datei)
                 zurueck += eigene.map { it.schluessel }
                 continue
             }
@@ -220,7 +230,8 @@ class SyncLauf(
     /**
      * Lädt die Fotos, die Server-Rezepte brauchen ([SyncSpeicher.fotowuensche]). Nicht auf dem Server → der Wunsch bleibt
      * für den nächsten Lauf. Eine vorübergehende Störung hält die übrigen Wünsche nicht auf und wird danach gemeldet;
-     * ein dauerhaft abgelehntes oder zu großes Foto wird übersprungen. Anmeldung und Versionen brechen sofort ab.
+     * ein dauerhaft abgelehntes oder zu großes Foto wird übersprungen. Ein lokaler Ein-/Ausgabefehler beim Ablegen gilt als
+     * vorübergehende Störung (Kennung `server_fehler`, es gibt keine eigene). Anmeldung und Versionen brechen sofort ab.
      */
     private suspend fun fotosLaden(server: ServerZugang) {
         var stoerung: ServerFehler? = null
@@ -234,7 +245,12 @@ class SyncLauf(
                 }
                 null
             } ?: continue
-            speicher.fotoErhalten(rezeptId, sha256, bytes)
+            try {
+                speicher.fotoErhalten(rezeptId, sha256, bytes)
+            } catch (_: IOException) {
+                // Ablegen gescheitert (z. B. Speicher voll): vorübergehend, der Wunsch bleibt; die übrigen weiter.
+                stoerung = ServerFehler.Server(0)
+            }
         }
         stoerung?.let { throw it }
     }

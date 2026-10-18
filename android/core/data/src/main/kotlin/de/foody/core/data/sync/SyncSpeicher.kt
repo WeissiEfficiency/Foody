@@ -650,6 +650,17 @@ class SyncSpeicher(
         verknuepfen(rezeptId, sha256, link)
     }
 
+    /**
+     * Verwirft den gemerkten Hash der eigenen Fotodatei [datei] (ihr Inhalt passt beim Hochladen nicht mehr dazu), damit
+     * der nächste Paketbau sie neu hasht – auch wenn Größe und Änderungszeit gleich geblieben sind.
+     */
+    suspend fun fotoHashVerwerfen(datei: File) {
+        val pfad = datei.absolutePath
+        for (e in dao.fotosLokal()) {
+            if (ablage.datei(e.uri)?.absolutePath == pfad) dao.loeschenFotoLokal(e.uri)
+        }
+    }
+
     private suspend fun verknuepfen(rezeptId: String, sha256: String, link: String) {
         db.withTransaction {
             if (dao.fotoGewuenscht(rezeptId)?.sha256 != sha256) return@withTransaction

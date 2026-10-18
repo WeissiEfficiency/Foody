@@ -24,6 +24,7 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.PlanEintragEntity
 import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.db.RezeptZutatEntity
+import de.foody.core.data.db.SyncTrigger
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
@@ -38,7 +39,9 @@ import java.io.File
 import java.math.BigDecimal
 import java.time.Duration
 import java.time.LocalDate
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
@@ -644,6 +647,163 @@ class SyncLaufTest {
         assertEquals(emptyList(), b.dao.outbox())
     }
 
+    @Test
+    fun mehrereSeitenWerdenErstNachDerLetztenAngewendet() = syncServerTest { server ->
+        val (name, konto) = server.kontoAnlegen()
+        val a = geraet(name, konto)
+        for (i in 1..3) a.db.zutatDao().upsert(zutat("z$i"))
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig)
+
+        val b = geraet(name, konto)
+        val echt = b.zugang.beiPull
+        val cursorGesehen = ArrayList<Long>()
+        val zutatenGesehen = ArrayList<Int>()
+        b.zugang.beiPull = { since, _ ->
+            cursorGesehen += b.speicher.zustand().cursor
+            zutatenGesehen += b.db.zutatDao().alle().size
+            echt(since, 1) // eine Seite je Datensatz
+        }
+        assertEquals(SyncErgebnis.Fertig(gesendet = 0, geholt = 3), b.ausfuehren())
+        assertEquals(3, b.zugang.pulls.size)
+        // Vor dem Ende der letzten Seite ist weder etwas angewendet noch der Cursor bewegt.
+        assertEquals(listOf(0L, 0L, 0L), cursorGesehen)
+        assertEquals(listOf(0, 0, 0), zutatenGesehen)
+        assertEquals(3, b.db.zutatDao().alle().size)
+        assertEquals(a.speicher.zustand().cursor, b.speicher.zustand().cursor)
+    }
+
+    /** Gerät A lädt Rezepte mit Fotos hoch; liefert Gerät B (noch ohne Lauf) und die Hashes je Rezept. */
+    private suspend fun ApplicationTestBuilder.fotosBeimServer(server: TestServer, anzahl: Int): Pair<Geraet, List<String>> {
+        val (name, konto) = server.kontoAnlegen()
+        val a = geraet(name, konto)
+        val hashes = (1..anzahl).map { i ->
+            val bytes = jpeg(20 + i)
+            a.rezeptMitZutat("r$i", bild = eigeneDatei("a$i.jpg", bytes))
+            PhotoHash.of(bytes)
+        }
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig)
+        return geraet(name, konto) to hashes
+    }
+
+    @Test
+    fun voruebergehendeStoerungBeimFotoLadenHaeltDieUebrigenNichtAuf() = syncServerTest { server ->
+        val (b, hashes) = fotosBeimServer(server, 2)
+        val echt = b.zugang.beiFotoLaden
+        b.zugang.beiFotoLaden = { sha -> if (sha == hashes[0]) throw ServerFehler.Offline() else echt(sha) }
+        // Wünsche laufen nach Rezept-ID: der gestörte kommt zuerst.
+        assertEquals(SyncErgebnis.Fehlgeschlagen("offline", voruebergehend = true), b.ausfuehren())
+        assertNull(b.db.rezeptDao().nachId("r1")!!.imageUri)
+        assertNotNull(b.db.rezeptDao().nachId("r2")!!.imageUri, "zweiter Wunsch wurde trotzdem geladen")
+        assertEquals(listOf("r1"), b.dao.fotosGewuenscht().map { it.recipeId })
+        assertEquals("offline", b.speicher.zustand().letzterFehler)
+        assertEquals(1, b.zugang.pulls.size, "der Pull lief vorher durch")
+    }
+
+    @Test
+    fun zuGrossesOderAbgelehntesFotoWirdUebersprungen() = syncServerTest { server ->
+        val (b, hashes) = fotosBeimServer(server, 3)
+        val echt = b.zugang.beiFotoLaden
+        b.zugang.beiFotoLaden = { sha ->
+            when (sha) {
+                hashes[0] -> throw ServerFehler.ZuGross() // z. B. falsche Länge eines Proxys
+                hashes[1] -> throw ServerFehler.Abgelehnt(400, ErrorCode.INVALID_INPUT)
+                else -> echt(sha)
+            }
+        }
+        assertEquals(SyncErgebnis.Fertig(gesendet = 0, geholt = 4), b.ausfuehren())
+        assertNull(b.speicher.zustand().letzterFehler)
+        assertNotNull(b.db.rezeptDao().nachId("r3")!!.imageUri)
+        assertEquals(listOf("r1", "r2"), b.dao.fotosGewuenscht().map { it.recipeId }, "die Wünsche bleiben")
+    }
+
+    @Test
+    fun lokalerFehlerBeimAblegenIstVoruebergehend() = syncServerTest { server ->
+        val (b, hashes) = fotosBeimServer(server, 2)
+        val echt = b.zugang.beiFotoLaden
+        b.zugang.beiFotoLaden = { sha ->
+            // Erstes Foto: an Stelle des Fotoordners liegt eine Datei, das Ablegen scheitert. Zweites: Ordner wieder da.
+            ordner.deleteRecursively()
+            if (sha == hashes[0]) ordner.writeText("kein Ordner") else ordner.mkdirs()
+            echt(sha)
+        }
+        assertEquals(SyncErgebnis.Fehlgeschlagen("server_fehler", voruebergehend = true), b.ausfuehren())
+        assertNull(b.db.rezeptDao().nachId("r1")!!.imageUri)
+        assertNotNull(b.db.rezeptDao().nachId("r2")!!.imageUri, "zweiter Wunsch wurde trotzdem abgelegt")
+        assertEquals(listOf("r1"), b.dao.fotosGewuenscht().map { it.recipeId })
+        assertEquals("server_fehler", b.speicher.zustand().letzterFehler)
+    }
+
+    /**
+     * Zusammengeführt in einen anderen Datensatz: Beide Geräte legten „Salz“ an. Der Server führt Bs Zutat in die von A
+     * zusammen; B übernimmt die Server-Zutat, hängt sein Rezept um und sendet es im selben Lauf erneut.
+     */
+    @Test
+    fun zusammengefuehrtInAndereIdWirdUebernommen() = syncServerTest { server ->
+        val (name, konto) = server.kontoAnlegen()
+        val a = geraet(name, konto)
+        a.db.zutatDao().upsert(zutat("salz-a", "Salz"))
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig)
+
+        val b = geraet(name, konto)
+        b.db.zutatDao().upsert(zutat("salz-b", "Salz"))
+        b.rezeptMitZutat("r1", zutatId = "salz-b")
+        assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
+        assertEquals(listOf("salz-a"), b.db.zutatDao().alle().map { it.id })
+        assertEquals(listOf("salz-a"), b.db.rezeptZutatDao().nachRezept("r1").map { it.ingredientId })
+        assertNull(b.dao.revision("ingredient", "salz-b"), "die Revision gehört nicht zur lokalen ID")
+        assertEquals(emptyList(), b.dao.outbox())
+        assertEquals(emptyList(), b.dao.probleme())
+        val stand = serverStand(b.zugang)
+        assertEquals(setOf(RecordType.INGREDIENT to "salz-a", RecordType.RECIPE to "r1"), stand.keys)
+        assertEquals(
+            "salz-a",
+            stand[RecordType.RECIPE to "r1"]!!.payload!!["lines"]!!.jsonArray.single().jsonObject["ingredientId"]!!.jsonPrimitive.content,
+        )
+    }
+
+    @Test
+    fun geaenderterInhaltBeimUploadVerwirftDenHash() = syncServerTest { server ->
+        val (name, konto) = server.kontoAnlegen()
+        val a = geraet(name, konto)
+        val link = eigeneDatei("eigen.jpg", jpeg(30))
+        a.rezeptMitZutat("r1", bild = link)
+        val datei = a.ablage.datei(link)!!
+        val neu = jpeg(31) // gleiche Größe
+        val echt = a.zugang.beiFotosFehlend
+        // Inhalt ändert sich zwischen Paketbau und Upload; Größe und Änderungszeit bleiben gleich.
+        a.zugang.beiFotosFehlend = { hashes ->
+            val zeit = datei.lastModified()
+            datei.writeBytes(neu)
+            datei.setLastModified(zeit)
+            echt(hashes)
+        }
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig)
+        assertTrue(a.dao.outbox().any { it.recordId == "r1" }, "bleibt in der Outbox")
+        assertNull(a.dao.fotoLokal(link), "gemerkter Hash verworfen")
+
+        a.zugang.beiFotosFehlend = echt
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig)
+        assertEquals(emptyList(), a.dao.outbox())
+        assertEquals(PhotoHash.of(neu), fotoVon(serverStand(a.zugang)[RecordType.RECIPE to "r1"]))
+        assertTrue(server.deps.photos.exists(konto, PhotoHash.of(neu)))
+    }
+
+    @Test
+    fun fehlerBeimBauenDesZugangsIstAnmeldungAbgelaufen() = syncServerTest { server ->
+        val (_, konto) = server.kontoAnlegen()
+        val db = neueDb()
+        val ablage = FotoAblage(context)
+        val speicher = SyncSpeicher(db, ablage, FotoIndex(db.syncDao(), ablage))
+        speicher.aktivieren(TEST_BASIS, konto, allesHochladen = false)
+        val kaputt = SyncLauf(speicher) { throw IllegalStateException("Keystore") }
+        assertEquals(SyncErgebnis.Fehlgeschlagen("anmeldung_abgelaufen", voruebergehend = false), kaputt.ausfuehren())
+        assertEquals("anmeldung_abgelaufen", speicher.zustand().letzterFehler)
+
+        val abgebrochen = SyncLauf(speicher) { throw CancellationException("abgebrochen") }
+        assertFailsWith<CancellationException> { abgebrochen.ausfuehren() }
+        assertFalse(speicher.laufSperre.isLocked)
+    }
+
     // --- v9-Datenbank wie auf dem Handy mit v1 ---
 
     private fun zutatRecord(id: String, name: String) = SyncRecord(
@@ -656,7 +816,8 @@ class SyncLaufTest {
 
     /**
      * Legt `foody.db` in Version 9 an – Tabellen und Indizes aus dem exportierten Schema 9 (`core/data/schemas`), Daten
-     * und Sync-Zustand wie auf dem Handy: Sync aktiv mit [cursor], Outbox mit Rezept, Zutat, Löschung und Vorrat.
+     * und Sync-Zustand wie auf dem Handy: Sync aktiv mit [cursor], Trigger der v1 ([v9Trigger]), Outbox mit Rezept und
+     * Löschung sowie – von den v1-Triggern vorgemerkt – Zutat und Vorrat.
      */
     private fun legeV9An(cursor: Long, revWeg: Long) {
         val schema = File(SCHEMA_9).readText()
@@ -682,12 +843,27 @@ class SyncLaufTest {
                     "VALUES (1, 1, 0, '$TEST_BASIS', 'haushalt-1', $cursor, 1700000000000, NULL)",
                 "INSERT INTO sync_record_rev (type, recordId, rev) VALUES ('ingredient', 'weg', $revWeg)",
                 "INSERT INTO sync_outbox (type, recordId, deleted, queuedAt) VALUES ('recipe', 'r1', 0, 1000)",
-                "INSERT INTO sync_outbox (type, recordId, deleted, queuedAt) VALUES ('ingredient', 'i1', 0, 1001)",
                 "INSERT INTO sync_outbox (type, recordId, deleted, queuedAt) VALUES ('ingredient', 'weg', 1, 1002)",
-                "INSERT INTO sync_outbox (type, recordId, deleted, queuedAt) VALUES ('pantry_item', 'p1', 0, 1003)",
             ).forEach(db::execSQL)
+            v9Trigger().forEach(db::execSQL)
+            // Letzte Änderungen in der v1, vorgemerkt von ihren Triggern (Zutat und Vorrat).
+            db.execSQL("UPDATE ingredient SET category = 'Backen' WHERE id = 'i1'")
+            db.execSQL("UPDATE pantry_item SET amount = '900' WHERE id = 'p1'")
             db.version = 9
         }
+    }
+
+    /**
+     * Trigger einer v9-Datenbank wie in `MigrationTest` (`:core:data`, androidTest): dieselben Namen wie Version 10,
+     * dazu die Vorrats-Trigger und ein veralteter Name; jeder trägt die Markierung `v9alt`.
+     */
+    private fun v9Trigger(): List<String> {
+        val markiert = SyncTrigger.anweisungen.map { it.replace(" BEGIN\n", " BEGIN\nSELECT 'v9alt';\n") }
+        val vorrat = markiert.filter { Regex("""EXISTS sync_ingredient_a[iud] """).containsMatchIn(it) }
+            .map { it.replace("ingredient", "pantry_item") }
+        check(vorrat.size == 3)
+        val veraltet = "CREATE TRIGGER sync_recipe_veraltet AFTER UPDATE ON recipe BEGIN\nSELECT 'v9alt';\nEND"
+        return markiert + vorrat + veraltet
     }
 
     private companion object {
