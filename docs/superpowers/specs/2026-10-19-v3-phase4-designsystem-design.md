@@ -55,7 +55,7 @@ Test belegt ist.
 | Primär / Text darauf | `#B5381C` / `#FFFFFF` |
 | Primär-Behälter / Text darauf | `#FCE0D3` / `#7A220E` |
 | Akzent (Oliv) | `#5C6B2A` |
-| Wärme (Safran, nur Grafik) | `#C77A1C` |
+| Wärme (Safran, nur Grafik) | `#BD741B` (Startwert `#C77A1C` hielt auf Glas LEICHT nur 2,8:1) |
 | Balkenspur | `#EADCC9` |
 | Verlauf | Aprikose `#FFB882` α 0,60 oben links · Oliv `#BAC480` α 0,50 unten rechts |
 
