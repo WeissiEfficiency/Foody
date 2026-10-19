@@ -44,4 +44,8 @@ if (System.getenv("FOODY_SERVER_ONLY") == null) {
     project(":core").projectDir = file("android/core")
     project(":core:data").projectDir = file("android/core/data")
     project(":core:sync").projectDir = file("android/core/sync")
+    // V3: Designsystem (Tokens, Glas, Komponenten) und Katalog-App zum Ansehen (Phase 4)
+    include(":core:designsystem", ":katalog")
+    project(":core:designsystem").projectDir = file("android/core/designsystem")
+    project(":katalog").projectDir = file("android/katalog")
 }

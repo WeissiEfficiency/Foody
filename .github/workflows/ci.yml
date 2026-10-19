@@ -24,7 +24,10 @@ jobs:
       - name: Domain-Tests
         run: ./gradlew :domain:test
       - name: Unit-Tests, Lint, Debug-Build
-        run: ./gradlew check :app:assembleDebug
+        run: ./gradlew check :app:assembleDebug :katalog:assembleDebug
+      # Katalog des V3-Designsystems gegen die eingecheckten Referenzbilder vergleichen
+      - name: Screenshot-Vergleich (Katalog)
+        run: ./gradlew :katalog:verifyRoborazziDebug
       # R8 entfernt nur im Release-Build Code – Fehler in Keep-Regeln fallen sonst erst beim Veröffentlichen auf
       - name: Release-Build (R8)
         run: ./gradlew :app:assembleRelease
