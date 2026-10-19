@@ -138,6 +138,8 @@ Spec: [`2026-10-18-v3-phase3-app-daten-sync-design.md`](../docs/superpowers/spec
   an (Token im Hardware-Keystore, nicht kopierbar); „ohne neue Anmeldung“ auf dem Gerät prüft Phase 8.
 
 ### Phase 4 – Designsystem (≈ 4 Tage)
+Spec: [`2026-10-19-v3-phase4-designsystem-design.md`](../docs/superpowers/specs/2026-10-19-v3-phase4-designsystem-design.md)
+(Richtung „Ofenwarm“, Glas mit Haze, Katalog-App `:katalog`).
 - [ ] `:core:designsystem`: zwei Glasstufen, Kachel, Rezeptkarte, Nährwertbalken, Sync-Status, leere Zustände
 - [ ] Katalog-Screen im Debug-Build, hell und dunkel, Handy und Tablet
 
