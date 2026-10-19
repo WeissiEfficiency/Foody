@@ -117,6 +117,8 @@ android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref 
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
+# Haze 2: die Unschärfe liegt in einem eigenen Artefakt
+haze-blur = { module = "dev.chrisbanes.haze:haze-blur", version.ref = "haze" }
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
 roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
 roborazzi-junit-rule = { module = "io.github.takahirom.roborazzi:roborazzi-junit-rule", version.ref = "roborazzi" }
