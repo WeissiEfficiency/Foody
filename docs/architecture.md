@@ -240,6 +240,33 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
   `SyncLaufTest.alterTokenUndCursorReichen`; „ohne neue Anmeldung“ auf dem Gerät prüft
   erst Phase 8. Echte Datenbanken (`*.foody-echt.db*`) kommen nie ins Repo.
 
+## Designsystem V3 (Phase 4)
+
+ADR 0012, Spec `docs/superpowers/specs/2026-10-19-v3-phase4-designsystem-design.md`. Einzige Quelle für das Aussehen
+der V3; die v1 (`android/app`) behält ihr eigenes Theme bis Phase 8.
+
+- **`:core:designsystem`** (`de.foody.core.designsystem`, ohne Abhängigkeit zu `:core:data`/`:core:sync`):
+  - `token/`: `FoodyFarben` (Hell/Dunkel, Richtung „Ofenwarm“), `GlasStufe` + `glasWerte` (LEICHT/DICHT, Tönung,
+    Unschärfe 24 dp, Lichtkante), `VerlaufHell`/`VerlaufDunkel`, `FoodyTypografie` (Fraunces bis `titleLarge`, sonst
+    Figtree; Deutsch mit Silbentrennung), `FoodyFormen` (12/20/28 dp), `FoodyAbstaende` (4-dp-Raster), `Kontrast.kt`
+    (`kontrast`, `mischen`, `kontrastPaare`).
+  - `FoodyTheme { … }` füllt Material 3 und stellt `FoodyTheme.farben/dunkel/unschaerfe` bereit; keine Dynamic Color.
+    `animationenErlaubt()` liest die Animator-Dauer des Systems – ist sie 0, entfallen Unschärfe und Drehungen.
+  - `glas/`: `FoodyHintergrund` (Grund + zwei Radialverläufe, Quelle der Unschärfe) und `GlasFlaeche(stufe)` (Haze
+    `hazeBlur` mit Tönung; ohne Hintergrund oder ohne Unschärfe nur die Tönung).
+  - `komponenten/`: `RezeptkarteGross`/`RezeptkarteRaster`, `Kachel`, `Naehrwertbalken`, `SyncStatus` (`SyncAnzeige`),
+    `LeererZustandZeile`/`LeererZustandFlaeche`, `FoodyKnopf`, `FoodyChip`, `Abschnittskopf`, `Augenbraue`,
+    `FoodyNavigationsleiste`/`FoodyNavigationsRail`. Zustandslos, nur einfache Werte und Slots; Berührflächen ≥ 48 dp;
+    ab Schriftskalierung 1,5 mehr Zeilen und Knöpfe unter dem Text statt Abschneiden.
+- **Kontrast:** WCAG 2.2 AA (Text 4,5:1, Grafik 3:1) gilt ohne Unschärfe gegen die ungünstigste Stelle des Verlaufs;
+  `KontrastTest` rechnet jedes Paar aus `kontrastPaare` nach, hell und dunkel.
+- **`:katalog`** (`de.foody.katalog`, nie ausgeliefert): alle Komponenten in allen Zuständen, Umschalter
+  hell/dunkel/System, Schrift 200 %, ohne Unschärfe; ab 840 dp zweispaltig.
+- **Tests:** Robolectric-Komponententests mit nativer Grafik (echte Textmessung) und 200-%-Prüfung
+  (`TestHilfen.abgeschnitteneTexte`); Roborazzi-Screenshots aller Katalogseiten (hell/dunkel, Handy 411 dp,
+  Tablet 1280 dp, Schrift 200 %) in `android/katalog/src/test/screenshots/`, Vergleich in der CI
+  (`:katalog:verifyRoborazziDebug`, Toleranz 0,5 %). Neu aufnehmen: `./gradlew :katalog:recordRoborazziDebug`.
+
 ## Packung scannen (seit DB v9)
 
 `PackungScan` (`android/app/.../scan`) steuert den Ablauf hinter Schnittstellen, die Hilt in `ScanModule` bindet und Tests durch
