@@ -32,6 +32,8 @@ class KontoAnbindung(
 
     override suspend fun hatLokaleDaten(): Boolean = konto.hatLokaleDaten()
 
+    override suspend fun istWiederanmeldung(): Boolean = konto.istWiederanmeldung()
+
     override suspend fun aktivieren(modus: ErsterSync): Ergebnis<Unit> = konto.aktivieren(modus)
 
     override suspend fun trennen() = konto.trennen()

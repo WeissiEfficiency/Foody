@@ -13,6 +13,7 @@ import de.foody.feature.heute.planen
 import de.foody.feature.heute.testDatenbank
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -148,5 +149,29 @@ class EintragenViewModelTest {
         vm.weg(EintragenWeg.ZUTAT)
         vm.suche("MEHL")
         assertEquals(30, vm.zustand.first().zutaten.size)
+    }
+
+    @Test
+    fun zahlenAusserhalbDerGrenzenGesperrt() {
+        fun r(p: String) = gueltig(Eingaben(weg = EintragenWeg.REZEPT, rezeptId = "r1", portionen = p))
+        assertFalse(r("1e999999999"), "Exponent")
+        assertFalse(r("0,0000000000000000000001"), "mehr als 20 Nachkommastellen")
+        assertFalse(r("1234567890123456789012345678901"), "mehr als 30 Stellen")
+        assertTrue(r("1,5"))
+        fun f(name: String) = gueltig(Eingaben(weg = EintragenWeg.FREI, freiName = name, freiKcal = "50"))
+        assertFalse(f("x".repeat(201)), "Name länger als 200 Zeichen")
+        assertTrue(f("Apfel"))
+    }
+
+    @Test
+    fun doppeltippLegtNurEinenEintragAn() = runTest {
+        db.bestand()
+        vm.weg(EintragenWeg.REZEPT)
+        vm.rezeptWaehlen("r1")
+        val ids = kotlinx.coroutines.coroutineScope {
+            listOf(async { vm.speichern() }, async { vm.speichern() }).map { it.await() }
+        }
+        assertEquals(1, ids.filterNotNull().size)
+        assertEquals(1, db.tagebuchDao().alle().size)
     }
 }

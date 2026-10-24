@@ -30,6 +30,7 @@ private class ErsatzKonto : KontoZugriff {
     override val zustand = stand
     var anmeldeErgebnis: Ergebnis<Unit> = Ergebnis.Erfolg(Unit)
     var lokaleDaten = false
+    var wiederanmeldung = false
     val aufrufe = mutableListOf<String>()
 
     override suspend fun anmelden(adresse: String, benutzer: String, passwort: String): Ergebnis<Unit> {
@@ -38,6 +39,8 @@ private class ErsatzKonto : KontoZugriff {
     }
 
     override suspend fun hatLokaleDaten() = lokaleDaten
+
+    override suspend fun istWiederanmeldung() = wiederanmeldung
 
     override suspend fun aktivieren(modus: ErsterSync): Ergebnis<Unit> {
         aufrufe += "aktivieren:$modus"
@@ -172,5 +175,32 @@ class VerbindenScreenTest {
         zeigen()
         val b = compose.onNodeWithTag(Verbinden.INHALT).getUnclippedBoundsInRoot()
         assertTrue(b.width <= Verbinden.MAX_BREITE, "zu breit: ${b.width}")
+    }
+
+    private fun neuAnmelden() {
+        konto.stand.value = VerbindungsZustand(true, "https://foody.example", null, "anmeldung_abgelaufen")
+        zeigen()
+        compose.onNodeWithText("Neu anmelden").performClick()
+        compose.onNodeWithText("Benutzername").performTextInput("Weissi")
+        compose.onNodeWithText("Passwort").performTextInput("geheim-123")
+        compose.onNodeWithText("Anmelden").performClick()
+        compose.waitForIdle()
+    }
+
+    @Test
+    fun neuAnmeldenGleichesKontoAktiviertOhneFrage() {
+        konto.wiederanmeldung = true
+        konto.lokaleDaten = true
+        neuAnmelden()
+        assertEquals("aktivieren:ZUSAMMENFUEHREN", konto.aufrufe.last())
+    }
+
+    @Test
+    fun neuAnmeldenAnderesKontoVerlangtTrennen() {
+        konto.wiederanmeldung = false
+        konto.lokaleDaten = true
+        neuAnmelden()
+        assertFalse(konto.aufrufe.any { it.startsWith("aktivieren") }, "nichts zusammenführen: ${konto.aufrufe}")
+        compose.onNodeWithText(anmeldeFehlerText(Verbinden.ERST_TRENNEN)).assertExists()
     }
 }

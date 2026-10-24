@@ -13,6 +13,7 @@ fun anmeldeFehlerText(kennung: String): String = when (kennung) {
     "server_zu_alt" -> SERVER_ZU_ALT
     "app_zu_alt" -> APP_ZU_ALT
     "token_nicht_gespeichert" -> "Anmeldung konnte nicht gespeichert werden."
+    Verbinden.ERST_TRENNEN -> "Für einen anderen Server oder ein anderes Konto bitte zuerst trennen."
     else -> "Anmeldung fehlgeschlagen."
 }
 

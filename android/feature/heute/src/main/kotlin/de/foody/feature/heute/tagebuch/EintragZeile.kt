@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import de.foody.api.protocol.ZahlGrenzen
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
@@ -33,8 +34,18 @@ internal fun kcalText(kcal: Int?, vollstaendig: Boolean): String = when {
     else -> "${ganzzahlDeutsch(kcal)} kcal"
 }
 
-/** Zahl aus einem Eingabefeld („1,5“ oder „1.5“); leer oder ungültig → `null`. */
-internal fun zahl(text: String): BigDecimal? = text.trim().replace(',', '.').takeIf { it.isNotEmpty() }?.toBigDecimalOrNull()
+/**
+ * Zahl aus einem Eingabefeld („1,5“ oder „1.5“); leer, ungültig, mit Exponent oder außerhalb der Sync-Grenzen
+ * ([ZahlGrenzen], wie v1 `parseNichtNegativ`) → `null` – sonst ginge der Eintrag nie zum Server.
+ */
+internal fun zahl(text: String): BigDecimal? {
+    val t = text.trim().replace(',', '.')
+    if (t.isEmpty() || t.contains('e', ignoreCase = true)) return null
+    return ZahlGrenzen.lesen(t)
+}
+
+/** Höchstlänge eines Namens (wie der Server). */
+internal const val MAX_NAME = 200
 
 /** Zahl für ein Eingabefeld: ohne Nullen am Ende, mit Komma. */
 internal fun zahlText(wert: BigDecimal?): String = wert?.stripTrailingZeros()?.toPlainString()?.replace('.', ',').orEmpty()

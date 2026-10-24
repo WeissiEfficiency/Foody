@@ -47,6 +47,9 @@ object Verbinden {
     const val TRENNEN_BESTAETIGEN = "Ja, trennen"
     const val INHALT = "verbinden-inhalt"
 
+    /** Kennung: angemeldet an anderem Server/Konto, während eine Verbindung besteht. */
+    const val ERST_TRENNEN = "erst_trennen"
+
     /** Lesebreite: Auf dem Tablet bleibt das Formular schmal und mittig. */
     val MAX_BREITE = 720.dp
 }

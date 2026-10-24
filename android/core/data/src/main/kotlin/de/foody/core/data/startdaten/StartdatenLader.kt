@@ -26,11 +26,13 @@ class StartdatenLader @Inject constructor(
         var geaendert = 0
         db.withTransaction {
             for (start in Startdaten.zutaten(System.currentTimeMillis())) {
-                val vorhanden = dao.nachNameOhneGross(start.canonicalName)
+                // Auch über die ID: Ein umbenannter Starteintrag (v1 oder Sync) darf nicht überschrieben werden
+                val vorhanden = dao.nachNameOhneGross(start.canonicalName) ?: dao.nachId(start.id)
                 val neu = when {
                     vorhanden == null -> start
-                    // Unveränderter Starteintrag: Korrekturen der Startdaten übernehmen
-                    vorhanden.id == start.id && vorhanden.nutrientSource in setOf(Startdaten.QUELLE, start.nutrientSource) ->
+                    // Unveränderter Starteintrag (gleicher Name, Startwerte): Korrekturen der Startdaten übernehmen
+                    vorhanden.id == start.id && vorhanden.canonicalName.equals(start.canonicalName, ignoreCase = true) &&
+                        vorhanden.nutrientSource in setOf(Startdaten.QUELLE, start.nutrientSource) ->
                         start.copy(createdAt = vorhanden.createdAt, version = vorhanden.version)
                     else -> vorhanden.ergaenztAus(start)
                 }

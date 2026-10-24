@@ -18,6 +18,9 @@ interface KontoZugriff {
 
     suspend fun hatLokaleDaten(): Boolean
 
+    /** Gleicher Server und gleiches Konto wie die bestehende Verbindung (nach [anmelden]). */
+    suspend fun istWiederanmeldung(): Boolean
+
     suspend fun aktivieren(modus: ErsterSync): Ergebnis<Unit>
 
     suspend fun trennen()

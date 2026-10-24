@@ -75,6 +75,9 @@ class EintragenViewModel @Inject constructor(
 ) : ViewModel() {
     private val eingaben = MutableStateFlow(Eingaben())
 
+    /** Während des Speicherns und nach Erfolg gesperrt (bis zum nächsten [oeffnen]): ein Doppeltipp legt nichts doppelt an. */
+    private val gesperrt = MutableStateFlow(false)
+
     /** Heutige, noch nicht eingetragene Plan-Einträge des gewählten Tags. */
     private val offenerPlan = eingaben.map { it.datum }.distinctUntilChanged().flatMapLatest { tag ->
         combine(heute.planHeuteUndMorgen(tag), tagebuch.amTag(tag)) { plan, eintraege ->
@@ -97,11 +100,12 @@ class EintragenViewModel @Inject constructor(
         }.stateIn(viewModelScope, SharingStarted.Eagerly, EintragenZustand(Eingaben(), emptyList(), emptyList(), emptyList()))
 
     val speichernMoeglich: StateFlow<Boolean> =
-        eingaben.map(::gueltig).stateIn(viewModelScope, SharingStarted.Eagerly, false)
+        combine(eingaben, gesperrt) { e, sperre -> !sperre && gueltig(e) }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     /** Neues Blatt: alles zurück; Mahlzeit aus der angetippten Zeile, sonst nach Uhrzeit. */
     fun oeffnen(datum: LocalDate, mahlzeit: Mahlzeit?, uhrzeit: LocalTime = LocalTime.now()) {
         eingaben.value = Eingaben(datum = datum, mahlzeit = mahlzeit ?: mahlzeitNachUhrzeit(uhrzeit))
+        gesperrt.value = false
     }
 
     fun weg(w: EintragenWeg) = eingaben.update { it.copy(weg = w, suche = "") }
@@ -129,8 +133,8 @@ class EintragenViewModel @Inject constructor(
     /** Speichert nach dem gewählten Weg; `null`, wenn die Eingaben ungültig sind oder Rezept/Zutat/Plan fehlen. */
     suspend fun speichern(): String? {
         val e = eingaben.value
-        if (!gueltig(e)) return null
-        return when (e.weg) {
+        if (!gueltig(e) || !gesperrt.compareAndSet(expect = false, update = true)) return null
+        val id = when (e.weg) {
             EintragenWeg.REZEPT -> tagebuch.ausRezept(e.datum, e.mahlzeit, e.rezeptId!!, zahl(e.portionen)!!)
             EintragenWeg.ZUTAT -> tagebuch.ausZutat(e.datum, e.mahlzeit, e.zutatId!!, zahl(e.menge)!!, e.einheit)
             EintragenWeg.PLAN -> tagebuch.ausPlan(e.planEintragId!!)
@@ -139,6 +143,8 @@ class EintragenViewModel @Inject constructor(
                 optional(e.freiEiweiss), optional(e.freiKh), optional(e.freiFett),
             )
         }
+        if (id == null) gesperrt.value = false
+        return id
     }
 }
 
@@ -154,6 +160,6 @@ internal fun gueltig(e: Eingaben): Boolean = when (e.weg) {
     EintragenWeg.REZEPT -> e.rezeptId != null && zahl(e.portionen).positiv()
     EintragenWeg.ZUTAT -> e.zutatId != null && zahl(e.menge).positiv()
     EintragenWeg.PLAN -> e.planEintragId != null
-    EintragenWeg.FREI -> e.freiName.isNotBlank() && (e.freiKcal.trim().toIntOrNull() ?: -1) >= 0 &&
+    EintragenWeg.FREI -> e.freiName.isNotBlank() && e.freiName.trim().length <= MAX_NAME && (e.freiKcal.trim().toIntOrNull() ?: -1) >= 0 &&
         optionalGueltig(e.freiEiweiss) && optionalGueltig(e.freiKh) && optionalGueltig(e.freiFett)
 }

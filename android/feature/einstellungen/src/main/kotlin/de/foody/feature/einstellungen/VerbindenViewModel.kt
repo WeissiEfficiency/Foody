@@ -32,8 +32,8 @@ class VerbindenViewModel @Inject constructor(private val konto: KontoZugriff) : 
         .stateIn(viewModelScope, SharingStarted.Eagerly, VerbindenUi(null, Schritt.EINGABE, null))
 
     /**
-     * Meldet an. Mit lokalen Daten fragt das Blatt „Zusammenführen/Ersetzen“; ohne – oder bei bestehender Verbindung
-     * (Wiederanmeldung, `SyncKonto.aktivieren` erkennt sie) – wird sofort aktiviert.
+     * Meldet an. Wiederanmeldung (gleicher Server, gleiches Konto) und Geräte ohne lokale Daten werden sofort aktiviert;
+     * mit lokalen Daten fragt die Wahl „Zusammenführen/Ersetzen“; ein Wechsel bei bestehender Verbindung verlangt Trennen.
      */
     fun anmelden(adresse: String, benutzer: String, passwort: String) {
         if (schritt.value == Schritt.LAEUFT) return
@@ -42,9 +42,13 @@ class VerbindenViewModel @Inject constructor(private val konto: KontoZugriff) : 
         viewModelScope.launch {
             when (val r = konto.anmelden(adresse.trim(), benutzer.trim(), passwort)) {
                 is Ergebnis.Fehler -> abbrechenMit(r.kennung)
-                is Ergebnis.Erfolg -> {
-                    val wiederanmeldung = konto.zustand.first().verbunden
-                    if (!wiederanmeldung && konto.hatLokaleDaten()) schritt.value = Schritt.WAHL else aktivieren(ErsterSync.ZUSAMMENFUEHREN)
+                is Ergebnis.Erfolg -> when {
+                    // Gleicher Server und gleiches Konto: nur das Token erneuern, ohne Frage
+                    konto.istWiederanmeldung() -> aktivieren(ErsterSync.ZUSAMMENFUEHREN)
+                    // Wechsel bei bestehender Verbindung: erst trennen (sonst flössen alle Daten ungefragt ins andere Konto)
+                    konto.zustand.first().verbunden -> abbrechenMit(Verbinden.ERST_TRENNEN)
+                    konto.hatLokaleDaten() -> schritt.value = Schritt.WAHL
+                    else -> aktivieren(ErsterSync.ZUSAMMENFUEHREN)
                 }
             }
         }

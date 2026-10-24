@@ -76,6 +76,18 @@ class StartdatenLaderTest {
     }
 
     @Test
+    fun umbenannteStartzutatBleibt() = runTest {
+        // Umbenannt (in v1 oder per Sync): Der Name passt nicht mehr, die ID schon – nichts überschreiben
+        val zwiebel = Startdaten.zutaten(1).first { it.id == "seed-zwiebel" }
+        db.zutatDao().upsert(zwiebel.copy(canonicalName = "Rote Zwiebel", energyKj = BigDecimal("111"), nutrientSource = "eigen"))
+        prefs.edit().putInt("seedVersion", 7).commit()
+        lader.ladenWennNoetig()
+        val e = db.zutatDao().nachId("seed-zwiebel")
+        assertEquals("Rote Zwiebel", e?.canonicalName)
+        assertEquals(BigDecimal("111"), e?.energyKj)
+    }
+
+    @Test
     fun geaenderteStartzutatBleibt() = runTest {
         val reis = Startdaten.zutaten(1).first { it.id == "seed-reis" }
         db.zutatDao().upsert(reis.copy(energyKj = BigDecimal("1234"), nutrientSource = "eigene"))
