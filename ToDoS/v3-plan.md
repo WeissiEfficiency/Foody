@@ -138,10 +138,19 @@ Spec: [`2026-10-18-v3-phase3-app-daten-sync-design.md`](../docs/superpowers/spec
   an (Token im Hardware-Keystore, nicht kopierbar); „ohne neue Anmeldung“ auf dem Gerät prüft Phase 8.
 
 ### Phase 4 – Designsystem (≈ 4 Tage)
-- [ ] `:core:designsystem`: zwei Glasstufen, Kachel, Rezeptkarte, Nährwertbalken, Sync-Status, leere Zustände
-- [ ] Katalog-Screen im Debug-Build, hell und dunkel, Handy und Tablet
+Spec: [`2026-10-19-v3-phase4-designsystem-design.md`](../docs/superpowers/specs/2026-10-19-v3-phase4-designsystem-design.md)
+(Richtung „Ofenwarm“, Glas mit Haze, Katalog-App `:katalog`).
+- [x] `:core:designsystem`: zwei Glasstufen, Kachel, Rezeptkarte, Nährwertbalken, Sync-Status, leere Zustände
+- [x] Katalog-Screen im Debug-Build, hell und dunkel, Handy und Tablet (eigene Debug-App `:katalog`)
 
 **Fertig, wenn** jede Komponente im Katalog WCAG 2.2 AA einhält, auch auf Glas.
+
+**Ergebnis** (2026-10-24): `:core:designsystem` und `:katalog` stehen (ADR 0012). AA belegt durch `KontrastTest` (jedes
+Farbpaar, hell und dunkel, Glas ohne Unschärfe über dem ungünstigsten Verlaufspunkt, Primär direkt auf dem Verlauf,
+alles über Fotos; Safran auf `#BD741B`, Primär hell auf `#A8341A` abgedunkelt, Leiste über Fotos als Stufe BILD), Komponententests (≥ 48 dp, TalkBack-Texte, nichts abgeschnitten bei 200 % Schrift) und 40
+Roborazzi-Referenzbilder. Sichtprüfung mit echter Unschärfe auf dem Emulator (Handy hell/dunkel, Tablet). Beim Ansehen
+der Bilder gefunden und behoben: fehlende deutsche Silbentrennung, Platzhalter-Symbol hinter der Glas-Leiste,
+überlappende Abzeichen bei großer Schrift.
 
 ### Phase 5 – Navigation und „Heute“ (≈ 1 Woche)
 - [ ] Vier Tabs (Heute · Rezepte · Woche · Einkauf), adaptive Navigation für das Tablet, Einstellungen über das
