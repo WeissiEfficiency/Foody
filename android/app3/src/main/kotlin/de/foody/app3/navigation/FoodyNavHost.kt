@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
+import de.foody.feature.einstellungen.VerbindenRoute
 import de.foody.feature.heute.HeuteRoute
 import de.foody.feature.heute.tagebuch.TagebuchTagRoute
 import java.time.LocalDate
@@ -15,6 +16,7 @@ import java.time.LocalDate
 class Bildschirme(
     val heute: @Composable (NavHostController) -> Unit,
     val tagebuch: @Composable (LocalDate, NavHostController) -> Unit,
+    val einstellungen: @Composable (NavHostController) -> Unit,
 ) {
     companion object {
         val echt = Bildschirme(
@@ -33,10 +35,12 @@ class Bildschirme(
                     nav.navigate(TagebuchTag(neu.toString())) { popUpTo<TagebuchTag> { inclusive = true } }
                 })
             },
+            einstellungen = { nav -> VerbindenRoute(onZurueck = { nav.popBackStack() }) },
         )
         val platzhalter = Bildschirme(
             heute = { Platzhalter("Heute") },
             tagebuch = { datum, _ -> Platzhalter("Tagebuch", "Tagebuch $datum") },
+            einstellungen = { Platzhalter("Einstellungen") },
         )
     }
 }
@@ -56,7 +60,7 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
         composable<Rezepte> { Platzhalter("Rezepte") }
         composable<Woche> { Platzhalter("Woche") }
         composable<Einkauf> { Platzhalter("Einkauf") }
-        composable<Einstellungen> { Platzhalter("Einstellungen") }
+        composable<Einstellungen> { bildschirme.einstellungen(nav) }
         composable<RezeptDetail>(deepLinks = listOf(navDeepLink<RezeptDetail>(basePath = "${SCHEMA}rezept"))) {
             Platzhalter("Rezept", "Rezept ${it.toRoute<RezeptDetail>().id}")
         }
