@@ -49,7 +49,8 @@ internal fun Naehrwerttabelle(v: RezeptVoll, portionen: Int) {
             kcalJePortion(v)?.let { Text(it, style = MaterialTheme.typography.titleMedium, color = FoodyTheme.farben.text) }
             Zeile("", "je Portion", if (portionen == 1) "1 Portion" else "$portionen Portionen", kopf = true)
             n.perServing(Nutrient.ENERGY_KJ)?.let { kj ->
-                Zeile("Energie", energie(kj), energie(kj.multiply(faktor)))
+                Zeile("Energie", kcal(kj), kcal(kj.multiply(faktor)))
+                Zeile("Brennwert", kilojoule(kj), kilojoule(kj.multiply(faktor)))
             }
             NAEHRSTOFFE.forEach { (naehrstoff, name) ->
                 n.perServing(naehrstoff)?.let { Zeile(name, gramm(it), gramm(it.multiply(faktor))) }
@@ -65,7 +66,9 @@ internal fun Naehrwerttabelle(v: RezeptVoll, portionen: Int) {
     }
 }
 
-private fun energie(kj: BigDecimal) = "${ganzzahlDeutsch(NutritionResult.kcal(kj))} kcal (${ganzzahlDeutsch(kj.setScale(0, RoundingMode.HALF_UP).toInt())} kJ)"
+private fun kcal(kj: BigDecimal) = "${ganzzahlDeutsch(NutritionResult.kcal(kj))} kcal"
+
+private fun kilojoule(kj: BigDecimal) = "${ganzzahlDeutsch(kj.setScale(0, RoundingMode.HALF_UP).toInt())} kJ"
 
 @Composable
 private fun Zeile(name: String, jePortion: String, gesamt: String, kopf: Boolean = false) {

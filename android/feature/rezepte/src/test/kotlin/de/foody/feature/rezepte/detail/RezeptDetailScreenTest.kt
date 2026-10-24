@@ -103,6 +103,15 @@ class RezeptDetailScreenTest {
     }
 
     @Test
+    fun energieUndBrennwertGetrennt() {
+        zeigen()
+        // Eigene Zeilen, damit auf dem Handy nichts mitten in der Zahl umbricht
+        compose.warteAufText("717 kcal")
+        compose.onNodeWithText("3.000 kJ").assertExists()
+        compose.onNodeWithText("6.000 kJ").assertExists()
+    }
+
+    @Test
     fun kochenMitPortionen() {
         zeigen()
         compose.warteAufText("400 g")

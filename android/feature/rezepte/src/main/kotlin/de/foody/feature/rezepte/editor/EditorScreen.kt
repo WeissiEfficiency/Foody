@@ -66,7 +66,7 @@ fun EditorRoute(id: String?, onFertig: (String) -> Unit, onZurueck: () -> Unit, 
                     Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
                 }
                 Text(
-                    if (id == null) "Neues Rezept" else "Rezept bearbeiten", Modifier.weight(1f),
+                    if (id == null) "Neues Rezept" else "Bearbeiten", Modifier.weight(1f),
                     style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text,
                 )
                 FoodyKnopf("Speichern", {

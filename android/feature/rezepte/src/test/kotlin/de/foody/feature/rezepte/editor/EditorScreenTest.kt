@@ -100,6 +100,7 @@ class EditorScreenTest {
     fun schrift200OhneAbschneiden() {
         compose.setContent { FoodyTheme { MitSchrift200 { EditorRoute(id = "r1", onFertig = {}, onZurueck = {}, vm = vm) } } }
         compose.warteAufText("400 g Reis")
+        compose.onNodeWithText("Bearbeiten").assertExists()
         compose.pruefeNichtsAbgeschnitten()
     }
 }
