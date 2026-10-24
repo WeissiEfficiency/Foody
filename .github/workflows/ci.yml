@@ -24,7 +24,7 @@ jobs:
       - name: Domain-Tests
         run: ./gradlew :domain:test
       - name: Unit-Tests, Lint, Debug-Build
-        run: ./gradlew check :app:assembleDebug :katalog:assembleDebug
+        run: ./gradlew check :app:assembleDebug :katalog:assembleDebug :app3:assembleDebug
       # Katalog des V3-Designsystems gegen die eingecheckten Referenzbilder vergleichen
       - name: Screenshot-Vergleich (Katalog)
         run: ./gradlew :katalog:verifyRoborazziDebug
