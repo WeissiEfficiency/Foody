@@ -315,6 +315,19 @@ class SyncKontoTest {
     }
 
     @Test
+    fun istWiederanmeldungNurBeiGleichemKontoUndAdresse() = syncServerTest { server ->
+        val (nameA, _) = server.kontoAnlegen()
+        val (nameB, _) = server.kontoAnlegen()
+        val g = Geraet(client)
+        assertFalse(g.konto.istWiederanmeldung(), "ohne Anmeldung")
+        verbinden(g, nameA)
+        assertEquals(Ergebnis.Erfolg(Unit), g.konto.anmelden(TEST_BASIS, nameA, TEST_PASSWORT, "Testgerät"))
+        assertTrue(g.konto.istWiederanmeldung(), "gleiches Konto, gleiche Adresse")
+        assertEquals(Ergebnis.Erfolg(Unit), g.konto.anmelden(TEST_BASIS, nameB, TEST_PASSWORT, "Testgerät"))
+        assertFalse(g.konto.istWiederanmeldung(), "anderes Konto")
+    }
+
+    @Test
     fun anmeldungAnAnderemKontoVermischtNichts() = syncServerTest { server ->
         val (nameA, kontoA) = server.kontoAnlegen()
         val (nameB, kontoB) = server.kontoAnlegen()

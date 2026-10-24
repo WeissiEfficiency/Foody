@@ -1,15 +1,21 @@
 package de.foody.core.sync
 
+import android.content.Context
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.sync.SyncSpeicher
 import javax.inject.Qualifier
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.map
 
 /**
  * Einstellungen des Sync-Clients, die die App liefert (Phase 5: `@Provides` in der App). [lokalesHttpErlaubt]: Debug-Build,
@@ -59,4 +65,13 @@ object SyncModul {
     @Singleton
     @SyncBereich
     fun bereich(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    /** „Läuft“ = der einmalige Auftrag [SyncAusloeser.AUFTRAG] ist gerade in Arbeit. */
+    @Provides
+    @Singleton
+    fun syncLageQuelle(@ApplicationContext context: Context, db: FoodyDatenbank): SyncLageQuelle = SyncLageQuelle {
+        val laeuft = WorkManager.getInstance(context).getWorkInfosForUniqueWorkFlow(SyncAusloeser.AUFTRAG)
+            .map { auftraege -> auftraege.any { it.state == WorkInfo.State.RUNNING } }
+        syncLage(db.syncDao().zustandFlow(), laeuft)
+    }
 }

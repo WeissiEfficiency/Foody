@@ -153,6 +153,15 @@ class SyncKonto @Inject constructor(
         return ergebnis
     }
 
+    /**
+     * Wäre [aktivieren] mit der letzten [anmelden]-Anmeldung eine Wiederanmeldung (gleiche Adresse und gleiches oder noch
+     * kein Konto)? Ohne Anmeldung `false`. Die Oberfläche fragt dann nicht nach „Zusammenführen/Ersetzen“.
+     */
+    suspend fun istWiederanmeldung(): Boolean {
+        val neu = anmeldung ?: return false
+        return wiederanmeldung(speicher.zustand(), neu)
+    }
+
     /** Aktiver Sync, dieselbe (vereinheitlichte) Adresse und dieselbe oder noch keine Konto-ID (nach der Migration). */
     private fun wiederanmeldung(z: SyncZustand, neu: Anmeldung): Boolean {
         val gespeichert = z.serverUrl?.let { ServerAdresse.pruefen(it, konfiguration.lokalesHttpErlaubt) }

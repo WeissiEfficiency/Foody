@@ -46,6 +46,10 @@ if (System.getenv("FOODY_SERVER_ONLY") == null) {
     project(":core:sync").projectDir = file("android/core/sync")
     // V3: Designsystem (Tokens, Glas, Komponenten) und Katalog-App zum Ansehen (Phase 4)
     include(":core:designsystem", ":katalog")
+    // V3: App-Hülle neben der v1 (Phase 5); wird in Phase 8 zu :app
+    include(":app3", ":feature:einstellungen")
+    project(":app3").projectDir = file("android/app3")
+    project(":feature:einstellungen").projectDir = file("android/feature/einstellungen")
     project(":core:designsystem").projectDir = file("android/core/designsystem")
     project(":katalog").projectDir = file("android/katalog")
 }
