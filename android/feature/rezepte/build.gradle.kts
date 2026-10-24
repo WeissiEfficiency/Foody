@@ -25,6 +25,9 @@ dependencies {
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     // Rezeptfotos (file:-Links aus der Fotoablage)
     implementation(libs.coil.compose)
+    // Photo-Picker und Kamera (ActivityResult), FileProvider, Zurück-Taste
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.core.ktx)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.coroutines.test)
