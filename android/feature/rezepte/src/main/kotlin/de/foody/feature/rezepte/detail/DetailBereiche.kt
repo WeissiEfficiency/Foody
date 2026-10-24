@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
@@ -92,8 +93,11 @@ internal fun DetailInhalt(z: DetailZustand.Da, a: DetailAktionen) {
 private fun Kopfbild(name: String, meta: String, bild: String?, onZurueck: () -> Unit) {
     Box(Modifier.fillMaxWidth().height(260.dp)) {
         rezeptBild(bild)?.invoke() ?: RezeptPlatzhalter(Modifier.fillMaxSize())
-        IconButton(onClick = onZurueck, modifier = Modifier.padding(8.dp)) {
-            Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
+        // Glaskreis hinter dem Pfeil, damit er auch auf dunklen Fotos lesbar bleibt
+        GlasFlaeche(GlasStufe.BILD, Modifier.padding(8.dp), form = CircleShape) {
+            IconButton(onClick = onZurueck) {
+                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
+            }
         }
         GlasFlaeche(GlasStufe.BILD, Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(12.dp)) {
             Column(Modifier.padding(16.dp)) {

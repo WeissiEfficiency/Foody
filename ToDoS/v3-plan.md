@@ -169,13 +169,22 @@ Emulator gegen den Test-Server: verbinden, 112 Rezepte geholt, Tagebuch-Eintrag 
 Bilder gefunden und behoben: Inhalte auf dem Tablet über die volle Breite (jetzt höchstens 720 dp, mittig).
 
 ### Phase 6 – Bereiche neu bauen (≈ 3 Wochen)
-- [ ] Rezepte (inkl. Tablet zweispaltig, Favorit + „Oft gekocht“)
+- [x] Rezepte (inkl. Tablet zweispaltig, Favorit + „Oft gekocht“) – Spec
+      [`2026-10-24-v3-phase6a-rezepte-design.md`](../docs/superpowers/specs/2026-10-24-v3-phase6a-rezepte-design.md)
 - [ ] Kochen (inkl. „Änderungen ins Rezept übernehmen“ nach dem Kochen)
 - [ ] Woche (eine fortlaufende Wochenansicht)
 - [ ] Einkauf (eine Ansicht, ohne Vorratsabzug)
 - [ ] Einstellungen (Server/Anmelden/Status, Zutatenkatalog, Sicherung, Darstellung, Tagesziel); nach dem Update aus
       der v1 ist `kontoId` leer: „Erneut anmelden“ an derselben Adresse übernimmt nur Token und Konto-ID (ungesendete
       Outbox bleibt, einmal alles neu holen), ohne Frage „Zusammenführen/Ersetzen“
+
+**Ergebnis 6a Rezepte** (2026-10-24): `:feature:rezepte` mit Bildraster, Suche und Filterchips, Detail mit
+Portionen und Nährwerttabelle, Editor mit Zutaten als Freitext je Zeile und Foto, Markdown-Import (Dateien oder
+Ordner, vorhandene Quellen übersprungen) und Tablet zweispaltig. Belegt durch Repository-, Import-, Zeilen-,
+Bildschirm- und Navigationstests und 12 Roborazzi-Bilder. Sichtprüfung auf dem Emulator gegen den Test-Server:
+Liste mit Serverdaten, Suche, Detail, Import (zweiter Import derselben Datei: „1 übersprungen“), neues Rezept mit
+Foto. Dabei gefunden und behoben: Zurück-Pfeil auf dunklen Fotos kaum sichtbar (jetzt im Glaskreis), Energie und
+Brennwert brachen auf dem Handy mitten in der Zahl um (jetzt eigene Zeilen).
 
 **Fertig, wenn** alle App-Abschnitte der Abnahmeliste abgehakt sind und kein Screen über 300 Zeilen hat.
 
