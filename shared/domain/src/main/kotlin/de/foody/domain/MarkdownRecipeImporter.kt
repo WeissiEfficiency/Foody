@@ -37,7 +37,7 @@ object MarkdownRecipeImporter {
     private val numberRegex = Regex("""^(${GermanAmounts.NUMBER})\s*(.*)$""")
     private val rangeUpper = Regex("""^(?:[-–]|bis\s)\s*(${GermanAmounts.NUMBER})(?!\S)""")
     private val servingsRegex = Regex("""^Portionen:\s*(\d{1,3})(?!\d)""")
-    private val vagueAmounts = setOf("n. b.", "n.b.", "evtl.", "etwas", "nach belieben", "etwas mehr", "prise", "1 prise")
+    internal val vagueAmounts = setOf("n. b.", "n.b.", "evtl.", "etwas", "nach belieben", "etwas mehr", "prise", "1 prise")
 
     fun parse(markdown: String): ImportedRecipe {
         val lines = markdown.lines().map { it.trim() }
@@ -100,7 +100,7 @@ object MarkdownRecipeImporter {
         return out
     }
 
-    private fun buildIngredient(amountText: String?, nameText: String, group: String?): ImportedIngredient {
+    internal fun buildIngredient(amountText: String?, nameText: String, group: String?): ImportedIngredient {
         var amount: BigDecimal? = null
         var unit: MeasureUnit? = null
         val notes = mutableListOf<String>()
