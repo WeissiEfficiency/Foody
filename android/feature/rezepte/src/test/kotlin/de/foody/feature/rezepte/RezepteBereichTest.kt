@@ -1,14 +1,19 @@
 package de.foody.feature.rezepte
 
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.feature.rezepte.detail.RezeptDetailViewModel
+import de.foody.feature.rezepte.editor.EditorViewModel
 import de.foody.feature.rezepte.liste.RezeptListeViewModel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -42,17 +47,38 @@ class RezepteBereichTest {
     fun tearDown() = db.close()
 
     private fun zeigen() {
-        val repo = RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1L }
+        val ablage = FotoAblage(RuntimeEnvironment.getApplication())
+        val repo = RezeptRepository(db, ablage) { 1L }
         val liste = RezeptListeViewModel(repo)
         val detail = RezeptDetailViewModel(repo)
         compose.setContent {
             FoodyTheme {
                 RezepteBereich(
                     onOeffnen = { geoeffnet += it }, onNeu = {}, onKochen = { _, _ -> },
-                    listeVm = liste, detailVm = detail,
+                    listeVm = liste, detailVm = detail, editorVm = { EditorViewModel(repo, db, ablage) },
                 )
             }
         }
+    }
+
+    @Test
+    @Config(qualifiers = "w1280dp-h800dp")
+    fun tabletFragtVorVerwerfen() {
+        // Ungespeicherte Eingaben rechts gehen beim Antippen einer Karte links nicht still verloren
+        zeigen()
+        compose.warteAufText("Wähle ein Rezept")
+        compose.onNodeWithText("Reispfanne").performClick()
+        compose.warteAufText("400 g")
+        compose.onNodeWithContentDescription("Bearbeiten").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasSetTextAction() and hasText("Reispfanne")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasSetTextAction() and hasText("Reispfanne")).performTextReplacement("Reispfanne scharf")
+        compose.onNodeWithText("Reispfanne").performClick()
+        compose.warteAufText("Änderungen verwerfen?")
+        compose.onNodeWithText("Weiter bearbeiten").performClick()
+        compose.onNode(hasSetTextAction() and hasText("Reispfanne scharf")).assertExists()
+        compose.onNodeWithText("Reispfanne").performClick()
+        compose.onNodeWithText("Verwerfen").performClick()
+        compose.warteAufText("400 g")
     }
 
     @Test

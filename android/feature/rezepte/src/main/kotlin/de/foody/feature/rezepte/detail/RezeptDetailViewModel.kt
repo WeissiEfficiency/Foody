@@ -61,9 +61,8 @@ class RezeptDetailViewModel @Inject constructor(private val repo: RezeptReposito
         viewModelScope.launch { repo.favorit(rezeptId, an) }
     }
 
-    suspend fun archivieren(an: Boolean) {
-        id.value?.let { repo.archivieren(it, an) }
-    }
+    /** [rezeptId] ausdrücklich: „Rückgängig“ muss das archivierte Rezept treffen, auch wenn inzwischen ein anderes offen ist. */
+    suspend fun archivieren(rezeptId: String, an: Boolean) = repo.archivieren(rezeptId, an)
 
     suspend fun duplizieren(): String? = id.value?.let { repo.duplizieren(it) }
 

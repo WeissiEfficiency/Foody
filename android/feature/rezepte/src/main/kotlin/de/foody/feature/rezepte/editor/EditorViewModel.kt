@@ -46,6 +46,9 @@ data class EditorEingaben(
 /** Eine Zutatzeile mit dem, was erkannt wurde; [fehler] sperrt das Speichern. */
 data class ZeilenStatus(val zeile: String, val erkannt: ImportedIngredient?, val imKatalog: Boolean, val fehler: String?)
 
+/** Eine geladene Zeile: was gespeichert war und zu welcher Zutat; bleibt, solange ihr Text unverändert ist. */
+internal data class Vorlage(val zeile: ImportedIngredient, val zutatId: String?)
+
 data class EditorZustand(
     val geladen: Boolean = false,
     val id: String? = null,
@@ -70,12 +73,13 @@ class EditorViewModel @Inject constructor(
     private val original = MutableStateFlow(EditorEingaben())
     private val kopf = MutableStateFlow(Triple(false, null as String?, null as String?)) // geladen, id, hinweis
     private val gesperrt = MutableStateFlow(false)
+    private val vorlagen = MutableStateFlow(emptyMap<String, Vorlage>())
     private var geladenFuer: String? = KEINS
 
     private val katalog = db.zutatDao().alleFlow().map { z -> z.map { it.canonicalName.lowercase() }.toSet() }
 
-    val zustand: StateFlow<EditorZustand> = combine(eingaben, katalog, kopf) { e, namen, (geladen, id, hinweis) ->
-        EditorZustand(geladen, id, e, zeilenStatus(e.zutatenText, namen), einordnung(e), hinweis)
+    val zustand: StateFlow<EditorZustand> = combine(eingaben, katalog, kopf, vorlagen) { e, namen, (geladen, id, hinweis), v ->
+        EditorZustand(geladen, id, e, zeilenStatus(e.zutatenText, namen, v), einordnung(e), hinweis)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, EditorZustand())
 
     val speichernMoeglich: StateFlow<Boolean> = combine(zustand, gesperrt) { z, sperre -> !sperre && z.geladen && gueltig(z) }
@@ -89,10 +93,15 @@ class EditorViewModel @Inject constructor(
         if (geladenFuer == id) return
         geladenFuer = id
         val e = id?.let { repo.entwurf(it) }
+        // Unveränderte Zeilen behalten Zutat und Hinweis: Katalognamen wie „Reis (roh)“ lassen sich nicht verlustfrei
+        // neu zerlegen
+        val zeilen = e?.zeilen.orEmpty()
+        val texte = zeilen.map { ZutatZeile.schreiben(it.amount, it.unit, it.name, it.note, it.optional) }
+        vorlagen.value = texte.withIndex().associate { (i, text) -> schluessel(text) to Vorlage(zeilen[i], e?.zutatIds?.getOrNull(i)) }
         val start = if (e == null) EditorEingaben() else EditorEingaben(
             name = e.name, portionen = e.portionen.toString(), vorbereitung = e.vorbereitung?.toString().orEmpty(),
             kochzeit = e.kochzeit?.toString().orEmpty(), tags = e.tags,
-            zutatenText = e.zeilen.joinToString("\n") { ZutatZeile.schreiben(it.amount, it.unit, it.name, it.note, it.optional) },
+            zutatenText = texte.joinToString("\n"),
             schritteText = e.schritte.joinToString("\n"), notizen = e.notizen.orEmpty(), quelle = e.quelle.orEmpty(),
             mahlzeiten = e.mahlzeiten, gaenge = e.gaenge, bild = e.bild,
         )
@@ -137,12 +146,15 @@ class EditorViewModel @Inject constructor(
         val z = zustand.value
         if (!z.geladen || !gueltig(z) || !gesperrt.compareAndSet(expect = false, update = true)) return null
         val e = z.eingaben
+        val zeilen = z.zeilen.filter { it.erkannt != null }
         val ergebnis = repo.speichern(
             RezeptEntwurf(
                 id = z.id, name = e.name.trim(), portionen = e.portionen.trim().toInt(),
                 vorbereitung = e.vorbereitung.trim().toIntOrNull(), kochzeit = e.kochzeit.trim().toIntOrNull(), tags = e.tags,
-                zeilen = z.zeilen.mapNotNull { it.erkannt }, schritte = e.schritteText.lines().map { it.trim() }.filter { it.isNotEmpty() },
+                zeilen = zeilen.mapNotNull { it.erkannt }, schritte = e.schritteText.lines().map { it.trim() }.filter { it.isNotEmpty() },
                 notizen = e.notizen, quelle = e.quelle, mahlzeiten = e.mahlzeiten, gaenge = e.gaenge, bild = e.bild,
+                zutatIds = zeilen.map { vorlagen.value[schluessel(it.zeile)]?.zutatId },
+                bildBehalten = z.id != null && e.bild == original.value.bild,
             ),
         )
         when (ergebnis) {
@@ -165,9 +177,18 @@ class EditorViewModel @Inject constructor(
     }
 }
 
-/** Je nicht-leerer Zeile: erkannte Zutat, Katalogtreffer (Name oder vereinheitlichter Name), Fehler. */
-internal fun zeilenStatus(text: String, katalog: Set<String>): List<ZeilenStatus> =
+/** Vergleichsform einer Zeile: ohne Rand, Leerraum zusammengefasst. */
+internal fun schluessel(zeile: String) = zeile.trim().replace(LEERRAUM, " ")
+
+private val LEERRAUM = Regex("\\s+")
+
+/**
+ * Je nicht-leerer Zeile: erkannte Zutat, Katalogtreffer (Name oder vereinheitlichter Name), Fehler. Eine Zeile, deren
+ * Text einer geladenen Zeile aus [vorlagen] gleicht, gilt als diese – unverändert.
+ */
+internal fun zeilenStatus(text: String, katalog: Set<String>, vorlagen: Map<String, Vorlage> = emptyMap()): List<ZeilenStatus> =
     text.lines().filter { it.isNotBlank() }.map { zeile ->
+        vorlagen[schluessel(zeile)]?.let { return@map ZeilenStatus(zeile.trim(), it.zeile, it.zutatId != null, null) }
         val erkannt = ZutatZeile.lesen(zeile)
         val fehler = when {
             EXPONENT.containsMatchIn(zeile) -> "Ungültige Zahl"

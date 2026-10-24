@@ -2,10 +2,14 @@ package de.foody.feature.rezepte.editor
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
+import de.foody.core.data.db.RezeptEntity
+import de.foody.core.data.db.RezeptZutatEntity
+import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.Gespeichert
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.domain.Mahlzeit
+import de.foody.domain.MeasureUnit
 import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.testDatenbank
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +27,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.math.BigDecimal
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
@@ -100,6 +105,44 @@ class EditorViewModelTest {
         assertFalse(vm.geaendert.first())
         assertIs<Gespeichert.Ok>(vm.speichern())
         assertEquals(1, db.rezeptZutatDao().nachRezept("r1").size)
+    }
+
+    @Test
+    fun katalognamenBleibenBeimBearbeiten() = runTest {
+        // Katalognamen mit Klammer, Komma oder kleinem Wort: unveränderte Zeilen behalten Zutat und Hinweis
+        val namen = listOf("z-roh" to "Reis (roh)", "z-milch" to "Milch 3,5 %", "z-joghurt" to "Joghurt griechisch")
+        namen.forEach { (id, name) -> db.zutatDao().upsert(ZutatEntity(id = id, canonicalName = name, createdAt = 1, updatedAt = 1)) }
+        db.rezeptDao().upsert(
+            RezeptEntity(
+                id = "r2", name = "Bowl", defaultServings = 2, prepMinutes = null, cookMinutes = null, imageUri = null,
+                notes = null, tags = "", archivedAt = null, createdAt = 1, updatedAt = 1,
+            ),
+        )
+        namen.forEachIndexed { i, (id, _) ->
+            db.rezeptZutatDao().upsert(RezeptZutatEntity("l$i", "r2", id, BigDecimal("100"), MeasureUnit.GRAM, i, null, false))
+        }
+        repeat(2) { runde ->
+            val ablage = FotoAblage(RuntimeEnvironment.getApplication())
+            val editor = EditorViewModel(RezeptRepository(db, ablage) { 1_000L }, db, ablage)
+            editor.laden("r2")
+            editor.aendern { it.copy(schritteText = "Schritt $runde") }
+            assertIs<Gespeichert.Ok>(editor.speichern())
+        }
+        val zeilen = db.rezeptZutatDao().nachRezept("r2")
+        assertEquals(listOf("z-roh", "z-milch", "z-joghurt"), zeilen.map { it.ingredientId })
+        assertEquals(listOf(null, null, null), zeilen.map { it.preparationNote })
+        assertEquals(3, db.zutatDao().alle().size)
+    }
+
+    @Test
+    fun fotoVomSyncBleibt() = runTest {
+        // Der Sync bringt das Foto, während der Editor offen ist; Speichern ohne Fotowahl behält es
+        db.bestand()
+        vm.laden("r1")
+        db.rezeptDao().bildSetzen("r1", "file:///sync/foto.jpg", 5)
+        vm.aendern { it.copy(name = "Reispfanne neu") }
+        assertIs<Gespeichert.Ok>(vm.speichern())
+        assertEquals("file:///sync/foto.jpg", db.rezeptDao().nachId("r1")?.imageUri)
     }
 
     @Test

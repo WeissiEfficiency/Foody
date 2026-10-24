@@ -1,5 +1,8 @@
 package de.foody.feature.rezepte.detail
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -8,6 +11,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.ArbeitsschrittEntity
 import de.foody.core.data.db.FoodyDatenbank
+import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.db.RezeptZutatEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
@@ -129,6 +133,32 @@ class RezeptDetailScreenTest {
         compose.waitUntil(5_000) { runBlocking { db.rezeptDao().nachId("r1")?.archivedAt != null } }
         compose.onNodeWithText("Rückgängig").performClick()
         compose.waitUntil(5_000) { runBlocking { db.rezeptDao().nachId("r1")?.archivedAt == null } }
+    }
+
+    @Test
+    fun rueckgaengigTrifftArchiviertesRezept() {
+        // Tablet: nach dem Archivieren rechts ein anderes Rezept öffnen, dann „Rückgängig“
+        runBlocking {
+            db.rezeptDao().upsert(
+                RezeptEntity(
+                    id = "r2", name = "Linsensuppe", defaultServings = 2, prepMinutes = null, cookMinutes = null,
+                    imageUri = null, notes = null, tags = "", archivedAt = null, createdAt = 1, updatedAt = 1,
+                ),
+            )
+        }
+        val vm = RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L })
+        var id by mutableStateOf("r1")
+        compose.setContent { FoodyTheme { RezeptDetailRoute(id, { _, _ -> }, {}, {}, {}, vm = vm) } }
+        compose.warteAufText("Reispfanne")
+        compose.onNodeWithContentDescription("Archivieren").performClick()
+        compose.warteAufText("Rezept archiviert")
+        compose.waitUntil(5_000) { runBlocking { db.rezeptDao().nachId("r1")?.archivedAt != null } }
+        val r2Vorher = runBlocking { db.rezeptDao().nachId("r2") }
+        id = "r2"
+        compose.warteAufText("Linsensuppe")
+        compose.onNodeWithText("Rückgängig").performClick()
+        compose.waitUntil(5_000) { runBlocking { db.rezeptDao().nachId("r1")?.archivedAt == null } }
+        assertEquals(r2Vorher, runBlocking { db.rezeptDao().nachId("r2") })
     }
 
     @Test

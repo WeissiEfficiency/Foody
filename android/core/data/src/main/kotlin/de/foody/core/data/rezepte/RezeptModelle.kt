@@ -52,7 +52,12 @@ data class RezeptVoll(
 /** Tags aus dem gespeicherten Text: Komma-getrennt, getrimmt, ohne leere. */
 internal fun tagsAus(text: String): List<String> = text.split(',').map { it.trim() }.filter { it.isNotEmpty() }
 
-/** Was der Editor (und der Import) speichert; [mahlzeiten]/[gaenge] `null` = vermuten. */
+/**
+ * Was der Editor (und der Import) speichert; [mahlzeiten]/[gaenge] `null` = vermuten. [zutatIds] gehört Zeile für Zeile
+ * zu [zeilen]: eine bekannte Zutat bleibt, statt über den Namen neu gesucht zu werden (`null` oder kürzer = suchen).
+ * [bildBehalten]: das Foto wurde nicht angefasst – das aktuelle aus der Datenbank bleibt (der Sync kann es inzwischen
+ * gebracht haben).
+ */
 data class RezeptEntwurf(
     val id: String?,
     val name: String,
@@ -67,6 +72,8 @@ data class RezeptEntwurf(
     val mahlzeiten: Set<Mahlzeit>?,
     val gaenge: Set<Gang>?,
     val bild: String?,
+    val zutatIds: List<String?> = emptyList(),
+    val bildBehalten: Boolean = false,
 )
 
 /** Ergebnis von [RezeptRepository.speichern]. */

@@ -3,6 +3,7 @@ package de.foody.domain
 import java.math.BigDecimal
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -72,6 +73,15 @@ class ZutatZeileTest {
         assertEquals("2 große Zwiebeln", ZutatZeile.schreiben(BigDecimal(2), MeasureUnit.PIECE, "Zwiebeln", "große", false))
         assertEquals("1 Prise Salz", ZutatZeile.schreiben(null, null, "Salz", "1 Prise", false))
         assertEquals("1,5 l Milch (optional)", ZutatZeile.schreiben(BigDecimal("1.50"), MeasureUnit.LITER, "Milch", null, true))
+    }
+
+    @Test
+    fun zubereitungshinweisBleibtHinten() {
+        // Ein Partizip ist kein Stückwort: „1 Zwiebel, gewürfelt“ bleibt so stehen
+        for (zeile in listOf("1 Zwiebel, gewürfelt", "2 Eier, verquirlt", "3 Knoblauchzehen, gehackt")) {
+            val a = assertNotNull(ZutatZeile.lesen(zeile))
+            assertEquals(zeile, ZutatZeile.schreiben(a.amount, a.unit, a.name, a.note, a.optional))
+        }
     }
 
     @Test

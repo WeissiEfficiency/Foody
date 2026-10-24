@@ -22,6 +22,11 @@ object ZutatZeile {
         return w in mengenwoerter || listOf("n", "en", "e").any { w.removeSuffix(it) in mengenwoerter }
     }
 
+    /** Gebeugtes Eigenschaftswort vor dem Namen („große“, „kleinen“, „reifer“) – kein Partizip wie „gewürfelt“. */
+    private fun istBeiwort(wort: String): Boolean = wort.first().isLowerCase() && beiwortEndung.containsMatchIn(wort)
+
+    private val beiwortEndung = Regex("""(e|en|er|es)$""")
+
     /** `null` bei leerer Zeile oder ohne Zutatnamen („200 g“). */
     fun lesen(text: String): ImportedIngredient? {
         val zeile = text.trim().replace(Regex("""\s+"""), " ")
@@ -46,8 +51,8 @@ object ZutatZeile {
             vorne += menge.stripTrailingZeros().toPlainString().replace('.', ',')
             if (einheit != null && einheit != MeasureUnit.PIECE) {
                 vorne += einheit.symbol
-            } else if (teile.isNotEmpty() && teile.first().let { ' ' !in it && (istMengenwort(it) || it.first().isLowerCase()) }) {
-                // „2 große Zwiebeln“, „½ Bund Dill“: das Stückwort steht vor dem Namen
+            } else if (teile.isNotEmpty() && teile.first().let { ' ' !in it && (istMengenwort(it) || istBeiwort(it)) }) {
+                // „2 große Zwiebeln“, „½ Bund Dill“: das Stückwort steht vor dem Namen; „gewürfelt“ bleibt hinten
                 vorne += teile.removeAt(0)
             }
         } else if (teile.isNotEmpty() && teile.first().let { zahlAmAnfang.containsMatchIn(it) || vageMenge(it) != null }) {

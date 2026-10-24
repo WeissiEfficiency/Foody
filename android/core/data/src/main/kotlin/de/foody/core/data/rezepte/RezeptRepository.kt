@@ -75,15 +75,17 @@ class RezeptRepository(
      */
     suspend fun speichern(e: RezeptEntwurf): Gespeichert {
         var altesBild: String? = null
+        var bild = e.bild
         val ergebnis = db.withTransaction {
             val vorher = e.id?.let { db.rezeptDao().nachId(it) ?: return@withTransaction Gespeichert.Geloescht }
             val id = vorher?.id ?: neueId()
             val jetzt = uhr()
             altesBild = vorher?.imageUri
+            if (e.bildBehalten && vorher != null) bild = vorher.imageUri
             db.rezeptDao().upsert(
                 RezeptEntity(
                     id = id, name = e.name.trim(), defaultServings = e.portionen, prepMinutes = e.vorbereitung,
-                    cookMinutes = e.kochzeit, imageUri = e.bild, notes = e.notizen?.trim()?.ifEmpty { null },
+                    cookMinutes = e.kochzeit, imageUri = bild, notes = e.notizen?.trim()?.ifEmpty { null },
                     tags = e.tags.trim(), archivedAt = vorher?.archivedAt, createdAt = vorher?.createdAt ?: jetzt,
                     updatedAt = jetzt, version = (vorher?.version ?: 0) + 1, favorite = vorher?.favorite ?: false,
                     sourceUrl = e.quelle?.trim()?.ifEmpty { null }, rating = vorher?.rating,
@@ -94,7 +96,8 @@ class RezeptRepository(
             val zutaten = mutableMapOf<String, String>()
             db.rezeptZutatDao().loeschenFuerRezept(id)
             e.zeilen.forEachIndexed { i, z ->
-                val zutatId = zutaten.getOrPut(z.name.lowercase()) { zutatId(z.name, jetzt) }
+                val zutatId = e.zutatIds.getOrNull(i)?.takeIf { db.zutatDao().nachId(it) != null }
+                    ?: zutaten.getOrPut(z.name.lowercase()) { zutatId(z.name, jetzt) }
                 // Ohne Menge („1 Prise Salz“): Menge 0 in Stück, die Angabe steht im Hinweis – wie beim Import
                 val menge = z.amount
                 val einheit = if (menge == null) MeasureUnit.PIECE else z.unit ?: MeasureUnit.PIECE
@@ -108,15 +111,16 @@ class RezeptRepository(
             }
             Gespeichert.Ok(id)
         }
-        if (ergebnis is Gespeichert.Ok && altesBild != e.bild) fotoAufraeumen(altesBild)
+        if (ergebnis is Gespeichert.Ok && altesBild != bild) fotoAufraeumen(altesBild)
         return ergebnis
     }
 
-    /** Das Rezept als Entwurf (Zeilen mit Katalognamen); `null`, wenn es die ID nicht gibt. */
+    /** Das Rezept als Entwurf (Zeilen mit Katalognamen und Zutat-IDs); `null`, wenn es die ID nicht gibt. */
     suspend fun entwurf(id: String): RezeptEntwurf? {
         val r = db.rezeptDao().nachId(id) ?: return null
         val katalog = db.zutatDao().alle().associateBy { it.id }
-        val zeilen = db.rezeptZutatDao().nachRezept(id).map { z ->
+        val gespeichert = db.rezeptZutatDao().nachRezept(id)
+        val zeilen = gespeichert.map { z ->
             val ohneMenge = z.amount.signum() == 0
             ImportedIngredient(
                 name = katalog[z.ingredientId]?.canonicalName.orEmpty(), amount = z.amount.takeUnless { ohneMenge },
@@ -127,6 +131,7 @@ class RezeptRepository(
             id = r.id, name = r.name, portionen = r.defaultServings, vorbereitung = r.prepMinutes, kochzeit = r.cookMinutes,
             tags = r.tags, zeilen = zeilen, schritte = db.arbeitsschrittDao().nachRezept(id).map { it.text }, notizen = r.notes,
             quelle = r.sourceUrl, mahlzeiten = Mahlzeit.mengeAus(r.mahlzeiten), gaenge = Gang.mengeAus(r.gaenge), bild = r.imageUri,
+            zutatIds = gespeichert.map { it.ingredientId },
         )
     }
 

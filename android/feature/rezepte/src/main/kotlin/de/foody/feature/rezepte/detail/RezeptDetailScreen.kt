@@ -66,10 +66,10 @@ fun RezeptDetailRoute(
         onDuplizieren = { bereich.launch { vm.duplizieren()?.let(onDupliziert) } },
         onArchivieren = { an ->
             bereich.launch {
-                vm.archivieren(an)
+                vm.archivieren(id, an)
                 if (an) {
                     val antwort = snackbar.showSnackbar("Rezept archiviert", actionLabel = "Rückgängig", duration = SnackbarDuration.Long)
-                    if (antwort == SnackbarResult.ActionPerformed) vm.archivieren(false)
+                    if (antwort == SnackbarResult.ActionPerformed) vm.archivieren(id, false)
                 }
             }
         },

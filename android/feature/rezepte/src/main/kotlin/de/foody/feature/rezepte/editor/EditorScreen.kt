@@ -77,13 +77,17 @@ fun EditorRoute(id: String?, onFertig: (String) -> Unit, onZurueck: () -> Unit, 
             if (z.geladen) EditorFelder(z, vm)
         }
     }
-    if (fragen) {
-        AlertDialog(
-            onDismissRequest = { fragen = false },
-            title = { Text("Änderungen verwerfen?") },
-            text = { Text("Die ungespeicherten Änderungen gehen verloren.") },
-            confirmButton = { FoodyKnopf("Verwerfen", { fragen = false; onZurueck() }, art = KnopfArt.TEXT) },
-            dismissButton = { FoodyKnopf("Weiter bearbeiten", { fragen = false }, art = KnopfArt.TEXT) },
-        )
-    }
+    if (fragen) VerwerfenFrage(onVerwerfen = { fragen = false; onZurueck() }, onWeiter = { fragen = false })
+}
+
+/** „Änderungen verwerfen?“ – vor dem Verlassen eines Editors mit ungespeicherten Änderungen. */
+@Composable
+internal fun VerwerfenFrage(onVerwerfen: () -> Unit, onWeiter: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onWeiter,
+        title = { Text("Änderungen verwerfen?") },
+        text = { Text("Die ungespeicherten Änderungen gehen verloren.") },
+        confirmButton = { FoodyKnopf("Verwerfen", onVerwerfen, art = KnopfArt.TEXT) },
+        dismissButton = { FoodyKnopf("Weiter bearbeiten", onWeiter, art = KnopfArt.TEXT) },
+    )
 }
