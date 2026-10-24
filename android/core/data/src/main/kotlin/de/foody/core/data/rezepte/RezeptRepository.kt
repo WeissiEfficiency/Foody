@@ -161,7 +161,7 @@ class RezeptRepository(
     }
 
     /** Zutat per Name (ohne Groß/klein), sonst über den vereinheitlichten Namen, sonst neu im Katalog. */
-    private suspend fun zutatId(name: String, jetzt: Long): String {
+    internal suspend fun zutatId(name: String, jetzt: Long = uhr()): String {
         val dao = db.zutatDao()
         dao.nachNameOhneGross(name)?.let { return it.id }
         val kanonisch = IngredientCatalog.canonicalName(name)
