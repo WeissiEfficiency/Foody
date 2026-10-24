@@ -3,6 +3,8 @@ package de.foody.core.data.db
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
+import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 /*
  * Grund-DAOs je Fachtabelle für Sync und Sicherung. `upsert` nutzt Room-`@Upsert` (INSERT, bei Konflikt UPDATE) –
@@ -16,6 +18,9 @@ interface ZutatDao {
     @Query("SELECT * FROM ingredient ORDER BY id") suspend fun alle(): List<ZutatEntity>
 
     @Query("SELECT * FROM ingredient WHERE id = :id") suspend fun nachId(id: String): ZutatEntity?
+
+    /** Alle Zutaten als Flow (Nährwertberechnung der Oberfläche). */
+    @Query("SELECT * FROM ingredient ORDER BY id") fun alleFlow(): Flow<List<ZutatEntity>>
 
     /** Namenstreffer ohne Groß-/Kleinschreibung (wie v1 `findByName`). */
     @Query("SELECT * FROM ingredient WHERE canonicalName = :name COLLATE NOCASE LIMIT 1")
@@ -35,6 +40,9 @@ interface RezeptDao {
     @Query("SELECT * FROM recipe ORDER BY id") suspend fun alle(): List<RezeptEntity>
 
     @Query("SELECT * FROM recipe WHERE id = :id") suspend fun nachId(id: String): RezeptEntity?
+
+    /** Nicht archivierte Rezepte, nach Name. */
+    @Query("SELECT * FROM recipe WHERE archivedAt IS NULL ORDER BY name COLLATE NOCASE, id") fun aktive(): Flow<List<RezeptEntity>>
 
     /** Rezepte mit der Quell-URL [url] (genauer Vergleich, wie beim Import gespeichert), nach ID sortiert. */
     @Query("SELECT * FROM recipe WHERE sourceUrl = :url ORDER BY id") suspend fun nachQuelle(url: String): List<RezeptEntity>
@@ -61,6 +69,9 @@ interface RezeptZutatDao {
     /** Zeilen eines Rezepts in Anzeigereihenfolge. */
     @Query("SELECT * FROM recipe_ingredient WHERE recipeId = :recipeId ORDER BY sortOrder, id")
     suspend fun nachRezept(recipeId: String): List<RezeptZutatEntity>
+
+    /** Alle Zeilen als Flow, in Anzeigereihenfolge (Nährwerte je Rezept). */
+    @Query("SELECT * FROM recipe_ingredient ORDER BY recipeId, sortOrder, id") fun alleFlow(): Flow<List<RezeptZutatEntity>>
 
     @Upsert suspend fun upsert(e: RezeptZutatEntity)
 
@@ -96,6 +107,10 @@ interface PlanEintragDao {
 
     @Query("SELECT * FROM meal_slot WHERE id = :id") suspend fun nachId(id: String): PlanEintragEntity?
 
+    /** Plan-Einträge von [von] bis [bis] (beide eingeschlossen). */
+    @Query("SELECT * FROM meal_slot WHERE date BETWEEN :von AND :bis ORDER BY date, id")
+    fun zwischen(von: LocalDate, bis: LocalDate): Flow<List<PlanEintragEntity>>
+
     @Upsert suspend fun upsert(e: PlanEintragEntity)
 
     @Query("DELETE FROM meal_slot WHERE id = :id") suspend fun loeschen(id: String)
@@ -125,6 +140,13 @@ interface EinkaufsartikelDao {
     @Query("SELECT * FROM shopping_item ORDER BY id") suspend fun alle(): List<EinkaufsartikelEntity>
 
     @Query("SELECT * FROM shopping_item WHERE id = :id") suspend fun nachId(id: String): EinkaufsartikelEntity?
+
+    /** Offene Artikel der zuletzt geänderten Liste, in Listenreihenfolge. */
+    @Query(
+        "SELECT * FROM shopping_item WHERE checked = 0 AND listId = " +
+            "(SELECT id FROM shopping_list ORDER BY updatedAt DESC, id LIMIT 1) ORDER BY sortOrder, id",
+    )
+    fun offeneDerJuengstenListe(): Flow<List<EinkaufsartikelEntity>>
 
     @Upsert suspend fun upsert(e: EinkaufsartikelEntity)
 
@@ -159,6 +181,14 @@ interface TagebuchDao {
     @Query("SELECT * FROM tagebuch_eintrag ORDER BY id") suspend fun alle(): List<TagebuchEintragEntity>
 
     @Query("SELECT * FROM tagebuch_eintrag WHERE id = :id") suspend fun nachId(id: String): TagebuchEintragEntity?
+
+    /** Einträge eines Tages in Eintragsreihenfolge. */
+    @Query("SELECT * FROM tagebuch_eintrag WHERE datum = :datum ORDER BY createdAt, id")
+    fun amTag(datum: LocalDate): Flow<List<TagebuchEintragEntity>>
+
+    /** Gibt es schon einen Eintrag aus diesem Plan-Eintrag? */
+    @Query("SELECT EXISTS(SELECT 1 FROM tagebuch_eintrag WHERE planEintragId = :planEintragId)")
+    suspend fun gibtEsFuerPlan(planEintragId: String): Boolean
 
     @Upsert suspend fun upsert(e: TagebuchEintragEntity)
 

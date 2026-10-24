@@ -13,6 +13,7 @@ import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.fotos.FotoIndex
 import de.foody.core.data.rezeptimport.PortionenNachtrag
 import de.foody.core.data.sicherung.Sicherung
+import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.data.sync.SyncSpeicher
 import javax.inject.Singleton
 
@@ -56,4 +57,8 @@ object DatenModul {
     @Provides
     @Singleton
     fun portionenNachtrag(db: FoodyDatenbank): PortionenNachtrag = PortionenNachtrag(db)
+
+    @Provides
+    @Singleton
+    fun tagebuchRepository(db: FoodyDatenbank): TagebuchRepository = TagebuchRepository(db, System::currentTimeMillis)
 }
