@@ -153,6 +153,8 @@ der Bilder gefunden und behoben: fehlende deutsche Silbentrennung, Platzhalter-S
 überlappende Abzeichen bei großer Schrift.
 
 ### Phase 5 – Navigation und „Heute“ (≈ 1 Woche)
+Spec: [`2026-10-24-v3-phase5-heute-design.md`](../docs/superpowers/specs/2026-10-24-v3-phase5-heute-design.md)
+(App-Modul `:app3` als „Foody Debug“, ganzes Tagebuch ohne Scan, schlichtes „Server verbinden“).
 - [ ] Vier Tabs (Heute · Rezepte · Woche · Einkauf), adaptive Navigation für das Tablet, Einstellungen über das
       Profilsymbol
 - [ ] `:feature:heute`: nächste Mahlzeit, Tagebuch des Tages, offener Einkauf; eine Rezept-Inspiration nur, wenn
