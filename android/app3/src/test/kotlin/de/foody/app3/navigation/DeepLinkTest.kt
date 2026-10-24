@@ -29,7 +29,7 @@ class DeepLinkTest {
     private fun oeffnen(link: String) {
         compose.setContent {
             nav = rememberNavController()
-            FoodyTheme { Hauptgeruest(nav) }
+            FoodyTheme { Hauptgeruest(nav, Bildschirme.platzhalter) }
         }
         compose.runOnIdle { assertTrue(nav.handleDeepLink(Intent(Intent.ACTION_VIEW, Uri.parse(link)))) }
         compose.waitForIdle()

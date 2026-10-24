@@ -46,7 +46,10 @@ private val tabs = listOf(
  * dem Inhalt; ab 840 dp Breite [FoodyNavigationsRail] links neben dem Inhalt.
  */
 @Composable
-fun Hauptgeruest(navController: NavHostController = rememberNavController()) {
+fun Hauptgeruest(
+    navController: NavHostController = rememberNavController(),
+    bildschirme: Bildschirme = Bildschirme.echt,
+) {
     val eintrag by navController.currentBackStackEntryAsState()
     val aktiv = tabs.indexOfFirst { tab -> eintrag?.destination?.gehoertZu(tab) == true }
     val waehlen: (Int) -> Unit = { i ->
@@ -63,10 +66,10 @@ fun Hauptgeruest(navController: NavHostController = rememberNavController()) {
                 Box(Modifier.fillMaxHeight().safeDrawingPadding(), contentAlignment = Alignment.Center) {
                     FoodyNavigationsRail(ziele, aktiv, waehlen, Modifier.wrapContentHeight().testTag(Hauptgeruest.RAIL))
                 }
-                FoodyNavHost(navController, Modifier.weight(1f))
+                FoodyNavHost(navController, bildschirme, Modifier.weight(1f))
             }
         } else {
-            FoodyNavHost(navController, Modifier.fillMaxSize())
+            FoodyNavHost(navController, bildschirme, Modifier.fillMaxSize())
             FoodyNavigationsleiste(
                 ziele, aktiv, waehlen,
                 Modifier.align(Alignment.BottomCenter).navigationBarsPadding().testTag(Hauptgeruest.LEISTE),

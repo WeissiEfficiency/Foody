@@ -32,7 +32,7 @@ class NavigationTest {
     private fun starten() {
         compose.setContent {
             nav = rememberNavController()
-            FoodyTheme { Hauptgeruest(nav) }
+            FoodyTheme { Hauptgeruest(nav, Bildschirme.platzhalter) }
         }
     }
 

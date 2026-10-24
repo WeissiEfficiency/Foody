@@ -62,6 +62,9 @@ interface SyncDao {
     // sync_state (genau eine Zeile, id = 1)
     @Query("SELECT * FROM sync_state WHERE id = 1") suspend fun zustand(): SyncZustandEntity?
 
+    /** Wie [zustand], als Flow für die Anzeige. */
+    @Query("SELECT * FROM sync_state WHERE id = 1") fun zustandFlow(): Flow<SyncZustandEntity?>
+
     @Upsert suspend fun upsertZustand(e: SyncZustandEntity)
 
     /** Schaltet die Trigger-Ruhe um (nur innerhalb der Transaktion des Anwendens). */

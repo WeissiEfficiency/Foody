@@ -7,7 +7,28 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
+import de.foody.feature.heute.HeuteRoute
 import java.time.LocalDate
+
+/** Die Bildschirme mit ViewModel (Hilt); Navigationstests setzen [Bildschirme.platzhalter] ein. */
+class Bildschirme(val heute: @Composable (NavHostController) -> Unit) {
+    companion object {
+        val echt = Bildschirme(
+            heute = { nav ->
+                HeuteRoute(
+                    onKochen = { id, portionen -> nav.navigate(Kochen(id, portionen)) },
+                    onRezept = { nav.navigate(RezeptDetail(it)) },
+                    onEinkauf = { nav.navigate(EinkaufListe(it)) },
+                    onAlleEintraege = { nav.navigate(TagebuchTag(LocalDate.now().toString())) },
+                    onEinstellungen = { nav.navigate(Einstellungen) },
+                    // Das Eintragen-Blatt kommt mit dem Tagebuch (Task 6)
+                    onEintragen = { nav.navigate(TagebuchTag(LocalDate.now().toString())) },
+                )
+            },
+        )
+        val platzhalter = Bildschirme(heute = { Platzhalter("Heute") })
+    }
+}
 
 /** Schema der Deep Links (die v1 hatte keine). */
 const val SCHEMA = "foody://"
@@ -18,9 +39,9 @@ const val SCHEMA = "foody://"
  * Phase 6 Platzhalter.
  */
 @Composable
-fun FoodyNavHost(nav: NavHostController, modifier: Modifier = Modifier) {
+fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Modifier = Modifier) {
     NavHost(nav, startDestination = Heute, modifier = modifier) {
-        composable<Heute> { Platzhalter("Heute") }
+        composable<Heute> { bildschirme.heute(nav) }
         composable<Rezepte> { Platzhalter("Rezepte") }
         composable<Woche> { Platzhalter("Woche") }
         composable<Einkauf> { Platzhalter("Einkauf") }
