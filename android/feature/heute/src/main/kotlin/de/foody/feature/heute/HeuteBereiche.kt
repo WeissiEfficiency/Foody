@@ -62,6 +62,7 @@ internal fun NaechsteMahlzeitKarte(n: NaechsteMahlzeit, aktionen: HeuteAktionen)
         meta = meta(m.portionen, m.kcalJePortion, m.zeitMinuten),
         onKlick = { aktionen.onRezept(m.rezeptId) },
         augenbraue = "${slotName(m.slot)} · ${if (n.morgen) "Morgen" else "Heute"}",
+        bild = rezeptBild(m.bild),
         aktion = KartenAktion("Kochen") { aktionen.onKochen(m.rezeptId, m.portionen) },
     )
 }
@@ -73,6 +74,7 @@ internal fun InspirationKarte(r: RezeptKurz, onRezept: (String) -> Unit) {
         meta = meta(null, r.kcalJePortion, r.zeitMinuten),
         onKlick = { onRezept(r.id) },
         augenbraue = "Inspiration",
+        bild = rezeptBild(r.bild),
         aktion = KartenAktion("Ansehen") { onRezept(r.id) },
     )
 }

@@ -2,11 +2,14 @@ package de.foody.feature.einstellungen
 
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.sync.Ergebnis
@@ -161,5 +164,13 @@ class VerbindenScreenTest {
         }
         assertTrue(texte.isNotEmpty())
         assertFalse(texte.any { "Sehr-Geheim-42" in it }, "Passwort sichtbar in: $texte")
+    }
+
+    @Test
+    @Config(qualifiers = "w1280dp-h1200dp")
+    fun tabletSchmal() {
+        zeigen()
+        val b = compose.onNodeWithTag(Verbinden.INHALT).getUnclippedBoundsInRoot()
+        assertTrue(b.width <= Verbinden.MAX_BREITE, "zu breit: ${b.width}")
     }
 }

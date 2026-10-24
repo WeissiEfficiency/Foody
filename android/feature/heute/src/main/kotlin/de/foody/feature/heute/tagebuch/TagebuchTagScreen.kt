@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -35,6 +36,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -48,6 +50,8 @@ import de.foody.core.designsystem.komponenten.LeererZustandZeile
 import de.foody.core.designsystem.komponenten.Naehrwertbalken
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.domain.Mahlzeit
+import de.foody.feature.heute.INHALT_MAX_BREITE
+import de.foody.feature.heute.TAGEBUCH_INHALT
 import de.foody.feature.heute.anzeigename
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -90,27 +94,10 @@ fun TagebuchTagRoute(
     }
 
     Box(Modifier.fillMaxSize()) {
-        Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).safeDrawingPadding()
-                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            TagKopf(datum, onDatum, onWahl = { datumWahl = true })
-            val z = zustand?.takeIf { it.datum == datum } ?: return@Column
-            GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
-                Naehrwertbalken(z.summe.kcal, z.ziel, z.summe.eiweiss, z.summe.kohlenhydrate, z.summe.fett, Modifier.padding(16.dp))
-            }
-            z.abschnitte.forEach { a ->
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Augenbraue(a.mahlzeit.anzeigename())
-                    a.eintraege.forEach { e -> EintragZeile(e, onAendern = { bearbeiten = e }, onLoeschen = { loeschen(e) }) }
-                    if (a.eintraege.isEmpty()) {
-                        LeererZustandZeile("Noch kein ${a.mahlzeit.anzeigename()}", "Eintragen", { blatt = BlattAuftrag(a.mahlzeit) })
-                    }
-                }
-            }
-            FoodyKnopf("Eintragen", { blatt = BlattAuftrag(null) }, Modifier.fillMaxWidth(), art = KnopfArt.UMRISS)
-        }
+        TagebuchTagInhalt(
+            datum, zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeiten = it }, onLoeschen = loeschen,
+            onEintragen = { blatt = BlattAuftrag(it) },
+        )
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = 88.dp))
     }
 
@@ -122,6 +109,53 @@ fun TagebuchTagRoute(
     }
     blatt?.let { b -> EintragenBlatt(datum, b.mahlzeit, onFertig = { blatt = null }, vm = eintragenVm ?: hiltViewModel()) }
     if (datumWahl) DatumWahl(datum, onDatum = { datumWahl = false; onDatum(it) }, onAbbrechen = { datumWahl = false })
+}
+
+/** Inhalt ohne eigenen Zustand: Kopf, Bilanz, Mahlzeiten mit Einträgen. */
+@Composable
+fun TagebuchTagInhalt(
+    datum: LocalDate,
+    zustand: TagZustand?,
+    onDatum: (LocalDate) -> Unit,
+    onWahl: () -> Unit,
+    onAendern: (TagebuchEintragEntity) -> Unit,
+    onLoeschen: (TagebuchEintragEntity) -> Unit,
+    onEintragen: (Mahlzeit?) -> Unit,
+) {
+    Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
+        Column(
+            Modifier.widthIn(max = INHALT_MAX_BREITE).fillMaxWidth().safeDrawingPadding()
+                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp).testTag(TAGEBUCH_INHALT),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) { TagInhalt(datum, zustand, onDatum, onWahl, onAendern, onLoeschen, onEintragen) }
+    }
+}
+
+@Composable
+private fun TagInhalt(
+    datum: LocalDate,
+    zustand: TagZustand?,
+    onDatum: (LocalDate) -> Unit,
+    onWahl: () -> Unit,
+    onAendern: (TagebuchEintragEntity) -> Unit,
+    onLoeschen: (TagebuchEintragEntity) -> Unit,
+    onEintragen: (Mahlzeit?) -> Unit,
+) {
+    TagKopf(datum, onDatum, onWahl)
+    val z = zustand?.takeIf { it.datum == datum } ?: return
+    GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
+        Naehrwertbalken(z.summe.kcal, z.ziel, z.summe.eiweiss, z.summe.kohlenhydrate, z.summe.fett, Modifier.padding(16.dp))
+    }
+    z.abschnitte.forEach { a ->
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Augenbraue(a.mahlzeit.anzeigename())
+            a.eintraege.forEach { e -> EintragZeile(e, onAendern = { onAendern(e) }, onLoeschen = { onLoeschen(e) }) }
+            if (a.eintraege.isEmpty()) {
+                LeererZustandZeile("Noch kein ${a.mahlzeit.anzeigename()}", "Eintragen", { onEintragen(a.mahlzeit) })
+            }
+        }
+    }
+    FoodyKnopf("Eintragen", { onEintragen(null) }, Modifier.fillMaxWidth(), art = KnopfArt.UMRISS)
 }
 
 @Composable

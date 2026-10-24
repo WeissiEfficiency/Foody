@@ -1,12 +1,14 @@
 package de.foody.feature.einstellungen
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -26,6 +28,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -42,6 +45,10 @@ import de.foody.core.sync.ErsterSync
 object Verbinden {
     const val LAEUFT = "Verbinde …"
     const val TRENNEN_BESTAETIGEN = "Ja, trennen"
+    const val INHALT = "verbinden-inhalt"
+
+    /** Lesebreite: Auf dem Tablet bleibt das Formular schmal und mittig. */
+    val MAX_BREITE = 720.dp
 }
 
 @Composable
@@ -53,10 +60,17 @@ fun VerbindenRoute(onZurueck: () -> Unit, vm: VerbindenViewModel = hiltViewModel
 /** Nicht verbunden: Anmeldeformular (und ggf. die Wahl beim ersten Abgleich); verbunden: Status, Jetzt, Trennen. */
 @Composable
 private fun VerbindenScreen(ui: VerbindenUi, vm: VerbindenViewModel, onZurueck: () -> Unit) {
+    Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
+        VerbindenInhalt(ui, vm, onZurueck)
+    }
+}
+
+@Composable
+private fun VerbindenInhalt(ui: VerbindenUi, vm: VerbindenViewModel, onZurueck: () -> Unit) {
     val verbindung = ui.verbindung?.takeIf { it.verbunden }
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).safeDrawingPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp),
+        Modifier.widthIn(max = Verbinden.MAX_BREITE).fillMaxWidth().safeDrawingPadding()
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp).testTag(Verbinden.INHALT),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

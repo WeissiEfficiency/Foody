@@ -1,10 +1,13 @@
 package de.foody.feature.heute
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -14,7 +17,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -64,9 +69,16 @@ fun HeuteRoute(
  */
 @Composable
 fun HeuteScreen(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
+        HeuteInhalt(zustand, aktionen)
+    }
+}
+
+@Composable
+private fun HeuteInhalt(zustand: HeuteZustand?, aktionen: HeuteAktionen) {
     Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).safeDrawingPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = PLATZ_FUER_LEISTE),
+        Modifier.widthIn(max = INHALT_MAX_BREITE).fillMaxWidth().safeDrawingPadding()
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = PLATZ_FUER_LEISTE).testTag(HEUTE_INHALT),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         HeuteKopf(zustand?.datum, zustand?.sync, aktionen.onEinstellungen)
