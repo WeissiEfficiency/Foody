@@ -6,6 +6,9 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.text.style.Hyphens
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.R
 
@@ -29,8 +32,24 @@ val FigtreeFamilie = FontFamily(
 
 private val basis = Typography()
 
-private fun TextStyle.fraunces() = copy(fontFamily = FrauncesFamilie, fontWeight = FontWeight.Bold)
-private fun TextStyle.figtree(gewicht: FontWeight) = copy(fontFamily = FigtreeFamilie, fontWeight = gewicht)
+// Foody ist deutschsprachig: Silbentrennung nach deutschen Regeln, statt Wörter ohne Strich zu zerreißen.
+private val Deutsch = LocaleList("de-DE")
+
+private fun TextStyle.fraunces() = copy(
+    fontFamily = FrauncesFamilie,
+    fontWeight = FontWeight.Bold,
+    localeList = Deutsch,
+    hyphens = Hyphens.Auto,
+    lineBreak = LineBreak.Heading,
+)
+
+private fun TextStyle.figtree(gewicht: FontWeight) = copy(
+    fontFamily = FigtreeFamilie,
+    fontWeight = gewicht,
+    localeList = Deutsch,
+    hyphens = Hyphens.Auto,
+    lineBreak = LineBreak.Paragraph,
+)
 
 /** Material-3-Größen (in sp, skalieren mit der Systemschrift); Fraunces bis `titleLarge`, darunter Figtree. */
 val FoodyTypografie = Typography(

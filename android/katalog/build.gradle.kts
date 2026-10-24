@@ -20,6 +20,11 @@ android {
     testOptions.unitTests.isIncludeAndroidResources = true
 }
 
+roborazzi {
+    // Referenzbilder liegen im Repo; die CI vergleicht mit verifyRoborazziDebug.
+    outputDir.set(file("src/test/screenshots"))
+}
+
 dependencies {
     implementation(project(":core:designsystem"))
 
@@ -27,7 +32,6 @@ dependencies {
     implementation(bom)
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
-    implementation(libs.compose.material3.adaptive)
     implementation(libs.androidx.activity.compose)
 
     testImplementation(bom)
@@ -35,6 +39,7 @@ dependencies {
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.androidx.test.core)
     testImplementation(libs.compose.ui.test.junit4)
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)

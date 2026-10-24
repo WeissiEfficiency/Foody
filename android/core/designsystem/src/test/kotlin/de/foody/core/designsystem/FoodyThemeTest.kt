@@ -5,6 +5,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.text.style.Hyphens
+import androidx.compose.ui.text.style.LineBreak
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.token.FigtreeFamilie
@@ -60,6 +63,16 @@ class FoodyThemeTest {
         assertEquals(FrauncesFamilie, FoodyTypografie.displayLarge.fontFamily)
         assertEquals(FigtreeFamilie, FoodyTypografie.titleMedium.fontFamily)
         assertEquals(FigtreeFamilie, FoodyTypografie.bodyLarge.fontFamily)
+    }
+
+    @Test
+    fun deutscheSilbentrennung() {
+        for (stil in listOf(FoodyTypografie.titleLarge, FoodyTypografie.headlineLarge, FoodyTypografie.bodyMedium, FoodyTypografie.titleSmall)) {
+            assertEquals(Hyphens.Auto, stil.hyphens)
+            assertEquals(LocaleList("de-DE"), stil.localeList)
+        }
+        assertEquals(LineBreak.Heading, FoodyTypografie.titleLarge.lineBreak)
+        assertEquals(LineBreak.Paragraph, FoodyTypografie.bodyMedium.lineBreak)
     }
 
     @Test

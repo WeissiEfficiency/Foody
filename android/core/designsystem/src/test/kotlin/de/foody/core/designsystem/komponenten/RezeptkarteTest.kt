@@ -8,6 +8,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -84,6 +85,40 @@ class RezeptkarteTest {
                 node.config.getOrElse(SemanticsProperties.ContentDescription) { emptyList() }.any { "Favorit" in it && "Kürbissuppe" in it }
             },
         ).assertExists()
+    }
+
+    @Test
+    fun platzhalterSymbolUeberDerGlasleiste() {
+        compose.setContent {
+            FoodyTheme {
+                RezeptkarteGross(
+                    titel = "Senf-Krusten-Braten",
+                    meta = "4 Portionen · 658 kcal · 95 Min.",
+                    onKlick = {},
+                    augenbraue = "Abendessen · 18:30",
+                    aktion = KartenAktion("Kochen") {},
+                    modifier = Modifier.width(379.dp),
+                )
+            }
+        }
+        val symbol = compose.onNodeWithTag(PLATZHALTER_SYMBOL_TAG, useUnmergedTree = true).getBoundsInRoot()
+        val leiste = compose.onNodeWithTag(GLASLEISTE_TAG, useUnmergedTree = true).getBoundsInRoot()
+        assertTrue(symbol.bottom <= leiste.top - 8.dp, "Symbol (${symbol.bottom}) ragt in die Glas-Leiste (${leiste.top})")
+    }
+
+    @Test
+    fun abzeichenUeberlappenNichtBeiGrosserSchrift() {
+        compose.setContent {
+            FoodyTheme {
+                MitSchrift200 {
+                    RezeptkarteRaster(titel = "Spaghetti Carbonara", onKlick = {}, zeit = "20 Min.", kcal = "640 kcal", modifier = Modifier.width(170.dp))
+                }
+            }
+        }
+        val zeit = compose.onNodeWithText("20 Min.", useUnmergedTree = true).getBoundsInRoot()
+        val kcal = compose.onNodeWithText("640 kcal", useUnmergedTree = true).getBoundsInRoot()
+        val ueberlappen = zeit.left < kcal.right && kcal.left < zeit.right && zeit.top < kcal.bottom && kcal.top < zeit.bottom
+        assertTrue(!ueberlappen, "Abzeichen überlappen: $zeit / $kcal")
     }
 
     @Test

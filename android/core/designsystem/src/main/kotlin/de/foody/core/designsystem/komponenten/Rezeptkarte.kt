@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,6 +39,10 @@ import de.foody.core.designsystem.token.GlasStufe
 /** Testkennung des Bild-Platzhalters (Rezept ohne Foto). */
 const val PLATZHALTER_TAG = "rezept-platzhalter"
 
+/** Testkennungen: Symbol im Platzhalter, Glas-Leiste der großen Karte. */
+const val PLATZHALTER_SYMBOL_TAG = "rezept-platzhalter-symbol"
+const val GLASLEISTE_TAG = "rezept-glasleiste"
+
 /** Aktion in der großen Karte, z. B. „Kochen“. */
 data class KartenAktion(val text: String, val onKlick: () -> Unit)
 
@@ -65,10 +70,13 @@ fun RezeptkarteGross(
             .clickable(onClick = onKlick)
             .semantics { contentDescription = beschreibung },
     ) {
-        Box(Modifier.matchParentSize()) { bild?.invoke() ?: RezeptPlatzhalter(Modifier.fillMaxSize()) }
+        Box(Modifier.matchParentSize()) {
+            // Symbol oben, damit es nicht hinter der Glas-Leiste verschwindet
+            bild?.invoke() ?: RezeptPlatzhalter(Modifier.fillMaxSize(), symbolOben = true)
+        }
         GlasFlaeche(
             GlasStufe.DICHT,
-            Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(10.dp),
+            Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(10.dp).testTag(GLASLEISTE_TAG),
             form = FoodyFormen.mittel,
         ) {
             val text: @Composable (Modifier) -> Unit = { m ->
@@ -129,8 +137,17 @@ fun RezeptkarteRaster(
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Filled.Favorite, contentDescription = null, tint = FoodyTheme.farben.primaer, modifier = Modifier.size(18.dp)) }
             }
-            if (zeit != null) Abzeichen(zeit, Modifier.align(Alignment.BottomStart).padding(8.dp))
-            if (kcal != null) Abzeichen(kcal, Modifier.align(Alignment.BottomEnd).padding(8.dp))
+            if (zeit != null || kcal != null) {
+                // Umbrechende Zeile: bei großer Schrift rutscht kcal unter die Zeit statt sie zu überdecken
+                FlowRow(
+                    Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    if (zeit != null) Abzeichen(zeit, Modifier)
+                    if (kcal != null) Abzeichen(kcal, Modifier)
+                }
+            }
         }
         Text(
             titel,
@@ -154,15 +171,23 @@ private fun Abzeichen(text: String, modifier: Modifier) {
     )
 }
 
-/** Rezept ohne Foto: warmer Verlauf (Tomate → Glut) mit Besteck-Symbol. */
+/** Rezept ohne Foto: warmer Verlauf (Tomate → Glut) mit Besteck-Symbol – mittig oder ([symbolOben]) im oberen Teil. */
 @Composable
-fun RezeptPlatzhalter(modifier: Modifier = Modifier) {
+fun RezeptPlatzhalter(modifier: Modifier = Modifier, symbolOben: Boolean = false) {
     Box(
         modifier
             .testTag(PLATZHALTER_TAG)
             .background(Brush.linearGradient(listOf(Color(0xFFE9A86B), Color(0xFFB5532A), Color(0xFF6E2A12)))),
-        contentAlignment = Alignment.Center,
+        contentAlignment = if (symbolOben) Alignment.TopCenter else Alignment.Center,
     ) {
-        Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(56.dp))
+        Icon(
+            Icons.Outlined.Restaurant,
+            contentDescription = null,
+            tint = Color.White.copy(alpha = 0.7f),
+            modifier = Modifier
+                .padding(top = if (symbolOben) 20.dp else 0.dp)
+                .size(if (symbolOben) 40.dp else 56.dp)
+                .testTag(PLATZHALTER_SYMBOL_TAG),
+        )
     }
 }
