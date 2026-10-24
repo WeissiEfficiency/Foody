@@ -9,8 +9,11 @@ import de.foody.core.designsystem.token.GlasStufe
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.GraphicsMode
 import kotlin.test.assertEquals
 
+// Native Grafik: echte Textmessung (im Standardmodus ist Text fast 0 px breit)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
 class GlasFlaecheTest {
     @get:Rule

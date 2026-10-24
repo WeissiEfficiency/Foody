@@ -11,6 +11,8 @@ android {
 dependencies {
     implementation(libs.haze)
     implementation(libs.haze.blur)
+    // Symbole (Sync-Status, Platzhalter, leere Zustände); R8 entfernt Ungenutztes
+    api(libs.compose.material.icons)
 
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.androidx.test.core)

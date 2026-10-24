@@ -14,10 +14,13 @@ import de.foody.core.designsystem.token.FrauncesFamilie
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.GraphicsMode
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+// Native Grafik: echte Textmessung (im Standardmodus ist Text fast 0 px breit)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
 class FoodyThemeTest {
     @get:Rule
