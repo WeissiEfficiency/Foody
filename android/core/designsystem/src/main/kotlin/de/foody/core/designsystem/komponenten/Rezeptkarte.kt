@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
+import de.foody.core.designsystem.token.FoodyFarben
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 
@@ -72,10 +73,11 @@ fun RezeptkarteGross(
     ) {
         Box(Modifier.matchParentSize()) {
             // Symbol oben, damit es nicht hinter der Glas-Leiste verschwindet
-            bild?.invoke() ?: RezeptPlatzhalter(Modifier.fillMaxSize(), symbolOben = true)
+            // Bei großer Schrift deckt die Leiste die ganze Karte – dann kein Symbol hinter dem Text
+            bild?.invoke() ?: RezeptPlatzhalter(Modifier.fillMaxSize(), symbolOben = true, mitSymbol = !gross)
         }
         GlasFlaeche(
-            GlasStufe.DICHT,
+            GlasStufe.BILD,
             Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(10.dp).testTag(GLASLEISTE_TAG),
             form = FoodyFormen.mittel,
         ) {
@@ -135,7 +137,7 @@ fun RezeptkarteRaster(
                 Box(
                     Modifier.align(Alignment.TopEnd).padding(8.dp).size(28.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.9f)),
                     contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Filled.Favorite, contentDescription = null, tint = FoodyTheme.farben.primaer, modifier = Modifier.size(18.dp)) }
+                ) { Icon(Icons.Filled.Favorite, contentDescription = null, tint = HerzFarbe, modifier = Modifier.size(18.dp)) }
             }
             if (zeit != null || kcal != null) {
                 // Umbrechende Zeile: bei großer Schrift rutscht kcal unter die Zeit statt sie zu überdecken
@@ -160,6 +162,9 @@ fun RezeptkarteRaster(
     }
 }
 
+/** Herz auf dem hellen Abzeichen – in beiden Modi das dunkle Tomate (helles Tomate hielte dort nur 2,5:1). */
+private val HerzFarbe = FoodyFarben.Hell.primaer
+
 /** Kleines Abzeichen auf dem Bild; dunkler Grund (α 0,6), damit weiße Schrift auf jedem Foto 4,5:1 hält. */
 @Composable
 private fun Abzeichen(text: String, modifier: Modifier) {
@@ -173,14 +178,14 @@ private fun Abzeichen(text: String, modifier: Modifier) {
 
 /** Rezept ohne Foto: warmer Verlauf (Tomate → Glut) mit Besteck-Symbol – mittig oder ([symbolOben]) im oberen Teil. */
 @Composable
-fun RezeptPlatzhalter(modifier: Modifier = Modifier, symbolOben: Boolean = false) {
+fun RezeptPlatzhalter(modifier: Modifier = Modifier, symbolOben: Boolean = false, mitSymbol: Boolean = true) {
     Box(
         modifier
             .testTag(PLATZHALTER_TAG)
             .background(Brush.linearGradient(listOf(Color(0xFFE9A86B), Color(0xFFB5532A), Color(0xFF6E2A12)))),
         contentAlignment = if (symbolOben) Alignment.TopCenter else Alignment.Center,
     ) {
-        Icon(
+        if (mitSymbol) Icon(
             Icons.Outlined.Restaurant,
             contentDescription = null,
             tint = Color.White.copy(alpha = 0.7f),

@@ -37,8 +37,8 @@ class KatalogScreenshotTest {
     @Config(qualifiers = "w1280dp-h1600dp")
     fun tablet() = alleSeiten("tablet", schrift200 = listOf(false))
 
-    /** Höchstens 0,5 % geänderte Pixel gelten als gleich (Schriftglättung), mehr ist eine echte Änderung. */
-    private val vergleich = RoborazziOptions(compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.005f))
+    /** Höchstens 0,1 % geänderte Pixel gelten als gleich (Schriftglättung); schon ein umgefärbtes Herz ist mehr. */
+    private val vergleich = RoborazziOptions(compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f))
 
     private fun alleSeiten(geraet: String, schrift200: List<Boolean>) {
         for (seite in KatalogSeite.entries) {

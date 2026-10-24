@@ -43,6 +43,9 @@ fun kontrastPaare(dunkel: Boolean): List<KontrastPaar> {
         untergruende.forEachIndexed { i, u ->
             add(KontrastPaar("Text ohne Glas @$i", f.text, u, TEXT))
             add(KontrastPaar("Nebentext ohne Glas @$i", f.nebentext, u, TEXT))
+            // Text- und Umriss-Knöpfe, Links stehen auch direkt auf dem Hintergrund
+            add(KontrastPaar("Primär als Text ohne Glas @$i", f.primaer, u, TEXT))
+            add(KontrastPaar("Primär als Kante ohne Glas @$i", f.primaer, u, GRAFIK))
             for (stufe in GlasStufe.entries) {
                 val glas = mischen(glasWerte(stufe, dunkel).toenung, u)
                 add(KontrastPaar("Text auf Glas ${stufe.name} @$i", f.text, glas, TEXT))
@@ -54,5 +57,21 @@ fun kontrastPaare(dunkel: Boolean): List<KontrastPaar> {
                 add(KontrastPaar("aufPrimärBehälter auf Behälter (Glas ${stufe.name})", f.aufPrimaerBehaelter, f.primaerBehaelter, TEXT))
             }
         }
+        // Über Fotos: alles von Schwarz bis Weiß möglich, dazu der Platzhalter-Verlauf
+        for ((name, bild) in BildUntergruende) {
+            val leiste = mischen(glasWerte(GlasStufe.BILD, dunkel).toenung, bild)
+            add(KontrastPaar("Text über Bild $name", f.text, leiste, TEXT))
+            add(KontrastPaar("Nebentext über Bild $name", f.nebentext, leiste, TEXT))
+            add(KontrastPaar("Primär als Text über Bild $name", f.primaer, leiste, TEXT))
+            add(KontrastPaar("Herz auf Abzeichen über Bild $name", FoodyFarben.Hell.primaer, mischen(Color.White.copy(alpha = 0.9f), bild), GRAFIK))
+            add(KontrastPaar("Abzeichen-Text über Bild $name", Color.White, mischen(Color.Black.copy(alpha = 0.6f), bild), TEXT))
+        }
     }
 }
+
+private val BildUntergruende = listOf(
+    "Schwarz" to Color.Black,
+    "Weiß" to Color.White,
+    "Platzhalter hell" to Color(0xFFE9A86B),
+    "Platzhalter dunkel" to Color(0xFF6E2A12),
+)

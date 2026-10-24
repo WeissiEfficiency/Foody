@@ -15,10 +15,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
@@ -26,6 +28,9 @@ import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 import java.util.Locale
+
+/** Testkennung des Monogramm-Kreises. */
+const val MONOGRAMM_TAG = "kachel-monogramm"
 
 /**
  * Kachel im Raster (Einkauf, Katalog): Monogramm oder Symbol, Name, Menge, optional Untertitel. Abgehakt wird der
@@ -50,6 +55,8 @@ fun Kachel(
             .clickable(onClick = onKlick)
             .semantics { if (abgehakt) stateDescription = "abgehakt" },
         form = FoodyFormen.mittel,
+        // Kacheln stehen in Listen: Unschärfe hinter jedem Eintrag kostet zu viel – nur Tönung
+        unschaerfeErlaubt = false,
     ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (symbol != null) {
@@ -60,6 +67,8 @@ fun Kachel(
                         .quadratisch(mindestens = 30.dp)
                         .clip(CircleShape)
                         .background(farben.primaerBehaelter)
+                        // Kennung hinter dem Hintergrund: misst den gezeichneten Kreis, nicht das äußere Quadrat
+                        .testTag(MONOGRAMM_TAG)
                         .semantics { hideFromAccessibility() },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -87,7 +96,10 @@ fun Kachel(
 
 /** Quadrat mit Kante = max(Inhalt, [mindestens]) – der Monogramm-Kreis wächst mit großer Schrift mit. */
 private fun Modifier.quadratisch(mindestens: Dp): Modifier = layout { messbar, vorgabe ->
-    val inhalt = messbar.measure(vorgabe.copy(minWidth = 0, minHeight = 0))
-    val kante = maxOf(inhalt.width, inhalt.height, mindestens.roundToPx())
-    layout(kante, kante) { inhalt.placeRelative((kante - inhalt.width) / 2, (kante - inhalt.height) / 2) }
+    // Kante aus der natürlichen Größe des Inhalts, dann fest messen: so füllen Clip und Hintergrund das ganze Quadrat.
+    val breite = messbar.maxIntrinsicWidth(vorgabe.maxHeight)
+    val hoehe = messbar.maxIntrinsicHeight(breite)
+    val kante = maxOf(breite, hoehe, mindestens.roundToPx())
+    val platziert = messbar.measure(Constraints.fixed(kante, kante))
+    layout(kante, kante) { platziert.placeRelative(0, 0) }
 }

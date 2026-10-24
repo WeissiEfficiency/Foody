@@ -52,7 +52,7 @@ Test belegt ist.
 | Grund | `#FBF4EA` |
 | Text | `#2B1D14` |
 | Nebentext | `#6B5547` |
-| Primär / Text darauf | `#B5381C` / `#FFFFFF` |
+| Primär / Text darauf | `#A8341A` / `#FFFFFF` (Startwert `#B5381C` hielt direkt auf dem Verlauf nur 4,2:1) |
 | Primär-Behälter / Text darauf | `#FCE0D3` / `#7A220E` |
 | Akzent (Oliv) | `#5C6B2A` |
 | Wärme (Safran, nur Grafik) | `#BD741B` (Startwert `#C77A1C` hielt auf Glas LEICHT nur 2,8:1) |
@@ -87,12 +87,14 @@ Großbuchstaben.
 | leicht | Navigation, Kopfzeile, Status-Chip | 24 dp | Creme `#FFFAF3` α 0,55 | `#2B201A` α 0,50 |
 | dicht | alles mit Fließtext: Karten, Tagebuch, Kacheln | 24 dp | Creme `#FFFAF3` α 0,78 | `#2B201A` α 0,72 |
 
+**Dritte Stufe BILD** (Nachtrag nach dem Gesamtreview): Leisten über Fotos (große Rezeptkarte) sind fast deckend (α 0,92 hell und dunkel) und **nie** unscharf – die Unschärfe-Quelle ist der Hintergrund, nicht das Foto, und über einem Foto ist von Schwarz bis Weiß alles möglich. Kacheln stehen in Listen und sind deshalb nur getönt (Leistung). Unschärfe tragen nur wenige feste Flächen (Navigation, Kopfzeile, Status).
+
 Dazu eine Lichtkante 1 dp (hell: Weiß α 0,75–0,8; dunkel: Weiß α 0,12). Kann das Gerät keine Unschärfe oder sind
 Animationen reduziert, zeichnet Haze nur die Tönung.
 
 **Kontrast-Regel (WCAG 2.2 AA):** gemessen gegen die ungünstigste Stelle – Tönung per Alpha-Mischung über dem
 dunkelsten bzw. hellsten Punkt des Verlaufs, **ohne** Unschärfe. Text ≥ 4,5:1, große Schrift (≥ 24 sp bzw. ≥ 18,66 sp
-fett) ≥ 3:1, Grafik und Kanten von Bedienelementen ≥ 3:1. Die Paartabelle (Vordergrund, Untergrund, Mindestwert) liegt
+fett) ≥ 3:1, Grafik und Kanten von Bedienelementen ≥ 3:1 (die Lichtkante der Glasflächen ist Dekor und ausgenommen). Geprüft werden zusätzlich Primär direkt auf dem Verlauf (Text-/Umriss-Knöpfe, Links) und alles über Fotos (Leiste BILD, Abzeichen, Herz) gegen Schwarz, Weiß und den Platzhalter. Die Paartabelle (Vordergrund, Untergrund, Mindestwert) liegt
 im Code neben den Tokens und wird vollständig getestet.
 
 ## 3. Komponenten

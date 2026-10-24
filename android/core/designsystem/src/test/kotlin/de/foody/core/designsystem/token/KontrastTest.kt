@@ -45,6 +45,16 @@ class KontrastTest {
         }
     }
 
+    @Test
+    fun paareDeckenRealeUntergruendeAb() {
+        for (dunkel in listOf(false, true)) {
+            val namen = kontrastPaare(dunkel).map { it.name }
+            for (pflicht in listOf("Primär als Text ohne Glas", "Primär als Kante ohne Glas", "über Bild", "Herz auf Abzeichen", "Abzeichen-Text")) {
+                assertTrue(namen.any { pflicht in it }, "Paar „$pflicht“ fehlt (dunkel=$dunkel)")
+            }
+        }
+    }
+
     private fun pruefe(paare: List<KontrastPaar>) {
         assertTrue(paare.isNotEmpty())
         val fehler = paare.mapNotNull { p ->

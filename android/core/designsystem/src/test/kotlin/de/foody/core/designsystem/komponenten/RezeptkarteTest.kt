@@ -107,6 +107,19 @@ class RezeptkarteTest {
     }
 
     @Test
+    fun beiGrosserSchriftKeinSymbolHinterDemText() {
+        compose.setContent {
+            FoodyTheme {
+                MitSchrift200 {
+                    RezeptkarteGross("Senf-Krusten-Braten", "4 Portionen", onKlick = {}, augenbraue = "Abendessen", modifier = Modifier.width(379.dp))
+                }
+            }
+        }
+        compose.onNodeWithTag(PLATZHALTER_SYMBOL_TAG, useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag(PLATZHALTER_TAG, useUnmergedTree = true).assertExists()
+    }
+
+    @Test
     fun abzeichenUeberlappenNichtBeiGrosserSchrift() {
         compose.setContent {
             FoodyTheme {

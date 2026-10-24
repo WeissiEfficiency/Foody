@@ -27,7 +27,7 @@ data class FoodyFarben(
             grund = Color(0xFFFBF4EA),
             text = Color(0xFF2B1D14),
             nebentext = Color(0xFF6B5547),
-            primaer = Color(0xFFB5381C),
+            primaer = Color(0xFFA8341A),
             aufPrimaer = Color(0xFFFFFFFF),
             primaerBehaelter = Color(0xFFFCE0D3),
             aufPrimaerBehaelter = Color(0xFF7A220E),

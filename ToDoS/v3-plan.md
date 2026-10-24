@@ -146,8 +146,8 @@ Spec: [`2026-10-19-v3-phase4-designsystem-design.md`](../docs/superpowers/specs/
 **Fertig, wenn** jede Komponente im Katalog WCAG 2.2 AA einhält, auch auf Glas.
 
 **Ergebnis** (2026-10-24): `:core:designsystem` und `:katalog` stehen (ADR 0012). AA belegt durch `KontrastTest` (jedes
-Farbpaar, hell und dunkel, Glas ohne Unschärfe über dem ungünstigsten Verlaufspunkt; Safran dafür auf `#BD741B`
-abgedunkelt), Komponententests (≥ 48 dp, TalkBack-Texte, nichts abgeschnitten bei 200 % Schrift) und 40
+Farbpaar, hell und dunkel, Glas ohne Unschärfe über dem ungünstigsten Verlaufspunkt, Primär direkt auf dem Verlauf,
+alles über Fotos; Safran auf `#BD741B`, Primär hell auf `#A8341A` abgedunkelt, Leiste über Fotos als Stufe BILD), Komponententests (≥ 48 dp, TalkBack-Texte, nichts abgeschnitten bei 200 % Schrift) und 40
 Roborazzi-Referenzbilder. Sichtprüfung mit echter Unschärfe auf dem Emulator (Handy hell/dunkel, Tablet). Beim Ansehen
 der Bilder gefunden und behoben: fehlende deutsche Silbentrennung, Platzhalter-Symbol hinter der Glas-Leiste,
 überlappende Abzeichen bei großer Schrift.

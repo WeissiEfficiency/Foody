@@ -246,14 +246,15 @@ ADR 0012, Spec `docs/superpowers/specs/2026-10-19-v3-phase4-designsystem-design.
 der V3; die v1 (`android/app`) behält ihr eigenes Theme bis Phase 8.
 
 - **`:core:designsystem`** (`de.foody.core.designsystem`, ohne Abhängigkeit zu `:core:data`/`:core:sync`):
-  - `token/`: `FoodyFarben` (Hell/Dunkel, Richtung „Ofenwarm“), `GlasStufe` + `glasWerte` (LEICHT/DICHT, Tönung,
-    Unschärfe 24 dp, Lichtkante), `VerlaufHell`/`VerlaufDunkel`, `FoodyTypografie` (Fraunces bis `titleLarge`, sonst
+  - `token/`: `FoodyFarben` (Hell/Dunkel, Richtung „Ofenwarm“), `GlasStufe` + `glasWerte` (LEICHT/DICHT mit Unschärfe 24 dp,
+    BILD fast deckend ohne Unschärfe; Tönung, Lichtkante), `VerlaufHell`/`VerlaufDunkel`, `FoodyTypografie` (Fraunces bis `titleLarge`, sonst
     Figtree; Deutsch mit Silbentrennung), `FoodyFormen` (12/20/28 dp), `FoodyAbstaende` (4-dp-Raster), `Kontrast.kt`
     (`kontrast`, `mischen`, `kontrastPaare`).
   - `FoodyTheme { … }` füllt Material 3 und stellt `FoodyTheme.farben/dunkel/unschaerfe` bereit; keine Dynamic Color.
     `animationenErlaubt()` liest die Animator-Dauer des Systems – ist sie 0, entfallen Unschärfe und Drehungen.
   - `glas/`: `FoodyHintergrund` (Grund + zwei Radialverläufe, Quelle der Unschärfe) und `GlasFlaeche(stufe)` (Haze
-    `hazeBlur` mit Tönung; ohne Hintergrund oder ohne Unschärfe nur die Tönung).
+    `hazeBlur` mit Tönung; ohne Hintergrund, ohne Unschärfe, bei Stufe BILD oder `unschaerfeErlaubt = false` – Kacheln –
+    nur die Tönung).
   - `komponenten/`: `RezeptkarteGross`/`RezeptkarteRaster`, `Kachel`, `Naehrwertbalken`, `SyncStatus` (`SyncAnzeige`),
     `LeererZustandZeile`/`LeererZustandFlaeche`, `FoodyKnopf`, `FoodyChip`, `Abschnittskopf`, `Augenbraue`,
     `FoodyNavigationsleiste`/`FoodyNavigationsRail`. Zustandslos, nur einfache Werte und Slots; Berührflächen ≥ 48 dp;
@@ -265,7 +266,7 @@ der V3; die v1 (`android/app`) behält ihr eigenes Theme bis Phase 8.
 - **Tests:** Robolectric-Komponententests mit nativer Grafik (echte Textmessung) und 200-%-Prüfung
   (`TestHilfen.abgeschnitteneTexte`); Roborazzi-Screenshots aller Katalogseiten (hell/dunkel, Handy 411 dp,
   Tablet 1280 dp, Schrift 200 %) in `android/katalog/src/test/screenshots/`, Vergleich in der CI
-  (`:katalog:verifyRoborazziDebug`, Toleranz 0,5 %). Neu aufnehmen: `./gradlew :katalog:recordRoborazziDebug`.
+  (`:katalog:verifyRoborazziDebug`, Toleranz 0,1 %). Neu aufnehmen: `./gradlew :katalog:recordRoborazziDebug`.
 
 ## Packung scannen (seit DB v9)
 
