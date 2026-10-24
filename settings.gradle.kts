@@ -50,6 +50,9 @@ if (System.getenv("FOODY_SERVER_ONLY") == null) {
     include(":app3", ":feature:einstellungen")
     project(":app3").projectDir = file("android/app3")
     project(":feature:einstellungen").projectDir = file("android/feature/einstellungen")
+    // V3 Phase 6: Bereiche neu bauen (6a Rezepte)
+    include(":feature:rezepte")
+    project(":feature:rezepte").projectDir = file("android/feature/rezepte")
     project(":core:designsystem").projectDir = file("android/core/designsystem")
     project(":katalog").projectDir = file("android/katalog")
 }
