@@ -25,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -41,12 +40,6 @@ const val PLATZHALTER_TAG = "rezept-platzhalter"
 
 /** Aktion in der großen Karte, z. B. „Kochen“. */
 data class KartenAktion(val text: String, val onKlick: () -> Unit)
-
-/** Ab dieser Schriftskalierung bekommen Titel mehr Zeilen und Knöpfe rutschen unter den Text. */
-private const val GROSSE_SCHRIFT = 1.5f
-
-@Composable
-private fun grosseSchrift(): Boolean = LocalDensity.current.fontScale >= GROSSE_SCHRIFT
 
 /**
  * Große Rezeptkarte („Heute“): Bild randlos, darüber unten eine dichte Glas-Leiste mit Augenbraue, Titel, Metazeile
