@@ -16,9 +16,11 @@ import de.foody.core.sync.SyncLageQuelle
 import de.foody.domain.DailyPicks
 import de.foody.domain.EintragWerte
 import de.foody.domain.Mahlzeit
-import de.foody.domain.Naehrwerte
 import de.foody.domain.Summe
 import de.foody.domain.Tagebuch
+import de.foody.feature.heute.tagebuch.MAHLZEITEN
+import de.foody.feature.heute.tagebuch.eintragMahlzeit
+import de.foody.feature.heute.tagebuch.werte
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -85,9 +87,6 @@ class HeuteViewModel @Inject constructor(
 
 private data class Tag(val datum: LocalDate, val plan: List<GeplanteMahlzeit>, val eintraege: List<TagebuchEintragEntity>)
 
-/** Reihenfolge im Tagebuch des Tages. */
-private val MAHLZEITEN = listOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.SNACK, Mahlzeit.ABENDESSEN)
-
 private fun heuteZustand(
     jetzt: LocalDateTime, tag: Tag, rezepte: List<RezeptKurz>, einkauf: OffenerEinkauf?, lage: SyncLage, ziel: Int?,
 ): HeuteZustand {
@@ -105,19 +104,16 @@ private fun heuteZustand(
 }
 
 private fun tagebuchHeute(eintraege: List<TagebuchEintragEntity>, planHeute: List<GeplanteMahlzeit>, ziel: Int?): TagebuchHeute {
-    // Alte Freitext-Mahlzeiten („Sonstiges“) zählen als Snack
-    fun TagebuchEintragEntity.mahlzeit() = Mahlzeit.ausText(mahlzeit) ?: Mahlzeit.SNACK
-    fun TagebuchEintragEntity.werte() = Naehrwerte(energieKj, eiweiss, kohlenhydrate, fett, vollstaendig)
     val uebernommen = eintraege.mapNotNull { it.planEintragId }.toSet()
     val offen = Tagebuch.offeneVorschlaege(planHeute, { it.planEintragId }, uebernommen)
-    val summe = Tagebuch.bilanz(eintraege.map { EintragWerte(it.mahlzeit(), it.werte()) }).tag
+    val summe = Tagebuch.bilanz(eintraege.map { EintragWerte(it.eintragMahlzeit(), it.werte()) }).tag
     return TagebuchHeute(
         summe = summe,
         ziel = ziel,
         mahlzeiten = MAHLZEITEN.map { m ->
             MahlzeitAbschnitt(
                 mahlzeit = m,
-                eintraege = eintraege.filter { it.mahlzeit() == m }.map { EintragKurz(it.id, it.name, it.werte().kcal, it.vollstaendig) },
+                eintraege = eintraege.filter { it.eintragMahlzeit() == m }.map { EintragKurz(it.id, it.name, it.werte().kcal, it.vollstaendig) },
                 vorschlaege = offen.filter { (Mahlzeit.ausText(it.slot) ?: Mahlzeit.ABENDESSEN) == m },
             )
         },

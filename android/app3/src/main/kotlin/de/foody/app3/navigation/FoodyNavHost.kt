@@ -8,10 +8,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import de.foody.feature.heute.HeuteRoute
+import de.foody.feature.heute.tagebuch.TagebuchTagRoute
 import java.time.LocalDate
 
 /** Die Bildschirme mit ViewModel (Hilt); Navigationstests setzen [Bildschirme.platzhalter] ein. */
-class Bildschirme(val heute: @Composable (NavHostController) -> Unit) {
+class Bildschirme(
+    val heute: @Composable (NavHostController) -> Unit,
+    val tagebuch: @Composable (LocalDate, NavHostController) -> Unit,
+) {
     companion object {
         val echt = Bildschirme(
             heute = { nav ->
@@ -21,12 +25,19 @@ class Bildschirme(val heute: @Composable (NavHostController) -> Unit) {
                     onEinkauf = { nav.navigate(EinkaufListe(it)) },
                     onAlleEintraege = { nav.navigate(TagebuchTag(LocalDate.now().toString())) },
                     onEinstellungen = { nav.navigate(Einstellungen) },
-                    // Das Eintragen-Blatt kommt mit dem Tagebuch (Task 6)
-                    onEintragen = { nav.navigate(TagebuchTag(LocalDate.now().toString())) },
                 )
             },
+            tagebuch = { datum, nav ->
+                // Blättern ersetzt den Tag, statt ihn auf den Stapel zu legen: „Zurück“ führt zu „Heute“
+                TagebuchTagRoute(datum, onDatum = { neu ->
+                    nav.navigate(TagebuchTag(neu.toString())) { popUpTo<TagebuchTag> { inclusive = true } }
+                })
+            },
         )
-        val platzhalter = Bildschirme(heute = { Platzhalter("Heute") })
+        val platzhalter = Bildschirme(
+            heute = { Platzhalter("Heute") },
+            tagebuch = { datum, _ -> Platzhalter("Tagebuch", "Tagebuch $datum") },
+        )
     }
 }
 
@@ -35,8 +46,8 @@ const val SCHEMA = "foody://"
 
 /**
  * Alle Ziele der V3. Deep Links: `foody://rezept/{id}`, `foody://einkauf/{listeId}`,
- * `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}`. Rezepte, Woche, Einkauf und Kochen sind bis
- * Phase 6 Platzhalter.
+ * `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute). Rezepte, Woche,
+ * Einkauf und Kochen sind bis Phase 6 Platzhalter.
  */
 @Composable
 fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Modifier = Modifier) {
@@ -57,7 +68,7 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
             Platzhalter("Einkaufsliste", "Liste ${it.toRoute<EinkaufListe>().listeId}")
         }
         composable<TagebuchTag>(deepLinks = listOf(navDeepLink<TagebuchTag>(basePath = "${SCHEMA}tagebuch"))) {
-            Platzhalter("Tagebuch", "Tagebuch ${tagebuchDatum(it.toRoute<TagebuchTag>().datum, LocalDate.now())}")
+            bildschirme.tagebuch(tagebuchDatum(it.toRoute<TagebuchTag>().datum, LocalDate.now()), nav)
         }
     }
 }

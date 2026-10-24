@@ -11,12 +11,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.domain.Mahlzeit
+import de.foody.feature.heute.tagebuch.BlattAuftrag
+import de.foody.feature.heute.tagebuch.EintragenBlatt
+import de.foody.feature.heute.tagebuch.EintragenViewModel
+import java.time.LocalDate
 
 /** Was „Heute“ auslösen kann; die Navigation liegt in der App. */
 data class HeuteAktionen(
@@ -36,11 +43,19 @@ fun HeuteRoute(
     onEinkauf: (String) -> Unit,
     onAlleEintraege: () -> Unit,
     onEinstellungen: () -> Unit,
-    onEintragen: (Mahlzeit?) -> Unit,
     vm: HeuteViewModel = hiltViewModel(),
+    eintragenVm: EintragenViewModel? = null,
 ) {
     val zustand by vm.zustand.collectAsStateWithLifecycle()
-    HeuteScreen(zustand, HeuteAktionen(onKochen, onRezept, onEinkauf, onAlleEintraege, onEinstellungen, onEintragen, vm::gegessen))
+    var blatt by remember { mutableStateOf<BlattAuftrag?>(null) }
+    val aktionen = HeuteAktionen(
+        onKochen, onRezept, onEinkauf, onAlleEintraege, onEinstellungen, { blatt = BlattAuftrag(it) }, vm::gegessen,
+    )
+    HeuteScreen(zustand, aktionen)
+    blatt?.let { b ->
+        val tag = zustand?.datum ?: LocalDate.now()
+        EintragenBlatt(tag, b.mahlzeit, onFertig = { blatt = null }, vm = eintragenVm ?: hiltViewModel())
+    }
 }
 
 /**

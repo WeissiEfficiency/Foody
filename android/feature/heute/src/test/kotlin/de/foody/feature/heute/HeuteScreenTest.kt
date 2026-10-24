@@ -60,7 +60,7 @@ class HeuteScreenTest {
                 val inhalt = @androidx.compose.runtime.Composable {
                     HeuteRoute(
                         onKochen = { id, p -> gekocht = id to p }, onRezept = {}, onEinkauf = {}, onAlleEintraege = {},
-                        onEinstellungen = { einstellungen++ }, onEintragen = {}, vm = vm,
+                        onEinstellungen = { einstellungen++ }, vm = vm,
                     )
                 }
                 if (schrift200) MitSchrift200(inhalt) else inhalt()

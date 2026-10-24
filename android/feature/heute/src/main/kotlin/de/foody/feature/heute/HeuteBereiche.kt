@@ -32,6 +32,7 @@ import de.foody.core.designsystem.komponenten.Naehrwertbalken
 import de.foody.core.designsystem.komponenten.RezeptkarteGross
 import de.foody.core.designsystem.komponenten.SyncAnzeige
 import de.foody.core.designsystem.komponenten.SyncStatus
+import de.foody.feature.heute.tagebuch.kcalText
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -106,7 +107,7 @@ private fun MahlzeitZeilen(a: MahlzeitAbschnitt, aktionen: HeuteAktionen) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(e.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
                 Spacer(Modifier.padding(4.dp))
-                Text(kcalText(e), style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
+                Text(kcalText(e.kcal, e.vollstaendig), style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
             }
         }
         a.vorschlaege.forEach { v ->
@@ -122,13 +123,6 @@ private fun MahlzeitZeilen(a: MahlzeitAbschnitt, aktionen: HeuteAktionen) {
             LeererZustandZeile("Noch kein $name", "Eintragen", { aktionen.onEintragen(a.mahlzeit) })
         }
     }
-}
-
-/** „717 kcal“, unvollständig „≥ 717 kcal“, ohne Werte „– kcal“. */
-private fun kcalText(e: EintragKurz): String = when {
-    e.kcal == null -> "– kcal"
-    !e.vollstaendig -> "≥ ${e.kcal} kcal"
-    else -> "${e.kcal} kcal"
 }
 
 /** Bis zu sechs offene Artikel der jüngsten Liste als Kacheln, zwei je Reihe. */
