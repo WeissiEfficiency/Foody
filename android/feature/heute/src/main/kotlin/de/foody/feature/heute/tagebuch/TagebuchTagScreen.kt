@@ -33,6 +33,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,11 +61,26 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import java.util.UUID
 
 private val TAG_LANG = DateTimeFormatter.ofPattern("EEEE, d. MMMM yyyy", Locale.GERMAN)
 
-/** Auftrag für das Eintragen-Blatt; [mahlzeit] `null` = nach Uhrzeit. */
-data class BlattAuftrag(val mahlzeit: Mahlzeit?)
+/**
+ * Auftrag für das Eintragen-Blatt: [mahlzeit] `null` = nach Uhrzeit, [datum] beim Öffnen festgehalten (ein Wechsel um
+ * Mitternacht leert das Blatt nicht), [id] je Öffnen neu – nur ein neuer Auftrag setzt die Eingaben zurück, ein
+ * Neuaufbau (Drehen, Dunkelmodus) nicht. Mit [Saver] überlebt er den Neuaufbau.
+ */
+data class BlattAuftrag(val mahlzeit: Mahlzeit?, val datum: LocalDate, val id: String = UUID.randomUUID().toString()) {
+    companion object {
+        val Saver: Saver<BlattAuftrag?, Any> = Saver(
+            save = { a -> a?.let { arrayListOf(it.mahlzeit?.name.orEmpty(), it.datum.toString(), it.id) } },
+            restore = { w ->
+                @Suppress("UNCHECKED_CAST")
+                (w as List<String>).let { (m, d, id) -> BlattAuftrag(m.takeIf { it.isNotEmpty() }?.let(Mahlzeit::valueOf), LocalDate.parse(d), id) }
+            },
+        )
+    }
+}
 
 /**
  * „Alle Einträge“ eines Tages: Vor/Zurück und Datumsauswahl ([onDatum] wechselt das Ziel), Tagesbilanz, Einträge je
@@ -81,9 +98,10 @@ fun TagebuchTagRoute(
     val zustand by vm.zustand.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val bereich = rememberCoroutineScope()
-    var bearbeiten by remember { mutableStateOf<TagebuchEintragEntity?>(null) }
-    var blatt by remember { mutableStateOf<BlattAuftrag?>(null) }
-    var datumWahl by remember { mutableStateOf(false) }
+    // Gespeichert, damit Dialog und Blatt Drehen und Dunkelmodus überstehen
+    var bearbeitenId by rememberSaveable { mutableStateOf<String?>(null) }
+    var blatt by rememberSaveable(stateSaver = BlattAuftrag.Saver) { mutableStateOf(null) }
+    var datumWahl by rememberSaveable { mutableStateOf(false) }
 
     val loeschen: (TagebuchEintragEntity) -> Unit = { e ->
         bereich.launch {
@@ -95,19 +113,20 @@ fun TagebuchTagRoute(
 
     Box(Modifier.fillMaxSize()) {
         TagebuchTagInhalt(
-            datum, zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeiten = it }, onLoeschen = loeschen,
-            onEintragen = { blatt = BlattAuftrag(it) },
+            datum, zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeitenId = it.id }, onLoeschen = loeschen,
+            onEintragen = { blatt = BlattAuftrag(it, datum) },
         )
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = 88.dp))
     }
 
+    val bearbeiten = bearbeitenId?.let { id -> zustand?.abschnitte?.firstNotNullOfOrNull { a -> a.eintraege.firstOrNull { it.id == id } } }
     bearbeiten?.let { e ->
         EintragBearbeiten(e, onSpeichern = { menge, m, tag, werte ->
             vm.aendern(e.id, menge, m, tag, werte)
-            bearbeiten = null
-        }, onAbbrechen = { bearbeiten = null })
+            bearbeitenId = null
+        }, onAbbrechen = { bearbeitenId = null })
     }
-    blatt?.let { b -> EintragenBlatt(datum, b.mahlzeit, onFertig = { blatt = null }, vm = eintragenVm ?: hiltViewModel()) }
+    blatt?.let { b -> EintragenBlatt(b, onFertig = { blatt = null }, vm = eintragenVm ?: hiltViewModel()) }
     if (datumWahl) DatumWahl(datum, onDatum = { datumWahl = false; onDatum(it) }, onAbbrechen = { datumWahl = false })
 }
 

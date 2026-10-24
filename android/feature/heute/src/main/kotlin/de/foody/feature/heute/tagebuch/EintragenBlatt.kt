@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -37,11 +38,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
-import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.anzeigename
 import de.foody.feature.heute.slotName
 import kotlinx.coroutines.launch
-import java.time.LocalDate
+
+/** Test-Tag des Speichern-Knopfs (die Überschrift heißt auch „Eintragen“). */
+const val EINTRAGEN_SPEICHERN = "eintragen-speichern"
 
 private val WEGE = listOf(
     EintragenWeg.REZEPT to "Rezept",
@@ -50,11 +52,11 @@ private val WEGE = listOf(
     EintragenWeg.FREI to "Frei",
 )
 
-/** Blatt von unten zum Eintragen; [mahlzeit] `null` = nach Uhrzeit. Schließt nach erfolgreichem Speichern. */
+/** Blatt von unten zum Eintragen (siehe [BlattAuftrag]). Schließt nach erfolgreichem Speichern. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun EintragenBlatt(datum: LocalDate, mahlzeit: Mahlzeit?, onFertig: () -> Unit, vm: EintragenViewModel) {
-    LaunchedEffect(datum, mahlzeit) { vm.oeffnen(datum, mahlzeit) }
+fun EintragenBlatt(auftrag: BlattAuftrag, onFertig: () -> Unit, vm: EintragenViewModel) {
+    LaunchedEffect(auftrag.id) { vm.oeffnen(auftrag.datum, auftrag.mahlzeit, auftrag = auftrag.id) }
     val z by vm.zustand.collectAsStateWithLifecycle()
     val moeglich by vm.speichernMoeglich.collectAsStateWithLifecycle()
     val bereich = rememberCoroutineScope()
@@ -80,7 +82,7 @@ fun EintragenBlatt(datum: LocalDate, mahlzeit: Mahlzeit?, onFertig: () -> Unit, 
             FoodyKnopf(
                 "Eintragen",
                 { bereich.launch { if (vm.speichern() != null) onFertig() } },
-                Modifier.fillMaxWidth(),
+                Modifier.fillMaxWidth().testTag(EINTRAGEN_SPEICHERN),
                 aktiv = moeglich,
             )
         }

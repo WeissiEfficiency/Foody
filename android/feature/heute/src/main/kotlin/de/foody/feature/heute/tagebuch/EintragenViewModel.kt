@@ -102,8 +102,15 @@ class EintragenViewModel @Inject constructor(
     val speichernMoeglich: StateFlow<Boolean> =
         combine(eingaben, gesperrt) { e, sperre -> !sperre && gueltig(e) }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    /** Neues Blatt: alles zurück; Mahlzeit aus der angetippten Zeile, sonst nach Uhrzeit. */
-    fun oeffnen(datum: LocalDate, mahlzeit: Mahlzeit?, uhrzeit: LocalTime = LocalTime.now()) {
+    private var letzterAuftrag: String? = null
+
+    /**
+     * Neues Blatt: alles zurück; Mahlzeit aus der angetippten Zeile, sonst nach Uhrzeit. Derselbe [auftrag] erneut
+     * (Neuaufbau nach Drehen) lässt die Eingaben stehen.
+     */
+    fun oeffnen(datum: LocalDate, mahlzeit: Mahlzeit?, uhrzeit: LocalTime = LocalTime.now(), auftrag: String? = null) {
+        if (auftrag != null && auftrag == letzterAuftrag) return
+        letzterAuftrag = auftrag
         eingaben.value = Eingaben(datum = datum, mahlzeit = mahlzeit ?: mahlzeitNachUhrzeit(uhrzeit))
         gesperrt.value = false
     }

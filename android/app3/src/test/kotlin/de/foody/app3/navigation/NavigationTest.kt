@@ -64,4 +64,39 @@ class NavigationTest {
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         tab("Heute").assertIsSelected()
     }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun heuteNachDetailUndTabwechselFuehrtNachHeute() {
+        starten()
+        compose.runOnUiThread { nav.navigate(RezeptDetail("r1")) }
+        compose.onNodeWithText("Rezept r1").assertExists()
+        tab("Heute").assertIsSelected()
+        tab("Rezepte").performClick()
+        tab("Heute").performClick()
+        tab("Heute").assertIsSelected()
+        compose.onNodeWithText("Rezept r1").assertDoesNotExist()
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun heuteTabAufDemTagebuchFuehrtNachHeute() {
+        starten()
+        compose.runOnUiThread { nav.navigate(TagebuchTag("2026-10-24")) }
+        compose.onNodeWithText("Tagebuch 2026-10-24").assertExists()
+        tab("Heute").performClick()
+        compose.onNodeWithText("Tagebuch 2026-10-24").assertDoesNotExist()
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun aktiverTabErneutFuehrtZurWurzel() {
+        starten()
+        tab("Rezepte").performClick()
+        compose.runOnUiThread { nav.navigate(RezeptDetail("r2")) }
+        tab("Rezepte").assertIsSelected()
+        tab("Rezepte").performClick()
+        compose.onNodeWithText("Rezept r2").assertDoesNotExist()
+        compose.onNodeWithText(Platzhalter.TEXT).assertExists()
+    }
 }

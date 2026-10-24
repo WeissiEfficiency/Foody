@@ -15,13 +15,11 @@ import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -29,17 +27,23 @@ import androidx.navigation.compose.rememberNavController
 import de.foody.core.designsystem.komponenten.FoodyNavigationsRail
 import de.foody.core.designsystem.komponenten.FoodyNavigationsleiste
 import de.foody.core.designsystem.komponenten.NavZiel
-import kotlin.reflect.KClass
 
-/** Ein Tab mit seiner Route und den Zielen, bei denen er als aktiv gilt (z. B. Rezept-Detail → „Rezepte“). */
-private class Tab(val route: Any, val ziel: NavZiel, val auch: List<KClass<*>> = emptyList())
+/** Ein Tab mit seiner Route. */
+private class Tab(val route: Any, val ziel: NavZiel)
 
 private val tabs = listOf(
-    Tab(Heute, NavZiel("Heute", Icons.Outlined.LightMode), listOf(TagebuchTag::class, Einstellungen::class)),
-    Tab(Rezepte, NavZiel("Rezepte", Icons.Outlined.Restaurant), listOf(RezeptDetail::class, Kochen::class)),
+    Tab(Heute, NavZiel("Heute", Icons.Outlined.LightMode)),
+    Tab(Rezepte, NavZiel("Rezepte", Icons.Outlined.Restaurant)),
     Tab(Woche, NavZiel("Woche", Icons.Outlined.CalendarMonth)),
-    Tab(Einkauf, NavZiel("Einkauf", Icons.Outlined.ShoppingBag), listOf(EinkaufListe::class)),
+    Tab(Einkauf, NavZiel("Einkauf", Icons.Outlined.ShoppingBag)),
 )
+
+/**
+ * Index des Tabs, zu dem der Stapel gehört. Ein Tab-Wechsel nimmt immer bis zur Wurzel „Heute“ zurück, also liegt
+ * höchstens ein anderer Tab im Stapel; sonst gehört alles (auch Details aus „Heute“) zu „Heute“.
+ */
+private fun aktiverTab(nav: NavHostController): Int =
+    (1 until tabs.size).firstOrNull { i -> runCatching { nav.getBackStackEntry(tabs[i].route) }.isSuccess } ?: 0
 
 /**
  * Rahmen der App: vier Tabs Heute · Rezepte · Woche · Einkauf. Handy: schwebende [FoodyNavigationsleiste] unten über
@@ -51,12 +55,17 @@ fun Hauptgeruest(
     bildschirme: Bildschirme = Bildschirme.echt,
 ) {
     val eintrag by navController.currentBackStackEntryAsState()
-    val aktiv = tabs.indexOfFirst { tab -> eintrag?.destination?.gehoertZu(tab) == true }
+    val aktiv = remember(eintrag) { aktiverTab(navController) }
     val waehlen: (Int) -> Unit = { i ->
-        navController.navigate(tabs[i].route) {
-            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-            launchSingleTop = true
-            restoreState = true
+        when {
+            // Heute ist die Wurzel; der aktive Tab erneut: zurück an seinen Anfang
+            i == 0 -> navController.popBackStack<Heute>(inclusive = false)
+            i == aktiv -> navController.popBackStack(tabs[i].route, inclusive = false)
+            else -> navController.navigate(tabs[i].route) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
         }
     }
     val ziele = tabs.map { it.ziel }
@@ -77,9 +86,6 @@ fun Hauptgeruest(
         }
     }
 }
-
-private fun NavDestination.gehoertZu(tab: Tab): Boolean =
-    hierarchy.any { d -> d.hasRoute(tab.route::class) || tab.auch.any { d.hasRoute(it) } }
 
 object Hauptgeruest {
     const val LEISTE = "navigationsleiste"
