@@ -58,6 +58,17 @@ interface RezeptDao {
 
     @Upsert suspend fun upsert(e: RezeptEntity)
 
+    @Query("UPDATE recipe SET archivedAt = :archiviert, updatedAt = :jetzt, version = version + 1 WHERE id = :id")
+    suspend fun archivSetzen(id: String, archiviert: Long?, jetzt: Long)
+
+    @Query("UPDATE recipe SET favorite = :an, updatedAt = :jetzt, version = version + 1 WHERE id = :id")
+    suspend fun favoritSetzen(id: String, an: Boolean, jetzt: Long)
+
+    @Query("UPDATE recipe SET imageUri = :link, updatedAt = :jetzt, version = version + 1 WHERE id = :id")
+    suspend fun bildSetzen(id: String, link: String?, jetzt: Long)
+
+    @Query("SELECT COUNT(*) FROM recipe WHERE imageUri = :link") suspend fun anzahlMitBild(link: String): Int
+
     @Query("DELETE FROM recipe WHERE id = :id") suspend fun loeschen(id: String)
 
     /** Leert die Tabelle (Sicherung: Import ersetzt alle Daten). */
