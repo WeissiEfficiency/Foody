@@ -53,6 +53,7 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:sync"))
     implementation(project(":feature:heute"))
+    implementation(project(":feature:rezepte"))
     implementation(project(":feature:einstellungen"))
     implementation(project(":domain"))
 

@@ -20,6 +20,10 @@ import java.time.format.DateTimeParseException
 
 @Serializable data class RezeptDetail(val id: String)
 
+@Serializable data object RezeptNeu
+
+@Serializable data class RezeptBearbeiten(val id: String)
+
 /** [portionen] `null` = Portionen des Rezepts. */
 @Serializable data class Kochen(val rezeptId: String, val portionen: Int? = null)
 
