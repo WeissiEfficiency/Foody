@@ -17,6 +17,10 @@ interface ZutatDao {
 
     @Query("SELECT * FROM ingredient WHERE id = :id") suspend fun nachId(id: String): ZutatEntity?
 
+    /** Namenstreffer ohne Groß-/Kleinschreibung (wie v1 `findByName`). */
+    @Query("SELECT * FROM ingredient WHERE canonicalName = :name COLLATE NOCASE LIMIT 1")
+    suspend fun nachNameOhneGross(name: String): ZutatEntity?
+
     @Upsert suspend fun upsert(e: ZutatEntity)
 
     @Query("DELETE FROM ingredient WHERE id = :id") suspend fun loeschen(id: String)
