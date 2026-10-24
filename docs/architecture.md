@@ -268,6 +268,48 @@ der V3; die v1 (`android/app`) behält ihr eigenes Theme bis Phase 8.
   Tablet 1280 dp, Schrift 200 %) in `android/katalog/src/test/screenshots/`, Vergleich in der CI
   (`:katalog:verifyRoborazziDebug`, Toleranz 0,1 %). Neu aufnehmen: `./gradlew :katalog:recordRoborazziDebug`.
 
+## App V3: Hülle, Heute, Tagebuch (Phase 5)
+
+Spec `docs/superpowers/specs/2026-10-24-v3-phase5-heute-design.md`. Die V3 läuft als eigenes App-Modul neben der v1,
+bis Phase 8 umschaltet.
+
+- **`:app3`** (`de.foody.app3`, `applicationId` `de.foody.app`, Debug `.debug` „Foody Debug“, Release noch aus):
+  `FoodyApp` (Hilt, `HiltWorkerFactory`; beim Start `SyncAusloeser.beimStart()` und `StartdatenLader`, bei jedem Wechsel
+  in den Vordergrund `appImVordergrund()`), `MainActivity` (`singleTask`, reicht Deep Links aus `onNewIntent` an die
+  Navigation), `AppModul` (`SyncKonfiguration`, `KontoZugriff` → `KontoAnbindung` auf `SyncKonto`/`sync_state`/
+  `SyncAusloeser`, Gerätename „Hersteller Modell“ wie v1).
+- **Navigation** (`navigation/`): typisierte Routen (`Heute`, `Rezepte`, `Woche`, `Einkauf`, `Einstellungen`,
+  `RezeptDetail(id)`, `Kochen(rezeptId, portionen?)`, `EinkaufListe(listeId)`, `TagebuchTag(datum)`). `Hauptgeruest`:
+  vier Tabs, unter 840 dp `FoodyNavigationsleiste` schwebend unten, ab 840 dp `FoodyNavigationsRail`; Detailziele
+  markieren ihren Tab. Deep Links `foody://rezept/{id}`, `foody://einkauf/{listeId}`,
+  `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute). Rezepte, Woche,
+  Einkauf, Kochen, Rezept-Detail und Einkaufsliste sind bis Phase 6 Platzhalter („Kommt in Phase 6“ mit Argumenten).
+  `Bildschirme` trennt die Hilt-Bildschirme von den Platzhaltern, damit Navigationstests ohne Hilt laufen.
+- **`:core:data`**: `HeuteRepository` (Plan heute/morgen nur mit vorhandenem, nicht archiviertem Rezept; kcal je
+  Portion über `RecipeProfiles`; Rezeptvorschläge; offene Artikel der zuletzt geänderten Liste), `TagebuchRepository`
+  (Werte beim Eintragen festhalten, ADR 0007; `ausPlan` eine Portion, höchstens einmal in einer Transaktion; Ändern
+  skaliert mit `Tagebuch.skaliert`; Löschen/Wiederherstellen mit derselben ID), `TageszielSpeicher` (Prefs
+  `dailyKcalGoal` als Flow), `DomainAbbildung` (Zeilen → `:domain`-Modelle wie die v1-Mapper).
+- **`:core:sync`**: `SyncLageQuelle` (`sync_state` als Flow + WorkManager-Status des Auftrags `foody-sync-v3` = „läuft“).
+- **`:feature:heute`**: „Heute“ (`HeuteViewModel` über einen minütlichen `Zeitgeber` – Datum und nächste Mahlzeit
+  wechseln um Mitternacht; `naechsteMahlzeit` mit Zeitfenstern Frühstück 10:00, Mittagessen 14:30, Snack 17:00, sonst
+  23:59; Inspiration per `DailyPicks` nur ohne Plan für heute; Tagebuch des Tages mit Vorschlägen „Gegessen?“; offener
+  Einkauf; `syncAnzeige` für den Kopf; leere Datenbank → „Server verbinden“). Tagebuch in `tagebuch/`: Eintragen-Blatt
+  (Rezept, Zutat, Aus dem Plan, Frei; Mahlzeit aus der Zeile oder nach Uhrzeit; Suche Teilstring, höchstens 30 Treffer;
+  `speichernMoeglich` nur bei gültigen Eingaben), Ändern-Dialog, „Alle Einträge“ (`TagebuchTagRoute`, Blättern,
+  Datumsauswahl, Löschen mit „Rückgängig“). Fotos per Coil (`file:`-Links), sonst Platzhalter. Inhalte höchstens
+  720 dp breit, mittig.
+- **`:feature:einstellungen`**: „Server verbinden“ über `KontoZugriff` (Anmelden; mit lokalen Daten Wahl
+  „Zusammenführen/Ersetzen“, bei bestehender Verbindung sofort aktivieren; verbunden: Adresse, „zuletzt
+  synchronisiert“, letzter Fehler als Klartext, „Jetzt synchronisieren“, „Neu anmelden“ nach abgelaufener Anmeldung,
+  Trennen mit Rückfrage). Das Passwort liegt nur im Eingabefeld.
+- **Tests:** Repository-Tests (Room im Speicher), Navigations- und Deep-Link-Tests, Bildschirmtests mit echtem
+  ViewModel (Uhr und Sync-Lage als Flows vorgegeben, Room-Abfragen synchron), Schrift 200 %, Hilt-Graph. Roborazzi-
+  Bilder von „Heute“ und „Alle Einträge“ (hell/dunkel × Handy 411 dp/Tablet 1280 dp, erfundene Daten) in
+  `android/feature/heute/src/test/screenshots/`, Vergleich in der CI (`:feature:heute:verifyRoborazziDebug`).
+  Testumgebung: Robolectric dekodiert unter Windows keine Bilder (Foto-Test mit `coil-test`), und ein Textfeld in einem
+  Dialog läuft mit Breiten-Qualifier endlos (der Ändern-Test nutzt nur die Höhe).
+
 ## Packung scannen (seit DB v9)
 
 `PackungScan` (`android/app/.../scan`) steuert den Ablauf hinter Schnittstellen, die Hilt in `ScanModule` bindet und Tests durch

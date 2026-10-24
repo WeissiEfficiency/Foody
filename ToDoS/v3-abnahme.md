@@ -48,19 +48,20 @@ ist. Grundlage: [`v2-abnahme.md`](v2-abnahme.md), gekürzt nach dem Review vom 2
 - [ ] Wasser wird nie eingekauft („nie einkaufen“)
 
 ## Heute und Tagebuch – `:feature:heute`
-- [ ] Nächste Mahlzeit aus dem Plan, „Kochen starten“
-- [ ] Offener Einkauf (Anzahl, Vorschau)
-- [ ] Eine Rezept-Inspiration, nur wenn für heute nichts geplant ist
-- [ ] Tagebuch-Einträge aus Rezept, Zutat, Planeintrag („Gegessen“) oder frei
-- [ ] Nährwerte beim Eintragen festhalten (ADR 0007)
-- [ ] Einträge ändern (Menge skaliert die Werte), löschen
-- [ ] Tagesbilanz gegen das Tagesziel; „Alle Einträge“
+- [x] Nächste Mahlzeit aus dem Plan, „Kochen starten“ (Phase 5; der Kochmodus selbst folgt in Phase 6)
+- [x] Offener Einkauf (Anzahl, Vorschau) (Phase 5)
+- [x] Eine Rezept-Inspiration, nur wenn für heute nichts geplant ist (Phase 5)
+- [x] Tagebuch-Einträge aus Rezept, Zutat, Planeintrag („Gegessen“) oder frei (Phase 5)
+- [x] Nährwerte beim Eintragen festhalten (ADR 0007) (Phase 5, `TagebuchRepositoryTest`)
+- [x] Einträge ändern (Menge skaliert die Werte), löschen (Phase 5, mit „Rückgängig“)
+- [x] Tagesbilanz gegen das Tagesziel; „Alle Einträge“ (Phase 5; Tagesziel einstellen in Phase 6)
 - [ ] Packung scannen: Strichcode → Katalog → Open Food Facts (abschaltbar) → Foto der Nährwerttabelle
 
 ## Einstellungen – `:feature:einstellungen`
-- [ ] Server verbinden: Adresse, Anmelden, Sync-Stand, „Jetzt synchronisieren“, Sync-Probleme, Trennen mit Rückfrage
+- [x] Server verbinden: Adresse, Anmelden, Sync-Stand, „Jetzt synchronisieren“, Sync-Probleme, Trennen mit Rückfrage
+      (Phase 5, `VerbindenScreenTest`; Sync-Probleme als letzter Fehler im Klartext)
 - [ ] Zutatenkatalog: Dichte, Stückgewicht, Synonyme, Dubletten zusammenführen, Strichcode an der Zutat, Scan
-- [ ] Startdaten mit `SeedData.VERSION`-Aktualisierung
+- [x] Startdaten mit `SeedData.VERSION`-Aktualisierung (Phase 5, `StartdatenLaderTest`)
 - [ ] Sicherung als ZIP (Daten und Fotos), Wiederherstellung (auch v1-Dateien), vollständige lokale Löschung
 - [ ] Darstellung hell / dunkel / System
 - [ ] Tagesziel
@@ -78,8 +79,8 @@ ist. Grundlage: [`v2-abnahme.md`](v2-abnahme.md), gekürzt nach dem Review vom 2
 - [x] Server: ein Konto, Anmeldung mit Argon2id, nur HTTPS (Traefik), keine Haushalte (Phase 2)
 - [x] App: Anmelden am Konto, Geräte-Token im Keystore, nur HTTPS (Phase 3, `:core:sync`: `SyncKontoTest`,
       `TokenSpeicherTest`, `ServerAdresseTest`; Keystore auf dem Gerät und Oberfläche in Phase 6/8)
-- [ ] Sync beim Öffnen/Fortsetzen und nach Änderungen (entprellt), nur mit Netz (Auslöser in `:core:sync` getestet,
-      `SyncAusloeserTest`; Einbau in die App Phase 5)
+- [x] Sync beim Öffnen/Fortsetzen und nach Änderungen (entprellt), nur mit Netz (Auslöser in `:core:sync` getestet,
+      `SyncAusloeserTest`; in `:app3` eingebaut, Phase 5, auf dem Emulator gegen den Test-Server geprüft)
 - [x] Server: Last-Writer-Wins je Datensatz, Einkaufseinträge feldweise; Löschen gewinnt gegen Bearbeiten ohne
       Kenntnis (Phase 2, `/api/v3`)
 - [x] App: dieselben Regeln im Sync-Client (Phase 3, `SyncLaufTest` gegen den echten `:server-sync`)

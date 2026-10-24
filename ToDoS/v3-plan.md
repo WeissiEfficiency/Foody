@@ -155,11 +155,18 @@ der Bilder gefunden und behoben: fehlende deutsche Silbentrennung, Platzhalter-S
 ### Phase 5 – Navigation und „Heute“ (≈ 1 Woche)
 Spec: [`2026-10-24-v3-phase5-heute-design.md`](../docs/superpowers/specs/2026-10-24-v3-phase5-heute-design.md)
 (App-Modul `:app3` als „Foody Debug“, ganzes Tagebuch ohne Scan, schlichtes „Server verbinden“).
-- [ ] Vier Tabs (Heute · Rezepte · Woche · Einkauf), adaptive Navigation für das Tablet, Einstellungen über das
+- [x] Vier Tabs (Heute · Rezepte · Woche · Einkauf), adaptive Navigation für das Tablet, Einstellungen über das
       Profilsymbol
-- [ ] `:feature:heute`: nächste Mahlzeit, Tagebuch des Tages, offener Einkauf; eine Rezept-Inspiration nur, wenn
+- [x] `:feature:heute`: nächste Mahlzeit, Tagebuch des Tages, offener Einkauf; eine Rezept-Inspiration nur, wenn
       nichts geplant ist
-- [ ] Deep Links: Rezept, Einkaufsliste, Kochmodus (auch aus der Timer-Benachrichtigung)
+- [x] Deep Links: Rezept, Einkaufsliste, Kochmodus (die Timer-Benachrichtigung nutzt ab Phase 6 denselben Link)
+
+**Ergebnis** (2026-10-24): Neues App-Modul `:app3` („Foody Debug“) mit Hilt, Startdaten, Sync-Auslösern, Navigation
+(Leiste/Rail) und `foody://`-Deep-Links; „Heute“ und das ganze Tagebuch außer Scan in `:feature:heute`; „Server
+verbinden“ in `:feature:einstellungen`. Belegt durch Repository-, Navigations-, Deep-Link- und Bildschirmtests (Schrift
+200 %, Mitternacht, gelöschtes Rezept, ungültige Eingaben, offline) und 8 Roborazzi-Bilder. Sichtprüfung auf dem
+Emulator gegen den Test-Server: verbinden, 112 Rezepte geholt, Tagebuch-Eintrag angelegt und gesendet. Beim Ansehen der
+Bilder gefunden und behoben: Inhalte auf dem Tablet über die volle Breite (jetzt höchstens 720 dp, mittig).
 
 ### Phase 6 – Bereiche neu bauen (≈ 3 Wochen)
 - [ ] Rezepte (inkl. Tablet zweispaltig, Favorit + „Oft gekocht“)
