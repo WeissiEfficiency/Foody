@@ -27,6 +27,10 @@ fun testDatenbank(): FoodyDatenbank =
 fun ComposeTestRule.warteAufText(text: String) =
     waitUntil(5_000) { onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
 
+/** Wie [warteAufText], aber als Teiltext (Abschnittsköpfe beginnen mit einem Emoji). */
+fun ComposeTestRule.warteAufTeil(text: String) =
+    waitUntil(5_000) { onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty() }
+
 /** Inhalt mit doppelter Schriftgröße (Systemschrift 200 %). */
 @Composable
 fun MitSchrift200(inhalt: @Composable () -> Unit) {
