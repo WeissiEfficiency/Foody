@@ -7,10 +7,13 @@ import de.foody.core.data.db.EinkaufslisteEntity
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.domain.EinkaufEingabe
 import de.foody.domain.ShoppingCatalog
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.time.LocalDate
@@ -190,6 +193,63 @@ class EinkaufRepository(
         } ?: return null
         ignoriert.hinzufuegen(id, abgewaehlt)
         return id
+    }
+
+    // ---- Abgleich ----
+
+    /**
+     * Was „Übernehmen“ an der Liste ändern würde; neu bei jeder Änderung an Liste, Artikeln, Plan, Rezepten, Zeilen,
+     * Zutaten oder ignorierten Schlüsseln. Liste ohne Zeitraum oder fehlend: leer.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun abgleich(listeId: String): Flow<List<AbgleichZeile>> = db.einkaufslisteDao().nachIdFlow(listeId).flatMapLatest { liste ->
+        val von = liste?.rangeStart
+        val bis = liste?.rangeEnd
+        if (von == null || bis == null) return@flatMapLatest flowOf(emptyList())
+        combine(
+            db.einkaufsartikelDao().nachListeFlow(listeId),
+            db.planEintragDao().zwischen(von, bis),
+            db.rezeptDao().alleFlow(),
+            db.rezeptZutatDao().alleFlow(),
+            db.zutatDao().alleFlow(),
+        ) { artikel, _, _, _, _ -> artikel }
+            .combine(ignoriert.fluss(listeId)) { artikel, ign -> artikel to ign }
+            .map { (artikel, ign) -> aenderungen(artikel, PlanBedarf.laden(db, von, bis), ign).map { it.zeile } }
+    }.distinctUntilChanged()
+
+    /** Wendet alle Zeilen außer den abgewählten an (die ignoriert werden); gibt die Zahl der angewendeten zurück. */
+    suspend fun abgleichen(listeId: String, abgewaehlt: Set<String>): Int {
+        val angewendet = db.withTransaction {
+            val liste = db.einkaufslisteDao().nachId(listeId) ?: return@withTransaction 0
+            val von = liste.rangeStart ?: return@withTransaction 0
+            val bis = liste.rangeEnd ?: return@withTransaction 0
+            val p = PlanBedarf.laden(db, von, bis)
+            val artikel = db.einkaufsartikelDao().nachListe(listeId)
+            var reihenfolge = (artikel.maxOfOrNull { it.sortOrder } ?: -1) + 1
+            val anwenden = aenderungen(artikel, p, ignoriert.lesen(listeId)).filter { it.zeile.schluessel !in abgewaehlt }
+            for (a in anwenden) {
+                val neu = a.neu
+                when (a.zeile.art) {
+                    AbgleichArt.NEU -> {
+                        val e = p.artikel(neu!!, listeId, reihenfolge++, uhr())
+                        db.einkaufsartikelDao().upsert(e)
+                        p.quellen(neu, e.id).forEach { db.einkaufsartikelQuelleDao().upsert(it) }
+                    }
+                    AbgleichArt.ENTFAELLT -> db.einkaufsartikelDao().loeschen(a.alt!!.id)
+                    AbgleichArt.MEHR, AbgleichArt.WENIGER, AbgleichArt.WIEDER_OFFEN -> {
+                        val alt = a.alt!!
+                        speichern(
+                            alt.copy(amount = neu!!.toBuy.amountIn(p.basis(neu)), unit = p.basis(neu), checked = alt.checked && a.zeile.art != AbgleichArt.WIEDER_OFFEN),
+                        )
+                        db.einkaufsartikelQuelleDao().loeschenNachArtikel(alt.id)
+                        p.quellen(neu, alt.id).forEach { db.einkaufsartikelQuelleDao().upsert(it) }
+                    }
+                }
+            }
+            anwenden.size
+        }
+        ignoriert.hinzufuegen(listeId, abgewaehlt)
+        return angewendet
     }
 
     /** Die gegebene Liste, wenn es sie gibt; sonst eine neue leere „Einkauf“. Nur innerhalb einer Transaktion. */
