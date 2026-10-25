@@ -1,5 +1,6 @@
 package de.foody.feature.rezepte
 
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
@@ -17,6 +18,8 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.PlanEintragEntity
 import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.db.RezeptZutatEntity
+import de.foody.core.data.einkauf.EinkaufRepository
+import de.foody.core.data.einkauf.IgnorierteSchluessel
 import de.foody.core.data.db.ZutatEntity
 import de.foody.domain.MeasureUnit
 import de.foody.domain.NutrientBasis
@@ -86,4 +89,11 @@ fun ComposeTestRule.pruefeNichtsAbgeschnitten() {
             }?.layoutInput?.text?.text
         }
     assertTrue(abgeschnitten.isEmpty(), "abgeschnitten: $abgeschnitten")
+}
+
+/** Einkauf-Repository der Testdatenbank (eigene Prefs-Datei, damit Tests sich nicht stören). */
+fun FoodyDatenbank.einkauf(): EinkaufRepository {
+    val prefs = RuntimeEnvironment.getApplication().getSharedPreferences("einkauf-test", Context.MODE_PRIVATE)
+    prefs.edit().clear().commit()
+    return EinkaufRepository(this, { 1_000L }, IgnorierteSchluessel(prefs))
 }

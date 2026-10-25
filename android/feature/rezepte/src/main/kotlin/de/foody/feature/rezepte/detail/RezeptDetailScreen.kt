@@ -19,8 +19,11 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -37,6 +40,8 @@ internal class DetailAktionen(
     val onKochen: (Int) -> Unit,
     val onBearbeiten: () -> Unit,
     val onDuplizieren: () -> Unit,
+    /** Mit den Portionen des Steppers. */
+    val onEinkauf: (Int) -> Unit,
     val onArchivieren: (Boolean) -> Unit,
     val onFavorit: (Boolean) -> Unit,
     val onPortionen: (Boolean) -> Unit,
@@ -54,8 +59,11 @@ fun RezeptDetailRoute(
     onBearbeiten: (String) -> Unit,
     onDupliziert: (String) -> Unit,
     onZurueck: () -> Unit,
+    onEinkauf: () -> Unit = {},
     vm: RezeptDetailViewModel = hiltViewModel(),
 ) {
+    // Portionen im Dialog „Auf die Einkaufsliste“; null = zu
+    var einkaufPortionen by rememberSaveable { mutableStateOf<Int?>(null) }
     LaunchedEffect(id) { vm.zeigen(id) }
     val zustand by vm.zustand.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
@@ -64,6 +72,7 @@ fun RezeptDetailRoute(
         onKochen = { p -> onKochen(id, p) },
         onBearbeiten = { onBearbeiten(id) },
         onDuplizieren = { bereich.launch { vm.duplizieren()?.let(onDupliziert) } },
+        onEinkauf = { einkaufPortionen = it },
         onArchivieren = { an ->
             bereich.launch {
                 vm.archivieren(id, an)
@@ -90,6 +99,25 @@ fun RezeptDetailRoute(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) { DetailInhalt(z, aktionen) }
             }
+        }
+        einkaufPortionen?.let { p ->
+            EinkaufsDialog(
+                p, onPortionen = { einkaufPortionen = it }, onAbbrechen = { einkaufPortionen = null },
+                onHinzufuegen = {
+                    einkaufPortionen = null
+                    bereich.launch {
+                        val anzahl = vm.aufEinkaufsliste(p)
+                        if (anzahl == 0) {
+                            snackbar.showSnackbar("Nichts einzukaufen")
+                        } else {
+                            val antwort = snackbar.showSnackbar(
+                                "$anzahl Artikel auf der Einkaufsliste", actionLabel = "Ansehen", duration = SnackbarDuration.Long,
+                            )
+                            if (antwort == SnackbarResult.ActionPerformed) onEinkauf()
+                        }
+                    }
+                },
+            )
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = 88.dp))
     }

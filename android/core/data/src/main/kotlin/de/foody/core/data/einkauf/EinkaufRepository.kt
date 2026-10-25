@@ -5,8 +5,14 @@ import de.foody.core.data.db.EinkaufsartikelEntity
 import de.foody.core.data.db.EinkaufsartikelQuelleEntity
 import de.foody.core.data.db.EinkaufslisteEntity
 import de.foody.core.data.db.FoodyDatenbank
+import de.foody.core.data.alsIngredient
+import de.foody.core.data.alsRecipe
 import de.foody.domain.EinkaufEingabe
+import de.foody.domain.MeasureUnit
+import de.foody.domain.Quantity
+import de.foody.domain.RezeptAufListe
 import de.foody.domain.ShoppingCatalog
+import java.math.BigDecimal
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -250,6 +256,48 @@ class EinkaufRepository(
         }
         ignoriert.hinzufuegen(listeId, abgewaehlt)
         return angewendet
+    }
+
+    // ---- Rezept → Liste ----
+
+    /**
+     * Die Zutaten eines Rezepts für [portionen] auf die aktuelle Liste (ohne Liste: neue „Einkauf“) nach
+     * `RezeptAufListe`: gleiche Zutat + Dimension addiert auf einen offenen manuellen Artikel, sonst neuer manueller.
+     * Gibt die Zahl der betroffenen Artikel zurück; nichts einzukaufen oder Rezept fehlt → 0, keine Liste.
+     */
+    suspend fun rezeptAufListe(rezeptId: String, portionen: Int): Int = db.withTransaction {
+        val rezept = db.rezeptDao().nachId(rezeptId) ?: return@withTransaction 0
+        val zutaten = db.zutatDao().alle().associateBy { it.id }
+        val heute = Instant.ofEpochMilli(uhr()).atZone(ZoneId.systemDefault()).toLocalDate()
+        val bedarf = RezeptAufListe.bedarf(
+            rezept.alsRecipe(db.rezeptZutatDao().nachRezept(rezeptId)), portionen, zutaten.mapValues { it.value.alsIngredient() }, heute,
+        )
+        if (bedarf.isEmpty()) return@withTransaction 0
+        val liste = listeOderNeu(db.einkaufslisteDao().alleFlow().first().firstOrNull()?.id)
+        val vorhanden = db.einkaufsartikelDao().nachListe(liste)
+        val bestand = vorhanden.map {
+            RezeptAufListe.Bestand(it.id, it.ingredientId, it.unit?.let { u -> Quantity.of(it.amount ?: BigDecimal.ZERO, u) }, it.manual, it.checked)
+        }
+        var reihenfolge = (vorhanden.maxOfOrNull { it.sortOrder } ?: -1) + 1
+        val aenderungen = RezeptAufListe.zusammenfuehren(bedarf, bestand)
+        for (a in aenderungen) when (a) {
+            is RezeptAufListe.Aenderung.Erhoehen -> {
+                val basis = MeasureUnit.baseOf(a.neu.dimension)
+                speichern(vorhanden.first { it.id == a.id }.copy(amount = a.neu.amountIn(basis), unit = basis))
+            }
+            is RezeptAufListe.Aenderung.Neu -> {
+                val n = a.bedarf
+                val basis = MeasureUnit.baseOf(n.toBuy.dimension)
+                val z = zutaten[n.ingredientId]
+                speichern(
+                    EinkaufsartikelEntity(
+                        id = neueId(), listId = liste, ingredientId = n.ingredientId, name = z?.canonicalName ?: n.ingredientId,
+                        amount = n.toBuy.amountIn(basis), unit = basis, manual = true, category = z?.category, sortOrder = reihenfolge++,
+                    ),
+                )
+            }
+        }
+        aenderungen.size
     }
 
     /** Die gegebene Liste, wenn es sie gibt; sonst eine neue leere „Einkauf“. Nur innerhalb einer Transaktion. */

@@ -50,7 +50,7 @@ class RezepteBereichTest {
         val ablage = FotoAblage(RuntimeEnvironment.getApplication())
         val repo = RezeptRepository(db, ablage) { 1L }
         val liste = RezeptListeViewModel(repo)
-        val detail = RezeptDetailViewModel(repo)
+        val detail = RezeptDetailViewModel(repo, db.einkauf())
         compose.setContent {
             FoodyTheme {
                 RezepteBereich(

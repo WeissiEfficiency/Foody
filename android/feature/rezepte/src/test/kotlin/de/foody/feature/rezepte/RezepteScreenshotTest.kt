@@ -100,7 +100,7 @@ class RezepteScreenshotTest {
                 RezeptListeRoute({}, {}, {}, vm = remember { RezeptListeViewModel(repo) })
             }
             bild("detail_${modus}_$geraet", dunkel) {
-                RezeptDetailRoute("r1", { _, _ -> }, {}, {}, {}, vm = remember { RezeptDetailViewModel(repo) })
+                RezeptDetailRoute("r1", { _, _ -> }, {}, {}, {}, vm = remember { RezeptDetailViewModel(repo, db.einkauf()) })
             }
             bild("editor_${modus}_$geraet", dunkel) {
                 val ablage = FotoAblage(RuntimeEnvironment.getApplication())
