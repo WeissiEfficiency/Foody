@@ -4,6 +4,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -132,6 +134,48 @@ class KochenViewModelTest {
         db.rezeptDao().loeschen("r1")
         assertIs<KochZustand.NichtGefunden>(vm.zustand.value)
         assertEquals(1, vm.timer.value.size)
+        assertNull(u.sitzungen.lesen("r1"))
+    }
+
+    @Test
+    fun fertigMarkiertEinmal() = runTest {
+        db.reistopf()
+        db.planHeute("p1")
+        db.planHeute("p2")
+        val vm = u.vm().apply { starten("r1", null) }
+        val ergebnisse = coroutineScope { listOf(async { vm.fertig() }, async { vm.fertig() }).map { it.await() } }
+        assertEquals(1, ergebnisse.count { it })
+        assertEquals(1, db.planEintragDao().alle().count { it.cookedAt != null })
+        assertTrue(vm.fertigOffen.value)
+    }
+
+    @Test
+    fun fertigLoeschtSitzung() = runTest {
+        db.reistopf()
+        val vm = u.vm().apply { starten("r1", null) }
+        vm.seiteWaehlen(3)
+        vm.fertig()
+        // Spätere Änderungen (z. B. das neue Foto) schreiben keine Sitzung mehr
+        db.rezeptDao().bildSetzen("r1", "file:///foto.jpg", 9)
+        assertNull(u.sitzungen.lesen("r1"))
+    }
+
+    @Test
+    fun fertigOhnePlanEintrag() = runTest {
+        db.reistopf()
+        val vm = u.vm().apply { starten("r1", null) }
+        assertTrue(vm.fertig())
+        assertTrue(vm.fertigOffen.value)
+        assertTrue(db.planEintragDao().alle().isEmpty())
+    }
+
+    @Test
+    fun schliessenLoeschtSitzung() = runTest {
+        db.reistopf()
+        val vm = u.vm().apply { starten("r1", null) }
+        vm.abhaken(0)
+        vm.schliessen()
+        vm.abhaken(1)
         assertNull(u.sitzungen.lesen("r1"))
     }
 

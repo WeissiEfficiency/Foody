@@ -1,18 +1,22 @@
 package de.foody.feature.kochen
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.kochen.KochenRepository
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.domain.StepTimer
 import de.foody.feature.kochen.timer.KochTimerSpeicher
 import de.foody.feature.kochen.timer.LaufenderTimer
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
@@ -21,6 +25,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import java.time.Clock
+import java.time.LocalDate
 import javax.inject.Inject
 
 sealed interface KochZustand {
@@ -65,9 +70,19 @@ class KochenViewModel @Inject constructor(
     private val sitzungen: KochSitzungSpeicher,
     internal val timerSpeicher: KochTimerSpeicher,
     private val clock: Clock,
+    private val ablage: FotoAblage,
 ) : ViewModel() {
     private val rezeptId = MutableStateFlow<String?>(null)
     private val stand = MutableStateFlow(Stand(null, 0, emptySet()))
+    private val fertigGetippt = MutableStateFlow(false)
+
+    /** Nach „Fertig“ oder „Schließen“ wird keine Sitzung mehr geschrieben. */
+    @Volatile private var beendet = false
+
+    private val blatt = MutableStateFlow(false)
+
+    /** Das Blatt „Guten Appetit!“ ist offen. */
+    val fertigOffen: StateFlow<Boolean> = blatt.asStateFlow()
 
     val timer: StateFlow<List<LaufenderTimer>> = timerSpeicher.timer
 
@@ -125,11 +140,44 @@ class KochenViewModel @Inject constructor(
 
     fun timerEntfernen(id: String) = timerSpeicher.entfernen(id)
 
+    /**
+     * Gekocht: markiert den heutigen Plan-Eintrag (falls es einen gibt), beendet die Sitzung und öffnet das Blatt.
+     * `false` bei einem zweiten Tipp – es wird nie mehr als ein Eintrag je Kochen markiert.
+     */
+    suspend fun fertig(): Boolean {
+        val id = rezeptId.value ?: return false
+        if (!fertigGetippt.compareAndSet(expect = false, update = true)) return false
+        kochen.gekochtMarkieren(id, LocalDate.now(clock))
+        schliessen()
+        blatt.value = true
+        return true
+    }
+
+    /** Beendet die Sitzung (Fertig-Blatt „Schließen“); laufende Timer bleiben. */
+    fun schliessen() {
+        beendet = true
+        rezeptId.value?.let(sitzungen::loeschen)
+    }
+
+    /** Kamerabild verkleinert in die Fotoablage und als Rezeptfoto; scheitert es, bleibt alles, wie es war. */
+    suspend fun fotoUebernehmen(quelle: Uri): Boolean {
+        val id = rezeptId.value ?: return false
+        return try {
+            repo.fotoSetzen(id, ablage.speichern(quelle))
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     /** `true` nur beim ersten Mal: der Hinweis, dass Timer ohne Benachrichtigungen nur bei offener App melden. */
     fun hinweisOhneBenachrichtigungEinmal(): Boolean = timerSpeicher.hinweisEinmal()
 
     private fun sitzungMerken(z: KochZustand) {
         val id = rezeptId.value ?: return
+        if (beendet) return
         when (z) {
             KochZustand.NichtGefunden -> sitzungen.loeschen(id)
             is KochZustand.Da -> sitzungen.schreiben(KochSitzung(id, z.portionen, z.seite, z.abgehakt, clock.millis()))

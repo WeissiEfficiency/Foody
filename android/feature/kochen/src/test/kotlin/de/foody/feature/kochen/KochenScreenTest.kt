@@ -40,12 +40,14 @@ class KochenScreenTest {
     @After
     fun tearDown() = db.close()
 
-    private fun zeigen(id: String = "r1", schrift200: Boolean = false) {
+    private val angepasst = mutableListOf<Pair<String, Int>>()
+
+    private fun zeigen(id: String = "r1", schrift200: Boolean = false, portionen: Int? = null) {
         val vm = u.vm()
         compose.setContent {
             FoodyTheme {
                 val inhalt = @androidx.compose.runtime.Composable {
-                    KochenRoute(id, null, onRezeptAnpassen = { _, _ -> }, onSchliessen = { geschlossen++ }, vm = vm)
+                    KochenRoute(id, portionen, onRezeptAnpassen = { r, p -> angepasst += r to p }, onSchliessen = { geschlossen++ }, vm = vm)
                 }
                 if (schrift200) MitSchrift200(inhalt) else inhalt()
             }
@@ -83,6 +85,48 @@ class KochenScreenTest {
         compose.warteAufText("20:00")
         compose.onNodeWithContentDescription("Timer 20 Minuten beenden").performClick()
         compose.waitUntil(5_000) { u.timer.timer.value.isEmpty() }
+    }
+
+    private fun bisFertig() {
+        compose.warteAufText("Bereitlegen")
+        repeat(3) { compose.onNodeWithText("Weiter").performClick() }
+        compose.warteAufText("Schritt 3 von 3")
+        compose.onNodeWithText("Fertig").performClick()
+        compose.warteAufText("Guten Appetit!")
+    }
+
+    @Test
+    fun fertigBlattMitFoto() {
+        zeigen()
+        bisFertig()
+        compose.onNodeWithText("Foto aufnehmen").assertExists()
+        compose.onNodeWithText("Schließen").performClick()
+        assertEquals(1, geschlossen)
+    }
+
+    @Test
+    fun fertigBlattOhneFotoKnopf() {
+        runBlocking { db.rezeptDao().bildSetzen("r1", "file:///foto.jpg", 2) }
+        zeigen()
+        bisFertig()
+        compose.onNodeWithText("Foto aufnehmen").assertDoesNotExist()
+    }
+
+    @Test
+    fun rezeptAnpassen() {
+        zeigen(portionen = 3)
+        bisFertig()
+        compose.onNodeWithText("War etwas anders? Rezept anpassen").performClick()
+        assertEquals(listOf("r1" to 3), angepasst)
+    }
+
+    @Test
+    @Config(qualifiers = "w1280dp-h800dp")
+    fun tabletSeitenliste() {
+        zeigen()
+        compose.warteAufText("Bereitlegen")
+        compose.onNodeWithText("Schritt 2").performClick()
+        compose.warteAufText("Schritt 2 von 3")
     }
 
     @Test

@@ -6,8 +6,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -53,6 +55,9 @@ import kotlinx.coroutines.launch
 
 private val INHALT_MAX = 720.dp
 
+/** Ab dieser Breite steht links die Liste aller Seiten. */
+private val ZWEISPALTIG_AB = 840.dp
+
 /** Was die Seiten auslösen können. */
 internal class KochAktionen(
     val onAbhaken: (Int) -> Unit,
@@ -77,6 +82,7 @@ fun KochenRoute(
     val zustand by vm.zustand.collectAsStateWithLifecycle()
     val timer by vm.timer.collectAsStateWithLifecycle()
     val jetzt by vm.jetzt.collectAsStateWithLifecycle()
+    val fertigOffen by vm.fertigOffen.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val view = LocalView.current
     DisposableEffect(view) {
@@ -104,21 +110,40 @@ fun KochenRoute(
         },
     )
     AblaufMelden(timer, jetzt)
-    Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.widthIn(max = INHALT_MAX).fillMaxSize()) {
-            when (val z = zustand) {
-                KochZustand.Laden -> Unit
-                KochZustand.NichtGefunden -> Column(Modifier.weight(1f)) {
-                    LeererZustandFlaeche(
-                        Icons.AutoMirrored.Outlined.MenuBook, "Rezept nicht gefunden", "Es wurde vielleicht gelöscht.",
-                        aktionText = "Zurück", onAktion = onSchliessen,
-                    )
+    BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
+        val breit = maxWidth >= ZWEISPALTIG_AB
+        Row(Modifier.fillMaxSize()) {
+            val z = zustand
+            if (breit && z is KochZustand.Da) SeitenListe(z, z.seite, vm::seiteWaehlen)
+            Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
+                Column(Modifier.widthIn(max = INHALT_MAX).fillMaxSize()) {
+                    when (z) {
+                        KochZustand.Laden -> Unit
+                        KochZustand.NichtGefunden -> Column(Modifier.weight(1f)) {
+                            LeererZustandFlaeche(
+                                Icons.AutoMirrored.Outlined.MenuBook, "Rezept nicht gefunden", "Es wurde vielleicht gelöscht.",
+                                aktionText = "Zurück", onAktion = onSchliessen,
+                            )
+                        }
+                        is KochZustand.Da -> KochInhalt(
+                            z, aktionen, onSeite = vm::seiteWaehlen, onFertig = { bereich.launch { vm.fertig() } },
+                            onSchliessen = onSchliessen, Modifier.weight(1f),
+                        )
+                    }
+                    TimerLeiste(timer, rezeptId, jetzt, vm::timerEntfernen)
                 }
-                is KochZustand.Da -> KochInhalt(z, aktionen, onSeite = vm::seiteWaehlen, onFertig = onSchliessen, onSchliessen = onSchliessen, Modifier.weight(1f))
             }
-            TimerLeiste(timer, rezeptId, jetzt, vm::timerEntfernen)
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
+    }
+    val da = zustand as? KochZustand.Da
+    if (fertigOffen && da != null) {
+        FertigBlatt(
+            ohneFoto = da.bild == null,
+            onFoto = { uri, datei -> bereich.launch { vm.fotoUebernehmen(uri); datei.delete() } },
+            onAnpassen = { onRezeptAnpassen(rezeptId, da.portionen) },
+            onSchliessen = { vm.schliessen(); onSchliessen() },
+        )
     }
 }
 

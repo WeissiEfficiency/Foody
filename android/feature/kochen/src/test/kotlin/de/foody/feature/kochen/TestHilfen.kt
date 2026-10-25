@@ -69,7 +69,7 @@ class KochTestUmgebung(val db: FoodyDatenbank, val clock: Clock = TEST_UHR) {
     val timer = KochTimerSpeicher(prefs("test_kochen_timer"), clock)
     val repo = RezeptRepository(db, FotoAblage(app)) { clock.millis() }
 
-    fun vm() = KochenViewModel(repo, KochenRepository(db) { clock.millis() }, sitzungen, timer, clock)
+    fun vm() = KochenViewModel(repo, KochenRepository(db) { clock.millis() }, sitzungen, timer, clock, FotoAblage(app))
 
     private fun prefs(name: String) = app.getSharedPreferences(name, Context.MODE_PRIVATE)
 
