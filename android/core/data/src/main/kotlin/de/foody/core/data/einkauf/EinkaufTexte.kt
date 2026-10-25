@@ -7,17 +7,26 @@ import de.foody.domain.Quantity
 import de.foody.domain.QuantityFormatter
 import de.foody.domain.ShoppingCatalog
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.DayOfWeek
 import java.time.LocalDate
 
 /** „300 g“, „1,5 kg“; `null` ohne Menge oder Einheit. */
 internal fun mengeText(amount: BigDecimal?, unit: MeasureUnit?): String? =
-    if (amount == null || unit == null || amount.signum() <= 0) null else QuantityFormatter.format(Quantity.of(amount, unit))
+    if (amount == null || unit == null || amount.signum() <= 0) null else mengeText(Quantity.of(amount, unit))
+
+/** Gramm und Milliliter ganzzahlig (mindestens 1), sonst wie `QuantityFormatter` („1,8 kg“, „3 Stk.“). */
+internal fun mengeText(q: Quantity): String {
+    val einheit = QuantityFormatter.displayUnit(q)
+    if (einheit != MeasureUnit.GRAM && einheit != MeasureUnit.MILLILITER) return QuantityFormatter.format(q, einheit)
+    val ganz = q.amountIn(einheit).setScale(0, RoundingMode.HALF_UP).max(BigDecimal.ONE)
+    return "${ganz.toPlainString()} ${einheit.symbol}"
+}
 
 /** „200 g Curry (Mo) + 100 g Reispfanne (Mi)“ in der Reihenfolge der Daten; `null` ohne Herkunft. */
 internal fun herkunftText(quellen: List<EinkaufsartikelQuelleEntity>): String? =
     quellen.sortedWith(compareBy({ it.date }, { it.id })).takeIf { it.isNotEmpty() }?.joinToString(" + ") { q ->
-        "${QuantityFormatter.format(Quantity.of(q.contributedAmount, q.unit))} ${q.recipeName} (${tagKurz(q.date)})"
+        "${mengeText(Quantity.of(q.contributedAmount, q.unit))} ${q.recipeName} (${tagKurz(q.date)})"
     }
 
 /** Name einer Liste aus dem Plan: „26.10.–1.11.“. */

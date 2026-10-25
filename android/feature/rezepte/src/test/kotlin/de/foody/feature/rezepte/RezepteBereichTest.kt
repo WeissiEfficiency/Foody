@@ -36,6 +36,7 @@ class RezepteBereichTest {
 
     private lateinit var db: FoodyDatenbank
     private val geoeffnet = mutableListOf<String>()
+    private var einkauf = 0
 
     @Before
     fun setUp() {
@@ -54,7 +55,7 @@ class RezepteBereichTest {
         compose.setContent {
             FoodyTheme {
                 RezepteBereich(
-                    onOeffnen = { geoeffnet += it }, onNeu = {}, onKochen = { _, _ -> },
+                    onOeffnen = { geoeffnet += it }, onNeu = {}, onKochen = { _, _ -> }, onEinkauf = { einkauf++ },
                     listeVm = liste, detailVm = detail, editorVm = { EditorViewModel(repo, db, ablage) },
                 )
             }
@@ -79,6 +80,22 @@ class RezepteBereichTest {
         compose.onNodeWithText("Reispfanne").performClick()
         compose.onNodeWithText("Verwerfen").performClick()
         compose.warteAufText("400 g")
+    }
+
+    @Test
+    @Config(qualifiers = "w1280dp-h800dp")
+    fun tabletAufEinkaufslisteAnsehen() {
+        // Rechts eingebettetes Detail: „Ansehen“ muss bis zur App durchgereicht werden
+        zeigen()
+        compose.warteAufText("Wähle ein Rezept")
+        compose.onNodeWithText("Reispfanne").performClick()
+        compose.warteAufText("400 g")
+        compose.onNodeWithContentDescription("Auf die Einkaufsliste").performClick()
+        compose.warteAufText("Hinzufügen")
+        compose.onNodeWithText("Hinzufügen").performClick()
+        compose.warteAufText("Ansehen")
+        compose.onNodeWithText("Ansehen").performClick()
+        compose.waitUntil(5_000) { einkauf == 1 }
     }
 
     @Test

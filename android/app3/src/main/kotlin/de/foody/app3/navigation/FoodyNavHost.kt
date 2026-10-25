@@ -57,6 +57,7 @@ class Bildschirme(
                     onOeffnen = { nav.navigate(RezeptDetail(it)) },
                     onNeu = { nav.navigate(RezeptNeu) },
                     onKochen = { id, portionen -> nav.navigate(Kochen(id, portionen)) },
+                    onEinkauf = { nav.zumEinkauf() },
                 )
             },
             rezeptDetail = { id, nav ->

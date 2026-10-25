@@ -131,4 +131,15 @@ class EinkaufLesenTest {
         assertEquals("26.10.–1.11.", listenName(MONTAG, MONTAG.plusDays(6)))
         assertEquals("1.1.–7.1.", listenName(java.time.LocalDate.of(2027, 1, 1), java.time.LocalDate.of(2027, 1, 7)))
     }
+
+    @Test
+    fun grammUndMilliliterGanzzahlig() {
+        // Im Laden kauft niemand 217,71 g Butter
+        assertEquals("218 g", mengeText(java.math.BigDecimal("217.71"), MeasureUnit.GRAM))
+        assertEquals("1 g", mengeText(java.math.BigDecimal("0.4"), MeasureUnit.GRAM))
+        assertEquals("333 ml", mengeText(java.math.BigDecimal("333.333"), MeasureUnit.MILLILITER))
+        assertEquals("1,8 kg", mengeText(java.math.BigDecimal("1800"), MeasureUnit.GRAM))
+        assertEquals("1,5 l", mengeText(java.math.BigDecimal("1500"), MeasureUnit.MILLILITER))
+        assertEquals("3 Stk.", mengeText(java.math.BigDecimal("3"), MeasureUnit.PIECE))
+    }
 }
