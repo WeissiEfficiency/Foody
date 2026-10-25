@@ -111,6 +111,14 @@ class NavigationTest {
 
     @Test
     @Config(qualifiers = "w411dp-h891dp")
+    fun wocheTabZeigtPlan() {
+        starten()
+        tab("Woche").performClick()
+        compose.onNodeWithText("Wochenplan").assertExists()
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
     fun kochenOhneLeiste() {
         starten()
         compose.runOnUiThread { nav.navigate(Kochen("r1", 2)) }

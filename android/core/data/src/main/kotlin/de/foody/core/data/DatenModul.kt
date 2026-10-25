@@ -18,7 +18,9 @@ import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.data.rezeptimport.PortionenNachtrag
 import de.foody.core.data.sicherung.Sicherung
 import de.foody.core.data.tagebuch.TagebuchRepository
+import de.foody.core.data.woche.WocheRepository
 import de.foody.core.data.sync.SyncSpeicher
+import java.time.Clock
 import javax.inject.Singleton
 
 /**
@@ -58,6 +60,10 @@ object DatenModul {
     fun sicherung(@ApplicationContext context: Context, db: FoodyDatenbank, ablage: FotoAblage, sync: SyncSpeicher): Sicherung =
         Sicherung(context, db, ablage, sync)
 
+    /** Uhr für alle Bereiche, die „jetzt“ oder „heute“ brauchen (in Tests eine feste Uhr). */
+    @Provides
+    fun uhr(): Clock = Clock.systemDefaultZone()
+
     @Provides
     @Singleton
     fun portionenNachtrag(db: FoodyDatenbank): PortionenNachtrag = PortionenNachtrag(db)
@@ -73,6 +79,11 @@ object DatenModul {
     @Provides
     @Singleton
     fun kochenRepository(db: FoodyDatenbank): KochenRepository = KochenRepository(db, System::currentTimeMillis)
+
+    @Provides
+    @Singleton
+    fun wocheRepository(db: FoodyDatenbank, rezepte: RezeptRepository): WocheRepository =
+        WocheRepository(db, rezepte, System::currentTimeMillis)
 
     @Provides
     fun rezeptImporter(dienst: RezeptImportDienst): RezeptImporter = dienst

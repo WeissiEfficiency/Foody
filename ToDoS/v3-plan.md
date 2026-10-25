@@ -173,7 +173,8 @@ Bilder gefunden und behoben: Inhalte auf dem Tablet über die volle Breite (jetz
       [`2026-10-24-v3-phase6a-rezepte-design.md`](../docs/superpowers/specs/2026-10-24-v3-phase6a-rezepte-design.md)
 - [x] Kochen (inkl. „Änderungen ins Rezept übernehmen“ nach dem Kochen) – Spec
       [`2026-10-25-v3-phase6b-kochen-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6b-kochen-design.md)
-- [ ] Woche (eine fortlaufende Wochenansicht)
+- [x] Woche (eine fortlaufende Wochenansicht) – Spec
+      [`2026-10-25-v3-phase6c-woche-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6c-woche-design.md)
 - [ ] Einkauf (eine Ansicht, ohne Vorratsabzug)
 - [ ] Einstellungen (Server/Anmelden/Status, Zutatenkatalog, Sicherung, Darstellung, Tagesziel); nach dem Update aus
       der v1 ist `kontoId` leer: „Erneut anmelden“ an derselben Adresse übernimmt nur Token und Konto-ID (ungesendete
@@ -195,6 +196,16 @@ ViewModel-, Bildschirm- und Navigationstests und 10 Roborazzi-Bilder. Sichtprüf
 Test-Server: Timer „1 Minute“ bei ausgeschaltetem Bildschirm gemeldet, Tipp auf die Meldung öffnet denselben
 Schritt, Fertig-Blatt und „Rezept anpassen“. Beim Ansehen der Bilder behoben: Namen unter „Du brauchst“
 versetzt, Timer-Leiste unter den Knöpfen, Fortschrittsspur in Material-Lila.
+
+**Ergebnis 6c Woche** (2026-10-25): `:feature:woche` mit Woche zum Blättern (KW, „Heute“), Tagen mit kcal,
+Makros und Tagesziel-Balken, „+ Mahlzeit“ mit eigenen Namen, Mahlzeit-Blatt (Portionen, Gekocht, Kochen,
+Verschieben, Umbenennen, Entfernen mit Rückgängig), „Leere Tage füllen“ mit Vorschau je Tag und Tablet
+zweispaltig; `WocheRepository` in `:core:data`. Belegt durch Repository-, ViewModel-, Bildschirm- und
+Navigationstests und 8 Roborazzi-Bilder. Sichtprüfung auf dem Emulator gegen den Test-Server: Woche mit
+Serverdaten, Eintrag angelegt, Kochen → „Fertig“ setzt den Haken „gekocht“ (Gerätebeleg aus 6b), Leere Tage
+füllen mit sieben Vorschlägen und „↻“ je Tag. Beim Ansehen der Bilder behoben: „Leere Tage füllen“ stand am
+Listenende statt fest über der Leiste, Blätter öffneten nur halb. Notiert für Phase 7/8: der Vorschlag nahm
+„Pizzateig“ (Grundrezept) als Abendessen.
 
 **Fertig, wenn** alle App-Abschnitte der Abnahmeliste abgehakt sind und kein Screen über 300 Zeilen hat.
 

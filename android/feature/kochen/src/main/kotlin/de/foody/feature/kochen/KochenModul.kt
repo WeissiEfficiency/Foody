@@ -11,13 +11,10 @@ import java.time.Clock
 import javax.inject.Named
 import javax.inject.Singleton
 
-/** Uhr und Speicher des Kochmodus. */
+/** Speicher des Kochmodus (die Uhr kommt aus `DatenModul`). */
 @Module
 @InstallIn(SingletonComponent::class)
 object KochenModul {
-    @Provides
-    fun uhr(): Clock = Clock.systemDefaultZone()
-
     @Provides
     @Singleton
     fun sitzungen(@ApplicationContext context: Context, clock: Clock): KochSitzungSpeicher =

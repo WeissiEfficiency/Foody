@@ -55,6 +55,7 @@ dependencies {
     implementation(project(":feature:heute"))
     implementation(project(":feature:rezepte"))
     implementation(project(":feature:kochen"))
+    implementation(project(":feature:woche"))
     implementation(project(":feature:einstellungen"))
     implementation(project(":domain"))
 
