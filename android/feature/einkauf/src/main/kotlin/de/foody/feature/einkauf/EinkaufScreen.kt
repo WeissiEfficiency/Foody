@@ -16,10 +16,13 @@ import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.RemoveShoppingCart
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -47,11 +50,13 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
     LaunchedEffect(listeId) { vm.anzeigen(listeId) }
     val z by vm.zustand.collectAsStateWithLifecycle()
     var aufgeklappt by rememberSaveable { mutableStateOf(listOf(ZULETZT)) }
+    var loeschenFrage by rememberSaveable { mutableStateOf(false) }
+    val snackbar = remember { SnackbarHostState() }
     val umschalten = { name: String -> aufgeklappt = if (name in aufgeklappt) aufgeklappt - name else aufgeklappt + name }
     val alle = z.ansicht?.alle.orEmpty()
 
     val oben: LazyGridScope.() -> Unit = {
-        ganz("kopf") { EinkaufKopf(z.ansicht) }
+        ganz("kopf") { EinkaufKopf(z.ansicht) { EinkaufMenue(z.ansicht, vm::blattOeffnen) { loeschenFrage = true } } }
         if (z.abgleich.isNotEmpty()) ganz("hinweis") { AbgleichHinweis { vm.blattOeffnen(Blatt.Abgleich) } }
         ganz("eingabe") { EingabeFeld(z.suche, vm::suche, vm::eingeben) }
     }
@@ -89,6 +94,11 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
             }
             else -> Raster(raster) { oben(); liste(); if (z.suche.isBlank()) katalog() }
         }
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = LISTE_UNTEN))
+    }
+    EinkaufBlaetter(vm, z, snackbar, onListe)
+    z.ansicht?.takeIf { loeschenFrage }?.let { a ->
+        LoeschenFrage(a.name, onLoeschen = { loeschenFrage = false; vm.listeLoeschen() }, onAbbrechen = { loeschenFrage = false })
     }
 }
 

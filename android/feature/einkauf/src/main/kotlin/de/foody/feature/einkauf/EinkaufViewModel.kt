@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.foody.core.data.einkauf.EinkaufRepository
 import de.foody.core.data.einkauf.GeloeschterArtikel
+import de.foody.core.data.einkauf.ListenKopf
 import de.foody.core.data.einkauf.ZuletztArtikel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -68,6 +69,8 @@ class EinkaufViewModel @Inject constructor(
     ) { z, zuletzt, suche -> z.copy(zuletzt = zuletzt, suche = suche) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, EinkaufZustand())
 
+    val fruehere: StateFlow<List<ListenKopf>> = repo.fruehere().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     val blatt: StateFlow<Blatt?> = saved.getStateFlow<String?>(BLATT, null).map { Blatt.ausText(it) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, Blatt.ausText(saved[BLATT]))
 
@@ -123,9 +126,10 @@ class EinkaufViewModel @Inject constructor(
 
     fun wiederherstellen(g: GeloeschterArtikel) = viewModelScope.launch { repo.wiederherstellen(g) }
 
-    fun listeLoeschen() {
-        val id = angezeigt.value ?: return
-        saved[LISTE] = null
+    /** Löscht [listeId] (Vorgabe: die angezeigte); war sie angezeigt, folgt der Bereich danach der aktuellen Liste. */
+    fun listeLoeschen(listeId: String? = null) {
+        val id = listeId ?: angezeigt.value ?: return
+        if (id == angezeigt.value) saved[LISTE] = null
         viewModelScope.launch { repo.listeLoeschen(id) }
     }
 

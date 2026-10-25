@@ -1,6 +1,11 @@
 package de.foody.feature.einkauf
 
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -183,5 +188,143 @@ class EinkaufScreenTest {
         compose.onNode(hasSetTextAction()).performTextInput("Grill")
         tester.emulateSavedInstanceStateRestore()
         compose.warteAufText("„Grill“ hinzufügen")
+    }
+
+    // ---- Blätter ----
+
+    @Test
+    fun vorschauAbwaehlenUndAnlegen() {
+        runBlocking { db.planen("s1", MITTWOCH, "c") }
+        zeigen()
+        compose.warteAufText("Noch nichts auf der Liste")
+        compose.onNodeWithText("Neue Liste aus dem Plan").performClick()
+        compose.warteAufText("Liste anlegen (2)")
+        compose.onNodeWithContentDescription("Reis übernehmen").performClick()
+        compose.warteAufText("Liste anlegen (1)")
+        compose.onNodeWithText("Liste anlegen (1)").performClick()
+        compose.waitUntil(5_000) { artikel().map { it.name } == listOf("Zwiebeln") }
+        compose.warteAufText("28.10.–3.11. · 1 offen")
+    }
+
+    @Test
+    fun vorschauNichtsGeplant() {
+        zeigen()
+        compose.warteAufText("Noch nichts auf der Liste")
+        compose.onNodeWithText("Neue Liste aus dem Plan").performClick()
+        compose.warteAufText("Im Zeitraum ist nichts geplant")
+        compose.onNodeWithText("Liste anlegen (0)").assertIsNotEnabled()
+    }
+
+    @Test
+    fun vorschauZeitraumVerschieben() {
+        runBlocking { db.planen("s1", MITTWOCH.plusDays(7), "c") }
+        zeigen()
+        compose.warteAufText("Noch nichts auf der Liste")
+        compose.onNodeWithText("Neue Liste aus dem Plan").performClick()
+        compose.warteAufText("Im Zeitraum ist nichts geplant")
+        compose.onNodeWithContentDescription("Ende später").performClick()
+        compose.warteAufText("Liste anlegen (2)")
+    }
+
+    @Test
+    fun abgleichUebernehmen() {
+        planListe()
+        zeigen()
+        compose.warteAufText("Zwiebeln")
+        runBlocking { db.planen("s1", MITTWOCH, "c", portionen = 4) }
+        compose.warteAufText("Plan geändert – abgleichen")
+        compose.onNodeWithText("Plan geändert – abgleichen").performClick()
+        compose.warteAufText("Übernehmen (2)")
+        compose.onNodeWithText("200 g → 400 g", substring = true).assertExists()
+        compose.onNodeWithText("Übernehmen (2)").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Plan geändert – abgleichen").fetchSemanticsNodes().isEmpty() }
+        compose.warteAufText("400 g")
+    }
+
+    private fun milchListe() = runBlocking {
+        db.einkaufslisteDao().upsert(liste("l1", 1))
+        db.einkaufsartikelDao().upsert(artikel("a1", "l1", "Milch"))
+    }
+
+    @Test
+    fun detailsSpeichern() {
+        milchListe()
+        zeigen()
+        compose.warteAufText("Milch")
+        compose.onNodeWithText("Milch").performTouchInput { longClick() }
+        compose.warteAufText("Speichern")
+        compose.onNode(hasSetTextAction() and hasText("Notiz")).performTextInput("Bio")
+        compose.onNodeWithText("Speichern").performClick()
+        compose.warteAufText("Bio")
+        assertEquals("Bio", artikel().single().note)
+    }
+
+    @Test
+    fun detailsHerkunft() {
+        runBlocking {
+            db.planen("s1", MONTAG, "c")
+            db.planen("s2", MITTWOCH, "p")
+            u.repo.ausPlanAnlegen(MONTAG, MONTAG.plusDays(6), emptySet())
+        }
+        zeigen()
+        compose.warteAufText("Zwiebeln")
+        compose.onNodeWithText("Zwiebeln").performTouchInput { longClick() }
+        compose.warteAufText("200 g Curry (Mo) + 100 g Reispfanne (Mi)")
+    }
+
+    @Test
+    fun loeschenMitRueckgaengig() {
+        milchListe()
+        zeigen()
+        compose.warteAufText("Milch")
+        compose.onNodeWithText("Milch").performTouchInput { longClick() }
+        compose.warteAufText("Löschen")
+        compose.onNodeWithText("Löschen").performClick()
+        compose.warteAufText("Rückgängig")
+        compose.waitUntil(5_000) { artikel().isEmpty() }
+        compose.onNodeWithText("Rückgängig").performClick()
+        compose.waitUntil(5_000) { artikel().size == 1 }
+    }
+
+    @Test
+    fun rueckgaengigVerschwindetNachEinerWeile() {
+        milchListe()
+        zeigen()
+        compose.warteAufText("Milch")
+        compose.onNodeWithText("Milch").performTouchInput { longClick() }
+        compose.warteAufText("Löschen")
+        compose.onNodeWithText("Löschen").performClick()
+        compose.warteAufText("Rückgängig")
+        compose.mainClock.advanceTimeBy(15_000)
+        compose.waitForIdle()
+        compose.onNodeWithText("Rückgängig").assertDoesNotExist()
+    }
+
+    @Test
+    fun fruehereOeffnen() {
+        runBlocking {
+            db.einkaufslisteDao().upsert(liste("alt", 1, name = "12.10.–18.10."))
+            db.einkaufslisteDao().upsert(liste("neu", 2))
+        }
+        zeigen()
+        compose.warteAufText("neu · 0 offen")
+        compose.onNodeWithContentDescription("Weitere Aktionen").performClick()
+        compose.onNodeWithText("Frühere Listen").performClick()
+        compose.warteAufText("12.10.–18.10.")
+        compose.onNodeWithText("12.10.–18.10.").performClick()
+        assertEquals(listOf("alt"), geoeffnet)
+    }
+
+    @Test
+    fun listeLoeschenMitRueckfrage() {
+        milchListe()
+        zeigen()
+        compose.warteAufText("Milch")
+        compose.onNodeWithContentDescription("Weitere Aktionen").performClick()
+        compose.onNodeWithText("Liste löschen").performClick()
+        compose.warteAufText("Liste löschen?")
+        compose.onNodeWithText("Löschen").performClick()
+        compose.waitUntil(5_000) { runBlocking { db.einkaufslisteDao().alle() }.isEmpty() }
+        compose.warteAufText("Noch nichts auf der Liste")
     }
 }
