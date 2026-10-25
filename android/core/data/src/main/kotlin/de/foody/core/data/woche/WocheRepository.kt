@@ -68,16 +68,22 @@ class WocheRepository(
     /** Rezepte für die Auswahl beim Hinzufügen: die Karten ohne archivierte. */
     fun rezeptAuswahl(): Flow<List<RezeptKarte>> = rezepte.karten().map { k -> k.filterNot { it.archiviert } }
 
-    /** Legt einen Eintrag an; Portionen 1–99 (`null` = die des Rezepts), Name wie [umbenennen]. */
-    suspend fun hinzufuegen(datum: LocalDate, mahlzeit: String, rezeptId: String, portionen: Int?): String {
-        val jetzt = uhr()
-        val n = portionen ?: db.rezeptDao().nachId(rezeptId)?.defaultServings ?: MIN_PORTIONEN
-        val e = PlanEintragEntity(
-            UUID.randomUUID().toString(), datum, mahlzeitText(mahlzeit), rezeptId, n.coerceIn(MIN_PORTIONEN, MAX_PORTIONEN),
-            createdAt = jetzt, updatedAt = jetzt,
-        )
-        db.planEintragDao().upsert(e)
-        return e.id
+    /**
+     * Legt einen Eintrag an; Portionen 1–99 (`null` = die des Rezepts), Name wie [umbenennen]. `null`, wenn es das
+     * Rezept nicht (mehr) gibt – etwa per Sync gelöscht, während die Auswahl offen war.
+     */
+    suspend fun hinzufuegen(datum: LocalDate, mahlzeit: String, rezeptId: String, portionen: Int?): String? {
+        val text = mahlzeitText(mahlzeit)
+        return db.withTransaction {
+            val r = db.rezeptDao().nachId(rezeptId) ?: return@withTransaction null
+            val jetzt = uhr()
+            val e = PlanEintragEntity(
+                UUID.randomUUID().toString(), datum, text, rezeptId, (portionen ?: r.defaultServings).coerceIn(MIN_PORTIONEN, MAX_PORTIONEN),
+                createdAt = jetzt, updatedAt = jetzt,
+            )
+            db.planEintragDao().upsert(e)
+            e.id
+        }
     }
 
     suspend fun portionen(id: String, n: Int) = aendern(id) { it.copy(servings = n.coerceIn(MIN_PORTIONEN, MAX_PORTIONEN)) }
@@ -95,8 +101,10 @@ class WocheRepository(
         db.planEintragDao().nachId(id)?.also { db.planEintragDao().loeschen(id) }
     }
 
-    /** Legt einen entfernten Eintrag mit derselben ID wieder an. */
-    suspend fun wiederherstellen(e: PlanEintragEntity) = db.planEintragDao().upsert(e.copy(updatedAt = uhr()))
+    /** Legt einen entfernten Eintrag mit derselben ID wieder an; gibt es sein Rezept nicht mehr, still nichts. */
+    suspend fun wiederherstellen(e: PlanEintragEntity) = db.withTransaction {
+        if (db.rezeptDao().nachId(e.recipeId) != null) db.planEintragDao().upsert(e.copy(updatedAt = uhr()))
+    }
 
     /** Setzt bzw. löscht `cookedAt` (zählt für „Oft gekocht“). */
     suspend fun gekocht(id: String, an: Boolean) {

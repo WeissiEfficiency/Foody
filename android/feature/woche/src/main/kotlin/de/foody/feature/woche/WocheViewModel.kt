@@ -11,6 +11,7 @@ import de.foody.core.data.woche.WochenAnsicht
 import de.foody.core.data.woche.WocheRepository
 import de.foody.domain.Mahlzeit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.LocalDate
@@ -90,9 +92,24 @@ class WocheViewModel @Inject constructor(
 
     fun wiederherstellen(e: PlanEintragEntity) = viewModelScope.launch { repo.wiederherstellen(e) }
 
+    /**
+     * Füllen-Aktionen laufen nacheinander: eine neue bricht die vorige ab (ein Chip-Tipp gewinnt gegen den davor),
+     * Schließen und Übernehmen brechen jede laufende ab.
+     */
+    private var fuellenAuftrag: Job? = null
+
+    private fun fuellenStarten(block: suspend () -> Unit) {
+        fuellenAuftrag?.cancel()
+        fuellenAuftrag = viewModelScope.launch { block() }
+    }
+
+    /** Schreibt nur in den Zustand, für den gerechnet wurde (gleiche Tage und Mahlzeit); Abwahlen bleiben. */
+    private fun fuellenAendern(fuer: FuellenZustand, f: (FuellenZustand) -> FuellenZustand) = fuellenStand.update { aktuell ->
+        if (aktuell != null && aktuell.tage == fuer.tage && aktuell.mahlzeit == fuer.mahlzeit) f(aktuell) else aktuell
+    }
+
     /** Öffnet „Leere Tage füllen“ für die gezeigte Woche; „heute“ gilt zum Zeitpunkt des Aufrufs. */
-    fun fuellenOeffnen(mahlzeit: Mahlzeit = Mahlzeit.ABENDESSEN) = viewModelScope.launch {
-        uebernehmenGesperrt.value = false
+    fun fuellenOeffnen(mahlzeit: Mahlzeit = Mahlzeit.ABENDESSEN) = fuellenStarten {
         val tage = repo.leereTage(LocalDate.ofEpochDay(montag.value), mahlzeit, LocalDate.now(clock))
         seed = clock.millis()
         val vorschlag = repo.vorschlagen(tage, mahlzeit, seed)
@@ -105,39 +122,45 @@ class WocheViewModel @Inject constructor(
     }
 
     /** Neuer Vorschlag für alle Tage; abgewählte bleiben abgewählt. */
-    fun neuMischen() = viewModelScope.launch {
-        val z = fuellenStand.value ?: return@launch
+    fun neuMischen() = fuellenStarten {
+        val z = fuellenStand.value ?: return@fuellenStarten
         seed++
-        fuellenStand.value = z.copy(vorschlag = repo.vorschlagen(z.tage, z.mahlzeit, seed))
+        val vorschlag = repo.vorschlagen(z.tage, z.mahlzeit, seed)
+        fuellenAendern(z) { it.copy(vorschlag = vorschlag) }
     }
 
     /** Neuer Vorschlag nur für [datum]; die übrigen Tage bleiben, kein Rezept doppelt. */
-    fun tagNeu(datum: LocalDate) = viewModelScope.launch {
-        val z = fuellenStand.value ?: return@launch
+    fun tagNeu(datum: LocalDate) = fuellenStarten {
+        val z = fuellenStand.value ?: return@fuellenStarten
         val andere = (z.vorschlag - datum).values.toSet()
         val bisher = z.vorschlag[datum]
         val neu = (1..VERSUCHE_JE_TAG).firstNotNullOfOrNull {
             seed++
             repo.vorschlagen(listOf(datum), z.mahlzeit, seed)[datum]?.takeIf { it !in andere && it != bisher }
-        } ?: return@launch
-        fuellenStand.value = z.copy(vorschlag = z.vorschlag + (datum to neu))
+        } ?: return@fuellenStarten
+        fuellenAendern(z) { it.copy(vorschlag = it.vorschlag + (datum to neu)) }
     }
 
-    fun abwaehlen(datum: LocalDate) {
-        val z = fuellenStand.value ?: return
-        fuellenStand.value = z.copy(abgewaehlt = if (datum in z.abgewaehlt) z.abgewaehlt - datum else z.abgewaehlt + datum)
+    fun abwaehlen(datum: LocalDate) = fuellenStand.update { z ->
+        z?.copy(abgewaehlt = if (datum in z.abgewaehlt) z.abgewaehlt - datum else z.abgewaehlt + datum)
     }
 
-    /** Legt die gewählten Vorschläge an und schließt; `null` bei einem zweiten Tipp. */
+    /** Legt die gewählten Vorschläge an und schließt; `null` bei einem zweiten Tipp, solange der erste läuft. */
     suspend fun uebernehmen(): Int? {
-        val z = fuellenStand.value ?: return null
         if (!uebernehmenGesperrt.compareAndSet(expect = false, update = true)) return null
-        val n = repo.uebernehmen(z.vorschlag - z.abgewaehlt, z.mahlzeit)
-        fuellenStand.value = null
-        return n
+        try {
+            fuellenAuftrag?.cancel()
+            val z = fuellenStand.value ?: return null
+            val n = repo.uebernehmen(z.vorschlag - z.abgewaehlt, z.mahlzeit)
+            fuellenStand.value = null
+            return n
+        } finally {
+            uebernehmenGesperrt.value = false
+        }
     }
 
     fun fuellenSchliessen() {
+        fuellenAuftrag?.cancel()
         fuellenStand.value = null
     }
 }

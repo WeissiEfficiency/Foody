@@ -191,6 +191,16 @@ class WocheScreenTest {
     }
 
     @Test
+    fun rueckgaengigVerschwindetNachEinerWeile() {
+        blattOeffnen()
+        compose.onNodeWithText("Entfernen").performClick()
+        compose.warteAufText("Rückgängig")
+        compose.mainClock.advanceTimeBy(15_000)
+        compose.waitForIdle()
+        compose.onNodeWithText("Rückgängig").assertDoesNotExist()
+    }
+
+    @Test
     fun gekochtUmschalten() {
         blattOeffnen()
         compose.onNodeWithText("Gekocht").performClick()

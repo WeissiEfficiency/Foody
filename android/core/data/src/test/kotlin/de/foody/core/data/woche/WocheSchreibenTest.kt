@@ -43,7 +43,7 @@ class WocheSchreibenTest {
     @Test
     fun hinzufuegenMitPortionen() = runTest {
         db.bestand()
-        val id = repo.hinzufuegen(tag, "ABENDESSEN", "r1", 3)
+        val id = assertNotNull(repo.hinzufuegen(tag, "ABENDESSEN", "r1", 3))
         val e = eintrag(id)
         assertEquals(tag, e.date)
         assertEquals("ABENDESSEN", e.slotType)
@@ -54,14 +54,14 @@ class WocheSchreibenTest {
     @Test
     fun hinzufuegenOhnePortionenNimmtDieDesRezepts() = runTest {
         db.bestand()
-        val id = repo.hinzufuegen(tag, "ABENDESSEN", "r1", null)
+        val id = assertNotNull(repo.hinzufuegen(tag, "ABENDESSEN", "r1", null))
         assertEquals(2, eintrag(id).servings)
     }
 
     @Test
     fun portionenBegrenzt() = runTest {
         db.bestand()
-        val id = repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2)
+        val id = assertNotNull(repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2))
         repo.portionen(id, 0)
         assertEquals(1, eintrag(id).servings)
         repo.portionen(id, 120)
@@ -71,7 +71,7 @@ class WocheSchreibenTest {
     @Test
     fun verschieben() = runTest {
         db.bestand()
-        val id = repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2)
+        val id = assertNotNull(repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2))
         repo.verschieben(id, tag.plusDays(2))
         assertEquals(tag.plusDays(2), eintrag(id).date)
     }
@@ -79,7 +79,7 @@ class WocheSchreibenTest {
     @Test
     fun umbenennenEigenerName() = runTest {
         db.bestand()
-        val id = repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2)
+        val id = assertNotNull(repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2))
         repo.umbenennen(id, "  Brotzeit am See ")
         assertEquals("Brotzeit am See", eintrag(id).slotType)
     }
@@ -87,7 +87,7 @@ class WocheSchreibenTest {
     @Test
     fun bekannterNameWirdMahlzeit() = runTest {
         db.bestand()
-        val id = repo.hinzufuegen(tag, "abendessen ", "r1", 2)
+        val id = assertNotNull(repo.hinzufuegen(tag, "abendessen ", "r1", 2))
         assertEquals("ABENDESSEN", eintrag(id).slotType)
         repo.umbenennen(id, "Frühstück")
         assertEquals("FRUEHSTUECK", eintrag(id).slotType)
@@ -96,7 +96,7 @@ class WocheSchreibenTest {
     @Test
     fun umbenennenLeerAbgelehnt() = runTest {
         db.bestand()
-        val id = repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2)
+        val id = assertNotNull(repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2))
         assertFailsWith<IllegalArgumentException> { repo.umbenennen(id, "   ") }
         assertFailsWith<IllegalArgumentException> { repo.umbenennen(id, "x".repeat(31)) }
         assertEquals("ABENDESSEN", eintrag(id).slotType)
@@ -105,7 +105,7 @@ class WocheSchreibenTest {
     @Test
     fun entfernenUndWiederherstellenMitDerselbenId() = runTest {
         db.bestand()
-        val id = repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2)
+        val id = assertNotNull(repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2))
         val weg = assertNotNull(repo.entfernen(id))
         assertNull(db.planEintragDao().nachId(id))
         repo.wiederherstellen(weg)
@@ -113,9 +113,26 @@ class WocheSchreibenTest {
     }
 
     @Test
+    fun wiederherstellenOhneRezeptStill() = runTest {
+        // Rückgängig, nachdem ein Sync das Rezept gelöscht hat: nichts anlegen, nicht abstürzen
+        db.bestand()
+        val id = assertNotNull(repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2))
+        val weg = assertNotNull(repo.entfernen(id))
+        db.rezeptDao().loeschen("r1")
+        repo.wiederherstellen(weg)
+        assertNull(db.planEintragDao().nachId(id))
+    }
+
+    @Test
+    fun hinzufuegenOhneRezeptStill() = runTest {
+        assertNull(repo.hinzufuegen(tag, "ABENDESSEN", "gibt-es-nicht", 2))
+        assertTrue(db.planEintragDao().alle().isEmpty())
+    }
+
+    @Test
     fun gekochtAnUndAus() = runTest {
         db.bestand()
-        val id = repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2)
+        val id = assertNotNull(repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2))
         repo.gekocht(id, true)
         assertEquals(5_000L, eintrag(id).cookedAt)
         repo.gekocht(id, false)
@@ -126,7 +143,7 @@ class WocheSchreibenTest {
     fun aenderungenInDerOutbox() = runTest {
         db.syncDao().upsertZustand(SyncZustandEntity(active = true, serverUrl = "https://foody.example"))
         db.bestand()
-        val id = repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2)
+        val id = assertNotNull(repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2))
         db.syncDao().outboxLeeren()
         repo.portionen(id, 3)
         assertTrue(db.syncDao().outbox().any { it.type == "meal_slot" && it.recordId == id })
@@ -135,7 +152,7 @@ class WocheSchreibenTest {
     @Test
     fun updatedAtGesetzt() = runTest {
         db.bestand()
-        val id = repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2)
+        val id = assertNotNull(repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2))
         repo.verschieben(id, tag.plusDays(1))
         assertEquals(5_000L, eintrag(id).updatedAt)
     }

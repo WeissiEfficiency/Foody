@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -126,7 +127,7 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
                     offen = null
                     bereich.launch {
                         val weg = vm.entfernen(e.id) ?: return@launch
-                        val antwort = snackbar.showSnackbar("Mahlzeit entfernt", actionLabel = "Rückgängig")
+                        val antwort = snackbar.showSnackbar("Mahlzeit entfernt", actionLabel = "Rückgängig", duration = SnackbarDuration.Long)
                         if (antwort == SnackbarResult.ActionPerformed) vm.wiederherstellen(weg)
                     }
                 },
