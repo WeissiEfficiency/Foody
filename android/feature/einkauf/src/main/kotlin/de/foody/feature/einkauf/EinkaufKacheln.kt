@@ -23,7 +23,7 @@ import de.foody.core.data.einkauf.Abteilung
 import de.foody.core.data.einkauf.EinkaufsArtikel
 import de.foody.core.data.einkauf.ZuletztArtikel
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.komponenten.Abschnittskopf
+import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.Kachel
 import de.foody.core.designsystem.komponenten.KachelEmoji
 import de.foody.domain.ShoppingCatalog
@@ -83,7 +83,7 @@ private fun Klappkopf(titel: String, offen: Boolean, onKlick: () -> Unit) {
 /** Offene Artikel je Abteilung; Antippen = gekauft, Langdruck = Details. */
 internal fun LazyGridScope.offeneKacheln(abteilungen: List<Abteilung>, onGekauft: (String) -> Unit, onDetails: (String) -> Unit) {
     for (a in abteilungen) {
-        ganzeZeile("offen-kopf-${a.name}") { Abschnittskopf("${a.emoji} ${a.name}", Modifier.padding(top = 8.dp)) }
+        ganzeZeile("offen-kopf-${a.name}") { Augenbraue("${a.emoji} ${a.name}", Modifier.padding(top = 12.dp)) }
         items(a.artikel, key = { "offen-${it.id}" }) { x ->
             EinkaufKachel(
                 x.name, x.menge.orEmpty(), x.emoji, Stand.OFFEN, onKlick = { onGekauft(x.id) }, untertitel = x.notiz,
