@@ -46,10 +46,20 @@ class StartdatenLader @Inject constructor(
         return geaendert
     }
 
-    /** Vergisst die geladene Version (nach „Alle Daten löschen“): [ladenWennNoetig] spielt den Katalog dann neu ein. */
-    fun versionZuruecksetzen() {
-        kontext.getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE).edit()
-            .putInt(SEED_VERSION, 0).remove(SEEDED_ALT).commit()
+    /**
+     * Vergisst die geladene Version (vor „Alle Daten löschen“): [ladenWennNoetig] spielt den Katalog dann neu ein.
+     * Gibt die bisherige Version zurück, für [versionWiederherstellen].
+     */
+    fun versionZuruecksetzen(): Int {
+        val prefs = kontext.getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE)
+        val vorher = prefs.getInt(SEED_VERSION, if (prefs.getBoolean(SEEDED_ALT, false)) 1 else 0)
+        prefs.edit().putInt(SEED_VERSION, 0).remove(SEEDED_ALT).commit()
+        return vorher
+    }
+
+    /** Setzt die Version zurück auf [vorher] (Löschen war gesperrt, es wurde nichts geleert). */
+    fun versionWiederherstellen(vorher: Int) {
+        kontext.getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE).edit().putInt(SEED_VERSION, vorher).commit()
     }
 
     private companion object {

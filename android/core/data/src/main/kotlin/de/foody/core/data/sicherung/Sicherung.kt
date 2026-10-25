@@ -412,17 +412,21 @@ class Sicherung(
      * wird vor dem Einspielen zurückgesetzt: scheitert es, holt der nächste App-Start den Katalog nach.
      */
     suspend fun allesLoeschen(): LoeschErgebnis = withContext(Dispatchers.IO) {
-        if (sync.zustand().aktiv) return@withContext LoeschErgebnis.SyncAktiv
-        // Ab hier nicht abbrechbar: Wer die Seite verlässt, während gelöscht wird, soll kein halbes Ergebnis bekommen
-        // (Daten weg, aber Fotos noch da und Katalog leer). Das Aufräumen ist kurz.
+        // Nicht abbrechbar: Wer die Seite verlässt, während gelöscht wird, soll kein halbes Ergebnis bekommen (Daten
+        // weg, aber Fotos noch da und Katalog leer). Das Ganze ist kurz.
         withContext(NonCancellable) {
+            // Vor dem Leeren: Stirbt der Prozess danach, holt der nächste Start den Startkatalog nach
+            val vorher = startdaten.versionZuruecksetzen()
             val gesperrt = db.withTransaction {
+                // Die Sperre wird hier geprüft, in der Transaktion: der Sync könnte gerade erst verbunden worden sein
                 if (db.syncDao().zustand()?.active == true) return@withTransaction true
                 leeren()
                 false
             }
-            if (gesperrt) return@withContext LoeschErgebnis.SyncAktiv
-            startdaten.versionZuruecksetzen()
+            if (gesperrt) {
+                startdaten.versionWiederherstellen(vorher)
+                return@withContext LoeschErgebnis.SyncAktiv
+            }
             try {
                 for (link in ablage.unbenutzteEntfernen(emptyList())) db.syncDao().loeschenFotoLokal(link)
                 startdaten.ladenWennNoetig()

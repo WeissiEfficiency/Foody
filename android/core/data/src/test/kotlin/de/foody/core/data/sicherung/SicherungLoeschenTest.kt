@@ -104,11 +104,16 @@ class SicherungLoeschenTest {
     }
 
     @Test
-    fun eigeneFotosEntfernt() = runTest {
+    fun eigeneFotosEntferntFremdeDateienNicht() = runTest {
         val datei = assertNotNull(ablage.datei(foto))
         assertTrue(datei.exists())
+        // Ein Rezept mit einem Bild außerhalb des Fotoordners: die Datei gehört nicht der App und bleibt
+        val fremd = File(context.cacheDir, "fremd.jpg").apply { writeBytes(byteArrayOf(9)) }
+        db.rezeptDao().upsert(assertNotNull(db.rezeptDao().nachId("r1")).copy(id = "r2", imageUri = android.net.Uri.fromFile(fremd).toString()))
         sicherung.allesLoeschen()
         assertFalse(datei.exists())
+        assertTrue(fremd.exists())
+        fremd.delete()
     }
 
     @Test
@@ -130,6 +135,31 @@ class SicherungLoeschenTest {
         assertEquals(LoeschErgebnis.SyncAktiv, sicherung.allesLoeschen())
         assertNotNull(db.rezeptDao().nachId("r1"))
         assertTrue(assertNotNull(ablage.datei(foto)).exists())
+        assertEquals(Startdaten.VERSION, prefs.getInt("seedVersion", 0))
+    }
+
+    @Test
+    fun versionVorDemLeerenZurueckgesetzt() = runBlocking<Unit> {
+        // Stirbt der Prozess nach dem Leeren, muss der nächste Start den Startkatalog nachholen: die Version ist
+        // also schon zurückgesetzt, wenn gelöscht wird
+        var versionBeimLoeschen = -1
+        beobachtet { sql -> if (sql.startsWith("DELETE FROM tagebuch_eintrag")) versionBeimLoeschen = prefs.getInt("seedVersion", -1) }
+        sicherung.allesLoeschen()
+        assertEquals(0, versionBeimLoeschen)
+        assertEquals(Startdaten.VERSION, prefs.getInt("seedVersion", 0))
+    }
+
+    /** Baut Datenbank, Sync und Sicherung neu – mit [beiSql] für jede Anweisung, synchron auf dem ausführenden Thread. */
+    private suspend fun beobachtet(beiSql: (String) -> Unit) {
+        db.close()
+        db = Room.inMemoryDatabaseBuilder(context, FoodyDatenbank::class.java).addCallback(FoodyDatenbank.CALLBACK)
+            .allowMainThreadQueries()
+            .setQueryCallback({ sql, _ -> beiSql(sql) }) { it.run() }
+            .build()
+        sync = SyncSpeicher(db, ablage, FotoIndex(db.syncDao(), ablage))
+        sicherung = Sicherung(context, db, ablage, sync, StartdatenLader(db, context))
+        db.syncDao().upsertFotoLokal(SyncFotoLokalEntity(foto, "abc", 3, 1))
+        bestand()
     }
 
     @Test
@@ -144,15 +174,7 @@ class SicherungLoeschenTest {
         // Die Transaktion wird festgeschrieben; Fotos und Startkatalog müssen trotzdem folgen – sonst bleiben Fotos
         // liegen und der Katalog bis zum nächsten Start leer.
         val auftrag = AtomicReference<Job?>(null)
-        db.close()
-        db = Room.inMemoryDatabaseBuilder(context, FoodyDatenbank::class.java).addCallback(FoodyDatenbank.CALLBACK)
-            .allowMainThreadQueries()
-            .setQueryCallback({ sql, _ -> if (sql.startsWith("DELETE FROM tagebuch_eintrag")) auftrag.get()?.cancel() }) { it.run() }
-            .build()
-        sync = SyncSpeicher(db, ablage, FotoIndex(db.syncDao(), ablage))
-        sicherung = Sicherung(context, db, ablage, sync, StartdatenLader(db, context))
-        db.syncDao().upsertFotoLokal(SyncFotoLokalEntity(foto, "abc", 3, 1))
-        bestand()
+        beobachtet { sql -> if (sql.startsWith("DELETE FROM tagebuch_eintrag")) auftrag.get()?.cancel() }
         val datei = assertNotNull(ablage.datei(foto))
 
         val job = launch(Dispatchers.Default, start = CoroutineStart.LAZY) { sicherung.allesLoeschen() }
