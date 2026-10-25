@@ -29,6 +29,9 @@ class DarstellungSpeicher @Inject constructor(@ApplicationContext kontext: Conte
         awaitClose { prefs.unregisterOnSharedPreferenceChangeListener(hoerer) }
     }.distinctUntilChanged()
 
+    /** Der gespeicherte Wert sofort, etwa als Startwert vor dem ersten Wert von [darstellung]. */
+    fun aktuell(): Darstellung = lesen()
+
     fun setzen(d: Darstellung) {
         val wert = when (d) {
             Darstellung.SYSTEM -> "SYSTEM"
