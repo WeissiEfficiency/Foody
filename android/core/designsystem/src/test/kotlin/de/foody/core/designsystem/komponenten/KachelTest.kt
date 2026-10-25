@@ -2,14 +2,18 @@ package de.foody.core.designsystem.komponenten
 
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
@@ -88,5 +92,36 @@ class KachelTest {
             }
         }
         compose.pruefeNichtsAbgeschnitten()
+    }
+
+    @Test
+    fun langdruckRuftCallback() {
+        var lang = 0
+        var kurz = 0
+        compose.setContent { FoodyTheme { Kachel("Milch", "1 l", onKlick = { kurz++ }, onLangdruck = { lang++ }) } }
+        compose.onNodeWithText("Milch").performTouchInput { longClick() }
+        assertEquals(1, lang)
+        assertEquals(0, kurz)
+    }
+
+    @Test
+    fun langdruckBeschriftetDetails() {
+        compose.setContent { FoodyTheme { Kachel("Milch", "1 l", onKlick = {}, onLangdruck = {}) } }
+        compose.onNode(SemanticsMatcher("Langdruck „Details“") { it.config.getOrNull(SemanticsActions.OnLongClick)?.label == "Details" })
+            .assertExists()
+    }
+
+    @Test
+    fun zustandsTextGemeldet() {
+        compose.setContent { FoodyTheme { Kachel("Milch", "1 l", onKlick = {}, aufDerListe = true, zustandsText = "auf der Liste") } }
+        compose.onNode(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "auf der Liste")).assertExists()
+    }
+
+    @Test
+    fun aufDerListeKlickbar() {
+        var klicks = 0
+        compose.setContent { FoodyTheme { Kachel("Milch", "1 l", onKlick = { klicks++ }, aufDerListe = true) } }
+        compose.onNodeWithText("Milch").performClick()
+        assertEquals(1, klicks)
     }
 }

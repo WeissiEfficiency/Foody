@@ -1,7 +1,8 @@
 package de.foody.core.designsystem.komponenten
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.token.FoodyFormen
@@ -35,7 +37,10 @@ const val MONOGRAMM_TAG = "kachel-monogramm"
 /**
  * Kachel im Raster (Einkauf, Katalog): Monogramm oder Symbol, Name, Menge, optional Untertitel. Abgehakt wird der
  * Name durchgestrichen und gedimmt (Nebentext hält 4,5:1) und an TalkBack als „abgehakt“ gemeldet.
+ * [aufDerListe] färbt die Fläche rot (Primärfarbe, Text darauf wie auf Knöpfen); [onLangdruck] öffnet Details
+ * (TalkBack: „Details“); [zustandsText] ersetzt die Zustandsmeldung („auf der Liste“, „gekauft“, …).
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Kachel(
     name: String,
@@ -45,19 +50,18 @@ fun Kachel(
     untertitel: String? = null,
     abgehakt: Boolean = false,
     symbol: (@Composable () -> Unit)? = null,
+    aufDerListe: Boolean = false,
+    onLangdruck: (() -> Unit)? = null,
+    zustandsText: String? = null,
 ) {
     val farben = FoodyTheme.farben
-    GlasFlaeche(
-        GlasStufe.DICHT,
-        modifier
-            .heightIn(min = 92.dp)
-            .clip(FoodyFormen.mittel)
-            .clickable(onClick = onKlick)
-            .semantics { if (abgehakt) stateDescription = "abgehakt" },
-        form = FoodyFormen.mittel,
-        // Kacheln stehen in Listen: Unschärfe hinter jedem Eintrag kostet zu viel – nur Tönung
-        unschaerfeErlaubt = false,
-    ) {
+    val zustand = zustandsText ?: if (abgehakt) "abgehakt" else null
+    val bedienung = modifier
+        .heightIn(min = 92.dp)
+        .clip(FoodyFormen.mittel)
+        .combinedClickable(onLongClickLabel = onLangdruck?.let { "Details" }, onLongClick = onLangdruck, onClick = onKlick)
+        .semantics { if (zustand != null) stateDescription = zustand }
+    val inhalt = @Composable {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (symbol != null) {
                 symbol()
@@ -66,7 +70,7 @@ fun Kachel(
                     Modifier
                         .quadratisch(mindestens = 30.dp)
                         .clip(CircleShape)
-                        .background(farben.primaerBehaelter)
+                        .background(if (aufDerListe) farben.aufPrimaer else farben.primaerBehaelter)
                         // Kennung hinter dem Hintergrund: misst den gezeichneten Kreis, nicht das äußere Quadrat
                         .testTag(MONOGRAMM_TAG)
                         .semantics { hideFromAccessibility() },
@@ -75,23 +79,39 @@ fun Kachel(
                     Text(
                         name.take(1).uppercase(Locale.GERMAN),
                         style = MaterialTheme.typography.labelLarge,
-                        color = farben.aufPrimaerBehaelter,
+                        color = if (aufDerListe) farben.primaer else farben.aufPrimaerBehaelter,
                     )
                 }
             }
             Text(
                 name,
                 style = MaterialTheme.typography.titleSmall,
-                color = if (abgehakt) farben.nebentext else farben.text,
+                color = when {
+                    aufDerListe -> farben.aufPrimaer
+                    abgehakt -> farben.nebentext
+                    else -> farben.text
+                },
                 textDecoration = if (abgehakt) TextDecoration.LineThrough else null,
             )
             Text(
-                listOfNotNull(menge, untertitel).joinToString(" · "),
+                listOfNotNull(menge.takeIf { it.isNotEmpty() }, untertitel).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,
-                color = farben.nebentext,
+                color = if (aufDerListe) farben.aufPrimaer else farben.nebentext,
             )
         }
     }
+    if (aufDerListe) {
+        Box(bedienung.background(farben.primaer)) { inhalt() }
+    } else {
+        // Kacheln stehen in Listen: Unschärfe hinter jedem Eintrag kostet zu viel – nur Tönung
+        GlasFlaeche(GlasStufe.DICHT, bedienung, form = FoodyFormen.mittel, unschaerfeErlaubt = false) { inhalt() }
+    }
+}
+
+/** Katalog-Emoji als Kachelsymbol; für TalkBack verborgen, der Name sagt dasselbe. */
+@Composable
+fun KachelEmoji(emoji: String) {
+    Text(emoji, fontSize = 28.sp, modifier = Modifier.semantics { hideFromAccessibility() })
 }
 
 /** Quadrat mit Kante = max(Inhalt, [mindestens]) – der Monogramm-Kreis wächst mit großer Schrift mit. */

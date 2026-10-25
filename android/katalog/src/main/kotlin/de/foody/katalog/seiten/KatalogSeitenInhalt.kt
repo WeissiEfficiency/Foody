@@ -36,6 +36,7 @@ import de.foody.core.designsystem.komponenten.FoodyNavigationsRail
 import de.foody.core.designsystem.komponenten.FoodyNavigationsleiste
 import de.foody.core.designsystem.komponenten.KartenAktion
 import de.foody.core.designsystem.komponenten.Kachel
+import de.foody.core.designsystem.komponenten.KachelEmoji
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.LeererZustandZeile
@@ -126,11 +127,17 @@ private fun Rezeptkarten() {
 }
 
 @Composable
-private fun Kacheln() {
+private fun Kacheln() = Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Kachel("Milch", "1 l", {}, Modifier.weight(1f))
         Kachel("Paprika", "3 Stk.", {}, Modifier.weight(1f), untertitel = "Gemüse")
         Kachel("Tomaten", "500 g", {}, Modifier.weight(1f), abgehakt = true)
+    }
+    // Einkauf: auf der Liste (warm), gekauft, nicht auf der Liste – mit Katalog-Emoji
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Kachel("Zwiebeln", "300 g", {}, Modifier.weight(1f), aufDerListe = true, onLangdruck = {}, symbol = { KachelEmoji("🧅") })
+        Kachel("Reis", "", {}, Modifier.weight(1f), abgehakt = true, symbol = { KachelEmoji("🍚") })
+        Kachel("Butter", "", {}, Modifier.weight(1f), symbol = { KachelEmoji("🧈") })
     }
 }
 
