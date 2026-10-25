@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Kochtimer: Meldung am Ende, Vordergrunddienst mit Teil-Wakelock bei ausgeschaltetem Bildschirm -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Ohne Benachrichtigungs-Freigabe vibriert der offene Kochmodus selbst, wenn ein Timer abläuft -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <application>
+        <service
+            android:name=".timer.KochTimerDienst"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Kochtimer: zählt gestartete Timer herunter und meldet das Ende auch bei ausgeschaltetem Bildschirm" />
+        </service>
+    </application>
+</manifest>

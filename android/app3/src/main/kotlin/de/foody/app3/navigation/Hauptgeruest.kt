@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -56,6 +57,8 @@ fun Hauptgeruest(
 ) {
     val eintrag by navController.currentBackStackEntryAsState()
     val aktiv = remember(eintrag) { aktiverTab(navController) }
+    // Der Kochmodus ist ein Vollbild ohne Navigation
+    val vollbild = eintrag?.destination?.hasRoute<Kochen>() == true
     val waehlen: (Int) -> Unit = { i ->
         when {
             // Heute ist die Wurzel; der aktive Tab erneut: zurück an seinen Anfang
@@ -70,7 +73,9 @@ fun Hauptgeruest(
     }
     val ziele = tabs.map { it.ziel }
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        if (maxWidth >= BREIT) {
+        if (vollbild) {
+            FoodyNavHost(navController, bildschirme, Modifier.fillMaxSize())
+        } else if (maxWidth >= BREIT) {
             Row(Modifier.fillMaxSize()) {
                 Box(Modifier.fillMaxHeight().safeDrawingPadding(), contentAlignment = Alignment.Center) {
                     FoodyNavigationsRail(ziele, aktiv, waehlen, Modifier.wrapContentHeight().testTag(Hauptgeruest.RAIL))

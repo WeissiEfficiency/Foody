@@ -9,6 +9,7 @@ import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import de.foody.feature.einstellungen.VerbindenRoute
 import de.foody.feature.heute.HeuteRoute
+import de.foody.feature.kochen.KochenRoute
 import de.foody.feature.heute.tagebuch.TagebuchTagRoute
 import de.foody.feature.rezepte.RezepteBereich
 import de.foody.feature.rezepte.detail.RezeptDetailRoute
@@ -22,8 +23,10 @@ class Bildschirme(
     val einstellungen: @Composable (NavHostController) -> Unit,
     val rezepte: @Composable (NavHostController) -> Unit,
     val rezeptDetail: @Composable (String, NavHostController) -> Unit,
-    /** Editor; ID `null` = neues Rezept. */
-    val editor: @Composable (String?, NavHostController) -> Unit,
+    /** Editor; ID `null` = neues Rezept; dazu die Portionen, mit denen gekocht wurde. */
+    val editor: @Composable (String?, Int?, NavHostController) -> Unit,
+    /** Kochmodus: Rezept-ID, Portionen (`null` = die des Rezepts). */
+    val kochen: @Composable (String, Int?, NavHostController) -> Unit,
 ) {
     companion object {
         val echt = Bildschirme(
@@ -60,7 +63,7 @@ class Bildschirme(
                     onZurueck = { nav.popBackStack() },
                 )
             },
-            editor = { id, nav ->
+            editor = { id, gekochtMit, nav ->
                 EditorRoute(
                     id,
                     onFertig = { gespeichert ->
@@ -68,6 +71,14 @@ class Bildschirme(
                         if (id == null) nav.navigate(RezeptDetail(gespeichert)) { popUpTo<RezeptNeu> { inclusive = true } } else nav.popBackStack()
                     },
                     onZurueck = { nav.popBackStack() },
+                    gekochtMit = gekochtMit,
+                )
+            },
+            kochen = { id, portionen, nav ->
+                KochenRoute(
+                    id, portionen,
+                    onRezeptAnpassen = { r, p -> nav.zuRezeptAnpassen(r, p) },
+                    onSchliessen = { nav.popBackStack() },
                 )
             },
         )
@@ -77,7 +88,12 @@ class Bildschirme(
             einstellungen = { Platzhalter("Einstellungen") },
             rezepte = { Platzhalter("Rezepte", "Rezeptliste") },
             rezeptDetail = { id, _ -> Platzhalter("Rezept", "Rezept $id") },
-            editor = { id, _ -> Platzhalter("Editor", if (id == null) "Neues Rezept" else "Rezept $id bearbeiten") },
+            editor = { id, gekochtMit, _ ->
+                Platzhalter("Editor", if (id == null) "Neues Rezept" else "Rezept $id bearbeiten" + gekochtMit?.let { " · gekocht mit $it" }.orEmpty())
+            },
+            kochen = { id, portionen, _ ->
+                Platzhalter("Kochen", "Rezept $id" + portionen?.let { n -> " · $n ${if (n == 1) "Portion" else "Portionen"}" }.orEmpty())
+            },
         )
     }
 }
@@ -87,8 +103,8 @@ const val SCHEMA = "foody://"
 
 /**
  * Alle Ziele der V3. Deep Links: `foody://rezept/{id}`, `foody://einkauf/{listeId}`,
- * `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute). Woche, Einkauf
- * und Kochen sind bis 6b–6d Platzhalter.
+ * `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute). Woche und
+ * Einkauf sind bis 6c–6d Platzhalter.
  */
 @Composable
 fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Modifier = Modifier) {
@@ -101,11 +117,14 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
         composable<RezeptDetail>(deepLinks = listOf(navDeepLink<RezeptDetail>(basePath = "${SCHEMA}rezept"))) {
             bildschirme.rezeptDetail(it.toRoute<RezeptDetail>().id, nav)
         }
-        composable<RezeptNeu> { bildschirme.editor(null, nav) }
-        composable<RezeptBearbeiten> { bildschirme.editor(it.toRoute<RezeptBearbeiten>().id, nav) }
+        composable<RezeptNeu> { bildschirme.editor(null, null, nav) }
+        composable<RezeptBearbeiten> {
+            val ziel = it.toRoute<RezeptBearbeiten>()
+            bildschirme.editor(ziel.id, ziel.gekochtMit, nav)
+        }
         composable<Kochen>(deepLinks = listOf(navDeepLink<Kochen>(basePath = "${SCHEMA}kochen"))) {
             val ziel = it.toRoute<Kochen>()
-            Platzhalter("Kochen", "Rezept ${ziel.rezeptId}" + ziel.portionen?.let { n -> " · $n ${if (n == 1) "Portion" else "Portionen"}" }.orEmpty())
+            bildschirme.kochen(ziel.rezeptId, ziel.portionen, nav)
         }
         composable<EinkaufListe>(deepLinks = listOf(navDeepLink<EinkaufListe>(basePath = "${SCHEMA}einkauf"))) {
             Platzhalter("Einkaufsliste", "Liste ${it.toRoute<EinkaufListe>().listeId}")
@@ -115,3 +134,7 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
         }
     }
 }
+
+/** „Rezept anpassen“ nach dem Kochen: der Editor ersetzt den Kochmodus, „Zurück“ führt dorthin, woher man kam. */
+fun NavHostController.zuRezeptAnpassen(rezeptId: String, portionen: Int) =
+    navigate(RezeptBearbeiten(rezeptId, gekochtMit = portionen)) { popUpTo<Kochen> { inclusive = true } }

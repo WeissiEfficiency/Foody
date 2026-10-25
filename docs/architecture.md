@@ -282,8 +282,8 @@ bis Phase 8 umschaltet.
   `RezeptDetail(id)`, `Kochen(rezeptId, portionen?)`, `EinkaufListe(listeId)`, `TagebuchTag(datum)`). `Hauptgeruest`:
   vier Tabs, unter 840 dp `FoodyNavigationsleiste` schwebend unten, ab 840 dp `FoodyNavigationsRail`; Detailziele
   markieren ihren Tab. Deep Links `foody://rezept/{id}`, `foody://einkauf/{listeId}`,
-  `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute). Rezepte, Woche,
-  Einkauf, Kochen, Rezept-Detail und Einkaufsliste sind bis Phase 6 Platzhalter („Kommt in Phase 6“ mit Argumenten).
+  `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute). Woche,
+  Einkauf und Einkaufsliste sind bis Phase 6c/6d Platzhalter („Kommt in Phase 6“ mit Argumenten).
   `Bildschirme` trennt die Hilt-Bildschirme von den Platzhaltern, damit Navigationstests ohne Hilt laufen.
 - **`:core:data`**: `HeuteRepository` (Plan heute/morgen nur mit vorhandenem, nicht archiviertem Rezept; kcal je
   Portion über `RecipeProfiles`; Rezeptvorschläge; offene Artikel der zuletzt geänderten Liste), `TagebuchRepository`
@@ -338,6 +338,34 @@ und `RezeptDetail(id)`; neu sind die Routen `RezeptNeu` und `RezeptBearbeiten(id
   ViewModel (Schrift 200 %, Doppeltipp auf Speichern, gelöschtes Rezept im Editor, Zustand nach Drehen),
   Navigationstests in `:app3`. Roborazzi-Bilder von Liste, Detail und Editor (hell/dunkel × Handy/Tablet) in
   `android/feature/rezepte/src/test/screenshots/`, Vergleich in der CI.
+
+## Kochen (Phase 6b)
+
+Spec `docs/superpowers/specs/2026-10-25-v3-phase6b-kochen-design.md`. Ersetzt den Platzhalter der Route
+`Kochen(rezeptId, portionen?)`; der Kochmodus ist ein Vollbild ohne Navigationsleiste/Rail. Keine Schemaänderung.
+
+- **`:core:data`**: `KochenRepository.gekochtMarkieren(rezeptId, heute)` setzt `cookedAt`/`updatedAt` beim ersten
+  heutigen, noch nicht gekochten Plan-Eintrag des Rezepts (zählt für „Oft gekocht“; der `meal_slot`-Trigger trägt es
+  in die Outbox); ohne Eintrag nichts.
+- **`:feature:kochen`**: `kochSchritte`/`bereitlegen` (reine Funktionen: je Schritt die erwähnten Zutaten über
+  `StepIngredientMatcher` mit Teilmenge „150 g von 400 g“, skaliert mit `RecipeScaler`; Timer 1 s–24 h aus
+  `StepTimerParser`). `KochenViewModel` über `RezeptRepository.voll` – Seiten „Bereitlegen“ (wenn es Zutaten gibt oder
+  keine Schritte) und je Schritt eine; Seite und Haken (Zeilenindex) bleiben gültig, wenn sich das Rezept per Sync
+  ändert. `KochSitzungSpeicher` (Prefs `kochen_sitzungen`): Seite, Haken, Portionen je Rezept, 12 Stunden fortsetzbar;
+  „Fertig“ und „Schließen“ im Fertig-Blatt löschen sie, Zurück und das Kreuz behalten sie. Fertig-Blatt „Guten
+  Appetit!“: Foto aufnehmen (nur ohne Rezeptfoto; FileProvider `rezeptfotos` aus `:feature:rezepte`), „War etwas
+  anders? Rezept anpassen“ → `RezeptBearbeiten(id, gekochtMit)` ersetzt den Kochmodus (der Editor zeigt „Gekocht mit 4
+  statt 2 Portionen – Mengen beziehen sich auf 2“). Ab 840 dp links die Seitenliste. Display bleibt an.
+- **Timer** (`timer/`): `KochTimerSpeicher` (Prefs `kochen_timer`, JSON; überstehen Neustart, abgelaufene höchstens
+  12 h, `gemeldet` verhindert doppelte Meldungen), reine Zeitlogik `zeitplan(timer, jetzt)`, `KochTimerDienst`
+  (Vordergrunddienst `specialUse` mit Teil-Wakelock bis kurz nach dem nächsten Ende wie v1; Kanäle `kochen_laufend`
+  leise, `kochen_ende` mit Alarmton; Tipp öffnet `foody://kochen/{id}?portionen={n}`). Gestartet beim ersten Timer
+  und in `MainActivity.onStart` (`wennNoetigStarten`), weil ein Vordergrunddienst nicht aus dem Hintergrund starten
+  darf. Benachrichtigungs-Freigabe beim ersten Timer; abgelehnt meldet der offene Kochmodus selbst (Ton, Vibration)
+  und sagt das einmal.
+- **Tests:** Repository, Schritte, Sitzung, Timer-Speicher und Zeitplan, ViewModel (Doppeltipp „Fertig“, Sync-
+  Änderung, gelöschtes Rezept, Portionen 0/500), Bildschirm (Schrift 200 %, Drehen, Tablet), Navigation in `:app3`.
+  Roborazzi-Bilder in `android/feature/kochen/src/test/screenshots/`, Vergleich in der CI.
 
 ## Packung scannen (seit DB v9)
 

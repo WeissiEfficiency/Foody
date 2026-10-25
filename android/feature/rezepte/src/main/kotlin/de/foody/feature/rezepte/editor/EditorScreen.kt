@@ -43,11 +43,19 @@ private val INHALT_MAX = 720.dp
 /**
  * Rezept-Editor ([id] `null` = neu): Kopf mit Zurück und Speichern, darunter alle Felder auf einer scrollenden Seite.
  * Zurück mit ungespeicherten Änderungen fragt „Änderungen verwerfen?“. Nach dem Speichern [onFertig] mit der ID.
+ * [gekochtMit]: aus dem Kochmodus mit dieser Portionenzahl – weicht sie vom Rezept ab, steht oben ein Hinweis.
  */
 @Composable
-fun EditorRoute(id: String?, onFertig: (String) -> Unit, onZurueck: () -> Unit, vm: EditorViewModel = hiltViewModel()) {
+fun EditorRoute(
+    id: String?,
+    onFertig: (String) -> Unit,
+    onZurueck: () -> Unit,
+    gekochtMit: Int? = null,
+    vm: EditorViewModel = hiltViewModel(),
+) {
     LaunchedEffect(id) { vm.laden(id) }
     val z by vm.zustand.collectAsStateWithLifecycle()
+    val ursprung by vm.ursprung.collectAsStateWithLifecycle()
     val moeglich by vm.speichernMoeglich.collectAsStateWithLifecycle()
     val geaendert by vm.geaendert.collectAsStateWithLifecycle()
     var fragen by rememberSaveable { mutableStateOf(false) }
@@ -74,6 +82,13 @@ fun EditorRoute(id: String?, onFertig: (String) -> Unit, onZurueck: () -> Unit, 
                 }, aktiv = moeglich)
             }
             z.hinweis?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error) }
+            val rezeptPortionen = ursprung.portionen.toIntOrNull()
+            if (z.geladen && gekochtMit != null && rezeptPortionen != null && gekochtMit != rezeptPortionen) {
+                Text(
+                    "Gekocht mit $gekochtMit statt $rezeptPortionen Portionen – Mengen beziehen sich auf $rezeptPortionen",
+                    style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.primaer,
+                )
+            }
             if (z.geladen) EditorFelder(z, vm)
         }
     }

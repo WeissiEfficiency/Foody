@@ -171,7 +171,8 @@ Bilder gefunden und behoben: Inhalte auf dem Tablet über die volle Breite (jetz
 ### Phase 6 – Bereiche neu bauen (≈ 3 Wochen)
 - [x] Rezepte (inkl. Tablet zweispaltig, Favorit + „Oft gekocht“) – Spec
       [`2026-10-24-v3-phase6a-rezepte-design.md`](../docs/superpowers/specs/2026-10-24-v3-phase6a-rezepte-design.md)
-- [ ] Kochen (inkl. „Änderungen ins Rezept übernehmen“ nach dem Kochen)
+- [x] Kochen (inkl. „Änderungen ins Rezept übernehmen“ nach dem Kochen) – Spec
+      [`2026-10-25-v3-phase6b-kochen-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6b-kochen-design.md)
 - [ ] Woche (eine fortlaufende Wochenansicht)
 - [ ] Einkauf (eine Ansicht, ohne Vorratsabzug)
 - [ ] Einstellungen (Server/Anmelden/Status, Zutatenkatalog, Sicherung, Darstellung, Tagesziel); nach dem Update aus
@@ -185,6 +186,15 @@ Bildschirm- und Navigationstests und 12 Roborazzi-Bilder. Sichtprüfung auf dem 
 Liste mit Serverdaten, Suche, Detail, Import (zweiter Import derselben Datei: „1 übersprungen“), neues Rezept mit
 Foto. Dabei gefunden und behoben: Zurück-Pfeil auf dunklen Fotos kaum sichtbar (jetzt im Glaskreis), Energie und
 Brennwert brachen auf dem Handy mitten in der Zahl um (jetzt eigene Zeilen).
+
+**Ergebnis 6b Kochen** (2026-10-25): `:feature:kochen` mit Seite „Bereitlegen“, einem Schritt pro Seite
+(„Du brauchst“ mit Teilmengen), Timern als Vordergrunddienst (überstehen Neustart), gespeicherter Sitzung
+(12 h), Fertig-Blatt mit Foto und „Rezept anpassen“ (Editor mit Portionen-Hinweis) und Seitenliste auf dem
+Tablet; „Fertig“ markiert den heutigen Plan-Eintrag als gekocht. Belegt durch Repository-, Timer-,
+ViewModel-, Bildschirm- und Navigationstests und 10 Roborazzi-Bilder. Sichtprüfung auf dem Emulator gegen den
+Test-Server: Timer „1 Minute“ bei ausgeschaltetem Bildschirm gemeldet, Tipp auf die Meldung öffnet denselben
+Schritt, Fertig-Blatt und „Rezept anpassen“. Beim Ansehen der Bilder behoben: Namen unter „Du brauchst“
+versetzt, Timer-Leiste unter den Knöpfen, Fortschrittsspur in Material-Lila.
 
 **Fertig, wenn** alle App-Abschnitte der Abnahmeliste abgehakt sind und kein Screen über 300 Zeilen hat.
 

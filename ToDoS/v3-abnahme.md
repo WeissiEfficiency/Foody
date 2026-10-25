@@ -21,12 +21,12 @@ ist. Grundlage: [`v2-abnahme.md`](v2-abnahme.md), gekürzt nach dem Review vom 2
 - [x] Tablet: Liste und Rezept nebeneinander
 
 ## Kochen – `:feature:kochen`
-- [ ] Ein Schritt pro Seite, Display bleibt an
-- [ ] „Du brauchst“ mit Teilmengen je Schritt
-- [ ] Zutaten abhaken (Mise en place)
-- [ ] Timer aus Zeitangaben; laufen bei ausgeschaltetem Bildschirm und im Hintergrund weiter; Benachrichtigung am Ende
-- [ ] Einladung zum eigenen Foto nach dem letzten Schritt
-- [ ] **Neu:** Beim Kochen geänderte Mengen oder Schritte ins Rezept übernehmen (mit Rückfrage)
+- [x] Ein Schritt pro Seite, Display bleibt an
+- [x] „Du brauchst“ mit Teilmengen je Schritt
+- [x] Zutaten abhaken (Mise en place)
+- [x] Timer aus Zeitangaben; laufen bei ausgeschaltetem Bildschirm und im Hintergrund weiter; Benachrichtigung am Ende
+- [x] Einladung zum eigenen Foto nach dem letzten Schritt
+- [x] **Neu:** Beim Kochen geänderte Mengen oder Schritte ins Rezept übernehmen (mit Rückfrage)
 
 ## Woche – `:feature:woche`
 - [ ] Eine fortlaufende Wochenansicht, weiterblättern in beide Richtungen
