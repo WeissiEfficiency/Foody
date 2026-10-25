@@ -17,6 +17,7 @@ import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.fotos.FotoIndex
+import de.foody.core.data.startdaten.StartdatenLader
 import de.foody.core.data.sync.SyncSpeicher
 import de.foody.domain.MeasureUnit
 import de.foody.domain.NutrientBasis
@@ -79,7 +80,7 @@ class SicherungTest {
 
     private fun sicherungFuer(d: FoodyDatenbank): Sicherung {
         val s = SyncSpeicher(d, ablage, FotoIndex(d.syncDao(), ablage))
-        return Sicherung(context, d, ablage, s)
+        return Sicherung(context, d, ablage, s, StartdatenLader(d, context))
     }
 
     @Before
@@ -88,7 +89,7 @@ class SicherungTest {
         db = neueDatenbank()
         ablage = FotoAblage(context)
         sync = SyncSpeicher(db, ablage, FotoIndex(db.syncDao(), ablage))
-        sicherung = Sicherung(context, db, ablage, sync)
+        sicherung = Sicherung(context, db, ablage, sync, StartdatenLader(db, context))
     }
 
     @After

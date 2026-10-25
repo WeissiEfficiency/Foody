@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import de.foody.feature.einkauf.EinkaufRoute
+import de.foody.feature.einstellungen.EinstellungenRoute
 import de.foody.feature.einstellungen.VerbindenRoute
 import de.foody.feature.heute.HeuteRoute
 import de.foody.feature.kochen.KochenRoute
@@ -24,6 +25,7 @@ class Bildschirme(
     val heute: @Composable (NavHostController) -> Unit,
     val tagebuch: @Composable (LocalDate, NavHostController) -> Unit,
     val einstellungen: @Composable (NavHostController) -> Unit,
+    val serverVerbinden: @Composable (NavHostController) -> Unit,
     val rezepte: @Composable (NavHostController) -> Unit,
     val rezeptDetail: @Composable (String, NavHostController) -> Unit,
     /** Editor; ID `null` = neues Rezept; dazu die Portionen, mit denen gekocht wurde. */
@@ -51,7 +53,8 @@ class Bildschirme(
                     nav.navigate(TagebuchTag(neu.toString())) { popUpTo<TagebuchTag> { inclusive = true } }
                 })
             },
-            einstellungen = { nav -> VerbindenRoute(onZurueck = { nav.popBackStack() }) },
+            einstellungen = { nav -> EinstellungenRoute(onServer = { nav.navigate(ServerVerbinden) }, onZurueck = { nav.popBackStack() }) },
+            serverVerbinden = { nav -> VerbindenRoute(onZurueck = { nav.popBackStack() }) },
             rezepte = { nav ->
                 RezepteBereich(
                     onOeffnen = { nav.navigate(RezeptDetail(it)) },
@@ -103,6 +106,7 @@ class Bildschirme(
             heute = { Platzhalter("Heute") },
             tagebuch = { datum, _ -> Platzhalter("Tagebuch", "Tagebuch $datum") },
             einstellungen = { Platzhalter("Einstellungen") },
+            serverVerbinden = { Platzhalter("Server verbinden") },
             rezepte = { Platzhalter("Rezepte", "Rezeptliste") },
             rezeptDetail = { id, _ -> Platzhalter("Rezept", "Rezept $id") },
             editor = { id, gekochtMit, _ ->
@@ -132,6 +136,7 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
         composable<Woche> { bildschirme.woche(nav) }
         composable<Einkauf> { bildschirme.einkauf(null, nav) }
         composable<Einstellungen> { bildschirme.einstellungen(nav) }
+        composable<ServerVerbinden> { bildschirme.serverVerbinden(nav) }
         composable<RezeptDetail>(deepLinks = listOf(navDeepLink<RezeptDetail>(basePath = "${SCHEMA}rezept"))) {
             bildschirme.rezeptDetail(it.toRoute<RezeptDetail>().id, nav)
         }

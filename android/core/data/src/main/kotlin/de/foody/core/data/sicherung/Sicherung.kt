@@ -26,6 +26,7 @@ import de.foody.core.data.sicherung.SicherungDaten.Companion.FOTO_SCHEMA
 import de.foody.core.data.sicherung.SicherungDaten.Companion.MAX_FOTO_BYTES
 import de.foody.core.data.sicherung.SicherungDaten.Companion.MAX_GESAMT_BYTES
 import de.foody.core.data.sicherung.SicherungDaten.Companion.MAX_JSON_BYTES
+import de.foody.core.data.startdaten.StartdatenLader
 import de.foody.core.data.sync.SyncSpeicher
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
@@ -61,6 +62,14 @@ sealed interface ImportErgebnis {
     data class Fehler(val grund: String) : ImportErgebnis
 }
 
+/** Ergebnis von [Sicherung.allesLoeschen]. */
+sealed interface LoeschErgebnis {
+    data object Fertig : LoeschErgebnis
+
+    /** Gesperrt, solange der Sync verbunden ist (er würde die Löschung auf den Server tragen). Nichts geändert. */
+    data object SyncAktiv : LoeschErgebnis
+}
+
 /**
  * Sicherung aller Daten als ZIP – wie in der v1 mit `backup.json` und den Rezeptfotos unter `photos/<n>.jpg`
  * (Aufbau in [SicherungDaten]). Geschrieben wird Format 3 (ohne Vorrat); gelesen werden Format 3 und Sicherungen der
@@ -77,6 +86,7 @@ class Sicherung(
     private val db: FoodyDatenbank,
     private val ablage: FotoAblage,
     private val sync: SyncSpeicher,
+    private val startdaten: StartdatenLader,
 ) {
     private val context = context.applicationContext ?: context
     private val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
@@ -394,8 +404,41 @@ class Sicherung(
     /** Alter Freitext („Frühstück“) wird dem Enum-Namen zugeordnet (wie v1); unbekannte Texte bleiben. */
     private fun mahlzeit(text: String): String = Mahlzeit.ausText(text)?.name ?: text
 
-    /** Leert alle Fachtabellen (Kinder zuerst) und schreibt die Sicherung hinein; nur in einer Transaktion aufrufen. */
-    private suspend fun ersetzen(e: Eintraege) {
+    // ---- Alles löschen ---------------------------------------------------------------------------------------
+
+    /**
+     * Löscht alle Fachdaten dieses Geräts und eigene Fotos, dann den Startkatalog neu einspielen. Nur bei getrenntem Sync
+     * (auch in der Transaktion erneut geprüft); Sync-Zustand, Outbox und Einstellungen bleiben. Die Startdaten-Version
+     * wird vor dem Einspielen zurückgesetzt: scheitert es, holt der nächste App-Start den Katalog nach.
+     */
+    suspend fun allesLoeschen(): LoeschErgebnis = withContext(Dispatchers.IO) {
+        // Nicht abbrechbar: Wer die Seite verlässt, während gelöscht wird, soll kein halbes Ergebnis bekommen (Daten
+        // weg, aber Fotos noch da und Katalog leer). Das Ganze ist kurz.
+        withContext(NonCancellable) {
+            // Vor dem Leeren: Stirbt der Prozess danach, holt der nächste Start den Startkatalog nach
+            val vorher = startdaten.versionZuruecksetzen()
+            val gesperrt = db.withTransaction {
+                // Die Sperre wird hier geprüft, in der Transaktion: der Sync könnte gerade erst verbunden worden sein
+                if (db.syncDao().zustand()?.active == true) return@withTransaction true
+                leeren()
+                false
+            }
+            if (gesperrt) {
+                startdaten.versionWiederherstellen(vorher)
+                return@withContext LoeschErgebnis.SyncAktiv
+            }
+            try {
+                for (link in ablage.unbenutzteEntfernen(emptyList())) db.syncDao().loeschenFotoLokal(link)
+                startdaten.ladenWennNoetig()
+            } catch (e: Exception) {
+                Log.w(TAG, "Aufräumen nach dem Löschen fehlgeschlagen", e)
+            }
+            LoeschErgebnis.Fertig
+        }
+    }
+
+    /** Leert alle Fachtabellen, Kinder zuerst; nur in einer Transaktion aufrufen. */
+    private suspend fun leeren() {
         db.tagebuchDao().alleLoeschen()
         db.einkaufsartikelQuelleDao().alleLoeschen()
         db.einkaufsartikelDao().alleLoeschen()
@@ -405,7 +448,11 @@ class Sicherung(
         db.rezeptZutatDao().alleLoeschen()
         db.rezeptDao().alleLoeschen()
         db.zutatDao().alleLoeschen()
+    }
 
+    /** Leert alle Fachtabellen und schreibt die Sicherung hinein; nur in einer Transaktion aufrufen. */
+    private suspend fun ersetzen(e: Eintraege) {
+        leeren()
         e.zutaten.forEach { db.zutatDao().upsert(it) }
         e.rezepte.forEach { db.rezeptDao().upsert(it) }
         e.rezeptZutaten.forEach { db.rezeptZutatDao().upsert(it) }

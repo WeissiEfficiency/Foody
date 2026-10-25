@@ -164,6 +164,19 @@ class NavigationTest {
 
     @Test
     @Config(qualifiers = "w411dp-h891dp")
+    fun einstellungenZumServer() {
+        starten()
+        compose.runOnUiThread { nav.navigate(Einstellungen) }
+        compose.onNodeWithText("Einstellungen").assertExists()
+        compose.runOnUiThread { nav.navigate(ServerVerbinden) }
+        compose.onNodeWithText("Server verbinden").assertExists()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithText("Server verbinden").assertDoesNotExist()
+        compose.onNodeWithText("Einstellungen").assertExists()
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
     fun wocheTabZeigtPlan() {
         starten()
         tab("Woche").performClick()

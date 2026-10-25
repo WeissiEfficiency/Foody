@@ -63,9 +63,10 @@ ist. Grundlage: [`v2-abnahme.md`](v2-abnahme.md), gekürzt nach dem Review vom 2
       (Phase 5, `VerbindenScreenTest`; Sync-Probleme als letzter Fehler im Klartext)
 - [ ] Zutatenkatalog: Dichte, Stückgewicht, Synonyme, Dubletten zusammenführen, Strichcode an der Zutat, Scan
 - [x] Startdaten mit `SeedData.VERSION`-Aktualisierung (Phase 5, `StartdatenLaderTest`)
-- [ ] Sicherung als ZIP (Daten und Fotos), Wiederherstellung (auch v1-Dateien), vollständige lokale Löschung
-- [ ] Darstellung hell / dunkel / System
-- [ ] Tagesziel
+- [x] Sicherung als ZIP (Daten und Fotos), Wiederherstellung (auch v1-Dateien), vollständige lokale Löschung (Phase 6e1;
+      Löschen spielt den Startkatalog neu ein; beides gesperrt, solange der Sync verbunden ist)
+- [x] Darstellung hell / dunkel / System (Phase 6e1, v1-Schlüssel `themeMode`)
+- [x] Tagesziel (Phase 6e1, 500–10.000 kcal)
 - [ ] Online-Produktsuche beim Scan an/aus
 
 ## KI – `:core:ki`, `/ki/*`

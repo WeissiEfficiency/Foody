@@ -421,6 +421,26 @@ Menge in der Basiseinheit und Herkunft je `NeedSource`, manuelle Artikel ohne He
   Transaktionen hinter einer Schranke), Bildschirm und Blätter, Navigation. Roborazzi-Bilder in
   `android/feature/einkauf/src/test/screenshots/`, Vergleich in der CI.
 
+## Einstellungen (Phase 6e1)
+
+Spec `docs/superpowers/specs/2026-10-25-v3-phase6e1-einstellungen-design.md`. Das Profilsymbol in Heute öffnet die
+Einstellungsseite; „Server verbinden“ ist das eigene Ziel `ServerVerbinden`. Keine Schemaänderung.
+
+- **`:core:data`:** `DarstellungSpeicher` (`themeMode` mit den v1-Werten `SYSTEM`/`LIGHT`/`DARK`, Flow und `aktuell()`
+  als Startwert), `TageszielSpeicher.setzen` (500–10.000 kcal, `null` = kein Ziel), `Sicherung.allesLoeschen()`:
+  bei aktivem Sync `SyncAktiv` (auch in der Transaktion geprüft), sonst alle Fachtabellen in einer Transaktion leeren
+  (derselbe Weg wie beim Wiederherstellen), eigene Fotos samt Sync-Fotoindex entfernen, Startdaten-Version
+  zurücksetzen und den Startkatalog neu einspielen (`StartdatenLader`, jetzt im Konstruktor von `Sicherung`).
+- **`:feature:einstellungen`:** `EinstellungenViewModel` (Darstellung und Ziel sofort speichern; Erstellen,
+  Wiederherstellen, Löschen im `viewModelScope`, eine Aktion zur Zeit, Ergebnis als Meldung) und `EinstellungenRoute`
+  (Konto, Darstellung, Tagesziel, Sicherung, Daten, Hinweise; Dateidialoge über SAF in der Route, für Tests als
+  `Dateiwahl` austauschbar). Wiederherstellen und Löschen fragen nach und sind bei verbundenem Sync gesperrt.
+- **`:app3`:** `MainActivity` zeichnet nach `DarstellungSpeicher` (`istDunkel`), Änderungen wirken sofort;
+  `SystemleistenPassend` richtet die Symbole von Status- und Navigationsleiste nach der gewählten Darstellung (wie v1).
+- **Tests:** Speicher, Löschen (Fotoindex, Sync-Sperre, Startkatalog), ViewModel (Doppeltipp per Mutation geprüft),
+  Bildschirm, Navigation, Darstellung. Roborazzi-Bilder in `android/feature/einstellungen/src/test/screenshots/`,
+  Vergleich in der CI.
+
 ## Packung scannen (seit DB v9)
 
 `PackungScan` (`android/app/.../scan`) steuert den Ablauf hinter Schnittstellen, die Hilt in `ScanModule` bindet und Tests durch

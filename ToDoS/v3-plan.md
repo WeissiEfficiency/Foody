@@ -177,9 +177,10 @@ Bilder gefunden und behoben: Inhalte auf dem Tablet über die volle Breite (jetz
       [`2026-10-25-v3-phase6c-woche-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6c-woche-design.md)
 - [x] Einkauf (eine Ansicht, ohne Vorratsabzug) – Spec
       [`2026-10-25-v3-phase6d-einkauf-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6d-einkauf-design.md)
-- [ ] Einstellungen (Server/Anmelden/Status, Zutatenkatalog, Sicherung, Darstellung, Tagesziel); nach dem Update aus
-      der v1 ist `kontoId` leer: „Erneut anmelden“ an derselben Adresse übernimmt nur Token und Konto-ID (ungesendete
-      Outbox bleibt, einmal alles neu holen), ohne Frage „Zusammenführen/Ersetzen“
+- [x] Einstellungen 6e1 (Server/Anmelden/Status, Sicherung, Darstellung, Tagesziel) – Spec
+      [`2026-10-25-v3-phase6e1-einstellungen-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6e1-einstellungen-design.md);
+      „Erneut anmelden“ nach dem v1-Update (übernimmt nur Token und Konto-ID) gibt es seit Phase 5
+- [ ] Einstellungen 6e2: Zutatenkatalog, „Packung scannen“, Online-Produktsuche an/aus
 
 **Ergebnis 6a Rezepte** (2026-10-24): `:feature:rezepte` mit Bildraster, Suche und Filterchips, Detail mit
 Portionen und Nährwerttabelle, Editor mit Zutaten als Freitext je Zeile und Foto, Markdown-Import (Dateien oder
@@ -219,6 +220,16 @@ Rezept → „7 Artikel auf der Einkaufsliste“ → „Ansehen“, Portionen in
 zurückgestellt → Hinweis weg. Dabei gefunden und behoben: Gramm mit Nachkommastellen („Butter 217,71 g“), „Ansehen“
 im eingebetteten Rezeptdetail auf dem Tablet wirkungslos; beim Ansehen der Bilder: „auf der Liste“ im hellen Modus
 kaum sichtbar (jetzt rot), Abteilungsköpfe zu wuchtig.
+
+**Ergebnis 6e1 Einstellungen** (2026-10-25): Einstellungsseite in `:feature:einstellungen` mit Konto (→ „Server
+verbinden“), Darstellung System/Hell/Dunkel (wirkt sofort), Tagesziel (500–10.000 kcal), Sicherung als ZIP erstellen
+und wiederherstellen (auch v1-Dateien) und „Alle Daten löschen“ (Startkatalog neu); beides gesperrt, solange der Sync
+verbunden ist. Belegt durch Speicher-, Lösch-, ViewModel-, Bildschirm-, Navigations- und Darstellungstests und 9
+Roborazzi-Bilder. Sichtprüfung auf dem Emulator gegen den Test-Server: Dunkel und Tagesziel (Heute zeigt „0 / 2.000
+kcal“), Sicherung erstellt (225 kB), gesperrt solange verbunden; getrennt, alles gelöscht, wiederhergestellt
+(„115 Rezepte, 249 Zutaten, 1 Foto“), mit „Zusammenführen“ verbunden: 115 Rezepte, keine doppelten, Outbox leer. Dabei
+behoben: „1 Fotos“; beim Ansehen der Bilder: Tagesziel im ersten Bild leer, Konto-Zeile schnitt den ersten Buchstaben
+ab. Nicht belegt: „Erneut anmelden“ nach einem v1-Update (kein v1-Stand auf dem Testgerät).
 
 **Fertig, wenn** alle App-Abschnitte der Abnahmeliste abgehakt sind und kein Screen über 300 Zeilen hat.
 

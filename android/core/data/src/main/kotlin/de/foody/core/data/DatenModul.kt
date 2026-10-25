@@ -19,6 +19,7 @@ import de.foody.core.data.rezepte.RezeptImporter
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.data.rezeptimport.PortionenNachtrag
 import de.foody.core.data.sicherung.Sicherung
+import de.foody.core.data.startdaten.StartdatenLader
 import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.data.woche.WocheRepository
 import de.foody.core.data.sync.SyncSpeicher
@@ -59,8 +60,13 @@ object DatenModul {
 
     @Provides
     @Singleton
-    fun sicherung(@ApplicationContext context: Context, db: FoodyDatenbank, ablage: FotoAblage, sync: SyncSpeicher): Sicherung =
-        Sicherung(context, db, ablage, sync)
+    fun sicherung(
+        @ApplicationContext context: Context,
+        db: FoodyDatenbank,
+        ablage: FotoAblage,
+        sync: SyncSpeicher,
+        startdaten: StartdatenLader,
+    ): Sicherung = Sicherung(context, db, ablage, sync, startdaten)
 
     /** Uhr für alle Bereiche, die „jetzt“ oder „heute“ brauchen (in Tests eine feste Uhr). */
     @Provides

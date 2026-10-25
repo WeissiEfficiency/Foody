@@ -18,6 +18,8 @@ import java.time.format.DateTimeParseException
 
 @Serializable data object Einstellungen
 
+@Serializable data object ServerVerbinden
+
 @Serializable data class RezeptDetail(val id: String)
 
 @Serializable data object RezeptNeu

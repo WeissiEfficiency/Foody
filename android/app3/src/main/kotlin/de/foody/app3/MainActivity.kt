@@ -6,10 +6,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.core.util.Consumer
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import de.foody.app3.navigation.Hauptgeruest
+import de.foody.core.data.DarstellungSpeicher
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
 import de.foody.feature.kochen.timer.KochTimerDienst
@@ -23,6 +27,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject lateinit var kochTimer: KochTimerSpeicher
+    @Inject lateinit var darstellung: DarstellungSpeicher
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,7 +39,11 @@ class MainActivity : ComponentActivity() {
                 addOnNewIntentListener(weiter)
                 onDispose { removeOnNewIntentListener(weiter) }
             }
-            FoodyTheme { FoodyHintergrund { Hauptgeruest(nav) } }
+            // Startwert sofort aus den Prefs: kein Aufblitzen der falschen Darstellung beim Start
+            val d by remember { darstellung.darstellung() }.collectAsStateWithLifecycle(darstellung.aktuell())
+            val dunkel = istDunkel(d)
+            SystemleistenPassend(dunkel)
+            FoodyTheme(dunkel = dunkel) { FoodyHintergrund { Hauptgeruest(nav) } }
         }
     }
 
