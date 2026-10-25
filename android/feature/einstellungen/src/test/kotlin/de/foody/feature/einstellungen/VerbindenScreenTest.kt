@@ -24,39 +24,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-/** Ersatz für das Konto: merkt sich die Aufrufe, Ergebnisse frei vorgebbar. */
-private class ErsatzKonto : KontoZugriff {
-    val stand = MutableStateFlow(VerbindungsZustand(verbunden = false, adresse = null, letzterSync = null, letzterFehler = null))
-    override val zustand = stand
-    var anmeldeErgebnis: Ergebnis<Unit> = Ergebnis.Erfolg(Unit)
-    var lokaleDaten = false
-    var wiederanmeldung = false
-    val aufrufe = mutableListOf<String>()
-
-    override suspend fun anmelden(adresse: String, benutzer: String, passwort: String): Ergebnis<Unit> {
-        aufrufe += "anmelden:$adresse:$benutzer"
-        return anmeldeErgebnis
-    }
-
-    override suspend fun hatLokaleDaten() = lokaleDaten
-
-    override suspend fun istWiederanmeldung() = wiederanmeldung
-
-    override suspend fun aktivieren(modus: ErsterSync): Ergebnis<Unit> {
-        aufrufe += "aktivieren:$modus"
-        stand.value = VerbindungsZustand(verbunden = true, adresse = "https://foody.example", letzterSync = null, letzterFehler = null)
-        return Ergebnis.Erfolg(Unit)
-    }
-
-    override suspend fun trennen() {
-        aufrufe += "trennen"
-        stand.value = VerbindungsZustand(verbunden = false, adresse = null, letzterSync = null, letzterFehler = null)
-    }
-
-    override fun jetztSynchronisieren() {
-        aufrufe += "jetzt"
-    }
-}
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
