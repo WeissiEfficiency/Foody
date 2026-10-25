@@ -175,7 +175,8 @@ Bilder gefunden und behoben: Inhalte auf dem Tablet über die volle Breite (jetz
       [`2026-10-25-v3-phase6b-kochen-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6b-kochen-design.md)
 - [x] Woche (eine fortlaufende Wochenansicht) – Spec
       [`2026-10-25-v3-phase6c-woche-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6c-woche-design.md)
-- [ ] Einkauf (eine Ansicht, ohne Vorratsabzug)
+- [x] Einkauf (eine Ansicht, ohne Vorratsabzug) – Spec
+      [`2026-10-25-v3-phase6d-einkauf-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6d-einkauf-design.md)
 - [ ] Einstellungen (Server/Anmelden/Status, Zutatenkatalog, Sicherung, Darstellung, Tagesziel); nach dem Update aus
       der v1 ist `kontoId` leer: „Erneut anmelden“ an derselben Adresse übernimmt nur Token und Konto-ID (ungesendete
       Outbox bleibt, einmal alles neu holen), ohne Frage „Zusammenführen/Ersetzen“
@@ -206,6 +207,18 @@ Serverdaten, Eintrag angelegt, Kochen → „Fertig“ setzt den Haken „gekoch
 füllen mit sieben Vorschlägen und „↻“ je Tag. Beim Ansehen der Bilder behoben: „Leere Tage füllen“ stand am
 Listenende statt fest über der Leiste, Blätter öffneten nur halb. Notiert für Phase 7/8: der Vorschlag nahm
 „Pizzateig“ (Grundrezept) als Abendessen.
+
+**Ergebnis 6d Einkauf** (2026-10-25): `:feature:einkauf` mit Kacheln (offen rot je Abteilung, „Zuletzt
+verwendet“, Katalog; Antippen = gekauft, Langdruck = Details), Eingabe „Was willst du einkaufen?“, „Neue Liste aus
+dem Plan“ mit Zeitraum und Vorschau zum Abwählen, Hinweis „Plan geändert – abgleichen“ mit Diff, Details mit
+Herkunft, Löschen mit „Rückgängig“, Frühere Listen und Tablet mit Katalog rechts; „Auf die Einkaufsliste“ im
+Rezeptdetail; `EinkaufRepository` in `:core:data`. Heute und Einkauf nehmen dieselbe Liste (zuletzt angelegt).
+Belegt durch Repository-, ViewModel-, Nebenläufigkeits-, Bildschirm- und Navigationstests und 12 Roborazzi-Bilder.
+Sichtprüfung auf dem Emulator gegen den Test-Server: Serverliste mit „Zuletzt verwendet“, neue Liste aus dem Plan,
+Rezept → „7 Artikel auf der Einkaufsliste“ → „Ansehen“, Portionen in der Woche geändert → Hinweis → Abgleich,
+zurückgestellt → Hinweis weg. Dabei gefunden und behoben: Gramm mit Nachkommastellen („Butter 217,71 g“), „Ansehen“
+im eingebetteten Rezeptdetail auf dem Tablet wirkungslos; beim Ansehen der Bilder: „auf der Liste“ im hellen Modus
+kaum sichtbar (jetzt rot), Abteilungsköpfe zu wuchtig.
 
 **Fertig, wenn** alle App-Abschnitte der Abnahmeliste abgehakt sind und kein Screen über 300 Zeilen hat.
 
