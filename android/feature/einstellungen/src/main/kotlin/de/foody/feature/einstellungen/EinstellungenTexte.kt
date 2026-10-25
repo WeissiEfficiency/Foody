@@ -8,9 +8,13 @@ const val ERST_TRENNEN = "Zuerst unter Konto die Verbindung trennen."
 /** Meldung nach dem Wiederherstellen: Anzahlen, bei v1-Dateien der übersprungene Vorrat; sonst Sperre oder Grund. */
 fun importMeldung(e: ImportErgebnis): String = when (e) {
     is ImportErgebnis.Fertig -> buildString {
-        append("${e.rezepte} Rezepte, ${e.zutaten} Zutaten, ${e.fotos} Fotos wiederhergestellt")
+        append("${anzahl(e.rezepte, "Rezept", "Rezepte")}, ${anzahl(e.zutaten, "Zutat", "Zutaten")}, ")
+        append("${anzahl(e.fotos, "Foto", "Fotos")} wiederhergestellt")
         if (e.vorratUebersprungen > 0) append(" · Vorrat übersprungen: ${e.vorratUebersprungen}")
     }
     ImportErgebnis.SyncAktiv -> ERST_TRENNEN
     is ImportErgebnis.Fehler -> e.grund
 }
+
+/** „1 Foto“, „0 Fotos“, „5 Fotos“. */
+private fun anzahl(n: Int, eins: String, viele: String) = "$n ${if (n == 1) eins else viele}"

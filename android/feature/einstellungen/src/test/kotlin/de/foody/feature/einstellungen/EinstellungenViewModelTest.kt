@@ -120,7 +120,7 @@ class EinstellungenViewModelTest {
         val quelle = datei("v1.json").apply { writeText(V1_SICHERUNG) }
         vm.wiederherstellen(Uri.fromFile(quelle))
         warte { meldungen.isNotEmpty() }
-        assertEquals("1 Rezepte, 1 Zutaten, 0 Fotos wiederhergestellt · Vorrat übersprungen: 2", meldungen.single())
+        assertEquals("1 Rezept, 1 Zutat, 0 Fotos wiederhergestellt · Vorrat übersprungen: 2", meldungen.single())
         assertNotNull(runBlocking { u.db.rezeptDao().nachId("r1") })
     }
 
@@ -179,6 +179,8 @@ class EinstellungenViewModelTest {
     @Test
     fun importMeldungen() {
         assertEquals("12 Rezepte, 230 Zutaten, 5 Fotos wiederhergestellt", importMeldung(ImportErgebnis.Fertig(12, 230, 5, 0)))
+        assertEquals("1 Rezept, 1 Zutat, 1 Foto wiederhergestellt", importMeldung(ImportErgebnis.Fertig(1, 1, 1, 0)))
+        assertEquals("115 Rezepte, 249 Zutaten, 0 Fotos wiederhergestellt", importMeldung(ImportErgebnis.Fertig(115, 249, 0, 0)))
         assertEquals("Zuerst unter Konto die Verbindung trennen.", importMeldung(ImportErgebnis.SyncAktiv))
         assertEquals("Die Datei ist beschädigt", importMeldung(ImportErgebnis.Fehler("Die Datei ist beschädigt")))
     }

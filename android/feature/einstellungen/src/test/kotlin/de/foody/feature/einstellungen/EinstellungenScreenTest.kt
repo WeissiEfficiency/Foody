@@ -148,7 +148,7 @@ class EinstellungenScreenTest {
         knopf("Wiederherstellen").performClick()
         compose.warteAufText("Alle Daten ersetzen?")
         compose.onNodeWithText("Ersetzen").performClick()
-        compose.warteAufText("1 Rezepte, 1 Zutaten, 0 Fotos wiederhergestellt · Vorrat übersprungen: 2")
+        compose.warteAufText("1 Rezept, 1 Zutat, 0 Fotos wiederhergestellt · Vorrat übersprungen: 2")
     }
 
     @Test
