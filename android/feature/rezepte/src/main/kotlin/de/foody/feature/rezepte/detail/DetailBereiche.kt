@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AddShoppingCart
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Edit
@@ -121,6 +122,9 @@ private fun Aktionen(z: DetailZustand.Da, a: DetailAktionen) {
         }
         IconButton(onClick = a.onBearbeiten) { Icon(Icons.Outlined.Edit, contentDescription = "Bearbeiten", tint = FoodyTheme.farben.text) }
         IconButton(onClick = a.onDuplizieren) { Icon(Icons.Outlined.ContentCopy, contentDescription = "Duplizieren", tint = FoodyTheme.farben.text) }
+        IconButton(onClick = { a.onEinkauf(z.portionen) }) {
+            Icon(Icons.Outlined.AddShoppingCart, contentDescription = "Auf die Einkaufsliste", tint = FoodyTheme.farben.text)
+        }
         if (z.voll.rezept.archivedAt == null) {
             IconButton(onClick = { a.onArchivieren(true) }) { Icon(Icons.Outlined.Archive, contentDescription = "Archivieren", tint = FoodyTheme.farben.text) }
         }

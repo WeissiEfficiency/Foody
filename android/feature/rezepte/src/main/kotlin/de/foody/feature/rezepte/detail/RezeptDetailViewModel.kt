@@ -3,6 +3,7 @@ package de.foody.feature.rezepte.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.foody.core.data.einkauf.EinkaufRepository
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.data.rezepte.RezeptVoll
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,7 +38,10 @@ private const val MAX_PORTIONEN = 99
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
-class RezeptDetailViewModel @Inject constructor(private val repo: RezeptRepository) : ViewModel() {
+class RezeptDetailViewModel @Inject constructor(
+    private val repo: RezeptRepository,
+    private val einkauf: EinkaufRepository,
+) : ViewModel() {
     private val id = MutableStateFlow<String?>(null)
     private val portionen = MutableStateFlow<Int?>(null)
 
@@ -65,6 +69,9 @@ class RezeptDetailViewModel @Inject constructor(private val repo: RezeptReposito
     suspend fun archivieren(rezeptId: String, an: Boolean) = repo.archivieren(rezeptId, an)
 
     suspend fun duplizieren(): String? = id.value?.let { repo.duplizieren(it) }
+
+    /** Zutaten für [portionen] auf die aktuelle Einkaufsliste; gibt die Zahl der Artikel zurück (0 = nichts zu kaufen). */
+    suspend fun aufEinkaufsliste(portionen: Int): Int = id.value?.let { einkauf.rezeptAufListe(it, portionen) } ?: 0
 
     private companion object {
         const val STOPP_MS = 5_000L

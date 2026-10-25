@@ -8,6 +8,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import de.foody.core.data.db.FoodyDatenbank
+import de.foody.core.data.einkauf.EinkaufRepository
+import de.foody.core.data.einkauf.IgnorierteSchluessel
 import de.foody.core.data.db.MIGRATION_9_10
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.fotos.FotoIndex
@@ -84,6 +86,16 @@ object DatenModul {
     @Singleton
     fun wocheRepository(db: FoodyDatenbank, rezepte: RezeptRepository): WocheRepository =
         WocheRepository(db, rezepte, System::currentTimeMillis)
+
+    @Provides
+    @Singleton
+    fun ignorierteSchluessel(@ApplicationContext context: Context): IgnorierteSchluessel =
+        IgnorierteSchluessel(context.getSharedPreferences("einkauf", Context.MODE_PRIVATE))
+
+    @Provides
+    @Singleton
+    fun einkaufRepository(db: FoodyDatenbank, ignoriert: IgnorierteSchluessel): EinkaufRepository =
+        EinkaufRepository(db, System::currentTimeMillis, ignoriert)
 
     @Provides
     fun rezeptImporter(dienst: RezeptImportDienst): RezeptImporter = dienst

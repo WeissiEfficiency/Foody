@@ -20,6 +20,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.domain.MeasureUnit
 import de.foody.feature.rezepte.MitSchrift200
 import de.foody.feature.rezepte.bestand
+import de.foody.feature.rezepte.einkauf
 import de.foody.feature.rezepte.pruefeNichtsAbgeschnitten
 import de.foody.feature.rezepte.testDatenbank
 import de.foody.feature.rezepte.warteAufText
@@ -36,6 +37,7 @@ import java.math.BigDecimal
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -49,6 +51,7 @@ class RezeptDetailScreenTest {
     private val bearbeitet = mutableListOf<String>()
     private val dupliziert = mutableListOf<String>()
     private var zurueck = 0
+    private var einkauf = 0
 
     @Before
     fun setUp() {
@@ -63,13 +66,13 @@ class RezeptDetailScreenTest {
     fun tearDown() = db.close()
 
     private fun zeigen(id: String = "r1", schrift200: Boolean = false) {
-        val vm = RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L })
+        val vm = RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L }, db.einkauf())
         compose.setContent {
             FoodyTheme {
                 val inhalt = @androidx.compose.runtime.Composable {
                     RezeptDetailRoute(
                         id, onKochen = { r, p -> gekocht += r to p }, onBearbeiten = { bearbeitet += it },
-                        onDupliziert = { dupliziert += it }, onZurueck = { zurueck++ }, vm = vm,
+                        onDupliziert = { dupliziert += it }, onZurueck = { zurueck++ }, onEinkauf = { einkauf++ }, vm = vm,
                     )
                 }
                 if (schrift200) MitSchrift200(inhalt) else inhalt()
@@ -146,7 +149,7 @@ class RezeptDetailScreenTest {
                 ),
             )
         }
-        val vm = RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L })
+        val vm = RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L }, db.einkauf())
         var id by mutableStateOf("r1")
         compose.setContent { FoodyTheme { RezeptDetailRoute(id, { _, _ -> }, {}, {}, {}, vm = vm) } }
         compose.warteAufText("Reispfanne")
@@ -204,5 +207,37 @@ class RezeptDetailScreenTest {
         zeigen(schrift200 = true)
         compose.warteAufText("Reispfanne")
         compose.pruefeNichtsAbgeschnitten()
+    }
+
+    @Test
+    fun aufEinkaufslisteMitAnsehen() {
+        zeigen()
+        compose.warteAufText("Reispfanne")
+        compose.onNodeWithContentDescription("Auf die Einkaufsliste").performClick()
+        compose.warteAufText("Hinzufügen")
+        compose.onNodeWithContentDescription("Eine Portion mehr").performClick()
+        compose.warteAufText("3 Portionen")
+        compose.onNodeWithText("Hinzufügen").performClick()
+        compose.warteAufText("1 Artikel auf der Einkaufsliste")
+        val reis = runBlocking { db.einkaufsartikelDao().alle() }.single()
+        assertEquals(0, BigDecimal("600").compareTo(reis.amount))
+        compose.onNodeWithText("Ansehen").performClick()
+        compose.waitUntil(5_000) { einkauf == 1 }
+    }
+
+    @Test
+    fun nichtsEinzukaufen() {
+        runBlocking {
+            db.zutatDao().upsert(ZutatEntity(id = "z-wasser", canonicalName = "Wasser", createdAt = 1, updatedAt = 1))
+            db.rezeptZutatDao().loeschenFuerRezept("r1")
+            db.rezeptZutatDao().upsert(RezeptZutatEntity("l9", "r1", "z-wasser", BigDecimal("500"), MeasureUnit.MILLILITER, 0, null, false))
+        }
+        zeigen()
+        compose.warteAufText("Reispfanne")
+        compose.onNodeWithContentDescription("Auf die Einkaufsliste").performClick()
+        compose.warteAufText("Hinzufügen")
+        compose.onNodeWithText("Hinzufügen").performClick()
+        compose.warteAufText("Nichts einzukaufen")
+        assertTrue(runBlocking { db.einkaufslisteDao().alle() }.isEmpty())
     }
 }

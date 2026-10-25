@@ -17,7 +17,7 @@ ist. Grundlage: [`v2-abnahme.md`](v2-abnahme.md), gekürzt nach dem Review vom 2
 - [x] Nährwerte (kJ/kcal, Eiweiß, Kohlenhydrate, Fett, Ballaststoffe, Zucker, Salz) pro Rezept und Portion,
       Vollständigkeitsanzeige – **kcal je Portion stimmen an allen Anzeigeorten überein** (Phase 1)
 - [x] Markdown-Import: mehrere Dateien oder ganzer Ordner, Gruppen, „nach Bedarf“, Quellen überspringen
-- [ ] Rezept direkt auf die Einkaufsliste
+- [x] Rezept direkt auf die Einkaufsliste (Phase 6d, Symbol im Rezeptdetail mit Portionen-Dialog)
 - [x] Tablet: Liste und Rezept nebeneinander
 
 ## Kochen – `:feature:kochen`
@@ -38,14 +38,15 @@ ist. Grundlage: [`v2-abnahme.md`](v2-abnahme.md), gekürzt nach dem Review vom 2
 - [x] Nährwerte je Tag, optionales Tagesziel
 
 ## Einkauf – `:feature:einkauf`
-- [ ] Liste aus dem Plan: Vorschau mit Abwählen, Snapshot, Neuberechnung mit Diff
-- [ ] Eine Ansicht (Kacheln oder Liste – Entscheidung in Phase 6 nach Probe auf Handy und Tablet)
-- [ ] „Zuletzt verwendet“, Katalog
-- [ ] Manuelle Einträge, Artikeldetails bearbeiten
-- [ ] Abhaken, Löschen mit Rückgängig
-- [ ] Herkunftsanzeige („300 g Curry + 150 g Reispfanne“)
-- [ ] Gruppiert nach Supermarkt-Abteilung
-- [ ] Wasser wird nie eingekauft („nie einkaufen“)
+- [x] Liste aus dem Plan: Vorschau mit Abwählen, Snapshot, Neuberechnung mit Diff (Phase 6d; Hinweis „Plan
+      geändert – abgleichen“, abgewählte Zeilen kommen nicht wieder, `EinkaufAbgleichTest`)
+- [x] Eine Ansicht (Phase 6d: Kacheln; Tablet mit Katalog rechts)
+- [x] „Zuletzt verwendet“, Katalog (Phase 6d; über alle Listen, höchstens 18)
+- [x] Manuelle Einträge, Artikeldetails bearbeiten (Phase 6d; Name, Notiz, Abteilung; Plan-Mengen nur lesend)
+- [x] Abhaken, Löschen mit Rückgängig (Phase 6d)
+- [x] Herkunftsanzeige („300 g Curry + 150 g Reispfanne“) (Phase 6d, „200 g Curry (Mo) + 100 g Reispfanne (Mi)“)
+- [x] Gruppiert nach Supermarkt-Abteilung (Phase 6d, Laufreihenfolge des Katalogs)
+- [x] Wasser wird nie eingekauft („nie einkaufen“) (Phase 6d, `EinkaufPlanTest`, `RezeptAufListeRepoTest`)
 
 ## Heute und Tagebuch – `:feature:heute`
 - [x] Nächste Mahlzeit aus dem Plan, „Kochen starten“ (Phase 5; der Kochmodus selbst folgt in Phase 6)

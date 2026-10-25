@@ -48,6 +48,8 @@ fun RezepteBereich(
     onOeffnen: (String) -> Unit,
     onNeu: () -> Unit,
     onKochen: (String, Int) -> Unit,
+    /** „Ansehen“ nach „Auf die Einkaufsliste“ im rechts eingebetteten Detail (Tablet). */
+    onEinkauf: () -> Unit = {},
     listeVm: RezeptListeViewModel = hiltViewModel(),
     detailVm: RezeptDetailViewModel = hiltViewModel(),
     importVm: ImportViewModel? = null,
@@ -91,7 +93,7 @@ fun RezepteBereich(
                         )
                         id != null -> RezeptDetailRoute(
                             id, onKochen, onBearbeiten = { auftrag++; rechts = Rechts.BEARBEITEN },
-                            onDupliziert = { ausgewaehlt = it }, onZurueck = { ausgewaehlt = null }, vm = detailVm,
+                            onDupliziert = { ausgewaehlt = it }, onZurueck = { ausgewaehlt = null }, onEinkauf = onEinkauf, vm = detailVm,
                         )
                         else -> Box(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), contentAlignment = Alignment.Center) {
                             LeererZustandFlaeche(

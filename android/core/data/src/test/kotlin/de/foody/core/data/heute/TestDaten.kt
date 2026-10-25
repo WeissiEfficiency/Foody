@@ -33,7 +33,8 @@ internal fun rezept(id: String, name: String, archiviert: Long? = null) = Rezept
 internal fun plan(id: String, datum: LocalDate, slot: String, rezeptId: String, portionen: Int = 2) =
     PlanEintragEntity(id = id, date = datum, slotType = slot, recipeId = rezeptId, servings = portionen, createdAt = 1, updatedAt = 1)
 
-internal fun liste(id: String, geaendert: Long) = EinkaufslisteEntity(id = id, name = id, createdAt = 1, updatedAt = geaendert)
+internal fun liste(id: String, angelegt: Long, geaendert: Long = angelegt) =
+    EinkaufslisteEntity(id = id, name = id, createdAt = angelegt, updatedAt = geaendert)
 
 internal fun artikel(id: String, listeId: String, name: String, erledigt: Boolean = false, reihenfolge: Int = 0) =
     EinkaufsartikelEntity(

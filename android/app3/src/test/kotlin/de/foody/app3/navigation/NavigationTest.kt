@@ -111,6 +111,59 @@ class NavigationTest {
 
     @Test
     @Config(qualifiers = "w411dp-h891dp")
+    fun einkaufTabZeigtListe() {
+        starten()
+        tab("Einkauf").performClick()
+        compose.onNodeWithText("Einkaufsliste").assertExists()
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun zumEinkaufWechseltTab() {
+        // „Ansehen“ nach „Auf die Einkaufsliste“ im Rezeptdetail
+        starten()
+        tab("Rezepte").performClick()
+        compose.runOnUiThread { nav.navigate(RezeptDetail("r1")) }
+        compose.onNodeWithText("Rezept r1").assertExists()
+        compose.runOnUiThread { nav.zumEinkauf() }
+        tab("Einkauf").assertIsSelected()
+        compose.onNodeWithText("Einkaufsliste").assertExists()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        tab("Heute").assertIsSelected()
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun zumEinkaufAusFruehererListe() {
+        // „Zur aktuellen Liste“ auf einer früheren (gelöschten) Liste: zurück an den Anfang des Tabs
+        starten()
+        tab("Einkauf").performClick()
+        compose.runOnUiThread { nav.navigate(EinkaufListe("alt")) }
+        compose.onNodeWithText("Liste alt").assertExists()
+        compose.runOnUiThread { nav.zumEinkauf() }
+        compose.onNodeWithText("Einkaufsliste").assertExists()
+        compose.onNodeWithText("Liste alt").assertDoesNotExist()
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun zumEinkaufNichtAufGemerkteFruehereListe() {
+        // „Ansehen“ nach Rezept → Liste: die aktuelle Liste, auch wenn im Einkauf-Tab noch eine frühere offen war
+        starten()
+        tab("Einkauf").performClick()
+        compose.runOnUiThread { nav.navigate(EinkaufListe("alt")) }
+        compose.onNodeWithText("Liste alt").assertExists()
+        tab("Rezepte").performClick()
+        compose.runOnUiThread { nav.navigate(RezeptDetail("r1")) }
+        compose.onNodeWithText("Rezept r1").assertExists()
+        compose.runOnUiThread { nav.zumEinkauf() }
+        tab("Einkauf").assertIsSelected()
+        compose.onNodeWithText("Einkaufsliste").assertExists()
+        compose.onNodeWithText("Liste alt").assertDoesNotExist()
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
     fun wocheTabZeigtPlan() {
         starten()
         tab("Woche").performClick()

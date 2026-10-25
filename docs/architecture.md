@@ -392,6 +392,35 @@ Schemaänderung.
   verstellbarer Uhr), Bildschirm (Hinzufügen mit eigenem Namen, Blätter, Rückgängig, Tablet), Navigation. Roborazzi-
   Bilder in `android/feature/woche/src/test/screenshots/`, Vergleich in der CI.
 
+## Einkauf (Phase 6d)
+
+Spec `docs/superpowers/specs/2026-10-25-v3-phase6d-einkauf-design.md`. Ersetzt die Platzhalter des Tabs „Einkauf“ und
+der Route `EinkaufListe(listeId)`. Keine Schemaänderung; gespeichert wird wie in v1 (Plan-Artikel `manual = false` mit
+Menge in der Basiseinheit und Herkunft je `NeedSource`, manuelle Artikel ohne Herkunft).
+
+- **`:core:data`** (`einkauf/`): `EinkaufRepository(db, uhr, ignoriert)`. Aktuell ist die zuletzt **angelegte** Liste
+  (`createdAt DESC, id DESC`; Heute nutzt dieselbe Reihenfolge). Lesen als Flows: `liste(id)` (offene Artikel je
+  Abteilung in Laufreihenfolge von `ShoppingCatalog`, Menge und Herkunft als Text), `zuletzt()` (gekaufte aller Listen,
+  einer je Artikel, höchstens 18), `fruehere()`, `abgleich(id)`. Schreiben: Kacheln und Eingabe nach `EinkaufEingabe`
+  (ohne Liste entsteht „Einkauf“), Details (Name 1–60, Notiz, Abteilung), Löschen/Wiederherstellen samt Herkunft,
+  `ausPlanAnlegen` (über `EinkaufsBedarf` ohne Vorrat; offene manuelle Artikel der bisherigen Liste wandern mit),
+  `rezeptAufListe` (über `RezeptAufListe`). **Abgleich:** die Plan-Artikel der Liste gegen den aktuellen Bedarf ihres
+  Zeitraums (`ShoppingDiff`), gefiltert nach `EinkaufsAbgleich` und nach `IgnorierteSchluessel` (lokal je Liste in den
+  Prefs `einkauf`: in Vorschau/Abgleich abgewählte und gelöschte Plan-Artikel). Die Liste selbst ist der alte Stand –
+  der Hinweis „Plan geändert“ erscheint genau dann, wenn „Übernehmen“ etwas ändern würde.
+- **`:feature:einkauf`**: `EinkaufViewModel` (angezeigte Liste, Blatt, Zeitraum und Suchtext im `SavedStateHandle`;
+  ein Rechen-Auftrag für die Vorschau; Sperre gegen Doppeltipp bei „Liste anlegen“/„Übernehmen“). `EinkaufRoute`:
+  Kopf mit Menü, Hinweis, „Was willst du einkaufen?“, offene Kacheln je Abteilung (Antippen = gekauft, Langdruck =
+  Details), „Zuletzt verwendet“, Katalog nach Abteilungen; ab 840 dp der Katalog rechts. Blätter: Vorschau (Zeitraum
+  ‹ ›, höchstens 28 Tage), Abgleich, Details mit Herkunft, Frühere Listen; Knopf fest unten.
+- **`:core:designsystem`**: `Kachel` mit `aufDerListe` (rot), `onLangdruck` („Details“) und `zustandsText`;
+  `KachelEmoji` für die Katalog-Emojis.
+- **`:feature:rezepte`**: „Auf die Einkaufsliste“ im Rezeptdetail (Portionen-Dialog, Snackbar mit „Ansehen“ →
+  `zumEinkauf()` in `:app3`).
+- **Tests:** Repository (Lesen, Schreiben, Plan, Abgleich, Rezept → Liste), ViewModel, Nebenläufigkeit (Abfragen und
+  Transaktionen hinter einer Schranke), Bildschirm und Blätter, Navigation. Roborazzi-Bilder in
+  `android/feature/einkauf/src/test/screenshots/`, Vergleich in der CI.
+
 ## Packung scannen (seit DB v9)
 
 `PackungScan` (`android/app/.../scan`) steuert den Ablauf hinter Schnittstellen, die Hilt in `ScanModule` bindet und Tests durch

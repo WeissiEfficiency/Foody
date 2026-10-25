@@ -67,8 +67,9 @@ class HeuteRepositoryTest {
 
     @Test
     fun offenerEinkaufJuengsteListe() = runTest {
-        db.einkaufslisteDao().upsert(liste("alt", 10))
-        db.einkaufslisteDao().upsert(liste("neu", 20))
+        // „alt“ wurde zuletzt geändert, „neu“ später angelegt: es zählt das Anlegen
+        db.einkaufslisteDao().upsert(liste("alt", angelegt = 20, geaendert = 99))
+        db.einkaufslisteDao().upsert(liste("neu", angelegt = 30))
         db.einkaufsartikelDao().upsert(artikel("a1", "alt", "Milch"))
         db.einkaufsartikelDao().upsert(artikel("b1", "neu", "Paprika", reihenfolge = 1))
         db.einkaufsartikelDao().upsert(artikel("b2", "neu", "Tomaten", reihenfolge = 0))
