@@ -14,6 +14,7 @@ import de.foody.feature.heute.tagebuch.TagebuchTagRoute
 import de.foody.feature.rezepte.RezepteBereich
 import de.foody.feature.rezepte.detail.RezeptDetailRoute
 import de.foody.feature.rezepte.editor.EditorRoute
+import de.foody.feature.woche.WocheRoute
 import java.time.LocalDate
 
 /** Die Bildschirme mit ViewModel (Hilt); Navigationstests setzen [Bildschirme.platzhalter] ein. */
@@ -27,6 +28,7 @@ class Bildschirme(
     val editor: @Composable (String?, Int?, NavHostController) -> Unit,
     /** Kochmodus: Rezept-ID, Portionen (`null` = die des Rezepts). */
     val kochen: @Composable (String, Int?, NavHostController) -> Unit,
+    val woche: @Composable (NavHostController) -> Unit,
 ) {
     companion object {
         val echt = Bildschirme(
@@ -81,6 +83,12 @@ class Bildschirme(
                     onSchliessen = { nav.popBackStack() },
                 )
             },
+            woche = { nav ->
+                WocheRoute(
+                    onKochen = { r, p -> nav.navigate(Kochen(r, p)) },
+                    onRezept = { nav.navigate(RezeptDetail(it)) },
+                )
+            },
         )
         val platzhalter = Bildschirme(
             heute = { Platzhalter("Heute") },
@@ -94,6 +102,7 @@ class Bildschirme(
             kochen = { id, portionen, _ ->
                 Platzhalter("Kochen", "Rezept $id" + portionen?.let { n -> " · $n ${if (n == 1) "Portion" else "Portionen"}" }.orEmpty())
             },
+            woche = { Platzhalter("Woche", "Wochenplan") },
         )
     }
 }
@@ -103,15 +112,15 @@ const val SCHEMA = "foody://"
 
 /**
  * Alle Ziele der V3. Deep Links: `foody://rezept/{id}`, `foody://einkauf/{listeId}`,
- * `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute). Woche und
- * Einkauf sind bis 6c–6d Platzhalter.
+ * `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute). Einkauf ist
+ * bis 6d Platzhalter.
  */
 @Composable
 fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Modifier = Modifier) {
     NavHost(nav, startDestination = Heute, modifier = modifier) {
         composable<Heute> { bildschirme.heute(nav) }
         composable<Rezepte> { bildschirme.rezepte(nav) }
-        composable<Woche> { Platzhalter("Woche") }
+        composable<Woche> { bildschirme.woche(nav) }
         composable<Einkauf> { Platzhalter("Einkauf") }
         composable<Einstellungen> { bildschirme.einstellungen(nav) }
         composable<RezeptDetail>(deepLinks = listOf(navDeepLink<RezeptDetail>(basePath = "${SCHEMA}rezept"))) {
