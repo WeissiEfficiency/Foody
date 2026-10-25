@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Ohne Benachrichtigungs-Freigabe vibriert der offene Kochmodus selbst, wenn ein Timer abläuft -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application>
         <service

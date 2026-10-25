@@ -45,6 +45,13 @@ class KochTimerSpeicher @Inject constructor(
 
     fun jetzt(): Long = clock.millis()
 
+    /** `true` nur beim ersten Aufruf überhaupt (für einen einmaligen Hinweis). */
+    fun hinweisEinmal(): Boolean {
+        if (prefs.getBoolean(HINWEIS, false)) return false
+        prefs.edit { putBoolean(HINWEIS, true) }
+        return true
+    }
+
     private fun aendern(f: (List<LaufenderTimer>) -> List<LaufenderTimer>) {
         liste.update(f)
         prefs.edit { putString(SCHLUESSEL, JSONArray(liste.value.map(::alsJson)).toString()) }
@@ -70,5 +77,6 @@ class KochTimerSpeicher @Inject constructor(
 
     private companion object {
         const val SCHLUESSEL = "timer"
+        const val HINWEIS = "hinweis_ohne_benachrichtigung"
     }
 }
