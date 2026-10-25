@@ -141,6 +141,13 @@ interface PlanEintragDao {
     @Query("SELECT * FROM meal_slot WHERE date BETWEEN :von AND :bis ORDER BY date, id")
     fun zwischen(von: LocalDate, bis: LocalDate): Flow<List<PlanEintragEntity>>
 
+    /** Noch nicht gekochte Einträge von [rezeptId] am [datum], in fester Reihenfolge (Mahlzeit, dann ID). */
+    @Query("SELECT * FROM meal_slot WHERE recipeId = :rezeptId AND date = :datum AND cookedAt IS NULL ORDER BY slotType, id")
+    suspend fun offeneAm(rezeptId: String, datum: LocalDate): List<PlanEintragEntity>
+
+    @Query("UPDATE meal_slot SET cookedAt = :zeit, updatedAt = :zeit WHERE id = :id")
+    suspend fun gekochtSetzen(id: String, zeit: Long)
+
     @Upsert suspend fun upsert(e: PlanEintragEntity)
 
     @Query("DELETE FROM meal_slot WHERE id = :id") suspend fun loeschen(id: String)
