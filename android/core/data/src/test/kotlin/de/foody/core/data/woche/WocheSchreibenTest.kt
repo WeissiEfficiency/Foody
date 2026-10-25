@@ -52,6 +52,13 @@ class WocheSchreibenTest {
     }
 
     @Test
+    fun hinzufuegenOhnePortionenNimmtDieDesRezepts() = runTest {
+        db.bestand()
+        val id = repo.hinzufuegen(tag, "ABENDESSEN", "r1", null)
+        assertEquals(2, eintrag(id).servings)
+    }
+
+    @Test
     fun portionenBegrenzt() = runTest {
         db.bestand()
         val id = repo.hinzufuegen(tag, "ABENDESSEN", "r1", 2)

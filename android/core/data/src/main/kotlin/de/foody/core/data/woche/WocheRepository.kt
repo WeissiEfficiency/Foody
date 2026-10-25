@@ -68,11 +68,12 @@ class WocheRepository(
     /** Rezepte für die Auswahl beim Hinzufügen: die Karten ohne archivierte. */
     fun rezeptAuswahl(): Flow<List<RezeptKarte>> = rezepte.karten().map { k -> k.filterNot { it.archiviert } }
 
-    /** Legt einen Eintrag an; Portionen 1–99, Name wie [umbenennen]. */
-    suspend fun hinzufuegen(datum: LocalDate, mahlzeit: String, rezeptId: String, portionen: Int): String {
+    /** Legt einen Eintrag an; Portionen 1–99 (`null` = die des Rezepts), Name wie [umbenennen]. */
+    suspend fun hinzufuegen(datum: LocalDate, mahlzeit: String, rezeptId: String, portionen: Int?): String {
         val jetzt = uhr()
+        val n = portionen ?: db.rezeptDao().nachId(rezeptId)?.defaultServings ?: MIN_PORTIONEN
         val e = PlanEintragEntity(
-            UUID.randomUUID().toString(), datum, mahlzeitText(mahlzeit), rezeptId, portionen.coerceIn(MIN_PORTIONEN, MAX_PORTIONEN),
+            UUID.randomUUID().toString(), datum, mahlzeitText(mahlzeit), rezeptId, n.coerceIn(MIN_PORTIONEN, MAX_PORTIONEN),
             createdAt = jetzt, updatedAt = jetzt,
         )
         db.planEintragDao().upsert(e)
