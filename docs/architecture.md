@@ -282,8 +282,8 @@ bis Phase 8 umschaltet.
   `RezeptDetail(id)`, `Kochen(rezeptId, portionen?)`, `EinkaufListe(listeId)`, `TagebuchTag(datum)`). `Hauptgeruest`:
   vier Tabs, unter 840 dp `FoodyNavigationsleiste` schwebend unten, ab 840 dp `FoodyNavigationsRail`; Detailziele
   markieren ihren Tab. Deep Links `foody://rezept/{id}`, `foody://einkauf/{listeId}`,
-  `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute). Woche,
-  Einkauf und Einkaufsliste sind bis Phase 6c/6d Platzhalter („Kommt in Phase 6“ mit Argumenten).
+  `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute). Einkauf
+  und Einkaufsliste sind bis Phase 6d Platzhalter („Kommt in Phase 6“ mit Argumenten).
   `Bildschirme` trennt die Hilt-Bildschirme von den Platzhaltern, damit Navigationstests ohne Hilt laufen.
 - **`:core:data`**: `HeuteRepository` (Plan heute/morgen nur mit vorhandenem, nicht archiviertem Rezept; kcal je
   Portion über `RecipeProfiles`; Rezeptvorschläge; offene Artikel der zuletzt geänderten Liste), `TagebuchRepository`
@@ -366,6 +366,31 @@ Spec `docs/superpowers/specs/2026-10-25-v3-phase6b-kochen-design.md`. Ersetzt de
 - **Tests:** Repository, Schritte, Sitzung, Timer-Speicher und Zeitplan, ViewModel (Doppeltipp „Fertig“, Sync-
   Änderung, gelöschtes Rezept, Portionen 0/500), Bildschirm (Schrift 200 %, Drehen, Tablet), Navigation in `:app3`.
   Roborazzi-Bilder in `android/feature/kochen/src/test/screenshots/`, Vergleich in der CI.
+
+## Woche (Phase 6c)
+
+Spec `docs/superpowers/specs/2026-10-25-v3-phase6c-woche-design.md`. Ersetzt den Platzhalter des Tabs „Woche“. Keine
+Schemaänderung.
+
+- **`:core:data`** (`woche/`): `WocheRepository(db, rezepte, uhr)` – `woche(montag)` als Flow mit sieben `WochenTag`
+  (Einträge nach Frühstück/Mittag/Snack/Abend, dann eigene Namen; `DayNutrition` je Person) und „Ø kcal/Tag“
+  (`PlanDurchschnitt`); Einträge verschwinden mit ihrem Rezept (FK `CASCADE`). Ändern (`hinzufuegen` mit Portionen
+  oder denen des Rezepts, `portionen` 1–99, `verschieben`, `umbenennen` – bekannte Namen als `Mahlzeit.name`, sonst
+  1–30 Zeichen –, `entfernen`/`wiederherstellen` mit derselben ID, `gekocht` an/aus) setzt `updatedAt`; Outbox über
+  den `meal_slot`-Trigger. „Leere Tage füllen“: `leereTage` (ab heute, ohne Eintrag dieser Mahlzeit),
+  `vorschlagen` (Eingaben für `LeereTageFuellen` aus Einordnung, Favorit, „gekocht“, letztem Plan, Merkmalen über
+  `Abwechslung`; belegte Nachbartage zählen), `uebernehmen` in einer Transaktion (gelöschte Rezepte übersprungen).
+  Die `Clock` für Woche und Kochen kommt aus `DatenModul`.
+- **`:feature:woche`**: `WocheViewModel` (Montag im `SavedStateHandle`, Tagesziel aus `TageszielSpeicher`, Füllen-
+  Zustand mit Seed, „↻“ je Tag ohne doppelte Rezepte, Sperre gegen Doppeltipp beim Übernehmen). `WocheRoute`:
+  „← KW 44 · 26.10.–1.11. →“ mit „Heute“, Tage als Glasflächen (kcal und Makros, mit Tagesziel `Naehrwertbalken`,
+  „mind.“ bei fehlenden Werten), „+ Mahlzeit“ (Mahlzeit wählen → Rezeptauswahl mit Suche, passende zuerst),
+  Mahlzeit-Blatt (Portionen, Gekocht, Kochen, Rezept ansehen, Verschieben auf Mo–So oder ±7 Tage, Umbenennen,
+  Entfernen mit „Rückgängig“), Füllen-Blatt; „Leere Tage füllen“ fest über der Navigationsleiste; Blätter ganz
+  geöffnet und scrollbar; ab 840 dp zwei Spalten (Mo–Do | Fr–So).
+- **Tests:** Repository (Lesen, Ändern, Vorschlag), ViewModel (Blättern, Jahreswechsel KW 53/KW 1, Füllen mit
+  verstellbarer Uhr), Bildschirm (Hinzufügen mit eigenem Namen, Blätter, Rückgängig, Tablet), Navigation. Roborazzi-
+  Bilder in `android/feature/woche/src/test/screenshots/`, Vergleich in der CI.
 
 ## Packung scannen (seit DB v9)
 

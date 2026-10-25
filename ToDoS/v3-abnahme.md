@@ -29,13 +29,13 @@ ist. Grundlage: [`v2-abnahme.md`](v2-abnahme.md), gekürzt nach dem Review vom 2
 - [x] **Neu:** Beim Kochen geänderte Mengen oder Schritte ins Rezept übernehmen (mit Rückfrage)
 
 ## Woche – `:feature:woche`
-- [ ] Eine fortlaufende Wochenansicht, weiterblättern in beide Richtungen
-- [ ] Frei benennbare Mahlzeiten-Slots; verschieben
-- [ ] Portionen skalieren im Planer
-- [ ] „Gekocht“ markieren (zählt für „Oft gekocht“, kein Vorratsabzug)
-- [ ] „Leere Tage füllen“ mit neuer Auswahl (Einordnung, Favoriten, Abwechslung, 14 Tage ohne Wiederholung),
+- [x] Eine fortlaufende Wochenansicht, weiterblättern in beide Richtungen
+- [x] Frei benennbare Mahlzeiten-Slots; verschieben
+- [x] Portionen skalieren im Planer
+- [x] „Gekocht“ markieren (zählt für „Oft gekocht“, kein Vorratsabzug)
+- [x] „Leere Tage füllen“ mit neuer Auswahl (Einordnung, Favoriten, Abwechslung, 14 Tage ohne Wiederholung),
       Vorschau, „Neu mischen“
-- [ ] Nährwerte je Tag, optionales Tagesziel
+- [x] Nährwerte je Tag, optionales Tagesziel
 
 ## Einkauf – `:feature:einkauf`
 - [ ] Liste aus dem Plan: Vorschau mit Abwählen, Snapshot, Neuberechnung mit Diff
