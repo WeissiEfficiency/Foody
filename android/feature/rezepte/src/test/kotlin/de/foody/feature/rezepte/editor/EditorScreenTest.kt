@@ -64,6 +64,19 @@ class EditorScreenTest {
     private fun feld(beschriftung: String) = compose.onNode(hasSetTextAction() and hasText(beschriftung))
 
     @Test
+    fun hinweisGekochtMitAnderenPortionen() {
+        compose.setContent { FoodyTheme { EditorRoute("r1", {}, {}, gekochtMit = 4, vm = vm) } }
+        compose.warteAufText("Gekocht mit 4 statt 2 Portionen – Mengen beziehen sich auf 2")
+    }
+
+    @Test
+    fun keinHinweisBeiGleichenPortionen() {
+        compose.setContent { FoodyTheme { EditorRoute("r1", {}, {}, gekochtMit = 2, vm = vm) } }
+        compose.warteAufText("Bearbeiten")
+        compose.onNodeWithText("Gekocht mit", substring = true).assertDoesNotExist()
+    }
+
+    @Test
     fun neuesRezeptSpeichern() {
         compose.setContent { inhalt() }
         compose.warteAufText("Neues Rezept")

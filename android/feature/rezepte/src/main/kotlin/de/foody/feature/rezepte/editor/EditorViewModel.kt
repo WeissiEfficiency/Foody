@@ -21,6 +21,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -87,6 +88,9 @@ class EditorViewModel @Inject constructor(
 
     val geaendert: StateFlow<Boolean> = combine(eingaben, original) { e, o -> e != o }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    /** Die Eingaben, wie sie geladen (oder zuletzt gespeichert) wurden. */
+    val ursprung: StateFlow<EditorEingaben> = original.asStateFlow()
 
     /** Lädt [id] (oder ein leeres Rezept); derselbe Aufruf nach einem Neuaufbau lässt die Eingaben stehen. */
     suspend fun laden(id: String?) {

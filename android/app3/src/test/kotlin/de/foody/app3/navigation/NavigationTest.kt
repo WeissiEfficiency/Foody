@@ -17,6 +17,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import kotlin.test.assertTrue
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -106,6 +107,42 @@ class NavigationTest {
         starten()
         tab("Rezepte").performClick()
         compose.onNodeWithText("Rezeptliste").assertExists()
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun kochenOhneLeiste() {
+        starten()
+        compose.runOnUiThread { nav.navigate(Kochen("r1", 2)) }
+        compose.onNodeWithText("Rezept r1 · 2 Portionen").assertExists()
+        compose.onNodeWithTag(Hauptgeruest.LEISTE).assertDoesNotExist()
+        compose.runOnUiThread { nav.popBackStack() }
+        compose.onNodeWithTag(Hauptgeruest.LEISTE).assertExists()
+    }
+
+    @Test
+    @Config(qualifiers = "w1280dp-h800dp")
+    fun kochenOhneRail() {
+        starten()
+        compose.runOnUiThread { nav.navigate(Kochen("r1", 2)) }
+        compose.onNodeWithTag(Hauptgeruest.RAIL).assertDoesNotExist()
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun kochenZuRezeptAnpassen() {
+        starten()
+        compose.runOnUiThread {
+            nav.navigate(RezeptDetail("r1"))
+            nav.navigate(Kochen("r1", 2))
+            nav.zuRezeptAnpassen("r1", 2)
+        }
+        compose.onNodeWithText("Rezept r1 bearbeiten · gekocht mit 2").assertExists()
+        compose.runOnUiThread {
+            assertTrue(runCatching { nav.getBackStackEntry<Kochen>() }.isFailure, "Kochen liegt nicht mehr im Stapel")
+            nav.popBackStack()
+        }
+        compose.onNodeWithText("Rezept r1").assertExists()
     }
 
     @Test

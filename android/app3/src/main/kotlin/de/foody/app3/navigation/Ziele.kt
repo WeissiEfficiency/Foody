@@ -22,7 +22,8 @@ import java.time.format.DateTimeParseException
 
 @Serializable data object RezeptNeu
 
-@Serializable data class RezeptBearbeiten(val id: String)
+/** [gekochtMit]: aus dem Kochmodus mit dieser Portionenzahl (Hinweis im Editor). */
+@Serializable data class RezeptBearbeiten(val id: String, val gekochtMit: Int? = null)
 
 /** [portionen] `null` = Portionen des Rezepts. */
 @Serializable data class Kochen(val rezeptId: String, val portionen: Int? = null)

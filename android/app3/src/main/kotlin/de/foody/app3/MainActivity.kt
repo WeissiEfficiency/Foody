@@ -12,6 +12,9 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.foody.app3.navigation.Hauptgeruest
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.feature.kochen.timer.KochTimerDienst
+import de.foody.feature.kochen.timer.KochTimerSpeicher
+import javax.inject.Inject
 
 /**
  * Einzige Activity der V3. `singleTask`: Ein Deep Link bei laufender App kommt über `onNewIntent` und wird an die
@@ -19,6 +22,8 @@ import de.foody.core.designsystem.glas.FoodyHintergrund
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject lateinit var kochTimer: KochTimerSpeicher
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -31,5 +36,11 @@ class MainActivity : ComponentActivity() {
             }
             FoodyTheme { FoodyHintergrund { Hauptgeruest(nav) } }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Laufende Kochtimer nach einem Neustart wieder aufnehmen – nur im Vordergrund darf der Dienst starten
+        KochTimerDienst.wennNoetigStarten(this, kochTimer)
     }
 }
