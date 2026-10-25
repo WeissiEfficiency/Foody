@@ -10,8 +10,10 @@ import de.foody.domain.ShoppingCatalog
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
 
@@ -151,6 +153,43 @@ class EinkaufRepository(
     suspend fun listeLoeschen(id: String) {
         db.einkaufslisteDao().loeschen(id)
         ignoriert.vergessen(id)
+    }
+
+    // ---- Liste aus dem Plan ----
+
+    suspend fun planVorschau(von: LocalDate, bis: LocalDate): List<VorschauZeile> =
+        PlanBedarf.laden(db, von, bis).let { p -> p.bedarf.map(p::zeile) }
+
+    /**
+     * Neue Liste „26.10.–1.11.“ mit allen nicht abgewählten Plan-Artikeln samt Herkunft; die abgewählten werden
+     * ignoriert, die offenen manuellen Artikel der bisherigen Liste wandern mit. Bleibt nichts übrig: `null`, keine Liste.
+     */
+    suspend fun ausPlanAnlegen(von: LocalDate, bis: LocalDate, abgewaehlt: Set<String>): String? {
+        val id = db.withTransaction {
+            val p = PlanBedarf.laden(db, von, bis)
+            val bedarf = p.bedarf.filter { it.key !in abgewaehlt }
+            if (bedarf.isEmpty()) return@withTransaction null
+            val vorher = db.einkaufslisteDao().alleFlow().first().firstOrNull()
+            // Später angelegt als die bisherige, auch wenn die Uhr gleich steht: die neue ist danach die aktuelle
+            val jetzt = maxOf(uhr(), (vorher?.createdAt ?: Long.MIN_VALUE) + 1)
+            val liste = EinkaufslisteEntity(
+                id = neueId(), name = listenName(von, bis), rangeStart = von, rangeEnd = bis, createdAt = jetzt, updatedAt = jetzt,
+            )
+            db.einkaufslisteDao().upsert(liste)
+            bedarf.forEachIndexed { i, n ->
+                val a = p.artikel(n, liste.id, i, uhr())
+                db.einkaufsartikelDao().upsert(a)
+                p.quellen(n, a.id).forEach { db.einkaufsartikelQuelleDao().upsert(it) }
+            }
+            vorher?.let { alt ->
+                db.einkaufsartikelDao().nachListe(alt.id).filter { it.manual && !it.checked }.forEachIndexed { i, m ->
+                    speichern(m.copy(listId = liste.id, sortOrder = bedarf.size + i))
+                }
+            }
+            liste.id
+        } ?: return null
+        ignoriert.hinzufuegen(id, abgewaehlt)
+        return id
     }
 
     /** Die gegebene Liste, wenn es sie gibt; sonst eine neue leere „Einkauf“. Nur innerhalb einer Transaktion. */
