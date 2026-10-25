@@ -114,6 +114,19 @@ class EinstellungenViewModelTest {
     }
 
     @Test
+    fun gescheiterteSicherungHinterlaesstKeineDatei() {
+        // Die Datei ist schon angelegt, dann scheitert das Schreiben: keine halbe ZIP, die wie eine Sicherung aussieht
+        val vm = u.vm()
+        val meldungen = meldungenVon(vm)
+        val ziel = datei("kaputt.zip").apply { writeBytes(byteArrayOf()) }
+        u.db.close()
+        vm.sicherungErstellen(Uri.fromFile(ziel))
+        warte { meldungen.isNotEmpty() }
+        assertTrue(meldungen.single().startsWith("Sicherung fehlgeschlagen"), meldungen.single())
+        assertFalse(ziel.exists())
+    }
+
+    @Test
     fun wiederherstellenV1() {
         val vm = u.vm()
         val meldungen = meldungenVon(vm)

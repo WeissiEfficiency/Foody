@@ -1,7 +1,9 @@
 package de.foody.feature.einstellungen
 
+import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
+import android.provider.DocumentsContract
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,8 +15,13 @@ import de.foody.core.data.TAGESZIEL_MIN
 import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.sicherung.LoeschErgebnis
 import de.foody.core.data.sicherung.Sicherung
+import java.io.File
+import java.time.Clock
+import java.time.LocalDate
+import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,9 +33,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.Clock
-import java.time.LocalDate
-import javax.inject.Inject
 
 /** Was gerade läuft; solange eine Aktion läuft, werden weitere ignoriert. */
 enum class Aktion { ERSTELLEN, WIEDERHERSTELLEN, LOESCHEN }
@@ -85,11 +89,28 @@ class EinstellungenViewModel @Inject constructor(
     fun dateiname(): String = "foody-sicherung-${LocalDate.now(clock)}.zip"
 
     fun sicherungErstellen(uri: Uri) = starten(Aktion.ERSTELLEN) {
-        withContext(Dispatchers.IO) {
-            val aus = kontext.contentResolver.openOutputStream(uri) ?: error("Datei lässt sich nicht öffnen")
-            aus.use { sicherung.schreiben(it) }
+        try {
+            withContext(Dispatchers.IO) {
+                val aus = kontext.contentResolver.openOutputStream(uri) ?: error("Datei lässt sich nicht öffnen")
+                aus.use { sicherung.schreiben(it) }
+            }
+        } catch (e: Throwable) {
+            // Gescheitert oder abgebrochen: keine halbe ZIP liegen lassen, die wie eine gültige Sicherung aussieht
+            withContext(NonCancellable + Dispatchers.IO) { halbeDateiEntfernen(uri) }
+            throw e
         }
         "Sicherung gespeichert"
+    }
+
+    /** Bestmöglich: Dokument über SAF löschen, eine `file:`-Uri direkt. */
+    private fun halbeDateiEntfernen(uri: Uri) {
+        runCatching {
+            if (uri.scheme == ContentResolver.SCHEME_FILE) {
+                uri.path?.let { File(it).delete() }
+            } else {
+                DocumentsContract.deleteDocument(kontext.contentResolver, uri)
+            }
+        }
     }
 
     fun wiederherstellen(uri: Uri) = starten(Aktion.WIEDERHERSTELLEN) {
