@@ -46,6 +46,12 @@ class StartdatenLader @Inject constructor(
         return geaendert
     }
 
+    /** Vergisst die geladene Version (nach „Alle Daten löschen“): [ladenWennNoetig] spielt den Katalog dann neu ein. */
+    fun versionZuruecksetzen() {
+        kontext.getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE).edit()
+            .putInt(SEED_VERSION, 0).remove(SEEDED_ALT).commit()
+    }
+
     private companion object {
         const val SEED_VERSION = "seedVersion"
         const val SEEDED_ALT = "seeded"
