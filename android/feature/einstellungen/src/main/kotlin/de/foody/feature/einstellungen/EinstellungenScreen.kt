@@ -78,10 +78,9 @@ fun EinstellungenRoute(
     // Datei, die nach der Rückfrage wiederhergestellt wird; als Text, damit sie Drehen übersteht
     var ersetzen by rememberSaveable { mutableStateOf<String?>(null) }
     var loeschen by rememberSaveable { mutableStateOf(false) }
+    // Eigene Eingabe; bis zur ersten Eingabe zeigt das Feld das gespeicherte Ziel (schon im ersten Bild)
     var zielText by rememberSaveable { mutableStateOf<String?>(null) }
     var zielFehler by rememberSaveable { mutableStateOf(false) }
-    // Das Feld startet mit dem gespeicherten Ziel, sobald die Speicher gelesen sind (der Kontostand kommt mit)
-    LaunchedEffect(z.konto != null) { if (z.konto != null && zielText == null) zielText = z.tagesziel?.toString().orEmpty() }
     val dateien = dateiwahl({ vm.sicherungErstellen(it) }, { ersetzen = it.toString() })
 
     Box(Modifier.fillMaxSize()) {
@@ -99,7 +98,7 @@ fun EinstellungenRoute(
                 }
                 KontoAbschnitt(z.konto, System.currentTimeMillis(), onServer)
                 DarstellungAbschnitt(z.darstellung, vm::darstellungSetzen)
-                TageszielAbschnitt(zielText.orEmpty(), zielFehler) { neu ->
+                TageszielAbschnitt(zielText ?: z.tagesziel?.toString().orEmpty(), zielFehler) { neu ->
                     zielText = neu
                     zielFehler = !vm.tageszielEingabe(neu)
                 }

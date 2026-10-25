@@ -18,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -51,7 +50,7 @@ private fun Klein(text: String) = Text(text, style = MaterialTheme.typography.bo
 internal fun KontoAbschnitt(konto: VerbindungsZustand?, jetzt: Long, onServer: () -> Unit) = Abschnitt("Konto") {
     val verbunden = konto?.takeIf { it.verbunden }
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(FoodyFormen.mittel).clickable(role = Role.Button, onClick = onServer),
+        Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onServer),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {

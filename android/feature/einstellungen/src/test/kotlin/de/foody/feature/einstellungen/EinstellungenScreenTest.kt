@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -107,6 +108,18 @@ class EinstellungenScreenTest {
         compose.warteAufText("Dunkel")
         compose.onNodeWithText("Dunkel").performClick()
         compose.waitUntil(5_000) { runBlocking { u.darstellung.darstellung().first() } == Darstellung.DUNKEL }
+    }
+
+    @Test
+    fun tageszielZeigtGespeichertenWert() {
+        u.ziel.setzen(2000)
+        zeigen()
+        compose.warteAufText("TAGESZIEL")
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().any {
+                it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.EditableText)?.text == "2000"
+            }
+        }
     }
 
     @Test
