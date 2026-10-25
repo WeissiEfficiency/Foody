@@ -125,6 +125,17 @@ class EinstellungenViewModelTest {
     }
 
     @Test
+    fun unlesbareDateiKeinAbsturz() {
+        // Etwa eine Cloud-Datei, die offline nicht verfügbar ist: Meldung statt Absturz, danach wieder bereit
+        val vm = u.vm()
+        val meldungen = meldungenVon(vm)
+        vm.wiederherstellen(Uri.fromFile(File(u.kontext.cacheDir, "gibt-es-nicht.zip").also { it.delete() }))
+        warte { meldungen.isNotEmpty() }
+        assertEquals("Die Datei lässt sich nicht öffnen", meldungen.single())
+        warte { vm.laeuft.value == null }
+    }
+
+    @Test
     fun loeschenMeldet() {
         rezept()
         val vm = u.vm()

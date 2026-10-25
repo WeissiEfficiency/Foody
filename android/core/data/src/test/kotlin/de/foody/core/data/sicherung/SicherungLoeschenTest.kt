@@ -18,6 +18,12 @@ import de.foody.core.data.startdaten.Startdaten
 import de.foody.core.data.startdaten.StartdatenLader
 import de.foody.core.data.sync.SyncSpeicher
 import de.foody.domain.MeasureUnit
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -130,5 +136,33 @@ class SicherungLoeschenTest {
     fun startdatenVersionWiederGesetzt() = runTest {
         sicherung.allesLoeschen()
         assertEquals(Startdaten.VERSION, prefs.getInt("seedVersion", 0))
+    }
+
+    @Test
+    fun abbruchNachDemCommitRaeumtTrotzdemAuf() = runBlocking<Unit> {
+        // Seite verlassen, während das Löschen läuft: Der Abbruch kommt mitten in der Transaktion (beim ersten DELETE).
+        // Die Transaktion wird festgeschrieben; Fotos und Startkatalog müssen trotzdem folgen – sonst bleiben Fotos
+        // liegen und der Katalog bis zum nächsten Start leer.
+        val auftrag = AtomicReference<Job?>(null)
+        db.close()
+        db = Room.inMemoryDatabaseBuilder(context, FoodyDatenbank::class.java).addCallback(FoodyDatenbank.CALLBACK)
+            .allowMainThreadQueries()
+            .setQueryCallback({ sql, _ -> if (sql.startsWith("DELETE FROM tagebuch_eintrag")) auftrag.get()?.cancel() }) { it.run() }
+            .build()
+        sync = SyncSpeicher(db, ablage, FotoIndex(db.syncDao(), ablage))
+        sicherung = Sicherung(context, db, ablage, sync, StartdatenLader(db, context))
+        db.syncDao().upsertFotoLokal(SyncFotoLokalEntity(foto, "abc", 3, 1))
+        bestand()
+        val datei = assertNotNull(ablage.datei(foto))
+
+        val job = launch(Dispatchers.Default, start = CoroutineStart.LAZY) { sicherung.allesLoeschen() }
+        auftrag.set(job)
+        job.start()
+        job.join()
+
+        assertTrue(job.isCancelled)
+        assertNull(db.rezeptDao().nachId("r1"))
+        assertFalse(datei.exists())
+        assertNotNull(db.zutatDao().nachId("seed-reis"))
     }
 }

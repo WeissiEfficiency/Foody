@@ -413,24 +413,24 @@ class Sicherung(
      */
     suspend fun allesLoeschen(): LoeschErgebnis = withContext(Dispatchers.IO) {
         if (sync.zustand().aktiv) return@withContext LoeschErgebnis.SyncAktiv
-        val gesperrt = withContext(NonCancellable) {
-            db.withTransaction {
+        // Ab hier nicht abbrechbar: Wer die Seite verlässt, während gelöscht wird, soll kein halbes Ergebnis bekommen
+        // (Daten weg, aber Fotos noch da und Katalog leer). Das Aufräumen ist kurz.
+        withContext(NonCancellable) {
+            val gesperrt = db.withTransaction {
                 if (db.syncDao().zustand()?.active == true) return@withTransaction true
                 leeren()
                 false
             }
+            if (gesperrt) return@withContext LoeschErgebnis.SyncAktiv
+            startdaten.versionZuruecksetzen()
+            try {
+                for (link in ablage.unbenutzteEntfernen(emptyList())) db.syncDao().loeschenFotoLokal(link)
+                startdaten.ladenWennNoetig()
+            } catch (e: Exception) {
+                Log.w(TAG, "Aufräumen nach dem Löschen fehlgeschlagen", e)
+            }
+            LoeschErgebnis.Fertig
         }
-        if (gesperrt) return@withContext LoeschErgebnis.SyncAktiv
-        startdaten.versionZuruecksetzen()
-        try {
-            for (link in ablage.unbenutzteEntfernen(emptyList())) db.syncDao().loeschenFotoLokal(link)
-            startdaten.ladenWennNoetig()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.w(TAG, "Aufräumen nach dem Löschen fehlgeschlagen", e)
-        }
-        LoeschErgebnis.Fertig
     }
 
     /** Leert alle Fachtabellen, Kinder zuerst; nur in einer Transaktion aufrufen. */

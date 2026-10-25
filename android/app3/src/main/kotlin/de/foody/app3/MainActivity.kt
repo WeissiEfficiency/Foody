@@ -41,7 +41,9 @@ class MainActivity : ComponentActivity() {
             }
             // Startwert sofort aus den Prefs: kein Aufblitzen der falschen Darstellung beim Start
             val d by remember { darstellung.darstellung() }.collectAsStateWithLifecycle(darstellung.aktuell())
-            FoodyTheme(dunkel = istDunkel(d)) { FoodyHintergrund { Hauptgeruest(nav) } }
+            val dunkel = istDunkel(d)
+            SystemleistenPassend(dunkel)
+            FoodyTheme(dunkel = dunkel) { FoodyHintergrund { Hauptgeruest(nav) } }
         }
     }
 

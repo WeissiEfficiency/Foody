@@ -85,17 +85,11 @@ class EinstellungenViewModel @Inject constructor(
     fun dateiname(): String = "foody-sicherung-${LocalDate.now(clock)}.zip"
 
     fun sicherungErstellen(uri: Uri) = starten(Aktion.ERSTELLEN) {
-        try {
-            withContext(Dispatchers.IO) {
-                val aus = kontext.contentResolver.openOutputStream(uri) ?: error("Datei lässt sich nicht öffnen")
-                aus.use { sicherung.schreiben(it) }
-            }
-            "Sicherung gespeichert"
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            "Sicherung fehlgeschlagen: ${e.message ?: "unbekannter Fehler"}"
+        withContext(Dispatchers.IO) {
+            val aus = kontext.contentResolver.openOutputStream(uri) ?: error("Datei lässt sich nicht öffnen")
+            aus.use { sicherung.schreiben(it) }
         }
+        "Sicherung gespeichert"
     }
 
     fun wiederherstellen(uri: Uri) = starten(Aktion.WIEDERHERSTELLEN) {
@@ -112,14 +106,31 @@ class EinstellungenViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Führt eine Aktion aus, solange keine andere läuft. Fehler (Datei nicht lesbar, Cloud-Datei offline, Speicher voll)
+     * werden zur Meldung statt den Prozess zu beenden.
+     */
     private fun starten(aktion: Aktion, arbeit: suspend () -> String) {
         if (!laufend.compareAndSet(null, aktion)) return
         viewModelScope.launch {
             try {
-                kanal.send(arbeit())
+                val meldung = try {
+                    arbeit()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    fehlerMeldung(aktion, e)
+                }
+                kanal.send(meldung)
             } finally {
                 laufend.value = null
             }
         }
+    }
+
+    private fun fehlerMeldung(aktion: Aktion, e: Exception): String = when (aktion) {
+        Aktion.ERSTELLEN -> "Sicherung fehlgeschlagen: ${e.message ?: "unbekannter Fehler"}"
+        Aktion.WIEDERHERSTELLEN -> "Die Datei lässt sich nicht öffnen"
+        Aktion.LOESCHEN -> "Löschen fehlgeschlagen: ${e.message ?: "unbekannter Fehler"}"
     }
 }
