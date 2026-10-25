@@ -47,6 +47,10 @@ import java.time.LocalDate
 private val INHALT_MAX = 1100.dp
 private val ZWEISPALTIG_AB = 840.dp
 
+/** Abstand des Füllen-Knopfs über der schwebenden Navigationsleiste; die Liste endet darüber. */
+private val UEBER_LEISTE = 96.dp
+private val LISTE_UNTEN = 168.dp
+
 /**
  * Der Tab „Woche“: eine Woche Mo–So mit Pfeilen zum Blättern, Tage mit Einträgen und Nährwerten (ab 840 dp in zwei
  * Spalten), „+ Mahlzeit“ (Mahlzeit wählen → Rezept wählen), das Mahlzeit-Blatt je Eintrag und „Leere Tage füllen“.
@@ -70,7 +74,7 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
         val zweispaltig = maxWidth >= ZWEISPALTIG_AB
         Column(
             Modifier.widthIn(max = INHALT_MAX).fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = LISTE_UNTEN),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Kopf(woche, zeigtHeute, vm::blaettern, vm::heute)
@@ -86,9 +90,13 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
             } else {
                 tage.forEach { karte(it) }
             }
-            FoodyKnopf("Leere Tage füllen", { vm.fuellenOeffnen() }, Modifier.fillMaxWidth())
         }
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = 96.dp))
+        // Fest über der schwebenden Navigationsleiste, nicht am Ende der Liste
+        FoodyKnopf(
+            "Leere Tage füllen", { vm.fuellenOeffnen() },
+            Modifier.align(Alignment.BottomCenter).widthIn(max = INHALT_MAX).fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = UEBER_LEISTE),
+        )
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = UEBER_LEISTE + 64.dp))
     }
 
     neuAm?.let { datum ->
