@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
@@ -18,7 +19,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.Darstellung
@@ -75,15 +78,16 @@ internal fun DarstellungAbschnitt(gewaehlt: Darstellung, onWahl: (Darstellung) -
 
 /** Tagesziel als Zahlenfeld; [fehler] zeigt „500 bis 10.000 kcal“ am Feld. */
 @Composable
-internal fun TageszielAbschnitt(text: String, fehler: Boolean, onText: (String) -> Unit) = Abschnitt("Tagesziel") {
+internal fun TageszielAbschnitt(text: String, fehler: Boolean, onFertig: () -> Unit, onText: (String) -> Unit) = Abschnitt("Tagesziel") {
     OutlinedTextField(
-        text, onText, Modifier.fillMaxWidth(),
+        text, onText, Modifier.fillMaxWidth().onFocusChanged { if (!it.isFocused) onFertig() },
         label = { Text("Tagesziel") },
         suffix = { Text("kcal") },
         singleLine = true,
         isError = fehler,
         supportingText = { Text(if (fehler) "500 bis 10.000 kcal" else "Leer lassen = kein Ziel") },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { onFertig() }),
     )
 }
 

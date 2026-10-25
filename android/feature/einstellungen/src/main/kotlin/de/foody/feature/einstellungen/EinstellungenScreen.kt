@@ -80,6 +80,8 @@ fun EinstellungenRoute(
     var loeschen by rememberSaveable { mutableStateOf(false) }
     // Eigene Eingabe; bis zur ersten Eingabe zeigt das Feld das gespeicherte Ziel (schon im ersten Bild)
     var zielText by rememberSaveable { mutableStateOf<String?>(null) }
+    // Ungültig ist sofort bekannt; gezeigt wird der Fehler erst nach „Fertig“ oder beim Verlassen des Feldes
+    var zielUngueltig by rememberSaveable { mutableStateOf(false) }
     var zielFehler by rememberSaveable { mutableStateOf(false) }
     val dateien = dateiwahl({ vm.sicherungErstellen(it) }, { ersetzen = it.toString() })
 
@@ -98,9 +100,10 @@ fun EinstellungenRoute(
                 }
                 KontoAbschnitt(z.konto, System.currentTimeMillis(), onServer)
                 DarstellungAbschnitt(z.darstellung, vm::darstellungSetzen)
-                TageszielAbschnitt(zielText ?: z.tagesziel?.toString().orEmpty(), zielFehler) { neu ->
+                TageszielAbschnitt(zielText ?: z.tagesziel?.toString().orEmpty(), zielFehler, onFertig = { zielFehler = zielUngueltig }) { neu ->
                     zielText = neu
-                    zielFehler = !vm.tageszielEingabe(neu)
+                    zielUngueltig = !vm.tageszielEingabe(neu)
+                    if (!zielUngueltig) zielFehler = false
                 }
                 SicherungAbschnitt(z, onErstellen = dateien.erstellen, onWiederherstellen = dateien.oeffnen)
                 DatenAbschnitt(z, onLoeschen = { loeschen = true })

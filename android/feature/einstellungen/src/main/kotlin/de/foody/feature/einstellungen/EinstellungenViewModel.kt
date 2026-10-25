@@ -67,7 +67,11 @@ class EinstellungenViewModel @Inject constructor(
     val zustand: StateFlow<EinstellungenZustand> =
         combine(darstellungen.darstellung(), ziel.tagesziel(), konto.zustand, laufend) { d, t, k, l ->
             EinstellungenZustand(d, t, k, l)
-        }.stateIn(viewModelScope, SharingStarted.Eagerly, EinstellungenZustand())
+        }.stateIn(
+            viewModelScope, SharingStarted.Eagerly,
+            // Startwerte sofort aus den Prefs: kein Umspringen, bis der Kontostand da ist
+            EinstellungenZustand(darstellung = darstellungen.aktuell(), tagesziel = ziel.aktuell()),
+        )
 
     private val kanal = Channel<String>(Channel.BUFFERED)
     val meldungen: Flow<String> = kanal.receiveAsFlow()

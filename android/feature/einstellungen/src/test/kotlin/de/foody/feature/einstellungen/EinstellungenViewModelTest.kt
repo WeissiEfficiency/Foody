@@ -96,6 +96,19 @@ class EinstellungenViewModelTest {
     }
 
     @Test
+    fun startwerteSofort() {
+        // Der Kontostand kommt (noch) nicht: Darstellung und Tagesziel stehen trotzdem schon im ersten Zustand
+        u.darstellung.setzen(Darstellung.DUNKEL)
+        u.ziel.setzen(2000)
+        val stumm = object : KontoZugriff by u.konto {
+            override val zustand = kotlinx.coroutines.flow.MutableSharedFlow<VerbindungsZustand>()
+        }
+        val z = u.vm(stumm).zustand.value
+        assertEquals(Darstellung.DUNKEL, z.darstellung)
+        assertEquals(2000, z.tagesziel)
+    }
+
+    @Test
     fun dateinameAusUhr() {
         assertEquals("foody-sicherung-2026-10-28.zip", u.vm().dateiname())
     }

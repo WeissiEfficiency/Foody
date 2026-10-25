@@ -17,8 +17,11 @@ const val TAGESZIEL_MAX = 10_000
 class TageszielSpeicher @Inject constructor(@ApplicationContext kontext: Context) {
     private val prefs = kontext.getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE)
 
+    /** Das gespeicherte Ziel sofort, etwa als Startwert vor dem ersten Wert von [tagesziel]. */
+    fun aktuell(): Int? = prefs.getInt(Einstellungsschluessel.TAGESZIEL, 0).takeIf { it > 0 }
+
     fun tagesziel(): Flow<Int?> = callbackFlow {
-        fun senden() = trySend(prefs.getInt(Einstellungsschluessel.TAGESZIEL, 0).takeIf { it > 0 })
+        fun senden() = trySend(aktuell())
         val hoerer = SharedPreferences.OnSharedPreferenceChangeListener { _, schluessel ->
             if (schluessel == Einstellungsschluessel.TAGESZIEL) senden()
         }

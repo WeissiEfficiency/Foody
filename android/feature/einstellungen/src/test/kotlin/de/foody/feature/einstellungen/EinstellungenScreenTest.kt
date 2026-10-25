@@ -12,6 +12,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
@@ -127,10 +128,23 @@ class EinstellungenScreenTest {
         zeigen()
         compose.warteAufText("TAGESZIEL")
         compose.onNode(hasSetTextAction()).performScrollTo().performTextInput("99")
+        compose.onNode(hasSetTextAction()).performImeAction()
         compose.warteAufText("500 bis 10.000 kcal")
         assertNull(runBlocking { u.ziel.tagesziel().first() })
         compose.onNode(hasSetTextAction()).performTextReplacement("2000")
         compose.waitUntil(5_000) { runBlocking { u.ziel.tagesziel().first() } == 2000 }
+    }
+
+    @Test
+    fun tageszielFehlerErstNachFertig() {
+        // Beim Tippen von „2000“ blinkt nach „2“, „20“, „200“ kein Fehler – erst „Fertig“ zeigt ihn
+        zeigen()
+        compose.warteAufText("TAGESZIEL")
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextInput("2")
+        compose.waitForIdle()
+        compose.onNodeWithText("500 bis 10.000 kcal").assertDoesNotExist()
+        compose.onNode(hasSetTextAction()).performImeAction()
+        compose.warteAufText("500 bis 10.000 kcal")
     }
 
     @Test
@@ -190,6 +204,7 @@ class EinstellungenScreenTest {
         tester.setContent { FoodyTheme { EinstellungenRoute({}, {}, vm = vm, dateiwahl = dateien) } }
         compose.warteAufText("TAGESZIEL")
         compose.onNode(hasSetTextAction()).performScrollTo().performTextInput("99")
+        compose.onNode(hasSetTextAction()).performImeAction()
         compose.warteAufText("500 bis 10.000 kcal")
         tester.emulateSavedInstanceStateRestore()
         compose.warteAufText("500 bis 10.000 kcal")

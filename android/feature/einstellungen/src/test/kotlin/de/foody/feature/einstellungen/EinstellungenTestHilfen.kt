@@ -76,7 +76,7 @@ internal class EinstellungenTestUmgebung {
         kontext.getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE).edit().clear().commit()
     }
 
-    fun vm() = EinstellungenViewModel(kontext, darstellung, ziel, sicherung, konto, TEST_UHR)
+    fun vm(kontoZugriff: KontoZugriff = konto) = EinstellungenViewModel(kontext, darstellung, ziel, sicherung, kontoZugriff, TEST_UHR)
 
     fun verbinden() {
         konto.stand.value = VerbindungsZustand(verbunden = true, adresse = "http://10.0.2.2:8081", letzterSync = null, letzterFehler = null)
