@@ -11,6 +11,9 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.MIGRATION_9_10
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.fotos.FotoIndex
+import de.foody.core.data.rezepte.RezeptImportDienst
+import de.foody.core.data.rezepte.RezeptImporter
+import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.data.rezeptimport.PortionenNachtrag
 import de.foody.core.data.sicherung.Sicherung
 import de.foody.core.data.tagebuch.TagebuchRepository
@@ -61,4 +64,11 @@ object DatenModul {
     @Provides
     @Singleton
     fun tagebuchRepository(db: FoodyDatenbank): TagebuchRepository = TagebuchRepository(db, System::currentTimeMillis)
+
+    @Provides
+    @Singleton
+    fun rezeptRepository(db: FoodyDatenbank, ablage: FotoAblage): RezeptRepository = RezeptRepository(db, ablage, System::currentTimeMillis)
+
+    @Provides
+    fun rezeptImporter(dienst: RezeptImportDienst): RezeptImporter = dienst
 }

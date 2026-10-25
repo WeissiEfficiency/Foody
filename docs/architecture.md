@@ -310,6 +310,35 @@ bis Phase 8 umschaltet.
   Testumgebung: Robolectric dekodiert unter Windows keine Bilder (Foto-Test mit `coil-test`), und ein Textfeld in einem
   Dialog läuft mit Breiten-Qualifier endlos (der Ändern-Test nutzt nur die Höhe).
 
+## Rezepte (Phase 6a)
+
+Spec `docs/superpowers/specs/2026-10-24-v3-phase6a-rezepte-design.md`. Ersetzt die Platzhalter für den Tab Rezepte
+und `RezeptDetail(id)`; neu sind die Routen `RezeptNeu` und `RezeptBearbeiten(id)`. Keine Schemaänderung (DB v10).
+
+- **`:domain`**: `ZutatZeile` liest eine Freitextzeile („200 g Reis, gekocht“, „1 Prise Salz“, „Pfeffer nach
+  Bedarf“, „1/2 Bund Petersilie (optional)“) über denselben Baukasten wie der Markdown-Import und schreibt sie für
+  den Editor zurück. Mengenwörter wie Bund, Dose oder Zehe landen als Hinweis, „optional“ als Kennzeichen.
+- **`:core:data`** (`rezepte/`): `RezeptRepository` (Karten für die Liste mit kcal je Portion, Favorit, „gekocht“
+  aus dem Plan; volles Rezept als Flow; `speichern` in einer Transaktion, gibt `Gespeichert.Geloescht` zurück, wenn
+  das Rezept inzwischen weg ist; `duplizieren` als „(Kopie)“ ohne Quelle und Favorit; Archiv, Favorit, Foto; ein
+  ersetztes Foto wird nur gelöscht, wenn kein anderes Rezept es nutzt). `RezeptImportDienst` (`RezeptImporter`):
+  mehrere Dateien oder ein ganzer Ordner über SAF, höchstens 1 MiB je Datei, in Blöcken zu 25 Rezepten; Rezepte mit
+  schon vorhandener Quelle werden übersprungen, Ergebnis `importiert/übersprungen/fehler`.
+- **`:feature:rezepte`**: Liste (`liste/`: ein Bildraster mit Suche über Name, Tags und Zutaten, Chips Favoriten ·
+  Oft gekocht · Ernährung · häufige Tags, Sortierung Name/Neueste/kcal/Eiweiß/Oft gekocht), Detail (`detail/`: Kopfbild mit
+  Glasfläche, Portionen skalieren, Zutaten, Schritte, Einordnung, Nährwerttabelle je Portion und gesamt mit
+  Vollständigkeit, Archivieren mit „Rückgängig“, Duplizieren, Kochen), Editor (`editor/`: alle Felder auf einer
+  Seite, Zutaten als Freitext je Zeile mit Vorschau „im Katalog / neu / ungültig“ – unveränderte Zeilen behalten ihre
+  Zutat und ihren Hinweis (`RezeptEntwurf.zutatIds`), ein nicht angefasstes Foto bleibt, auch wenn der Sync es
+  inzwischen gebracht hat (`bildBehalten`); Foto per Photo-Picker oder Kamera
+  über den FileProvider `${applicationId}.rezeptfotos`, Speichern gesperrt bis gültig und während des Speicherns,
+  „Änderungen verwerfen?“ beim Zurück), Import-Blatt (`importieren/`). `RezepteBereich` zeigt ab 840 dp Liste und
+  Detail nebeneinander; ein Tipp links fragt erst, wenn rechts ein Editor ungespeicherte Änderungen hat. Inhalte höchstens 720 dp breit.
+- **Tests:** Repository- und Importtests (Room im Speicher), Filter- und Zeilentests, Bildschirmtests mit echtem
+  ViewModel (Schrift 200 %, Doppeltipp auf Speichern, gelöschtes Rezept im Editor, Zustand nach Drehen),
+  Navigationstests in `:app3`. Roborazzi-Bilder von Liste, Detail und Editor (hell/dunkel × Handy/Tablet) in
+  `android/feature/rezepte/src/test/screenshots/`, Vergleich in der CI.
+
 ## Packung scannen (seit DB v9)
 
 `PackungScan` (`android/app/.../scan`) steuert den Ablauf hinter Schnittstellen, die Hilt in `ScanModule` bindet und Tests durch

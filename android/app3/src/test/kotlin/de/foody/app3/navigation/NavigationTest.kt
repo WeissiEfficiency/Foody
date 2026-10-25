@@ -99,4 +99,22 @@ class NavigationTest {
         compose.onNodeWithText("Rezept r2").assertDoesNotExist()
         compose.onNodeWithText(Platzhalter.TEXT).assertExists()
     }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun rezepteTabZeigtListe() {
+        starten()
+        tab("Rezepte").performClick()
+        compose.onNodeWithText("Rezeptliste").assertExists()
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun rezeptNeuUndBearbeiten() {
+        starten()
+        compose.runOnUiThread { nav.navigate(RezeptNeu) }
+        compose.onNodeWithText("Neues Rezept").assertExists()
+        compose.runOnUiThread { nav.navigate(RezeptBearbeiten("r1")) }
+        compose.onNodeWithText("Rezept r1 bearbeiten").assertExists()
+    }
 }

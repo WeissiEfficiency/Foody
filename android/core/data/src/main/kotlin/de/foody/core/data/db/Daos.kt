@@ -41,6 +41,11 @@ interface RezeptDao {
 
     @Query("SELECT * FROM recipe WHERE id = :id") suspend fun nachId(id: String): RezeptEntity?
 
+    /** Alle Rezepte (auch archivierte) als Flow. */
+    @Query("SELECT * FROM recipe ORDER BY id") fun alleFlow(): Flow<List<RezeptEntity>>
+
+    @Query("SELECT * FROM recipe WHERE id = :id") fun nachIdFlow(id: String): Flow<RezeptEntity?>
+
     /** Nicht archivierte Rezepte, nach Name. */
     @Query("SELECT * FROM recipe WHERE archivedAt IS NULL ORDER BY name COLLATE NOCASE, id") fun aktive(): Flow<List<RezeptEntity>>
 
@@ -52,6 +57,17 @@ interface RezeptDao {
     suspend fun portionenSetzen(id: String, portionen: Int, notiz: String?, updatedAt: Long)
 
     @Upsert suspend fun upsert(e: RezeptEntity)
+
+    @Query("UPDATE recipe SET archivedAt = :archiviert, updatedAt = :jetzt, version = version + 1 WHERE id = :id")
+    suspend fun archivSetzen(id: String, archiviert: Long?, jetzt: Long)
+
+    @Query("UPDATE recipe SET favorite = :an, updatedAt = :jetzt, version = version + 1 WHERE id = :id")
+    suspend fun favoritSetzen(id: String, an: Boolean, jetzt: Long)
+
+    @Query("UPDATE recipe SET imageUri = :link, updatedAt = :jetzt, version = version + 1 WHERE id = :id")
+    suspend fun bildSetzen(id: String, link: String?, jetzt: Long)
+
+    @Query("SELECT COUNT(*) FROM recipe WHERE imageUri = :link") suspend fun anzahlMitBild(link: String): Int
 
     @Query("DELETE FROM recipe WHERE id = :id") suspend fun loeschen(id: String)
 
@@ -69,6 +85,11 @@ interface RezeptZutatDao {
     /** Zeilen eines Rezepts in Anzeigereihenfolge. */
     @Query("SELECT * FROM recipe_ingredient WHERE recipeId = :recipeId ORDER BY sortOrder, id")
     suspend fun nachRezept(recipeId: String): List<RezeptZutatEntity>
+
+    @Query("SELECT * FROM recipe_ingredient WHERE recipeId = :recipeId ORDER BY sortOrder, id")
+    fun nachRezeptFlow(recipeId: String): Flow<List<RezeptZutatEntity>>
+
+    @Query("DELETE FROM recipe_ingredient WHERE recipeId = :recipeId") suspend fun loeschenFuerRezept(recipeId: String)
 
     /** Alle Zeilen als Flow, in Anzeigereihenfolge (Nährwerte je Rezept). */
     @Query("SELECT * FROM recipe_ingredient ORDER BY recipeId, sortOrder, id") fun alleFlow(): Flow<List<RezeptZutatEntity>>
@@ -88,6 +109,11 @@ interface ArbeitsschrittDao {
 
     @Query("SELECT * FROM instruction_step WHERE id = :id") suspend fun nachId(id: String): ArbeitsschrittEntity?
 
+    @Query("SELECT * FROM instruction_step WHERE recipeId = :recipeId ORDER BY position, id")
+    fun nachRezeptFlow(recipeId: String): Flow<List<ArbeitsschrittEntity>>
+
+    @Query("DELETE FROM instruction_step WHERE recipeId = :recipeId") suspend fun loeschenFuerRezept(recipeId: String)
+
     /** Schritte eines Rezepts in Anzeigereihenfolge. */
     @Query("SELECT * FROM instruction_step WHERE recipeId = :recipeId ORDER BY position, id")
     suspend fun nachRezept(recipeId: String): List<ArbeitsschrittEntity>
@@ -106,6 +132,10 @@ interface PlanEintragDao {
     @Query("SELECT * FROM meal_slot ORDER BY id") suspend fun alle(): List<PlanEintragEntity>
 
     @Query("SELECT * FROM meal_slot WHERE id = :id") suspend fun nachId(id: String): PlanEintragEntity?
+
+    /** Wie oft jedes Rezept gekocht wurde (Plan-Einträge mit `cookedAt`). */
+    @Query("SELECT recipeId, COUNT(*) AS anzahl FROM meal_slot WHERE cookedAt IS NOT NULL GROUP BY recipeId")
+    fun gekochtJeRezept(): Flow<List<GekochtZahl>>
 
     /** Plan-Einträge von [von] bis [bis] (beide eingeschlossen). */
     @Query("SELECT * FROM meal_slot WHERE date BETWEEN :von AND :bis ORDER BY date, id")
@@ -197,3 +227,6 @@ interface TagebuchDao {
     /** Leert die Tabelle (Sicherung: Import ersetzt alle Daten). */
     @Query("DELETE FROM tagebuch_eintrag") suspend fun alleLoeschen()
 }
+
+/** Ergebnis von [PlanEintragDao.gekochtJeRezept]. */
+data class GekochtZahl(val recipeId: String, val anzahl: Int)

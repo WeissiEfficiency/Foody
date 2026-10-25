@@ -5,20 +5,20 @@ PR hakt die Punkte ab, die er fertigstellt, und nennt sie in der Beschreibung. R
 ist. Grundlage: [`v2-abnahme.md`](v2-abnahme.md), gekürzt nach dem Review vom 2026-10-17. Gestrichenes steht am Ende.
 
 ## Rezepte – `:feature:rezepte`
-- [ ] Anlegen, bearbeiten, duplizieren, archivieren
-- [ ] Favoriten und „Oft gekocht“ (automatisch)
-- [ ] Suche nach Name, Tags und Zutaten
-- [ ] Ernährungsfilter (vegetarisch, vegan, eiweißreich, Low Carb, leicht), Sortierung, kcal auf den Karten
-- [ ] Foto über System-Photo-Picker oder Kamera
-- [ ] Portionen, Zeiten, Zutaten mit Menge/Einheit/Hinweis/optional, Arbeitsschritte, Notizen
-- [ ] Einordnung nach Mahlzeit und Gang (manuell oder vermutet)
-- [ ] Bildraster, Filter nach Tags und Favoriten
-- [ ] Portionen skalieren in der Detailansicht
-- [ ] Nährwerte (kJ/kcal, Eiweiß, Kohlenhydrate, Fett, Ballaststoffe, Zucker, Salz) pro Rezept und Portion,
+- [x] Anlegen, bearbeiten, duplizieren, archivieren
+- [x] Favoriten und „Oft gekocht“ (automatisch)
+- [x] Suche nach Name, Tags und Zutaten
+- [x] Ernährungsfilter (vegetarisch, vegan, eiweißreich, Low Carb, leicht), Sortierung, kcal auf den Karten
+- [x] Foto über System-Photo-Picker oder Kamera
+- [x] Portionen, Zeiten, Zutaten mit Menge/Einheit/Hinweis/optional, Arbeitsschritte, Notizen
+- [x] Einordnung nach Mahlzeit und Gang (manuell oder vermutet)
+- [x] Bildraster, Filter nach Tags und Favoriten
+- [x] Portionen skalieren in der Detailansicht
+- [x] Nährwerte (kJ/kcal, Eiweiß, Kohlenhydrate, Fett, Ballaststoffe, Zucker, Salz) pro Rezept und Portion,
       Vollständigkeitsanzeige – **kcal je Portion stimmen an allen Anzeigeorten überein** (Phase 1)
-- [ ] Markdown-Import: mehrere Dateien oder ganzer Ordner, Gruppen, „nach Bedarf“, Quellen überspringen
+- [x] Markdown-Import: mehrere Dateien oder ganzer Ordner, Gruppen, „nach Bedarf“, Quellen überspringen
 - [ ] Rezept direkt auf die Einkaufsliste
-- [ ] Tablet: Liste und Rezept nebeneinander
+- [x] Tablet: Liste und Rezept nebeneinander
 
 ## Kochen – `:feature:kochen`
 - [ ] Ein Schritt pro Seite, Display bleibt an
