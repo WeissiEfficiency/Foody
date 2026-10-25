@@ -1,5 +1,7 @@
 package de.foody.core.data.einkauf
 
+import de.foody.core.data.db.EinkaufsartikelEntity
+import de.foody.core.data.db.EinkaufsartikelQuelleEntity
 import java.time.LocalDate
 
 /** Ein Artikel einer Einkaufsliste, fertig für die Kachel. */
@@ -36,6 +38,9 @@ data class EinkaufsAnsicht(
 
 /** Ein zuletzt gekaufter Artikel (über alle Listen). */
 data class ZuletztArtikel(val name: String, val emoji: String, val abteilung: String, val ingredientId: String?)
+
+/** Gelöschter Artikel samt Herkunft, für „Rückgängig“. */
+data class GeloeschterArtikel(val artikel: EinkaufsartikelEntity, val herkunft: List<EinkaufsartikelQuelleEntity>)
 
 /** Kopf einer früheren Liste. */
 data class ListenKopf(val id: String, val name: String, val angelegt: LocalDate, val artikel: Int)
