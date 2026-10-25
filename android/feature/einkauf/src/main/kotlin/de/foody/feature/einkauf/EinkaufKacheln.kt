@@ -130,7 +130,7 @@ internal fun LazyGridScope.katalogKacheln(
     }
 }
 
-/** Suche: Katalogtreffer und – solange keiner genau passt – „„…“ hinzufügen“. */
+/** Suche: Katalogtreffer und – solange der Text kein Katalogartikel ist (auch in anderer Schreibweise) – „„…“ hinzufügen“. */
 internal fun LazyGridScope.suchKacheln(
     text: String,
     alle: List<EinkaufsArtikel>,
@@ -140,7 +140,7 @@ internal fun LazyGridScope.suchKacheln(
     val q = text.trim()
     val treffer = ShoppingCatalog.search(q)
     items(treffer, key = { (i, s) -> "treffer-${s.name}-${i.name}" }) { (i, s) -> EinkaufKachel(i.name, "", i.emoji, stand(i.name, alle), { onTreffer(i.name, s.name) }) }
-    if (treffer.none { it.first.name.equals(q, ignoreCase = true) }) {
+    if (ShoppingCatalog.find(q) == null && treffer.none { ShoppingCatalog.sameItem(it.first.name, q) }) {
         item(key = "neu") { EinkaufKachel("„$q“ hinzufügen", "", "➕", Stand.NICHT, onNeu) }
     }
 }

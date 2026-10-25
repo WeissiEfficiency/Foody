@@ -114,6 +114,17 @@ class EinkaufScreenTest {
     }
 
     @Test
+    fun keinHinzufuegenFuerBekanntenArtikel() {
+        // „Zwiebel“ ist die Katalog-Zwiebeln: kein irreführendes „hinzufügen“, das die offenen Zwiebeln abhaken würde
+        planListe()
+        zeigen()
+        compose.warteAufText("Zwiebeln")
+        compose.onNode(hasSetTextAction()).performTextInput("Zwiebel")
+        compose.warteAufText("Frühlingszwiebeln")
+        compose.onNodeWithText("„Zwiebel“ hinzufügen").assertDoesNotExist()
+    }
+
+    @Test
     fun eingabeMitEnter() {
         planListe()
         zeigen()

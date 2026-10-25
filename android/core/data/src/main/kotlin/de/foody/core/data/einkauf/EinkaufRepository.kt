@@ -8,11 +8,13 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.alsIngredient
 import de.foody.core.data.alsRecipe
 import de.foody.domain.EinkaufEingabe
+import de.foody.domain.IngredientCatalog
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Quantity
 import de.foody.domain.RezeptAufListe
 import de.foody.domain.ShoppingCatalog
 import java.math.BigDecimal
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -20,6 +22,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.time.LocalDate
@@ -64,14 +67,17 @@ class EinkaufRepository(
         EinkaufsAnsicht(liste.id, liste.name, liste.rangeStart, liste.rangeEnd, offen, alle)
     }
 
+    /**
+     * Gekaufte Artikel aller Listen, neueste zuerst, einer je Artikel (gleicher Schlüssel wie `ShoppingCatalog.sameItem`).
+     * Bricht nach [ZULETZT_MAX] ab und rechnet nicht auf dem Main-Thread: die Kaufhistorie wächst über Jahre.
+     */
     fun zuletzt(): Flow<List<ZuletztArtikel>> = db.einkaufsartikelDao().gekauftFlow().map { gekauft ->
-        val gesehen = mutableListOf<String>()
-        gekauft.filter { a ->
-            (gesehen.none { ShoppingCatalog.sameItem(it, a.name) }).also { neu -> if (neu) gesehen += a.name }
-        }.take(ZULETZT_MAX).map { a ->
-            ZuletztArtikel(a.name, ShoppingCatalog.emojiFor(a.name, a.category), abteilungVon(a.category, a.name), a.ingredientId)
-        }
-    }
+        gekauft.asSequence()
+            .distinctBy { IngredientCatalog.canonicalName(it.name).lowercase() }
+            .take(ZULETZT_MAX)
+            .map { a -> ZuletztArtikel(a.name, ShoppingCatalog.emojiFor(a.name, a.category), abteilungVon(a.category, a.name), a.ingredientId) }
+            .toList()
+    }.flowOn(Dispatchers.Default)
 
     fun fruehere(): Flow<List<ListenKopf>> = combine(
         db.einkaufslisteDao().alleFlow(),

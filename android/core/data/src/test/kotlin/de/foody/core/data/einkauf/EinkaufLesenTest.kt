@@ -142,4 +142,19 @@ class EinkaufLesenTest {
         assertEquals("1,5 l", mengeText(java.math.BigDecimal("1500"), MeasureUnit.MILLILITER))
         assertEquals("3 Stk.", mengeText(java.math.BigDecimal("3"), MeasureUnit.PIECE))
     }
+
+    @Test
+    fun zuletztBleibtBeiLangerHistorieSchnell() = runTest {
+        // Ein Jahr Einkauf: viele gekaufte Artikel mit vielen Namen – „Zuletzt“ darf im Laden nicht ruckeln
+        db.einkaufslisteDao().upsert(liste("l", 1))
+        repeat(3000) { i ->
+            db.einkaufsartikelDao().upsert(artikel("a$i", "l", "Artikel ${i % 600}", gekauft = true, gekauftUm = i.toLong()))
+        }
+        val start = System.nanoTime()
+        val z = repo.zuletzt().first()
+        val ms = (System.nanoTime() - start) / 1_000_000
+        assertEquals(18, z.size)
+        assertEquals("Artikel 599", z.first().name)
+        kotlin.test.assertTrue(ms < 1_000, "zuletzt dauerte $ms ms")
+    }
 }

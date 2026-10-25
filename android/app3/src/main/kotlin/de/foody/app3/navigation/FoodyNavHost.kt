@@ -157,9 +157,15 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
 fun NavHostController.zuRezeptAnpassen(rezeptId: String, portionen: Int) =
     navigate(RezeptBearbeiten(rezeptId, gekochtMit = portionen)) { popUpTo<Kochen> { inclusive = true } }
 
-/** Zum Tab „Einkauf“ (aktuelle Liste) wie ein Tipp auf den Tab: Heute bleibt die Wurzel, „Zurück“ führt dorthin. */
-fun NavHostController.zumEinkauf() = navigate(Einkauf) {
-    popUpTo(graph.findStartDestination().id) { saveState = true }
-    launchSingleTop = true
-    restoreState = true
+/**
+ * Zur aktuellen Einkaufsliste: im Einkauf-Tab zurück an seinen Anfang (etwa von einer früheren Liste), sonst zum Tab
+ * „Einkauf“, ohne einen gemerkten Stapel wiederherzustellen – der könnte noch eine frühere Liste zeigen. Heute bleibt
+ * die Wurzel, „Zurück“ führt dorthin.
+ */
+fun NavHostController.zumEinkauf() {
+    if (popBackStack<Einkauf>(inclusive = false)) return
+    navigate(Einkauf) {
+        popUpTo(graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
+    }
 }
