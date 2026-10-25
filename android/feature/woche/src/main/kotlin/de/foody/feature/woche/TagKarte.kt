@@ -30,12 +30,6 @@ import de.foody.core.designsystem.komponenten.Naehrwertbalken
 import de.foody.core.designsystem.komponenten.RezeptPlatzhalter
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.token.GlasStufe
-import java.time.DayOfWeek
-
-private val WOCHENTAG = mapOf(
-    DayOfWeek.MONDAY to "MO", DayOfWeek.TUESDAY to "DI", DayOfWeek.WEDNESDAY to "MI", DayOfWeek.THURSDAY to "DO",
-    DayOfWeek.FRIDAY to "FR", DayOfWeek.SATURDAY to "SA", DayOfWeek.SUNDAY to "SO",
-)
 
 /**
  * Ein Tag: Kopf mit Datum (heute hervorgehoben) und kcal, mit Tagesziel der Nährwertbalken; die Einträge zum Antippen
@@ -48,7 +42,7 @@ internal fun TagKarte(tag: WochenTag, heute: Boolean, ziel: Int?, onEintrag: (Pl
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "${WOCHENTAG.getValue(tag.datum.dayOfWeek)} ${tag.datum.dayOfMonth}.${tag.datum.monthValue}.", Modifier.weight(1f),
+                    tagKurz(tag.datum), Modifier.weight(1f),
                     style = MaterialTheme.typography.titleMedium, color = if (heute) FoodyTheme.farben.primaer else FoodyTheme.farben.text,
                 )
                 if (n != null && ziel == null) {

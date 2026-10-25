@@ -1,6 +1,8 @@
 package de.foody.feature.woche
 
 import android.content.Context
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -27,6 +29,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.math.BigDecimal
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -131,6 +134,117 @@ class WocheScreenTest {
         compose.warteAufText("KW 45 · 2.11.–8.11.")
         compose.onNodeWithText("Heute").performClick()
         compose.warteAufText("KW 44 · 26.10.–1.11.")
+    }
+
+    private fun blattOeffnen(tag: Long = 2) {
+        planen(tag, "ABENDESSEN")
+        zeigen()
+        compose.warteAufText("Reispfanne")
+        compose.onNodeWithText("Reispfanne").performClick()
+        compose.warteAufText("Rezept ansehen")
+    }
+
+    private fun eintrag() = runBlocking { db.planEintragDao().alle().single() }
+
+    @Test
+    fun portionenImBlatt() {
+        blattOeffnen()
+        compose.onNodeWithContentDescription("Mehr Portionen").performClick()
+        compose.waitUntil(5_000) { eintrag().servings == 3 }
+        compose.warteAufText("3 P.")
+    }
+
+    @Test
+    fun umbenennenImBlatt() {
+        blattOeffnen()
+        compose.onNodeWithText("Umbenennen").performClick()
+        compose.warteAufText("Mittagessen")
+        compose.onNodeWithText("Mittagessen").performClick()
+        compose.waitUntil(5_000) { eintrag().slotType == "MITTAGESSEN" }
+    }
+
+    @Test
+    fun verschiebenAufMittwoch() {
+        blattOeffnen(tag = 0)
+        compose.onNodeWithText("Mi").performClick()
+        compose.waitUntil(5_000) { eintrag().date == MITTWOCH }
+    }
+
+    @Test
+    fun verschiebenNaechsteWoche() {
+        blattOeffnen(tag = 6)
+        compose.onNodeWithText("Nächste Woche").performClick()
+        compose.waitUntil(5_000) { eintrag().date == MONTAG.plusDays(13) }
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Reispfanne").fetchSemanticsNodes().isEmpty() }
+        compose.onNodeWithText("KW 44 · 26.10.–1.11.").assertExists()
+    }
+
+    @Test
+    fun entfernenMitRueckgaengig() {
+        blattOeffnen()
+        val id = eintrag().id
+        compose.onNodeWithText("Entfernen").performClick()
+        compose.warteAufText("Rückgängig")
+        compose.waitUntil(5_000) { runBlocking { db.planEintragDao().alle().isEmpty() } }
+        compose.onNodeWithText("Rückgängig").performClick()
+        compose.waitUntil(5_000) { runBlocking { db.planEintragDao().nachId(id) != null } }
+    }
+
+    @Test
+    fun gekochtUmschalten() {
+        blattOeffnen()
+        compose.onNodeWithText("Gekocht").performClick()
+        compose.waitUntil(5_000) { eintrag().cookedAt != null }
+        compose.onNodeWithText("Gekocht").performClick()
+        compose.waitUntil(5_000) { eintrag().cookedAt == null }
+    }
+
+    @Test
+    fun kochenUndRezept() {
+        blattOeffnen()
+        compose.onNodeWithText("Kochen").performClick()
+        assertEquals(listOf("r1" to 2), gekocht)
+        compose.onNodeWithText("Reispfanne").performClick()
+        compose.warteAufText("Rezept ansehen")
+        compose.onNodeWithText("Rezept ansehen").performClick()
+        assertEquals(listOf("r1"), rezepte)
+    }
+
+    @Test
+    fun fuellenVorschauUndUebernehmen() {
+        runBlocking { db.hauptspeisen() }
+        zeigen()
+        compose.warteAufText("KW 44 · 26.10.–1.11.")
+        compose.onNodeWithText("Leere Tage füllen").performClick()
+        compose.warteAufText("Übernehmen (5)")
+        compose.onNodeWithContentDescription("MI 28.10. übernehmen").performClick()
+        compose.warteAufText("Übernehmen (4)")
+        compose.onNodeWithText("Übernehmen (4)").performClick()
+        compose.waitUntil(5_000) { runBlocking { db.planEintragDao().alle().size == 4 } }
+        assertTrue(runBlocking { db.planEintragDao().alle() }.none { it.date == MITTWOCH })
+    }
+
+    @Test
+    fun fuellenKeinVorschlag() {
+        runBlocking { db.rezeptDao().upsert(db.rezeptDao().nachId("r1")!!.copy(mahlzeiten = "ABENDESSEN", gaenge = "HAUPTSPEISE")) }
+        zeigen()
+        compose.warteAufText("KW 44 · 26.10.–1.11.")
+        compose.onNodeWithText("Leere Tage füllen").performClick()
+        compose.warteAufText("Übernehmen (1)")
+        assertEquals(4, compose.onAllNodesWithText("kein Vorschlag", substring = true).fetchSemanticsNodes().size)
+    }
+
+    @Test
+    @Config(qualifiers = "w1280dp-h1200dp")
+    fun tabletZweiSpalten() {
+        zeigen()
+        compose.warteAufText("MO 26.10.")
+        compose.onNodeWithText("MO 26.10.").assertIsDisplayed()
+        compose.onNodeWithText("FR 30.10.").assertIsDisplayed()
+        // Zwei Spalten: Freitag steht rechts neben Montag, nicht darunter
+        val mo = compose.onNodeWithText("MO 26.10.").getUnclippedBoundsInRoot()
+        val fr = compose.onNodeWithText("FR 30.10.").getUnclippedBoundsInRoot()
+        assertTrue(fr.left > mo.right, "Freitag in der rechten Spalte")
     }
 
     @Test
