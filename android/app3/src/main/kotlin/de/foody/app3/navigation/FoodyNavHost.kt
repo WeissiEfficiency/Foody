@@ -2,11 +2,13 @@ package de.foody.app3.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
+import de.foody.feature.einkauf.EinkaufRoute
 import de.foody.feature.einstellungen.VerbindenRoute
 import de.foody.feature.heute.HeuteRoute
 import de.foody.feature.kochen.KochenRoute
@@ -29,6 +31,8 @@ class Bildschirme(
     /** Kochmodus: Rezept-ID, Portionen (`null` = die des Rezepts). */
     val kochen: @Composable (String, Int?, NavHostController) -> Unit,
     val woche: @Composable (NavHostController) -> Unit,
+    /** Einkauf; Liste `null` = die aktuelle. */
+    val einkauf: @Composable (String?, NavHostController) -> Unit,
 ) {
     companion object {
         val echt = Bildschirme(
@@ -63,6 +67,7 @@ class Bildschirme(
                     // Die Kopie ersetzt das Original im Stapel: „Zurück“ führt dorthin, woher man kam
                     onDupliziert = { kopie -> nav.navigate(RezeptDetail(kopie)) { popUpTo<RezeptDetail> { inclusive = true } } },
                     onZurueck = { nav.popBackStack() },
+                    onEinkauf = { nav.zumEinkauf() },
                 )
             },
             editor = { id, gekochtMit, nav ->
@@ -89,6 +94,9 @@ class Bildschirme(
                     onRezept = { nav.navigate(RezeptDetail(it)) },
                 )
             },
+            einkauf = { listeId, nav ->
+                EinkaufRoute(listeId, onListe = { nav.navigate(EinkaufListe(it)) }, onAktuelle = { nav.zumEinkauf() })
+            },
         )
         val platzhalter = Bildschirme(
             heute = { Platzhalter("Heute") },
@@ -103,6 +111,7 @@ class Bildschirme(
                 Platzhalter("Kochen", "Rezept $id" + portionen?.let { n -> " · $n ${if (n == 1) "Portion" else "Portionen"}" }.orEmpty())
             },
             woche = { Platzhalter("Woche", "Wochenplan") },
+            einkauf = { listeId, _ -> Platzhalter("Einkauf", listeId?.let { "Liste $it" } ?: "Einkaufsliste") },
         )
     }
 }
@@ -112,8 +121,7 @@ const val SCHEMA = "foody://"
 
 /**
  * Alle Ziele der V3. Deep Links: `foody://rezept/{id}`, `foody://einkauf/{listeId}`,
- * `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute). Einkauf ist
- * bis 6d Platzhalter.
+ * `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute).
  */
 @Composable
 fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Modifier = Modifier) {
@@ -121,7 +129,7 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
         composable<Heute> { bildschirme.heute(nav) }
         composable<Rezepte> { bildschirme.rezepte(nav) }
         composable<Woche> { bildschirme.woche(nav) }
-        composable<Einkauf> { Platzhalter("Einkauf") }
+        composable<Einkauf> { bildschirme.einkauf(null, nav) }
         composable<Einstellungen> { bildschirme.einstellungen(nav) }
         composable<RezeptDetail>(deepLinks = listOf(navDeepLink<RezeptDetail>(basePath = "${SCHEMA}rezept"))) {
             bildschirme.rezeptDetail(it.toRoute<RezeptDetail>().id, nav)
@@ -136,7 +144,7 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
             bildschirme.kochen(ziel.rezeptId, ziel.portionen, nav)
         }
         composable<EinkaufListe>(deepLinks = listOf(navDeepLink<EinkaufListe>(basePath = "${SCHEMA}einkauf"))) {
-            Platzhalter("Einkaufsliste", "Liste ${it.toRoute<EinkaufListe>().listeId}")
+            bildschirme.einkauf(it.toRoute<EinkaufListe>().listeId, nav)
         }
         composable<TagebuchTag>(deepLinks = listOf(navDeepLink<TagebuchTag>(basePath = "${SCHEMA}tagebuch"))) {
             bildschirme.tagebuch(tagebuchDatum(it.toRoute<TagebuchTag>().datum, LocalDate.now()), nav)
@@ -147,3 +155,10 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
 /** „Rezept anpassen“ nach dem Kochen: der Editor ersetzt den Kochmodus, „Zurück“ führt dorthin, woher man kam. */
 fun NavHostController.zuRezeptAnpassen(rezeptId: String, portionen: Int) =
     navigate(RezeptBearbeiten(rezeptId, gekochtMit = portionen)) { popUpTo<Kochen> { inclusive = true } }
+
+/** Zum Tab „Einkauf“ (aktuelle Liste) wie ein Tipp auf den Tab: Heute bleibt die Wurzel, „Zurück“ führt dorthin. */
+fun NavHostController.zumEinkauf() = navigate(Einkauf) {
+    popUpTo(graph.findStartDestination().id) { saveState = true }
+    launchSingleTop = true
+    restoreState = true
+}
