@@ -163,6 +163,12 @@ interface EinkaufslisteDao {
 
     @Query("SELECT * FROM shopping_list WHERE id = :id") suspend fun nachId(id: String): EinkaufslisteEntity?
 
+    /** Alle Listen, die zuletzt angelegte zuerst (sie ist die aktuelle). */
+    @Query("SELECT * FROM shopping_list ORDER BY createdAt DESC, id DESC")
+    fun alleFlow(): Flow<List<EinkaufslisteEntity>>
+
+    @Query("SELECT * FROM shopping_list WHERE id = :id") fun nachIdFlow(id: String): Flow<EinkaufslisteEntity?>
+
     @Upsert suspend fun upsert(e: EinkaufslisteEntity)
 
     @Query("DELETE FROM shopping_list WHERE id = :id") suspend fun loeschen(id: String)
@@ -178,12 +184,24 @@ interface EinkaufsartikelDao {
 
     @Query("SELECT * FROM shopping_item WHERE id = :id") suspend fun nachId(id: String): EinkaufsartikelEntity?
 
-    /** Offene Artikel der zuletzt geänderten Liste, in Listenreihenfolge. */
+    /** Offene Artikel der zuletzt angelegten Liste, in Listenreihenfolge. */
     @Query(
         "SELECT * FROM shopping_item WHERE checked = 0 AND listId = " +
-            "(SELECT id FROM shopping_list ORDER BY updatedAt DESC, id LIMIT 1) ORDER BY sortOrder, id",
+            "(SELECT id FROM shopping_list ORDER BY createdAt DESC, id DESC LIMIT 1) ORDER BY sortOrder, id",
     )
     fun offeneDerJuengstenListe(): Flow<List<EinkaufsartikelEntity>>
+
+    @Query("SELECT * FROM shopping_item ORDER BY id") fun alleFlow(): Flow<List<EinkaufsartikelEntity>>
+
+    @Query("SELECT * FROM shopping_item WHERE listId = :listeId ORDER BY sortOrder, id")
+    fun nachListeFlow(listeId: String): Flow<List<EinkaufsartikelEntity>>
+
+    @Query("SELECT * FROM shopping_item WHERE listId = :listeId ORDER BY sortOrder, id")
+    suspend fun nachListe(listeId: String): List<EinkaufsartikelEntity>
+
+    /** Gekaufte Artikel aller Listen, die zuletzt abgehakten zuerst („Zuletzt verwendet“). */
+    @Query("SELECT * FROM shopping_item WHERE checked = 1 ORDER BY checkedChangedAt DESC, id")
+    fun gekauftFlow(): Flow<List<EinkaufsartikelEntity>>
 
     @Upsert suspend fun upsert(e: EinkaufsartikelEntity)
 
@@ -203,6 +221,16 @@ interface EinkaufsartikelQuelleDao {
     /** Herkunftszeilen eines Einkaufsartikels. */
     @Query("SELECT * FROM shopping_item_source WHERE shoppingItemId = :shoppingItemId ORDER BY id")
     suspend fun nachArtikel(shoppingItemId: String): List<EinkaufsartikelQuelleEntity>
+
+    /** Herkunftszeilen aller Artikel einer Liste. */
+    @Query(
+        "SELECT s.* FROM shopping_item_source s JOIN shopping_item i ON i.id = s.shoppingItemId " +
+            "WHERE i.listId = :listeId ORDER BY s.date, s.id",
+    )
+    fun nachListeFlow(listeId: String): Flow<List<EinkaufsartikelQuelleEntity>>
+
+    @Query("DELETE FROM shopping_item_source WHERE shoppingItemId = :shoppingItemId")
+    suspend fun loeschenNachArtikel(shoppingItemId: String)
 
     @Upsert suspend fun upsert(e: EinkaufsartikelQuelleEntity)
 
