@@ -128,9 +128,10 @@ fun KochenRoute(
                         is KochZustand.Da -> KochInhalt(
                             z, aktionen, onSeite = vm::seiteWaehlen, onFertig = { bereich.launch { vm.fertig() } },
                             onSchliessen = onSchliessen, Modifier.weight(1f),
+                            timerLeiste = { TimerLeiste(timer, rezeptId, jetzt, vm::timerEntfernen) },
                         )
                     }
-                    TimerLeiste(timer, rezeptId, jetzt, vm::timerEntfernen)
+                    if (z !is KochZustand.Da) TimerLeiste(timer, rezeptId, jetzt, vm::timerEntfernen)
                 }
             }
         }
@@ -155,6 +156,7 @@ private fun KochInhalt(
     onFertig: () -> Unit,
     onSchliessen: () -> Unit,
     modifier: Modifier = Modifier,
+    timerLeiste: @Composable () -> Unit = {},
 ) {
     val pager = rememberPagerState(initialPage = z.seite) { z.seitenzahl }
     LaunchedEffect(pager) { snapshotFlow { pager.settledPage }.collect(onSeite) }
@@ -167,6 +169,8 @@ private fun KochInhalt(
                 if (schritt == null) BereitlegenSeite(z, a) else SchrittSeite(schritt, z.abgehakt, a)
             }
         }
+        // Laufende Timer über den Knöpfen
+        timerLeiste()
         Knoepfe(z, pager, onSeite, onFertig)
     }
 }
@@ -181,6 +185,7 @@ private fun Kopf(z: KochZustand.Da, seite: Int, onSchliessen: () -> Unit) {
         progress = { (seite + 1f) / z.seitenzahl.coerceAtLeast(1) },
         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
         color = FoodyTheme.farben.primaer,
+        trackColor = FoodyTheme.farben.balkenSpur,
         drawStopIndicator = {},
     )
     val nummer = seite - if (z.hatBereitlegen) 1 else 0

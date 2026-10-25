@@ -1,12 +1,14 @@
 package de.foody.feature.kochen
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.Icon
@@ -57,6 +59,9 @@ private fun SchrittZutatZeile(z: SchrittZutat, bereit: Boolean) {
             z.gesamt?.let { Text("von $it", style = MaterialTheme.typography.labelMedium, color = FoodyTheme.farben.nebentext) }
         }
         Text(z.name, Modifier.weight(0.6f), style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
-        if (bereit) Icon(Icons.Outlined.CheckCircle, contentDescription = "bereitgelegt", tint = FoodyTheme.farben.primaer)
+        // Platz immer frei halten, sonst stehen die Namen der Zeilen versetzt
+        Box(Modifier.size(24.dp)) {
+            if (bereit) Icon(Icons.Outlined.CheckCircle, contentDescription = "bereitgelegt", tint = FoodyTheme.farben.primaer)
+        }
     }
 }
