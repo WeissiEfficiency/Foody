@@ -10,20 +10,23 @@ import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.domain.StepTimer
 import de.foody.feature.kochen.timer.KochTimerSpeicher
 import de.foody.feature.kochen.timer.LaufenderTimer
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
@@ -109,10 +112,8 @@ class KochenViewModel @Inject constructor(
 
     /** Öffnet [id]; Portionen aus [portionen] (begrenzt 1–99), sonst aus der Sitzung, sonst aus dem Rezept. */
     fun starten(id: String, portionen: Int?) {
-        if (rezeptId.value == id) {
-            portionen?.let { p -> stand.update { it.copy(portionen = p.coerceIn(MIN_PORTIONEN, MAX_PORTIONEN)) } }
-            return
-        }
+        // Derselbe Aufruf nach dem Drehen ändert nichts: hier geänderte Portionen, Seite und Haken bleiben
+        if (rezeptId.value == id) return
         val s = sitzungen.lesen(id)
         stand.value = Stand(portionen?.coerceIn(MIN_PORTIONEN, MAX_PORTIONEN) ?: s?.portionen, s?.seite ?: 0, s?.abgehakt.orEmpty())
         rezeptId.value = id
@@ -159,16 +160,22 @@ class KochenViewModel @Inject constructor(
         rezeptId.value?.let(sitzungen::loeschen)
     }
 
-    /** Kamerabild verkleinert in die Fotoablage und als Rezeptfoto; scheitert es, bleibt alles, wie es war. */
-    suspend fun fotoUebernehmen(quelle: Uri): Boolean {
-        val id = rezeptId.value ?: return false
-        return try {
-            repo.fotoSetzen(id, ablage.speichern(quelle))
-            true
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            false
+    /**
+     * Kamerabild verkleinert in die Fotoablage und als Rezeptfoto; scheitert es, bleibt alles, wie es war. Läuft zu
+     * Ende, auch wenn der Kochmodus gleich danach geschlossen wird, und löscht danach die [kameraDatei].
+     */
+    fun fotoUebernehmen(quelle: Uri, kameraDatei: File) {
+        val id = rezeptId.value ?: return
+        viewModelScope.launch {
+            withContext(NonCancellable) {
+                try {
+                    repo.fotoSetzen(id, ablage.speichern(quelle))
+                } catch (_: Exception) {
+                    // Foto unlesbar: das alte bleibt
+                } finally {
+                    kameraDatei.delete()
+                }
+            }
         }
     }
 

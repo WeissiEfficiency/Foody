@@ -1,5 +1,10 @@
 package de.foody.feature.kochen
 
+import android.net.Uri
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
 import kotlinx.coroutines.Dispatchers
@@ -14,9 +19,12 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.io.File
 import java.time.Duration
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -85,6 +93,17 @@ class KochenViewModelTest {
         val vm = u.vm().apply { starten("r1", null) }
         vm.portionenSchritt(mehr = true)
         assertEquals("600 g", da(vm).bereit[0].menge)
+    }
+
+    @Test
+    fun erneuterStartBehaeltGeaendertePortionen() = runTest {
+        // Drehen: die Route ruft starten() mit denselben Argumenten noch einmal auf
+        db.reistopf()
+        val vm = u.vm().apply { starten("r1", 2) }
+        vm.portionenSchritt(mehr = true)
+        vm.starten("r1", 2)
+        assertEquals(3, da(vm).portionen)
+        assertEquals(3, u.sitzungen.lesen("r1")?.portionen)
     }
 
     @Test
@@ -167,6 +186,22 @@ class KochenViewModelTest {
         assertTrue(vm.fertig())
         assertTrue(vm.fertigOffen.value)
         assertTrue(db.planEintragDao().alle().isEmpty())
+    }
+
+    @Test
+    fun kamerafotoNachDemVerlassenAufgeraeumt() = runTest {
+        // Foto aufnehmen und sofort „Schließen“: die Übernahme läuft weiter, die Kameradatei wird gelöscht
+        db.reistopf()
+        val store = ViewModelStore()
+        val vm = ViewModelProvider.create(store, viewModelFactory { initializer { u.vm() } })[KochenViewModel::class]
+        vm.starten("r1", null)
+        val ordner = File(RuntimeEnvironment.getApplication().cacheDir, "kamera").apply { mkdirs() }
+        val datei = File(ordner, "test.jpg").apply { writeBytes(ByteArray(16)) }
+        vm.fotoUebernehmen(Uri.fromFile(datei), datei)
+        store.clear()
+        val bis = System.currentTimeMillis() + 5_000
+        while (datei.exists() && System.currentTimeMillis() < bis) Thread.sleep(20)
+        assertFalse(datei.exists())
     }
 
     @Test

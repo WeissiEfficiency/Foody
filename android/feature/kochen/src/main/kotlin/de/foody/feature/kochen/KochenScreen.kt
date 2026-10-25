@@ -141,7 +141,7 @@ fun KochenRoute(
     if (fertigOffen && da != null) {
         FertigBlatt(
             ohneFoto = da.bild == null,
-            onFoto = { uri, datei -> bereich.launch { vm.fotoUebernehmen(uri); datei.delete() } },
+            onFoto = vm::fotoUebernehmen,
             onAnpassen = { onRezeptAnpassen(rezeptId, da.portionen) },
             onSchliessen = { vm.schliessen(); onSchliessen() },
         )

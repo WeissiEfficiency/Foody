@@ -41,7 +41,14 @@ internal object TimerBenachrichtigung {
         val naechster = laufende.minByOrNull { it.endeUm }
         return NotificationCompat.Builder(context, KANAL_LAUFEND)
             .setSmallIcon(R.drawable.ic_stat_kochtimer)
-            .setContentTitle(if (laufende.size == 1) "1 Timer läuft" else "${laufende.size} Timer laufen")
+            .setContentTitle(
+                when (laufende.size) {
+                    // Nur Abgelaufenes zu melden: der Dienst endet gleich wieder
+                    0 -> "Kochtimer"
+                    1 -> "1 Timer läuft"
+                    else -> "${laufende.size} Timer laufen"
+                },
+            )
             .setContentText(naechster?.let { "${it.rezeptName}: ${it.label}" })
             .setWhen(naechstesEnde)
             .setUsesChronometer(true)
