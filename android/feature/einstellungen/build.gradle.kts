@@ -24,6 +24,8 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
+    // Dateidialoge für Sicherung und Wiederherstellen
+    implementation(libs.androidx.activity.compose)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.coroutines.test)
