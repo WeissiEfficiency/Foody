@@ -1,6 +1,7 @@
 package de.foody.core.data.db
 
 import androidx.room.Dao
+import androidx.room.Embedded
 import androidx.room.Query
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
@@ -11,6 +12,9 @@ import java.time.LocalDate
  * nie `REPLACE`, das als DELETE + INSERT Kindzeilen per CASCADE löschen und Lösch-Trigger auslösen würde.
  * Abfragen für die Oberfläche kommen mit den Bereichs-Repositories.
  */
+
+/** Eine Zutat mit der Zahl der Rezepte, die sie verwenden (Zutatenkatalog). */
+data class ZutatMitVerwendung(@Embedded val zutat: ZutatEntity, val rezepte: Int)
 
 /** Zutaten (`ingredient`). */
 @Dao
@@ -27,6 +31,33 @@ interface ZutatDao {
     suspend fun nachNameOhneGross(name: String): ZutatEntity?
 
     @Upsert suspend fun upsert(e: ZutatEntity)
+
+    // Zutatenkatalog (Phase 6e2)
+
+    /** Alle Zutaten mit der Zahl der Rezepte, die sie verwenden. */
+    @Query(
+        "SELECT i.*, (SELECT COUNT(DISTINCT ri.recipeId) FROM recipe_ingredient ri WHERE ri.ingredientId = i.id) AS rezepte " +
+            "FROM ingredient i",
+    )
+    fun mitVerwendungFlow(): Flow<List<ZutatMitVerwendung>>
+
+    @Query("SELECT COUNT(*) FROM ingredient") fun anzahlFlow(): Flow<Int>
+
+    @Query("SELECT * FROM ingredient WHERE id = :id") fun nachIdFlow(id: String): Flow<ZutatEntity?>
+
+    /** Namen der Rezepte mit der Zutat, ohne Groß/klein sortiert. */
+    @Query(
+        "SELECT DISTINCT r.name FROM recipe r JOIN recipe_ingredient ri ON ri.recipeId = r.id " +
+            "WHERE ri.ingredientId = :id ORDER BY r.name COLLATE NOCASE",
+    )
+    fun rezeptNamenFlow(id: String): Flow<List<String>>
+
+    /** Eine andere Zutat als [ausser] mit diesem Strichcode. */
+    @Query("SELECT * FROM ingredient WHERE barcode = :code AND id != :ausser LIMIT 1")
+    suspend fun nachStrichcode(code: String, ausser: String): ZutatEntity?
+
+    @Query("SELECT COUNT(DISTINCT recipeId) FROM recipe_ingredient WHERE ingredientId = :id")
+    suspend fun rezeptAnzahl(id: String): Int
 
     @Query("DELETE FROM ingredient WHERE id = :id") suspend fun loeschen(id: String)
 
