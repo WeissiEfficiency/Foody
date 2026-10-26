@@ -28,6 +28,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
+import kotlin.coroutines.CoroutineContext
 
 /** Höchstens so viele Kacheln unter „Zuletzt verwendet“. */
 private const val ZULETZT_MAX = 18
@@ -49,6 +50,8 @@ class EinkaufRepository(
     private val db: FoodyDatenbank,
     private val uhr: () -> Long,
     private val ignoriert: IgnorierteSchluessel,
+    /** Wo [zuletzt] rechnet; Tests geben `EmptyCoroutineContext`, damit nichts auf einem fremden Thread nachläuft. */
+    private val rechnen: CoroutineContext = Dispatchers.Default,
 ) {
     fun aktuelleListeId(): Flow<String?> = db.einkaufslisteDao().alleFlow().map { it.firstOrNull()?.id }.distinctUntilChanged()
 
@@ -77,7 +80,7 @@ class EinkaufRepository(
             .take(ZULETZT_MAX)
             .map { a -> ZuletztArtikel(a.name, ShoppingCatalog.emojiFor(a.name, a.category), abteilungVon(a.category, a.name), a.ingredientId) }
             .toList()
-    }.flowOn(Dispatchers.Default)
+    }.flowOn(rechnen)
 
     fun fruehere(): Flow<List<ListenKopf>> = combine(
         db.einkaufslisteDao().alleFlow(),
