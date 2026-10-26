@@ -56,6 +56,9 @@ if (System.getenv("FOODY_SERVER_ONLY") == null) {
     project(":feature:kochen").projectDir = file("android/feature/kochen")
     project(":feature:woche").projectDir = file("android/feature/woche")
     project(":feature:einkauf").projectDir = file("android/feature/einkauf")
+    // V3 Phase 6e2: Zutatenkatalog
+    include(":feature:zutaten")
+    project(":feature:zutaten").projectDir = file("android/feature/zutaten")
     project(":core:designsystem").projectDir = file("android/core/designsystem")
     project(":katalog").projectDir = file("android/katalog")
 }

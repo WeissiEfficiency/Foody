@@ -264,6 +264,9 @@ object IngredientCatalog {
             "stärke", "semmelbrösel", "linsen", "bohnen", "kichererbsen", "nüsse", "mandeln"),
     )
 
+    /** Die Supermarkt-Abteilungen, die [guessCategory] kennt, in dieser Reihenfolge. */
+    val categories: List<String> get() = categoryRules.map { it.first }
+
     /** Grobe Supermarkt-Abteilung per Stichwort; null, wenn nichts passt. */
     fun guessCategory(name: String): String? {
         val k = key(name)

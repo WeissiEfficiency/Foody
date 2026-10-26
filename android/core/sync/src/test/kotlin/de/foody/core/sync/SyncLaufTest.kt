@@ -30,6 +30,8 @@ import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.fotos.FotoIndex
 import de.foody.core.data.sync.SyncSpeicher
+import de.foody.core.data.zutaten.ZutatErgebnis
+import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.domain.TagebuchArt
@@ -864,6 +866,53 @@ class SyncLaufTest {
         check(vorrat.size == 3)
         val veraltet = "CREATE TRIGGER sync_recipe_veraltet AFTER UPDATE ON recipe BEGIN\nSELECT 'v9alt';\nEND"
         return markiert + vorrat + veraltet
+    }
+
+    // --- Zutatenkatalog: Zusammenführen kommt auf dem zweiten Gerät an (Phase 6e2) ---
+
+    /** A und B mit den Zutaten „Zwiebeln“ (`z-alt`) und „Zwiebel“ (`z-neu`) und Rezept r1 auf `z-alt`. */
+    private suspend fun ApplicationTestBuilder.zweiGeraeteMitDublette(server: TestServer): Pair<Geraet, Geraet> {
+        val (name, konto) = server.kontoAnlegen()
+        val a = geraet(name, konto)
+        a.db.zutatDao().upsert(zutat("z-alt", "Zwiebeln"))
+        a.db.zutatDao().upsert(zutat("z-neu", "Zwiebel"))
+        a.rezeptMitZutat("r1", "z-alt")
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig)
+        val b = geraet(name, konto)
+        assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
+        assertEquals("z-alt", b.db.rezeptZutatDao().nachRezept("r1").single().ingredientId)
+        return a to b
+    }
+
+    @Test
+    fun zusammenfuehrenKommtAufZweitemGeraetAn() = syncServerTest { server ->
+        val (a, b) = zweiGeraeteMitDublette(server)
+        assertEquals(ZutatErgebnis.Zusammengefuehrt("z-neu", "Zwiebel"), ZutatenRepository(a.db) { 50L }.zusammenfuehren("z-alt", "z-neu"))
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig)
+        assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
+
+        assertEquals("z-neu", b.db.rezeptZutatDao().nachRezept("r1").single().ingredientId)
+        assertNull(b.db.zutatDao().nachId("z-alt"))
+        assertEquals(emptyList(), a.dao.outbox() + b.dao.outbox())
+        assertEquals(emptyList(), a.dao.probleme() + b.dao.probleme())
+    }
+
+    @Test
+    fun zusammenfuehrenMitOffenerAenderungAufB() = syncServerTest { server ->
+        val (a, b) = zweiGeraeteMitDublette(server)
+        // B ändert r1, bevor die Zusammenführung ankommt – die Änderung ist noch nicht gesendet
+        b.db.rezeptDao().upsert(b.db.rezeptDao().nachId("r1")!!.copy(name = "Rezept r1 B", updatedAt = 7))
+        ZutatenRepository(a.db) { 50L }.zusammenfuehren("z-alt", "z-neu")
+        a.ausfuehren()
+        b.ausfuehren()
+        assertNotNull(b.db.zutatDao().nachId("z-alt"), "B braucht die Quelle noch: nicht gelöscht")
+        a.ausfuehren()
+
+        for (g in listOf(a, b)) {
+            val zeilen = g.db.rezeptZutatDao().nachRezept("r1")
+            assertTrue(zeilen.isNotEmpty())
+            for (z in zeilen) assertNotNull(g.db.zutatDao().nachId(z.ingredientId), "Zeile zeigt auf vorhandene Zutat")
+        }
     }
 
     private companion object {

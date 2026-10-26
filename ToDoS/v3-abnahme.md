@@ -62,6 +62,7 @@ ist. Grundlage: [`v2-abnahme.md`](v2-abnahme.md), gekürzt nach dem Review vom 2
 - [x] Server verbinden: Adresse, Anmelden, Sync-Stand, „Jetzt synchronisieren“, Sync-Probleme, Trennen mit Rückfrage
       (Phase 5, `VerbindenScreenTest`; Sync-Probleme als letzter Fehler im Klartext)
 - [ ] Zutatenkatalog: Dichte, Stückgewicht, Synonyme, Dubletten zusammenführen, Strichcode an der Zutat, Scan
+      (Phase 6e2 erledigt bis auf den Scan, der folgt in 6e3)
 - [x] Startdaten mit `SeedData.VERSION`-Aktualisierung (Phase 5, `StartdatenLaderTest`)
 - [x] Sicherung als ZIP (Daten und Fotos), Wiederherstellung (auch v1-Dateien), vollständige lokale Löschung (Phase 6e1;
       Löschen spielt den Startkatalog neu ein; beides gesperrt, solange der Sync verbunden ist)

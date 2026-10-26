@@ -58,6 +58,7 @@ dependencies {
     implementation(project(":feature:woche"))
     implementation(project(":feature:einkauf"))
     implementation(project(":feature:einstellungen"))
+    implementation(project(":feature:zutaten"))
     implementation(project(":domain"))
 
     val bom = platform(libs.compose.bom)

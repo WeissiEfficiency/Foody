@@ -17,9 +17,9 @@ import de.foody.core.data.db.SyncOutboxEntity
 import de.foody.core.data.db.SyncProblemEntity
 import de.foody.core.data.db.SyncRevisionEntity
 import de.foody.core.data.db.SyncZustandEntity
-import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.fotos.FotoIndex
+import de.foody.core.data.zutaten.zusammenfuehrenSchritte
 import java.io.File
 import java.io.IOException
 import java.time.DateTimeException
@@ -464,16 +464,11 @@ class SyncSpeicher(
         db.zutatDao().upsert(umbenannt)
         Abbildung.anwenden(db, r)
         val server = requireNotNull(db.zutatDao().nachId(r.id))
-        val ergaenzt = server.ergaenztUm(umbenannt)
         // Mit aktiven Triggern zusammenführen, damit umgehängte Rezepte, Artikel und Einträge in die Outbox kommen
         val vorher = dao.outbox().associate { (it.type to it.recordId) to it.queuedAt }
         dao.applyingRemoteSetzen(false)
-        try {
-            dao.rezeptZeilenUmhaengen(lokal.id, r.id)
-            dao.einkaufsartikelUmhaengen(lokal.id, r.id)
-            dao.tagebuchUmhaengen(lokal.id, r.id)
-            db.zutatDao().loeschen(lokal.id)
-            db.zutatDao().upsert(ergaenzt.copy(updatedAt = uhr()))
+        val geaendert = try {
+            zusammenfuehrenSchritte(db, quelle = umbenannt, ziel = server, jetzt = uhr())
         } finally {
             dao.applyingRemoteSetzen(true)
         }
@@ -487,7 +482,7 @@ class SyncSpeicher(
         }
         dao.loeschenOutbox(RecordType.INGREDIENT.wire, lokal.id)
         // Hat die Zusammenführung die Server-Zutat nicht ergänzt, muss sie nicht zurückgesendet werden
-        if (ergaenzt == server) dao.loeschenOutbox(RecordType.INGREDIENT.wire, r.id)
+        if (!geaendert) dao.loeschenOutbox(RecordType.INGREDIENT.wire, r.id)
     }
 
     private suspend fun loeschungAnwenden(r: SyncRecord) {
@@ -697,22 +692,4 @@ class SyncSpeicher(
         /** Kinder vor Eltern (umgekehrte Abhängigkeitsreihenfolge). */
         private val LOESCH_REIHENFOLGE = RecordType.entries.reversed()
     }
-}
-
-/** Übernimmt Nährwerte und Umrechnungsdaten aus [andere], wo diese Zutat keine hat (wie das Zusammenführen der v1). */
-private fun ZutatEntity.ergaenztUm(andere: ZutatEntity): ZutatEntity {
-    val mitNaehrwerten = if (nutrientBasis == null && andere.nutrientBasis != null) {
-        copy(
-            nutrientBasis = andere.nutrientBasis, energyKj = andere.energyKj, protein = andere.protein, carbs = andere.carbs,
-            fat = andere.fat, fiber = andere.fiber, sugar = andere.sugar, salt = andere.salt, nutrientSource = andere.nutrientSource,
-        )
-    } else {
-        this
-    }
-    return mitNaehrwerten.copy(
-        category = category ?: andere.category,
-        densityGPerMl = densityGPerMl ?: andere.densityGPerMl,
-        pieceWeightG = pieceWeightG ?: andere.pieceWeightG,
-        barcode = barcode ?: andere.barcode,
-    )
 }

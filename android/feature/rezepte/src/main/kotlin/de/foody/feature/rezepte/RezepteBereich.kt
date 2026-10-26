@@ -23,11 +23,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
+import de.foody.core.designsystem.komponenten.VerwerfenFrage
 import de.foody.feature.rezepte.detail.RezeptDetailRoute
 import de.foody.feature.rezepte.detail.RezeptDetailViewModel
 import de.foody.feature.rezepte.editor.EditorRoute
 import de.foody.feature.rezepte.editor.EditorViewModel
-import de.foody.feature.rezepte.editor.VerwerfenFrage
 import de.foody.feature.rezepte.importieren.ImportBlatt
 import de.foody.feature.rezepte.importieren.ImportViewModel
 import de.foody.feature.rezepte.liste.RezeptListeRoute

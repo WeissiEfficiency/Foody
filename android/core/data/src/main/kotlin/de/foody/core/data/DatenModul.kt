@@ -23,6 +23,7 @@ import de.foody.core.data.startdaten.StartdatenLader
 import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.data.woche.WocheRepository
 import de.foody.core.data.sync.SyncSpeicher
+import de.foody.core.data.zutaten.ZutatenRepository
 import java.time.Clock
 import javax.inject.Singleton
 
@@ -102,6 +103,10 @@ object DatenModul {
     @Singleton
     fun einkaufRepository(db: FoodyDatenbank, ignoriert: IgnorierteSchluessel): EinkaufRepository =
         EinkaufRepository(db, System::currentTimeMillis, ignoriert)
+
+    @Provides
+    @Singleton
+    fun zutatenRepository(db: FoodyDatenbank): ZutatenRepository = ZutatenRepository(db, System::currentTimeMillis)
 
     @Provides
     fun rezeptImporter(dienst: RezeptImportDienst): RezeptImporter = dienst

@@ -60,12 +60,14 @@ fun rememberDateiwahl(dateiname: String, onErstellt: (Uri) -> Unit, onGewaehlt: 
 }
 
 /**
- * Einstellungen: Konto (→ „Server verbinden“), Darstellung, Tagesziel, Sicherung, alle Daten löschen, Hinweise.
+ * Einstellungen: Konto (→ „Server verbinden“), Darstellung, Tagesziel, Zutatenkatalog, Sicherung, alle Daten löschen,
+ * Hinweise.
  * Wiederherstellen und Löschen fragen nach; bei verbundenem Sync sind beide gesperrt.
  */
 @Composable
 fun EinstellungenRoute(
     onServer: () -> Unit,
+    onZutaten: () -> Unit,
     onZurueck: () -> Unit,
     vm: EinstellungenViewModel = hiltViewModel(),
     dateiwahl: @Composable (onErstellt: (Uri) -> Unit, onGewaehlt: (Uri) -> Unit) -> Dateiwahl = { erstellt, gewaehlt ->
@@ -105,6 +107,7 @@ fun EinstellungenRoute(
                     zielUngueltig = !vm.tageszielEingabe(neu)
                     if (!zielUngueltig) zielFehler = false
                 }
+                ZutatenAbschnitt(z.zutaten, onZutaten)
                 SicherungAbschnitt(z, onErstellen = dateien.erstellen, onWiederherstellen = dateien.oeffnen)
                 DatenAbschnitt(z, onLoeschen = { loeschen = true })
                 HinweiseAbschnitt()

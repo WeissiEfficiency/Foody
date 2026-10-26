@@ -74,6 +74,17 @@ class EinstellungenViewModelTest {
     }
 
     @Test
+    fun zutatenAnzahl() {
+        runBlocking {
+            for (n in listOf("Reis", "Salz", "Zucker")) {
+                u.db.zutatDao().upsert(de.foody.core.data.db.ZutatEntity(id = n, canonicalName = n, createdAt = 1, updatedAt = 1))
+            }
+        }
+        val vm = u.vm()
+        warte { vm.zustand.value.zutaten == 3 }
+    }
+
+    @Test
     fun darstellungSetzen() = runTest {
         val vm = u.vm()
         vm.darstellungSetzen(Darstellung.DUNKEL)

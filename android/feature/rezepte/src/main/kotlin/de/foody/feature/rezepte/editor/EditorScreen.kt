@@ -15,7 +15,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,7 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.data.rezepte.Gespeichert
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
-import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.VerwerfenFrage
 import kotlinx.coroutines.launch
 
 private val INHALT_MAX = 720.dp
@@ -95,14 +94,3 @@ fun EditorRoute(
     if (fragen) VerwerfenFrage(onVerwerfen = { fragen = false; onZurueck() }, onWeiter = { fragen = false })
 }
 
-/** „Änderungen verwerfen?“ – vor dem Verlassen eines Editors mit ungespeicherten Änderungen. */
-@Composable
-internal fun VerwerfenFrage(onVerwerfen: () -> Unit, onWeiter: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onWeiter,
-        title = { Text("Änderungen verwerfen?") },
-        text = { Text("Die ungespeicherten Änderungen gehen verloren.") },
-        confirmButton = { FoodyKnopf("Verwerfen", onVerwerfen, art = KnopfArt.TEXT) },
-        dismissButton = { FoodyKnopf("Weiter bearbeiten", onWeiter, art = KnopfArt.TEXT) },
-    )
-}
