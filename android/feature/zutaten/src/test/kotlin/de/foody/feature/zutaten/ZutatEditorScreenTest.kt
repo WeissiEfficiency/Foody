@@ -196,6 +196,14 @@ class ZutatEditorScreenTest {
     }
 
     @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun speichernUeberDerLeiste() {
+        reis()
+        zeigen("seed-reis")
+        compose.pruefeUeberLeiste(compose.onNodeWithText("Speichern"))
+    }
+
+    @Test
     fun schrift200() {
         reis()
         zeigen("seed-reis", schrift200 = true)

@@ -9,6 +9,8 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.room.Room
@@ -71,6 +73,19 @@ fun ComposeTestRule.warteAufText(text: String) =
 
 fun ComposeTestRule.warteAufTeil(text: String) =
     waitUntil(5_000) { onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty() }
+
+/**
+ * Prüft, dass [knoten] mindestens [LEISTE_FREI] über dem unteren Bildschirmrand endet – darunter liegt auf dem Handy die
+ * schwebende Navigationsleiste der App (wie die Snackbars der anderen Seiten).
+ */
+fun ComposeTestRule.pruefeUeberLeiste(knoten: androidx.compose.ui.test.SemanticsNodeInteraction) {
+    val unten = knoten.fetchSemanticsNode().boundsInRoot.bottom
+    val hoehe = onRoot().fetchSemanticsNode().boundsInRoot.bottom
+    val frei = with(density) { LEISTE_FREI.toPx() }
+    assertTrue(hoehe - unten >= frei - 0.5f, "nur ${hoehe - unten} px über dem Rand, nötig $frei px")
+}
+
+val LEISTE_FREI = 88.dp
 
 /** Inhalt mit doppelter Schriftgröße (Systemschrift 200 %). */
 @Composable

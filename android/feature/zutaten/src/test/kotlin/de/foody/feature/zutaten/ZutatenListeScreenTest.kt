@@ -141,6 +141,15 @@ class ZutatenListeScreenTest {
     }
 
     @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun neuKnopfUeberDerLeiste() {
+        bestand()
+        zeigen()
+        compose.warteAufText("Reis")
+        compose.pruefeUeberLeiste(compose.onNodeWithContentDescription("Neue Zutat"))
+    }
+
+    @Test
     @Config(qualifiers = "w411dp-h1600dp")
     fun schrift200() {
         bestand()

@@ -91,9 +91,13 @@ fun ZutatEditorRoute(id: String, onFertig: () -> Unit, vm: ZutatEditorViewModel 
                     EditorFelder(entwurf, z.fehler, z.synonyme, z.verwendetIn, onAendern = vm::aendern, onFeldFertig = vm::feldFertig)
                 }
             }
-            FoodyKnopf("Speichern", vm::speichern, Modifier.fillMaxWidth().padding(16.dp), aktiv = z.geladen && !z.laeuft)
+            FoodyKnopf(
+                "Speichern", vm::speichern,
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = UEBER_LEISTE),
+                aktiv = z.geladen && !z.laeuft,
+            )
         }
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = 88.dp))
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = UEBER_LEISTE + 64.dp))
     }
 
     val name = z.vorher?.name.orEmpty()

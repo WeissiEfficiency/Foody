@@ -55,6 +55,9 @@ import kotlinx.coroutines.launch
 /** Lesebreite der Seiten. */
 internal val INHALT_MAX = 720.dp
 
+/** Abstand zum unteren Rand für Knöpfe und Snackbars: darunter schwebt auf dem Handy die Navigationsleiste. */
+internal val UEBER_LEISTE = 88.dp
+
 private val FILTER = listOf(
     ZutatFilter.OHNE_NAEHRWERTE to "Ohne Nährwerte", ZutatFilter.EIGENE to "Eigene",
     ZutatFilter.UNBENUTZT to "Unbenutzt", ZutatFilter.MIT_STRICHCODE to "Mit Strichcode",
@@ -109,7 +112,7 @@ fun ZutatenListeRoute(onZutat: (String) -> Unit, onZurueck: () -> Unit, vm: Zuta
                     style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.nebentext,
                 )
             }
-            LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = 96.dp)) {
+            LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = UEBER_LEISTE + 72.dp)) {
                 items(z.treffer, key = { it.id }) { zutat ->
                     ZutatZeile(zutat) { onZutat(zutat.id) }
                     HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = FoodyTheme.farben.nebentext.copy(alpha = 0.2f))
@@ -118,9 +121,9 @@ fun ZutatenListeRoute(onZutat: (String) -> Unit, onZurueck: () -> Unit, vm: Zuta
         }
         FloatingActionButton(
             onClick = { gibtEsSchon = null; neu = true },
-            modifier = Modifier.align(Alignment.BottomEnd).safeDrawingPadding().padding(16.dp),
+            modifier = Modifier.align(Alignment.BottomEnd).safeDrawingPadding().padding(end = 16.dp, bottom = UEBER_LEISTE),
         ) { Icon(Icons.Outlined.Add, contentDescription = "Neue Zutat") }
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = 88.dp))
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = UEBER_LEISTE + 72.dp))
     }
 
     if (neu) {
