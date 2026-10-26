@@ -5,6 +5,7 @@ import de.foody.app.data.ShoppingPreferences
 import android.content.Context
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
@@ -57,7 +58,16 @@ class ShoppingTilesTest {
     private fun openItems() = runBlocking { db.shoppingDao().getAllItems().filter { !it.checked }.map { it.name } }
 
     private fun waitForOpen(expected: List<String>) =
-        compose.waitUntil(5_000) { openItems() == expected }
+        compose.waitUntil(WAIT_MS) { openItems() == expected }
+
+    // Room meldet Änderungen über einen Flow auf einem Hintergrund-Thread, den die Compose-Idling-Logik
+    // nicht kennt: Steht etwas in der DB, kann die Kachel noch den alten Zustand zeigen. Daher auf die UI warten.
+    private fun waitForNode(matcher: SemanticsMatcher) =
+        compose.waitUntil(WAIT_MS) { compose.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty() }
+
+    // Dasselbe im Lazy-Grid: Kacheln außerhalb des Bildschirms stehen nicht im Semantik-Baum, also bis zum Treffer scrollen
+    private fun scrollToNode(grid: SemanticsNodeInteraction, matcher: SemanticsMatcher) =
+        compose.waitUntil(WAIT_MS) { runCatching { grid.performScrollToNode(matcher) }.isSuccess }
 
     @Test fun catalogTileToListAndBack() {
         // Abteilung aufklappen und Bananen antippen → legt automatisch eine Liste an
@@ -66,11 +76,13 @@ class ShoppingTilesTest {
         waitForOpen(listOf("Bananen"))
 
         // Rote Kachel oben antippen = gekauft
+        waitForNode(hasText("Bananen") and state("auf der Liste"))
         compose.onAllNodes(hasText("Bananen") and state("auf der Liste")).onFirst().performClick()
         waitForOpen(emptyList())
-        compose.onNode(hasText("Nichts einzukaufen!")).assertExists()
+        waitForNode(hasText("Nichts einzukaufen!"))
 
         // „Zuletzt verwendet“ → wieder auf die Liste
+        waitForNode(hasText("Bananen") and state("nicht auf der Liste"))
         compose.onAllNodes(hasText("Bananen") and state("nicht auf der Liste")).onFirst().performClick()
         waitForOpen(listOf("Bananen"))
         assertEquals(1, runBlocking { db.shoppingDao().getAllItems().size }, "kein doppelter Eintrag")
@@ -95,12 +107,12 @@ class ShoppingTilesTest {
         waitForOpen(listOf("Grillkohle XL"))
         // Die Kachel in der Abteilung „Eigene Artikel“ (nicht die rote Kachel oben) geht über tapCatalog
         val grid = compose.onNode(hasScrollAction())
-        grid.performScrollToNode(hasText(ShoppingCatalog.OWN_ITEMS))
+        scrollToNode(grid, hasText(ShoppingCatalog.OWN_ITEMS))
         compose.onNode(hasText(ShoppingCatalog.OWN_ITEMS)).performClick()
-        grid.performScrollToNode(hasText("Grillkohle XL") and state("auf der Liste"))
+        scrollToNode(grid, hasText("Grillkohle XL") and state("auf der Liste"))
         compose.onAllNodes(hasText("Grillkohle XL") and state("auf der Liste")).onLast().performClick()
         waitForOpen(emptyList())
-        grid.performScrollToNode(hasText("Grillkohle XL") and state("nicht auf der Liste"))
+        scrollToNode(grid, hasText("Grillkohle XL") and state("nicht auf der Liste"))
         compose.onAllNodes(hasText("Grillkohle XL") and state("nicht auf der Liste")).onLast().performClick()
         waitForOpen(listOf("Grillkohle XL"))
         assertEquals(1, runBlocking { db.shoppingDao().getAllItems().size }, "kein doppelter Eintrag")
@@ -114,8 +126,13 @@ class ShoppingTilesTest {
 
         field.performTextInput("Milch")
         field.performImeAction()
-        compose.waitUntil(5_000) { openItems().toSet() == setOf("schoki", "Milch") }
+        compose.waitUntil(WAIT_MS) { openItems().toSet() == setOf("schoki", "Milch") }
         val milk = runBlocking { db.shoppingDao().getAllItems().single { it.name == "Milch" } }
         assertEquals("Milch & Käse", milk.category, "Katalogartikel bekommt seine Abteilung")
+    }
+
+    private companion object {
+        // Großzügig für den überlasteten CI-Emulator (drei Managed Devices parallel, Software-Rendering)
+        const val WAIT_MS = 15_000L
     }
 }

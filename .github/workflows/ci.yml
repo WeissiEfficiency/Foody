@@ -60,6 +60,14 @@ jobs:
           name: instrumented-test-reports
           path: android/app/build/reports/androidTests/managedDevice/
           if-no-files-found: ignore
+      # Logcat je Test und JUnit-XML: der HTML-Bericht enthält nur den Stacktrace, zum Eingrenzen von Flakes fehlt sonst alles
+      - name: Logcat der Instrumented-Tests hochladen
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: instrumented-test-logcat
+          path: android/app/build/outputs/androidTest-results/managedDevice/
+          if-no-files-found: ignore
 
   # Sync-Server: Tests, Docker-Image (ohne Android-SDK) und ein Smoke-Test des laufenden Containers.
   server:
