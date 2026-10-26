@@ -18,6 +18,8 @@ import de.foody.feature.rezepte.RezepteBereich
 import de.foody.feature.rezepte.detail.RezeptDetailRoute
 import de.foody.feature.rezepte.editor.EditorRoute
 import de.foody.feature.woche.WocheRoute
+import de.foody.feature.zutaten.ZutatEditorRoute
+import de.foody.feature.zutaten.ZutatenListeRoute
 import java.time.LocalDate
 
 /** Die Bildschirme mit ViewModel (Hilt); Navigationstests setzen [Bildschirme.platzhalter] ein. */
@@ -26,6 +28,9 @@ class Bildschirme(
     val tagebuch: @Composable (LocalDate, NavHostController) -> Unit,
     val einstellungen: @Composable (NavHostController) -> Unit,
     val serverVerbinden: @Composable (NavHostController) -> Unit,
+    val zutaten: @Composable (NavHostController) -> Unit,
+    /** Zutateneditor mit der Zutat-ID. */
+    val zutat: @Composable (String, NavHostController) -> Unit,
     val rezepte: @Composable (NavHostController) -> Unit,
     val rezeptDetail: @Composable (String, NavHostController) -> Unit,
     /** Editor; ID `null` = neues Rezept; dazu die Portionen, mit denen gekocht wurde. */
@@ -53,8 +58,14 @@ class Bildschirme(
                     nav.navigate(TagebuchTag(neu.toString())) { popUpTo<TagebuchTag> { inclusive = true } }
                 })
             },
-            einstellungen = { nav -> EinstellungenRoute(onServer = { nav.navigate(ServerVerbinden) }, onZurueck = { nav.popBackStack() }) },
+            einstellungen = { nav ->
+                EinstellungenRoute(
+                    onServer = { nav.navigate(ServerVerbinden) }, onZutaten = { nav.navigate(Zutaten) }, onZurueck = { nav.popBackStack() },
+                )
+            },
             serverVerbinden = { nav -> VerbindenRoute(onZurueck = { nav.popBackStack() }) },
+            zutaten = { nav -> ZutatenListeRoute(onZutat = { nav.navigate(Zutat(it)) }, onZurueck = { nav.popBackStack() }) },
+            zutat = { id, nav -> ZutatEditorRoute(id, onFertig = { nav.popBackStack() }) },
             rezepte = { nav ->
                 RezepteBereich(
                     onOeffnen = { nav.navigate(RezeptDetail(it)) },
@@ -107,6 +118,8 @@ class Bildschirme(
             tagebuch = { datum, _ -> Platzhalter("Tagebuch", "Tagebuch $datum") },
             einstellungen = { Platzhalter("Einstellungen") },
             serverVerbinden = { Platzhalter("Server verbinden") },
+            zutaten = { Platzhalter("Zutatenkatalog") },
+            zutat = { id, _ -> Platzhalter("Zutat", "Zutat $id") },
             rezepte = { Platzhalter("Rezepte", "Rezeptliste") },
             rezeptDetail = { id, _ -> Platzhalter("Rezept", "Rezept $id") },
             editor = { id, gekochtMit, _ ->
@@ -137,6 +150,8 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
         composable<Einkauf> { bildschirme.einkauf(null, nav) }
         composable<Einstellungen> { bildschirme.einstellungen(nav) }
         composable<ServerVerbinden> { bildschirme.serverVerbinden(nav) }
+        composable<Zutaten> { bildschirme.zutaten(nav) }
+        composable<Zutat> { bildschirme.zutat(it.toRoute<Zutat>().id, nav) }
         composable<RezeptDetail>(deepLinks = listOf(navDeepLink<RezeptDetail>(basePath = "${SCHEMA}rezept"))) {
             bildschirme.rezeptDetail(it.toRoute<RezeptDetail>().id, nav)
         }

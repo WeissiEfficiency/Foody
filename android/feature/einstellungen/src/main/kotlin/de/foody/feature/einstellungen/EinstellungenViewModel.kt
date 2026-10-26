@@ -15,6 +15,7 @@ import de.foody.core.data.TAGESZIEL_MIN
 import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.sicherung.LoeschErgebnis
 import de.foody.core.data.sicherung.Sicherung
+import de.foody.core.data.zutaten.ZutatenRepository
 import java.io.File
 import java.time.Clock
 import java.time.LocalDate
@@ -43,6 +44,8 @@ data class EinstellungenZustand(
     val tagesziel: Int? = null,
     val konto: VerbindungsZustand? = null,
     val laeuft: Aktion? = null,
+    /** Anzahl Zutaten im Katalog (Zeile „Zutatenkatalog“). */
+    val zutaten: Int? = null,
 ) {
     val gesperrt: Boolean get() = konto?.verbunden == true
 }
@@ -58,6 +61,7 @@ class EinstellungenViewModel @Inject constructor(
     private val darstellungen: DarstellungSpeicher,
     private val ziel: TageszielSpeicher,
     private val sicherung: Sicherung,
+    zutaten: ZutatenRepository,
     konto: KontoZugriff,
     private val clock: Clock,
 ) : ViewModel() {
@@ -65,8 +69,8 @@ class EinstellungenViewModel @Inject constructor(
     val laeuft: StateFlow<Aktion?> = laufend.asStateFlow()
 
     val zustand: StateFlow<EinstellungenZustand> =
-        combine(darstellungen.darstellung(), ziel.tagesziel(), konto.zustand, laufend) { d, t, k, l ->
-            EinstellungenZustand(d, t, k, l)
+        combine(darstellungen.darstellung(), ziel.tagesziel(), konto.zustand, laufend, zutaten.anzahl()) { d, t, k, l, n ->
+            EinstellungenZustand(d, t, k, l, n)
         }.stateIn(
             viewModelScope, SharingStarted.Eagerly,
             // Startwerte sofort aus den Prefs: kein Umspringen, bis der Kontostand da ist

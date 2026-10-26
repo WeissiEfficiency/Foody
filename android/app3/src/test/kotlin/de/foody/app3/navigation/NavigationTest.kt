@@ -177,6 +177,20 @@ class NavigationTest {
 
     @Test
     @Config(qualifiers = "w411dp-h891dp")
+    fun einstellungenZumZutatenkatalog() {
+        starten()
+        compose.runOnUiThread { nav.navigate(Einstellungen) }
+        compose.runOnUiThread { nav.navigate(Zutaten) }
+        compose.onNodeWithText("Zutatenkatalog").assertExists()
+        compose.runOnUiThread { nav.navigate(Zutat("z1")) }
+        compose.onNodeWithText("Zutat z1").assertExists()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithText("Zutat z1").assertDoesNotExist()
+        compose.onNodeWithText("Zutatenkatalog").assertExists()
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
     fun wocheTabZeigtPlan() {
         starten()
         tab("Woche").performClick()

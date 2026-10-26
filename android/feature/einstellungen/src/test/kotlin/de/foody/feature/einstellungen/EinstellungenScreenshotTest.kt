@@ -68,7 +68,7 @@ class EinstellungenScreenshotTest {
         val vm = u.vm()
         compose.setContent {
             FoodyTheme(dunkel = false, unschaerfe = false) {
-                FoodyHintergrund { EinstellungenRoute({}, {}, vm = vm, dateiwahl = keineDateien) }
+                FoodyHintergrund { EinstellungenRoute({}, {}, {}, vm = vm, dateiwahl = keineDateien) }
             }
         }
         compose.warteAufText("Alle Daten löschen")
@@ -86,7 +86,7 @@ class EinstellungenScreenshotTest {
                 val name = "${if (verbunden) "verbunden" else "getrennt"}_${if (dunkel) "dunkel" else "hell"}_$geraet"
                 captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
                     FoodyTheme(dunkel = dunkel, unschaerfe = false) {
-                        FoodyHintergrund { EinstellungenRoute({}, {}, vm = vm, dateiwahl = keineDateien) }
+                        FoodyHintergrund { EinstellungenRoute({}, {}, {}, vm = vm, dateiwahl = keineDateien) }
                     }
                 }
             }

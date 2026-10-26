@@ -42,6 +42,7 @@ class EinstellungenScreenTest {
 
     private lateinit var u: EinstellungenTestUmgebung
     private var server = 0
+    private var zutatenGeoeffnet = 0
     private lateinit var zip: File
     private lateinit var json: File
 
@@ -72,7 +73,7 @@ class EinstellungenScreenTest {
         val vm = u.vm()
         compose.setContent {
             FoodyTheme {
-                val inhalt = @Composable { EinstellungenRoute(onServer = { server++ }, onZurueck = {}, vm = vm, dateiwahl = dateien) }
+                val inhalt = @Composable { EinstellungenRoute(onServer = { server++ }, onZutaten = { zutatenGeoeffnet++ }, onZurueck = {}, vm = vm, dateiwahl = dateien) }
                 if (schrift200) MitSchrift200(inhalt) else inhalt()
             }
         }
@@ -80,6 +81,20 @@ class EinstellungenScreenTest {
     }
 
     private fun knopf(text: String) = compose.onNodeWithText(text).performScrollTo()
+
+    @Test
+    fun zutatenZeile() {
+        runBlocking {
+            for (n in listOf("Reis", "Salz", "Zucker")) {
+                u.db.zutatDao().upsert(de.foody.core.data.db.ZutatEntity(id = n, canonicalName = n, createdAt = 1, updatedAt = 1))
+            }
+        }
+        zeigen()
+        compose.onNodeWithText("ZUTATEN").assertExists()
+        compose.warteAufText("3")
+        compose.onNodeWithText("Zutatenkatalog").performScrollTo().performClick()
+        assertEquals(1, zutatenGeoeffnet)
+    }
 
     @Test
     fun abschnitteSichtbar() {
@@ -201,7 +216,7 @@ class EinstellungenScreenTest {
     fun ueberstehtDrehen() {
         val vm = u.vm()
         val tester = StateRestorationTester(compose)
-        tester.setContent { FoodyTheme { EinstellungenRoute({}, {}, vm = vm, dateiwahl = dateien) } }
+        tester.setContent { FoodyTheme { EinstellungenRoute({}, {}, {}, vm = vm, dateiwahl = dateien) } }
         compose.warteAufText("TAGESZIEL")
         compose.onNode(hasSetTextAction()).performScrollTo().performTextInput("99")
         compose.onNode(hasSetTextAction()).performImeAction()

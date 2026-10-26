@@ -20,6 +20,11 @@ import java.time.format.DateTimeParseException
 
 @Serializable data object ServerVerbinden
 
+/** Zutatenkatalog (aus den Einstellungen). */
+@Serializable data object Zutaten
+
+@Serializable data class Zutat(val id: String)
+
 @Serializable data class RezeptDetail(val id: String)
 
 @Serializable data object RezeptNeu

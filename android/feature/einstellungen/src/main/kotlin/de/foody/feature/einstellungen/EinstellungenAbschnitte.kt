@@ -91,6 +91,19 @@ internal fun TageszielAbschnitt(text: String, fehler: Boolean, onFertig: () -> U
     )
 }
 
+/** Zutatenkatalog: ganze Zeile mit Anzahl und „›“. */
+@Composable
+internal fun ZutatenAbschnitt(anzahl: Int?, onZutaten: () -> Unit) = Abschnitt("Zutaten") {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onZutaten),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("Zutatenkatalog", Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
+        anzahl?.let { Klein(it.toString()) }
+        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = FoodyTheme.farben.text)
+    }
+}
+
 @Composable
 internal fun SicherungAbschnitt(z: EinstellungenZustand, onErstellen: () -> Unit, onWiederherstellen: () -> Unit) = Abschnitt("Sicherung") {
     Klein("Rezepte, Zutaten, Plan, Einkauf, Tagebuch und Fotos als ZIP-Datei.")
