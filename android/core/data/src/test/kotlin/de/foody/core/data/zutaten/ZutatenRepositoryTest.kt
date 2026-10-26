@@ -342,6 +342,18 @@ class ZutatenRepositoryTest {
     }
 
     @Test
+    fun scanMitGleichemKcalTextUebernimmtGenaueKj() = runTest {
+        // 1502 kJ und 1500 kJ ergeben beide „359 kcal“ – der Text ändert sich nicht, der Packungswert gilt trotzdem
+        val vorher = ZutatEntwurf.aus(zutat("z", "Hafer") { it.copy(nutrientBasis = NutrientBasis.PER_100_G, energyKj = BigDecimal("1502")) })
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1500")))
+        val (nachher, _) = vorher.mitPackung(p)
+        assertEquals(vorher.kcal, nachher.kcal)
+        assertEquals(ZutatErgebnis.Gespeichert("z"), repo.speichern("z", vorher, nachher, scan = p))
+        assertEquals(BigDecimal("1500"), gespeichert("z").energyKj)
+        assertEquals("Open Food Facts", gespeichert("z").nutrientSource)
+    }
+
+    @Test
     fun scanKcalGeaendertRechnet() = runTest {
         val vorher = ZutatEntwurf.aus(zutat("z", "Hafer"))
         val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1500")))

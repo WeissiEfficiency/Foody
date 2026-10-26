@@ -1,6 +1,7 @@
 package de.foody.core.data.zutaten
 
 import de.foody.core.data.db.ZutatEntity
+import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
 import de.foody.domain.NutritionResult
 import java.math.BigDecimal
@@ -27,7 +28,9 @@ internal fun ZutatEntity.mitAenderungen(
     fun zahl(alt: String, neu: String, wert: BigDecimal?): BigDecimal? = if (alt == neu) wert else zahlAus(neu)
     fun text(alt: String, neu: String, wert: String?): String? = if (alt == neu) wert else neu.trim().ifEmpty { null }
 
-    val kcalNeu = nachher.kcal != vorher.kcal
+    // Mit Scan zählt auch ein gleicher kcal-Text (1500 statt 1502 kJ ergeben beide „359“): der genaue Packungswert gilt
+    val kcalNeu = nachher.kcal != vorher.kcal ||
+        (scan?.werte?.get(Nutrient.ENERGY_KJ) != null && nachher.kcal == scan.kcalText && energyKj != scan.werte[Nutrient.ENERGY_KJ])
     var z = copy(
         canonicalName = if (mitName && nachher.name != vorher.name) nameBereinigt(nachher.name) else canonicalName,
         category = if (nachher.kategorie != vorher.kategorie) nachher.kategorie else category,
