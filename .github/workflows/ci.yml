@@ -27,7 +27,7 @@ jobs:
         run: ./gradlew check :app:assembleDebug :katalog:assembleDebug :app3:assembleDebug
       # Katalog des V3-Designsystems und die V3-Bereiche gegen die eingecheckten Referenzbilder vergleichen
       - name: Screenshot-Vergleich (Katalog, Heute, Rezepte)
-        run: ./gradlew :katalog:verifyRoborazziDebug :feature:heute:verifyRoborazziDebug :feature:rezepte:verifyRoborazziDebug :feature:kochen:verifyRoborazziDebug :feature:woche:verifyRoborazziDebug :feature:einkauf:verifyRoborazziDebug :feature:einstellungen:verifyRoborazziDebug
+        run: ./gradlew :katalog:verifyRoborazziDebug :feature:heute:verifyRoborazziDebug :feature:rezepte:verifyRoborazziDebug :feature:kochen:verifyRoborazziDebug :feature:woche:verifyRoborazziDebug :feature:einkauf:verifyRoborazziDebug :feature:einstellungen:verifyRoborazziDebug :feature:zutaten:verifyRoborazziDebug
       # R8 entfernt nur im Release-Build Code – Fehler in Keep-Regeln fallen sonst erst beim Veröffentlichen auf
       - name: Release-Build (R8)
         run: ./gradlew :app:assembleRelease
