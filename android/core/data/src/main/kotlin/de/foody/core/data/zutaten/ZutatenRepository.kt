@@ -48,7 +48,9 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
             andereMitNamen(n, ausser = null)?.let { return@withTransaction ZutatErgebnis.NameVergeben(it.id, it.canonicalName) }
             val jetzt = uhr()
             val id = UUID.randomUUID().toString()
-            val neu = ZutatEntity(id = id, canonicalName = n, category = IngredientCatalog.guessCategory(n), createdAt = jetzt, updatedAt = jetzt)
+            val neu = ZutatEntity(
+                id = id, canonicalName = n, category = IngredientCatalog.guessCategory(n), createdAt = jetzt, updatedAt = jetzt,
+            )
             dao.upsert(
                 if (packung == null) {
                     neu
