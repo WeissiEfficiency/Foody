@@ -37,6 +37,8 @@ internal class ZutatenTestUmgebung {
 
     fun liste() = ZutatenListeViewModel(repo, meldungen)
 
+    fun editor() = ZutatEditorViewModel(repo, meldungen)
+
     fun zutat(id: String, name: String, aendern: (ZutatEntity) -> ZutatEntity = { it }): ZutatEntity = runBlocking {
         aendern(ZutatEntity(id = id, canonicalName = name, createdAt = 1, updatedAt = 1)).also { db.zutatDao().upsert(it) }
     }
