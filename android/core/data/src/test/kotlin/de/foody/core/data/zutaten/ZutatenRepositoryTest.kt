@@ -14,6 +14,7 @@ import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.domain.IngredientCatalog
 import de.foody.domain.MeasureUnit
+import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
 import de.foody.domain.NutritionResult
 import de.foody.domain.TagebuchArt
@@ -315,5 +316,126 @@ class ZutatenRepositoryTest {
         assertEquals(1, repo.vereinheitlichen())
         assertEquals("Eigene Abteilung", gespeichert("b").category)
         assertNull(db.zutatDao().nachId("a"))
+    }
+
+    // --- Packung scannen (Phase 6e3) ---
+
+    private fun packung(
+        werte: Map<Nutrient, BigDecimal>,
+        basis: NutrientBasis? = NutrientBasis.PER_100_G,
+        strichcode: String? = null,
+        quelle: String = "Open Food Facts",
+    ) = Packungswerte(name = "Haferflocken", basis = basis, werte = werte, strichcode = strichcode, quelle = quelle)
+
+    @Test
+    fun scanKcalUnveraendertGenaueKj() = runTest {
+        val vorher = ZutatEntwurf.aus(zutat("z", "Hafer"))
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1500"), Nutrient.PROTEIN_G to BigDecimal("13.5")))
+        val (nachher, _) = vorher.mitPackung(p)
+        assertEquals("359", nachher.kcal)
+        assertEquals(ZutatErgebnis.Gespeichert("z"), repo.speichern("z", vorher, nachher, scan = p))
+        val z = gespeichert("z")
+        assertEquals(BigDecimal("1500"), z.energyKj)
+        assertEquals(BigDecimal("13.5"), z.protein)
+        assertEquals(NutrientBasis.PER_100_G, z.nutrientBasis)
+        assertEquals("Open Food Facts", z.nutrientSource)
+    }
+
+    @Test
+    fun scanKcalGeaendertRechnet() = runTest {
+        val vorher = ZutatEntwurf.aus(zutat("z", "Hafer"))
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1500")))
+        val (nachher, _) = vorher.mitPackung(p)
+        repo.speichern("z", vorher, nachher.copy(kcal = "360"), scan = p)
+        assertEquals(0, kjAusKcal(BigDecimal(360)).compareTo(gespeichert("z").energyKj))
+    }
+
+    @Test
+    fun erneuterScanBehaeltQuelle() = runTest {
+        val z = zutat("z", "Hafer") {
+            it.copy(nutrientBasis = NutrientBasis.PER_100_G, energyKj = BigDecimal("1400"), fat = BigDecimal("6"), nutrientSource = "Open Food Facts")
+        }
+        val vorher = ZutatEntwurf.aus(z)
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1500"), Nutrient.FAT_G to BigDecimal("7")))
+        val (nachher, _) = vorher.mitPackung(p)
+        assertEquals(vorher.quelle, nachher.quelle)
+        repo.speichern("z", vorher, nachher.copy(fett = "7,5"), scan = p)
+        val neu = gespeichert("z")
+        assertEquals("Open Food Facts", neu.nutrientSource)
+        assertEquals(BigDecimal("1500"), neu.energyKj)
+        assertEquals(BigDecimal("7.5"), neu.fat)
+    }
+
+    @Test
+    fun fotoScanUeberOffSetztFotoQuelle() = runTest {
+        val z = zutat("z", "Hafer") { it.copy(nutrientBasis = NutrientBasis.PER_100_G, energyKj = BigDecimal("1400"), nutrientSource = "Open Food Facts") }
+        val vorher = ZutatEntwurf.aus(z)
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1500")), basis = null, quelle = "Packung (Foto)")
+        repo.speichern("z", vorher, vorher.mitPackung(p).first, scan = p)
+        assertEquals("Packung (Foto)", gespeichert("z").nutrientSource)
+    }
+
+    @Test
+    fun ohneScanWeiterEigeneAngabe() = runTest {
+        val z = zutat("z", "Hafer") { it.copy(nutrientBasis = NutrientBasis.PER_100_G, energyKj = BigDecimal("1400"), nutrientSource = "Open Food Facts") }
+        val vorher = ZutatEntwurf.aus(z)
+        repo.speichern("z", vorher, vorher.copy(eiweiss = "12"))
+        assertEquals(EIGENE_ANGABE, gespeichert("z").nutrientSource)
+    }
+
+    @Test
+    fun scanOhneUebernommeneQuelleEigeneAngabe() = runTest {
+        val z = zutat("z", "Hafer") { it.copy(nutrientBasis = NutrientBasis.PER_100_G, energyKj = BigDecimal("1400"), nutrientSource = "BLS") }
+        val vorher = ZutatEntwurf.aus(z)
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1500")))
+        repo.speichern("z", vorher, vorher.copy(fett = "2"), scan = p)
+        assertEquals(EIGENE_ANGABE, gespeichert("z").nutrientSource)
+    }
+
+    @Test
+    fun anlegenMitPackung() = runTest {
+        val p = packung(
+            mapOf(Nutrient.ENERGY_KJ to BigDecimal("1500"), Nutrient.CARBS_G to BigDecimal("58.7"), Nutrient.SALT_G to BigDecimal("0.02")),
+            basis = NutrientBasis.PER_100_ML, strichcode = "4001234567890",
+        )
+        val e = assertIs<ZutatErgebnis.Gespeichert>(repo.anlegen(" Hafer ", p))
+        val z = gespeichert(e.id)
+        assertEquals("Hafer", z.canonicalName)
+        assertEquals(NutrientBasis.PER_100_ML, z.nutrientBasis)
+        assertEquals(BigDecimal("1500"), z.energyKj)
+        assertEquals(BigDecimal("58.7"), z.carbs)
+        assertEquals(BigDecimal("0.02"), z.salt)
+        assertNull(z.fat)
+        assertEquals("Open Food Facts", z.nutrientSource)
+        assertEquals("4001234567890", z.barcode)
+        assertEquals(IngredientCatalog.guessCategory("Hafer"), z.category)
+    }
+
+    @Test
+    fun anlegenMitPackungOhneBasis() = runTest {
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1500")), basis = null, quelle = "Packung (Foto)")
+        val z = gespeichert(assertIs<ZutatErgebnis.Gespeichert>(repo.anlegen("Hafer", p)).id)
+        assertEquals(NutrientBasis.PER_100_G, z.nutrientBasis)
+        assertEquals("Packung (Foto)", z.nutrientSource)
+        assertNull(z.barcode)
+    }
+
+    @Test
+    fun anlegenStrichcodeVergeben() = runTest {
+        zutat("a", "Saft") { it.copy(barcode = "4001234567890") }
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1500")), strichcode = "4001234567890")
+        val z = gespeichert(assertIs<ZutatErgebnis.Gespeichert>(repo.anlegen("Hafer", p)).id)
+        assertNull(z.barcode)
+        assertEquals(BigDecimal("1500"), z.energyKj)
+        assertEquals("4001234567890", gespeichert("a").barcode)
+    }
+
+    @Test
+    fun anlegenMitPackungNameVergeben() = runTest {
+        zutat("seed-hafer", "Hafer")
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1500")), strichcode = "4001234567890")
+        assertEquals(ZutatErgebnis.NameVergeben("seed-hafer", "Hafer"), repo.anlegen("hafer", p))
+        assertEquals(1, db.zutatDao().alle().size)
+        assertNull(gespeichert("seed-hafer").energyKj)
     }
 }

@@ -14,8 +14,16 @@ const val EIGENE_ANGABE = "Eigene Angabe"
  * Unberührtes bleibt exakt, auch ein Sync-Stand, der während des Bearbeitens kam. Wurden Nährwerte geändert: ohne Werte
  * keine Basis und keine Quelle; mit Werten Basis mindestens „je 100 g“ und – wenn die Quelle unberührt blieb –
  * [EIGENE_ANGABE] (sonst gälte eine bearbeitete Startzutat beim nächsten Startdaten-Update als unverändert).
+ *
+ * Mit [scan] (Packung im Editor übernommen): kcal wie gescannt → genauer kJ-Wert der Packung ([energieKj]); steht die
+ * Quelle des Scans im Entwurf, bleibt sie – auch beim erneuten Scan einer Zutat, die sie schon trägt.
  */
-internal fun ZutatEntity.mitAenderungen(vorher: ZutatEntwurf, nachher: ZutatEntwurf, mitName: Boolean = true): ZutatEntity {
+internal fun ZutatEntity.mitAenderungen(
+    vorher: ZutatEntwurf,
+    nachher: ZutatEntwurf,
+    mitName: Boolean = true,
+    scan: Packungswerte? = null,
+): ZutatEntity {
     fun zahl(alt: String, neu: String, wert: BigDecimal?): BigDecimal? = if (alt == neu) wert else zahlAus(neu)
     fun text(alt: String, neu: String, wert: String?): String? = if (alt == neu) wert else neu.trim().ifEmpty { null }
 
@@ -24,7 +32,7 @@ internal fun ZutatEntity.mitAenderungen(vorher: ZutatEntwurf, nachher: ZutatEntw
         canonicalName = if (mitName && nachher.name != vorher.name) nameBereinigt(nachher.name) else canonicalName,
         category = if (nachher.kategorie != vorher.kategorie) nachher.kategorie else category,
         nutrientBasis = if (nachher.basis != vorher.basis) nachher.basis else nutrientBasis,
-        energyKj = if (kcalNeu) zahlAus(nachher.kcal)?.let(::kjAusKcal) else energyKj,
+        energyKj = if (kcalNeu) energieKj(nachher.kcal, scan) else energyKj,
         protein = zahl(vorher.eiweiss, nachher.eiweiss, protein),
         carbs = zahl(vorher.kohlenhydrate, nachher.kohlenhydrate, carbs),
         sugar = zahl(vorher.zucker, nachher.zucker, sugar),
@@ -44,7 +52,7 @@ internal fun ZutatEntity.mitAenderungen(vorher: ZutatEntwurf, nachher: ZutatEntw
     z = if (hatWerte) {
         z.copy(
             nutrientBasis = z.nutrientBasis ?: NutrientBasis.PER_100_G,
-            nutrientSource = if (nachher.quelle == vorher.quelle) EIGENE_ANGABE else z.nutrientSource,
+            nutrientSource = if (nachher.quelle == vorher.quelle && nachher.quelle != scan?.quelle) EIGENE_ANGABE else z.nutrientSource,
         )
     } else {
         z.copy(nutrientBasis = null, nutrientSource = null)

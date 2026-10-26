@@ -1,5 +1,6 @@
 package de.foody.core.data.zutaten
 
+import de.foody.core.data.db.ZutatEntity
 import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
 import de.foody.domain.NutritionResult
@@ -57,4 +58,31 @@ fun ZutatEntwurf.mitPackung(p: Packungswerte): Pair<ZutatEntwurf, Set<ZutatFeld>
         markiert += ZutatFeld.STRICHCODE
     }
     return e to markiert
+}
+
+/**
+ * Energie-Regel für gescannte Werte: Gleicht [kcalText] dem kcal-Text von [scan], gilt der genaue kJ-Wert der Packung;
+ * sonst wird aus dem Text umgerechnet ([kjAusKcal]). Leer oder ungültig → `null`.
+ */
+internal fun energieKj(kcalText: String, scan: Packungswerte?): BigDecimal? =
+    if (scan != null && kcalText == scan.kcalText) scan.werte[Nutrient.ENERGY_KJ] else zahlAus(kcalText)?.let(::kjAusKcal)
+
+/**
+ * Überträgt die Packung als Block: die Basis (falls bekannt, sonst die bisherige, mindestens je 100 g), alle Werte der
+ * Packung und ihre Quelle. Nährwerte, die die Packung nicht hat, bleiben. Den Strichcode setzt der Aufrufer.
+ */
+internal fun ZutatEntity.mitPackungswerten(p: Packungswerte): ZutatEntity {
+    if (p.werte.isEmpty()) return this
+    fun w(n: Nutrient, alt: BigDecimal?) = p.werte[n] ?: alt
+    return copy(
+        nutrientBasis = p.basis ?: nutrientBasis ?: NutrientBasis.PER_100_G,
+        energyKj = w(Nutrient.ENERGY_KJ, energyKj),
+        protein = w(Nutrient.PROTEIN_G, protein),
+        carbs = w(Nutrient.CARBS_G, carbs),
+        sugar = w(Nutrient.SUGAR_G, sugar),
+        fat = w(Nutrient.FAT_G, fat),
+        fiber = w(Nutrient.FIBER_G, fiber),
+        salt = w(Nutrient.SALT_G, salt),
+        nutrientSource = p.quelle,
+    )
 }
