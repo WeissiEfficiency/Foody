@@ -441,6 +441,31 @@ Einstellungsseite; „Server verbinden“ ist das eigene Ziel `ServerVerbinden`.
   Bildschirm, Navigation, Darstellung. Roborazzi-Bilder in `android/feature/einstellungen/src/test/screenshots/`,
   Vergleich in der CI.
 
+## Zutatenkatalog (Phase 6e2)
+
+Spec `docs/superpowers/specs/2026-10-25-v3-phase6e2-zutaten-design.md`. Einstellungen → „Zutatenkatalog“ (Ziele
+`Zutaten` und `Zutat(id)`). Keine Schema- und keine Protokolländerung.
+
+- **`:core:data/zutaten`:** `ZutatenRepository` (Liste mit Rezeptzahl, anlegen, speichern, löschen, zusammenführen,
+  „Namen vereinheitlichen“ mit Vorschau). Reine Funktionen: `filtern` (Suche auch über `IngredientCatalog.canonicalName`,
+  Filter „Ohne Nährwerte“, „Eigene“, „Unbenutzt“, „Mit Strichcode“), `ZutatEntwurf`/`pruefen` (Editor als Texte,
+  Prüfregeln nur für geänderte Felder), `angleichungen` (wie v1 `harmonizeNames`). Speichern schreibt nur geänderte
+  Felder auf den aktuellen Stand der Zeile: unberührtes kcal-Feld lässt kJ exakt, ein Sync-Stand dazwischen bleibt.
+  Geänderte Nährwerte ohne eigene Quelle bekommen „Eigene Angabe“.
+- **Gemeinsames Zusammenführen:** `ergaenztUm` (Lücken füllen wie v1 `fillFrom`) und `zusammenfuehrenSchritte`
+  (Rezeptzeilen, Einkaufsartikel, Tagebuch umhängen, Quelle löschen, Ziel ergänzen) nutzen Katalog, `SyncSpeicher`
+  (Namenskollision beim Anwenden) und `StartdatenLader` gleichermaßen.
+- **Startdaten:** Der Lader überschreibt Kategorie, Dichte, Stückgewicht und Strichcode einer Startzutat nicht mehr;
+  bearbeitete Nährwerte gelten über die Quelle als verändert. Bekannte Grenze: Eine gelöschte oder weg-zusammengeführte
+  Startzutat kehrt beim nächsten Anstieg von `Startdaten.VERSION` zurück (unbenutzt).
+- **Sync auf dem zweiten Gerät:** `anwenden` schreibt erst Datensätze, dann Löschungen; mit offener Rezeptänderung wird
+  die Quelle wiederbelebt (`nochGebraucht`). Belegt durch zwei Tests in `SyncLaufTest`.
+- **`:feature:zutaten`:** Liste (`ZutatenListeViewModel`), Editor (`ZutatEditorViewModel`, `ZielwahlBlatt`), Meldungen
+  vom Editor an die Liste über `ZutatenMeldungen`. „Änderungen verwerfen?“ liegt jetzt als `VerwerfenFrage` im
+  Designsystem. Knöpfe und Snackbars halten `UEBER_LEISTE` (88 dp) Abstand zur schwebenden Navigationsleiste.
+- **Tests:** Repository, reine Funktionen, Startdaten, Zwei-Geräte-Sync, ViewModels, Bildschirme, Navigation;
+  Roborazzi-Bilder in `android/feature/zutaten/src/test/screenshots/`, Vergleich in der CI.
+
 ## Packung scannen (seit DB v9)
 
 `PackungScan` (`android/app/.../scan`) steuert den Ablauf hinter Schnittstellen, die Hilt in `ScanModule` bindet und Tests durch

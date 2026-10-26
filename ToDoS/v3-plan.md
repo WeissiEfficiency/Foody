@@ -180,7 +180,9 @@ Bilder gefunden und behoben: Inhalte auf dem Tablet über die volle Breite (jetz
 - [x] Einstellungen 6e1 (Server/Anmelden/Status, Sicherung, Darstellung, Tagesziel) – Spec
       [`2026-10-25-v3-phase6e1-einstellungen-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6e1-einstellungen-design.md);
       „Erneut anmelden“ nach dem v1-Update (übernimmt nur Token und Konto-ID) gibt es seit Phase 5
-- [ ] Einstellungen 6e2: Zutatenkatalog, „Packung scannen“, Online-Produktsuche an/aus
+- [x] Einstellungen 6e2: Zutatenkatalog – Spec
+      [`2026-10-25-v3-phase6e2-zutaten-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6e2-zutaten-design.md)
+- [ ] Einstellungen 6e3: „Packung scannen“, Online-Produktsuche an/aus
 
 **Ergebnis 6a Rezepte** (2026-10-24): `:feature:rezepte` mit Bildraster, Suche und Filterchips, Detail mit
 Portionen und Nährwerttabelle, Editor mit Zutaten als Freitext je Zeile und Foto, Markdown-Import (Dateien oder
@@ -230,6 +232,16 @@ kcal“), Sicherung erstellt (225 kB), gesperrt solange verbunden; getrennt, all
 („115 Rezepte, 249 Zutaten, 1 Foto“), mit „Zusammenführen“ verbunden: 115 Rezepte, keine doppelten, Outbox leer. Dabei
 behoben: „1 Fotos“; beim Ansehen der Bilder: Tagesziel im ersten Bild leer, Konto-Zeile schnitt den ersten Buchstaben
 ab. Nicht belegt: „Erneut anmelden“ nach einem v1-Update (kein v1-Stand auf dem Testgerät).
+
+**Ergebnis 6e2 Zutatenkatalog** (2026-10-26): `:feature:zutaten` mit Liste (Suche auch über Katalognamen, Filter
+„Ohne Nährwerte“, „Eigene“, „Unbenutzt“, „Mit Strichcode“), Editor (Name, Kategorie, Nährwerte, Dichte, Stückgewicht,
+Strichcode, Synonyme zum Lesen), Anlegen, Löschen (nur unbenutzt), Zusammenführen und „Namen vereinheitlichen“ mit
+Vorschau. Speichern schreibt nur geänderte Felder; der Startdaten-Lader überschreibt Bearbeitungen nicht mehr. Sync und
+Katalog führen über dieselbe Funktion zusammen; zwei Zwei-Geräte-Tests belegen die Ankunft auf dem zweiten Gerät.
+Sichtprüfung auf dem Emulator gegen den Test-Server (249 Zutaten): Filter, Suche „Zwiebeln“ → „Zwiebel“, Testzutat
+anlegen und bearbeiten (Feldfehler „8 bis 14 Ziffern“, „Änderungen verwerfen?“), zwei Testzutaten zusammengeführt,
+gelöscht, „In 45 Rezepten verwendet“ bei Zwiebel, Synchronisieren ohne Fehler. Dabei behoben: „+“ und „Speichern“ lagen
+hinter der Navigationsleiste. „Namen vereinheitlichen“ auf echten Daten nur als Vorschau („schon einheitlich“).
 
 **Fertig, wenn** alle App-Abschnitte der Abnahmeliste abgehakt sind und kein Screen über 300 Zeilen hat.
 
