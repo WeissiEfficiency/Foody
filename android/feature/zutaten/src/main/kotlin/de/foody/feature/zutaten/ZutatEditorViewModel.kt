@@ -15,13 +15,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
  * Zustand des Editors. [vorher] ist der Stand beim Öffnen (gespeichert werden nur Abweichungen davon); [fehler] zeigt
- * nur Felder, die der Nutzer verlassen hat, nach „Speichern“ alle; [ziele] = andere Zutaten fürs Zusammenführen.
+ * nur Felder, die der Nutzer verlassen hat, nach „Speichern“ alle; [ziele] = andere Zutaten fürs Zusammenführen;
+ * [rezepte] = Zahl der Rezepte mit dieser Zutat ([verwendetIn] fasst gleichnamige Rezepte zusammen).
  */
 data class EditorZustand(
     val geladen: Boolean = false,
@@ -31,6 +33,7 @@ data class EditorZustand(
     val synonyme: List<String> = emptyList(),
     val verwendetIn: List<String> = emptyList(),
     val ziele: List<ZutatKurz> = emptyList(),
+    val rezepte: Int = 0,
     val laeuft: Boolean = false,
 ) {
     val geaendert: Boolean get() = entwurf != vorher
@@ -67,13 +70,16 @@ class ZutatEditorViewModel @Inject constructor(
     /** Der Editor ist (durch eigene Aktion oder weil die Zutat verschwand) fertig: weitere Meldungen unterdrücken. */
     private var fertig = false
 
+    /** Die Zutat verschwand, während eine Aktion lief: nach deren Ende schließen, falls sie es nicht selbst tut. */
+    private var weg = false
+
     fun laden(id: String) {
         if (this.id != null) return
         this.id = id
         viewModelScope.launch {
             repo.zutat(id).collect { z ->
                 when {
-                    z == null -> if (!fertig && !stand.value.laeuft) verschwunden()
+                    z == null -> if (stand.value.laeuft) weg = true else verschwunden()
                     !stand.value.geladen -> {
                         val e = ZutatEntwurf.aus(z)
                         stand.update { it.copy(geladen = true, vorher = e, entwurf = e, synonyme = repo.synonyme(z.canonicalName)) }
@@ -82,7 +88,11 @@ class ZutatEditorViewModel @Inject constructor(
             }
         }
         viewModelScope.launch { repo.verwendetIn(id).collect { namen -> stand.update { it.copy(verwendetIn = namen) } } }
-        viewModelScope.launch { repo.liste().collect { alle -> stand.update { it.copy(ziele = alle.filter { z -> z.id != id }) } } }
+        viewModelScope.launch {
+            repo.liste().collect { alle ->
+                stand.update { it.copy(ziele = alle.filter { z -> z.id != id }, rezepte = alle.firstOrNull { z -> z.id == id }?.rezepte ?: 0) }
+            }
+        }
     }
 
     fun aendern(neu: ZutatEntwurf) {
@@ -105,10 +115,7 @@ class ZutatEditorViewModel @Inject constructor(
             when (val e = repo.speichern(id, vorher, entwurf)) {
                 is ZutatErgebnis.Gespeichert -> schliessen(null)
                 is ZutatErgebnis.NameVergeben -> kanal.send(EditorEreignis.NameVergeben(e.id, e.name))
-                is ZutatErgebnis.StrichcodeVergeben -> {
-                    zusatz = mapOf(ZutatFeld.STRICHCODE to "Gehört schon zu „${e.name}“")
-                    fehlerZeigen()
-                }
+                is ZutatErgebnis.StrichcodeVergeben -> strichcodeVergeben(e.name)
                 is ZutatErgebnis.NichtGefunden -> verschwunden()
                 else -> fehlerZeigen()
             }
@@ -129,7 +136,10 @@ class ZutatEditorViewModel @Inject constructor(
         val mit = if (entwurf != vorher) vorher to entwurf else null
         when (val e = repo.zusammenfuehren(id, nachId, mit)) {
             is ZutatErgebnis.Zusammengefuehrt -> schliessen("Zusammengeführt in „${e.name}“")
-            is ZutatErgebnis.NichtGefunden -> kanal.send(EditorEreignis.Meldung("Die Zutat gibt es nicht mehr"))
+            // Fehlt diese Zutat selbst, schließt der Editor; sonst ist das Ziel weg
+            is ZutatErgebnis.NichtGefunden ->
+                if (repo.zutat(id).first() == null) verschwunden() else kanal.send(EditorEreignis.Meldung("Die Zutat gibt es nicht mehr"))
+            is ZutatErgebnis.StrichcodeVergeben -> strichcodeVergeben(e.name)
             is ZutatErgebnis.Ungueltig -> {
                 sichtbar = ZutatFeld.entries.toSet()
                 fehlerZeigen()
@@ -142,6 +152,11 @@ class ZutatEditorViewModel @Inject constructor(
         val s = stand.value
         val geprueft = if (s.vorher != null && s.entwurf != null) pruefen(s.vorher, s.entwurf).filterKeys { it in sichtbar } else emptyMap()
         stand.update { it.copy(fehler = geprueft + zusatz) }
+    }
+
+    private fun strichcodeVergeben(name: String) {
+        zusatz = mapOf(ZutatFeld.STRICHCODE to "Gehört schon zu „$name“")
+        fehlerZeigen()
     }
 
     private suspend fun schliessen(meldung: String?) {
@@ -167,6 +182,7 @@ class ZutatEditorViewModel @Inject constructor(
             } finally {
                 stand.update { it.copy(laeuft = false) }
             }
+            if (weg) verschwunden()
         }
     }
 }

@@ -45,4 +45,21 @@ class AngleichungenTest {
 
     @Test
     fun einheitlichLeer() = assertTrue(angleichungen(listOf(zutat("a", c), zutat("b", "Meine Würzmischung", "Öle & Gewürze"))).isEmpty())
+
+    @Test
+    fun mitgebrachteKategorieBleibt() = assertEquals(
+        // „Gemüsezwiebel“ kommt vor „Zwiebel“ dran und bringt ihre Kategorie mit – nichts zu raten
+        listOf(Angleichung.Zusammenfuehren("a", "Gemüsezwiebel", "b", "Zwiebel")),
+        angleichungen(listOf(zutat("a", "Gemüsezwiebel", kategorie = "Eigene Abteilung"), zutat("b", "Zwiebel", kategorie = null))),
+    )
+
+    @Test
+    fun angepassteZutatenZaehltZutatenNichtSchritte() = assertEquals(
+        2,
+        listOf(
+            Angleichung.Umbenennen("a", "Zwiebeln", c),
+            Angleichung.KategorieErgaenzen("a", c, "Obst & Gemüse"),
+            Angleichung.Zusammenfuehren("b", "zwiebeln", "a", c),
+        ).angepassteZutaten(),
+    )
 }

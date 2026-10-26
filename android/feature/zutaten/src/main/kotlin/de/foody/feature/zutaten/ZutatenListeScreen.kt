@@ -74,6 +74,8 @@ fun ZutatenListeRoute(onZutat: (String) -> Unit, onZurueck: () -> Unit, vm: Zuta
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var suche by rememberSaveable { mutableStateOf(z.suche) }
+    // Nach einem Prozessende stellt das Feld den Text wieder her, das ViewModel beginnt leer
+    LaunchedEffect(Unit) { if (suche != z.suche) vm.suchen(suche) }
     var neu by rememberSaveable { mutableStateOf(false) }
     var gibtEsSchon by remember { mutableStateOf<Pair<String, String>?>(null) }
     LaunchedEffect(vm) {

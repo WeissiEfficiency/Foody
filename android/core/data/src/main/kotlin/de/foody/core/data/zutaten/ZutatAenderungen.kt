@@ -4,6 +4,7 @@ import de.foody.core.data.db.ZutatEntity
 import de.foody.domain.NutrientBasis
 import de.foody.domain.NutritionResult
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 /** Quelle von Nährwerten, die im Editor eingegeben wurden (wie v1). */
 const val EIGENE_ANGABE = "Eigene Angabe"
@@ -23,7 +24,7 @@ internal fun ZutatEntity.mitAenderungen(vorher: ZutatEntwurf, nachher: ZutatEntw
         canonicalName = if (mitName && nachher.name != vorher.name) nameBereinigt(nachher.name) else canonicalName,
         category = if (nachher.kategorie != vorher.kategorie) nachher.kategorie else category,
         nutrientBasis = if (nachher.basis != vorher.basis) nachher.basis else nutrientBasis,
-        energyKj = if (kcalNeu) zahlAus(nachher.kcal)?.let { NutritionResult.kcalToKj(it) } else energyKj,
+        energyKj = if (kcalNeu) zahlAus(nachher.kcal)?.let(::kjAusKcal) else energyKj,
         protein = zahl(vorher.eiweiss, nachher.eiweiss, protein),
         carbs = zahl(vorher.kohlenhydrate, nachher.kohlenhydrate, carbs),
         sugar = zahl(vorher.zucker, nachher.zucker, sugar),
@@ -50,3 +51,9 @@ internal fun ZutatEntity.mitAenderungen(vorher: ZutatEntwurf, nachher: ZutatEntw
     }
     return z
 }
+
+/** kcal → kJ; ×4,184 hängt drei Nachkommastellen an, die Sync-Grenze erlaubt höchstens [KJ_STELLEN]. */
+internal fun kjAusKcal(kcal: BigDecimal): BigDecimal =
+    NutritionResult.kcalToKj(kcal).let { if (it.scale() > KJ_STELLEN) it.setScale(KJ_STELLEN, RoundingMode.HALF_UP) else it }
+
+private const val KJ_STELLEN = 20

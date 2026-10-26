@@ -110,7 +110,7 @@ fun ZutatEditorRoute(id: String, onFertig: () -> Unit, vm: ZutatEditorViewModel 
             f.name, onZusammenfuehren = { frage = Frage.Zusammenfuehren(f.id, f.name) }, onAbbrechen = { frage = null },
         )
         is Frage.Zusammenfuehren -> ZusammenfuehrenFrage(
-            zusammenfuehrenFrage(name, f.nachName, z.verwendetIn.size),
+            zusammenfuehrenFrage(name, f.nachName, z.rezepte),
             onJa = { frage = null; vm.zusammenfuehren(f.nachId) }, onNein = { frage = null },
         )
         null -> Unit

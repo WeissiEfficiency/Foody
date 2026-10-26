@@ -112,7 +112,7 @@ internal fun EditorFelder(
             FoodyChip("je 100 g", e.basis != NutrientBasis.PER_100_ML, { onAendern(e.copy(basis = NutrientBasis.PER_100_G)) })
             FoodyChip("je 100 ml", e.basis == NutrientBasis.PER_100_ML, { onAendern(e.copy(basis = NutrientBasis.PER_100_ML)) })
         }
-        zahl("kcal", ZutatFeld.KCAL, e.kcal, { e.copy(kcal = it) }, KeyboardType.Number)
+        zahl("kcal", ZutatFeld.KCAL, e.kcal, { e.copy(kcal = it) })
         zahl("Eiweiß", ZutatFeld.EIWEISS, e.eiweiss, { e.copy(eiweiss = it) })
         zahl("Kohlenhydrate", ZutatFeld.KOHLENHYDRATE, e.kohlenhydrate, { e.copy(kohlenhydrate = it) })
         zahl("davon Zucker", ZutatFeld.ZUCKER, e.zucker, { e.copy(zucker = it) })

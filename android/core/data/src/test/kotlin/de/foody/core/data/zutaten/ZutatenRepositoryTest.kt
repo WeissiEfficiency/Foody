@@ -3,6 +3,7 @@ package de.foody.core.data.zutaten
 import android.content.Context
 import androidx.room.Room
 import de.foody.api.protocol.RecordType
+import de.foody.api.protocol.ZahlGrenzen
 import de.foody.core.data.db.EinkaufsartikelEntity
 import de.foody.core.data.db.EinkaufslisteEntity
 import de.foody.core.data.db.FoodyDatenbank
@@ -246,7 +247,7 @@ class ZutatenRepositoryTest {
         rezept("r1", "b")
         val vorschau = repo.vereinheitlichenVorschau()
         assertEquals(2, vorschau.size)
-        assertEquals(vorschau.size, repo.vereinheitlichen())
+        assertEquals(vorschau.angepassteZutaten(), repo.vereinheitlichen())
         assertEquals(listOf("a" to c), db.zutatDao().alle().map { it.id to it.canonicalName })
         assertEquals("a", db.rezeptZutatDao().nachRezept("r1").single().ingredientId)
         assertTrue(repo.vereinheitlichenVorschau().isEmpty())
@@ -259,5 +260,60 @@ class ZutatenRepositoryTest {
         assertEquals(ZutatErgebnis.NichtGefunden, repo.zusammenfuehren("a", "fehlt"))
         assertEquals(ZutatErgebnis.NichtGefunden, repo.zusammenfuehren("fehlt", "a"))
         assertTrue(db.zutatDao().nachId("a") != null)
+    }
+
+    // --- aus dem Gesamtreview ---
+
+    @Test
+    fun alteUmlautDubletteBlockiertSpeichernNicht() = runTest {
+        // Der Namensindex ist binär, der Sync vergleicht mit NOCASE: „Äpfel“ und „äpfel“ können nebeneinander stehen
+        zutat("a", "Äpfel")
+        val vorher = ZutatEntwurf.aus(zutat("b", "äpfel"))
+        assertEquals(ZutatErgebnis.Gespeichert("b"), repo.speichern("b", vorher, vorher.copy(dichte = "0,6")))
+        assertEquals(BigDecimal("0.6"), gespeichert("b").densityGPerMl)
+    }
+
+    @Test
+    fun kcalMitVielenStellenBleibtInDenSyncGrenzen() = runTest {
+        val vorher = ZutatEntwurf.aus(zutat("z", "Würze"))
+        assertEquals(ZutatErgebnis.Gespeichert("z"), repo.speichern("z", vorher, vorher.copy(kcal = "1,123456789012345678")))
+        val kj = assertNotNull(gespeichert("z").energyKj)
+        assertTrue(ZahlGrenzen.imRahmen(kj), "kJ $kj")
+    }
+
+    @Test
+    fun loeschenFehltNichtGefunden() = runTest {
+        assertEquals(ZutatErgebnis.NichtGefunden, repo.loeschen("fehlt"))
+    }
+
+    @Test
+    fun zusammenfuehrenMitUngueltigemEntwurf() = runTest {
+        val vorher = ZutatEntwurf.aus(zutat("alt", "Zwiebeln"))
+        zutat("neu", "Zwiebel")
+        val e = assertIs<ZutatErgebnis.Ungueltig>(repo.zusammenfuehren("alt", "neu", vorher to vorher.copy(kcal = "5000")))
+        assertEquals(setOf(ZutatFeld.KCAL), e.fehler.keys)
+        gespeichert("alt")
+    }
+
+    @Test
+    fun zusammenfuehrenMitVergebenemStrichcode() = runTest {
+        zutat("c", "Saft") { it.copy(barcode = "4001234567890") }
+        val vorher = ZutatEntwurf.aus(zutat("alt", "Zwiebeln"))
+        zutat("neu", "Zwiebel")
+        assertEquals(
+            ZutatErgebnis.StrichcodeVergeben("c", "Saft"),
+            repo.zusammenfuehren("alt", "neu", vorher to vorher.copy(strichcode = "4001234567890")),
+        )
+        gespeichert("alt")
+        assertNull(gespeichert("neu").barcode)
+    }
+
+    @Test
+    fun vereinheitlichenUeberschreibtMitgebrachteKategorieNicht() = runTest {
+        zutat("a", "Gemüsezwiebel") { it.copy(category = "Eigene Abteilung") }
+        zutat("b", "Zwiebel")
+        assertEquals(1, repo.vereinheitlichen())
+        assertEquals("Eigene Abteilung", gespeichert("b").category)
+        assertNull(db.zutatDao().nachId("a"))
     }
 }

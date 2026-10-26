@@ -59,8 +59,11 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
         db.withTransaction {
             val aktuell = dao.nachId(id) ?: return@withTransaction ZutatErgebnis.NichtGefunden
             val neu = aktuell.mitAenderungen(vorher, nachher)
-            andereMitNamen(neu.canonicalName, ausser = id)?.let {
-                return@withTransaction ZutatErgebnis.NameVergeben(it.id, it.canonicalName)
+            // Nur ein geänderter Name kann kollidieren; eine alte Dublette („Äpfel“/„äpfel“) blockiert sonst nichts
+            if (neu.canonicalName != aktuell.canonicalName) {
+                andereMitNamen(neu.canonicalName, ausser = id)?.let {
+                    return@withTransaction ZutatErgebnis.NameVergeben(it.id, it.canonicalName)
+                }
             }
             neu.barcode?.takeIf { it != aktuell.barcode }?.let { code ->
                 dao.nachStrichcode(code, ausser = id)?.let { return@withTransaction ZutatErgebnis.StrichcodeVergeben(it.id, it.canonicalName) }
@@ -93,6 +96,10 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
             val quelle = dao.nachId(vonId) ?: return@withTransaction ZutatErgebnis.NichtGefunden
             val ziel = dao.nachId(nachId) ?: return@withTransaction ZutatErgebnis.NichtGefunden
             val mitEingaben = entwurf?.let { (vorher, nachher) -> quelle.mitAenderungen(vorher, nachher, mitName = false) } ?: quelle
+            mitEingaben.barcode?.takeIf { it != quelle.barcode }?.let { code ->
+                dao.nachStrichcode(code, ausser = vonId)?.takeIf { it.id != nachId }
+                    ?.let { return@withTransaction ZutatErgebnis.StrichcodeVergeben(it.id, it.canonicalName) }
+            }
             zusammenfuehrenSchritte(db, mitEingaben, ziel, uhr())
             ZutatErgebnis.Zusammengefuehrt(ziel.id, ziel.canonicalName)
         }
@@ -103,7 +110,7 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
 
     /**
      * Gleicht alle Namen an den Katalog an – in einer Transaktion und auf dem Stand von jetzt (nicht dem der Vorschau).
-     * Gibt die Zahl der Schritte zurück.
+     * Gibt die Zahl der angepassten Zutaten zurück ([angepassteZutaten]).
      */
     suspend fun vereinheitlichen(): Int = db.withTransaction {
         val schritte = angleichungen(dao.alle())
@@ -111,7 +118,8 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
         for (s in schritte) {
             when (s) {
                 is Angleichung.Umbenennen -> dao.nachId(s.id)?.let { dao.upsert(it.copy(canonicalName = s.neu, updatedAt = jetzt)) }
-                is Angleichung.KategorieErgaenzen -> dao.nachId(s.id)?.let { dao.upsert(it.copy(category = s.kategorie, updatedAt = jetzt)) }
+                is Angleichung.KategorieErgaenzen -> dao.nachId(s.id)?.takeIf { it.category == null }
+                    ?.let { dao.upsert(it.copy(category = s.kategorie, updatedAt = jetzt)) }
                 is Angleichung.Zusammenfuehren -> {
                     val quelle = dao.nachId(s.vonId)
                     val ziel = dao.nachId(s.nachId)
@@ -119,7 +127,7 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
                 }
             }
         }
-        schritte.size
+        schritte.angepassteZutaten()
     }
 
     /** Andere Zutat mit diesem Namen ohne Groß/klein – auch bei Umlauten, anders als `COLLATE NOCASE`. */

@@ -204,4 +204,49 @@ class ZutatEditorViewModelTest {
         assertEquals(listOf<EditorEreignis>(EditorEreignis.Fertig), ereignisse.toList())
         assertNull(meldungen.firstOrNull())
     }
+
+    @Test
+    fun quelleVerschwindetBeimZusammenfuehren() {
+        u.zutat("alt", "Zwiebeln")
+        u.zutat("neu", "Zwiebel")
+        val vm = editor("alt")
+        runBlocking { u.db.zutatDao().loeschen("alt") }
+        vm.zusammenfuehren("neu")
+        warte { ereignisse.isNotEmpty() && meldungen.isNotEmpty() && !vm.zustand.value.laeuft }
+        assertEquals(listOf<EditorEreignis>(EditorEreignis.Fertig), ereignisse.toList())
+        assertEquals(listOf("Diese Zutat gibt es nicht mehr"), meldungen.toList())
+        assertNotNull(runBlocking { u.db.zutatDao().nachId("neu") })
+    }
+
+    @Test
+    fun zielWegBleibtOffen() {
+        u.zutat("alt", "Zwiebeln")
+        val vm = editor("alt")
+        vm.zusammenfuehren("fehlt")
+        warte { ereignisse.isNotEmpty() && !vm.zustand.value.laeuft }
+        assertEquals(listOf<EditorEreignis>(EditorEreignis.Meldung("Die Zutat gibt es nicht mehr")), ereignisse.toList())
+    }
+
+    @Test
+    fun rezeptzahlZaehltGleichnamigeRezepteEinzeln() {
+        u.zutat("z", "Würze")
+        u.rezept("r1", "Curry", "z")
+        u.rezept("r2", "Curry", "z")
+        val vm = editor("z")
+        warte { vm.zustand.value.rezepte == 2 }
+        assertEquals(listOf("Curry"), vm.zustand.value.verwendetIn)
+    }
+
+    @Test
+    fun strichcodeVergebenBeimZusammenfuehren() {
+        u.zutat("c", "Saft") { it.copy(barcode = "4001234567890") }
+        u.zutat("alt", "Zwiebeln")
+        u.zutat("neu", "Zwiebel")
+        val vm = editor("alt")
+        vm.aendern(vm.entwurf().copy(strichcode = "4001234567890"))
+        vm.zusammenfuehren("neu")
+        warte { vm.zustand.value.fehler.isNotEmpty() && !vm.zustand.value.laeuft }
+        assertEquals(mapOf(ZutatFeld.STRICHCODE to "Gehört schon zu „Saft“"), vm.zustand.value.fehler)
+        assertTrue(ereignisse.isEmpty())
+    }
 }
