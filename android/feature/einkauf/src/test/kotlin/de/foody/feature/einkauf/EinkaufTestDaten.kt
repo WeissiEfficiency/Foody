@@ -19,6 +19,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
+import kotlin.coroutines.EmptyCoroutineContext
 
 /** Mittwoch, 28.10.2026 – in KW 44 (Mo 26.10.–So 1.11.). */
 val MITTWOCH: LocalDate = LocalDate.of(2026, 10, 28)
@@ -75,12 +76,17 @@ fun artikel(id: String, listeId: String, name: String, menge: String? = null, ge
         checked = gekauft, manual = true, sortOrder = reihenfolge,
     )
 
-/** Repository und ViewModel wie in der App, mit fester Uhr; ViewModel außerhalb der Komposition anlegen. */
+/**
+ * Repository und ViewModel wie in der App, mit fester Uhr; ViewModel außerhalb der Komposition anlegen.
+ * „Zuletzt gekauft“ rechnet im Aufrufer statt auf `Dispatchers.Default`: sonst kommt der erste Zustand (und jede
+ * Änderung von `zustand`, der `zuletzt` kombiniert) erst, wenn ein Hintergrundthread dran war – auf einer vollen
+ * CI-Maschine nach der Prüfung.
+ */
 class EinkaufTestUmgebung(val db: FoodyDatenbank, val uhr: Clock = TestUhr()) {
     private val prefs = RuntimeEnvironment.getApplication().getSharedPreferences("einkauf", Context.MODE_PRIVATE)
         .also { it.edit().clear().commit() }
     val ignoriert = IgnorierteSchluessel(prefs)
-    val repo = EinkaufRepository(db, { uhr.millis() }, ignoriert)
+    val repo = EinkaufRepository(db, { uhr.millis() }, ignoriert, EmptyCoroutineContext)
 
     fun vm(saved: SavedStateHandle = SavedStateHandle()) = EinkaufViewModel(saved, repo, uhr)
 }
