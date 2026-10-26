@@ -1,8 +1,11 @@
 package de.foody.app
 
 import android.content.Context
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.platform.InterceptPlatformTextInput
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.StateRestorationTester
@@ -37,6 +40,7 @@ import de.foody.app.ui.tagebuch.TagebuchViewModel
 import de.foody.app.ui.theme.FoodyTheme
 import de.foody.domain.MeasureUnit
 import de.foody.domain.NutrientBasis
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -79,45 +83,58 @@ class TagebuchScreenTest {
         db.close()
     }
 
+    /**
+     * Ohne echte Bildschirmtastatur: performTextInput schreibt über die Semantik-Aktion, braucht also keine IME.
+     * Die Tastatur verkleinert sonst das Dialogfenster (WRAP_CONTENT) und wechselt zwischen Text- und Zahlenlayout;
+     * auf dem langsamen CI-Emulator blieb danach ein Layout-Durchgang hängen (ComposeNotIdleException).
+     */
+    @OptIn(ExperimentalComposeUiApi::class)
+    private fun inhalt(content: @Composable () -> Unit) =
+        compose.setContent { InterceptPlatformTextInput({ _, _ -> awaitCancellation() }) { FoodyTheme(content = content) } }
+
+    // Großzügig: auf dem überlasteten CI-Emulator brauchen DB-Flow und erste Komposition teils mehr als 5 s
+    private fun warteAufText(text: String) =
+        compose.waitUntil(WARTEZEIT) { compose.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty() }
+
     @Test fun vorschlagWirdZumEintrag() {
-        compose.setContent { FoodyTheme { TagebuchScreen(vm = vm) } }
+        inhalt { TagebuchScreen(vm = vm) }
         for (titel in listOf("Frühstück", "Mittagessen", "Snack", "Abendessen")) {
             compose.onNodeWithText(titel).performScrollTo().assertIsDisplayed()
         }
-        compose.waitUntil(5_000) { compose.onAllNodes(androidx.compose.ui.test.hasText("Geplant: Curry")).fetchSemanticsNodes().isNotEmpty() }
+        warteAufText("Geplant: Curry")
         compose.onNodeWithText("Gegessen").performScrollTo().performClick()
-        compose.waitUntil(5_000) { compose.onAllNodes(androidx.compose.ui.test.hasText("Geplant: Curry")).fetchSemanticsNodes().isEmpty() }
+        compose.waitUntil(WARTEZEIT) { compose.onAllNodes(hasText("Geplant: Curry")).fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithText("Curry").performScrollTo().assertIsDisplayed()
         // Zeile, Mahlzeit und Tag zeigen dieselbe Summe
         assert(compose.onAllNodesWithText("350 kcal").fetchSemanticsNodes().isNotEmpty())
     }
 
     @Test fun portionenKnopfAnDerKarte() {
-        compose.setContent { FoodyTheme { TagebuchScreen(vm = vm) } }
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Geplant: Curry")).fetchSemanticsNodes().isNotEmpty() }
+        inhalt { TagebuchScreen(vm = vm) }
+        warteAufText("Geplant: Curry")
         compose.onNodeWithContentDescription("Portionen wählen").performScrollTo().performClick()
         compose.onNodeWithText("1 Portion").assertIsDisplayed()
         compose.onNodeWithContentDescription("Mehr").performClick()
         compose.onNodeWithText("1,5 Portionen").assertIsDisplayed()
         compose.onAllNodesWithText("Gegessen").onLast().performClick()
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("525 kcal")).fetchSemanticsNodes().isNotEmpty() }
+        warteAufText("525 kcal")
     }
 
     @Test fun doppeltippLegtZutatNurEinmalAn() {
-        compose.setContent {
-            FoodyTheme {
-                val s by vm.state.collectAsState()
-                HinzufuegenDialog(Mahlzeit.SNACK, s, vm, onDismiss = {})
-            }
+        inhalt {
+            val s by vm.state.collectAsState()
+            HinzufuegenDialog(Mahlzeit.SNACK, s, vm, onDismiss = {})
         }
-        compose.waitUntil(5_000) { vm.state.value.zutaten.isNotEmpty() }
+        compose.waitUntil(WARTEZEIT) { vm.state.value.zutaten.isNotEmpty() }
         compose.onNodeWithText("Zutat").performClick()
         compose.onNode(hasSetTextAction() and hasText("Zutat suchen")).performTextInput("Reis")
         compose.onNode(hasText("Reis") and !hasSetTextAction()).performClick()
         compose.onNode(hasSetTextAction() and hasText("Menge")).performTextInput("100")
         compose.onNodeWithText("Hinzufügen").performClick()
         compose.onNodeWithText("Hinzufügen").performClick()
-        compose.waitForIdle()
+        // Erst warten, bis gespeichert ist (unter Last dauert das länger als früher angenommene 500 ms),
+        // dann noch kurz, damit ein zweiter Eintrag aus dem Doppeltipp auffiele.
+        compose.waitUntil(WARTEZEIT) { runBlocking { db.tagebuchDao().getAll() }.isNotEmpty() }
         runBlocking { kotlinx.coroutines.delay(500) }
         assertEquals(1, runBlocking { db.tagebuchDao().getAll() }.size)
     }
@@ -126,7 +143,7 @@ class TagebuchScreenTest {
         vm.rezeptEintragen(Mahlzeit.MITTAGESSEN, runBlocking { db.recipeDao().getAll().single().id }, BigDecimal.ONE)
         val tester = StateRestorationTester(compose)
         tester.setContent { FoodyTheme { TagebuchScreen(vm = vm) } }
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("1 Portion")).fetchSemanticsNodes().isNotEmpty() }
+        warteAufText("1 Portion")
         compose.onNodeWithText("1 Portion").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Mehr").performClick()
         compose.onNodeWithText("1,5 Portionen").assertIsDisplayed()
@@ -148,16 +165,14 @@ class TagebuchScreenTest {
                 suche = { de.foody.app.scan.ProduktSuche.Antwort.Gefunden(skyr) }, katalog = { null }, play = { true }, online = { true },
             ),
         )
-        compose.setContent {
-            FoodyTheme {
-                val s by mitScan.state.collectAsState()
-                HinzufuegenDialog(Mahlzeit.SNACK, s, mitScan, onDismiss = {})
-            }
+        inhalt {
+            val s by mitScan.state.collectAsState()
+            HinzufuegenDialog(Mahlzeit.SNACK, s, mitScan, onDismiss = {})
         }
         compose.onNodeWithText("Frei").performClick()
         compose.onNodeWithText("Von Packung scannen").performClick()
         compose.onNodeWithText("Strichcode scannen").performClick()
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Als Zutat im Katalog speichern")).fetchSemanticsNodes().isNotEmpty() }
+        warteAufText("Als Zutat im Katalog speichern")
         compose.onNode(hasSetTextAction() and hasText("Skyr")).assertExists()
         // Abgewähltes Häkchen bleibt aus, auch wenn danach der Name geändert wird
         compose.onNodeWithText("Als Zutat im Katalog speichern").performClick()
@@ -168,9 +183,13 @@ class TagebuchScreenTest {
         compose.onNode(hasSetTextAction() and hasText("Menge", substring = true)).performTextInput("150")
         compose.onNodeWithText("≈ 93 kcal").assertExists()
         compose.onNodeWithText("Hinzufügen").performClick()
-        compose.waitUntil(5_000) { runBlocking { db.tagebuchDao().getAll().isNotEmpty() } }
+        compose.waitUntil(WARTEZEIT) { runBlocking { db.tagebuchDao().getAll().isNotEmpty() } }
         val angelegt = runBlocking { db.ingredientDao().getAll() }.filter { it.barcode != null }.map { it.canonicalName to it.barcode }
         assertEquals(listOf("Skyr Natur" to "4001234567890"), angelegt, "angelegte Zutaten mit Strichcode")
         mitScan.aufraeumen()
+    }
+
+    private companion object {
+        const val WARTEZEIT = 15_000L
     }
 }
