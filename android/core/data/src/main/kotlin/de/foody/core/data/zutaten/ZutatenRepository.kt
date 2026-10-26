@@ -98,6 +98,30 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
         }
     }
 
+    /** Was „Namen vereinheitlichen“ täte (für die Rückfrage). */
+    suspend fun vereinheitlichenVorschau(): List<Angleichung> = angleichungen(dao.alle())
+
+    /**
+     * Gleicht alle Namen an den Katalog an – in einer Transaktion und auf dem Stand von jetzt (nicht dem der Vorschau).
+     * Gibt die Zahl der Schritte zurück.
+     */
+    suspend fun vereinheitlichen(): Int = db.withTransaction {
+        val schritte = angleichungen(dao.alle())
+        val jetzt = uhr()
+        for (s in schritte) {
+            when (s) {
+                is Angleichung.Umbenennen -> dao.nachId(s.id)?.let { dao.upsert(it.copy(canonicalName = s.neu, updatedAt = jetzt)) }
+                is Angleichung.KategorieErgaenzen -> dao.nachId(s.id)?.let { dao.upsert(it.copy(category = s.kategorie, updatedAt = jetzt)) }
+                is Angleichung.Zusammenfuehren -> {
+                    val quelle = dao.nachId(s.vonId)
+                    val ziel = dao.nachId(s.nachId)
+                    if (quelle != null && ziel != null) zusammenfuehrenSchritte(db, quelle, ziel, jetzt)
+                }
+            }
+        }
+        schritte.size
+    }
+
     /** Andere Zutat mit diesem Namen ohne Groß/klein – auch bei Umlauten, anders als `COLLATE NOCASE`. */
     private suspend fun andereMitNamen(name: String, ausser: String?): ZutatEntity? =
         dao.alle().firstOrNull { it.id != ausser && it.canonicalName.equals(name, ignoreCase = true) }

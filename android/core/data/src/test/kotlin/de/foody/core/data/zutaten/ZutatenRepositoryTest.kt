@@ -236,6 +236,22 @@ class ZutatenRepositoryTest {
         assertNull(db.zutatDao().nachId("alt"))
     }
 
+    // --- vereinheitlichen ---
+
+    @Test
+    fun vereinheitlichenWieVorschau() = runTest {
+        val c = IngredientCatalog.canonicalName("Zwiebeln")
+        zutat("a", "Zwiebeln") { it.copy(category = "Obst & Gemüse") }
+        zutat("b", "zwiebeln") { it.copy(category = "Obst & Gemüse") }
+        rezept("r1", "b")
+        val vorschau = repo.vereinheitlichenVorschau()
+        assertEquals(2, vorschau.size)
+        assertEquals(vorschau.size, repo.vereinheitlichen())
+        assertEquals(listOf("a" to c), db.zutatDao().alle().map { it.id to it.canonicalName })
+        assertEquals("a", db.rezeptZutatDao().nachRezept("r1").single().ingredientId)
+        assertTrue(repo.vereinheitlichenVorschau().isEmpty())
+    }
+
     @Test
     fun zusammenfuehrenGleicheOderFehlendeIds() = runTest {
         zutat("a", "Zwiebel")
