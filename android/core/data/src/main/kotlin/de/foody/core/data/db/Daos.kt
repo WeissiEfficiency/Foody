@@ -56,6 +56,10 @@ interface ZutatDao {
     @Query("SELECT * FROM ingredient WHERE barcode = :code AND id != :ausser LIMIT 1")
     suspend fun nachStrichcode(code: String, ausser: String): ZutatEntity?
 
+    /** Die Zutat mit diesem Strichcode (Packung scannen, Phase 6e3). */
+    @Query("SELECT * FROM ingredient WHERE barcode = :code LIMIT 1")
+    suspend fun mitStrichcode(code: String): ZutatEntity?
+
     @Query("SELECT COUNT(DISTINCT recipeId) FROM recipe_ingredient WHERE ingredientId = :id")
     suspend fun rezeptAnzahl(id: String): Int
 
