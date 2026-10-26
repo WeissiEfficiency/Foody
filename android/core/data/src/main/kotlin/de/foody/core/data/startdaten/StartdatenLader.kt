@@ -5,7 +5,7 @@ import androidx.room.withTransaction
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.db.FoodyDatenbank
-import de.foody.core.data.db.ZutatEntity
+import de.foody.core.data.zutaten.ergaenztUm
 import javax.inject.Inject
 
 /**
@@ -30,11 +30,18 @@ class StartdatenLader @Inject constructor(
                 val vorhanden = dao.nachNameOhneGross(start.canonicalName) ?: dao.nachId(start.id)
                 val neu = when {
                     vorhanden == null -> start
-                    // Unveränderter Starteintrag (gleicher Name, Startwerte): Korrekturen der Startdaten übernehmen
+                    // Starteintrag mit Startwerten (gleicher Name, Startquelle): Korrekturen der Nährwerte übernehmen;
+                    // Kategorie, Dichte, Stückgewicht und Strichcode können im Katalog bearbeitet sein und bleiben
                     vorhanden.id == start.id && vorhanden.canonicalName.equals(start.canonicalName, ignoreCase = true) &&
                         vorhanden.nutrientSource in setOf(Startdaten.QUELLE, start.nutrientSource) ->
-                        start.copy(createdAt = vorhanden.createdAt, version = vorhanden.version)
-                    else -> vorhanden.ergaenztAus(start)
+                        start.copy(
+                            createdAt = vorhanden.createdAt, version = vorhanden.version,
+                            category = vorhanden.category ?: start.category,
+                            densityGPerMl = vorhanden.densityGPerMl ?: start.densityGPerMl,
+                            pieceWeightG = vorhanden.pieceWeightG ?: start.pieceWeightG,
+                            barcode = vorhanden.barcode ?: start.barcode,
+                        )
+                    else -> vorhanden.ergaenztUm(start)
                 }
                 if (neu != vorhanden) {
                     dao.upsert(neu)
@@ -66,22 +73,4 @@ class StartdatenLader @Inject constructor(
         const val SEED_VERSION = "seedVersion"
         const val SEEDED_ALT = "seeded"
     }
-}
-
-/** Füllt nur Lücken: Nährwerte, wenn keine da sind, sonst Kategorie, Dichte, Stückgewicht, Strichcode (wie v1 `fillFrom`). */
-private fun ZutatEntity.ergaenztAus(start: ZutatEntity): ZutatEntity {
-    val mitWerten = if (nutrientBasis == null && start.nutrientBasis != null) {
-        copy(
-            nutrientBasis = start.nutrientBasis, energyKj = start.energyKj, protein = start.protein, carbs = start.carbs,
-            fat = start.fat, fiber = start.fiber, sugar = start.sugar, salt = start.salt, nutrientSource = start.nutrientSource,
-        )
-    } else {
-        this
-    }
-    return mitWerten.copy(
-        category = category ?: start.category,
-        densityGPerMl = densityGPerMl ?: start.densityGPerMl,
-        pieceWeightG = pieceWeightG ?: start.pieceWeightG,
-        barcode = barcode ?: start.barcode,
-    )
 }

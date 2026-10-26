@@ -96,6 +96,30 @@ class StartdatenLaderTest {
     }
 
     @Test
+    fun bearbeiteteUmrechnungBleibt() = runTest {
+        // Im Editor geändert, Nährwerte unangetastet (Quelle noch die Startquelle): Kategorie, Dichte und Strichcode
+        // dürfen neue Startdaten nicht überschreiben
+        val reis = Startdaten.zutaten(1).first { it.id == "seed-reis" }
+        db.zutatDao().upsert(reis.copy(category = "Eigene Abteilung", densityGPerMl = BigDecimal("0.85"), barcode = "4001234567890"))
+        prefs.edit().putInt("seedVersion", 7).commit()
+        lader.ladenWennNoetig()
+        val e = assertNotNull(db.zutatDao().nachId("seed-reis"))
+        assertEquals("Eigene Abteilung", e.category)
+        assertEquals(BigDecimal("0.85"), e.densityGPerMl)
+        assertEquals("4001234567890", e.barcode)
+    }
+
+    @Test
+    fun leereFelderWerdenGefuellt() = runTest {
+        val reis = Startdaten.zutaten(1).first { it.id == "seed-reis" }
+        assertNotNull(reis.category)
+        db.zutatDao().upsert(reis.copy(category = null))
+        prefs.edit().putInt("seedVersion", 7).commit()
+        lader.ladenWennNoetig()
+        assertEquals(reis.category, db.zutatDao().nachId("seed-reis")?.category)
+    }
+
+    @Test
     fun beiAktivemSyncLandenStartdatenInDerOutbox() = runTest {
         db.syncDao().upsertZustand(SyncZustandEntity(active = true, serverUrl = "https://foody.example"))
         lader.ladenWennNoetig()
