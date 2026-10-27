@@ -252,7 +252,13 @@ im Zutateneditor (markierte Werte, „Online abrufen“, fremder Strichcode → 
 Unverändertes kcal speichert die genauen kJ der Packung; die Scan-Quelle gilt nicht als „Eigene Angabe“. Schalter
 „Online-Produktsuche“ in den Einstellungen (v1-Schlüssel, Standard an). Belegt durch Daten-, Ablauf-, Open-Food-Facts-,
 Knopf-, ViewModel- und Bildschirmtests mit einem Fake-Scan und 4 neuen Roborazzi-Bildern (die Einstellungsbilder zeigen
-jetzt stabil die Katalog-Anzahl). Sichtprüfung auf dem Emulator gegen den Test-Server: folgt.
+jetzt stabil die Katalog-Anzahl). Sichtprüfung auf dem Emulator (Play-Store-Abbild, ohne Server – der Scan braucht
+keinen): Galeriefoto einer Nährwerttabelle im Tagebuch → alle Werte richtig erkannt, Basis „je 100 g“, 60 g → „= 227
+kcal“, Eintrag gespeichert und „Haferflocken“ als Zutat angelegt (Trockenwaren); „Neue Zutat“ mit Foto legt die Zutat
+mit Werten an; im Editor alle sieben Werte markiert (gesättigte Fettsäuren nicht mit Fett verwechselt); Code Scanner
+öffnet und bricht sauber ab; Schalter schreibt `onlineProduktsuche`. Nicht belegt: Strichcode-Treffer bei Open Food
+Facts (im Emulator lässt sich kein Code zeigen). Gesehen, aber älter als 6e3: Menüs und Dialoge haben den lila
+Material-Standardhintergrund, weil das Farbschema die `surfaceContainer*`-Farben nicht setzt.
 
 **Fertig, wenn** alle App-Abschnitte der Abnahmeliste abgehakt sind und kein Screen über 300 Zeilen hat.
 
