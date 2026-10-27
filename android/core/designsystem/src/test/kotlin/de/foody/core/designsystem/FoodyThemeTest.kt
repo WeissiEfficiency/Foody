@@ -3,6 +3,7 @@ package de.foody.core.designsystem
 import android.provider.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.text.intl.LocaleList
@@ -55,6 +56,29 @@ class FoodyThemeTest {
         }
         assertEquals(FoodyFarben.Dunkel, farben)
         assertTrue(dunkel)
+    }
+
+    @Test
+    fun keineFlaecheLila() {
+        val flaechen = mutableMapOf<Boolean, List<Color>>()
+        compose.setContent {
+            for (dunkel in listOf(false, true)) {
+                FoodyTheme(dunkel = dunkel) {
+                    val s = MaterialTheme.colorScheme
+                    flaechen[dunkel] = listOf(
+                        s.surfaceContainerLowest, s.surfaceContainerLow, s.surfaceContainer, s.surfaceContainerHigh,
+                        s.surfaceContainerHighest, s.surfaceBright, s.surfaceDim, s.inverseSurface, s.inversePrimary,
+                        s.outlineVariant,
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+        assertEquals(setOf(false, true), flaechen.keys)
+        // Ofenwarm heißt: Rot überwiegt Blau; die lila Baseline von Material 3 hat es umgekehrt
+        flaechen.forEach { (dunkel, farben) ->
+            farben.forEach { assertTrue(it.red >= it.blue, "Lila Fläche $it (dunkel = $dunkel)") }
+        }
     }
 
     @Test
