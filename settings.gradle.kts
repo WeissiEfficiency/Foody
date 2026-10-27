@@ -59,6 +59,9 @@ if (System.getenv("FOODY_SERVER_ONLY") == null) {
     // V3 Phase 6e2: Zutatenkatalog
     include(":feature:zutaten")
     project(":feature:zutaten").projectDir = file("android/feature/zutaten")
+    // V3 Phase 6e3: Packung scannen (Tagebuch und Zutatenkatalog, ADR 0013)
+    include(":core:scan")
+    project(":core:scan").projectDir = file("android/core/scan")
     project(":core:designsystem").projectDir = file("android/core/designsystem")
     project(":katalog").projectDir = file("android/katalog")
 }
