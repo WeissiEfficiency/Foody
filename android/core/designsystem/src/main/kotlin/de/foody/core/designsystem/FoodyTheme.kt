@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import de.foody.core.designsystem.token.FoodyFarben
 import de.foody.core.designsystem.token.FoodyFormen
@@ -75,25 +77,30 @@ fun animationenErlaubt(): Boolean {
 @Composable
 fun unschaerfeErlaubt(): Boolean = animationenErlaubt()
 
-private fun farbschema(f: FoodyFarben, dunkel: Boolean): ColorScheme =
-    if (dunkel) {
-        darkColorScheme(
-            primary = f.primaer, onPrimary = f.aufPrimaer,
-            primaryContainer = f.primaerBehaelter, onPrimaryContainer = f.aufPrimaerBehaelter,
-            secondary = f.oliv, tertiary = f.safran,
-            background = f.grund, onBackground = f.text,
-            surface = f.grund, onSurface = f.text,
-            surfaceVariant = f.balkenSpur, onSurfaceVariant = f.nebentext,
-            outline = f.nebentext,
-        )
-    } else {
-        lightColorScheme(
-            primary = f.primaer, onPrimary = f.aufPrimaer,
-            primaryContainer = f.primaerBehaelter, onPrimaryContainer = f.aufPrimaerBehaelter,
-            secondary = f.oliv, tertiary = f.safran,
-            background = f.grund, onBackground = f.text,
-            surface = f.grund, onSurface = f.text,
-            surfaceVariant = f.balkenSpur, onSurfaceVariant = f.nebentext,
-            outline = f.nebentext,
-        )
-    }
+/**
+ * Material-Rollen aus den Foody-Farben. Die Behälterflächen (Menü, Dialog, Sheet) staffeln sich vom Grund zur
+ * Balkenspur, damit nirgends die lila Baseline von Material 3 durchscheint.
+ */
+private fun farbschema(f: FoodyFarben, dunkel: Boolean): ColorScheme {
+    val stufe = { anteil: Float -> lerp(f.grund, f.balkenSpur, anteil) }
+    val gegenstueck = if (dunkel) FoodyFarben.Hell else FoodyFarben.Dunkel
+    return (if (dunkel) darkColorScheme() else lightColorScheme()).copy(
+        primary = f.primaer, onPrimary = f.aufPrimaer,
+        primaryContainer = f.primaerBehaelter, onPrimaryContainer = f.aufPrimaerBehaelter,
+        inversePrimary = gegenstueck.primaer,
+        secondary = f.oliv, tertiary = f.safran,
+        background = f.grund, onBackground = f.text,
+        surface = f.grund, onSurface = f.text,
+        surfaceVariant = f.balkenSpur, onSurfaceVariant = f.nebentext,
+        surfaceTint = f.primaer,
+        inverseSurface = f.text, inverseOnSurface = f.grund,
+        outline = f.nebentext, outlineVariant = f.balkenSpur,
+        surfaceBright = if (dunkel) f.balkenSpur else f.grund,
+        surfaceDim = if (dunkel) f.grund else f.balkenSpur,
+        surfaceContainerLowest = lerp(f.grund, if (dunkel) Color.Black else Color.White, 0.4f),
+        surfaceContainerLow = stufe(0.15f),
+        surfaceContainer = stufe(0.3f),
+        surfaceContainerHigh = stufe(0.45f),
+        surfaceContainerHighest = stufe(0.6f),
+    )
+}
