@@ -5,6 +5,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import de.foody.core.data.db.FoodyDatenbank
+import de.foody.core.scan.ScanKonfiguration
 import de.foody.core.sync.SyncAusloeser
 import de.foody.core.sync.SyncKonfiguration
 import de.foody.core.sync.SyncKonto
@@ -18,6 +19,11 @@ object AppModul {
     @Provides
     @Singleton
     fun syncKonfiguration(): SyncKonfiguration = SyncKonfiguration(lokalesHttpErlaubt = BuildConfig.DEBUG)
+
+    /** App-Version für den User-Agent der Anfragen an Open Food Facts. */
+    @Provides
+    @Singleton
+    fun scanKonfiguration(): ScanKonfiguration = ScanKonfiguration(BuildConfig.VERSION_NAME)
 
     @Provides
     fun kontoZugriff(konto: SyncKonto, db: FoodyDatenbank, ausloeser: SyncAusloeser): KontoZugriff =

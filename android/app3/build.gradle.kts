@@ -52,6 +52,7 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:data"))
     implementation(project(":core:sync"))
+    implementation(project(":core:scan"))
     implementation(project(":feature:heute"))
     implementation(project(":feature:rezepte"))
     implementation(project(":feature:kochen"))

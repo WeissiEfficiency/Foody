@@ -25,6 +25,9 @@ data class Packungswerte(
 
     /** Wert als Feldtext, ungerundet mit Komma; leer, wenn die Packung ihn nicht hat. */
     fun feldText(n: Nutrient): String = zahlText(werte[n])
+
+    /** kJ zu einem kcal-Feldtext nach der Energie-Regel ([energieKj]): unverändert → genauer Packungswert. */
+    fun kjFuer(kcalText: String): BigDecimal? = energieKj(kcalText, this)
 }
 
 /** Makro-Felder des Editors und ihr Nährstoff. */

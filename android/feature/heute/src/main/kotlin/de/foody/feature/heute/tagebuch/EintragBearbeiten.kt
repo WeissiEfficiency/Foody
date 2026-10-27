@@ -25,12 +25,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.vorausgefuelltFarben
 import de.foody.domain.Mahlzeit
 import de.foody.domain.Naehrwerte
 import de.foody.domain.Tagebuch
@@ -109,15 +112,28 @@ internal fun EintragBearbeiten(
     )
 }
 
-/** Eingabefeld für Zahlen mit Ziffern-Tastatur. */
+/**
+ * Eingabefeld für Zahlen mit Ziffern-Tastatur. [markiert]: vorausgefüllt aus einem Scan (Akzentfarbe); [einheit] steht
+ * hinter der Zahl; [focusRequester] erlaubt, den Fokus von außen zu setzen.
+ */
 @Composable
-internal fun Zahlfeld(beschriftung: String, wert: String, ganzzahlig: Boolean = false, onWert: (String) -> Unit) {
+internal fun Zahlfeld(
+    beschriftung: String,
+    wert: String,
+    ganzzahlig: Boolean = false,
+    markiert: Boolean = false,
+    einheit: String? = null,
+    focusRequester: FocusRequester? = null,
+    onWert: (String) -> Unit,
+) {
     OutlinedTextField(
         value = wert,
         onValueChange = onWert,
         label = { Text(beschriftung) },
+        suffix = if (einheit != null) { { Text(einheit) } } else null,
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = if (ganzzahlig) KeyboardType.Number else KeyboardType.Decimal),
-        modifier = Modifier.fillMaxWidth(),
+        colors = vorausgefuelltFarben(markiert),
+        modifier = Modifier.fillMaxWidth().then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier),
     )
 }

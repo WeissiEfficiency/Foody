@@ -29,6 +29,16 @@ class PackungswerteTest {
     }
 
     @Test
+    fun kjFuerNachEnergieRegel() {
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1502")))
+        // kcal-Text unverändert → genauer Wert der Packung, sonst umgerechnet (360 × 4,184)
+        assertEquals(BigDecimal("1502"), p.kjFuer("359"))
+        assertEquals(0, BigDecimal("1506.24").compareTo(p.kjFuer("360")))
+        assertNull(p.kjFuer(""))
+        assertNull(p.kjFuer("abc"))
+    }
+
+    @Test
     fun feldTextUngerundet() {
         val p = packung(mapOf(Nutrient.FAT_G to BigDecimal("7.250")))
         assertEquals("7,25", p.feldText(Nutrient.FAT_G))

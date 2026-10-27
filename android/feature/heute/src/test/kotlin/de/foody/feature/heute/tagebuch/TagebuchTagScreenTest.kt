@@ -24,6 +24,7 @@ import de.foody.feature.heute.MitSchrift200
 import de.foody.feature.heute.bestand
 import de.foody.feature.heute.pruefeNichtsAbgeschnitten
 import de.foody.feature.heute.testDatenbank
+import de.foody.feature.heute.testScan
 import de.foody.feature.heute.warteAufText
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -62,7 +63,7 @@ class TagebuchTagScreenTest {
     private fun zeigen(schrift200: Boolean = false) {
         val kontext = RuntimeEnvironment.getApplication()
         val vm = TagebuchTagViewModel(tagebuch, TageszielSpeicher(kontext))
-        val eintragen = EintragenViewModel(HeuteRepository(db), tagebuch, db)
+        val eintragen = EintragenViewModel(HeuteRepository(db), tagebuch, db, testScan())
         compose.setContent {
             FoodyTheme {
                 var datum by remember { mutableStateOf(heute) }
