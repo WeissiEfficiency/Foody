@@ -75,6 +75,7 @@ class ZutatEditorViewModel @Inject constructor(
     /** Für den Scan-Knopf und „Online abrufen“. */
     val scan: PackungScan,
     private val online: OnlineSucheErlaubt,
+    private val uebergabe: ZutatUebergabe,
 ) : ViewModel() {
     private val stand = MutableStateFlow(EditorZustand())
     val zustand: StateFlow<EditorZustand> = stand.asStateFlow()
@@ -105,6 +106,11 @@ class ZutatEditorViewModel @Inject constructor(
                     !stand.value.geladen -> {
                         val e = ZutatEntwurf.aus(z)
                         stand.update { it.copy(geladen = true, vorher = e, entwurf = e, synonyme = repo.synonyme(z.canonicalName)) }
+                        // Aus „Neue Zutat“: gescannte Packung übernehmen bzw. „Schon im Katalog“ melden
+                        uebergabe.abholen(id)?.let { (packung, meldung) ->
+                            packung?.let(::packungUebernehmen)
+                            meldung?.let { kanal.send(EditorEreignis.Meldung(it)) }
+                        }
                     }
                 }
             }

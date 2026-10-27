@@ -8,9 +8,11 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -20,13 +22,27 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.zutaten.Angleichung
+import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 
-/** „Neue Zutat“: Name eingeben; gibt es ihn schon ([gibtEsSchon] = vorhandener Name), bietet der Dialog „Öffnen“ an. */
+/**
+ * „Neue Zutat“: Name eingeben; gibt es ihn schon ([gibtEsSchon] = vorhandener Name), bietet der Dialog „Öffnen“ an.
+ * Unter dem Namen der Scan-[knopf]; nach einem Scan [packungHinweis] („Werte aus … werden übernommen“), und
+ * [namensVorschlag] füllt das Namensfeld, solange es leer ist.
+ */
 @Composable
-internal fun NeueZutatDialog(gibtEsSchon: String?, onAnlegen: (String) -> Unit, onOeffnen: () -> Unit, onAbbrechen: () -> Unit) {
+internal fun NeueZutatDialog(
+    gibtEsSchon: String?,
+    onAnlegen: (String) -> Unit,
+    onOeffnen: () -> Unit,
+    onAbbrechen: () -> Unit,
+    knopf: @Composable () -> Unit = {},
+    packungHinweis: String? = null,
+    namensVorschlag: String? = null,
+) {
     var name by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(namensVorschlag) { if (!namensVorschlag.isNullOrBlank() && name.isBlank()) name = namensVorschlag }
     val anlegen = { if (name.isNotBlank()) onAnlegen(name) }
     AlertDialog(
         onDismissRequest = onAbbrechen,
@@ -38,6 +54,10 @@ internal fun NeueZutatDialog(gibtEsSchon: String?, onAnlegen: (String) -> Unit, 
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { anlegen() }),
                 )
+                knopf()
+                packungHinweis?.let {
+                    Text(it, style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.primaer)
+                }
                 if (gibtEsSchon != null) Text("„$gibtEsSchon“ gibt es schon.")
             }
         },

@@ -46,10 +46,11 @@ internal class ZutatenTestUmgebung {
     val repo = ZutatenRepository(db) { 10L }
     val meldungen = ZutatenMeldungen()
     val scan = TestScan()
+    val uebergabe = ZutatUebergabe()
 
-    fun liste() = ZutatenListeViewModel(repo, meldungen)
+    fun liste() = ZutatenListeViewModel(repo, meldungen, scan.scan, uebergabe)
 
-    fun editor() = ZutatEditorViewModel(repo, meldungen, scan.scan, { scan.online })
+    fun editor() = ZutatEditorViewModel(repo, meldungen, scan.scan, { scan.online }, uebergabe)
 
     fun zutat(id: String, name: String, aendern: (ZutatEntity) -> ZutatEntity = { it }): ZutatEntity = runBlocking {
         aendern(ZutatEntity(id = id, canonicalName = name, createdAt = 1, updatedAt = 1)).also { db.zutatDao().upsert(it) }
