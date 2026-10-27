@@ -168,6 +168,9 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
   Portionen-Nachtrag (`DatenModul`); `:core:sync` (`android/core/sync`, Paket `de.foody.core.sync`) – Server-Zugang,
   Sync-Lauf, Verbinden/Trennen, Auslöser, Token (`SyncModul`). `:core:sync` → `:core:data`, `:api-protocol`;
   `:core:data` → `:domain`, `:api-protocol` (per `api`, weil Entities und `FoodyDatenbank` diese Typen zeigen).
+  Seit Phase 6e3 dazu `:core:scan` (`android/core/scan`, Paket `de.foody.core.scan`) – Packung scannen (`ScanModul`,
+  ADR 0013). `:core:scan` → `:core:data`, `:domain` (per `api`), `:core:designsystem`; `:feature:heute`,
+  `:feature:zutaten`, `:feature:einstellungen` und `:app3` → `:core:scan`.
 - **Datenbank `foody.db`, Version 10** (`FoodyDatenbank`, Schemata 1–9 aus der v1 unter `android/core/data/schemas`):
   Schema 9 ohne `pantry_item`, `sync_state.kontoId` (nullable) statt `householdId`; ein Schema-Vergleichstest erzwingt,
   dass sonst alles gleich ist. `baueDatenbank` registriert nur `MIGRATION_9_10` und den Callback für neue Datenbanken,
@@ -466,9 +469,40 @@ Spec `docs/superpowers/specs/2026-10-25-v3-phase6e2-zutaten-design.md`. Einstell
 - **Tests:** Repository, reine Funktionen, Startdaten, Zwei-Geräte-Sync, ViewModels, Bildschirme, Navigation;
   Roborazzi-Bilder in `android/feature/zutaten/src/test/screenshots/`, Vergleich in der CI.
 
+## Packung scannen (Phase 6e3)
+
+ADR 0013, Spec `docs/superpowers/specs/2026-10-26-v3-phase6e3-scan-design.md`. Scannen im Tagebuch („Frei“), im
+Zutateneditor und im Dialog „Neue Zutat“; Werte werden nur vorausgefüllt und markiert, Speichern ist die Bestätigung.
+Keine Schema- und keine Protokolländerung (nur die Abfrage `ZutatDao.mitStrichcode`).
+
+- **`:core:data/zutaten`:** `Packungswerte` (Name, Basis oder `null`, Werte je 100 g/ml, Strichcode, Quelle; `kcalText`,
+  `feldText`). `ZutatEntwurf.mitPackung` übernimmt Zahlen, Basis, Quelle und einen fehlenden Strichcode und nennt die
+  markierten Felder. `ZutatenRepository.speichern(…, scan)`: unverändertes kcal-Feld → genaue kJ der Packung, Scan-Quelle
+  gilt nicht als „Eigene Angabe“; `anlegen(name, packung)` mit Werten und freiem Strichcode. `zutatMitNamen` (roher, dann
+  kanonischer Name) für Tagebuch und „Neue Zutat“. `TagebuchRepository.ausPackung` in einer Transaktion: ohne Häkchen
+  „Frei“ mit den Werten der Menge, mit Häkchen Zutat anlegen oder als Block aktualisieren, dann Eintrag „Zutat“.
+- **`:core:scan`:** Ablauf `PackungScan` wie v1 (Strichcode → eigener Katalog → Open Food Facts, wenn erlaubt → Foto der
+  Nährwerttabelle, ML Kit) hinter Schnittstellen, die `ScanModul` bindet und Tests durch Fakes ersetzen; dazu
+  `online(code)` für „Online abrufen“. `OffProduktSuche` (eigener Ktor-Client, 8 s, nur Produktnummer und User-Agent mit
+  der App-Version aus `ScanKonfiguration`), `GooglePlayDienste` (vorladen, Module nachladen), `ScanEinstellung`
+  („Online-Produktsuche“, v1-Schlüssel `onlineProduktsuche`, Standard an). `PackungScanKnopf` mit Menü „Strichcode“,
+  „Foto der Nährwerttabelle“, „Aus der Galerie“, Meldungen und Foto-Knöpfen darunter; Zustand in `ScanKnopfZustand`
+  (Saver), Kamerafoto kurz in `cache/scan/` über den eigenen `ScanFotoProvider`. Ohne Play-Dienste ausgegraut.
+- **`:core:designsystem`:** `vorausgefuelltFarben` – Rahmen und Beschriftung markierter Felder in der Akzentfarbe.
+- **`:feature:heute`:** Scan-Knopf über „Frei“; nach einem Treffer `PackungEingabe` (Name, Menge in g/ml nach der Basis,
+  ohne Basis Chips, Werte je 100 markiert, Vorschau „= 359 kcal“, Häkchen „Als Zutat speichern“ bzw. „Zutat „…“
+  aktualisieren“, „Zurück zu Frei“). „Im Katalog“ wechselt zu „Zutat“ mit Fokus auf der Menge.
+- **`:feature:zutaten`:** Editor mit Scan-Knopf im Abschnitt „Nährwerte“, Markierung endet beim Ändern; „Im Katalog“
+  mit dieser Zutat → „Online abrufen“, mit einer anderen → Zusammenführen. „Neue Zutat“ mit Scan-Knopf; Packung bzw.
+  Meldung gehen über `ZutatUebergabe` an den Editor.
+- **`:feature:einstellungen`:** Schalter „Online-Produktsuche“ im Abschnitt „Zutaten“, wirkt sofort für alle Einstiege.
+- **Tests:** Packungswerte, Repositories, Namenssuche, Ablauf, Open Food Facts (`MockEngine`), Einstellung,
+  Knopf-Zustand, ViewModels und Bildschirme mit einem Fake-Scan ohne Play-Dienste; Roborazzi-Bilder „Frei“ mit Packung
+  (hell/dunkel), Editor mit markierten Werten und „Neue Zutat“ nach einem Scan, Vergleich in der CI.
+
 ## Packung scannen (seit DB v9)
 
-`PackungScan` (`android/app/.../scan`) steuert den Ablauf hinter Schnittstellen, die Hilt in `ScanModule` bindet und Tests durch
+v1 (`:app`); die V3 nutzt `:core:scan` (oben). `PackungScan` (`android/app/.../scan`) steuert den Ablauf hinter Schnittstellen, die Hilt in `ScanModule` bindet und Tests durch
 Fakes ersetzen: `StrichcodeLeser` (Google Code Scanner) → `KatalogSuche` (`ingredient.barcode`) → `ProduktSuche`
 (`OffProduktSuche`, Open Food Facts, nur wenn `ScanPreferences.onlineSuche`) → sonst `TabellenScanner` (ML Kit).
 Fehlende Play-Dienste-Module werden über `ModuleInstallClient` nachgeladen. Die Auswertung ist rein: `NaehrwertScan`

@@ -52,3 +52,5 @@ Review aller Funktionen (Fragenkatalog „Foody V3 Review“, 2026-10-17) hat er
 - Rezeptdaten gehen zur KI-Verarbeitung an einen externen Dienst – nur auf ausdrücklichen Knopfdruck, nur das
   betroffene Rezept bzw. Foto. Der Datenschutzhinweis in der App nennt das.
 - ADR 0006 bleibt für Opt-in, Konto, HTTPS und Fotos gültig; Haushalte entfallen.
+
+Der Punkt zu `:core:scan` ist durch ADR 0013 ersetzt.
