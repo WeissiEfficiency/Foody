@@ -46,7 +46,8 @@ klappt.
   - die Quelle;
   - der Strichcode, wenn das Feld leer ist.
   
-  Felder, die die Packung nicht hat, bleiben. Markiert werden nur die übernommenen Zahlen und der Strichcode.
+  Felder, die die Packung nicht hat, bleiben – außer die Packung bringt eine andere Basis mit (je 100 ml → je 100 g),
+  dann werden kcal und Makros leer. Markiert werden nur die übernommenen Zahlen und der Strichcode.
 - **`ZutatEntwurf.mitAenderungen` / `ZutatenRepository.speichern(id, vorher, nachher, scan: Packungswerte? = null)`**
   ergänzen die 6e2-Regeln um zwei Punkte, wenn `scan` gesetzt ist:
   - **Energie:** Gleicht der kcal-Text `scan.kcalText`, wird `energyKj` der genaue Wert der Packung (statt
@@ -67,7 +68,8 @@ klappt.
   - **Ohne Häkchen:** Ein Eintrag „Frei“ mit den Werten für die Menge (`Tagebuch.naehrwerteZutat` mit einer Zutat aus
     diesen Werten, wie v1).
   - **Mit Häkchen und vorhandener Zutat** (`zutatMitNamen`): Die Zutat bekommt die Werte als Block. Das sind die Basis
-    (falls bekannt), alle Werte der Packung und die Quelle; Nährwerte, die die Packung nicht hat, bleiben. Den
+    (falls bekannt), alle Werte der Packung und die Quelle; Nährwerte, die die Packung nicht hat, bleiben (bei neuer
+    Basis fallen sie weg). Den
     Strichcode bekommt sie nur, wenn sie keinen hat und kein anderer ihn trägt.
   - **Mit Häkchen ohne Zutat:** Es wird eine neue angelegt (kanonischer Name, Kategorie geraten, Basis `null` → je
     100 g).

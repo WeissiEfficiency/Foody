@@ -35,12 +35,12 @@ internal fun haekchenText(vorhandeneZutat: String?): String =
 internal fun vorschauKcal(e: Eingaben): Int? {
     val p = e.packung ?: return null
     val menge = zahl(e.pMenge)?.takeIf { it.signum() > 0 } ?: return null
-    val kj = p.kjFuer(e.pKcal.trim()) ?: return null
+    val kj = p.kjFuer(e.pKcal) ?: return null
     return NutritionResult.kcal(kj.multiply(menge).movePointLeft(2))
 }
 
 /** Markiert, solange das Feld dem Scanwert gleicht (und die Packung den Wert hatte). */
-private fun wieGescannt(feld: String, scan: String) = scan.isNotEmpty() && feld == scan
+private fun wieGescannt(feld: String, scan: String) = scan.isNotEmpty() && feld.trim() == scan
 
 /**
  * „Frei“ mit gescannter Packung (Spec 6e3, 3.): Herkunft, Name, Menge mit Einheit nach der Basis (ohne Basis Chips

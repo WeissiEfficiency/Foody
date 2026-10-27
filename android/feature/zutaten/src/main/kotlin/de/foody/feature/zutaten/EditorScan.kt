@@ -40,7 +40,7 @@ private fun Packungswerte.scanText(f: ZutatFeld): String? = when (f) {
 
 /** Markierungen nach einer Änderung: nur Felder, deren Text noch dem Scanwert gleicht; zurückgesetzte kommen nicht wieder. */
 internal fun nochMarkiert(markiert: Set<ZutatFeld>, e: ZutatEntwurf, scan: Packungswerte?): Set<ZutatFeld> =
-    if (scan == null) emptySet() else markiert.filterTo(LinkedHashSet()) { e.text(it) == scan.scanText(it) }
+    if (scan == null) emptySet() else markiert.filterTo(LinkedHashSet()) { e.text(it).trim() == scan.scanText(it) }
 
 /** Meldung, wenn „Online abrufen“ keine Werte brachte. */
 internal fun abrufMeldung(a: ScanAusgang): String =

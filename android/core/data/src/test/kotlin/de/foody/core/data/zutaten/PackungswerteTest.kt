@@ -122,4 +122,23 @@ class PackungswerteTest {
         assertEquals(NutrientBasis.PER_100_ML, foto.nutrientBasis)
         assertEquals(BigDecimal("3.5"), foto.fat)
     }
+
+    @Test
+    fun mitPackungNeueBasisLeertAlteWerte() {
+        val milch = leer.copy(basis = NutrientBasis.PER_100_ML, fett = "3,5", kcal = "64")
+        val (e, markiert) = milch.mitPackung(packung(mapOf(Nutrient.PROTEIN_G to BigDecimal("3"))))
+        assertEquals(NutrientBasis.PER_100_G, e.basis)
+        assertEquals("", e.fett)
+        assertEquals("", e.kcal)
+        assertEquals("3", e.eiweiss)
+        assertEquals(setOf(ZutatFeld.EIWEISS), markiert)
+    }
+
+    @Test
+    fun kcalWieGescanntOhneLeerzeichen() {
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1502")))
+        assertEquals(true, p.kcalWieGescannt(" 359 "))
+        assertEquals(false, p.kcalWieGescannt("360"))
+        assertEquals(false, packung(emptyMap()).kcalWieGescannt(""))
+    }
 }

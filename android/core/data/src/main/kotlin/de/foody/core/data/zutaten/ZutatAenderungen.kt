@@ -30,7 +30,7 @@ internal fun ZutatEntity.mitAenderungen(
 
     // Mit Scan zählt auch ein gleicher kcal-Text (1500 statt 1502 kJ ergeben beide „359“): der genaue Packungswert gilt
     val kcalNeu = nachher.kcal != vorher.kcal ||
-        (scan?.werte?.get(Nutrient.ENERGY_KJ) != null && nachher.kcal.trim() == scan.kcalText && energyKj != scan.werte[Nutrient.ENERGY_KJ])
+        (scan != null && scan.kcalWieGescannt(nachher.kcal) && energyKj != scan.werte[Nutrient.ENERGY_KJ])
     var z = copy(
         canonicalName = if (mitName && nachher.name != vorher.name) nameBereinigt(nachher.name) else canonicalName,
         category = if (nachher.kategorie != vorher.kategorie) nachher.kategorie else category,

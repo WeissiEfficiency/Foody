@@ -257,7 +257,10 @@ keinen): Galeriefoto einer Nährwerttabelle im Tagebuch → alle Werte richtig e
 kcal“, Eintrag gespeichert und „Haferflocken“ als Zutat angelegt (Trockenwaren); „Neue Zutat“ mit Foto legt die Zutat
 mit Werten an; im Editor alle sieben Werte markiert (gesättigte Fettsäuren nicht mit Fett verwechselt); Code Scanner
 öffnet und bricht sauber ab; Schalter schreibt `onlineProduktsuche`. Nicht belegt: Strichcode-Treffer bei Open Food
-Facts (im Emulator lässt sich kein Code zeigen). Gesehen, aber älter als 6e3: Menüs und Dialoge haben den lila
+Facts (im Emulator lässt sich kein Code zeigen). Gesamtreview: 6 Befunde behoben, darunter das Kamerafoto nach
+Prozessende (das Aufräumen löschte es vor der Erkennung; im Emulator mit beendetem Prozess nachgestellt, vorher
+„Scannen hat nicht geklappt“, jetzt erkannt), Zusammenführen mit gescannter Packung und alte Werte bei neuer Basis.
+Gesehen, aber älter als 6e3: Menüs und Dialoge haben den lila
 Material-Standardhintergrund, weil das Farbschema die `surfaceContainer*`-Farben nicht setzt.
 
 **Fertig, wenn** alle App-Abschnitte der Abnahmeliste abgehakt sind und kein Screen über 300 Zeilen hat.

@@ -270,7 +270,7 @@ internal fun formularWerte(e: Eingaben): Packungswerte {
     val p = requireNotNull(e.packung)
     val werte = p.werte.toMutableMap()
     val felder = listOf(
-        Nutrient.ENERGY_KJ to p.kjFuer(e.pKcal.trim()),
+        Nutrient.ENERGY_KJ to p.kjFuer(e.pKcal),
         Nutrient.PROTEIN_G to zahl(e.pEiweiss),
         Nutrient.CARBS_G to zahl(e.pKh),
         Nutrient.FAT_G to zahl(e.pFett),

@@ -26,9 +26,15 @@ data class Packungswerte(
     /** Wert als Feldtext, ungerundet mit Komma; leer, wenn die Packung ihn nicht hat. */
     fun feldText(n: Nutrient): String = zahlText(werte[n])
 
+    /** Steht im kcal-Feld noch der gescannte Wert (Leerzeichen zählen nicht)? Ohne Energie nie. */
+    fun kcalWieGescannt(text: String): Boolean = kcal != null && text.trim() == kcalText
+
     /** kJ zu einem kcal-Feldtext nach der Energie-Regel ([energieKj]): unverändert → genauer Packungswert. */
     fun kjFuer(kcalText: String): BigDecimal? = energieKj(kcalText, this)
 }
+
+/** Die Packung bringt eine andere Basis mit als die bisherige (je 100 ml → je 100 g): Alte Werte passen dann nicht mehr. */
+private fun basisWechselt(alt: NutrientBasis?, p: Packungswerte) = alt != null && p.basis != null && p.basis != alt
 
 /** Makro-Felder des Editors und ihr Nährstoff. */
 private val MAKROS: List<Triple<ZutatFeld, Nutrient, (ZutatEntwurf, String) -> ZutatEntwurf>> = listOf(
@@ -42,11 +48,13 @@ private val MAKROS: List<Triple<ZutatFeld, Nutrient, (ZutatEntwurf, String) -> Z
 
 /**
  * Übernimmt die Packung in den Entwurf: kcal und Makros, soweit vorhanden; die Basis, wenn bekannt; die Quelle; den
- * Strichcode nur bei leerem Feld. Was die Packung nicht hat, bleibt. Liefert dazu die übernommenen (markierten) Felder.
+ * Strichcode nur bei leerem Feld. Was die Packung nicht hat, bleibt – außer die Basis wechselt ([basisWechselt]), dann
+ * wird es leer. Liefert dazu die übernommenen (markierten) Felder.
  */
 fun ZutatEntwurf.mitPackung(p: Packungswerte): Pair<ZutatEntwurf, Set<ZutatFeld>> {
     val markiert = LinkedHashSet<ZutatFeld>()
     var e = copy(basis = p.basis ?: basis, quelle = p.quelle)
+    if (basisWechselt(basis, p)) e = MAKROS.fold(e.copy(kcal = "")) { acc, (_, _, setzen) -> setzen(acc, "") }
     if (p.kcal != null) {
         e = e.copy(kcal = p.kcalText)
         markiert += ZutatFeld.KCAL
@@ -68,16 +76,16 @@ fun ZutatEntwurf.mitPackung(p: Packungswerte): Pair<ZutatEntwurf, Set<ZutatFeld>
  * sonst wird aus dem Text umgerechnet ([kjAusKcal]). Leer oder ungültig → `null`.
  */
 internal fun energieKj(kcalText: String, scan: Packungswerte?): BigDecimal? =
-    if (scan != null && kcalText.trim() == scan.kcalText) scan.werte[Nutrient.ENERGY_KJ] else zahlAus(kcalText)?.let(::kjAusKcal)
+    if (scan != null && scan.kcalWieGescannt(kcalText)) scan.werte[Nutrient.ENERGY_KJ] else zahlAus(kcalText)?.let(::kjAusKcal)
 
 /**
  * Überträgt die Packung als Block: die Basis (falls bekannt, sonst die bisherige, mindestens je 100 g), alle Werte der
- * Packung und ihre Quelle. Nährwerte, die die Packung nicht hat, bleiben – außer die Basis wechselt (je 100 ml → je
- * 100 g): Dann passen die alten nicht mehr und fallen weg. Den Strichcode setzt der Aufrufer.
+ * Packung und ihre Quelle. Nährwerte, die die Packung nicht hat, bleiben – außer die Basis wechselt ([basisWechselt]):
+ * Dann fallen sie weg. Den Strichcode setzt der Aufrufer.
  */
 internal fun ZutatEntity.mitPackungswerten(p: Packungswerte): ZutatEntity {
     if (p.werte.isEmpty()) return this
-    val neueBasis = nutrientBasis != null && p.basis != null && p.basis != nutrientBasis
+    val neueBasis = basisWechselt(nutrientBasis, p)
     fun w(n: Nutrient, alt: BigDecimal?) = p.werte[n] ?: alt.takeUnless { neueBasis }
     return copy(
         nutrientBasis = p.basis ?: nutrientBasis ?: NutrientBasis.PER_100_G,
