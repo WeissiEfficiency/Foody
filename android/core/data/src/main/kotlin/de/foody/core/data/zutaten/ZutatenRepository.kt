@@ -36,8 +36,11 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
     fun synonyme(name: String): List<String> =
         IngredientCatalog.synonymsOf(name).filterNot { it.equals(name, ignoreCase = true) }
 
-    /** Neue eigene Zutat; die Kategorie rät der Katalog. */
-    suspend fun anlegen(name: String): ZutatErgebnis = namensschutz(name) {
+    /**
+     * Neue eigene Zutat; die Kategorie rät der Katalog. Mit [packung] in derselben Transaktion deren Basis (sonst je
+     * 100 g), Werte und Quelle sowie der Strichcode, wenn ihn keine andere Zutat trägt.
+     */
+    suspend fun anlegen(name: String, packung: Packungswerte? = null): ZutatErgebnis = namensschutz(name) {
         val n = nameBereinigt(name)
         val fehler = nameFehler(n)
         if (fehler != null) return@namensschutz ZutatErgebnis.Ungueltig(mapOf(ZutatFeld.NAME to fehler))
@@ -45,20 +48,35 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
             andereMitNamen(n, ausser = null)?.let { return@withTransaction ZutatErgebnis.NameVergeben(it.id, it.canonicalName) }
             val jetzt = uhr()
             val id = UUID.randomUUID().toString()
+            val neu = ZutatEntity(
+                id = id, canonicalName = n, category = IngredientCatalog.guessCategory(n), createdAt = jetzt, updatedAt = jetzt,
+            )
             dao.upsert(
-                ZutatEntity(id = id, canonicalName = n, category = IngredientCatalog.guessCategory(n), createdAt = jetzt, updatedAt = jetzt),
+                if (packung == null) {
+                    neu
+                } else {
+                    neu.mitPackungswerten(packung).copy(barcode = packung.strichcode?.takeIf { dao.mitStrichcode(it) == null })
+                },
             )
             ZutatErgebnis.Gespeichert(id)
         }
     }
 
-    /** Schreibt die gegenüber [vorher] geänderten Felder von [nachher] auf den aktuellen Stand der Zutat. */
-    suspend fun speichern(id: String, vorher: ZutatEntwurf, nachher: ZutatEntwurf): ZutatErgebnis = namensschutz(nachher.name) {
+    /**
+     * Schreibt die gegenüber [vorher] geänderten Felder von [nachher] auf den aktuellen Stand der Zutat. [scan]: die im
+     * Editor übernommene Packung (genaue kJ, Quelle bleibt; siehe [mitAenderungen]).
+     */
+    suspend fun speichern(
+        id: String,
+        vorher: ZutatEntwurf,
+        nachher: ZutatEntwurf,
+        scan: Packungswerte? = null,
+    ): ZutatErgebnis = namensschutz(nachher.name) {
         val fehler = pruefen(vorher, nachher)
         if (fehler.isNotEmpty()) return@namensschutz ZutatErgebnis.Ungueltig(fehler)
         db.withTransaction {
             val aktuell = dao.nachId(id) ?: return@withTransaction ZutatErgebnis.NichtGefunden
-            val neu = aktuell.mitAenderungen(vorher, nachher)
+            val neu = aktuell.mitAenderungen(vorher, nachher, scan = scan)
             // Nur ein geänderter Name kann kollidieren; eine alte Dublette („Äpfel“/„äpfel“) blockiert sonst nichts
             if (neu.canonicalName != aktuell.canonicalName) {
                 andereMitNamen(neu.canonicalName, ausser = id)?.let {
@@ -86,7 +104,12 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
      * Führt [vonId] in [nachId] zusammen. Mit [entwurf] (vorher → nachher) wandern die Eingaben des Editors (ohne Namen)
      * mit: Sie gelten für die Quelle, deren Angaben dann Lücken des Ziels füllen.
      */
-    suspend fun zusammenfuehren(vonId: String, nachId: String, entwurf: Pair<ZutatEntwurf, ZutatEntwurf>? = null): ZutatErgebnis {
+    suspend fun zusammenfuehren(
+        vonId: String,
+        nachId: String,
+        entwurf: Pair<ZutatEntwurf, ZutatEntwurf>? = null,
+        scan: Packungswerte? = null,
+    ): ZutatErgebnis {
         if (vonId == nachId) return ZutatErgebnis.NichtGefunden
         if (entwurf != null) {
             val fehler = pruefen(entwurf.first, entwurf.second) - ZutatFeld.NAME
@@ -95,7 +118,7 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
         return db.withTransaction {
             val quelle = dao.nachId(vonId) ?: return@withTransaction ZutatErgebnis.NichtGefunden
             val ziel = dao.nachId(nachId) ?: return@withTransaction ZutatErgebnis.NichtGefunden
-            val mitEingaben = entwurf?.let { (vorher, nachher) -> quelle.mitAenderungen(vorher, nachher, mitName = false) } ?: quelle
+            val mitEingaben = entwurf?.let { (vorher, nachher) -> quelle.mitAenderungen(vorher, nachher, mitName = false, scan = scan) } ?: quelle
             mitEingaben.barcode?.takeIf { it != quelle.barcode }?.let { code ->
                 dao.nachStrichcode(code, ausser = vonId)?.takeIf { it.id != nachId }
                     ?.let { return@withTransaction ZutatErgebnis.StrichcodeVergeben(it.id, it.canonicalName) }

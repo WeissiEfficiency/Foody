@@ -1,8 +1,10 @@
 package de.foody.feature.zutaten
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -39,7 +41,7 @@ class ZutatenListeScreenTest {
     }
 
     @After
-    fun tearDown() = u.db.close()
+    fun tearDown() = u.schliessen()
 
     private fun zeigen(schrift200: Boolean = false) {
         val vm = u.liste()
@@ -156,5 +158,59 @@ class ZutatenListeScreenTest {
         zeigen(schrift200 = true)
         compose.warteAufText("Reis")
         compose.pruefeNichtsAbgeschnitten()
+    }
+
+    private fun neuOeffnen() {
+        compose.onNodeWithContentDescription("Neue Zutat").performClick()
+        compose.warteAufText("Anlegen")
+    }
+
+    private fun scannen() {
+        compose.onNodeWithText("Packung scannen").performClick()
+        compose.onNode(hasText("Strichcode") and hasAnyAncestor(isPopup())).performClick()
+        compose.waitForIdle()
+    }
+
+    @Test
+    fun neueZutatMitKnopf() {
+        zeigen()
+        neuOeffnen()
+        compose.onNodeWithText("Packung scannen").assertExists()
+    }
+
+    @Test
+    fun hinweisNachScan() {
+        u.scan.packung = haferflocken()
+        zeigen()
+        neuOeffnen()
+        scannen()
+        compose.warteAufText("Werte aus Open Food Facts werden übernommen")
+        compose.onNode(hasSetTextAction() and hasText("Haferflocken")).assertExists()
+        compose.onNodeWithText("Anlegen").performClick()
+        compose.warteBisWeg("Neue Zutat")
+        val z = runBlocking { u.db.zutatDao().nachId(geoeffnet.single()) }
+        assertEquals("Open Food Facts", z?.nutrientSource)
+    }
+
+    @Test
+    fun getippterNameBleibt() {
+        u.scan.packung = haferflocken()
+        zeigen()
+        neuOeffnen()
+        compose.onNode(hasSetTextAction() and hasText("Name")).performTextInput("Hafer")
+        scannen()
+        compose.warteAufText("Werte aus Open Food Facts werden übernommen")
+        compose.onNode(hasSetTextAction() and hasText("Hafer")).assertExists()
+    }
+
+    @Test
+    fun imKatalogOeffnetEditor() {
+        u.zutat("h", "Haferflocken") { it.copy(barcode = TEST_CODE) }
+        u.scan.imKatalog = de.foody.core.scan.ZutatTreffer("h", "Haferflocken")
+        zeigen()
+        neuOeffnen()
+        scannen()
+        compose.warteBisWeg("Anlegen")
+        assertEquals("h", geoeffnet.single())
     }
 }

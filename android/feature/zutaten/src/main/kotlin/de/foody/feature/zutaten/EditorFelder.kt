@@ -29,8 +29,12 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyChip
+import de.foody.core.designsystem.komponenten.FoodyKnopf
+import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.vorausgefuelltFarben
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
+import de.foody.core.scan.ScanTexte
 import de.foody.domain.IngredientCatalog
 import de.foody.domain.NutrientBasis
 
@@ -50,7 +54,7 @@ private fun Klein(text: String) = Text(text, style = MaterialTheme.typography.bo
 
 /**
  * Eingabefeld; [fehler] als Hinweis darunter. „Fertig“ auf der Tastatur oder Verlassen des Feldes meldet [onFertig] –
- * erst dann zeigt der Editor einen Fehler.
+ * erst dann zeigt der Editor einen Fehler. [markiert]: Wert aus einem Scan (Akzentfarbe).
  */
 @Composable
 private fun Feld(
@@ -60,6 +64,7 @@ private fun Feld(
     onWert: (String) -> Unit,
     onFertig: () -> Unit,
     tastatur: KeyboardType = KeyboardType.Decimal,
+    markiert: Boolean = false,
 ) {
     var hatteFokus by remember { mutableStateOf(false) }
     OutlinedTextField(
@@ -76,10 +81,15 @@ private fun Feld(
             capitalization = if (tastatur == KeyboardType.Text) KeyboardCapitalization.Sentences else KeyboardCapitalization.None,
         ),
         keyboardActions = KeyboardActions(onDone = { onFertig() }),
+        colors = vorausgefuelltFarben(markiert),
     )
 }
 
-/** Alle Abschnitte des Editors; jede Eingabe geht als neuer Entwurf an [onAendern]. */
+/**
+ * Alle Abschnitte des Editors; jede Eingabe geht als neuer Entwurf an [onAendern]. Im Abschnitt „Nährwerte“ oben
+ * [scanKnopf]; nach einem Scan „Werte aus [scanQuelle] – bitte prüfen“ und die [markiert]en Felder; [onOnlineAbrufen]
+ * zeigt den Knopf „Online abrufen“.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun EditorFelder(
@@ -89,10 +99,14 @@ internal fun EditorFelder(
     verwendetIn: List<String>,
     onAendern: (ZutatEntwurf) -> Unit,
     onFeldFertig: (ZutatFeld) -> Unit,
+    markiert: Set<ZutatFeld> = emptySet(),
+    scanQuelle: String? = null,
+    onOnlineAbrufen: (() -> Unit)? = null,
+    scanKnopf: @Composable () -> Unit = {},
 ) {
     @Composable
     fun zahl(beschriftung: String, feld: ZutatFeld, wert: String, neu: (String) -> ZutatEntwurf, tastatur: KeyboardType = KeyboardType.Decimal) =
-        Feld(beschriftung, wert, fehler[feld], { onAendern(neu(it)) }, { onFeldFertig(feld) }, tastatur)
+        Feld(beschriftung, wert, fehler[feld], { onAendern(neu(it)) }, { onFeldFertig(feld) }, tastatur, markiert = feld in markiert)
 
     Bereich(null) {
         Feld("Name", e.name, fehler[ZutatFeld.NAME], { onAendern(e.copy(name = it)) }, { onFeldFertig(ZutatFeld.NAME) }, KeyboardType.Text)
@@ -108,6 +122,11 @@ internal fun EditorFelder(
         }
     }
     Bereich("Nährwerte") {
+        scanKnopf()
+        onOnlineAbrufen?.let { FoodyKnopf("Online abrufen", it, art = KnopfArt.TEXT) }
+        scanQuelle?.let {
+            Text(ScanTexte.bittePruefen(it), style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.primaer)
+        }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FoodyChip("je 100 g", e.basis != NutrientBasis.PER_100_ML, { onAendern(e.copy(basis = NutrientBasis.PER_100_G)) })
             FoodyChip("je 100 ml", e.basis == NutrientBasis.PER_100_ML, { onAendern(e.copy(basis = NutrientBasis.PER_100_ML)) })

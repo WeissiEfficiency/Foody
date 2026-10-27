@@ -95,6 +95,14 @@ class DaoTest {
     }
 
     @Test
+    fun zutatMitStrichcode() = runTest {
+        val dao = db.zutatDao()
+        dao.upsert(zutat)
+        assertEquals(zutat, dao.mitStrichcode("4000000000001"))
+        assertNull(dao.mitStrichcode("4000000000002"))
+    }
+
+    @Test
     fun rezepteUndKinder() = runTest {
         db.zutatDao().upsert(zutat)
         db.rezeptDao().upsert(rezept)

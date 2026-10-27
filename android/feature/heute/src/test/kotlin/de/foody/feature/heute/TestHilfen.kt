@@ -18,7 +18,14 @@ import de.foody.core.data.db.PlanEintragEntity
 import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.db.RezeptZutatEntity
 import de.foody.core.data.db.ZutatEntity
+import de.foody.core.data.zutaten.Packungswerte
+import de.foody.core.scan.PackungScan
+import de.foody.core.scan.ProduktSuche
+import de.foody.core.scan.ScanStatus
+import de.foody.core.scan.StrichcodeStatus
+import de.foody.core.scan.ZutatTreffer
 import de.foody.domain.MeasureUnit
+import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
 import org.robolectric.RuntimeEnvironment
 import java.math.BigDecimal
@@ -87,3 +94,28 @@ fun ComposeTestRule.pruefeNichtsAbgeschnitten() {
         }
     assertTrue(abgeschnitten.isEmpty(), "abgeschnitten: $abgeschnitten")
 }
+
+/** Haferflocken je 100 g aus Open Food Facts: 1502 kJ (359 kcal), Eiweiß 13,5, KH 58,7, Zucker 1,2, Fett 7. */
+fun haferflocken(name: String? = "Haferflocken", basis: NutrientBasis? = NutrientBasis.PER_100_G) = Packungswerte(
+    name = name,
+    basis = basis,
+    werte = mapOf(
+        Nutrient.ENERGY_KJ to BigDecimal("1502"), Nutrient.PROTEIN_G to BigDecimal("13.5"), Nutrient.CARBS_G to BigDecimal("58.7"),
+        Nutrient.SUGAR_G to BigDecimal("1.2"), Nutrient.FAT_G to BigDecimal("7"),
+    ),
+    strichcode = "4000000000000",
+    quelle = "Open Food Facts",
+)
+
+/**
+ * Scan ohne Play-Dienste: Der Strichcode ist immer gelesen; trägt ihn [imKatalog], kommt „im Katalog“, sonst [packung]
+ * (ohne: unbekannt).
+ */
+fun testScan(packung: Packungswerte? = null, imKatalog: ZutatTreffer? = null) = PackungScan(
+    leser = { StrichcodeStatus.Gelesen("4000000000000") },
+    tabelle = { ScanStatus.Fehler },
+    suche = { packung?.let { ProduktSuche.Antwort.Gefunden(it) } ?: ProduktSuche.Antwort.Unbekannt },
+    katalog = { imKatalog },
+    play = { true },
+    online = { true },
+)

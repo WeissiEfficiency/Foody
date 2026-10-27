@@ -4,11 +4,18 @@ import androidx.room.Room
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.RezeptZutatEntity
 import de.foody.core.data.db.SyncZustandEntity
+import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.heute.bestand
 import de.foody.core.data.heute.plan
+import de.foody.core.data.zutaten.Packungswerte
+import de.foody.domain.IngredientCatalog
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
+import de.foody.domain.Naehrwerte
+import de.foody.domain.Nutrient
+import de.foody.domain.NutrientBasis
+import de.foody.domain.NutritionResult
 import de.foody.domain.TagebuchArt
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -136,5 +143,120 @@ class TagebuchRepositoryTest {
         val e = assertNotNull(db.tagebuchDao().nachId(id))
         assertEquals("Reispfanne", e.name)
         assertEquals(0, BigDecimal("3000").compareTo(e.energieKj))
+    }
+
+    // --- aus Packung (Phase 6e3) ---
+
+    private fun packung(
+        werte: Map<Nutrient, BigDecimal>,
+        basis: NutrientBasis? = NutrientBasis.PER_100_G,
+        strichcode: String? = null,
+    ) = Packungswerte(name = null, basis = basis, werte = werte, strichcode = strichcode, quelle = "Open Food Facts")
+
+    private fun kjAus(kcal: Int) = NutritionResult.kcalToKj(BigDecimal(kcal))
+
+    private fun kcal(e: TagebuchEintragEntity) = Naehrwerte(e.energieKj, null, null, null, true).kcal
+
+    @Test
+    fun packungOhneHaekchenFrei() = runTest {
+        val zutaten = db.zutatDao().alle().size
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to kjAus(400), Nutrient.PROTEIN_G to BigDecimal("10")))
+        val id = assertNotNull(repo.ausPackung(heute, Mahlzeit.SNACK, " Müsliriegel ", BigDecimal("150"), MeasureUnit.GRAM, p, alsZutat = false))
+        val e = assertNotNull(db.tagebuchDao().nachId(id))
+        assertEquals(TagebuchArt.FREI, e.art)
+        assertEquals("Müsliriegel", e.name)
+        assertEquals(600, kcal(e))
+        assertEquals(0, BigDecimal("15").compareTo(e.eiweiss))
+        assertNull(e.zutatId)
+        assertEquals(zutaten, db.zutatDao().alle().size)
+    }
+
+    @Test
+    fun packungOhneBerechenbareWerteNull() = runTest {
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to kjAus(400)))
+        assertNull(repo.ausPackung(heute, Mahlzeit.SNACK, "Saft", BigDecimal("200"), MeasureUnit.MILLILITER, p, alsZutat = false))
+        assertNull(repo.ausPackung(heute, Mahlzeit.SNACK, "Saft", BigDecimal("200"), MeasureUnit.MILLILITER, p, alsZutat = true))
+        assertTrue(db.tagebuchDao().alle().isEmpty())
+        assertNull(db.zutatDao().alle().firstOrNull { it.canonicalName == "Saft" })
+    }
+
+    @Test
+    fun packungNeueZutat() = runTest {
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1500"), Nutrient.FAT_G to BigDecimal("7")), strichcode = "4001234567890")
+        val id = assertNotNull(
+            repo.ausPackung(heute, Mahlzeit.FRUEHSTUECK, "Haferflocken Extra", BigDecimal("50"), MeasureUnit.GRAM, p, alsZutat = true),
+        )
+        val e = assertNotNull(db.tagebuchDao().nachId(id))
+        assertEquals(TagebuchArt.ZUTAT, e.art)
+        val z = assertNotNull(db.zutatDao().nachId(assertNotNull(e.zutatId)))
+        assertEquals(IngredientCatalog.canonicalName("Haferflocken Extra"), z.canonicalName)
+        assertEquals(IngredientCatalog.guessCategory(z.canonicalName), z.category)
+        assertEquals(BigDecimal("1500"), z.energyKj)
+        assertEquals(BigDecimal("7"), z.fat)
+        assertEquals(NutrientBasis.PER_100_G, z.nutrientBasis)
+        assertEquals("Open Food Facts", z.nutrientSource)
+        assertEquals("4001234567890", z.barcode)
+        assertEquals(z.canonicalName, e.name)
+        assertEquals(0, BigDecimal("50").compareTo(e.menge))
+        assertEquals(MeasureUnit.GRAM, e.einheit)
+        assertEquals(0, BigDecimal("750").compareTo(e.energieKj))
+        assertEquals(Mahlzeit.FRUEHSTUECK.name, e.mahlzeit)
+    }
+
+    @Test
+    fun packungAktualisiertVorhandene() = runTest {
+        val k = IngredientCatalog.canonicalName("Mehl")
+        db.zutatDao().upsert(
+            ZutatEntity(
+                id = "w", canonicalName = k, nutrientBasis = NutrientBasis.PER_100_G, energyKj = BigDecimal("1400"),
+                fat = BigDecimal("1"), fiber = BigDecimal("3"), nutrientSource = "BLS", createdAt = 1, updatedAt = 1,
+            ),
+        )
+        val anzahl = db.zutatDao().alle().size
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1450"), Nutrient.FAT_G to BigDecimal("1.2")))
+        val id = assertNotNull(repo.ausPackung(heute, Mahlzeit.ABENDESSEN, "Mehl", BigDecimal("100"), MeasureUnit.GRAM, p, alsZutat = true))
+        assertEquals(anzahl, db.zutatDao().alle().size)
+        val z = assertNotNull(db.zutatDao().nachId("w"))
+        assertEquals(BigDecimal("1450"), z.energyKj)
+        assertEquals(BigDecimal("1.2"), z.fat)
+        assertEquals(BigDecimal("3"), z.fiber)
+        assertEquals("Open Food Facts", z.nutrientSource)
+        assertEquals(1_000L, z.updatedAt)
+        val e = assertNotNull(db.tagebuchDao().nachId(id))
+        assertEquals("w", e.zutatId)
+        assertEquals(k, e.name)
+    }
+
+    @Test
+    fun packungStrichcodeNurWennFrei() = runTest {
+        db.zutatDao().upsert(ZutatEntity(id = "a", canonicalName = "Saft", barcode = "4001234567890", createdAt = 1, updatedAt = 1))
+        db.zutatDao().upsert(ZutatEntity(id = "b", canonicalName = "Quark", barcode = "40000000", createdAt = 1, updatedAt = 1))
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("300")), strichcode = "4001234567890")
+        val neu = assertNotNull(repo.ausPackung(heute, Mahlzeit.SNACK, "Joghurtdrink", BigDecimal("100"), MeasureUnit.GRAM, p, alsZutat = true))
+        assertNull(db.zutatDao().nachId(assertNotNull(db.tagebuchDao().nachId(neu)?.zutatId))?.barcode)
+        repo.ausPackung(heute, Mahlzeit.SNACK, "Quark", BigDecimal("100"), MeasureUnit.GRAM, p.copy(strichcode = "4009999999999"), alsZutat = true)
+        assertEquals("40000000", db.zutatDao().nachId("b")?.barcode)
+        assertEquals("4001234567890", db.zutatDao().nachId("a")?.barcode)
+    }
+
+    @Test
+    fun packungBasisMl() = runTest {
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("200")), basis = NutrientBasis.PER_100_ML)
+        val frei = assertNotNull(repo.ausPackung(heute, Mahlzeit.SNACK, "Saft", BigDecimal("250"), MeasureUnit.MILLILITER, p, alsZutat = false))
+        assertEquals(0, BigDecimal("500").compareTo(db.tagebuchDao().nachId(frei)?.energieKj))
+        val id = assertNotNull(repo.ausPackung(heute, Mahlzeit.SNACK, "Saft", BigDecimal("250"), MeasureUnit.MILLILITER, p, alsZutat = true))
+        val e = assertNotNull(db.tagebuchDao().nachId(id))
+        assertEquals(MeasureUnit.MILLILITER, e.einheit)
+        assertEquals(0, BigDecimal("500").compareTo(e.energieKj))
+        assertEquals(NutrientBasis.PER_100_ML, db.zutatDao().nachId(assertNotNull(e.zutatId))?.nutrientBasis)
+    }
+
+    @Test
+    fun packungGenaueKj() = runTest {
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1502.3")))
+        val id = assertNotNull(repo.ausPackung(heute, Mahlzeit.SNACK, "Dinkelpops", BigDecimal("100"), MeasureUnit.GRAM, p, alsZutat = true))
+        val e = assertNotNull(db.tagebuchDao().nachId(id))
+        assertEquals(BigDecimal("1502.3"), db.zutatDao().nachId(assertNotNull(e.zutatId))?.energyKj)
+        assertEquals(0, BigDecimal("1502.3").compareTo(e.energieKj))
     }
 }

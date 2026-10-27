@@ -20,6 +20,8 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:data"))
     implementation(project(":core:sync"))
+    // „Packung scannen“ in „Frei“ (Phase 6e3)
+    implementation(project(":core:scan"))
     implementation(project(":domain"))
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

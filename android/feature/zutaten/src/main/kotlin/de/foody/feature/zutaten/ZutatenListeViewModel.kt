@@ -4,11 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.foody.core.data.zutaten.Angleichung
+import de.foody.core.data.zutaten.Packungswerte
 import de.foody.core.data.zutaten.ZutatErgebnis
 import de.foody.core.data.zutaten.ZutatFilter
 import de.foody.core.data.zutaten.ZutatKurz
 import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.data.zutaten.filtern
+import de.foody.core.scan.PackungScan
+import de.foody.core.scan.ScanAusgang
 import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -40,11 +43,17 @@ sealed interface ListeEreignis {
     data class Meldung(val text: String) : ListeEreignis
 }
 
-/** Katalogliste: Suche, Filter, „Neue Zutat“ und „Namen vereinheitlichen“ (Vorschau, dann anwenden). */
+/**
+ * Katalogliste: Suche, Filter, „Neue Zutat“ (mit „Packung scannen“) und „Namen vereinheitlichen“ (Vorschau, dann
+ * anwenden). Packung oder Meldung für den Editor gehen über [ZutatUebergabe].
+ */
 @HiltViewModel
 class ZutatenListeViewModel @Inject constructor(
     private val repo: ZutatenRepository,
     meldungen: ZutatenMeldungen,
+    /** Für den Scan-Knopf im Dialog „Neue Zutat“. */
+    val scan: PackungScan,
+    private val uebergabe: ZutatUebergabe,
 ) : ViewModel() {
     private val suche = MutableStateFlow("")
     private val filter = MutableStateFlow(emptySet<ZutatFilter>())
@@ -58,6 +67,11 @@ class ZutatenListeViewModel @Inject constructor(
 
     /** Vorschau von „Namen vereinheitlichen“; `null` = kein Dialog. */
     val vorschau: StateFlow<List<Angleichung>?> = vorschauStand.asStateFlow()
+
+    private val neuStand = MutableStateFlow<Packungswerte?>(null)
+
+    /** Gescannte Packung für „Neue Zutat“; liegt hier, damit sie Drehen übersteht. */
+    val neuPackung: StateFlow<Packungswerte?> = neuStand.asStateFlow()
 
     private val kanal = Channel<ListeEreignis>(Channel.BUFFERED)
     val ereignisse: Flow<ListeEreignis> = kanal.receiveAsFlow()
@@ -89,9 +103,35 @@ class ZutatenListeViewModel @Inject constructor(
         kanal.send(ListeEreignis.Meldung(angepasstText(repo.vereinheitlichen())))
     }
 
+    fun packungFuerNeu(p: Packungswerte) {
+        neuStand.value = p
+    }
+
+    /** Dialog „Neue Zutat“ abgebrochen: die Packung verwerfen. */
+    fun neuVerwerfen() {
+        neuStand.value = null
+    }
+
+    /** Der gescannte Strichcode gehört schon einer Zutat: deren Editor öffnen, dort „Schon im Katalog“. */
+    fun imKatalog(t: ScanAusgang.ImKatalog) {
+        neuStand.value = null
+        uebergabe.ablegen(t.id, null, "Schon im Katalog")
+        kanal.trySend(ListeEreignis.Oeffnen(t.id))
+    }
+
+    /** „Gibt es schon“ → „Öffnen“: Die Packung geht mit in den Editor der vorhandenen Zutat. */
+    fun vorhandeneOeffnen(id: String) {
+        neuStand.value?.let { uebergabe.ablegen(id, it, null) }
+        neuStand.value = null
+        kanal.trySend(ListeEreignis.Oeffnen(id))
+    }
+
     fun anlegen(name: String) = starten {
-        when (val e = repo.anlegen(name)) {
-            is ZutatErgebnis.Gespeichert -> kanal.send(ListeEreignis.Oeffnen(e.id))
+        when (val e = repo.anlegen(name, neuStand.value)) {
+            is ZutatErgebnis.Gespeichert -> {
+                neuStand.value = null
+                kanal.send(ListeEreignis.Oeffnen(e.id))
+            }
             is ZutatErgebnis.NameVergeben -> kanal.send(ListeEreignis.GibtEsSchon(e.id, e.name))
             else -> Unit // leerer Name: Der Dialog lässt „Anlegen“ dann nicht zu
         }

@@ -13,6 +13,7 @@ import de.foody.core.data.sicherung.Sicherung
 import de.foody.core.data.startdaten.StartdatenLader
 import de.foody.core.data.sync.SyncSpeicher
 import de.foody.core.data.zutaten.ZutatenRepository
+import de.foody.core.scan.ScanEinstellung
 import de.foody.core.sync.Ergebnis
 import de.foody.core.sync.ErsterSync
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,12 +62,15 @@ val TEST_UHR: Clock = Clock.fixed(LocalDate.of(2026, 10, 28).atTime(12, 0).toIns
 
 /**
  * Echte Datenbank, echte Sicherung und Speicher, Konto als [ErsatzKonto]; Prefs `foody` geleert. ViewModel außerhalb der
- * Komposition anlegen.
+ * Komposition anlegen. Room-Abfragen laufen sofort im aufrufenden Thread: Flows wie die Katalog-Anzahl liefern dann schon
+ * beim Anlegen des ViewModels (stabile Referenzbilder).
  */
 internal class EinstellungenTestUmgebung {
     val kontext: Context = RuntimeEnvironment.getApplication()
     val db: FoodyDatenbank = Room.inMemoryDatabaseBuilder(kontext, FoodyDatenbank::class.java)
-        .addCallback(FoodyDatenbank.CALLBACK).allowMainThreadQueries().build()
+        .addCallback(FoodyDatenbank.CALLBACK).allowMainThreadQueries()
+        .setQueryExecutor { it.run() }.setTransactionExecutor { it.run() }
+        .build()
     private val ablage = FotoAblage(kontext)
     val konto = ErsatzKonto()
     val darstellung = DarstellungSpeicher(kontext)
@@ -79,7 +83,11 @@ internal class EinstellungenTestUmgebung {
 
     val zutaten = ZutatenRepository(db) { 1L }
 
-    fun vm(kontoZugriff: KontoZugriff = konto) = EinstellungenViewModel(kontext, darstellung, ziel, sicherung, zutaten, kontoZugriff, TEST_UHR)
+    /** Nach dem Leeren der Prefs angelegt: Online-Suche steht auf dem Standard (an). */
+    val scan = ScanEinstellung(kontext)
+
+    fun vm(kontoZugriff: KontoZugriff = konto) =
+        EinstellungenViewModel(kontext, darstellung, ziel, sicherung, zutaten, kontoZugriff, scan, TEST_UHR)
 
     fun verbinden() {
         konto.stand.value = VerbindungsZustand(verbunden = true, adresse = "http://10.0.2.2:8081", letzterSync = null, letzterFehler = null)

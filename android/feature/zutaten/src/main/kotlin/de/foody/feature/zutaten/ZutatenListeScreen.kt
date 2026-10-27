@@ -50,6 +50,8 @@ import de.foody.core.data.zutaten.ZutatKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyChip
+import de.foody.core.scan.PackungScanKnopf
+import de.foody.core.scan.ScanTexte
 import kotlinx.coroutines.launch
 
 /** Lesebreite der Seiten. */
@@ -71,6 +73,7 @@ private val FILTER = listOf(
 fun ZutatenListeRoute(onZutat: (String) -> Unit, onZurueck: () -> Unit, vm: ZutatenListeViewModel = hiltViewModel()) {
     val z by vm.zustand.collectAsStateWithLifecycle()
     val vorschau by vm.vorschau.collectAsStateWithLifecycle()
+    val packung by vm.neuPackung.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var suche by rememberSaveable { mutableStateOf(z.suche) }
@@ -132,8 +135,11 @@ fun ZutatenListeRoute(onZutat: (String) -> Unit, onZurueck: () -> Unit, vm: Zuta
         NeueZutatDialog(
             gibtEsSchon = gibtEsSchon?.second,
             onAnlegen = vm::anlegen,
-            onOeffnen = { gibtEsSchon?.first?.let(onZutat); neu = false },
-            onAbbrechen = { neu = false; gibtEsSchon = null },
+            onOeffnen = { gibtEsSchon?.first?.let(vm::vorhandeneOeffnen) },
+            onAbbrechen = { neu = false; gibtEsSchon = null; vm.neuVerwerfen() },
+            knopf = { PackungScanKnopf(vm.scan, onPackung = vm::packungFuerNeu, onImKatalog = vm::imKatalog) },
+            packungHinweis = packung?.let { ScanTexte.werdenUebernommen(it.quelle) },
+            namensVorschlag = packung?.let(::nameAusPackung),
         )
     }
     vorschau?.let { VereinheitlichenDialog(it, onAnwenden = vm::anwenden, onAbbrechen = vm::vorschauSchliessen) }

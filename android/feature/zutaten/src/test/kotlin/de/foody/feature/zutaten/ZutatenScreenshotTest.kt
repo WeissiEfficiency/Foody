@@ -2,13 +2,16 @@ package de.foody.feature.zutaten
 
 import android.provider.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -30,7 +33,8 @@ import java.math.BigDecimal
 
 /**
  * Referenzbilder des Zutatenkatalogs: Liste hell/dunkel, Liste ohne Treffer, Editor Handy/Tablet, dazu Vorschau,
- * Zielwahl-Blatt und „In Verwendung“ als ganzer Bildschirm.
+ * Zielwahl-Blatt und „In Verwendung“ als ganzer Bildschirm; nach einem Scan (Fake, Phase 6e3) der Editor mit übernommenen,
+ * markierten Werten und „Neue Zutat“ mit Packung.
  */
 @OptIn(ExperimentalRoborazziApi::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -65,7 +69,7 @@ class ZutatenScreenshotTest {
     }
 
     @After
-    fun tearDown() = u.db.close()
+    fun tearDown() = u.schliessen()
 
     private fun zeigen(dunkel: Boolean = false, inhalt: @Composable () -> Unit) {
         compose.setContent { FoodyTheme(dunkel = dunkel, unschaerfe = false) { FoodyHintergrund { inhalt() } } }
@@ -126,6 +130,39 @@ class ZutatenScreenshotTest {
     fun editorTablet() {
         editor("seed-reis")
         bild("editor_hell_tablet")
+    }
+
+    /** „Packung scannen“ → „Strichcode“ (Eintrag im Menü); [TestScan] liefert die Haferflocken. Im Dialog gibt es nichts zu rollen. */
+    private fun scannen(rollen: Boolean = true) {
+        u.scan.packung = haferflocken()
+        val knopf = compose.onNodeWithText("Packung scannen")
+        (if (rollen) knopf.performScrollTo() else knopf).performClick()
+        compose.onNode(hasText("Strichcode") and hasAnyAncestor(isPopup())).performClick()
+        compose.waitForIdle()
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h1600dp")
+    fun editorMitPackung() {
+        editor("seed-reis")
+        scannen()
+        compose.warteAufText("Werte aus Open Food Facts – bitte prüfen")
+        bild("editor_packung_hell_handy")
+    }
+
+    /**
+     * Schmales Handy (320 dp): Unter Robolectric wird ein Dialog mit Textfeld ab etwa 360 dp Breite nie „idle“
+     * (Testumgebung, nicht die App; vgl. EintragenBlattTest in :feature:heute).
+     */
+    @Test
+    @Config(qualifiers = "w320dp-h891dp")
+    fun neuMitPackung() {
+        liste()
+        compose.onNodeWithContentDescription("Neue Zutat").performClick()
+        compose.warteAufText("Anlegen")
+        scannen(rollen = false)
+        compose.warteAufText("Werte aus Open Food Facts werden übernommen")
+        bildschirm("neu_packung_hell_handy")
     }
 
     @Test

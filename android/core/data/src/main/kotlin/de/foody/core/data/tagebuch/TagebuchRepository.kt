@@ -5,9 +5,18 @@ import de.foody.core.data.alsIngredient
 import de.foody.core.data.alsRecipe
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.TagebuchEintragEntity
+import de.foody.core.data.db.ZutatEntity
+import de.foody.core.data.zutaten.Packungswerte
+import de.foody.core.data.zutaten.mitPackungswerten
+import de.foody.core.data.zutaten.nameBereinigt
+import de.foody.core.data.zutaten.zutatMitNamen
+import de.foody.domain.Ingredient
+import de.foody.domain.IngredientCatalog
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Naehrwerte
+import de.foody.domain.NutrientBasis
+import de.foody.domain.NutrientProfile
 import de.foody.domain.Tagebuch
 import de.foody.domain.TagebuchArt
 import kotlinx.coroutines.flow.Flow
@@ -56,6 +65,40 @@ class TagebuchRepository(private val db: FoodyDatenbank, private val uhr: () -> 
         datum: LocalDate, mahlzeit: Mahlzeit, name: String, kcal: Int,
         eiweiss: BigDecimal?, kohlenhydrate: BigDecimal?, fett: BigDecimal?,
     ): String = speichern(neu(datum, mahlzeit, TagebuchArt.FREI, name.trim(), Tagebuch.freiWerte(kcal, eiweiss, kohlenhydrate, fett)))
+
+    /**
+     * Trägt eine gescannte Packung ein (wie v1). [werte]: je 100 g/ml, wie sie im Formular stehen (kJ schon nach der
+     * Energie-Regel). Ohne [alsZutat] ein Eintrag „Frei“ mit den Werten der Menge. Mit [alsZutat] bekommt die Zutat
+     * gleichen Namens ([zutatMitNamen]) die Werte als Block, sonst entsteht eine neue (kanonischer Name, Kategorie
+     * geraten); den Strichcode bekommt sie nur, wenn sie keinen hat und keine andere ihn trägt. Danach ein Eintrag
+     * „Zutat“ über [ausZutat]. Alles in einer Transaktion; `null` (nichts geschrieben) ohne Namen oder wenn die Menge
+     * nicht berechenbar ist.
+     */
+    suspend fun ausPackung(
+        datum: LocalDate, mahlzeit: Mahlzeit, name: String, menge: BigDecimal, einheit: MeasureUnit,
+        werte: Packungswerte, alsZutat: Boolean,
+    ): String? = db.withTransaction {
+        val n = nameBereinigt(name)
+        if (n.isEmpty()) return@withTransaction null
+        if (!alsZutat) {
+            val profil = NutrientProfile(werte.basis ?: NutrientBasis.PER_100_G, werte.werte, werte.quelle)
+            val w = Tagebuch.naehrwerteZutat(Ingredient("", n, nutrients = profil), menge, einheit) ?: return@withTransaction null
+            return@withTransaction speichern(neu(datum, mahlzeit, TagebuchArt.FREI, n, w))
+        }
+        val zutaten = db.zutatDao()
+        val jetzt = uhr()
+        val basis = zutatMitNamen(zutaten.alle(), n) ?: IngredientCatalog.canonicalName(n).let { k ->
+            ZutatEntity(
+                id = UUID.randomUUID().toString(), canonicalName = k, category = IngredientCatalog.guessCategory(k),
+                createdAt = jetzt, updatedAt = jetzt,
+            )
+        }
+        val code = basis.barcode ?: werte.strichcode?.takeIf { zutaten.mitStrichcode(it) == null }
+        val zutat = basis.mitPackungswerten(werte).copy(barcode = code, updatedAt = jetzt)
+        Tagebuch.naehrwerteZutat(zutat.alsIngredient(), menge, einheit) ?: return@withTransaction null
+        zutaten.upsert(zutat)
+        ausZutat(datum, mahlzeit, zutat.id, menge, einheit)
+    }
 
     /**
      * Ändert Menge (Portionen bzw. Zutatmenge), Mahlzeit und Tag. Rezept- und Zutatwerte werden im Verhältnis

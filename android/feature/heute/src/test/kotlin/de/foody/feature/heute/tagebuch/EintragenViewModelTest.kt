@@ -11,6 +11,7 @@ import de.foody.domain.TagebuchArt
 import de.foody.feature.heute.bestand
 import de.foody.feature.heute.planen
 import de.foody.feature.heute.testDatenbank
+import de.foody.feature.heute.testScan
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -45,7 +46,7 @@ class EintragenViewModelTest {
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         db = testDatenbank()
-        vm = EintragenViewModel(HeuteRepository(db), TagebuchRepository(db) { 1L }, db)
+        vm = EintragenViewModel(HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan())
         vm.oeffnen(heute, Mahlzeit.ABENDESSEN)
     }
 

@@ -13,8 +13,10 @@ import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.github.takahirom.roborazzi.captureScreenRoboImage
+import de.foody.core.data.db.ZutatEntity
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -22,10 +24,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import kotlin.test.assertEquals
 
 /**
  * Referenzbilder der Einstellungsseite: nicht verbunden und verbunden (gesperrt) – hell/dunkel × Handy/Tablet –, dazu
- * die Rückfrage „Alle Daten löschen?“ als ganzer Bildschirm.
+ * die Rückfrage „Alle Daten löschen?“ als ganzer Bildschirm. Drei Zutaten im Katalog (Zeile „Zutatenkatalog 3“).
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -42,7 +45,15 @@ class EinstellungenScreenshotTest {
         Settings.Global.putFloat(app.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 0f)
         u = EinstellungenTestUmgebung()
         u.ziel.setzen(2000)
+        runBlocking {
+            listOf("Reis", "Zwiebel", "Haferflocken").forEachIndexed { i, n ->
+                u.db.zutatDao().upsert(ZutatEntity(id = "z$i", canonicalName = n, createdAt = 1, updatedAt = 1))
+            }
+        }
     }
+
+    /** ViewModel mit fertigem Zustand: Die Katalog-Anzahl muss vor der Aufnahme da sein, sonst fehlt sie im Bild. */
+    private fun vm(): EinstellungenViewModel = u.vm().also { assertEquals(3, it.zustand.value.zutaten) }
 
     @After
     fun tearDown() = u.db.close()
@@ -65,7 +76,7 @@ class EinstellungenScreenshotTest {
     @Test
     @Config(qualifiers = "w411dp-h891dp")
     fun loeschenRueckfrageHandy() {
-        val vm = u.vm()
+        val vm = vm()
         compose.setContent {
             FoodyTheme(dunkel = false, unschaerfe = false) {
                 FoodyHintergrund { EinstellungenRoute({}, {}, {}, vm = vm, dateiwahl = keineDateien) }
@@ -82,7 +93,7 @@ class EinstellungenScreenshotTest {
         for (verbunden in listOf(false, true)) {
             if (verbunden) u.verbinden()
             for (dunkel in listOf(false, true)) {
-                val vm = u.vm()
+                val vm = vm()
                 val name = "${if (verbunden) "verbunden" else "getrennt"}_${if (dunkel) "dunkel" else "hell"}_$geraet"
                 captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
                     FoodyTheme(dunkel = dunkel, unschaerfe = false) {

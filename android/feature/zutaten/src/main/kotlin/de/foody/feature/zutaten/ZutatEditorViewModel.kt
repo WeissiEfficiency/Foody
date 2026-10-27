@@ -3,12 +3,17 @@ package de.foody.feature.zutaten
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.foody.core.data.zutaten.Packungswerte
 import de.foody.core.data.zutaten.ZutatEntwurf
 import de.foody.core.data.zutaten.ZutatErgebnis
 import de.foody.core.data.zutaten.ZutatFeld
 import de.foody.core.data.zutaten.ZutatKurz
 import de.foody.core.data.zutaten.ZutatenRepository
+import de.foody.core.data.zutaten.mitPackung
 import de.foody.core.data.zutaten.pruefen
+import de.foody.core.scan.OnlineSucheErlaubt
+import de.foody.core.scan.PackungScan
+import de.foody.core.scan.ScanAusgang
 import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -23,7 +28,9 @@ import kotlinx.coroutines.launch
 /**
  * Zustand des Editors. [vorher] ist der Stand beim Öffnen (gespeichert werden nur Abweichungen davon); [fehler] zeigt
  * nur Felder, die der Nutzer verlassen hat, nach „Speichern“ alle; [ziele] = andere Zutaten fürs Zusammenführen;
- * [rezepte] = Zahl der Rezepte mit dieser Zutat ([verwendetIn] fasst gleichnamige Rezepte zusammen).
+ * [rezepte] = Zahl der Rezepte mit dieser Zutat ([verwendetIn] fasst gleichnamige Rezepte zusammen). Nach einem Scan:
+ * [markiert] = Felder, die noch dem Scanwert gleichen, [scanQuelle] für „Werte aus … – bitte prüfen“;
+ * [imKatalogSelbst] = Strichcode, der schon an dieser Zutat hängt und online abgerufen werden darf („Online abrufen“).
  */
 data class EditorZustand(
     val geladen: Boolean = false,
@@ -35,6 +42,9 @@ data class EditorZustand(
     val ziele: List<ZutatKurz> = emptyList(),
     val rezepte: Int = 0,
     val laeuft: Boolean = false,
+    val markiert: Set<ZutatFeld> = emptySet(),
+    val scanQuelle: String? = null,
+    val imKatalogSelbst: String? = null,
 ) {
     val geaendert: Boolean get() = entwurf != vorher
 }
@@ -48,14 +58,24 @@ sealed interface EditorEreignis {
 
     data class InVerwendung(val rezepte: Int) : EditorEreignis
 
+    /** Der gescannte Strichcode gehört der Zutat [id] („[name]“): Zusammenführen anbieten. */
+    data class StrichcodeGehoert(val id: String, val name: String) : EditorEreignis
+
     data class Meldung(val text: String) : EditorEreignis
 }
 
-/** Editor einer Zutat: Entwurf bearbeiten, speichern, löschen, zusammenführen. Meldungen beim Schließen gehen an die Liste. */
+/**
+ * Editor einer Zutat: Entwurf bearbeiten, speichern, löschen, zusammenführen, Packung scannen. Meldungen beim Schließen
+ * gehen an die Liste.
+ */
 @HiltViewModel
 class ZutatEditorViewModel @Inject constructor(
     private val repo: ZutatenRepository,
     private val meldungen: ZutatenMeldungen,
+    /** Für den Scan-Knopf und „Online abrufen“. */
+    val scan: PackungScan,
+    private val online: OnlineSucheErlaubt,
+    private val uebergabe: ZutatUebergabe,
 ) : ViewModel() {
     private val stand = MutableStateFlow(EditorZustand())
     val zustand: StateFlow<EditorZustand> = stand.asStateFlow()
@@ -66,6 +86,9 @@ class ZutatEditorViewModel @Inject constructor(
     private var id: String? = null
     private var sichtbar = emptySet<ZutatFeld>()
     private var zusatz = emptyMap<ZutatFeld, String>()
+
+    /** Die zuletzt übernommene Packung; geht beim Speichern mit (genaue kJ, Quelle bleibt). */
+    private var packung: Packungswerte? = null
 
     /** Der Editor ist (durch eigene Aktion oder weil die Zutat verschwand) fertig: weitere Meldungen unterdrücken. */
     private var fertig = false
@@ -83,6 +106,11 @@ class ZutatEditorViewModel @Inject constructor(
                     !stand.value.geladen -> {
                         val e = ZutatEntwurf.aus(z)
                         stand.update { it.copy(geladen = true, vorher = e, entwurf = e, synonyme = repo.synonyme(z.canonicalName)) }
+                        // Aus „Neue Zutat“: gescannte Packung übernehmen bzw. „Schon im Katalog“ melden
+                        uebergabe.abholen(id)?.let { (packung, meldung) ->
+                            packung?.let(::packungUebernehmen)
+                            meldung?.let { kanal.send(EditorEreignis.Meldung(it)) }
+                        }
                     }
                 }
             }
@@ -97,8 +125,44 @@ class ZutatEditorViewModel @Inject constructor(
 
     fun aendern(neu: ZutatEntwurf) {
         zusatz = emptyMap()
-        stand.update { it.copy(entwurf = neu) }
+        stand.update { it.copy(entwurf = neu, markiert = nochMarkiert(it.markiert, neu, packung)) }
         fehlerZeigen()
+    }
+
+    /** Scan-Ergebnis übernehmen und markieren; Fehler übernommener Werte zeigen sich sofort. */
+    fun packungUebernehmen(p: Packungswerte) {
+        val e = stand.value.entwurf ?: return
+        val (neu, markiert) = e.mitPackung(p)
+        packung = p
+        zusatz = emptyMap()
+        sichtbar = sichtbar + markiert
+        stand.update { it.copy(entwurf = neu, markiert = markiert, scanQuelle = p.quelle, imKatalogSelbst = null) }
+        fehlerZeigen()
+    }
+
+    /**
+     * Der Strichcode gehört schon einer Zutat: dieser → Meldung, und „Online abrufen“, wenn die Online-Suche an ist;
+     * einer anderen → Zusammenführen anbieten.
+     */
+    fun imKatalog(t: ScanAusgang.ImKatalog) {
+        if (fertig) return
+        if (t.id == id) {
+            stand.update { it.copy(imKatalogSelbst = t.strichcode.takeIf { online.erlaubt() }) }
+            kanal.trySend(EditorEreignis.Meldung(GEHOERT_SCHON))
+        } else {
+            kanal.trySend(EditorEreignis.StrichcodeGehoert(t.id, t.name))
+        }
+    }
+
+    /** Werte zum Strichcode dieser Zutat bei Open Food Facts holen (ohne Katalog-Schritt). */
+    fun onlineAbrufen() {
+        val code = stand.value.imKatalogSelbst ?: return
+        starten { _, _, _ ->
+            when (val a = scan.online(code)) {
+                is ScanAusgang.Gefunden -> packungUebernehmen(a.packung)
+                else -> kanal.send(EditorEreignis.Meldung(abrufMeldung(a)))
+            }
+        }
     }
 
     /** Feld verlassen oder „Fertig“ gedrückt: ab jetzt zeigt es seinen Fehler. */
@@ -112,7 +176,7 @@ class ZutatEditorViewModel @Inject constructor(
         fehlerZeigen()
         if (stand.value.fehler.isNotEmpty()) return
         starten { id, vorher, entwurf ->
-            when (val e = repo.speichern(id, vorher, entwurf)) {
+            when (val e = repo.speichern(id, vorher, entwurf, packung)) {
                 is ZutatErgebnis.Gespeichert -> schliessen(null)
                 is ZutatErgebnis.NameVergeben -> kanal.send(EditorEreignis.NameVergeben(e.id, e.name))
                 is ZutatErgebnis.StrichcodeVergeben -> strichcodeVergeben(e.name)
@@ -131,10 +195,10 @@ class ZutatEditorViewModel @Inject constructor(
         }
     }
 
-    /** Diese Zutat in [nachId] zusammenführen; ungespeicherte Eingaben wandern mit. */
+    /** Diese Zutat in [nachId] zusammenführen; ungespeicherte Eingaben (samt übernommener Packung) wandern mit. */
     fun zusammenfuehren(nachId: String) = starten { id, vorher, entwurf ->
         val mit = if (entwurf != vorher) vorher to entwurf else null
-        when (val e = repo.zusammenfuehren(id, nachId, mit)) {
+        when (val e = repo.zusammenfuehren(id, nachId, mit, packung)) {
             is ZutatErgebnis.Zusammengefuehrt -> schliessen("Zusammengeführt in „${e.name}“")
             // Fehlt diese Zutat selbst, schließt der Editor; sonst ist das Ziel weg
             is ZutatErgebnis.NichtGefunden ->

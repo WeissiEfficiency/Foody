@@ -34,7 +34,7 @@ class ZutatenListeViewModelTest {
 
     @After
     fun tearDown() {
-        u.db.close()
+        u.schliessen()
         Dispatchers.resetMain()
     }
 

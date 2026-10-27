@@ -31,6 +31,11 @@ internal fun InVerwendungDialog(rezepte: Int, onZusammenfuehren: () -> Unit, onA
 internal fun NameVergebenDialog(name: String, onZusammenfuehren: () -> Unit, onAbbrechen: () -> Unit) =
     Frage(null, "„$name“ gibt es schon. Diese Zutat damit zusammenführen?", "Zusammenführen", onZusammenfuehren, onAbbrechen)
 
+/** Der gescannte Strichcode gehört schon einer anderen Zutat. */
+@Composable
+internal fun StrichcodeGehoertDialog(name: String, onZusammenfuehren: () -> Unit, onAbbrechen: () -> Unit) =
+    Frage(null, "Diesen Strichcode hat schon „$name“.", "Zusammenführen …", onZusammenfuehren, onAbbrechen)
+
 @Composable
 internal fun ZusammenfuehrenFrage(text: String, onJa: () -> Unit, onNein: () -> Unit) =
     Frage(null, text, "Zusammenführen", onJa, onNein)

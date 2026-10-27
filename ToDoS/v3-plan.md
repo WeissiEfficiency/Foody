@@ -45,7 +45,7 @@ Später, nicht in V3: Rezept-Import per Web-Link, Wochenplan wiederholen/als Vor
 android/app                 :app                 Navigation, Hilt-Zusammenbau
 android/feature/<bereich>   :feature:heute, :feature:rezepte, :feature:kochen, :feature:woche,
                             :feature:einkauf, :feature:einstellungen
-android/core/<bereich>      :core:designsystem, :core:data, :core:sync, :core:ki
+android/core/<bereich>      :core:designsystem, :core:data, :core:sync, :core:scan, :core:ki
 shared/domain               :domain              bleibt, wird ergänzt und korrigiert
 shared/sync-protocol        :sync-protocol       Protokoll 2, eingefroren für die v1-App, entfällt in Phase 8
 shared/api-protocol         :api-protocol        Protokoll 3: ein Konto, ohne Haushalte und Vorrat
@@ -54,9 +54,9 @@ server/start                :server              main, Docker
 build-logic/                                     Convention-Plugins
 ```
 
-Scan liegt in `:feature:heute` (Tagebuch) und wird vom Katalog in `:feature:einstellungen` über eine schmale
-Schnittstelle in `:core:data` genutzt; Timer liegt in `:feature:kochen`. `:core:testing` erst, wenn zwei Module
-dieselben Test-Helfer brauchen. Abhängigkeiten nur nach unten; Features kennen sich nicht.
+Scan liegt in `:core:scan` und wird von Tagebuch (`:feature:heute`) und Zutatenkatalog (`:feature:zutaten`) genutzt
+([ADR 0013](../docs/adr/0013-core-scan-fuer-tagebuch-und-katalog.md)); Timer liegt in `:feature:kochen`.
+`:core:testing` erst, wenn zwei Module dieselben Test-Helfer brauchen. Abhängigkeiten nur nach unten; Features kennen sich nicht.
 
 ## Phasen
 
@@ -182,7 +182,8 @@ Bilder gefunden und behoben: Inhalte auf dem Tablet über die volle Breite (jetz
       „Erneut anmelden“ nach dem v1-Update (übernimmt nur Token und Konto-ID) gibt es seit Phase 5
 - [x] Einstellungen 6e2: Zutatenkatalog – Spec
       [`2026-10-25-v3-phase6e2-zutaten-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6e2-zutaten-design.md)
-- [ ] Einstellungen 6e3: „Packung scannen“, Online-Produktsuche an/aus
+- [x] Einstellungen 6e3: „Packung scannen“, Online-Produktsuche an/aus – Spec
+      [`2026-10-26-v3-phase6e3-scan-design.md`](../docs/superpowers/specs/2026-10-26-v3-phase6e3-scan-design.md)
 
 **Ergebnis 6a Rezepte** (2026-10-24): `:feature:rezepte` mit Bildraster, Suche und Filterchips, Detail mit
 Portionen und Nährwerttabelle, Editor mit Zutaten als Freitext je Zeile und Foto, Markdown-Import (Dateien oder
@@ -242,6 +243,25 @@ Sichtprüfung auf dem Emulator gegen den Test-Server (249 Zutaten): Filter, Such
 anlegen und bearbeiten (Feldfehler „8 bis 14 Ziffern“, „Änderungen verwerfen?“), zwei Testzutaten zusammengeführt,
 gelöscht, „In 45 Rezepten verwendet“ bei Zwiebel, Synchronisieren ohne Fehler. Dabei behoben: „+“ und „Speichern“ lagen
 hinter der Navigationsleiste. „Namen vereinheitlichen“ auf echten Daten nur als Vorschau („schon einheitlich“).
+
+**Ergebnis 6e3 Packung scannen** (2026-10-27): neues Modul `:core:scan` (ADR 0013) mit dem Ablauf der v1 – Strichcode
+(Google Code Scanner) → eigener Katalog → Open Food Facts (abschaltbar) → Foto der Nährwerttabelle (Kamera oder
+Galerie, ML Kit) – und dem Knopf „Packung scannen“. Scannen im Tagebuch „Frei“ (Packung mit Menge, markierten Werten
+je 100 g/ml, Vorschau und Häkchen „Als Zutat speichern“ bzw. „Zutat „…“ aktualisieren“; „im Katalog“ → Weg „Zutat“),
+im Zutateneditor (markierte Werte, „Online abrufen“, fremder Strichcode → Zusammenführen) und in „Neue Zutat“.
+Unverändertes kcal speichert die genauen kJ der Packung; die Scan-Quelle gilt nicht als „Eigene Angabe“. Schalter
+„Online-Produktsuche“ in den Einstellungen (v1-Schlüssel, Standard an). Belegt durch Daten-, Ablauf-, Open-Food-Facts-,
+Knopf-, ViewModel- und Bildschirmtests mit einem Fake-Scan und 4 neuen Roborazzi-Bildern (die Einstellungsbilder zeigen
+jetzt stabil die Katalog-Anzahl). Sichtprüfung auf dem Emulator (Play-Store-Abbild, ohne Server – der Scan braucht
+keinen): Galeriefoto einer Nährwerttabelle im Tagebuch → alle Werte richtig erkannt, Basis „je 100 g“, 60 g → „= 227
+kcal“, Eintrag gespeichert und „Haferflocken“ als Zutat angelegt (Trockenwaren); „Neue Zutat“ mit Foto legt die Zutat
+mit Werten an; im Editor alle sieben Werte markiert (gesättigte Fettsäuren nicht mit Fett verwechselt); Code Scanner
+öffnet und bricht sauber ab; Schalter schreibt `onlineProduktsuche`. Nicht belegt: Strichcode-Treffer bei Open Food
+Facts (im Emulator lässt sich kein Code zeigen). Gesamtreview: 6 Befunde behoben, darunter das Kamerafoto nach
+Prozessende (das Aufräumen löschte es vor der Erkennung; im Emulator mit beendetem Prozess nachgestellt, vorher
+„Scannen hat nicht geklappt“, jetzt erkannt), Zusammenführen mit gescannter Packung und alte Werte bei neuer Basis.
+Gesehen, aber älter als 6e3: Menüs und Dialoge haben den lila
+Material-Standardhintergrund, weil das Farbschema die `surfaceContainer*`-Farben nicht setzt.
 
 **Fertig, wenn** alle App-Abschnitte der Abnahmeliste abgehakt sind und kein Screen über 300 Zeilen hat.
 

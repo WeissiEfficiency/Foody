@@ -28,6 +28,7 @@ import de.foody.feature.heute.HeuteViewModel
 import de.foody.feature.heute.Zeitgeber
 import de.foody.feature.heute.bestand
 import de.foody.feature.heute.testDatenbank
+import de.foody.feature.heute.testScan
 import de.foody.feature.heute.warteAufText
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -78,7 +79,7 @@ class EintragenBlattTest {
             Zeitgeber { MutableStateFlow(LocalDateTime.of(heute, LocalTime.of(8, 0))) },
         )
     }
-    private val eintragen by lazy { EintragenViewModel(HeuteRepository(db), tagebuch, db) }
+    private val eintragen by lazy { EintragenViewModel(HeuteRepository(db), tagebuch, db, testScan()) }
 
     private val heuteInhalt = @androidx.compose.runtime.Composable {
         FoodyTheme { HeuteRoute({ _, _ -> }, {}, {}, {}, {}, vm = vm, eintragenVm = eintragen) }

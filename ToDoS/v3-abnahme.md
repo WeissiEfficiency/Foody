@@ -56,19 +56,20 @@ ist. Grundlage: [`v2-abnahme.md`](v2-abnahme.md), gekürzt nach dem Review vom 2
 - [x] Nährwerte beim Eintragen festhalten (ADR 0007) (Phase 5, `TagebuchRepositoryTest`)
 - [x] Einträge ändern (Menge skaliert die Werte), löschen (Phase 5, mit „Rückgängig“)
 - [x] Tagesbilanz gegen das Tagesziel; „Alle Einträge“ (Phase 5; Tagesziel einstellen in Phase 6)
-- [ ] Packung scannen: Strichcode → Katalog → Open Food Facts (abschaltbar) → Foto der Nährwerttabelle
+- [x] Packung scannen: Strichcode → Katalog → Open Food Facts (abschaltbar) → Foto der Nährwerttabelle
+      (Phase 6e3, `:core:scan`; im Tagebuch „Frei“, `PackungScanTest`, `EintragenPackungTest`)
 
 ## Einstellungen – `:feature:einstellungen`
 - [x] Server verbinden: Adresse, Anmelden, Sync-Stand, „Jetzt synchronisieren“, Sync-Probleme, Trennen mit Rückfrage
       (Phase 5, `VerbindenScreenTest`; Sync-Probleme als letzter Fehler im Klartext)
-- [ ] Zutatenkatalog: Dichte, Stückgewicht, Synonyme, Dubletten zusammenführen, Strichcode an der Zutat, Scan
-      (Phase 6e2 erledigt bis auf den Scan, der folgt in 6e3)
+- [x] Zutatenkatalog: Dichte, Stückgewicht, Synonyme, Dubletten zusammenführen, Strichcode an der Zutat, Scan
+      (Phase 6e2; Scan im Editor und in „Neue Zutat“ seit Phase 6e3, `ZutatEditorScanTest`, `ZutatenListeScanTest`)
 - [x] Startdaten mit `SeedData.VERSION`-Aktualisierung (Phase 5, `StartdatenLaderTest`)
 - [x] Sicherung als ZIP (Daten und Fotos), Wiederherstellung (auch v1-Dateien), vollständige lokale Löschung (Phase 6e1;
       Löschen spielt den Startkatalog neu ein; beides gesperrt, solange der Sync verbunden ist)
 - [x] Darstellung hell / dunkel / System (Phase 6e1, v1-Schlüssel `themeMode`)
 - [x] Tagesziel (Phase 6e1, 500–10.000 kcal)
-- [ ] Online-Produktsuche beim Scan an/aus
+- [x] Online-Produktsuche beim Scan an/aus (Phase 6e3, Abschnitt „Zutaten“, v1-Schlüssel, `ScanEinstellungTest`)
 
 ## KI – `:core:ki`, `/ki/*`
 - [ ] Rezept aus Foto oder Freitext erfassen

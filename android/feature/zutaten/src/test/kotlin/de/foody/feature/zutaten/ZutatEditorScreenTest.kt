@@ -2,8 +2,10 @@ package de.foody.feature.zutaten
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -14,6 +16,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.scan.ZutatTreffer
 import de.foody.domain.IngredientCatalog
 import de.foody.domain.NutrientBasis
 import org.junit.After
@@ -25,6 +28,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.math.BigDecimal
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -42,7 +46,7 @@ class ZutatEditorScreenTest {
     }
 
     @After
-    fun tearDown() = u.db.close()
+    fun tearDown() = u.schliessen()
 
     private fun zeigen(id: String, schrift200: Boolean = false): ZutatEditorViewModel {
         val vm = u.editor()
@@ -208,5 +212,58 @@ class ZutatEditorScreenTest {
         reis()
         zeigen("seed-reis", schrift200 = true)
         compose.pruefeNichtsAbgeschnitten()
+    }
+
+    /** „Packung scannen“ → „Strichcode“ (Eintrag im Menü, nicht der Abschnitt gleichen Namens). */
+    private fun scannen() {
+        compose.onNodeWithText("Packung scannen").performScrollTo().performClick()
+        compose.onNode(hasText("Strichcode") and hasAnyAncestor(isPopup())).performClick()
+        compose.waitForIdle()
+    }
+
+    @Test
+    fun knopfImNaehrwertAbschnitt() {
+        reis()
+        zeigen("seed-reis")
+        val knopf = compose.onNodeWithText("Packung scannen").fetchSemanticsNode().boundsInRoot
+        val abschnitt = compose.onNodeWithText("NÄHRWERTE").fetchSemanticsNode().boundsInRoot
+        val kcal = feld("kcal").fetchSemanticsNode().boundsInRoot
+        assertTrue(knopf.top > abschnitt.bottom - 0.5f && knopf.bottom < kcal.top + 0.5f, "Knopf $knopf, Abschnitt $abschnitt, kcal $kcal")
+    }
+
+    @Test
+    fun markierteFelder() {
+        reis()
+        u.scan.packung = haferflocken()
+        val vm = zeigen("seed-reis")
+        scannen()
+        compose.warteAufText("Werte aus Open Food Facts – bitte prüfen")
+        compose.onNode(hasSetTextAction() and hasText("13,5")).assertExists()
+        assertTrue(vm.zustand.value.markiert.isNotEmpty())
+    }
+
+    @Test
+    fun onlineAbrufenNachImKatalog() {
+        reis()
+        u.scan.imKatalog = ZutatTreffer("seed-reis", "Reis")
+        u.scan.packung = haferflocken()
+        zeigen("seed-reis")
+        scannen()
+        compose.warteAufText("Diese Packung gehört schon zu dieser Zutat")
+        compose.onNodeWithText("Online abrufen").performScrollTo().performClick()
+        compose.warteAufText("Werte aus Open Food Facts – bitte prüfen")
+        compose.warteBisWeg("Online abrufen")
+    }
+
+    @Test
+    fun strichcodeGehoertDialogFuehrtZurBestaetigung() {
+        u.zutat("alt", "Zwiebeln")
+        u.zutat("neu", "Zwiebel") { it.copy(barcode = TEST_CODE) }
+        u.scan.imKatalog = ZutatTreffer("neu", "Zwiebel")
+        zeigen("alt")
+        scannen()
+        compose.warteAufText("Diesen Strichcode hat schon „Zwiebel“.")
+        compose.onNodeWithText("Zusammenführen …").performClick()
+        compose.warteAufText(zusammenfuehrenFrage("Zwiebeln", "Zwiebel", 0))
     }
 }

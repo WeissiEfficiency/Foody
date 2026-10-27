@@ -1,4 +1,5 @@
-// Einstellungen der V3: Seite mit Konto, Darstellung, Tagesziel, Sicherung, Löschen (6e1) und „Server verbinden“.
+// Einstellungen der V3: Seite mit Konto, Darstellung, Tagesziel, Zutaten (Katalog, Online-Produktsuche), Sicherung,
+// Löschen (6e1) und „Server verbinden“.
 plugins {
     alias(libs.plugins.foody.android.feature)
     alias(libs.plugins.ksp)
@@ -21,6 +22,8 @@ dependencies {
     implementation(project(":core:sync"))
     // Darstellung, Tagesziel, Sicherung
     implementation(project(":core:data"))
+    // Schalter „Online-Produktsuche“ (ScanEinstellung)
+    implementation(project(":core:scan"))
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)

@@ -27,9 +27,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
@@ -38,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
+import de.foody.core.scan.PackungScanKnopf
 import de.foody.feature.heute.anzeigename
 import de.foody.feature.heute.slotName
 import kotlinx.coroutines.launch
@@ -77,7 +80,7 @@ fun EintragenBlatt(auftrag: BlattAuftrag, onFertig: () -> Unit, vm: EintragenVie
                 EintragenWeg.REZEPT -> RezeptWahl(z, vm)
                 EintragenWeg.ZUTAT -> ZutatWahl(z, vm)
                 EintragenWeg.PLAN -> PlanWahl(z, vm)
-                EintragenWeg.FREI -> FreiEingabe(e, vm)
+                EintragenWeg.FREI -> FreiEingabe(z, vm)
             }
             FoodyKnopf(
                 "Eintragen",
@@ -125,7 +128,10 @@ private fun RezeptWahl(z: EintragenZustand, vm: EintragenViewModel) {
 private fun ZutatWahl(z: EintragenZustand, vm: EintragenViewModel) {
     Suche(z.eingaben.suche, "Zutat suchen", vm::suche)
     z.zutaten.forEach { t -> Treffer(t.name, t.id == z.eingaben.zutatId) { vm.zutatWaehlen(t.id) } }
-    Zahlfeld("Menge", z.eingaben.menge, onWert = vm::menge)
+    // Nach „im Katalog“ (Scan in „Frei“) geht der Fokus auf die Menge
+    val mengeFokus = remember { FocusRequester() }
+    LaunchedEffect(vm) { vm.mengeFokus.collect { mengeFokus.requestFocus() } }
+    Zahlfeld("Menge", z.eingaben.menge, focusRequester = mengeFokus, onWert = vm::menge)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         EINTRAGEN_EINHEITEN.forEach { u -> FoodyChip(u.symbol, u == z.eingaben.einheit, { vm.einheit(u) }) }
     }
@@ -141,8 +147,15 @@ private fun PlanWahl(z: EintragenZustand, vm: EintragenViewModel) {
     }
 }
 
+/** „Frei“: oben der Scan-Knopf; nach einem Scan die Packung ([PackungEingabe]) statt der freien Felder. */
 @Composable
-private fun FreiEingabe(e: Eingaben, vm: EintragenViewModel) {
+private fun FreiEingabe(z: EintragenZustand, vm: EintragenViewModel) {
+    val e = z.eingaben
+    if (e.packung != null) {
+        PackungEingabe(e, z.vorhandeneZutat, vm)
+        return
+    }
+    PackungScanKnopf(vm.scan, onPackung = vm::packungUebernehmen, onImKatalog = vm::imKatalog)
     OutlinedTextField(e.freiName, vm::freiName, Modifier.fillMaxWidth(), label = { Text("Name") }, singleLine = true)
     Zahlfeld("kcal", e.freiKcal, ganzzahlig = true, onWert = vm::freiKcal)
     Zahlfeld("Eiweiß (g, optional)", e.freiEiweiss, onWert = vm::freiEiweiss)
