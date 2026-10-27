@@ -363,6 +363,31 @@ class ZutatenRepositoryTest {
     }
 
     @Test
+    fun scanKcalMitLeerzeichenGenaueKj() = runTest {
+        val vorher = ZutatEntwurf.aus(zutat("z", "Hafer"))
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1500")))
+        val (nachher, _) = vorher.mitPackung(p)
+        repo.speichern("z", vorher, nachher.copy(kcal = "359 "), scan = p)
+        assertEquals(BigDecimal("1500"), gespeichert("z").energyKj)
+    }
+
+    @Test
+    fun zusammenfuehrenNachScanWieSpeichern() = runTest {
+        // Erneuter Scan einer OFF-Zutat, dann zusammenführen: genaue kJ und Quelle wie beim Speichern
+        val z = zutat("alt", "Haferflocken") {
+            it.copy(nutrientBasis = NutrientBasis.PER_100_G, energyKj = BigDecimal("1400"), nutrientSource = "Open Food Facts")
+        }
+        zutat("neu", "Hafer")
+        val vorher = ZutatEntwurf.aus(z)
+        val p = packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("1502")))
+        val (nachher, _) = vorher.mitPackung(p)
+        assertEquals(ZutatErgebnis.Zusammengefuehrt("neu", "Hafer"), repo.zusammenfuehren("alt", "neu", vorher to nachher, scan = p))
+        val ziel = gespeichert("neu")
+        assertEquals(BigDecimal("1502"), ziel.energyKj)
+        assertEquals("Open Food Facts", ziel.nutrientSource)
+    }
+
+    @Test
     fun erneuterScanBehaeltQuelle() = runTest {
         val z = zutat("z", "Hafer") {
             it.copy(nutrientBasis = NutrientBasis.PER_100_G, energyKj = BigDecimal("1400"), fat = BigDecimal("6"), nutrientSource = "Open Food Facts")

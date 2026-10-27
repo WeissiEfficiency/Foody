@@ -104,7 +104,12 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
      * Führt [vonId] in [nachId] zusammen. Mit [entwurf] (vorher → nachher) wandern die Eingaben des Editors (ohne Namen)
      * mit: Sie gelten für die Quelle, deren Angaben dann Lücken des Ziels füllen.
      */
-    suspend fun zusammenfuehren(vonId: String, nachId: String, entwurf: Pair<ZutatEntwurf, ZutatEntwurf>? = null): ZutatErgebnis {
+    suspend fun zusammenfuehren(
+        vonId: String,
+        nachId: String,
+        entwurf: Pair<ZutatEntwurf, ZutatEntwurf>? = null,
+        scan: Packungswerte? = null,
+    ): ZutatErgebnis {
         if (vonId == nachId) return ZutatErgebnis.NichtGefunden
         if (entwurf != null) {
             val fehler = pruefen(entwurf.first, entwurf.second) - ZutatFeld.NAME
@@ -113,7 +118,7 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
         return db.withTransaction {
             val quelle = dao.nachId(vonId) ?: return@withTransaction ZutatErgebnis.NichtGefunden
             val ziel = dao.nachId(nachId) ?: return@withTransaction ZutatErgebnis.NichtGefunden
-            val mitEingaben = entwurf?.let { (vorher, nachher) -> quelle.mitAenderungen(vorher, nachher, mitName = false) } ?: quelle
+            val mitEingaben = entwurf?.let { (vorher, nachher) -> quelle.mitAenderungen(vorher, nachher, mitName = false, scan = scan) } ?: quelle
             mitEingaben.barcode?.takeIf { it != quelle.barcode }?.let { code ->
                 dao.nachStrichcode(code, ausser = vonId)?.takeIf { it.id != nachId }
                     ?.let { return@withTransaction ZutatErgebnis.StrichcodeVergeben(it.id, it.canonicalName) }

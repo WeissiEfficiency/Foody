@@ -36,6 +36,8 @@ class PackungswerteTest {
         assertEquals(0, BigDecimal("1506.24").compareTo(p.kjFuer("360")))
         assertNull(p.kjFuer(""))
         assertNull(p.kjFuer("abc"))
+        // Leerzeichen um den Text ändern den Wert nicht
+        assertEquals(BigDecimal("1502"), p.kjFuer(" 359 "))
     }
 
     @Test
@@ -97,5 +99,27 @@ class PackungswerteTest {
         assertEquals("3", e.fett)
         assertEquals("100", e.kcal)
         assertEquals("1", e.eiweiss)
+    }
+
+    @Test
+    fun mitPackungswertenGleicheBasisBehaeltFehlende() {
+        val z = ZutatEntity(id = "z", canonicalName = "Milch", nutrientBasis = NutrientBasis.PER_100_ML, fat = BigDecimal("3.5"), createdAt = 1, updatedAt = 1)
+        val neu = z.mitPackungswerten(packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("270")), basis = NutrientBasis.PER_100_ML))
+        assertEquals(BigDecimal("3.5"), neu.fat)
+        assertEquals(BigDecimal("270"), neu.energyKj)
+    }
+
+    @Test
+    fun mitPackungswertenNeueBasisVerwirftAlteWerte() {
+        // Fett je 100 ml passt nicht zu Werten je 100 g
+        val z = ZutatEntity(id = "z", canonicalName = "Milch", nutrientBasis = NutrientBasis.PER_100_ML, fat = BigDecimal("3.5"), createdAt = 1, updatedAt = 1)
+        val neu = z.mitPackungswerten(packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("270"))))
+        assertEquals(NutrientBasis.PER_100_G, neu.nutrientBasis)
+        assertNull(neu.fat)
+        assertEquals(BigDecimal("270"), neu.energyKj)
+        // Foto ohne erkannte Basis: Die bisherige bleibt und mit ihr die Werte
+        val foto = z.mitPackungswerten(packung(mapOf(Nutrient.ENERGY_KJ to BigDecimal("270")), basis = null))
+        assertEquals(NutrientBasis.PER_100_ML, foto.nutrientBasis)
+        assertEquals(BigDecimal("3.5"), foto.fat)
     }
 }

@@ -76,11 +76,7 @@ class ScanKnopfZustand(
             }
             is ScanAusgang.NichtGefunden -> {
                 strichcode = a.strichcode
-                meldung = when (a.grund) {
-                    ScanAusgang.Grund.UNBEKANNT -> ScanTexte.NICHT_GEFUNDEN
-                    ScanAusgang.Grund.OFFLINE -> ScanTexte.OFFLINE
-                    ScanAusgang.Grund.ONLINE_AUS -> ScanTexte.ONLINE_AUS
-                }
+                meldung = ScanTexte.nichtGefunden(a.grund)
                 fotoAnbieten = true
                 null
             }

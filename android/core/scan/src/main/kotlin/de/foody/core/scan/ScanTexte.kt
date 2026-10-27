@@ -15,6 +15,13 @@ object ScanTexte {
     const val KEINE_TABELLE = "Keine Nährwerttabelle erkannt – bitte näher und gerade fotografieren"
     const val FEHLER = "Scannen hat nicht geklappt"
 
+    /** Hinweis, wenn ein Strichcode keine Werte brachte. */
+    fun nichtGefunden(grund: ScanAusgang.Grund): String = when (grund) {
+        ScanAusgang.Grund.UNBEKANNT -> NICHT_GEFUNDEN
+        ScanAusgang.Grund.OFFLINE -> OFFLINE
+        ScanAusgang.Grund.ONLINE_AUS -> ONLINE_AUS
+    }
+
     /** „Werte aus Open Food Facts – bitte prüfen“ bzw. „Werte aus dem Foto – bitte prüfen“. */
     fun bittePruefen(quelle: String): String = "Werte aus ${quelleText(quelle)} – bitte prüfen"
 

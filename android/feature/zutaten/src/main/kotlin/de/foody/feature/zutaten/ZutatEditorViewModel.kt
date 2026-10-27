@@ -195,10 +195,10 @@ class ZutatEditorViewModel @Inject constructor(
         }
     }
 
-    /** Diese Zutat in [nachId] zusammenführen; ungespeicherte Eingaben wandern mit. */
+    /** Diese Zutat in [nachId] zusammenführen; ungespeicherte Eingaben (samt übernommener Packung) wandern mit. */
     fun zusammenfuehren(nachId: String) = starten { id, vorher, entwurf ->
         val mit = if (entwurf != vorher) vorher to entwurf else null
-        when (val e = repo.zusammenfuehren(id, nachId, mit)) {
+        when (val e = repo.zusammenfuehren(id, nachId, mit, packung)) {
             is ZutatErgebnis.Zusammengefuehrt -> schliessen("Zusammengeführt in „${e.name}“")
             // Fehlt diese Zutat selbst, schließt der Editor; sonst ist das Ziel weg
             is ZutatErgebnis.NichtGefunden ->

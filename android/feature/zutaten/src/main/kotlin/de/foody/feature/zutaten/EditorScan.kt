@@ -43,11 +43,5 @@ internal fun nochMarkiert(markiert: Set<ZutatFeld>, e: ZutatEntwurf, scan: Packu
     if (scan == null) emptySet() else markiert.filterTo(LinkedHashSet()) { e.text(it) == scan.scanText(it) }
 
 /** Meldung, wenn „Online abrufen“ keine Werte brachte. */
-internal fun abrufMeldung(a: ScanAusgang): String = when (a) {
-    is ScanAusgang.NichtGefunden -> when (a.grund) {
-        ScanAusgang.Grund.UNBEKANNT -> ScanTexte.NICHT_GEFUNDEN
-        ScanAusgang.Grund.OFFLINE -> ScanTexte.OFFLINE
-        ScanAusgang.Grund.ONLINE_AUS -> ScanTexte.ONLINE_AUS
-    }
-    else -> ScanTexte.FEHLER
-}
+internal fun abrufMeldung(a: ScanAusgang): String =
+    if (a is ScanAusgang.NichtGefunden) ScanTexte.nichtGefunden(a.grund) else ScanTexte.FEHLER

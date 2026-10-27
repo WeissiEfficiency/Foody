@@ -88,11 +88,14 @@ internal fun PackungScanKnopf(
     val katalogWeiter by rememberUpdatedState(onImKatalog)
     var menue by remember { mutableStateOf(false) }
 
+    // Beim Aufbau gelesen: Nach Drehen oder Prozessende liefert der Launcher das Kameraergebnis schon vor den Effekten
+    // und vergisst dabei den Pfad – das Aufräumen darf das Foto, das dann gerade erkannt wird, nicht löschen.
+    val offenesFoto = remember { zustand.fotoPfad }
+
     // Sobald der Knopf zu sehen ist: Module vorladen und Reste früherer Kamerafotos wegräumen
     LaunchedEffect(Unit) {
         vorladen()
-        val offen = zustand.fotoPfad
-        withContext(Dispatchers.IO) { aufraeumen(scanOrdner(context), behalten = offen) }
+        withContext(Dispatchers.IO) { aufraeumen(scanOrdner(context), behalten = offenesFoto) }
     }
 
     fun weitergeben(e: ScanKnopfZustand.Ergebnis?) = when (e) {

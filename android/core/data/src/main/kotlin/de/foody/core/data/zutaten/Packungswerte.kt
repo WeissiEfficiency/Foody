@@ -68,15 +68,17 @@ fun ZutatEntwurf.mitPackung(p: Packungswerte): Pair<ZutatEntwurf, Set<ZutatFeld>
  * sonst wird aus dem Text umgerechnet ([kjAusKcal]). Leer oder ungültig → `null`.
  */
 internal fun energieKj(kcalText: String, scan: Packungswerte?): BigDecimal? =
-    if (scan != null && kcalText == scan.kcalText) scan.werte[Nutrient.ENERGY_KJ] else zahlAus(kcalText)?.let(::kjAusKcal)
+    if (scan != null && kcalText.trim() == scan.kcalText) scan.werte[Nutrient.ENERGY_KJ] else zahlAus(kcalText)?.let(::kjAusKcal)
 
 /**
  * Überträgt die Packung als Block: die Basis (falls bekannt, sonst die bisherige, mindestens je 100 g), alle Werte der
- * Packung und ihre Quelle. Nährwerte, die die Packung nicht hat, bleiben. Den Strichcode setzt der Aufrufer.
+ * Packung und ihre Quelle. Nährwerte, die die Packung nicht hat, bleiben – außer die Basis wechselt (je 100 ml → je
+ * 100 g): Dann passen die alten nicht mehr und fallen weg. Den Strichcode setzt der Aufrufer.
  */
 internal fun ZutatEntity.mitPackungswerten(p: Packungswerte): ZutatEntity {
     if (p.werte.isEmpty()) return this
-    fun w(n: Nutrient, alt: BigDecimal?) = p.werte[n] ?: alt
+    val neueBasis = nutrientBasis != null && p.basis != null && p.basis != nutrientBasis
+    fun w(n: Nutrient, alt: BigDecimal?) = p.werte[n] ?: alt.takeUnless { neueBasis }
     return copy(
         nutrientBasis = p.basis ?: nutrientBasis ?: NutrientBasis.PER_100_G,
         energyKj = w(Nutrient.ENERGY_KJ, energyKj),
