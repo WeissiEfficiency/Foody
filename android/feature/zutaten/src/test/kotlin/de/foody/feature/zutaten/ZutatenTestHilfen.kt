@@ -13,6 +13,9 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
 import androidx.room.Room
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.RezeptEntity
@@ -48,9 +51,30 @@ internal class ZutatenTestUmgebung {
     val scan = TestScan()
     val uebergabe = ZutatUebergabe()
 
-    fun liste() = ZutatenListeViewModel(repo, meldungen, scan.scan, uebergabe)
+    /** Hält die ViewModels, damit [schliessen] ihre Flows beendet, bevor die Datenbank zugeht. */
+    private val viewModels = ViewModelStore()
+    private var anzahl = 0
 
-    fun editor() = ZutatEditorViewModel(repo, meldungen, scan.scan, { scan.online }, uebergabe)
+    fun liste() = behalten(ZutatenListeViewModel(repo, meldungen, scan.scan, uebergabe))
+
+    fun editor() = behalten(ZutatEditorViewModel(repo, meldungen, scan.scan, { scan.online }, uebergabe))
+
+    private fun <T : ViewModel> behalten(vm: T): T {
+        val fabrik = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <V : ViewModel> create(modelClass: Class<V>): V = vm as V
+        }
+        return ViewModelProvider(viewModels, fabrik)["vm${anzahl++}", vm.javaClass]
+    }
+
+    /**
+     * Für `@After`: erst die ViewModels beenden, dann die Datenbank schließen – sonst fragt ein Flow, den eine letzte
+     * Änderung angestoßen hat, die schon geschlossene Datenbank ab (IllegalStateException im nächsten Test).
+     */
+    fun schliessen() {
+        viewModels.clear()
+        db.close()
+    }
 
     fun zutat(id: String, name: String, aendern: (ZutatEntity) -> ZutatEntity = { it }): ZutatEntity = runBlocking {
         aendern(ZutatEntity(id = id, canonicalName = name, createdAt = 1, updatedAt = 1)).also { db.zutatDao().upsert(it) }

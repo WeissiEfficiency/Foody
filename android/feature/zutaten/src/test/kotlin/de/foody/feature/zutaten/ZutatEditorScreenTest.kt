@@ -46,7 +46,7 @@ class ZutatEditorScreenTest {
     }
 
     @After
-    fun tearDown() = u.db.close()
+    fun tearDown() = u.schliessen()
 
     private fun zeigen(id: String, schrift200: Boolean = false): ZutatEditorViewModel {
         val vm = u.editor()

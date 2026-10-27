@@ -69,7 +69,7 @@ class ZutatenScreenshotTest {
     }
 
     @After
-    fun tearDown() = u.db.close()
+    fun tearDown() = u.schliessen()
 
     private fun zeigen(dunkel: Boolean = false, inhalt: @Composable () -> Unit) {
         compose.setContent { FoodyTheme(dunkel = dunkel, unschaerfe = false) { FoodyHintergrund { inhalt() } } }

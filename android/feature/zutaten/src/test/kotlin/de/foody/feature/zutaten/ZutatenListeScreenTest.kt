@@ -41,7 +41,7 @@ class ZutatenListeScreenTest {
     }
 
     @After
-    fun tearDown() = u.db.close()
+    fun tearDown() = u.schliessen()
 
     private fun zeigen(schrift200: Boolean = false) {
         val vm = u.liste()
