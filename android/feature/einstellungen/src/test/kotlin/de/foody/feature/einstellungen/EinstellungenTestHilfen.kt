@@ -13,6 +13,7 @@ import de.foody.core.data.sicherung.Sicherung
 import de.foody.core.data.startdaten.StartdatenLader
 import de.foody.core.data.sync.SyncSpeicher
 import de.foody.core.data.zutaten.ZutatenRepository
+import de.foody.core.scan.ScanEinstellung
 import de.foody.core.sync.Ergebnis
 import de.foody.core.sync.ErsterSync
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -79,7 +80,11 @@ internal class EinstellungenTestUmgebung {
 
     val zutaten = ZutatenRepository(db) { 1L }
 
-    fun vm(kontoZugriff: KontoZugriff = konto) = EinstellungenViewModel(kontext, darstellung, ziel, sicherung, zutaten, kontoZugriff, TEST_UHR)
+    /** Nach dem Leeren der Prefs angelegt: Online-Suche steht auf dem Standard (an). */
+    val scan = ScanEinstellung(kontext)
+
+    fun vm(kontoZugriff: KontoZugriff = konto) =
+        EinstellungenViewModel(kontext, darstellung, ziel, sicherung, zutaten, kontoZugriff, scan, TEST_UHR)
 
     fun verbinden() {
         konto.stand.value = VerbindungsZustand(verbunden = true, adresse = "http://10.0.2.2:8081", letzterSync = null, letzterFehler = null)

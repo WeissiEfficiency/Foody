@@ -3,6 +3,7 @@ package de.foody.feature.einstellungen
 import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.Darstellung
+import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.sicherung.ImportErgebnis
 import kotlinx.coroutines.Dispatchers
@@ -82,6 +83,28 @@ class EinstellungenViewModelTest {
         }
         val vm = u.vm()
         warte { vm.zustand.value.zutaten == 3 }
+    }
+
+    @Test
+    fun onlineSuche() {
+        val vm = u.vm()
+        assertTrue(vm.zustand.value.onlineSuche)
+        vm.onlineSucheSetzen(false)
+        assertFalse(u.scan.onlineSuche.value)
+        val prefs = u.kontext.getSharedPreferences(Einstellungsschluessel.PREFS, android.content.Context.MODE_PRIVATE)
+        assertFalse(prefs.getBoolean(Einstellungsschluessel.ONLINE_SUCHE, true))
+        warte { !vm.zustand.value.onlineSuche }
+        vm.onlineSucheSetzen(true)
+        warte { vm.zustand.value.onlineSuche }
+    }
+
+    @Test
+    fun onlineSucheAusSchonImErstenZustand() {
+        u.scan.setzen(false)
+        val stumm = object : KontoZugriff by u.konto {
+            override val zustand = kotlinx.coroutines.flow.MutableSharedFlow<VerbindungsZustand>()
+        }
+        assertFalse(u.vm(stumm).zustand.value.onlineSuche)
     }
 
     @Test

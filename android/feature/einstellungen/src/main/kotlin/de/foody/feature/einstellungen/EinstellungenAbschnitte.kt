@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -91,9 +93,9 @@ internal fun TageszielAbschnitt(text: String, fehler: Boolean, onFertig: () -> U
     )
 }
 
-/** Zutatenkatalog: ganze Zeile mit Anzahl und „›“. */
+/** Zutatenkatalog: ganze Zeile mit Anzahl und „›“; darunter der Schalter „Online-Produktsuche“ (ganze Zeile tippbar). */
 @Composable
-internal fun ZutatenAbschnitt(anzahl: Int?, onZutaten: () -> Unit) = Abschnitt("Zutaten") {
+internal fun ZutatenAbschnitt(anzahl: Int?, onlineSuche: Boolean, onZutaten: () -> Unit, onOnlineSuche: (Boolean) -> Unit) = Abschnitt("Zutaten") {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onZutaten),
         verticalAlignment = Alignment.CenterVertically,
@@ -101,6 +103,17 @@ internal fun ZutatenAbschnitt(anzahl: Int?, onZutaten: () -> Unit) = Abschnitt("
         Text("Zutatenkatalog", Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
         anzahl?.let { Klein(it.toString()) }
         Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = FoodyTheme.farben.text)
+    }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(onlineSuche, role = Role.Switch, onValueChange = onOnlineSuche),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text("Online-Produktsuche", style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
+            Klein("Open Food Facts; gesendet wird nur die Produktnummer")
+        }
+        Switch(onlineSuche, onCheckedChange = null)
     }
 }
 

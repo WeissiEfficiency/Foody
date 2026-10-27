@@ -4,6 +4,8 @@ import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.StateRestorationTester
@@ -94,6 +96,21 @@ class EinstellungenScreenTest {
         compose.warteAufText("3")
         compose.onNodeWithText("Zutatenkatalog").performScrollTo().performClick()
         assertEquals(1, zutatenGeoeffnet)
+    }
+
+    @Test
+    fun onlineSchalter() {
+        zeigen()
+        compose.warteAufText("Online-Produktsuche")
+        compose.onNodeWithText("Open Food Facts; gesendet wird nur die Produktnummer", useUnmergedTree = true).assertExists()
+        val schalter = compose.onNodeWithText("Online-Produktsuche").performScrollTo()
+        schalter.assertIsOn()
+        schalter.performClick()
+        compose.waitUntil(5_000) { !u.scan.onlineSuche.value }
+        schalter.assertIsOff()
+        schalter.performClick()
+        compose.waitUntil(5_000) { u.scan.onlineSuche.value }
+        schalter.assertIsOn()
     }
 
     @Test

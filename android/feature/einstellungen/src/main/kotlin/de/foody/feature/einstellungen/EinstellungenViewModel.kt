@@ -16,6 +16,7 @@ import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.sicherung.LoeschErgebnis
 import de.foody.core.data.sicherung.Sicherung
 import de.foody.core.data.zutaten.ZutatenRepository
+import de.foody.core.scan.ScanEinstellung
 import java.io.File
 import java.time.Clock
 import java.time.LocalDate
@@ -46,6 +47,8 @@ data class EinstellungenZustand(
     val laeuft: Aktion? = null,
     /** Anzahl Zutaten im Katalog (Zeile „Zutatenkatalog“). */
     val zutaten: Int? = null,
+    /** Schalter „Online-Produktsuche“ (Open Food Facts beim Scan). */
+    val onlineSuche: Boolean = true,
 ) {
     val gesperrt: Boolean get() = konto?.verbunden == true
 }
@@ -63,6 +66,7 @@ class EinstellungenViewModel @Inject constructor(
     private val sicherung: Sicherung,
     zutaten: ZutatenRepository,
     konto: KontoZugriff,
+    private val scan: ScanEinstellung,
     private val clock: Clock,
 ) : ViewModel() {
     private val laufend = MutableStateFlow<Aktion?>(null)
@@ -71,16 +75,19 @@ class EinstellungenViewModel @Inject constructor(
     val zustand: StateFlow<EinstellungenZustand> =
         combine(darstellungen.darstellung(), ziel.tagesziel(), konto.zustand, laufend, zutaten.anzahl()) { d, t, k, l, n ->
             EinstellungenZustand(d, t, k, l, n)
-        }.stateIn(
+        }.combine(scan.onlineSuche) { z, online -> z.copy(onlineSuche = online) }.stateIn(
             viewModelScope, SharingStarted.Eagerly,
             // Startwerte sofort aus den Prefs: kein Umspringen, bis der Kontostand da ist
-            EinstellungenZustand(darstellung = darstellungen.aktuell(), tagesziel = ziel.aktuell()),
+            EinstellungenZustand(darstellung = darstellungen.aktuell(), tagesziel = ziel.aktuell(), onlineSuche = scan.onlineSuche.value),
         )
 
     private val kanal = Channel<String>(Channel.BUFFERED)
     val meldungen: Flow<String> = kanal.receiveAsFlow()
 
     fun darstellungSetzen(d: Darstellung) = darstellungen.setzen(d)
+
+    /** Wirkt sofort für alle Scan-Einstiege (Tagebuch, Zutateneditor, „Neue Zutat“). */
+    fun onlineSucheSetzen(an: Boolean) = scan.setzen(an)
 
     /** Leer = kein Ziel; Tausenderpunkte und Leerzeichen erlaubt. `false` = ungültig, nichts gespeichert. */
     fun tageszielEingabe(text: String): Boolean {
