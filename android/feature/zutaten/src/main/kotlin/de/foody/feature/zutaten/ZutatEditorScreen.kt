@@ -40,6 +40,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
+import de.foody.core.scan.PackungScanKnopf
 import kotlinx.coroutines.launch
 
 /** Offene Rückfrage des Editors. */
@@ -49,6 +50,8 @@ private sealed interface Frage {
     data class InVerwendung(val rezepte: Int) : Frage
 
     data class NameVergeben(val id: String, val name: String) : Frage
+
+    data class StrichcodeGehoert(val id: String, val name: String) : Frage
 
     data class Zusammenfuehren(val nachId: String, val nachName: String) : Frage
 }
@@ -73,6 +76,7 @@ fun ZutatEditorRoute(id: String, onFertig: () -> Unit, vm: ZutatEditorViewModel 
                 EditorEreignis.Fertig -> onFertig()
                 is EditorEreignis.NameVergeben -> frage = Frage.NameVergeben(e.id, e.name)
                 is EditorEreignis.InVerwendung -> frage = Frage.InVerwendung(e.rezepte)
+                is EditorEreignis.StrichcodeGehoert -> frage = Frage.StrichcodeGehoert(e.id, e.name)
                 is EditorEreignis.Meldung -> scope.launch { snackbar.showSnackbar(e.text) }
             }
         }
@@ -88,7 +92,12 @@ fun ZutatEditorRoute(id: String, onFertig: () -> Unit, vm: ZutatEditorViewModel 
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 z.entwurf?.let { entwurf ->
-                    EditorFelder(entwurf, z.fehler, z.synonyme, z.verwendetIn, onAendern = vm::aendern, onFeldFertig = vm::feldFertig)
+                    EditorFelder(
+                        entwurf, z.fehler, z.synonyme, z.verwendetIn, onAendern = vm::aendern, onFeldFertig = vm::feldFertig,
+                        markiert = z.markiert, scanQuelle = z.scanQuelle,
+                        onOnlineAbrufen = if (z.imKatalogSelbst != null && !z.laeuft) vm::onlineAbrufen else null,
+                        scanKnopf = { PackungScanKnopf(vm.scan, onPackung = vm::packungUebernehmen, onImKatalog = vm::imKatalog) },
+                    )
                 }
             }
             FoodyKnopf(
@@ -107,6 +116,9 @@ fun ZutatEditorRoute(id: String, onFertig: () -> Unit, vm: ZutatEditorViewModel 
             f.rezepte, onZusammenfuehren = { frage = null; zielwahl = true }, onAbbrechen = { frage = null },
         )
         is Frage.NameVergeben -> NameVergebenDialog(
+            f.name, onZusammenfuehren = { frage = Frage.Zusammenfuehren(f.id, f.name) }, onAbbrechen = { frage = null },
+        )
+        is Frage.StrichcodeGehoert -> StrichcodeGehoertDialog(
             f.name, onZusammenfuehren = { frage = Frage.Zusammenfuehren(f.id, f.name) }, onAbbrechen = { frage = null },
         )
         is Frage.Zusammenfuehren -> ZusammenfuehrenFrage(

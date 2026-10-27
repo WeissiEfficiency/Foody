@@ -18,8 +18,16 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.db.RezeptZutatEntity
 import de.foody.core.data.db.ZutatEntity
+import de.foody.core.data.zutaten.Packungswerte
 import de.foody.core.data.zutaten.ZutatenRepository
+import de.foody.core.scan.PackungScan
+import de.foody.core.scan.ProduktSuche
+import de.foody.core.scan.ScanStatus
+import de.foody.core.scan.StrichcodeStatus
+import de.foody.core.scan.ZutatTreffer
 import de.foody.domain.MeasureUnit
+import de.foody.domain.Nutrient
+import de.foody.domain.NutrientBasis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -27,6 +35,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.robolectric.RuntimeEnvironment
 import java.math.BigDecimal
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertTrue
 
 /** Echte Datenbank und echtes Repository; ViewModels außerhalb der Komposition anlegen. */
@@ -36,10 +45,11 @@ internal class ZutatenTestUmgebung {
         .addCallback(FoodyDatenbank.CALLBACK).allowMainThreadQueries().build()
     val repo = ZutatenRepository(db) { 10L }
     val meldungen = ZutatenMeldungen()
+    val scan = TestScan()
 
     fun liste() = ZutatenListeViewModel(repo, meldungen)
 
-    fun editor() = ZutatEditorViewModel(repo, meldungen)
+    fun editor() = ZutatEditorViewModel(repo, meldungen, scan.scan, { scan.online })
 
     fun zutat(id: String, name: String, aendern: (ZutatEntity) -> ZutatEntity = { it }): ZutatEntity = runBlocking {
         aendern(ZutatEntity(id = id, canonicalName = name, createdAt = 1, updatedAt = 1)).also { db.zutatDao().upsert(it) }
@@ -108,3 +118,42 @@ fun ComposeTestRule.pruefeNichtsAbgeschnitten() {
         }
     assertTrue(abgeschnitten.isEmpty(), "abgeschnitten: $abgeschnitten")
 }
+
+/** Strichcode, den [TestScan] immer liest. */
+const val TEST_CODE = "4000000000000"
+
+/**
+ * Scan ohne Play-Dienste: Der Strichcode [TEST_CODE] ist immer gelesen; trägt ihn [imKatalog], kommt „im Katalog“,
+ * sonst fragt er Open Food Facts ([packung], ohne: unbekannt). [online] steht für die Einstellung „Online-Produktsuche“,
+ * [anfragen] zählt die Anfragen an Open Food Facts.
+ */
+internal class TestScan {
+    @Volatile var packung: Packungswerte? = null
+    @Volatile var imKatalog: ZutatTreffer? = null
+    @Volatile var online: Boolean = true
+    val anfragen = AtomicInteger()
+
+    val scan = PackungScan(
+        leser = { StrichcodeStatus.Gelesen(TEST_CODE) },
+        tabelle = { ScanStatus.Fehler },
+        suche = {
+            anfragen.incrementAndGet()
+            packung?.let { ProduktSuche.Antwort.Gefunden(it) } ?: ProduktSuche.Antwort.Unbekannt
+        },
+        katalog = { imKatalog },
+        play = { true },
+        online = { online },
+    )
+}
+
+/** Haferflocken je 100 g aus Open Food Facts: 1502 kJ (359 kcal), Eiweiß 13,5, KH 58,7, Zucker 1,2, Fett 7. */
+fun haferflocken(name: String? = "Haferflocken", basis: NutrientBasis? = NutrientBasis.PER_100_G, kj: String = "1502") = Packungswerte(
+    name = name,
+    basis = basis,
+    werte = mapOf(
+        Nutrient.ENERGY_KJ to BigDecimal(kj), Nutrient.PROTEIN_G to BigDecimal("13.5"), Nutrient.CARBS_G to BigDecimal("58.7"),
+        Nutrient.SUGAR_G to BigDecimal("1.2"), Nutrient.FAT_G to BigDecimal("7"),
+    ),
+    strichcode = TEST_CODE,
+    quelle = "Open Food Facts",
+)

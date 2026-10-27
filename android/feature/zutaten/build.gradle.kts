@@ -19,6 +19,8 @@ roborazzi {
 dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:data"))
+    // „Packung scannen“ im Editor und bei „Neue Zutat“ (Phase 6e3)
+    implementation(project(":core:scan"))
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
