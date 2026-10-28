@@ -376,13 +376,15 @@ Entscheidung 2026-10-28: Die KI-Hilfe wird ein eigenes Projekt nach dem Umstieg.
 - [ ] Android-Studio-Profiler auf Handy und Tablet (Start, Scrollen, Speicher); Baseline-Profil neu erzeugen
 - [ ] TalkBack-Durchlauf, Schriftgröße 200 %
 - [ ] Probelauf mit Kopien, dann Umstieg: Sicherungen → Server v3 → Umwandlung → beide Geräte auf V3
-- [ ] v1-Code entfernen (`ui/`-Pakete, alte Routen); `README.md`, `docs/architecture.md` aktualisieren
+- [x] v1-Code entfernen (`ui/`-Pakete, alte Routen); `README.md`, `docs/architecture.md` aktualisieren.
+      **Erledigt (2026-10-28):** `:app` (v1) und `:sync-protocol` entfernt, `:app3` ist jetzt `:app`
+      (`de.foody.app`, Release mit eigenem Schlüssel, `versionCode` 300), App-Icon der v1 übernommen, CI angepasst.
 - [ ] Vorrats-Regeln aus `docs/domain-rules.md` und `:domain` entfernen (8, 17, 21 anpassen), dazu
       `MealSuggestions`/`PlanVorschlag`/`PantryCoverage`; Tests nachziehen
-- [ ] **APK-Ablage:** `apkNachOpenCloud` auf die V3 übertragen (erst `:app3`, nach dem Umbenennen `:app`), auch für
+- [x] **APK-Ablage:** `apkNachOpenCloud` auf die V3 übertragen (erst `:app3`, nach dem Umbenennen `:app`), auch für
       „Foody Vorschau“. Ziel je Rechner über `foody.apkZiel` in `local.properties`, z. B.
       `E:/OpenCloud/Persönlich (2)/foody.apk`. Von dort kommt die APK über OpenCloud aufs Handy und aufs Tablet.
-- [ ] **Installationsanleitung** `docs/installation.md` (aus dem README verlinkt): wo die APK liegt, Erstinstallation
+- [x] **Installationsanleitung** `docs/installation.md` (aus dem README verlinkt): wo die APK liegt, Erstinstallation
       und Update auf Handy und Tablet („Installation aus dieser Quelle zulassen“), Signaturschlüssel sichern,
       Umstieg von der v1 (Sicherung → V3 → Wiederherstellen), Server verbinden, was bei Problemen hilft.
 - [ ] **Abschluss: Code-Review** mit dem Skill `code-review` über die ganze V3 nach dem Umstieg; Befunde hier

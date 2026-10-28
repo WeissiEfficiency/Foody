@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Icon-Fläche: das helle Markengrün (Grafik, kein Text); aus der v1 übernommen -->
+    <color name="ic_launcher_background">#14B88F</color>
+</resources>

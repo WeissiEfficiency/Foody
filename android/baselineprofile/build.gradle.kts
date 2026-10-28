@@ -1,4 +1,4 @@
-// Erzeugt das Baseline-Profil für :app – die Liste der Methoden, die beim Start und in den Haupt-Tabs gebraucht
+// Erzeugt das Baseline-Profil für :app (V3) – die Liste der Methoden, die beim Start und in den Haupt-Tabs gebraucht
 // werden. ART kompiliert sie schon bei der Installation vorab, statt sie erst beim Benutzen zu interpretieren.
 //
 // Neu erzeugen (genau ein Emulator/Gerät mit Android 13+ verbunden – nie eines mit echten Daten):
