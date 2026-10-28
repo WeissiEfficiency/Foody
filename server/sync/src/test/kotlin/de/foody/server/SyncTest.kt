@@ -73,13 +73,17 @@ class SyncTest {
     }
 
     @Test
-    fun pullBeyondHeadIsEmpty() = testServer { env ->
+    fun pullBeyondHeadExpiresCursor() = testServer { env ->
+        // Ein Cursor hinter dem Server-Stand (z. B. nach dem Einspielen einer älteren Sicherung) verlangt einen Voll-Abgleich.
         val (token, _) = env.setupHousehold()
         client.pushOk(token, listOf(ingredient("i1"), ingredient("i2", "Salz")))
-        val pulled = client.pull(token, 10)
-        assertEquals(emptyList(), pulled.records)
-        assertEquals(10L, pulled.nextCursor)
-        assertEquals(false, pulled.hasMore)
+        val expired = client.pullRaw(token, "?since=10")
+        assertEquals(HttpStatusCode.Gone, expired.status)
+        assertEquals(ErrorCode.CURSOR_EXPIRED, expired.errorCode())
+        val atHead = client.pull(token, 2)
+        assertEquals(emptyList(), atHead.records)
+        assertEquals(2L, atHead.nextCursor)
+        assertEquals(false, atHead.hasMore)
     }
 
     @Test
