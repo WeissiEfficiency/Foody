@@ -3,42 +3,36 @@
 Native, offline-first Android-App für Rezepte, Nährwertberechnung, Essensplanung und automatisch
 konsolidierte Einkaufslisten.
 
-`Rezept → Portionierung → Essensplan → Zutatenaggregation → Vorratsabzug → Einkaufsliste`
+`Rezept → Portionierung → Wochenplan → Zutatenaggregation → Einkaufsliste`
 
-## Funktionen
+**Stand (2026-10-28):** Foody wird als **V3** neu gebaut (Plan [`ToDoS/v3-plan.md`](ToDoS/v3-plan.md), Umfang
+[ADR 0011](docs/adr/0011-v3-umfang-ein-nutzer.md)). Die V3 (`:app3`) läuft bis zum Umstieg in Phase 8 neben der
+**v1** (`:app`), die im Alltag genutzt und **nicht mehr verändert** wird. Neue Arbeit gehört nach `:app3`, `:core:*`
+und `:feature:*`; in Phase 8 entfallen `:app` und `:sync-protocol`, und `:app3` wird zu `:app`.
 
-- **Rezepte:** anlegen, bearbeiten, duplizieren, archivieren, **Favoriten**; suchen nach Name, Tags und
-  **Zutaten** („Zucchini“); Bild über den System-Photo-Picker oder **eigenes Foto mit der Kamera**, Portionen, Zeiten, Zutaten mit
-  Menge/Einheit/Hinweis/optional, Arbeitsschritte, Notizen.
-- **Startseite:** drei „Rezepte des Tages“, Bildraster, Filter nach Tags und Favoriten; **„Aus dem Vorrat“** zeigt,
-  was sich mit dem Vorrat kochen lässt (höchstens eine fehlende Zutat). Auf Tablets Liste und Rezept nebeneinander.
-- **Kochmodus:** ein Schritt pro Seite, Display bleibt an; „Du brauchst“ zeigt die im Schritt genannte Teilmenge
-  („0,25 l von 0,5 l Bier“); erkannte Zeitangaben („20 Minuten“) als **Timer**, die auch bei ausgeschaltetem
-  Bildschirm oder im Hintergrund weiterlaufen und das Ende als Benachrichtigung melden; nach dem letzten
-  Schritt die Einladung zum ersten eigenen Foto.
-- **Portionen skalieren** in der Detailansicht und im Planer.
-- **Nährwerte:** Energie (kJ/kcal), Eiweiß, Kohlenhydrate, Fett, Ballaststoffe, Zucker, Salz – pro Rezept und pro
-  Portion, mit Vollständigkeitsanzeige („zu 82 % vollständig“) statt stiller Nullen.
-- **Zutatenstamm** mit Dichte und Stückgewicht für sichere Umrechnungen; Startdatensatz mit häufigen Zutaten.
-  **Synonyme** vereinheitlichen Namen („Mehl“ → „Weizenmehl“), Dubletten lassen sich zusammenführen.
-- **Planer:** 1, 2, 3, 7 oder beliebig viele Tage; frei benennbare Mahlzeiten-Slots; verschieben; „gekocht“ bucht
-  den Verbrauch vom Vorrat ab.
-  **„Leere Tage füllen“** schlägt Abendessen für freie Tage vor – zuerst, was der Vorrat hergibt, dann Favoriten;
-  ohne Wiederholung der letzten zwei Wochen; mit Vorschau und „Neu mischen“.
-- **Einkaufsliste:** Vorschau mit Abwählen vorhandener Artikel, Vorratsabzug, Snapshot, manuelle Einträge,
-  Abhaken, Löschen mit Rückgängig, Herkunftsanzeige („300 g Curry + 150 g Reispfanne“), Neuberechnung mit Diff.
-  Gruppiert nach Supermarkt-Abteilung; Rezepte lassen sich auch **direkt** auf die Liste setzen. Wasser wird nie
-  eingekauft.
-- **Teilen** der Liste als Text über das Android-Sharesheet (z. B. an Bring!).
-- **Vorrat** mit Menge, Einheit und MHD; bald Ablaufendes zuerst und farbig markiert.
-- **Rezept-Import aus Markdown** (z. B. Web-Clipper-Export von Chefkoch): Titel, Quelle, Zutaten inkl. Gruppen,
-  Mengen/Einheiten, Zubereitung; mehrere Dateien oder ein **ganzer Ordner** auf einmal. Mengen ohne Zahl werden
-  „nach Bedarf“ (n. B.). Bereits importierte Quellen werden übersprungen.
-- **Sicherung als ZIP** (Daten und Fotos) und Wiederherstellung; vollständige lokale Löschung.
+## Funktionen (V3)
+
+Phasen 1–6 sind fertig; als Nächstes kommt die KI-Hilfe (Phase 7). Abnahmeliste: [`ToDoS/v3-abnahme.md`](ToDoS/v3-abnahme.md).
+
+- **Heute:** Plan für heute und morgen mit kcal je Portion, Rezeptvorschläge, offene Einkaufsartikel; **Tagebuch** mit
+  beim Eintragen festgehaltenen Nährwerten (ADR 0007) und Tagesziel.
+- **Rezepte:** Liste mit Suche und Filtern, Favoriten und „Oft gekocht“, Detail mit Portionen skalieren, Editor,
+  **Import aus Markdown** (einzelne Dateien oder ganzer Ordner, bereits importierte Quellen werden übersprungen);
+  auf Tablets zweispaltig.
+- **Kochen:** ein Schritt pro Seite mit den im Schritt genannten Teilmengen, erkannte Zeitangaben als Timer, nach dem
+  Kochen „Änderungen ins Rezept übernehmen“.
+- **Woche:** eine fortlaufende Wochenansicht; „Leere Tage füllen“ schlägt Hauptspeisen ohne Wiederholung vor.
+- **Einkauf:** eine Ansicht; Vorschau mit Abwählen vorhandener Artikel, gruppiert nach Abteilung, Rezepte auch direkt
+  auf die Liste. Wasser wird nie eingekauft.
+- **Einstellungen:** Server und Anmeldung, Sicherung als ZIP, Darstellung, Tagesziel, **Zutatenkatalog** (Synonyme,
+  Zusammenführen) und **Packung scannen** (Strichcode, Open Food Facts abschaltbar, Foto der Nährwerttabelle; ADR 0013).
+
+Gestrichen gegenüber der v1 (ADR 0011): Vorrat mit MHD, „Aus dem Vorrat“, Abbuchen bei „Gekocht“, Liste als Text
+teilen, Planer-Modi 1/2/3/7 Tage, Web-App. Was die v1 kann, beschreibt [`docs/architecture.md`](docs/architecture.md).
 
 ## Synchronisierung (optional)
 
-Foody funktioniert ohne Server. Wer mehrere Geräte oder einen Haushalt teilen möchte, betreibt einen eigenen
+Foody funktioniert ohne Server. Wer Handy und Tablet abgleichen möchte, betreibt einen eigenen
 Sync-Server (Docker, hinter Traefik/HTTPS) und verbindet die App unter Einstellungen → Synchronisierung. Aufbau und
 Betrieb: [`server/README.md`](server/README.md); Entscheidung: [`docs/adr/0006-optional-self-hosted-sync.md`](docs/adr/0006-optional-self-hosted-sync.md).
 
@@ -48,15 +42,23 @@ Die Web-Oberfläche ist mit V3 entfallen (ADR 0011).
 
 | Ordner | Modul | Inhalt |
 |---|---|---|
-| `android/app/` | `:app` | Handy-App: Compose-UI, ViewModels, Room, Hilt, Repositories, Backup |
-| `android/baselineprofile/` | `:baselineprofile` | Generator für das Baseline-Profil (schnellerer Start) |
-| `android/feature/heute/` | `:feature:heute` | V3 im Aufbau (`ToDoS/v3-plan.md`): Startseite „Heute“ (noch nicht in der App eingebunden) |
+| `android/app3/` | `:app3` | **V3-App** (Hülle): Hilt, Navigation mit vier Tabs, Deep Links; bindet alle `:core:*` und `:feature:*` ein |
+| `android/feature/<bereich>/` | `:feature:heute`, `:rezepte`, `:kochen`, `:woche`, `:einkauf`, `:einstellungen`, `:zutaten` | ein Modul je Bereich (Bildschirme, ViewModels); Features kennen sich nicht |
+| `android/core/data/` | `:core:data` | Room (`foody.db` v10), Repositories, Sync-Speicher, Fotos, Sicherung |
+| `android/core/sync/` | `:core:sync` | Sync-Client: Server-Zugang, Sync-Lauf, Verbinden/Trennen, Token |
+| `android/core/scan/` | `:core:scan` | Packung scannen für Tagebuch und Zutatenkatalog (ADR 0013) |
+| `android/core/designsystem/` | `:core:designsystem` | Tokens, Glas-Flächen, Komponenten, Theme „Ofenwarm“ (ADR 0012) |
+| `android/katalog/` | `:katalog` | kleine App zum Ansehen des Designsystems |
+| `android/app/` | `:app` | **v1-App, eingefroren** (Compose, Room, Hilt, Vorrat); entfällt in Phase 8 |
+| `android/baselineprofile/` | `:baselineprofile` | Generator für das Baseline-Profil der v1 |
 | `build-logic/` | – | Convention-Plugins (`foody.android.application`, `.library`, `.feature`): SDK-Stände, Java 17, Kotlin ohne Warnungen |
-| `shared/domain/` | `:domain` | Reines Kotlin (keine Android-Abhängigkeiten): Einheiten, Skalierung, Nährwerte, Einkaufsaggregation, Diff, Import, Einordnung – von der App genutzt |
-| `shared/sync-protocol/` | `:sync-protocol` | Protokoll 2 der v1-App (DTOs, Validierung, Version); eingefroren, entfällt in Phase 8 |
+| `shared/domain/` | `:domain` | Reines Kotlin (keine Android-Abhängigkeiten): Einheiten, Skalierung, Nährwerte, Einkaufsaggregation, Diff, Import, Einordnung – von v1, V3 und Server genutzt |
 | `shared/api-protocol/` | `:api-protocol` | Protokoll 3 des Servers (`/api/v3`): DTOs, Validierung, Version |
+| `shared/sync-protocol/` | `:sync-protocol` | Protokoll 2 der v1-App; eingefroren, entfällt in Phase 8 |
 | `server/sync/` | `:server-sync` | Optionaler Sync-Server (Ktor + SQLite): API, Konten, Datenbank, Sync, Fotos, Admin-CLI |
 | `server/start/` | `:server` | Startpunkt (`main`), startet den Sync-Server; Docker-Image |
+
+Abhängigkeiten laufen nur nach unten: `:app3` → `:feature:*` → `:core:*` → `:domain`, `:api-protocol`.
 
 Änderungen unter `shared/api-protocol/` betreffen den Server: danach den Server neu bauen (`server/README.md`, Update).
 
@@ -68,11 +70,18 @@ Voraussetzungen: JDK 21+ (z. B. das JBR von Android Studio; Robolectric braucht 
 Die App läuft ab **Android 16** (`minSdk` 36, `targetSdk` 37; ADR 0009).
 
 ```bash
-./gradlew :domain:test            # schnelle JVM-Tests des Rechenkerns
-./gradlew check                   # alle Unit-Tests + Lint
-./gradlew :app:assembleDebug
-./gradlew :app:connectedCheck     # Room-, Migrations- und End-to-End-Tests auf Gerät/Emulator
+./gradlew :domain:test                 # schnelle JVM-Tests des Rechenkerns
+./gradlew :feature:rezepte:test        # Tests eines Bereichs (Robolectric, Roborazzi-Bilder)
+./gradlew check                        # alle Unit-Tests + Lint (so prüft auch die CI)
+./gradlew :app3:assembleDebug          # V3 als „Foody Debug“
+./gradlew :app3:installDebug           # V3 auf Emulator/Gerät
+./gradlew :core:data:connectedCheck    # Room- und Migrationstests der V3 auf Gerät/Emulator
+./gradlew :app:connectedCheck          # Tests der v1 auf Gerät/Emulator
 ```
+
+`:app3` und `:app` haben dieselbe App-ID (`de.foody.app`, Debug `de.foody.app.debug`): Ein Debug-Build der V3 ersetzt
+eine installierte „Foody Debug“ der v1 samt Migration 9 → 10. Auf dem Alltags-Handy daher erst in Phase 8.
+Sync gegen einen Test-Server: [`server/README.md`](server/README.md), Abschnitt „Test-Server“.
 
 **Baseline-Profil** (schnellerer App-Start): liegt erzeugt unter
 `android/app/src/release/generated/baselineProfiles/baseline-prof.txt` und kommt automatisch in jeden Release-Build.
@@ -95,6 +104,8 @@ Alltagsversion, ohne deren Daten zu berühren.
 
 ## Auf dem eigenen Handy installieren (signierter Release-Build)
 
+Gilt bis Phase 8 für die v1 (`:app`); die V3 hat noch keinen Release-Build.
+
 Einmalig einen Signaturschlüssel erzeugen (PowerShell; `keytool` fragt nach Passwort und Namen):
 
 ```powershell
@@ -115,6 +126,11 @@ Die APK aufs Handy kopieren und öffnen (einmalig „Installation aus dieser Que
 
 ## Datenschutz
 
-Kein Konto, kein Server, kein Internetzugriff. Berechtigungen nur für Kochtimer im Hintergrund
-(Benachrichtigungen – ab Android 13 abfragbar und ablehnbar –, Vordergrunddienst, Wakelock bis zum Timer-Ende). Alle Daten liegen lokal in Room; kein automatisches Cloud-Backup.
-Cleartext-Traffic ist per Network Security Config verboten.
+Kein Konto bei Dritten, keine Werbung, keine Analyse. Alle Daten liegen lokal in Room; kein automatisches
+Cloud-Backup. Internet nutzt die App nur für
+- den **optionalen Sync** mit dem eigenen Server (nur HTTPS, Cleartext per Network Security Config verboten),
+- die **Online-Produktsuche** beim Scannen (nur die Produktnummer an Open Food Facts, abschaltbar),
+- künftig die **KI-Hilfe** (Phase 7), nur über den eigenen Server und nur auf Knopfdruck (ADR 0011).
+
+Berechtigungen nur für Kochtimer im Hintergrund (Benachrichtigungen, ablehnbar; Vordergrunddienst; Wakelock bis zum
+Timer-Ende). Details: [`docs/security.md`](docs/security.md).
