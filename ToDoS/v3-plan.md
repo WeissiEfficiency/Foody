@@ -289,10 +289,12 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
       **Erledigt (2026-10-28):** `listeOderNeu` nimmt ohne gültige Liste (keine angezeigt oder inzwischen gelöscht)
       die jüngste und legt nur an, wenn es keine gibt; Test mit zwei gleichzeitigen Tipps.
 - [ ] **R-W4** `SyncLauf.kt:62-65` fängt jede Exception als „Server-Fehler“: kein Log, kein erneuter Versuch.
-- [ ] **R-W5** Deep Link mit `NEW_TASK` (Timer-Meldung) baut den Task neu auf → ungespeicherte Eingaben weg
+- [x] **R-W5** Deep Link mit `NEW_TASK` (Timer-Meldung) baut den Task neu auf → ungespeicherte Eingaben weg
       (`MainActivity.kt:38`). Fix: `navigate(uri) { launchSingleTop }`.
-- [ ] **R-W6** NavHost an drei Stellen (`Hauptgeruest.kt:76-91`) → Kochen-Vollbild oder Drehen über 840 dp verliert
-      `rememberSaveable`.
+      **Erledigt (2026-10-28):** `deepLinkOeffnen` in `FoodyNavHost.kt`; der Kaltstart liest den Link weiter selbst.
+- [x] **R-W6** NavHost an drei Stellen (`Hauptgeruest.kt:76-91`) → Kochen-Vollbild oder Drehen über 840 dp verliert
+      `rememberSaveable`. **Erledigt (2026-10-28):** ein NavHost an fester Stelle, Rail und Leiste kommen nur dazu;
+      `NavZustandTest` prüft Breitenwechsel und Vollbild.
 - [x] **R-W7 + D1** Entwürfe ohne `SavedStateHandle` (`EditorViewModel`, `ZutatEditorViewModel`, `KochenViewModel`,
       `EintragenViewModel`) gehen nach einem Prozess-Ende verloren. Verschärft durch 6e3: Ein Foto-Scan aus dem
       Tagebuch kommt nach Prozess-Ende nie an, weil `weg` auf REZEPT zurückfällt und der Scan-Knopf nicht aufgebaut

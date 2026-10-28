@@ -15,6 +15,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.time.LocalDate
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -33,6 +34,35 @@ class DeepLinkTest {
         }
         compose.runOnIdle { assertTrue(nav.handleDeepLink(Intent(Intent.ACTION_VIEW, Uri.parse(link)))) }
         compose.waitForIdle()
+    }
+
+    @Test
+    fun laufendeAppBehaeltDenStapel() {
+        compose.setContent {
+            nav = rememberNavController()
+            FoodyTheme { Hauptgeruest(nav, Bildschirme.platzhalter) }
+        }
+        compose.runOnIdle { nav.navigate(RezeptDetail("r1")) }
+        // Wie der Tipp auf die Timer-Meldung: aus einer Benachrichtigung mit NEW_TASK
+        val link = { Intent(Intent.ACTION_VIEW, Uri.parse("foody://kochen/r1?portionen=3")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+        compose.runOnIdle { assertTrue(nav.deepLinkOeffnen(link())) }
+        compose.onNodeWithText("Rezept r1 · 3 Portionen").assertExists()
+        val tiefe = compose.runOnIdle { nav.currentBackStack.value.size }
+        compose.runOnIdle { assertTrue(nav.deepLinkOeffnen(link())) }
+        compose.runOnIdle {
+            assertEquals(tiefe, nav.currentBackStack.value.size, "derselbe Link nicht doppelt")
+            nav.popBackStack()
+        }
+        compose.onNodeWithText("Rezept r1").assertExists()
+    }
+
+    @Test
+    fun fremderLinkWirdIgnoriert() {
+        compose.setContent {
+            nav = rememberNavController()
+            FoodyTheme { Hauptgeruest(nav, Bildschirme.platzhalter) }
+        }
+        compose.runOnIdle { assertFalse(nav.deepLinkOeffnen(Intent(Intent.ACTION_VIEW, Uri.parse("foody://gibt-es-nicht/1")))) }
     }
 
     @Test

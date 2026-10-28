@@ -73,17 +73,18 @@ fun Hauptgeruest(
     }
     val ziele = tabs.map { it.ziel }
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        if (vollbild) {
-            FoodyNavHost(navController, bildschirme, Modifier.fillMaxSize())
-        } else if (maxWidth >= BREIT) {
-            Row(Modifier.fillMaxSize()) {
+        val breit = !vollbild && maxWidth >= BREIT
+        // Ein NavHost an fester Stelle: Vollbild, Drehen oder Fenstergröße tauschen nur die Navigation daneben aus,
+        // der Zustand der Bildschirme (`rememberSaveable`) bleibt.
+        Row(Modifier.fillMaxSize()) {
+            if (breit) {
                 Box(Modifier.fillMaxHeight().safeDrawingPadding(), contentAlignment = Alignment.Center) {
                     FoodyNavigationsRail(ziele, aktiv, waehlen, Modifier.wrapContentHeight().testTag(Hauptgeruest.RAIL))
                 }
-                FoodyNavHost(navController, bildschirme, Modifier.weight(1f))
             }
-        } else {
-            FoodyNavHost(navController, bildschirme, Modifier.fillMaxSize())
+            FoodyNavHost(navController, bildschirme, Modifier.weight(1f))
+        }
+        if (!vollbild && !breit) {
             FoodyNavigationsleiste(
                 ziele, aktiv, waehlen,
                 Modifier.align(Alignment.BottomCenter).navigationBarsPadding().testTag(Hauptgeruest.LEISTE),

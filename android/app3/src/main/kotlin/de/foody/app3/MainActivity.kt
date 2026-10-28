@@ -13,6 +13,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import de.foody.app3.navigation.Hauptgeruest
+import de.foody.app3.navigation.deepLinkOeffnen
 import de.foody.core.data.DarstellungSpeicher
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
@@ -35,7 +36,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val nav = rememberNavController()
             DisposableEffect(nav) {
-                val weiter = Consumer<Intent> { nav.handleDeepLink(it) }
+                val weiter = Consumer<Intent> { nav.deepLinkOeffnen(it) }
                 addOnNewIntentListener(weiter)
                 onDispose { removeOnNewIntentListener(weiter) }
             }
