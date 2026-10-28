@@ -18,3 +18,7 @@ Feature-Plugin bindet das Modul als `testImplementation` ein. Jeder Test gibt se
 - *`testFixtures` von `:core:data`:* braucht experimentelle Kotlin-Unterstützung im Android-Plugin.
 
 **Folgen:** Ein `:core`-Modul mehr, das nie in die App gelangt (nur `testImplementation`).
+
+**Nachtrag (2026-10-28, PR #118):** Das Modul enthält auch `SavedStateHandle.nachProzessende()` (`Prozessende.kt`). Es
+baut ein neues Handle, dessen Werte durch die Java-Serialisierung gingen wie im Bundle. So prüfen Tests, dass Entwürfe
+im `SavedStateHandle` ein Prozessende überstehen, und nicht serialisierbare Werte fallen schon im Test auf.

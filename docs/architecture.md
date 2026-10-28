@@ -173,7 +173,9 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
   `:feature:zutaten`, `:feature:einstellungen` und `:app3` → `:core:scan`.
   Nur für Tests: `:core:testing` (`android/core/testing`) mit `ViewModelHalter`; das Feature-Plugin bindet es als
   `testImplementation` ein. Tests geben ihre ViewModels hinein und rufen in `@After` erst `schliessen()`, dann
-  `db.close()` – sonst fragt ein noch laufender Flow die geschlossene In-Memory-Datenbank ab.
+  `db.close()` – sonst fragt ein noch laufender Flow die geschlossene In-Memory-Datenbank ab. Dazu
+  `SavedStateHandle.nachProzessende()` (`Prozessende.kt`): ein neues Handle, dessen Werte durch die
+  Java-Serialisierung gingen wie im Bundle – Tests für Entwürfe, die ein Prozessende überstehen müssen.
 - **Datenbank `foody.db`, Version 10** (`FoodyDatenbank`, Schemata 1–9 aus der v1 unter `android/core/data/schemas`):
   Schema 9 ohne `pantry_item`, `sync_state.kontoId` (nullable) statt `householdId`; ein Schema-Vergleichstest erzwingt,
   dass sonst alles gleich ist. `baueDatenbank` registriert nur `MIGRATION_9_10` und den Callback für neue Datenbanken,
@@ -284,16 +286,19 @@ bis Phase 8 umschaltet.
 
 - **`:app3`** (`de.foody.app3`, `applicationId` `de.foody.app`, Debug `.debug` „Foody Debug“, Release noch aus):
   `FoodyApp` (Hilt, `HiltWorkerFactory`; beim Start `SyncAusloeser.beimStart()` und `StartdatenLader`, bei jedem Wechsel
-  in den Vordergrund `appImVordergrund()`), `MainActivity` (`singleTask`, reicht Deep Links aus `onNewIntent` an die
-  Navigation), `AppModul` (`SyncKonfiguration`, `KontoZugriff` → `KontoAnbindung` auf `SyncKonto`/`sync_state`/
+  in den Vordergrund `appImVordergrund()`), `MainActivity` (`singleTask`; Deep Links aus `onNewIntent` gehen über
+  `deepLinkOeffnen`, siehe Navigation), `AppModul` (`SyncKonfiguration`, `KontoZugriff` → `KontoAnbindung` auf `SyncKonto`/`sync_state`/
   `SyncAusloeser`, Gerätename „Hersteller Modell“ wie v1).
 - **Navigation** (`navigation/`): typisierte Routen (`Heute`, `Rezepte`, `Woche`, `Einkauf`, `Einstellungen`,
   `RezeptDetail(id)`, `Kochen(rezeptId, portionen?)`, `EinkaufListe(listeId)`, `TagebuchTag(datum)`). `Hauptgeruest`:
   vier Tabs, unter 840 dp `FoodyNavigationsleiste` schwebend unten, ab 840 dp `FoodyNavigationsRail`; Detailziele
-  markieren ihren Tab. Deep Links `foody://rezept/{id}`, `foody://einkauf/{listeId}`,
-  `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute). Einkauf
-  und Einkaufsliste sind bis Phase 6d Platzhalter („Kommt in Phase 6“ mit Argumenten).
-  `Bildschirme` trennt die Hilt-Bildschirme von den Platzhaltern, damit Navigationstests ohne Hilt laufen.
+  markieren ihren Tab. **Ein `FoodyNavHost` an fester Stelle** (seit R-W6): Kochen-Vollbild, Drehen und
+  Breitenwechsel blenden nur Leiste bzw. Rail daneben ein oder aus, der Zustand der Bildschirme (`rememberSaveable`)
+  bleibt. Deep Links `foody://rezept/{id}`, `foody://einkauf/{listeId}`, `foody://kochen/{rezeptId}?portionen={n}`,
+  `foody://tagebuch/{datum}` (ungültiges Datum → heute). Bei laufender App navigiert `deepLinkOeffnen` mit
+  `launchSingleTop` ins Gerüst – **nicht** `handleDeepLink`: das baut bei `FLAG_ACTIVITY_NEW_TASK` (Tipp auf die
+  Timer-Meldung) den Task neu auf und verwirft ungespeicherte Eingaben (R-W5).
+  `Bildschirme` bündelt die Hilt-Bildschirme; Navigationstests setzen `Bildschirme.platzhalter` ein und laufen ohne Hilt.
 - **`:core:data`**: `HeuteRepository` (Plan heute/morgen nur mit vorhandenem, nicht archiviertem Rezept; kcal je
   Portion über `RecipeProfiles`; Rezeptvorschläge; offene Artikel der zuletzt geänderten Liste), `TagebuchRepository`
   (Werte beim Eintragen festhalten, ADR 0007; `ausPlan` eine Portion, höchstens einmal in einer Transaktion; Ändern
