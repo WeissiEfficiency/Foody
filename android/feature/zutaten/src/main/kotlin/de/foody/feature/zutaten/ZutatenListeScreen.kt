@@ -137,7 +137,7 @@ fun ZutatenListeRoute(onZutat: (String) -> Unit, onZurueck: () -> Unit, vm: Zuta
             onAnlegen = vm::anlegen,
             onOeffnen = { gibtEsSchon?.first?.let(vm::vorhandeneOeffnen) },
             onAbbrechen = { neu = false; gibtEsSchon = null; vm.neuVerwerfen() },
-            knopf = { PackungScanKnopf(vm.scan, onPackung = vm::packungFuerNeu, onImKatalog = vm::imKatalog) },
+            knopf = { PackungScanKnopf(vm.scanLauf) },
             packungHinweis = packung?.let { ScanTexte.werdenUebernommen(it.quelle) },
             namensVorschlag = packung?.let(::nameAusPackung),
         )

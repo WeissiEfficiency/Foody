@@ -295,6 +295,9 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
       `EintragenViewModel`) gehen nach einem Prozess-Ende verloren. Verschärft durch 6e3: Ein Foto-Scan aus dem
       Tagebuch kommt nach Prozess-Ende nie an, weil `weg` auf REZEPT zurückfällt und der Scan-Knopf nicht aufgebaut
       wird. Mindestens `weg`, Packungsfelder und Scan-Markierungen sichern.
+      **D1 erledigt (2026-10-28):** `EintragenViewModel` legt Eingaben und Auftrag im `SavedStateHandle` ab, der
+      Scan-Knopf-Zustand liegt dort über `ScanLauf`; im Emulator mit beendetem Prozess geprüft (Foto kommt in „Frei“
+      an). Offen: Entwürfe in `EditorViewModel`, `ZutatEditorViewModel` (samt Markierungen) und `KochenViewModel`.
 - [ ] **R-W8** „↻“ in der Woche findet oft nichts; `tagNeuAendertNurDiesenTag` besteht auch ohne Änderung. Fix:
       Parameter `ausgeschlossen` in `LeereTageFuellen`.
 - [ ] **R-W9** Ø kcal/Tag ohne „mind.“, wenn Werte fehlen (`WocheScreen.kt:169`).
@@ -320,9 +323,9 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
 - [ ] R-N4 `EinkaufRepository.kt:220`, `WocheRepository.kt:35` ohne `flowOn(rechnen)`
 - [ ] R-N5 + D3 Duplikate: `RezeptBild` ×3, `mengeSkaliert` vs. `RecipeScaler.scale`, Löschliste
       `SyncKonto`/`Sicherung`, Kamera + FileProvider jetzt dreifach (`ScanFotoProvider`, `FotoWahl`, `FertigBlatt`)
-- [ ] D2 (Muster R-C4) Strichcode-Suche und Texterkennung in `rememberCoroutineScope` (`PackungScanKnopf.kt:328,371`)
+- [x] D2 (2026-10-28, `ScanLauf` im ViewModel) (Muster R-C4) Strichcode-Suche und Texterkennung in `rememberCoroutineScope` (`PackungScanKnopf.kt:328,371`)
       brechen beim Drehen still ab → ins ViewModel
-- [ ] D4 `OffProduktSuche.kt:89` liest ohne Größengrenze; wie beim eigenen Server `begrenztLesen` (≈ 256 kB)
+- [x] D4 (2026-10-28) `OffProduktSuche.kt:89` liest ohne Größengrenze; wie beim eigenen Server `begrenztLesen` (≈ 256 kB)
 - [ ] S-N7 `settings.gradle.kts`: je Modul `include` und `projectDir` untereinander, nach `core`/`feature` gruppiert
 - [ ] S-N4 `gradle/gradle-daemon-jvm.properties` einchecken oder ignorieren
 - [ ] Weitere aus dem Review: `backup.sh` ohne `integrity_check` und Restore-Anleitung, Argon2 auf Request-Threads,

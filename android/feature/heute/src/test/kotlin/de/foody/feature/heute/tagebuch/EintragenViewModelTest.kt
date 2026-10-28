@@ -1,5 +1,6 @@
 package de.foody.feature.heute.tagebuch
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.ZutatEntity
@@ -49,7 +50,7 @@ class EintragenViewModelTest {
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         db = testDatenbank()
-        vm = halter.behalten(EintragenViewModel(HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan()))
+        vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan()))
         vm.oeffnen(heute, Mahlzeit.ABENDESSEN)
     }
 

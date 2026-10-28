@@ -39,4 +39,13 @@ class OffProduktSucheTest {
         assertEquals(ProduktSuche.Antwort.Offline, suche { respondError(HttpStatusCode.ServiceUnavailable) }.suche("1"))
         assertEquals(ProduktSuche.Antwort.Offline, suche { throw IOException("kein Netz") }.suche("1"))
     }
+
+    @Test fun zuGrosseAntwortGiltAlsOffline() = runTest {
+        // Gültiges JSON, aber über der Grenze: wird nicht ausgewertet, auch ohne Content-Length
+        val gross = """{"status":1,"product":{"product_name":"${"x".repeat(OffProduktSuche.MAX_ANTWORT_BYTES.toInt())}",""" +
+            """"nutriments":{"energy-kj_100g":276}}}"""
+        assertEquals(ProduktSuche.Antwort.Offline, suche { respond(gross) }.suche("1"))
+        val knapp = """{"status":1,"product":{"product_name":"Joghurt","nutriments":{"energy-kj_100g":276}}}"""
+        assertIs<ProduktSuche.Antwort.Gefunden>(suche { respond(knapp) }.suche("1"))
+    }
 }

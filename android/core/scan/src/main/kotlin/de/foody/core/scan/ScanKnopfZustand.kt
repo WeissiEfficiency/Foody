@@ -9,7 +9,7 @@ import de.foody.core.data.zutaten.Packungswerte
 
 /**
  * Zustand des Scan-Knopfs ohne Oberfläche: Meldung, Foto-Angebot, gemerkter Strichcode und der Pfad eines laufenden
- * Kamerafotos. Übersteht Drehen und Prozessende über [Saver]; eine laufende Erkennung ([laeuft]) nicht.
+ * Kamerafotos. Liegt in [ScanLauf] (ViewModel) und übersteht ein Prozessende über [Saver]; [laeuft] nicht.
  */
 class ScanKnopfZustand(
     meldung: String? = null,

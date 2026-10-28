@@ -17,11 +17,15 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.zutaten.Packungswerte
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,17 +51,27 @@ class PackungScanKnopfTest {
     private val imKatalog = mutableListOf<ScanAusgang.ImKatalog>()
     private var vorgeladen = 0
 
+    /** Steht für den viewModelScope; läuft auf dem Hauptthread wie dort. */
+    private val scope = MainScope()
+
+    @After
+    fun tearDown() = scope.cancel()
+
     private fun zeigen(verfuegbar: Boolean = true, schrift200: Boolean = false) {
         compose.setContent {
             FoodyTheme {
                 val inhalt = @Composable {
                     PackungScanKnopf(
-                        verfuegbar = verfuegbar,
-                        vorladen = { vorgeladen++ },
-                        strichcode = { ausgang },
-                        foto = { _, _ -> ausgang },
-                        onPackung = { packungen += it },
-                        onImKatalog = { imKatalog += it },
+                        ScanLauf(
+                            verfuegbar = verfuegbar,
+                            vorladen = { vorgeladen++ },
+                            strichcodeLesen = { ausgang },
+                            fotoLesen = { _, _ -> ausgang },
+                            scope = scope,
+                            gespeichert = SavedStateHandle(),
+                            onPackung = { packungen += it },
+                            onImKatalog = { imKatalog += it },
+                        ),
                     )
                 }
                 if (schrift200) {

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
@@ -68,7 +69,7 @@ class PackungScreenshotTest {
     }
 
     private fun packung(dunkel: Boolean) {
-        val vm = halter.behalten(EintragenViewModel(HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan(packung = haferflocken())))
+        val vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan(packung = haferflocken())))
         val auftrag = BlattAuftrag(Mahlzeit.FRUEHSTUECK, LocalDate.of(2026, 10, 24))
         compose.setContent {
             FoodyTheme(dunkel = dunkel, unschaerfe = false) { FoodyHintergrund { EintragenBlatt(auftrag, {}, vm) } }

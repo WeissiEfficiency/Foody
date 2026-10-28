@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.TageszielSpeicher
@@ -69,7 +70,7 @@ class TagebuchTagScreenTest {
     private fun zeigen(schrift200: Boolean = false) {
         val kontext = RuntimeEnvironment.getApplication()
         val vm = halter.behalten(TagebuchTagViewModel(tagebuch, TageszielSpeicher(kontext)))
-        val eintragen = halter.behalten(EintragenViewModel(HeuteRepository(db), tagebuch, db, testScan()))
+        val eintragen = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db), tagebuch, db, testScan()))
         compose.setContent {
             FoodyTheme {
                 var datum by remember { mutableStateOf(heute) }

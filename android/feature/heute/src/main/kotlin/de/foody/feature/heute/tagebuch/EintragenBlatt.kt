@@ -155,7 +155,7 @@ private fun FreiEingabe(z: EintragenZustand, vm: EintragenViewModel) {
         PackungEingabe(e, z.vorhandeneZutat, vm)
         return
     }
-    PackungScanKnopf(vm.scan, onPackung = vm::packungUebernehmen, onImKatalog = vm::imKatalog)
+    PackungScanKnopf(vm.scanLauf)
     OutlinedTextField(e.freiName, vm::freiName, Modifier.fillMaxWidth(), label = { Text("Name") }, singleLine = true)
     Zahlfeld("kcal", e.freiKcal, ganzzahlig = true, onWert = vm::freiKcal)
     Zahlfeld("Eiweiß (g, optional)", e.freiEiweiss, onWert = vm::freiEiweiss)

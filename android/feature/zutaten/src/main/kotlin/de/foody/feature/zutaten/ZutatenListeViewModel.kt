@@ -1,5 +1,6 @@
 package de.foody.feature.zutaten
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,6 +13,7 @@ import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.data.zutaten.filtern
 import de.foody.core.scan.PackungScan
 import de.foody.core.scan.ScanAusgang
+import de.foody.core.scan.ScanLauf
 import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -49,12 +51,15 @@ sealed interface ListeEreignis {
  */
 @HiltViewModel
 class ZutatenListeViewModel @Inject constructor(
+    gespeichert: SavedStateHandle,
     private val repo: ZutatenRepository,
     meldungen: ZutatenMeldungen,
-    /** Für den Scan-Knopf im Dialog „Neue Zutat“. */
-    val scan: PackungScan,
+    scan: PackungScan,
     private val uebergabe: ZutatUebergabe,
 ) : ViewModel() {
+    /** Der Scan-Knopf im Dialog „Neue Zutat“; Erkennung läuft im viewModelScope weiter, auch wenn gedreht wird. */
+    val scanLauf = ScanLauf(scan, viewModelScope, gespeichert, ::packungFuerNeu, ::imKatalog)
+
     private val suche = MutableStateFlow("")
     private val filter = MutableStateFlow(emptySet<ZutatFilter>())
     private val laufend = MutableStateFlow(false)
