@@ -11,6 +11,8 @@ android {
 dependencies {
     implementation(libs.haze)
     implementation(libs.haze.blur)
+    // Rezeptfotos (rezeptBild) aus der Fotoablage
+    implementation(libs.coil.compose)
     // Symbole (Sync-Status, Platzhalter, leere Zustände); R8 entfernt Ungenutztes
     api(libs.compose.material.icons)
 

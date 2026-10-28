@@ -5,6 +5,7 @@ import androidx.room.withTransaction
 import de.foody.api.protocol.LoginRequest
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.SyncZustandEntity
+import de.foody.core.data.db.fachdatenLeeren
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.sync.SyncSpeicher
 import de.foody.core.data.sync.SyncZustand
@@ -218,14 +219,7 @@ class SyncKonto @Inject constructor(
         val dao = db.syncDao()
         db.withTransaction {
             dao.applyingRemoteSetzen(true)
-            db.tagebuchDao().alleLoeschen()
-            db.einkaufsartikelQuelleDao().alleLoeschen()
-            db.einkaufsartikelDao().alleLoeschen()
-            db.einkaufslisteDao().alleLoeschen()
-            db.planEintragDao().alleLoeschen()
-            db.arbeitsschrittDao().alleLoeschen()
-            db.rezeptZutatDao().alleLoeschen()
-            db.rezeptDao().alleLoeschen()
+            db.fachdatenLeeren(mitZutaten = false)
             dao.outboxLeeren()
             dao.revisionenLeeren()
             dao.problemeLeeren()

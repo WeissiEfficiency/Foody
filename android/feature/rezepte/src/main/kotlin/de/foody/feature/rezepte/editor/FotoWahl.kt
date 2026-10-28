@@ -22,17 +22,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
+import de.foody.core.data.fotos.KameraDatei
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.RezeptPlatzhalter
-import de.foody.feature.rezepte.rezeptBild
+import de.foody.core.designsystem.komponenten.rezeptBild
 import kotlinx.coroutines.launch
 import java.io.File
-import java.util.UUID
 
-/** Unterordner im Cache für Kamerabilder (siehe `res/xml/rezeptfotos_pfade.xml`). */
-private const val KAMERA_ORDNER = "kamera"
 
 /**
  * Foto des Rezepts mit „Foto wählen“ (System-Photo-Picker), „Kamera“ und „Entfernen“. Die Kamera schreibt über den
@@ -63,9 +60,9 @@ internal fun FotoWahl(bild: String?, vm: EditorViewModel) {
             auswahl.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }, art = KnopfArt.UMRISS)
         FoodyKnopf("Kamera", {
-            val datei = File(File(kontext.cacheDir, KAMERA_ORDNER).apply { mkdirs() }, "${UUID.randomUUID()}.jpg")
+            val datei = KameraDatei.neu(kontext, KameraDatei.REZEPTFOTOS)
             kameraDatei = datei.path
-            kamera.launch(FileProvider.getUriForFile(kontext, "${kontext.packageName}.rezeptfotos", datei))
+            kamera.launch(KameraDatei.uri(kontext, datei))
         }, art = KnopfArt.UMRISS)
         if (bild != null) FoodyKnopf("Foto entfernen", vm::fotoEntfernen, art = KnopfArt.TEXT)
     }

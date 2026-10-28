@@ -29,6 +29,7 @@ import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.Naehrwertbalken
 import de.foody.core.designsystem.komponenten.RezeptPlatzhalter
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.rezeptBild
 import de.foody.core.designsystem.token.GlasStufe
 
 /**

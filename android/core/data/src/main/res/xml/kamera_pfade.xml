@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nur diese beiden Cache-Ordner; Namen wie KameraDatei.REZEPTFOTOS und KameraDatei.SCAN -->
+<paths>
+    <cache-path name="kamera" path="kamera/" />
+    <cache-path name="scan" path="scan/" />
+</paths>

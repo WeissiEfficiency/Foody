@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Kamerafotos der Nährwerttabelle: liegen kurz in cache/scan/ und werden nach der Erkennung gelöscht -->
-<paths>
-    <cache-path name="scan" path="scan/" />
-</paths>

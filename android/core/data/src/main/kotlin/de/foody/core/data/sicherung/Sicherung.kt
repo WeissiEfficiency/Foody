@@ -9,6 +9,7 @@ import de.foody.api.protocol.ZahlGrenzen
 import de.foody.core.data.db.ArbeitsschrittEntity
 import de.foody.core.data.db.EinkaufsartikelEntity
 import de.foody.core.data.db.EinkaufsartikelQuelleEntity
+import de.foody.core.data.db.fachdatenLeeren
 import de.foody.core.data.db.EinkaufslisteEntity
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.PlanEintragEntity
@@ -420,7 +421,7 @@ class Sicherung(
             val gesperrt = db.withTransaction {
                 // Die Sperre wird hier geprüft, in der Transaktion: der Sync könnte gerade erst verbunden worden sein
                 if (db.syncDao().zustand()?.active == true) return@withTransaction true
-                leeren()
+                db.fachdatenLeeren(mitZutaten = true)
                 false
             }
             if (gesperrt) {
@@ -437,22 +438,9 @@ class Sicherung(
         }
     }
 
-    /** Leert alle Fachtabellen, Kinder zuerst; nur in einer Transaktion aufrufen. */
-    private suspend fun leeren() {
-        db.tagebuchDao().alleLoeschen()
-        db.einkaufsartikelQuelleDao().alleLoeschen()
-        db.einkaufsartikelDao().alleLoeschen()
-        db.einkaufslisteDao().alleLoeschen()
-        db.planEintragDao().alleLoeschen()
-        db.arbeitsschrittDao().alleLoeschen()
-        db.rezeptZutatDao().alleLoeschen()
-        db.rezeptDao().alleLoeschen()
-        db.zutatDao().alleLoeschen()
-    }
-
     /** Leert alle Fachtabellen und schreibt die Sicherung hinein; nur in einer Transaktion aufrufen. */
     private suspend fun ersetzen(e: Eintraege) {
-        leeren()
+        db.fachdatenLeeren(mitZutaten = true)
         e.zutaten.forEach { db.zutatDao().upsert(it) }
         e.rezepte.forEach { db.rezeptDao().upsert(it) }
         e.rezeptZutaten.forEach { db.rezeptZutatDao().upsert(it) }

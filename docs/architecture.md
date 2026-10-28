@@ -354,7 +354,7 @@ und `RezeptDetail(id)`; neu sind die Routen `RezeptNeu` und `RezeptBearbeiten(id
   Seite, Zutaten als Freitext je Zeile mit Vorschau „im Katalog / neu / ungültig“ – unveränderte Zeilen behalten ihre
   Zutat und ihren Hinweis (`RezeptEntwurf.zutatIds`), ein nicht angefasstes Foto bleibt, auch wenn der Sync es
   inzwischen gebracht hat (`bildBehalten`); Foto per Photo-Picker oder Kamera
-  über den FileProvider `${applicationId}.rezeptfotos`, Speichern gesperrt bis gültig und während des Speicherns,
+  über `KameraDatei` (`:core:data`, FileProvider `${applicationId}.kamera`), Speichern gesperrt bis gültig und während des Speicherns,
   „Änderungen verwerfen?“ beim Zurück), Import-Blatt (`importieren/`). `RezepteBereich` zeigt ab 840 dp Liste und
   Detail nebeneinander; ein Tipp links fragt erst, wenn rechts ein Editor ungespeicherte Änderungen hat. Inhalte höchstens 720 dp breit.
 - **Tests:** Repository- und Importtests (Room im Speicher), Filter- und Zeilentests, Bildschirmtests mit echtem
@@ -376,7 +376,7 @@ Spec `docs/superpowers/specs/2026-10-25-v3-phase6b-kochen-design.md`. Ersetzt de
   keine Schritte) und je Schritt eine; Seite und Haken (Zeilenindex) bleiben gültig, wenn sich das Rezept per Sync
   ändert. `KochSitzungSpeicher` (Prefs `kochen_sitzungen`): Seite, Haken, Portionen je Rezept, 12 Stunden fortsetzbar;
   „Fertig“ und „Schließen“ im Fertig-Blatt löschen sie, Zurück und das Kreuz behalten sie. Fertig-Blatt „Guten
-  Appetit!“: Foto aufnehmen (nur ohne Rezeptfoto; FileProvider `rezeptfotos` aus `:feature:rezepte`), „War etwas
+  Appetit!“: Foto aufnehmen (nur ohne Rezeptfoto; über `KameraDatei` aus `:core:data`), „War etwas
   anders? Rezept anpassen“ → `RezeptBearbeiten(id, gekochtMit)` ersetzt den Kochmodus (der Editor zeigt „Gekocht mit 4
   statt 2 Portionen – Mengen beziehen sich auf 2“). Ab 840 dp links die Seitenliste. Display bleibt an.
 - **Timer** (`timer/`): `KochTimerSpeicher` (Prefs `kochen_timer`, JSON; überstehen Neustart, abgelaufene höchstens
@@ -508,8 +508,8 @@ Keine Schema- und keine Protokolländerung (nur die Abfrage `ZutatDao.mitStrichc
   („Online-Produktsuche“, v1-Schlüssel `onlineProduktsuche`, Standard an). `PackungScanKnopf` mit Menü „Strichcode“,
   „Foto der Nährwerttabelle“, „Aus der Galerie“, Meldungen und Foto-Knöpfen darunter; der Ablauf liegt in `ScanLauf`,
   den das ViewModel hält: Strichcode und Erkennung laufen im `viewModelScope` (brechen beim Drehen nicht ab), der
-  `ScanKnopfZustand` liegt im `SavedStateHandle` (übersteht ein Prozessende). Kamerafoto kurz in `cache/scan/` über den
-  eigenen `ScanFotoProvider`. Antworten von Open Food Facts höchstens 256 kB. Ohne Play-Dienste ausgegraut.
+  `ScanKnopfZustand` liegt im `SavedStateHandle` (übersteht ein Prozessende). Kamerafoto kurz in `cache/scan/` über
+  `KameraDatei` (`:core:data`). Antworten von Open Food Facts höchstens 256 kB. Ohne Play-Dienste ausgegraut.
 - **`:core:designsystem`:** `vorausgefuelltFarben` – Rahmen und Beschriftung markierter Felder in der Akzentfarbe.
 - **`:feature:heute`:** Scan-Knopf über „Frei“; nach einem Treffer `PackungEingabe` (Name, Menge in g/ml nach der Basis,
   ohne Basis Chips, Werte je 100 markiert, Vorschau „= 359 kcal“, Häkchen „Als Zutat speichern“ bzw. „Zutat „…“

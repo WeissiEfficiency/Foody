@@ -20,15 +20,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
+import de.foody.core.data.fotos.KameraDatei
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import java.io.File
-import java.util.UUID
 
-/** Cache-Unterordner und FileProvider der Kamerabilder – angelegt von `:feature:rezepte` (`rezeptfotos_pfade.xml`). */
-private const val KAMERA_ORDNER = "kamera"
 
 /**
  * „Guten Appetit!“ nach dem letzten Schritt: eigenes Foto (nur ohne Rezeptfoto), „Rezept anpassen“ und „Schließen“.
@@ -52,9 +49,9 @@ internal fun FertigBlatt(ohneFoto: Boolean, onFoto: (Uri, File) -> Unit, onAnpas
             Text("Guten Appetit!", style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
             if (ohneFoto) {
                 FoodyKnopf("Foto aufnehmen", {
-                    val datei = File(File(kontext.cacheDir, KAMERA_ORDNER).apply { mkdirs() }, "${UUID.randomUUID()}.jpg")
+                    val datei = KameraDatei.neu(kontext, KameraDatei.REZEPTFOTOS)
                     kameraDatei = datei.path
-                    kamera.launch(FileProvider.getUriForFile(kontext, "${kontext.packageName}.rezeptfotos", datei))
+                    kamera.launch(KameraDatei.uri(kontext, datei))
                 }, Modifier.fillMaxWidth(), art = KnopfArt.UMRISS)
             }
             FoodyKnopf("War etwas anders? Rezept anpassen", onAnpassen, Modifier.fillMaxWidth(), art = KnopfArt.UMRISS)
