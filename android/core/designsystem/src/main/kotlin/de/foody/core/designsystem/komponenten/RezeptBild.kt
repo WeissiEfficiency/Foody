@@ -1,17 +1,17 @@
-package de.foody.feature.woche
+package de.foody.core.designsystem.komponenten
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.SubcomposeAsyncImage
-import de.foody.core.designsystem.komponenten.RezeptPlatzhalter
 
 /**
  * Bild-Slot einer Rezeptkarte: das Foto hinter [bild] (`file:`-Link aus der Fotoablage), solange es lädt oder wenn es
- * fehlt der Platzhalter; ohne Link `null` – dann zeigt die Karte ihren eigenen Platzhalter.
+ * fehlt der Platzhalter; ohne Link `null` – dann zeigt die Karte ihren eigenen Platzhalter. Für Rezeptkarten in Heute,
+ * Rezepte und Woche.
  */
-internal fun rezeptBild(bild: String?): (@Composable () -> Unit)? = bild?.let { link ->
+fun rezeptBild(bild: String?): (@Composable () -> Unit)? = bild?.let { link ->
     {
         SubcomposeAsyncImage(
             model = link,

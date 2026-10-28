@@ -1,16 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <application>
-        <!-- Eigene Unterklasse: ein zweiter Eintrag androidx.core.content.FileProvider stieße sich mit :feature:rezepte -->
-        <provider
-            android:name="de.foody.core.scan.ScanFotoProvider"
-            android:authorities="${applicationId}.scan"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/scan_pfade" />
-        </provider>
-    </application>
-</manifest>
+<manifest />

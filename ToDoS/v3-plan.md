@@ -330,7 +330,8 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
 - [ ] R-N2 `PRAGMA synchronous=NORMAL` (Push = ein fsync je Datensatz)
 - [ ] R-N3 `Sicherung.kt:167` ohne `checkedChangedAt`/`updatedAt` der Einkaufsartikel
 - [ ] R-N4 `EinkaufRepository.kt:220`, `WocheRepository.kt:35` ohne `flowOn(rechnen)`
-- [ ] R-N5 + D3 Duplikate: `RezeptBild` ×3, `mengeSkaliert` vs. `RecipeScaler.scale`, Löschliste
+- [x] R-N5 + D3 (2026-10-28: `rezeptBild` im Designsystem, `RecipeScaler.scale`, `fachdatenLeeren`, ein
+      `KameraFotoProvider` in `:core:data`) Duplikate: `RezeptBild` ×3, `mengeSkaliert` vs. `RecipeScaler.scale`, Löschliste
       `SyncKonto`/`Sicherung`, Kamera + FileProvider jetzt dreifach (`ScanFotoProvider`, `FotoWahl`, `FertigBlatt`)
 - [x] D2 (2026-10-28, `ScanLauf` im ViewModel) (Muster R-C4) Strichcode-Suche und Texterkennung in `rememberCoroutineScope` (`PackungScanKnopf.kt:328,371`)
       brechen beim Drehen still ab → ins ViewModel

@@ -33,9 +33,10 @@ sich so:
 - **Network-Security-Config** (`android/app3/src/main/res/xml`): nur HTTPS. Die lokale CA gilt ausschließlich für
   `foody.homeserver.lan`. Klartext für `10.0.2.2` und `localhost` gibt es nur im Debug-Build (`src/debug`). Nur dort
   akzeptiert `ServerAdresse.pruefen` auch `http` (`lokalesHttpErlaubt = BuildConfig.DEBUG`).
-- **FileProvider:** zwei, beide nicht exportiert, Schreibrecht nur befristet an die Kamera-App:
-  - `ScanFotoProvider` (`${applicationId}.scan`, `cache/scan/`, Fotos der Nährwerttabelle; nach der Erkennung gelöscht),
-  - `${applicationId}.rezeptfotos` (`cache/kamera/`, Rezeptfotos; verkleinert übernommen).
+- **FileProvider:** einer, `KameraFotoProvider` in `:core:data` (`${applicationId}.kamera`). Er ist nicht exportiert,
+  Schreibrecht bekommt nur befristet die Kamera-App, und er gibt nur zwei Cache-Ordner frei:
+  - `cache/kamera/` für Rezeptfotos (verkleinert übernommen),
+  - `cache/scan/` für Fotos der Nährwerttabelle (nach der Erkennung gelöscht).
 - **Open Food Facts** (`:core:scan`, `OffProduktSuche`):
   - Der Strichcode wird vorher auf Ziffern gefiltert (EAN/UPC).
   - Es wird nur die Produktnummer gesendet, mit `User-Agent: Foody/<Version>`.

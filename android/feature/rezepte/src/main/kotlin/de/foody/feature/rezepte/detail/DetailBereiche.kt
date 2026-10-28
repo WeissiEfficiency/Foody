@@ -37,13 +37,14 @@ import de.foody.core.designsystem.komponenten.Abschnittskopf
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.RezeptPlatzhalter
+import de.foody.core.designsystem.komponenten.rezeptBild
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.domain.Einordnung
 import de.foody.domain.Gang
 import de.foody.domain.Mahlzeit
 import de.foody.domain.Quantity
 import de.foody.domain.QuantityFormatter
-import de.foody.feature.rezepte.rezeptBild
+import de.foody.domain.RecipeScaler
 
 @Composable
 internal fun DetailInhalt(z: DetailZustand.Da, a: DetailAktionen) {
@@ -63,7 +64,7 @@ internal fun DetailInhalt(z: DetailZustand.Da, a: DetailAktionen) {
         Abschnittskopf("Zutaten")
         z.voll.zeilen.forEach { zeile ->
             val menge = zeile.menge.takeIf { it.signum() > 0 }?.let { m ->
-                val skaliert = mengeSkaliert(m, r.defaultServings, z.portionen)
+                val skaliert = RecipeScaler.scale(m, r.defaultServings.coerceAtLeast(1), z.portionen)
                 QuantityFormatter.format(Quantity.of(skaliert, zeile.einheit), zeile.einheit)
             }.orEmpty()
             Row {

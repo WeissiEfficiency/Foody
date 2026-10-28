@@ -32,6 +32,7 @@ import de.foody.core.designsystem.komponenten.Naehrwertbalken
 import de.foody.core.designsystem.komponenten.RezeptkarteGross
 import de.foody.core.designsystem.komponenten.SyncAnzeige
 import de.foody.core.designsystem.komponenten.SyncStatus
+import de.foody.core.designsystem.komponenten.rezeptBild
 import de.foody.feature.heute.tagebuch.kcalText
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter

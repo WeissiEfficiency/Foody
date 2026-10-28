@@ -16,8 +16,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.math.BigDecimal
-import java.math.RoundingMode
 import javax.inject.Inject
 
 sealed interface DetailZustand {
@@ -28,10 +26,6 @@ sealed interface DetailZustand {
     /** [portionen]: gewählte Portionen (Stepper), anfangs die des Rezepts. */
     data class Da(val voll: RezeptVoll, val portionen: Int) : DetailZustand
 }
-
-/** Menge für [auf] statt [von] Portionen, 6 Nachkommastellen, ohne Nullen am Ende. */
-fun mengeSkaliert(menge: BigDecimal, von: Int, auf: Int): BigDecimal =
-    if (von <= 0 || von == auf) menge else menge.multiply(BigDecimal(auf)).divide(BigDecimal(von), 6, RoundingMode.HALF_UP).stripTrailingZeros()
 
 private const val MIN_PORTIONEN = 1
 private const val MAX_PORTIONEN = 99

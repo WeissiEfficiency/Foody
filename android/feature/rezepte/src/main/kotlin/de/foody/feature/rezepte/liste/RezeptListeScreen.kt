@@ -24,8 +24,8 @@ import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.RezeptkarteRaster
+import de.foody.core.designsystem.komponenten.rezeptBild
 import de.foody.core.designsystem.token.FoodyFormen
-import de.foody.feature.rezepte.rezeptBild
 
 /**
  * Rezeptliste: Kopf mit Menü, Suche, Filterchips, Bildraster. [ausgewaehlt] hebt auf dem Tablet das rechts offene
