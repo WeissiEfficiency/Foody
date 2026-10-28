@@ -8,7 +8,8 @@ import java.math.BigDecimal
 
 /**
  * Nährwerte einer gescannten Packung (Strichcode oder Foto), je 100 g bzw. ml. [basis] `null`: Das Foto hat keine
- * Basis erkannt. [quelle] etwa „Open Food Facts“ oder „Packung (Foto)“.
+ * Basis erkannt. [quelle] etwa „Open Food Facts“ oder „Packung (Foto)“. Serializable, damit ein Formular sie im
+ * SavedStateHandle über ein Prozessende retten kann.
  */
 data class Packungswerte(
     val name: String?,
@@ -16,7 +17,7 @@ data class Packungswerte(
     val werte: Map<Nutrient, BigDecimal>,
     val strichcode: String?,
     val quelle: String,
-) {
+) : java.io.Serializable {
     /** Angezeigte kcal aus dem kJ-Wert; `null` ohne Energie. */
     val kcal: Int? get() = werte[Nutrient.ENERGY_KJ]?.let(NutritionResult::kcal)
 

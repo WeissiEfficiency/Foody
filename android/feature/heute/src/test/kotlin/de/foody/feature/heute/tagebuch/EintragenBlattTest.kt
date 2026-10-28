@@ -14,6 +14,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.db.FoodyDatenbank
@@ -87,7 +88,7 @@ class EintragenBlattTest {
             ),
         )
     }
-    private val eintragen by lazy { halter.behalten(EintragenViewModel(HeuteRepository(db), tagebuch, db, testScan())) }
+    private val eintragen by lazy { halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db), tagebuch, db, testScan())) }
 
     private val heuteInhalt = @androidx.compose.runtime.Composable {
         FoodyTheme { HeuteRoute({ _, _ -> }, {}, {}, {}, {}, vm = vm, eintragenVm = eintragen) }

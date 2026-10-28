@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
+import androidx.lifecycle.SavedStateHandle
 import androidx.room.Room
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.RezeptEntity
@@ -52,9 +53,9 @@ internal class ZutatenTestUmgebung {
     /** Hält die ViewModels, damit [schliessen] ihre Flows beendet, bevor die Datenbank zugeht. */
     private val viewModels = ViewModelHalter()
 
-    fun liste() = viewModels.behalten(ZutatenListeViewModel(repo, meldungen, scan.scan, uebergabe))
+    fun liste() = viewModels.behalten(ZutatenListeViewModel(SavedStateHandle(), repo, meldungen, scan.scan, uebergabe))
 
-    fun editor() = viewModels.behalten(ZutatEditorViewModel(repo, meldungen, scan.scan, { scan.online }, uebergabe))
+    fun editor() = viewModels.behalten(ZutatEditorViewModel(SavedStateHandle(), repo, meldungen, scan.scan, { scan.online }, uebergabe))
 
     /** Für `@After`: erst die ViewModels beenden, dann die Datenbank schließen ([ViewModelHalter]). */
     fun schliessen() {

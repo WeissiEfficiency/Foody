@@ -1,5 +1,6 @@
 package de.foody.feature.heute.tagebuch
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.ZutatEntity
@@ -29,6 +30,10 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
 import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.test.assertEquals
@@ -52,7 +57,7 @@ class EintragenPackungTest {
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         db = testDatenbank()
-        vm = halter.behalten(EintragenViewModel(HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan()))
+        vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan()))
         vm.oeffnen(heute, Mahlzeit.FRUEHSTUECK)
         vm.weg(EintragenWeg.FREI)
     }
@@ -69,6 +74,35 @@ class EintragenPackungTest {
     )
 
     private val e get() = vm.zustand.value.eingaben
+
+    /** Wie ein Bundle beim Prozessende: Jeder Wert muss die Java-Serialisierung überstehen. */
+    private fun nachProzessende(h: SavedStateHandle) = SavedStateHandle(
+        h.keys().associateWith { k ->
+            val bytes = ByteArrayOutputStream().also { aus -> ObjectOutputStream(aus).use { it.writeObject(h.get<Any?>(k)) } }.toByteArray()
+            ObjectInputStream(ByteArrayInputStream(bytes)).use { it.readObject() }
+        },
+    )
+
+    @Test
+    fun ueberstehtProzessende() {
+        // Foto aus dem Tagebuch: Während die Kamera offen ist, beendet Android die App (R-W7/D1)
+        val h = SavedStateHandle()
+        val vor = halter.behalten(EintragenViewModel(h, HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan()))
+        vor.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
+        vor.weg(EintragenWeg.FREI)
+        vor.packungUebernehmen(haferflocken())
+        vor.pMenge("60")
+
+        val nach = halter.behalten(EintragenViewModel(nachProzessende(h), HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan()))
+        // Das Blatt baut sich mit demselben Auftrag wieder auf: Die Eingaben bleiben
+        nach.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
+        val wieder = nach.zustand.value.eingaben
+        assertEquals(EintragenWeg.FREI, wieder.weg)
+        assertEquals(haferflocken(), wieder.packung)
+        assertEquals("60", wieder.pMenge)
+        assertEquals("Haferflocken", wieder.pName)
+        assertTrue(nach.speichernMoeglich.value)
+    }
 
     @Test
     fun uebernimmtPackung() {

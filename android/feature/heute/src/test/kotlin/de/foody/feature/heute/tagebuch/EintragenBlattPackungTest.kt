@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.heute.HeuteRepository
@@ -66,7 +67,7 @@ class EintragenBlattPackungTest {
 
     private fun zeigen(scan: PackungScan, schrift200: Boolean = false): EintragenViewModel {
         // ViewModel außerhalb der Komposition, wie in der App
-        val vm = halter.behalten(EintragenViewModel(HeuteRepository(db), TagebuchRepository(db) { 1L }, db, scan))
+        val vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db), TagebuchRepository(db) { 1L }, db, scan))
         val auftrag = BlattAuftrag(Mahlzeit.FRUEHSTUECK, heute)
         compose.setContent {
             FoodyTheme {

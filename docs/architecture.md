@@ -489,8 +489,10 @@ Keine Schema- und keine Protokolländerung (nur die Abfrage `ZutatDao.mitStrichc
   `online(code)` für „Online abrufen“. `OffProduktSuche` (eigener Ktor-Client, 8 s, nur Produktnummer und User-Agent mit
   der App-Version aus `ScanKonfiguration`), `GooglePlayDienste` (vorladen, Module nachladen), `ScanEinstellung`
   („Online-Produktsuche“, v1-Schlüssel `onlineProduktsuche`, Standard an). `PackungScanKnopf` mit Menü „Strichcode“,
-  „Foto der Nährwerttabelle“, „Aus der Galerie“, Meldungen und Foto-Knöpfen darunter; Zustand in `ScanKnopfZustand`
-  (Saver), Kamerafoto kurz in `cache/scan/` über den eigenen `ScanFotoProvider`. Ohne Play-Dienste ausgegraut.
+  „Foto der Nährwerttabelle“, „Aus der Galerie“, Meldungen und Foto-Knöpfen darunter; der Ablauf liegt in `ScanLauf`,
+  den das ViewModel hält: Strichcode und Erkennung laufen im `viewModelScope` (brechen beim Drehen nicht ab), der
+  `ScanKnopfZustand` liegt im `SavedStateHandle` (übersteht ein Prozessende). Kamerafoto kurz in `cache/scan/` über den
+  eigenen `ScanFotoProvider`. Antworten von Open Food Facts höchstens 256 kB. Ohne Play-Dienste ausgegraut.
 - **`:core:designsystem`:** `vorausgefuelltFarben` – Rahmen und Beschriftung markierter Felder in der Akzentfarbe.
 - **`:feature:heute`:** Scan-Knopf über „Frei“; nach einem Treffer `PackungEingabe` (Name, Menge in g/ml nach der Basis,
   ohne Basis Chips, Werte je 100 markiert, Vorschau „= 359 kcal“, Häkchen „Als Zutat speichern“ bzw. „Zutat „…“

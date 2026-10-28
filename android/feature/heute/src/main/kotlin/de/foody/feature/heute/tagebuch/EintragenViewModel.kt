@@ -1,5 +1,6 @@
 package de.foody.feature.heute.tagebuch
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,6 +14,7 @@ import de.foody.core.data.zutaten.nameBereinigt
 import de.foody.core.data.zutaten.zutatMitNamen
 import de.foody.core.scan.PackungScan
 import de.foody.core.scan.ScanAusgang
+import de.foody.core.scan.ScanLauf
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Nutrient
@@ -40,7 +42,7 @@ enum class EintragenWeg { REZEPT, ZUTAT, PLAN, FREI }
 
 data class ZutatKurz(val id: String, val name: String)
 
-/** Eingaben des Blatts; Zahlen als Text, wie getippt. */
+/** Eingaben des Blatts; Zahlen als Text, wie getippt. Serializable: Sie liegen im SavedStateHandle (Prozessende). */
 data class Eingaben(
     val datum: LocalDate = LocalDate.EPOCH,
     val mahlzeit: Mahlzeit = Mahlzeit.ABENDESSEN,
@@ -69,7 +71,7 @@ data class Eingaben(
     val alsZutat: Boolean = false,
     /** Hat der Nutzer das Häkchen selbst gesetzt, bestimmt der Name die Vorgabe nicht mehr. */
     val alsZutatVomNutzer: Boolean = false,
-)
+) : java.io.Serializable
 
 /** Eingaben plus Trefferlisten: Suche als Teilstring ohne Groß/klein, höchstens [MAX_TREFFER]. */
 data class EintragenZustand(
@@ -93,13 +95,17 @@ private val SCHRITT = BigDecimal("0.5")
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class EintragenViewModel @Inject constructor(
+    /** Eingaben, Auftrag und Scan-Knopf überstehen damit ein Prozessende (etwa während das Kamerafoto entsteht). */
+    private val gespeichert: SavedStateHandle,
     heute: HeuteRepository,
     private val tagebuch: TagebuchRepository,
     db: FoodyDatenbank,
-    /** Für den Scan-Knopf in „Frei“. */
-    val scan: PackungScan,
+    scan: PackungScan,
 ) : ViewModel() {
-    private val eingaben = MutableStateFlow(Eingaben())
+    private val eingaben = gespeichert.getMutableStateFlow(EINGABEN, Eingaben())
+
+    /** Der Scan-Knopf in „Frei“; Erkennung läuft im viewModelScope weiter, auch wenn gedreht wird. */
+    val scanLauf = ScanLauf(scan, viewModelScope, gespeichert, ::packungUebernehmen, ::imKatalog)
 
     /** Während des Speicherns und nach Erfolg gesperrt (bis zum nächsten [oeffnen]): ein Doppeltipp legt nichts doppelt an. */
     private val gesperrt = MutableStateFlow(false)
@@ -132,7 +138,11 @@ class EintragenViewModel @Inject constructor(
     val speichernMoeglich: StateFlow<Boolean> =
         combine(eingaben, gesperrt) { e, sperre -> !sperre && gueltig(e) }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    private var letzterAuftrag: String? = null
+    private var letzterAuftrag: String?
+        get() = gespeichert[AUFTRAG]
+        set(wert) {
+            gespeichert[AUFTRAG] = wert
+        }
 
     private val fokus = Channel<Unit>(Channel.CONFLATED)
 
@@ -278,3 +288,6 @@ internal fun formularWerte(e: Eingaben): Packungswerte {
     for ((n, wert) in felder) if (wert == null) werte.remove(n) else werte[n] = wert
     return p.copy(basis = e.pBasis, werte = werte)
 }
+
+private const val EINGABEN = "eintragen"
+private const val AUFTRAG = "eintragenAuftrag"

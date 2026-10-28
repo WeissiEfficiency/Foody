@@ -30,62 +30,27 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import de.foody.core.data.zutaten.Packungswerte
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
  * „Packung scannen“: Strichcode (eigener Katalog, dann Open Food Facts) oder Foto der Nährwerttabelle (Kamera oder
- * Galerie). Liefert nur Vorschläge über [onPackung]; das Formular markiert sie, Speichern übernimmt. Trägt schon eine
- * eigene Zutat den Strichcode, kommt [onImKatalog].
+ * Galerie). Der Ablauf liegt in [lauf] (im ViewModel); hier sind nur Menü, Hinweise und die Launcher für Kamera und
+ * Galerie. Treffer liefert [lauf] als Vorschläge; das Formular markiert sie, Speichern übernimmt.
  */
-@Composable
-fun PackungScanKnopf(
-    scan: PackungScan,
-    onPackung: (Packungswerte) -> Unit,
-    onImKatalog: (ScanAusgang.ImKatalog) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    PackungScanKnopf(
-        verfuegbar = remember(scan) { scan.verfuegbar },
-        vorladen = scan::vorladen,
-        strichcode = scan::strichcode,
-        foto = scan::foto,
-        onPackung = onPackung,
-        onImKatalog = onImKatalog,
-        modifier = modifier,
-    )
-}
-
-/** Wie oben, mit Funktionen statt [PackungScan] (für Tests ohne Play-Dienste). */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun PackungScanKnopf(
-    verfuegbar: Boolean,
-    vorladen: () -> Unit,
-    strichcode: suspend () -> ScanAusgang,
-    foto: suspend (bildUri: String, strichcode: String?) -> ScanAusgang,
-    onPackung: (Packungswerte) -> Unit,
-    onImKatalog: (ScanAusgang.ImKatalog) -> Unit,
-    modifier: Modifier = Modifier,
-) {
+fun PackungScanKnopf(lauf: ScanLauf, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val zustand = rememberSaveable(saver = ScanKnopfZustand.Saver) { ScanKnopfZustand() }
-    val packungWeiter by rememberUpdatedState(onPackung)
-    val katalogWeiter by rememberUpdatedState(onImKatalog)
+    val zustand = lauf.zustand
     var menue by remember { mutableStateOf(false) }
 
     // Beim Aufbau gelesen: Nach Drehen oder Prozessende liefert der Launcher das Kameraergebnis schon vor den Effekten
@@ -94,27 +59,8 @@ internal fun PackungScanKnopf(
 
     // Sobald der Knopf zu sehen ist: Module vorladen und Reste früherer Kamerafotos wegräumen
     LaunchedEffect(Unit) {
-        vorladen()
+        lauf.vorladen()
         withContext(Dispatchers.IO) { aufraeumen(scanOrdner(context), behalten = offenesFoto) }
-    }
-
-    fun weitergeben(e: ScanKnopfZustand.Ergebnis?) = when (e) {
-        is ScanKnopfZustand.Ergebnis.Packung -> packungWeiter(e.werte)
-        is ScanKnopfZustand.Ergebnis.ImKatalog -> katalogWeiter(e.treffer)
-        null -> Unit
-    }
-
-    fun fotoErkennen(uri: String, danach: () -> Unit = {}) {
-        zustand.starten()
-        val code = zustand.strichcode
-        // finally: auch wenn der Bildschirm während der Erkennung verlassen wird, ist die Kameradatei danach weg
-        scope.launch {
-            try {
-                weitergeben(zustand.auswerten(foto(uri, code)))
-            } finally {
-                danach()
-            }
-        }
     }
 
     val kamera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
@@ -122,11 +68,11 @@ internal fun PackungScanKnopf(
         when {
             datei == null -> Unit
             !ok -> datei.delete()
-            else -> fotoErkennen(Uri.fromFile(datei).toString()) { datei.delete() }
+            else -> lauf.foto(Uri.fromFile(datei).toString()) { datei.delete() }
         }
     }
     val galerie = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) fotoErkennen(uri.toString())
+        if (uri != null) lauf.foto(uri.toString())
     }
 
     fun kameraStarten() {
@@ -143,15 +89,14 @@ internal fun PackungScanKnopf(
 
     fun galerieStarten() = galerie.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
 
+    val verfuegbar = lauf.verfuegbar
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Box {
             ScanMenueKnopf(aktiv = verfuegbar && !zustand.laeuft, laeuft = zustand.laeuft) { menue = true }
             DropdownMenu(menue, onDismissRequest = { menue = false }) {
                 DropdownMenuItem({ Text(ScanTexte.STRICHCODE) }, {
                     menue = false
-                    zustand.menueVersuch()
-                    zustand.starten()
-                    scope.launch { weitergeben(zustand.auswerten(strichcode())) }
+                    lauf.strichcode()
                 })
                 // Ein neuer Versuch über das Menü vergisst den Strichcode; nur die angebotenen Foto-Knöpfe hängen ihn an.
                 DropdownMenuItem({ Text(ScanTexte.FOTO) }, {

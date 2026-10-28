@@ -96,7 +96,7 @@ fun ZutatEditorRoute(id: String, onFertig: () -> Unit, vm: ZutatEditorViewModel 
                         entwurf, z.fehler, z.synonyme, z.verwendetIn, onAendern = vm::aendern, onFeldFertig = vm::feldFertig,
                         markiert = z.markiert, scanQuelle = z.scanQuelle,
                         onOnlineAbrufen = if (z.imKatalogSelbst != null && !z.laeuft) vm::onlineAbrufen else null,
-                        scanKnopf = { PackungScanKnopf(vm.scan, onPackung = vm::packungUebernehmen, onImKatalog = vm::imKatalog) },
+                        scanKnopf = { PackungScanKnopf(vm.scanLauf) },
                     )
                 }
             }
