@@ -72,7 +72,8 @@ sealed interface EditorEreignis {
  */
 @HiltViewModel
 class ZutatEditorViewModel @Inject constructor(
-    gespeichert: SavedStateHandle,
+    /** Entwurf, Markierungen, Packung und Scan-Knopf überstehen damit ein Prozessende. */
+    private val gespeichert: SavedStateHandle,
     private val repo: ZutatenRepository,
     private val meldungen: ZutatenMeldungen,
     /** Für den Scan-Knopf und „Online abrufen“. */
@@ -95,6 +96,13 @@ class ZutatEditorViewModel @Inject constructor(
 
     /** Die zuletzt übernommene Packung; geht beim Speichern mit (genaue kJ, Quelle bleibt). */
     private var packung: Packungswerte? = null
+        set(wert) {
+            field = wert
+            gespeichert[PACKUNG] = wert
+        }
+
+    /** Ein Scan-Ergebnis, das vor dem Laden der Zutat kam (nach einem Prozessende); wird danach übernommen. */
+    private var wartend: Packungswerte? = null
 
     /** Der Editor ist (durch eigene Aktion oder weil die Zutat verschwand) fertig: weitere Meldungen unterdrücken. */
     private var fertig = false
@@ -111,7 +119,23 @@ class ZutatEditorViewModel @Inject constructor(
                     z == null -> if (stand.value.laeuft) weg = true else verschwunden()
                     !stand.value.geladen -> {
                         val e = ZutatEntwurf.aus(z)
-                        stand.update { it.copy(geladen = true, vorher = e, entwurf = e, synonyme = repo.synonyme(z.canonicalName)) }
+                        // Nach einem Prozessende: Eingaben, Markierungen und Packung aus dem SavedStateHandle
+                        val gerettet = gespeichert.get<String>(ENTWURF_FUER) == id
+                        gespeichert[ENTWURF_FUER] = id
+                        packung = if (gerettet) gespeichert[PACKUNG] else null
+                        val entwurf = gespeichert.get<ZutatEntwurf>(ENTWURF).takeIf { gerettet } ?: e
+                        val markiert = gespeichert.get<HashSet<ZutatFeld>>(MARKIERT).takeIf { gerettet }.orEmpty()
+                        sichtbar = sichtbar + markiert
+                        stand.update {
+                            it.copy(
+                                geladen = true, vorher = e, entwurf = entwurf, markiert = markiert, scanQuelle = packung?.quelle,
+                                synonyme = repo.synonyme(z.canonicalName),
+                            )
+                        }
+                        wartend?.let { w ->
+                            wartend = null
+                            packungUebernehmen(w)
+                        }
                         // Aus „Neue Zutat“: gescannte Packung übernehmen bzw. „Schon im Katalog“ melden
                         uebergabe.abholen(id)?.let { (packung, meldung) ->
                             packung?.let(::packungUebernehmen)
@@ -132,18 +156,30 @@ class ZutatEditorViewModel @Inject constructor(
     fun aendern(neu: ZutatEntwurf) {
         zusatz = emptyMap()
         stand.update { it.copy(entwurf = neu, markiert = nochMarkiert(it.markiert, neu, packung)) }
+        sichern()
         fehlerZeigen()
     }
 
     /** Scan-Ergebnis übernehmen und markieren; Fehler übernommener Werte zeigen sich sofort. */
     fun packungUebernehmen(p: Packungswerte) {
-        val e = stand.value.entwurf ?: return
+        val e = stand.value.entwurf ?: run {
+            wartend = p
+            return
+        }
         val (neu, markiert) = e.mitPackung(p)
         packung = p
         zusatz = emptyMap()
         sichtbar = sichtbar + markiert
         stand.update { it.copy(entwurf = neu, markiert = markiert, scanQuelle = p.quelle, imKatalogSelbst = null) }
+        sichern()
         fehlerZeigen()
+    }
+
+    /** Entwurf und Markierungen ins SavedStateHandle (für ein Prozessende). */
+    private fun sichern() {
+        val s = stand.value
+        gespeichert[ENTWURF] = s.entwurf
+        gespeichert[MARKIERT] = HashSet(s.markiert)
     }
 
     /**
@@ -256,3 +292,8 @@ class ZutatEditorViewModel @Inject constructor(
         }
     }
 }
+
+private const val ENTWURF = "zutatEntwurf"
+private const val ENTWURF_FUER = "zutatEntwurfFuer"
+private const val MARKIERT = "zutatMarkiert"
+private const val PACKUNG = "zutatPackung"

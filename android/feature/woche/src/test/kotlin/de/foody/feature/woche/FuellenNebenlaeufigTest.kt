@@ -61,6 +61,9 @@ class FuellenNebenlaeufigTest {
         u.viewModels.schliessen()
         db.close()
         abfragen.shutdownNow()
+        // Erst wenn der Room-Thread fertig ist: Sonst setzt er noch Coroutinen auf Dispatchers.Main fort, während
+        // resetMain ihn umstellt („Dispatchers.Main is used concurrently with setting it“)
+        abfragen.awaitTermination(5, TimeUnit.SECONDS)
         Dispatchers.resetMain()
     }
 

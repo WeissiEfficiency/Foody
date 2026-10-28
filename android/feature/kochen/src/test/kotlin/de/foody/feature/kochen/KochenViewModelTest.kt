@@ -6,7 +6,9 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.lifecycle.SavedStateHandle
 import de.foody.core.data.db.FoodyDatenbank
+import de.foody.core.testing.nachProzessende
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -52,6 +54,33 @@ class KochenViewModelTest {
     }
 
     private fun da(vm: KochenViewModel) = assertIs<KochZustand.Da>(vm.zustand.value)
+
+    @Test
+    fun ueberstehtProzessende() = runTest {
+        // Hier geänderte Portionen gelten nach einem Prozessende vor denen aus dem Aufruf (R-W7)
+        db.reistopf()
+        val h = SavedStateHandle()
+        val vor = u.vm(h).apply { starten("r1", 2) }
+        vor.portionenSchritt(mehr = true)
+        vor.seiteWaehlen(1)
+        assertEquals(3, da(vor).portionen)
+
+        val nach = u.vm(h.nachProzessende()).apply { starten("r1", 2) }
+        assertEquals(3, da(nach).portionen)
+        assertEquals(1, da(nach).seite)
+    }
+
+    @Test
+    fun fertigUeberstehtProzessende() = runTest {
+        db.reistopf()
+        val h = SavedStateHandle()
+        val vor = u.vm(h).apply { starten("r1", null) }
+        assertTrue(vor.fertig())
+
+        val nach = u.vm(h.nachProzessende()).apply { starten("r1", null) }
+        assertTrue(nach.fertigOffen.value)
+        assertFalse(nach.fertig())
+    }
 
     @Test
     fun seitenMitBereitlegen() = runTest {

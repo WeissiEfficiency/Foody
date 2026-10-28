@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.fotos.FotoAblage
@@ -62,7 +63,7 @@ class RezepteBereichTest {
             FoodyTheme {
                 RezepteBereich(
                     onOeffnen = { geoeffnet += it }, onNeu = {}, onKochen = { _, _ -> }, onEinkauf = { einkauf++ },
-                    listeVm = liste, detailVm = detail, editorVm = { halter.behalten(EditorViewModel(repo, db, ablage)) },
+                    listeVm = liste, detailVm = detail, editorVm = { halter.behalten(EditorViewModel(SavedStateHandle(), repo, db, ablage)) },
                 )
             }
         }

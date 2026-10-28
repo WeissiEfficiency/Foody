@@ -1,6 +1,7 @@
 package de.foody.feature.kochen
 
 import android.net.Uri
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -62,12 +63,16 @@ sealed interface KochZustand {
 private data class Stand(val portionen: Int?, val seite: Int, val abgehakt: Set<Int>)
 
 private const val TICK_MS = 1_000L
+private const val REZEPT = "kochenRezept"
+private const val FERTIG = "kochenFertig"
 private const val MIN_PORTIONEN = 1
 private const val MAX_PORTIONEN = 99
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class KochenViewModel @Inject constructor(
+    /** Welches Rezept offen ist und ob „Fertig“ schon getippt wurde; übersteht ein Prozessende. */
+    private val gespeichert: SavedStateHandle,
     private val repo: RezeptRepository,
     private val kochen: KochenRepository,
     private val sitzungen: KochSitzungSpeicher,
@@ -110,12 +115,24 @@ class KochenViewModel @Inject constructor(
         roh.copy(seite = s.seite.coerceIn(0, roh.seitenzahl - 1), abgehakt = s.abgehakt.filter { it < bereit.size }.toSet())
     }.onEach(::sitzungMerken).stateIn(viewModelScope, SharingStarted.Eagerly, KochZustand.Laden)
 
-    /** Öffnet [id]; Portionen aus [portionen] (begrenzt 1–99), sonst aus der Sitzung, sonst aus dem Rezept. */
+    /**
+     * Öffnet [id]; Portionen aus [portionen] (begrenzt 1–99), sonst aus der Sitzung, sonst aus dem Rezept. Nach einem
+     * Prozessende gilt die Sitzung vor [portionen] (hier geänderte Portionen bleiben), und ein schon getipptes „Fertig“
+     * öffnet wieder das Blatt.
+     */
     fun starten(id: String, portionen: Int?) {
         // Derselbe Aufruf nach dem Drehen ändert nichts: hier geänderte Portionen, Seite und Haken bleiben
         if (rezeptId.value == id) return
+        val nachNeustart = gespeichert.get<String>(REZEPT) == id
+        gespeichert[REZEPT] = id
         val s = sitzungen.lesen(id)
-        stand.value = Stand(portionen?.coerceIn(MIN_PORTIONEN, MAX_PORTIONEN) ?: s?.portionen, s?.seite ?: 0, s?.abgehakt.orEmpty())
+        val p = if (nachNeustart) s?.portionen ?: portionen else portionen ?: s?.portionen
+        stand.value = Stand(p?.coerceIn(MIN_PORTIONEN, MAX_PORTIONEN), s?.seite ?: 0, s?.abgehakt.orEmpty())
+        if (nachNeustart && gespeichert.get<Boolean>(FERTIG) == true) {
+            beendet = true
+            fertigGetippt.value = true
+            blatt.value = true
+        }
         rezeptId.value = id
     }
 
@@ -149,6 +166,7 @@ class KochenViewModel @Inject constructor(
         val id = rezeptId.value ?: return false
         if (!fertigGetippt.compareAndSet(expect = false, update = true)) return false
         kochen.gekochtMarkieren(id, LocalDate.now(clock))
+        gespeichert[FERTIG] = true
         schliessen()
         blatt.value = true
         return true

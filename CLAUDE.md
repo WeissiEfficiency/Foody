@@ -41,6 +41,8 @@ JDK 21+ (JBR von Android Studio), Android SDK 37. Befehle in PowerShell mit `.\g
 - `allWarningsAsErrors` ist überall an; Bytecode Java 17.
 - Tests mit ViewModels und Room im Speicher: ViewModels in einen `ViewModelHalter` (`:core:testing`) geben, in `@After`
   erst `schliessen()`, dann `db.close()` – sonst fragt ein laufender Flow die geschlossene Datenbank ab (ADR 0014).
+- Eingaben, die ein Prozessende überstehen müssen, liegen im `SavedStateHandle`; Tests prüfen das mit
+  `SavedStateHandle.nachProzessende()` aus `:core:testing` (Werte gehen durch die Java-Serialisierung wie im Bundle).
 - Room: nie einen destruktiven Fallback; jede Schemaänderung mit Migration und Migrationstest.
 - Änderungen unter `shared/api-protocol/` oder `server/` → der Server muss neu gebaut werden; im PR sagen, ob ein
   Server-Rebuild nötig ist (`server/README.md`, Update).

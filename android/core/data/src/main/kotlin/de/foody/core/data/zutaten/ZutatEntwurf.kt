@@ -11,7 +11,8 @@ enum class ZutatFeld { NAME, KCAL, EIWEISS, KOHLENHYDRATE, ZUCKER, FETT, BALLAST
 
 /**
  * Was der Editor zeigt, als Texte. Gespeichert werden später nur Felder, deren Text sich gegenüber dem Öffnen geändert
- * hat – so bleibt etwa der kJ-Wert exakt, wenn das kcal-Feld unberührt ist.
+ * hat – so bleibt etwa der kJ-Wert exakt, wenn das kcal-Feld unberührt ist. Serializable: Der Editor rettet den Entwurf
+ * im SavedStateHandle über ein Prozessende.
  */
 data class ZutatEntwurf(
     val name: String,
@@ -28,7 +29,7 @@ data class ZutatEntwurf(
     val stueckgewicht: String,
     val strichcode: String,
     val quelle: String,
-) {
+) : java.io.Serializable {
     companion object {
         fun aus(z: ZutatEntity): ZutatEntwurf = ZutatEntwurf(
             name = z.canonicalName,

@@ -11,6 +11,7 @@ import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
+import androidx.lifecycle.SavedStateHandle
 import androidx.room.Room
 import de.foody.core.data.db.ArbeitsschrittEntity
 import de.foody.core.data.db.FoodyDatenbank
@@ -73,8 +74,9 @@ class KochTestUmgebung(val db: FoodyDatenbank, val clock: Clock = TEST_UHR) {
     /** Hält die ViewModels; `viewModels.schliessen()` gehört in `@After` vor `db.close()` ([ViewModelHalter]). */
     val viewModels = ViewModelHalter()
 
-    fun vm() = viewModels.behalten(
-        KochenViewModel(repo, KochenRepository(db) { clock.millis() }, sitzungen, timer, clock, FotoAblage(app)),
+    /** [gespeichert]: SavedStateHandle wie nach einem Prozessende; sonst ein neues. */
+    fun vm(gespeichert: SavedStateHandle = SavedStateHandle()) = viewModels.behalten(
+        KochenViewModel(gespeichert, repo, KochenRepository(db) { clock.millis() }, sitzungen, timer, clock, FotoAblage(app)),
     )
 
     private fun prefs(name: String) = app.getSharedPreferences(name, Context.MODE_PRIVATE)

@@ -291,13 +291,16 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
       (`MainActivity.kt:38`). Fix: `navigate(uri) { launchSingleTop }`.
 - [ ] **R-W6** NavHost an drei Stellen (`Hauptgeruest.kt:76-91`) → Kochen-Vollbild oder Drehen über 840 dp verliert
       `rememberSaveable`.
-- [ ] **R-W7 + D1** Entwürfe ohne `SavedStateHandle` (`EditorViewModel`, `ZutatEditorViewModel`, `KochenViewModel`,
+- [x] **R-W7 + D1** Entwürfe ohne `SavedStateHandle` (`EditorViewModel`, `ZutatEditorViewModel`, `KochenViewModel`,
       `EintragenViewModel`) gehen nach einem Prozess-Ende verloren. Verschärft durch 6e3: Ein Foto-Scan aus dem
       Tagebuch kommt nach Prozess-Ende nie an, weil `weg` auf REZEPT zurückfällt und der Scan-Knopf nicht aufgebaut
       wird. Mindestens `weg`, Packungsfelder und Scan-Markierungen sichern.
       **D1 erledigt (2026-10-28):** `EintragenViewModel` legt Eingaben und Auftrag im `SavedStateHandle` ab, der
       Scan-Knopf-Zustand liegt dort über `ScanLauf`; im Emulator mit beendetem Prozess geprüft (Foto kommt in „Frei“
-      an). Offen: Entwürfe in `EditorViewModel`, `ZutatEditorViewModel` (samt Markierungen) und `KochenViewModel`.
+      an). **Rest erledigt (2026-10-28):** `EditorViewModel` (Eingaben, gebunden an die Rezept-ID; Ursprung und
+      Zeilen wieder aus der Datenbank), `ZutatEditorViewModel` (Entwurf, Markierungen, Packung; ein Scan-Ergebnis vor
+      dem Laden wartet) und `KochenViewModel` (Sitzung gilt nach dem Neustart vor den Aufruf-Portionen, „Fertig“
+      bleibt). Tests stellen das Prozessende mit `nachProzessende()` aus `:core:testing` nach.
 - [ ] **R-W8** „↻“ in der Woche findet oft nichts; `tagNeuAendertNurDiesenTag` besteht auch ohne Änderung. Fix:
       Parameter `ausgeschlossen` in `LeereTageFuellen`.
 - [ ] **R-W9** Ø kcal/Tag ohne „mind.“, wenn Werte fehlen (`WocheScreen.kt:169`).

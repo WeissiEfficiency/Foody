@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.fotos.FotoAblage
@@ -48,7 +49,7 @@ class EditorScreenTest {
     // ViewModel außerhalb der Komposition: übersteht den Neuaufbau wie ein Hilt-ViewModel
     private val vm by lazy {
         val ablage = FotoAblage(RuntimeEnvironment.getApplication())
-        halter.behalten(EditorViewModel(RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+        halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage) { 1_000L }, db, ablage))
     }
 
     @Before
