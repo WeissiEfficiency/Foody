@@ -379,6 +379,14 @@ Entscheidung 2026-10-28: Die KI-Hilfe wird ein eigenes Projekt nach dem Umstieg.
 - [ ] v1-Code entfernen (`ui/`-Pakete, alte Routen); `README.md`, `docs/architecture.md` aktualisieren
 - [ ] Vorrats-Regeln aus `docs/domain-rules.md` und `:domain` entfernen (8, 17, 21 anpassen), dazu
       `MealSuggestions`/`PlanVorschlag`/`PantryCoverage`; Tests nachziehen
+- [ ] **APK-Ablage:** `apkNachOpenCloud` auf die V3 übertragen (erst `:app3`, nach dem Umbenennen `:app`), auch für
+      „Foody Vorschau“. Ziel je Rechner über `foody.apkZiel` in `local.properties`, z. B.
+      `E:/OpenCloud/Persönlich (2)/foody.apk`. Von dort kommt die APK über OpenCloud aufs Handy und aufs Tablet.
+- [ ] **Installationsanleitung** `docs/installation.md` (aus dem README verlinkt): wo die APK liegt, Erstinstallation
+      und Update auf Handy und Tablet („Installation aus dieser Quelle zulassen“), Signaturschlüssel sichern,
+      Umstieg von der v1 (Sicherung → V3 → Wiederherstellen), Server verbinden, was bei Problemen hilft.
+- [ ] **Abschluss: Code-Review** mit dem Skill `code-review` über die ganze V3 nach dem Umstieg; Befunde hier
+      eintragen und die blockierenden vor dem Release beheben.
 
 ## Leitplanken
 
