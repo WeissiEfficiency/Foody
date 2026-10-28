@@ -278,8 +278,8 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
       vorhandenem Datensatz ist ein Konflikt; unveränderte Startzutaten nicht vormerken; Zwei-Geräte-Test.
       Server-Rebuild nötig.
 - [x] **R-W1 Pull hinter `last_rev` liefert leer statt 410** (`SyncService.kt:31-43`, z. B. nach einer
-      Server-Wiederherstellung) → Geräte verpassen still Änderungen. Test `pullBeyondHeadIsEmpty` umstellen. Steckt
-      auch im echten Server auf `v1-server`.
+      Server-Wiederherstellung) → Geräte verpassen still Änderungen. Test `pullBeyondHeadIsEmpty` umstellen.
+      **Erledigt nur auf `main` (#115):** Der echte Server läuft von `v1-server` und hat den Fehler weiter (R2-W1).
 
 **Wichtig (App):**
 - [x] **R-W2** Zutat löschen, die nur Einkaufsartikel nutzen → Artikel dauerhaft `missing_reference`
@@ -346,6 +346,18 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
       nie freigegeben, Tagesziel speichert Zwischenstände, verwaiste Fotos nach Sync, Keystore auf
       Main, 4 A11y-Lücken (SeitenListe, Timer-Chip, Quellen-Link, Überschriften), falscher Leer-Grund bei
       „Leere Tage füllen“, kein ktlint/detekt
+
+**Zweites Review (R2, 2026-10-28, Stand nach #121–#125):**
+- [ ] **R2-W1** R-W1 (410 hinter `last_rev`) fehlt dem echten Server auf `v1-server`. Offen: Fix dorthin
+      übernehmen (Server-Rebuild) oder bis zum Umstieg hinnehmen.
+- [x] **R2-N1** `nachProzessende()` übernahm keine `saveable`-Zustände, der Scan-Knopf war ungeprüft. **Erledigt
+      (2026-10-28):** sichert über `savedStateProvider()` wie Android, Bundle durch ein Parcel; Test für `ScanLauf`.
+- [x] **R2-N2** „↻“ ohne Alternative tat still nichts; die übrigen Vorschläge zählten nicht in die Abwechslung.
+      **Erledigt (2026-10-28):** Meldung im Blatt, `vorschlagen(…, vorgemerkt)` nimmt die übrigen Vorschläge mit.
+- [ ] **R2-N3** Maschinenspezifisches (JAVA_HOME, ö-Pfad, Emulator) aus `CLAUDE.md` in eine nicht eingecheckte
+      `CLAUDE.local.md`? Offen.
+- [x] Struktur-Delta **W5** (Navigation in `architecture.md`) und **N8** (`nachProzessende` in Doku und ADR 0014):
+      erledigt in #123.
 
 **Lokal, ohne Commit:** Build-Reste `app/`, `domain/`, `sync-protocol/` im Root (S-N2) und alte Worktrees unter
 `.claude/worktrees/` (S-N3) entfernen.
