@@ -310,8 +310,13 @@ class EinkaufRepository(
     }
 
     /** Die gegebene Liste, wenn es sie gibt; sonst eine neue leere „Einkauf“. Nur innerhalb einer Transaktion. */
+    /**
+     * Die gewünschte Liste; fehlt sie (noch keine angezeigt oder inzwischen gelöscht), die aktuelle. Erst wenn es gar
+     * keine gibt, eine neue – in der Transaktion, damit zwei schnelle Tipps nicht zwei Listen anlegen.
+     */
     private suspend fun listeOderNeu(listeId: String?): String {
         if (listeId != null && db.einkaufslisteDao().nachId(listeId) != null) return listeId
+        db.einkaufslisteDao().juengste()?.let { return it.id }
         val jetzt = uhr()
         val neu = EinkaufslisteEntity(id = neueId(), name = LEERE_LISTE, createdAt = jetzt, updatedAt = jetzt)
         db.einkaufslisteDao().upsert(neu)
