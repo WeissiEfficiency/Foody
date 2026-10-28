@@ -25,13 +25,17 @@ import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
 
-/** „Leere Tage füllen“: Vorschlag für [tage]; [abgewaehlt] wird nicht angelegt; [hinweis] statt Vorschlag. */
+/**
+ * „Leere Tage füllen“: Vorschlag für [tage]; [abgewaehlt] wird nicht angelegt; [hinweis] statt Vorschlag; [meldung]
+ * nach einem „↻“ ohne Alternative.
+ */
 data class FuellenZustand(
     val mahlzeit: Mahlzeit,
     val tage: List<LocalDate>,
     val vorschlag: Map<LocalDate, String>,
     val abgewaehlt: Set<LocalDate>,
     val hinweis: String?,
+    val meldung: String? = null,
 )
 
 private const val MONTAG = "montag"
@@ -125,20 +129,26 @@ class WocheViewModel @Inject constructor(
         val z = fuellenStand.value ?: return@fuellenStarten
         seed++
         val vorschlag = repo.vorschlagen(z.tage, z.mahlzeit, seed)
-        fuellenAendern(z) { it.copy(vorschlag = vorschlag) }
+        fuellenAendern(z) { it.copy(vorschlag = vorschlag, meldung = null) }
     }
 
-    /** Neuer Vorschlag nur für [datum]; die übrigen Tage bleiben, kein Rezept doppelt. */
+    /**
+     * Neuer Vorschlag nur für [datum]; die übrigen Tage bleiben, kein Rezept doppelt. Die übrigen (gewählten) Vorschläge
+     * zählen wie Geplantes in die Abwechslung; ohne Alternative bleibt der Tag und [FuellenZustand.meldung] sagt es.
+     */
     fun tagNeu(datum: LocalDate) = fuellenStarten {
         val z = fuellenStand.value ?: return@fuellenStarten
         seed++
-        val neu = repo.vorschlagen(listOf(datum), z.mahlzeit, seed, ausgeschlossen = z.vorschlag.values.toSet())[datum]
-            ?: return@fuellenStarten
-        fuellenAendern(z) { it.copy(vorschlag = it.vorschlag + (datum to neu)) }
+        val andere = z.vorschlag - datum - z.abgewaehlt
+        val neu = repo.vorschlagen(listOf(datum), z.mahlzeit, seed, ausgeschlossen = z.vorschlag.values.toSet(), vorgemerkt = andere)[datum]
+        fuellenAendern(z) {
+            if (neu == null) it.copy(meldung = "Kein anderes passendes Rezept für ${tagKurz(datum)}")
+            else it.copy(vorschlag = it.vorschlag + (datum to neu), meldung = null)
+        }
     }
 
     fun abwaehlen(datum: LocalDate) = fuellenStand.update { z ->
-        z?.copy(abgewaehlt = if (datum in z.abgewaehlt) z.abgewaehlt - datum else z.abgewaehlt + datum)
+        z?.copy(abgewaehlt = if (datum in z.abgewaehlt) z.abgewaehlt - datum else z.abgewaehlt + datum, meldung = null)
     }
 
     /** Legt die gewählten Vorschläge an und schließt; `null` bei einem zweiten Tipp, solange der erste läuft. */

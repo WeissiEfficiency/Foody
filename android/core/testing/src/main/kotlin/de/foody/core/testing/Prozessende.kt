@@ -1,19 +1,32 @@
 package de.foody.core.testing
 
+import android.annotation.SuppressLint
+import android.os.Bundle
+import android.os.Parcel
 import androidx.lifecycle.SavedStateHandle
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
 
 /**
- * Ein neues SavedStateHandle wie nach einem Prozessende: Jeder Wert geht durch die Java-Serialisierung, wie beim
- * Ablegen im Bundle. Nicht serialisierbare Werte fallen so im Test auf statt erst auf dem Gerät. Werte, die über
- * `saveable` (SavedStateProvider) liegen, kommen nicht mit.
+ * Ein neues SavedStateHandle wie nach einem Prozessende: Gesichert wird, was Android sichern würde, also die Werte samt
+ * der über `saveable` angemeldeten Zustände. Das Bundle geht einmal durch ein Parcel; nicht ablegbare Werte fallen so
+ * im Test auf statt erst auf dem Gerät. Nur unter Robolectric (Bundle, Parcel).
+ *
+ * `savedStateProvider()` ist für die Lifecycle-Bibliotheken gedacht; es ist aber genau der Weg, über den Android sichert
+ * (ein Bundle mit einem Eintrag je Schlüssel). Wiederhergestellt wird wie in `SavedStateHandle.createHandle`.
  */
-fun SavedStateHandle.nachProzessende(): SavedStateHandle = SavedStateHandle(
-    keys().associateWith { schluessel ->
-        val bytes = ByteArrayOutputStream().also { aus -> ObjectOutputStream(aus).use { it.writeObject(get<Any?>(schluessel)) } }
-        ObjectInputStream(ByteArrayInputStream(bytes.toByteArray())).use { it.readObject() }
-    },
-)
+@SuppressLint("RestrictedApi", "VisibleForTests")
+fun SavedStateHandle.nachProzessende(): SavedStateHandle {
+    val zurueck = durchParcel(savedStateProvider().saveState())
+    @Suppress("DEPRECATION")
+    return SavedStateHandle(zurueck.keySet().associateWith { zurueck.get(it) })
+}
+
+private fun durchParcel(b: Bundle): Bundle {
+    val p = Parcel.obtain()
+    try {
+        p.writeBundle(b)
+        p.setDataPosition(0)
+        return requireNotNull(p.readBundle(SavedStateHandle::class.java.classLoader))
+    } finally {
+        p.recycle()
+    }
+}
