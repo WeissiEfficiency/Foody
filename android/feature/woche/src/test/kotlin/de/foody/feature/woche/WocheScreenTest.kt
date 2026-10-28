@@ -102,6 +102,8 @@ class WocheScreenTest {
         planen(2, "ABENDESSEN")
         zeigen()
         compose.warteAufText("mind. 717 kcal")
+        planen(2, "MITTAGESSEN")
+        compose.warteAufText("Ø mind. 1.434 kcal/Tag")
     }
 
     @Test

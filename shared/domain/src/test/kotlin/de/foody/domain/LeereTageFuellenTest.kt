@@ -59,6 +59,16 @@ class LeereTageFuellenTest {
         assertEquals(mapOf(montag to "suppe"), vorschlag(listOf(suppe), tage = listOf(montag)))
     }
 
+    @Test fun ausgeschlosseneFallenVorDerStufenwahlWeg() {
+        val ohneGang = rezept("pommes", einordnung = einordnung(abend, emptySet()))
+        repeat(30) { seed ->
+            val plan = LeereTageFuellen.vorschlagen(
+                hauptgerichte(3) + ohneGang, listOf(montag), Mahlzeit.ABENDESSEN, seed.toLong(), ausgeschlossen = setOf("r1", "r2", "r3"),
+            )
+            assertEquals(mapOf(montag to "pommes"), plan)
+        }
+    }
+
     @Test fun eingeordneteVorUnbekanntemGangVorUneingeordnetem() {
         val ohneGang = rezept("pommes", einordnung = einordnung(abend, emptySet()))
         val uneingeordnet = rezept("la-garbure", einordnung = einordnung(emptySet(), emptySet()))

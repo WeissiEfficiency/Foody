@@ -35,7 +35,6 @@ data class FuellenZustand(
 )
 
 private const val MONTAG = "montag"
-private const val VERSUCHE_JE_TAG = 20
 private const val STOPP_MS = 5_000L
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -132,12 +131,9 @@ class WocheViewModel @Inject constructor(
     /** Neuer Vorschlag nur für [datum]; die übrigen Tage bleiben, kein Rezept doppelt. */
     fun tagNeu(datum: LocalDate) = fuellenStarten {
         val z = fuellenStand.value ?: return@fuellenStarten
-        val andere = (z.vorschlag - datum).values.toSet()
-        val bisher = z.vorschlag[datum]
-        val neu = (1..VERSUCHE_JE_TAG).firstNotNullOfOrNull {
-            seed++
-            repo.vorschlagen(listOf(datum), z.mahlzeit, seed)[datum]?.takeIf { it !in andere && it != bisher }
-        } ?: return@fuellenStarten
+        seed++
+        val neu = repo.vorschlagen(listOf(datum), z.mahlzeit, seed, ausgeschlossen = z.vorschlag.values.toSet())[datum]
+            ?: return@fuellenStarten
         fuellenAendern(z) { it.copy(vorschlag = it.vorschlag + (datum to neu)) }
     }
 
