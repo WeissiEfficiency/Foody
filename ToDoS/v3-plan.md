@@ -372,12 +372,20 @@ Entscheidung 2026-10-28: Die KI-Hilfe wird ein eigenes Projekt nach dem Umstieg.
 (`GET /ki/status`, `KiKontingent`) bleibt bestehen.
 
 ### Phase 8 – Messen, Umstieg, Release V3 (≈ 1 Woche) – als Nächstes
-- [ ] Probeversion „Foody Vorschau“ (`:app3:assembleVorschau`, eigene App-ID neben der v1) auf dem Handy testen
+- [ ] Probeversion „Foody Vorschau“ (`:app:assembleVorschau`, eigene App-ID neben der v1) auf dem Handy testen
 - [ ] Android-Studio-Profiler auf Handy und Tablet (Start, Scrollen, Speicher); Baseline-Profil neu erzeugen.
       **Baseline-Profil erzeugt (2026-10-28)** auf dem Emulator (Heute, Rezepte, Woche, Einkauf, Einstellungen);
       offen: Profiler auf den echten Geräten
 - [ ] TalkBack-Durchlauf, Schriftgröße 200 %
 - [ ] Probelauf mit Kopien, dann Umstieg: Sicherungen → Server v3 → Umwandlung → beide Geräte auf V3
+      **Probelauf bestanden (2026-10-28):** Kopie der echten Server-Datenbank (Integrität ok, 375 lebende
+      Datensätze) auf dem Test-Server von `v1-server` auf `main` umgestellt: Sicherung `vor-migration-2-*.db`
+      geschrieben, Haushalt → Konto „Weissi“ (Revision 423), 3 aktive Geräte erhalten. Gerät auf dem Emulator: v1
+      synchronisiert aus einer Kopie, offline einen Favoriten gesetzt (Outbox), dann die V3 per Update darüber
+      installiert – Schema 10, Integrität ok, alle Zeilenzahlen gleich, Vorrat entfernt, **keine neue Anmeldung**;
+      der Favorit kam als Revision 424 beim Server an, Cursor 424, kein Sync-Fehler. `kontoId` bleibt nach der
+      Migration leer (gewollt, siehe `SyncKonto`). Nicht beobachtet: die Meldung „Bitte App aktualisieren“ der v1
+      am umgestellten Server (deckt der Server-Test für 409 ab). Offen: der echte Umstieg.
 - [x] v1-Code entfernen (`ui/`-Pakete, alte Routen); `README.md`, `docs/architecture.md` aktualisieren.
       **Erledigt (2026-10-28):** `:app` (v1) und `:sync-protocol` entfernt, `:app3` ist jetzt `:app`
       (`de.foody.app`, Release mit eigenem Schlüssel, `versionCode` 300), App-Icon der v1 übernommen, CI angepasst.
