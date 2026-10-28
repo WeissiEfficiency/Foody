@@ -1,0 +1,100 @@
+# Aufräum- und Optimierungsplan nach dem Umstieg
+
+Stand: 2026-10-28, `main` 71c887c. Server, Handy und Tablet laufen auf der V3 (Umstieg am 28.10., #137; danach ein
+Import, Server jetzt bei Revision 890). Damit braucht vieles nicht mehr zu existieren, was für die v1, die Web-App und den Umstieg selbst
+gebaut wurde. Dieser Plan sammelt alles an einer Stelle: Altlasten, Doku und offene Review-Befunde
+(Gesamt-Review vom 28.10., IDs **W…/N…** wie im Chat „Zutatenkatalog V3 Phase 6e2“).
+
+**Rückweg-Frist:** Was den Rückweg zur v1 offenhält, bleibt bis **2026-11-25** (4 Wochen Alltag ohne Probleme).
+In diesem Plan steht es unter Stufe 3. Alles in Stufe 1 und 2 kann sofort weg.
+
+Legende: 👤 = machst du (Gerät, Homeserver), 🤖 = Claude, PR = eigener kleiner PR gegen `main`.
+
+---
+
+## Stufe 1 – Sofort, ohne Risiko (kein Code)
+
+| ID | Was | Wer | Hinweis |
+|---|---|---|---|
+| A1 | Alte Apps auf den Geräten deinstallieren, falls noch da: die bis 18.10. verbundene App auf dem Handy und die bis 27.10. verbundene auf dem Tablet (beide haben sich beim Umstieg nicht als Update gemeldet) | 👤 | Vorher kurz öffnen: Liegt dort seitdem etwas Ungesendetes, das du brauchst? Mit der Deinstallation ist es weg |
+| A2 | Lokale Build-Reste im Repo-Ordner löschen: `app/`, `domain/`, `sync-protocol/` (nur `build/`, von Git nicht verfolgt) | 🤖 | Rest der alten Modulpfade |
+| A3 | Alte Worktrees entfernen: `.claude/worktrees/` (3 Stück, Stand v2) und der Temp-Worktree `v3-befunde` | 🤖 | `git worktree remove`, danach `git worktree prune` |
+| A4 | Lokale Branches löschen, deren Inhalt in `main` ist: alle 16 `claude/*` (web-teil1–4, v2-phase0, projektstruktur, aufraeumen, v3-befunde-review …) | 🤖 | Squash-Merges, Git hält sie deshalb für „nicht gemergt“; vorher je Branch prüfen, dass der PR gemergt ist |
+| A5 | Remote-Branches `origin/claude/phase8-probelauf` und `…/phase8-umstieg` löschen | 🤖 | PRs gemergt |
+| A6 | Probelauf-Ordner `~/foody-probelauf-20261028-1829/` auf dem Homeserver löschen | 👤 / 🤖 | Enthält eine Kopie der echten Datenbank – auch aus Datenschutzsicht besser weg |
+| A7 | Zwei Checkouts → einer: Gearbeitet wird in `C:\Users\Stefan\Downloads\Foody`, gezogen in `E:\OpenCloud\…\Foody`. Festlegen, welcher bleibt, und den anderen löschen | 👤 | Spart den doppelten `git pull` nach jedem Merge und Verwechslungen; im OpenCloud-Ordner synchronisiert jeder Build Hunderte MB mit |
+
+## Stufe 2 – Repo aufräumen (Doku, Build), je ein PR
+
+| ID | Was | Wer | Folge, wenn man es lässt |
+|---|---|---|---|
+| B1 | **Alte Pläne archivieren (= W6):** `docs/superpowers/` (44 Dateien) – Sync-Etappen, Essenstracking, Scan, Einordnung, Projektstruktur, Web-Teil 1–4 nach `docs/superpowers/archiv/`; ebenso `ToDoS/v2-plan.md`, `v2-abnahme.md`, `web-frontend-plan.md`, `optimierungsplan.md`, `projektstruktur-regeln.md` nach `ToDoS/archiv/` | 🤖 PR | Eine neue Session findet bei „Tagebuch“ oder „Sync“ den alten Plan mit Haushalt und Vorrat und baut danach |
+| B2 | `docs/STRUKTUR-CHECK.md` (Stand 27.10., vor dem Umstieg) ins Archiv oder löschen; die offenen Punkte stehen in `v3-plan.md` | 🤖 PR | Doppelte, veraltete Befundliste |
+| B3 | **Doku auf „nach dem Umstieg“:** `CLAUDE.md`, `README.md` und `server/README.md` sind mit #137 schon nachgezogen. Offen: `docs/architecture.md:16`, `docs/roadmap.md` (Stand 17.10.), `docs/installation.md` (Abschnitt „Umstieg von der v1“ auf einen Satz + Verweis auf die Git-Historie kürzen) | 🤖 PR | Neue Sessions arbeiten mit falschem Stand |
+| B4 | Phase 8 in `ToDoS/v3-plan.md` abschließen: Umstieg ist mit #137 abgehakt; offen ist das Abschluss-Review – abhaken, Befunde W1–W6/N1–N5 eintragen und auf diesen Plan verweisen | 🤖 PR | Plan zeigt das Review als offen, die Befunde stehen nur im Chat |
+| B5 | Ungenutzte Einträge im Versionskatalog entfernen: `androidx-lifecycle-runtime-compose`, `compose-ui-tooling`, `compose-ui-tooling-preview` (laut Suche in allen `*.kts` nicht referenziert – vor dem Löschen per Build bestätigen) | 🤖 PR | Nur Ballast, Renovate/Updates prüfen sie mit |
+| B6 | `proguard-rules.pro:1`: Kommentar „Nur für die Variante vorschau“ ist falsch, die Regeln gelten auch fürs Release | 🤖 PR | Wer dem Kommentar glaubt und die Regeln löscht, bricht Sicherung und Sync im Release |
+| B7 | Room-Schemata `1.json`–`8.json` in `android/core/data/schemas/` löschen; `9.json` (Migrationstest) und `10.json` bleiben | 🤖 PR | ~8 Dateien Ballast; die V3 kennt nur die Migration 9 → 10 |
+| B8 | `Platzhalter.kt` und `Bildschirme.platzhalter` aus dem Produktivcode in die Tests von `:app` verschieben; Text „Kommt in Phase 6“ entfällt | 🤖 PR | Bauzeit-Gerüst landet im Release (R8 entfernt es zwar, aber es liest sich wie unfertiger Code) |
+| B9 | Doppelte Konstante `SEEDED_ALT` (`Einstellungsschluessel.kt:15` und `StartdatenLader.kt:74`) auf eine reduzieren | 🤖 PR | Klein |
+
+## Stufe 3 – Rückweg zur v1 schließen (ab 2026-11-25)
+
+Erst, wenn vier Wochen nichts schiefging. Danach gibt es keinen Weg zurück zur v1 mehr – das ist gewollt.
+
+| ID | Was | Wer | Hinweis |
+|---|---|---|---|
+| C1 | Branch `v1-server` auf GitHub und Forgejo löschen (vorher Tag `v1-final` setzen, damit der Stand auffindbar bleibt) | 🤖 | `CLAUDE.md` und `server/README.md` (Rückweg) nennen ihn – im selben Schritt anpassen |
+| C2 | `foody-v1.apk` aus OpenCloud löschen; die v1-Sicherungsdateien der Geräte noch behalten oder ins Archiv | 👤 | |
+| C3 | Server: Sicherung `vor-migration-2-*.db` im Daten-Volume löschen | 👤 / 🤖 | Enthält den Stand vor der Umwandlung |
+| C4 | Server: Altlast-Route `/api/v1/{...}` für Protokoll 1/2 (`Application.kt:100`) entfernen | 🤖 PR, Server-Rebuild | Gibt alten Apps „Bitte aktualisieren“; nach A1 gibt es keine mehr |
+| C5 | Server: Migration 1 → 2 (Haushalt → Konto, `Migrations.kt:69-180`), Vorprüfung, `haushalt_umzug` und `FotoUmzug` samt Tests entfernen. Die Migrationsliste beginnt dann mit einem Grundschema in Version 2 | 🤖 PR, Server-Rebuild | ~250 Zeilen Code + Tests weniger. Danach lässt sich eine Server-Sicherung von vor dem 28.10. nicht mehr einspielen – deshalb erst nach C3 |
+| C6 | App: Abmelden der v1-WorkManager-Aufträge (`SyncAusloeser.kt:60-61`, `ALTER_AUFTRAG`, `ALTER_EINMALAUFTRAG`) entfernen | 🤖 PR | Beide Geräte sind mehrfach gestartet, die Aufträge sind längst weg |
+| C7 | App: Lesen des alten Schlüssels `seeded` (`StartdatenLader.kt`) entfernen | 🤖 PR | Wie C6 |
+| C8 | App: Einspielen von **v1-Sicherungen** (Vorrat überspringen, alte Feldnamen in `SicherungFormat.kt`/`Sicherung.kt`) prüfen – nur entfernen, wenn du die v1-Sicherungsdateien nicht mehr brauchst | 🤖 PR | Bewusst die letzte Stufe: Das ist dein letzter Rettungsweg für Daten von vor dem Umstieg |
+
+**Bewusst behalten (auch nach der Frist):**
+- Migration 9 → 10 in der App (`Migration9auf10.kt`) samt Tests: Wird eine alte „Foody Debug“ oder eine v1-Datenbank
+  aus einer Gerätesicherung je wieder geöffnet, verhindert sie Datenverlust. Kostet nur ~80 Zeilen.
+- Die Namen der SharedPreferences und Schlüssel aus der v1 (`Einstellungsschluessel.kt`): Sie *sind* jetzt die
+  Schlüssel der V3, ein Umbenennen bräuchte wieder eine Migration.
+- ADRs zu v1/v2: Entscheidungen bleiben Geschichte, sie werden nicht archiviert.
+
+## Stufe 4 – Server-Betrieb nach dem Umstieg
+
+| ID | Was | Wer | Folge, wenn man es lässt |
+|---|---|---|---|
+| D1 | Drei verwaiste Anmeldungen (Handy und Tablet vom 11.10., „Browser (Chrome)“ vom 18.10.) widerrufen. Dafür fehlt ein Befehl: `foody-admin abmelden-ungenutzt <tage>` (widerruft Tokens ohne Anfrage seit n Tagen) | 🤖 PR, Server-Rebuild | Alte Tokens bleiben unbegrenzt gültig; geht ein altes Gerät verloren, hat es weiter Zugriff |
+| D2 | Leeres Konto „stefan“ löschen; dafür ebenfalls ein Admin-Befehl `konto-loeschen` (nur für leere Konten) | 🤖 PR, Server-Rebuild | Ein zweites, ungenutztes Login am Server |
+| D3 | Offenes aus dem ersten Review: `backup.sh` mit `PRAGMA integrity_check` und eine Restore-Anleitung | 🤖 PR | Eine kaputte Sicherung fällt erst beim Einspielen auf |
+| D4 | **W5** vor der ersten Wiederherstellung des Servers: Admin-Befehl, der nach dem Einspielen alle Gerätestände ungültig macht, und App sendet Datensätze mit höherer Revision erneut statt sie zu löschen | 🤖 PR, Server-Rebuild | Nach einer Wiederherstellung gehen Daten auf den Geräten verloren |
+| D5 | **N3** Speicher im Container: `docker inspect` auf OOMKilled prüfen; Healthcheck ohne zweite JVM (z. B. `wget`/`curl`) | 👤 / 🤖 | Bei 512 MB knapp, mit 296 Rezepten mehr Last als vorher |
+
+## Stufe 5 – Optimierung (Review-Befunde aus dem Alltag)
+
+Reihenfolge wie im Gesamt-Review empfohlen; jede Korrektur mit einem Test, der vorher fehlschlägt.
+
+| ID | Was | Warum jetzt |
+|---|---|---|
+| **W1** | Einkauf: Einheit je Zutat unabhängig von der Reihenfolge der Planzeilen wählen (`Shopping.kt:53`), Regel 7/10 in `docs/domain-rules.md` | Gekauftes erscheint nach einer Planänderung wieder als „neu“ – bei Zwiebel, Ei, Knoblauch der Normalfall |
+| **W2** | Sync: abgelehnte Datensätze unter Einstellungen → Konto anzeigen (`SyncDao.probleme()` ist schon da), fehlgeschlagene Abholungen wiederholen, bei vollem Speicher abbrechen | Datensätze bleiben still auf einem Gerät liegen; nach dem Import von 435 Rezepten wahrscheinlicher |
+| **W3 + W4** | Nährwerte nicht auf dem Haupt-Thread: `flowOn(rechnen)` in `HeuteRepository.kt:44`, `RezeptRepository.kt:38/51`, Rezept-Flow teilen; `WhileSubscribed(5_000)` statt `Eagerly` in `EintragenViewModel`/`EditorViewModel`, fester Schlüssel für den Tablet-Editor | Mit jetzt 296 Rezepten und 494 Zutaten spürbar; vorher einmal mit dem Baseline-Profil messen (Start, Wechsel auf „Heute“), damit der Gewinn belegt ist |
+| N1 | Server: nach `compact` kein Voll-Download bei jedem Start (`SyncService.kt:43`) | Akku/Datenvolumen |
+| N2 | Speichern-Knöpfe nach Drehen nicht gesperrt lassen (`EditorViewModel.kt:162`, `KochenViewModel.kt:167`, `EintragenViewModel.kt:224`) | Selten, aber ärgerlich |
+| N4 | Login-Bremse auch je IP, Fehlversuche loggen (`LoginThrottle.kt:19`) | Heimnetz, geringe Wirkung |
+| N5 | Rezeptkopf ohne feste Höhe 260 dp (`DetailBereiche.kt:96`) | Bei großer Schrift abgeschnitten |
+| E1 | CI: doppelt laufende Tests zusammenlegen; Basis-Image und Gradle-Download pinnen | Schnellere, reproduzierbare CI |
+| E2 | Gradle-Deprecations (`--warning-mode all`) und die Manifest-Warnung zu `WorkManagerInitializer` (`AndroidManifest.xml:39`) beheben | Vor dem nächsten Gradle-Hauptversionswechsel |
+| E3 | Rest der Liste „Weitere aus dem Review“ in `v3-plan.md` (Kochmodus rekomponiert sekündlich, Tagesziel speichert Zwischenstände, verwaiste Fotos nach Sync, 4 A11y-Lücken, ktlint/detekt) | Beim nächsten Anfassen der Bereiche |
+
+## Empfohlene Reihenfolge
+
+1. **Diese Woche:** A1–A7 (lokal, 30 min), dann ein Doku-PR mit B1–B4 und ein Aufräum-PR mit B5–B9.
+2. **Danach:** W1 und W2 (je ein PR), dann W3+W4 mit Messung vorher/nachher.
+3. **Server, ein Rebuild für alles:** D1–D4 zusammen, D5 prüfen.
+4. **Ab 25.11.:** Stufe 3 (C1–C7), C8 nur auf deinen Wunsch.
+5. Danach ist die Bahn frei für die KI-Hilfe (`ToDoS/ki-plan.md`).
+
+**Geschätzter Gewinn (geschätzt, nicht gemessen):** ~45 Doku-Dateien aus dem Suchpfad neuer Sessions, ~300 Zeilen
+Server- und ~60 Zeilen App-Code weniger, 3 Katalog-Einträge und 8 Schemadateien weniger, 16 Branches und 4
+Worktrees weg, ein Checkout statt zwei.
