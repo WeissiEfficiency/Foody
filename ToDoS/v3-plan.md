@@ -377,7 +377,13 @@ Entscheidung 2026-10-28: Die KI-Hilfe wird ein eigenes Projekt nach dem Umstieg.
       **Baseline-Profil erzeugt (2026-10-28)** auf dem Emulator (Heute, Rezepte, Woche, Einkauf, Einstellungen);
       offen: Profiler auf den echten Geräten
 - [ ] TalkBack-Durchlauf, Schriftgröße 200 %
-- [ ] Probelauf mit Kopien, dann Umstieg: Sicherungen → Server v3 → Umwandlung → beide Geräte auf V3
+- [x] Probelauf mit Kopien, dann Umstieg: Sicherungen → Server v3 → Umwandlung → beide Geräte auf V3
+      **Umstieg erledigt (2026-10-28):** frische Server-Sicherung, `~/docker/foody` von `v1-server` auf `main`
+      (Sicherung `vor-migration-2-2026-10-28-1859.db`; Konto „Weissi“ mit Revision 423, 375 lebende Datensätze wie
+      vorher). Handy und Tablet mit `foody.apk` 3.0.0; beide hatten keine verbundene v1-Release-App und haben sich
+      neu angemeldet (Daten vom Server). Danach Import von Rezepten auf einem Gerät: Server von Revision 423 auf
+      890, 184 neue Rezepte, keine doppelten Zutaten. Gefunden und behoben: die Release-APK hieß „Foody Debug“
+      (#136). Alte Anmeldungen (Handy/Tablet vom 11.10., Browser) bleiben am Server, bis es dafür einen Befehl gibt.
       **Probelauf bestanden (2026-10-28):** Kopie der echten Server-Datenbank (Integrität ok, 375 lebende
       Datensätze) auf dem Test-Server von `v1-server` auf `main` umgestellt: Sicherung `vor-migration-2-*.db`
       geschrieben, Haushalt → Konto „Weissi“ (Revision 423), 3 aktive Geräte erhalten. Gerät auf dem Emulator: v1

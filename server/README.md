@@ -61,9 +61,9 @@ Seit V3 Phase 2 kennt der Server in `main` nur noch ein Konto je Person, Push/Pu
 (API v3, Protokoll 3). Haushalte, Einladungen, Registrierung, Geräteliste und Web-Oberfläche gibt es nicht mehr
 (ADR 0011, Spec `docs/superpowers/specs/2026-10-17-v3-phase2-server-schlank-design.md`).
 
-- **Echter Server bis zum Umstieg:** `~/docker/foody` läuft bis Phase 8 auf dem eingefrorenen Branch `v1-server`
-  (Protokoll 2, für die v1-App); ein `git pull` dort bringt nie den v3-Server. Fehlerbehebungen per Cherry-Pick auf
-  `v1-server`. V3 läuft bis dahin nur auf dem Test-Server.
+- **Echter Server:** `~/docker/foody` läuft seit dem Umstieg am 2026-10-28 auf `main` (Sicherung davor:
+  `vor-migration-2-2026-10-28-1859.db`). Der eingefrorene Branch `v1-server` (Protokoll 2) bleibt nur für den
+  Rückweg unten.
 - **Erster Start mit V3:** Der Server sichert die Datenbank automatisch (`vor-migration-2-<JJJJ-MM-TT-HHMM>.db`
   neben der Datenbankdatei, per `VACUUM INTO`), prüft vorab (jeder Haushalt hat genau ein Mitglied, kein Konto ist in
   mehreren Haushalten, keine verwaisten Datensätze) und wandelt dann in einer Transaktion mit Gegenzählung um: alles

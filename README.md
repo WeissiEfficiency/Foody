@@ -6,13 +6,13 @@ konsolidierte Einkaufslisten.
 `Rezept → Portionierung → Wochenplan → Zutatenaggregation → Einkaufsliste`
 
 **Stand (2026-10-28):** Foody ist als **V3** neu gebaut (Plan [`ToDoS/v3-plan.md`](ToDoS/v3-plan.md), Umfang
-[ADR 0011](docs/adr/0011-v3-umfang-ein-nutzer.md)) und steckt im Umstieg (Phase 8). Die v1 ist aus `main` entfernt;
-bis die Geräte umgestellt sind, läuft der echte Server weiter vom Branch `v1-server`.
+[ADR 0011](docs/adr/0011-v3-umfang-ein-nutzer.md)) und seit dem 2026-10-28 auf Handy, Tablet und dem echten Server im Einsatz (Umstieg, Phase 8). Die v1 ist aus
+`main` entfernt; der Branch `v1-server` bleibt nur als Rückweg.
 **Installieren und aktualisieren:** [`docs/installation.md`](docs/installation.md).
 
 ## Funktionen (V3)
 
-Phasen 1–6 sind fertig, der Umstieg (Phase 8) läuft; danach kommt die KI-Hilfe als eigenes Projekt
+Phasen 1–6 und der Umstieg sind fertig; offen in Phase 8 sind Messungen und das Abschluss-Review. Danach kommt die KI-Hilfe als eigenes Projekt
 ([`ToDoS/ki-plan.md`](ToDoS/ki-plan.md)). Abnahmeliste: [`ToDoS/v3-abnahme.md`](ToDoS/v3-abnahme.md).
 
 - **Heute:** Plan für heute und morgen mit kcal je Portion, Rezeptvorschläge, offene Einkaufsartikel; **Tagebuch** mit
