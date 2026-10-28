@@ -12,7 +12,8 @@ und `:feature:*`; in Phase 8 entfallen `:app` und `:sync-protocol`, und `:app3` 
 
 ## Funktionen (V3)
 
-Phasen 1–6 sind fertig; als Nächstes kommt die KI-Hilfe (Phase 7). Abnahmeliste: [`ToDoS/v3-abnahme.md`](ToDoS/v3-abnahme.md).
+Phasen 1–6 sind fertig; als Nächstes kommt der Umstieg (Phase 8), danach die KI-Hilfe als eigenes Projekt
+([`ToDoS/ki-plan.md`](ToDoS/ki-plan.md)). Abnahmeliste: [`ToDoS/v3-abnahme.md`](ToDoS/v3-abnahme.md).
 
 - **Heute:** Plan für heute und morgen mit kcal je Portion, Rezeptvorschläge, offene Einkaufsartikel; **Tagebuch** mit
   beim Eintragen festgehaltenen Nährwerten (ADR 0007) und Tagesziel.
@@ -76,12 +77,16 @@ Die App läuft ab **Android 16** (`minSdk` 36, `targetSdk` 37; ADR 0009).
 ./gradlew check                        # alle Unit-Tests + Lint (so prüft auch die CI)
 ./gradlew :app3:assembleDebug          # V3 als „Foody Debug“
 ./gradlew :app3:installDebug           # V3 auf Emulator/Gerät
+./gradlew :app3:assembleVorschau       # V3 als „Foody Vorschau“ (R8 wie ein Release) zum Testen auf dem Handy
 ./gradlew :core:data:connectedCheck    # Room- und Migrationstests der V3 auf Gerät/Emulator
 ./gradlew :app:connectedCheck          # Tests der v1 auf Gerät/Emulator
 ```
 
 `:app3` und `:app` haben dieselbe App-ID (`de.foody.app`, Debug `de.foody.app.debug`): Ein Debug-Build der V3 ersetzt
 eine installierte „Foody Debug“ der v1 samt Migration 9 → 10. Auf dem Alltags-Handy daher erst in Phase 8.
+Zum Testen dort gibt es „Foody Vorschau“ (`de.foody.app.vorschau`, mit dem Debug-Schlüssel signiert): eigene Daten,
+läuft neben beiden v1-Varianten. Sie spricht Protokoll 3, synchronisiert also nicht mit dem echten Server (bis
+Phase 8 `v1-server`); echte Daten kommen über „Sicherung wiederherstellen“ mit einer Sicherung der v1.
 Sync gegen einen Test-Server: [`server/README.md`](server/README.md), Abschnitt „Test-Server“.
 
 **Baseline-Profil** (schnellerer App-Start): liegt erzeugt unter
@@ -105,7 +110,7 @@ Alltagsversion, ohne deren Daten zu berühren.
 
 ## Auf dem eigenen Handy installieren (signierter Release-Build)
 
-Gilt bis Phase 8 für die v1 (`:app`); die V3 hat noch keinen Release-Build.
+Gilt bis Phase 8 für die v1 (`:app`); die V3 hat bis dahin nur „Foody Vorschau“ (siehe oben).
 
 Einmalig einen Signaturschlüssel erzeugen (PowerShell; `keytool` fragt nach Passwort und Namen):
 
@@ -131,7 +136,7 @@ Kein Konto bei Dritten, keine Werbung, keine Analyse. Alle Daten liegen lokal in
 Cloud-Backup. Internet nutzt die App nur für
 - den **optionalen Sync** mit dem eigenen Server (nur HTTPS, Cleartext per Network Security Config verboten),
 - die **Online-Produktsuche** beim Scannen (nur die Produktnummer an Open Food Facts, abschaltbar),
-- künftig die **KI-Hilfe** (Phase 7), nur über den eigenen Server und nur auf Knopfdruck (ADR 0011).
+- künftig die **KI-Hilfe** (eigenes Projekt nach dem Umstieg), nur über den eigenen Server und nur auf Knopfdruck (ADR 0011).
 
 Berechtigungen nur für Kochtimer im Hintergrund (Benachrichtigungen, ablehnbar; Vordergrunddienst; Wakelock bis zum
 Timer-Ende). Details: [`docs/security.md`](docs/security.md).

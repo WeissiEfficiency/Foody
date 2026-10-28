@@ -18,6 +18,36 @@ werden und welche Restrisiken bewusst bleiben. Bei Änderungen an Import, Sicher
 | Datenbank | Room mit gebundenen Parametern; `LIKE`-Suche maskiert `%`/`_`; rohes SQL nur in Migrationen |
 | Backup | Kein Cloud-Backup. Gerät-zu-Gerät-Umzug (Android 12+) nimmt Datenbank und eigene Fotos mit |
 
+## V3 (`:app3`)
+
+Die Tabelle oben beschreibt die v1 (`android/app`). Die V3 läuft bis zum Umstieg (Phase 8) daneben und unterscheidet
+sich so:
+
+- **Deep Links:** `MainActivity` nimmt `foody://rezept/{id}`, `foody://einkauf/{listeId}`,
+  `foody://kochen/{rezeptId}?portionen={n}` und `foody://tagebuch/{datum}` an (`VIEW` mit `BROWSABLE`). Damit kann
+  jede Webseite oder App sie öffnen. Sie **navigieren nur** und ändern keine Daten, bis man selbst etwas antippt.
+  Unbekannte IDs zeigen „nicht gefunden“, ein ungültiges Datum zeigt heute, und die Portionen sind auf 1–99 begrenzt.
+  Links ohne passendes Ziel werden verworfen (`deepLinkOeffnen`). Bei laufender App navigiert ein Link im
+  bestehenden Stapel (`singleTask`, `onNewIntent`), statt den Task neu aufzubauen. Der Kochmodus merkt sich nur seine
+  Sitzung lokal (Portionen, Seite).
+- **Network-Security-Config** (`android/app3/src/main/res/xml`): nur HTTPS. Die lokale CA gilt ausschließlich für
+  `foody.homeserver.lan`. Klartext für `10.0.2.2` und `localhost` gibt es nur im Debug-Build (`src/debug`). Nur dort
+  akzeptiert `ServerAdresse.pruefen` auch `http` (`lokalesHttpErlaubt = BuildConfig.DEBUG`).
+- **FileProvider:** zwei, beide nicht exportiert, Schreibrecht nur befristet an die Kamera-App:
+  - `ScanFotoProvider` (`${applicationId}.scan`, `cache/scan/`, Fotos der Nährwerttabelle; nach der Erkennung gelöscht),
+  - `${applicationId}.rezeptfotos` (`cache/kamera/`, Rezeptfotos; verkleinert übernommen).
+- **Open Food Facts** (`:core:scan`, `OffProduktSuche`):
+  - Der Strichcode wird vorher auf Ziffern gefiltert (EAN/UPC).
+  - Es wird nur die Produktnummer gesendet, mit `User-Agent: Foody/<Version>`.
+  - Ein eigener OkHttp-Client ohne die lokale CA, mit Zeitlimit von 8 s.
+  - Die Antwort wird gezählt gelesen und ist auf 256 kB begrenzt; mehr gilt als kaputt, dann wird ein Foto angeboten.
+  - Abschaltbar unter „Einstellungen → Zutaten → Online-Produktsuche“.
+- **Backup:** `allowBackup="false"`. Daten kommen nur über „Sicherung erstellen/wiederherstellen“ vom Gerät, mit
+  denselben Prüfungen wie unten.
+- **Signatur:** Einen Release-Build gibt es erst in Phase 8. Die Probeversion „Foody Vorschau“ (`assembleVorschau`,
+  `de.foody.app.vorschau`) ist mit dem Debug-Schlüssel signiert. Das ist nur zum Testen gedacht und eignet sich
+  nicht für die Weitergabe.
+
 ## Fremde Eingaben
 
 **Rezept-Import (Markdown):** Höchstens 1 MB pro Datei, Ordnerimport ohne Unterordner. Lesen und Parsen

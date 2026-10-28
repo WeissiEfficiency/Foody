@@ -6,16 +6,20 @@ künftig die KI-Hilfe über den eigenen Server.
 
 ## Nächster Schritt: V3
 
-Neubau mit dem im Review bestätigten Funktionsumfang und KI-Hilfe – Plan: [`ToDoS/v3-plan.md`](../ToDoS/v3-plan.md),
+Neubau mit dem im Review bestätigten Funktionsumfang – Plan: [`ToDoS/v3-plan.md`](../ToDoS/v3-plan.md),
 Abnahme: [`ToDoS/v3-abnahme.md`](../ToDoS/v3-abnahme.md), Entscheidung: [ADR 0011](adr/0011-v3-umfang-ein-nutzer.md).
 
 | Bereich | V3 |
 |---|---|
 | Rechenkern | kcal je Portion überall gleich, neue Auswahl für „Leere Tage füllen“ |
-| KI (über den eigenen Server) | Rezept erfassen und anpassen, Wochenplan vorschlagen, Nährwerte schätzen |
 | Kochen | Änderungen ins Rezept übernehmen |
 | Sync | ein Konto, schlankes Push/Pull, Sync beim Öffnen und nach Änderungen |
 | Gestrichen | Vorrat, Web-App, Haushalte/Einladungen, Teilen als Text, Sterne |
+
+## Danach: KI-Hilfe
+
+Eigenes Projekt nach dem Umstieg auf die V3 (über den eigenen Server): Rezept erfassen und anpassen, Wochenplan
+vorschlagen, Nährwerte schätzen – Plan: [`ToDoS/ki-plan.md`](../ToDoS/ki-plan.md).
 
 ## Später
 
