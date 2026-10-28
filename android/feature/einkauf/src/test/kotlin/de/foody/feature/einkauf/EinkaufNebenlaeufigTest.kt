@@ -62,6 +62,10 @@ class EinkaufNebenlaeufigTest {
         db.close()
         abfragen.shutdownNow()
         transaktionen.shutdownNow()
+        // Erst wenn die Room-Threads fertig sind: Sonst setzen sie noch Coroutinen auf Dispatchers.Main fort, während
+        // resetMain ihn umstellt („Dispatchers.Main is used concurrently with setting it“)
+        abfragen.awaitTermination(5, TimeUnit.SECONDS)
+        transaktionen.awaitTermination(5, TimeUnit.SECONDS)
         Dispatchers.resetMain()
     }
 
