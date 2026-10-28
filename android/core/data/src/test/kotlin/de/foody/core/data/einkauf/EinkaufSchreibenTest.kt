@@ -3,6 +3,7 @@ package de.foody.core.data.einkauf
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.SyncZustandEntity
 import de.foody.domain.MeasureUnit
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -78,6 +79,25 @@ class EinkaufSchreibenTest {
         assertNull(l.rangeStart)
         assertEquals(JETZT, l.createdAt)
         assertEquals(1, artikelIn(id).size)
+    }
+
+    @Test
+    fun doppeltippOhneListeLegtNurEineAn() = runTest {
+        val a = async { repo.eingeben(null, "Milch") }
+        val b = async { repo.antippen(null, "Eier", "Eier") }
+        val id = assertNotNull(a.await())
+        assertEquals(id, b.await())
+        assertEquals(listOf(id), db.einkaufslisteDao().alle().map { it.id })
+        assertEquals(setOf("Milch", "Eier"), artikelIn(id).map { it.name }.toSet())
+    }
+
+    @Test
+    fun ohneGueltigeListeNimmtDieAktuelle() = runTest {
+        db.einkaufslisteDao().upsert(liste("alt", 1))
+        neueListe("l")
+        db.einkaufslisteDao().upsert(liste("aelter", 0))
+        assertEquals("l", repo.antippen("geloescht", "Milch", "Milch & Käse"))
+        assertEquals(3, db.einkaufslisteDao().alle().size)
     }
 
     @Test

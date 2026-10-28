@@ -200,6 +200,10 @@ interface EinkaufslisteDao {
     @Query("SELECT * FROM shopping_list ORDER BY createdAt DESC, id DESC")
     fun alleFlow(): Flow<List<EinkaufslisteEntity>>
 
+    /** Die aktuelle Liste (zuletzt angelegt), wie bei [alleFlow]. */
+    @Query("SELECT * FROM shopping_list ORDER BY createdAt DESC, id DESC LIMIT 1")
+    suspend fun juengste(): EinkaufslisteEntity?
+
     @Query("SELECT * FROM shopping_list WHERE id = :id") fun nachIdFlow(id: String): Flow<EinkaufslisteEntity?>
 
     @Upsert suspend fun upsert(e: EinkaufslisteEntity)
