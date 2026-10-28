@@ -75,6 +75,8 @@ internal data class SicherungDaten(
         val id: String, val listId: String, val ingredientId: String? = null, val name: String,
         val amount: String? = null, val unit: String? = null, val checked: Boolean, val manual: Boolean,
         val category: String? = null, val sortOrder: Int, val note: String? = null,
+        /** Ab V3; fehlen sie (v1), setzt der Einfüge-Trigger `updatedAt` auf jetzt. */
+        val updatedAt: Long = 0, val checkedChangedAt: Long = 0,
     )
 
     @Serializable

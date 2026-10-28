@@ -326,17 +326,17 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
       nutzen `foody.android.feature`.
 
 **Klein, beim nächsten Anfassen:**
-- [ ] R-N1 `Migrations.kt:199`: kein Abbruch bei unbekannter, höherer DB-Version
-- [ ] R-N2 `PRAGMA synchronous=NORMAL` (Push = ein fsync je Datensatz)
-- [ ] R-N3 `Sicherung.kt:167` ohne `checkedChangedAt`/`updatedAt` der Einkaufsartikel
-- [ ] R-N4 `EinkaufRepository.kt:220`, `WocheRepository.kt:35` ohne `flowOn(rechnen)`
+- [x] R-N1 (2026-10-28) `Migrations.kt:199`: kein Abbruch bei unbekannter, höherer DB-Version
+- [x] R-N2 (2026-10-28) `PRAGMA synchronous=NORMAL` (Push = ein fsync je Datensatz)
+- [x] R-N3 (2026-10-28) `Sicherung.kt:167` ohne `checkedChangedAt`/`updatedAt` der Einkaufsartikel
+- [x] R-N4 (2026-10-28) `EinkaufRepository.kt:220`, `WocheRepository.kt:35` ohne `flowOn(rechnen)`
 - [ ] R-N5 + D3 Duplikate: `RezeptBild` ×3, `mengeSkaliert` vs. `RecipeScaler.scale`, Löschliste
       `SyncKonto`/`Sicherung`, Kamera + FileProvider jetzt dreifach (`ScanFotoProvider`, `FotoWahl`, `FertigBlatt`)
 - [x] D2 (2026-10-28, `ScanLauf` im ViewModel) (Muster R-C4) Strichcode-Suche und Texterkennung in `rememberCoroutineScope` (`PackungScanKnopf.kt:328,371`)
       brechen beim Drehen still ab → ins ViewModel
 - [x] D4 (2026-10-28) `OffProduktSuche.kt:89` liest ohne Größengrenze; wie beim eigenen Server `begrenztLesen` (≈ 256 kB)
-- [ ] S-N7 `settings.gradle.kts`: je Modul `include` und `projectDir` untereinander, nach `core`/`feature` gruppiert
-- [ ] S-N4 `gradle/gradle-daemon-jvm.properties` einchecken oder ignorieren
+- [x] S-N7 (2026-10-28, `modul(name, ordner)`) `settings.gradle.kts`: je Modul `include` und `projectDir` untereinander, nach `core`/`feature` gruppiert
+- [x] S-N4 (2026-10-28, ignoriert) `gradle/gradle-daemon-jvm.properties` einchecken oder ignorieren
 - [ ] Weitere aus dem Review: `backup.sh` ohne `integrity_check` und Restore-Anleitung, Argon2 auf Request-Threads,
       Docker ohne Gradle-Cache, toter `RecordStore.lebende()`, Kochmodus rekomponiert sekündlich, Tablet-Editor-VMs
       nie freigegeben, Tagesziel speichert Zwischenstände, verwaiste Fotos nach Sync, Keystore auf

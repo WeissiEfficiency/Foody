@@ -33,7 +33,7 @@ class WocheVorschlagTest {
     fun setUp() {
         db = Room.inMemoryDatabaseBuilder(RuntimeEnvironment.getApplication(), FoodyDatenbank::class.java)
             .addCallback(FoodyDatenbank.CALLBACK).allowMainThreadQueries().build()
-        repo = WocheRepository(db, RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1L }) { 5_000L }
+        repo = WocheRepository(db, RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1L }, { 5_000L })
     }
 
     @After

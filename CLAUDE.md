@@ -13,7 +13,7 @@ Offline-first Android-App für Rezepte, Nährwerte, Wochenplan und Einkaufsliste
 - Abhängigkeiten nur nach unten: `:app3` → `:feature:*` → `:core:*` → `:domain`/`:api-protocol`.
   **Features kennen sich nicht**; was zwei Features brauchen, kommt in ein `:core`-Modul (Beispiel ADR 0013).
 - Rechenlogik gehört nach `:domain` (reines Kotlin), jede Korrektur mit einem Test, der vorher fehlschlägt.
-- Neues Modul: in `settings.gradle.kts` eintragen (`include` + `projectDir`), Plugin aus `build-logic/`
+- Neues Modul: in `settings.gradle.kts` mit `modul(name, ordner)` in seiner Gruppe eintragen, Plugin aus `build-logic/`
   (`foody.android.library`, mit Compose `foody.android.feature`).
 
 ## Bauen und Testen

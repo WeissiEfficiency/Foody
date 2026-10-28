@@ -195,9 +195,16 @@ object Migrations {
         s.executeQuery("PRAGMA user_version").use { it.next(); it.getInt(1) }
     }
 
-    /** Wendet alle noch fehlenden Migrationen aus [liste] an, jede in einer eigenen Transaktion. */
+    /**
+     * Wendet alle noch fehlenden Migrationen aus [liste] an, jede in einer eigenen Transaktion. Ist die Datenbank
+     * neuer, als [liste] reicht (Rückweg auf einen älteren Server), bricht der Start ab, statt mit einem Schema zu
+     * arbeiten, das dieser Server nicht kennt.
+     */
     fun apply(c: Connection, liste: List<String> = all) {
         val current = aktuell(c)
+        if (current > liste.size) {
+            throw MigrationAbgebrochen("Datenbank hat Version $current, dieser Server kennt nur ${liste.size} – neueren Server starten")
+        }
         for (index in current until liste.size) {
             val wasAuto = c.autoCommit
             c.autoCommit = false

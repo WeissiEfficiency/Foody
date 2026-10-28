@@ -37,6 +37,9 @@ class Database(
             try {
                 c.createStatement().use { s ->
                     if (datei != null) s.execute("PRAGMA journal_mode=WAL")
+                    // Mit WAL sicher: Ein Absturz verliert höchstens die letzten Transaktionen, nie die Datei; spart
+                    // den fsync je Transaktion (ein Push schreibt je Datensatz)
+                    s.execute("PRAGMA synchronous=NORMAL")
                     s.execute("PRAGMA foreign_keys=ON")
                     s.execute("PRAGMA busy_timeout=5000")
                 }
