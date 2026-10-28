@@ -279,7 +279,7 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
       Server-Rebuild nötig.
 - [x] **R-W1 Pull hinter `last_rev` liefert leer statt 410** (`SyncService.kt:31-43`, z. B. nach einer
       Server-Wiederherstellung) → Geräte verpassen still Änderungen. Test `pullBeyondHeadIsEmpty` umstellen.
-      **Erledigt nur auf `main` (#115):** Der echte Server läuft von `v1-server` und hat den Fehler weiter (R2-W1).
+      **Erledigt (#115),** für den echten Server auf `v1-server` nachgezogen in #129 (R2-W1).
 
 **Wichtig (App):**
 - [x] **R-W2** Zutat löschen, die nur Einkaufsartikel nutzen → Artikel dauerhaft `missing_reference`
@@ -349,8 +349,8 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
       „Leere Tage füllen“, kein ktlint/detekt
 
 **Zweites Review (R2, 2026-10-28, Stand nach #121–#125):**
-- [ ] **R2-W1** R-W1 (410 hinter `last_rev`) fehlt dem echten Server auf `v1-server`. Offen: Fix dorthin
-      übernehmen (Server-Rebuild) oder bis zum Umstieg hinnehmen.
+- [x] **R2-W1** R-W1 (410 hinter `last_rev`) fehlte dem echten Server auf `v1-server`. **Erledigt (2026-10-28):**
+      übernommen in #129 (ohne den R-K1-Teil), echter Server neu gebaut; die v1-App gleicht bei 410 voll ab.
 - [x] **R2-N1** `nachProzessende()` übernahm keine `saveable`-Zustände, der Scan-Knopf war ungeprüft. **Erledigt
       (2026-10-28):** sichert über `savedStateProvider()` wie Android, Bundle durch ein Parcel; Test für `ScanLauf`.
 - [x] **R2-N2** „↻“ ohne Alternative tat still nichts; die übrigen Vorschläge zählten nicht in die Abwechslung.
