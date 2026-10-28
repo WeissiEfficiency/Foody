@@ -244,6 +244,12 @@ interface EinkaufsartikelDao {
 
     @Query("DELETE FROM shopping_item WHERE id = :id") suspend fun loeschen(id: String)
 
+    /**
+     * Löst den Verweis auf eine gelöschte Zutat; Name und Menge bleiben. `ingredientId` hat keinen Fremdschlüssel, und der
+     * Server lehnt Artikel mit Verweis auf eine fehlende Zutat ab (`missing_reference`).
+     */
+    @Query("UPDATE shopping_item SET ingredientId = NULL WHERE ingredientId = :zutatId") suspend fun zutatLoesen(zutatId: String)
+
     /** Leert die Tabelle (Sicherung: Import ersetzt alle Daten). */
     @Query("DELETE FROM shopping_item") suspend fun alleLoeschen()
 }

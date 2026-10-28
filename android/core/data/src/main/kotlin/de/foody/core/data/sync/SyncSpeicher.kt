@@ -528,7 +528,11 @@ class SyncSpeicher(
     /** Löscht den lokalen Datensatz (Kinder per Kaskade); `applyingRemote` setzt der Aufrufer. */
     private suspend fun loeschenLokal(typ: RecordType, id: String) {
         when (typ) {
-            RecordType.INGREDIENT -> db.zutatDao().loeschen(id)
+            RecordType.INGREDIENT -> {
+                // Artikel ohne offene Änderung (sonst nochGebraucht): Verweis lösen, wie beim lokalen Löschen
+                db.einkaufsartikelDao().zutatLoesen(id)
+                db.zutatDao().loeschen(id)
+            }
             RecordType.RECIPE -> {
                 db.rezeptDao().loeschen(id)
                 dao.loeschenFotoGewuenscht(id)

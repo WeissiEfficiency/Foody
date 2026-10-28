@@ -465,6 +465,25 @@ class SyncSpeicherTest {
     }
 
     @Test
+    fun loeschungEinerZutatLoestEinkaufsartikel() = runTest {
+        aktiv()
+        speicher.anwenden(listOf(zutatRecord("z1", "Mehl")), neuerCursor = 2)
+        db.einkaufslisteDao().upsert(EinkaufslisteEntity("e1", "Einkauf", createdAt = 1, updatedAt = 1))
+        db.einkaufsartikelDao().upsert(EinkaufsartikelEntity(id = "a1", listId = "e1", ingredientId = "z1", name = "Mehl", sortOrder = 0))
+        dao.outbox().forEach { dao.loeschenOutbox(it.type, it.recordId) }
+
+        speicher.anwenden(
+            listOf(SyncRecord(id = "z1", type = RecordType.INGREDIENT, deleted = true, updatedAt = 200, rev = 3)),
+            neuerCursor = 3,
+        )
+
+        assertNull(db.zutatDao().nachId("z1"))
+        assertNull(db.einkaufsartikelDao().nachId("a1")?.ingredientId)
+        // Beim Anwenden von Server-Daten geht nichts hinaus
+        assertTrue(dao.outbox().isEmpty())
+    }
+
+    @Test
     fun loeschungEinerBenutztenZutatBelebtSieWieder() = runTest {
         aktiv()
         speicher.anwenden(listOf(zutatRecord("z1", "Mehl"), rezeptRecord("r1", null, listOf("z1"))), neuerCursor = 2)

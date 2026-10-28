@@ -61,6 +61,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.shadows.ShadowLog
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
@@ -599,9 +600,15 @@ class SyncLaufTest {
         assertEquals(SyncErgebnis.Fehlgeschlagen("server_zu_alt", voruebergehend = false), a.ausfuehren())
         a.zugang.beiPull = { _, _ -> throw ServerFehler.Server(503) }
         assertEquals(SyncErgebnis.Fehlgeschlagen("server_fehler", voruebergehend = true), a.ausfuehren())
+        // Unerwartet: wiederholen (Backoff), ins Log nur Klasse und Stelle, nie die Meldung
+        ShadowLog.clear()
         a.zugang.beiPull = { _, _ -> throw IllegalStateException("geheimer Inhalt") }
-        assertEquals(SyncErgebnis.Fehlgeschlagen("server_fehler", voruebergehend = false), a.ausfuehren())
+        assertEquals(SyncErgebnis.Fehlgeschlagen("server_fehler", voruebergehend = true), a.ausfuehren())
         assertEquals("server_fehler", a.speicher.zustand().letzterFehler)
+        val log = ShadowLog.getLogsForTag("SyncLauf").single()
+        assertTrue("java.lang.IllegalStateException" in log.msg, log.msg)
+        assertFalse("geheimer Inhalt" in log.msg)
+        assertNull(log.throwable)
 
         // Ein erfolgreicher Lauf setzt die Kennung zurück.
         a.zugang.beiPull = echt

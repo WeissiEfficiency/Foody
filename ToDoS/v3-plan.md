@@ -282,13 +282,17 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
       auch im echten Server auf `v1-server`.
 
 **Wichtig (App):**
-- [ ] **R-W2** Zutat löschen, die nur Einkaufsartikel nutzen → Artikel dauerhaft `missing_reference`
+- [x] **R-W2** Zutat löschen, die nur Einkaufsartikel nutzen → Artikel dauerhaft `missing_reference`
       (`ZutatenRepository.kt:79`). Fix: `ingredientId = NULL` beim Löschen, lokal und per Sync.
+      **Erledigt (2026-10-28):** `EinkaufsartikelDao.zutatLoesen` in `ZutatenRepository.loeschen` (geht als Änderung
+      hinaus) und beim Anwenden einer Server-Löschung (`SyncSpeicher.loeschenLokal`, ohne Outbox).
 - [x] **R-W3** Zwei schnelle Tipps ohne Liste legen zwei Listen an (`EinkaufViewModel.kt:52,115`,
       `EinkaufRepository.kt:313`). Fix: bei `null` die jüngste Liste in der Transaktion nehmen.
       **Erledigt (2026-10-28):** `listeOderNeu` nimmt ohne gültige Liste (keine angezeigt oder inzwischen gelöscht)
       die jüngste und legt nur an, wenn es keine gibt; Test mit zwei gleichzeitigen Tipps.
-- [ ] **R-W4** `SyncLauf.kt:62-65` fängt jede Exception als „Server-Fehler“: kein Log, kein erneuter Versuch.
+- [x] **R-W4** `SyncLauf.kt:62-65` fängt jede Exception als „Server-Fehler“: kein Log, kein erneuter Versuch.
+      **Erledigt (2026-10-28):** Unerwartetes gilt als vorübergehend (WorkManager-Backoff); ins Log Klasse und erste
+      eigene Stelle, nie die Meldung.
 - [x] **R-W5** Deep Link mit `NEW_TASK` (Timer-Meldung) baut den Task neu auf → ungespeicherte Eingaben weg
       (`MainActivity.kt:38`). Fix: `navigate(uri) { launchSingleTop }`.
       **Erledigt (2026-10-28):** `deepLinkOeffnen` in `FoodyNavHost.kt`; der Kaltstart liest den Link weiter selbst.

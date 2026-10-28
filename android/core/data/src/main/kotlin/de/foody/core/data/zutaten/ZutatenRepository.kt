@@ -91,11 +91,15 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
         }
     }
 
-    /** Nur unbenutzte Zutaten; Einkaufsartikel und Tagebucheinträge behalten Name und Werte. */
+    /**
+     * Nur unbenutzte Zutaten; Einkaufsartikel und Tagebucheinträge behalten Name und Werte. Einkaufsartikel verlieren den
+     * Verweis (gehen als Änderung hinaus), sonst lehnte der Server sie dauerhaft ab.
+     */
     suspend fun loeschen(id: String): ZutatErgebnis = db.withTransaction {
         dao.nachId(id) ?: return@withTransaction ZutatErgebnis.NichtGefunden
         val rezepte = dao.rezeptAnzahl(id)
         if (rezepte > 0) return@withTransaction ZutatErgebnis.InVerwendung(rezepte)
+        db.einkaufsartikelDao().zutatLoesen(id)
         dao.loeschen(id)
         ZutatErgebnis.Geloescht
     }
