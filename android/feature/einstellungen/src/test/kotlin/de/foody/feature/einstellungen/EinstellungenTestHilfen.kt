@@ -16,6 +16,7 @@ import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.scan.ScanEinstellung
 import de.foody.core.sync.Ergebnis
 import de.foody.core.sync.ErsterSync
+import de.foody.core.testing.ViewModelHalter
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.robolectric.RuntimeEnvironment
 import java.time.Clock
@@ -86,8 +87,16 @@ internal class EinstellungenTestUmgebung {
     /** Nach dem Leeren der Prefs angelegt: Online-Suche steht auf dem Standard (an). */
     val scan = ScanEinstellung(kontext)
 
+    private val viewModels = ViewModelHalter()
+
     fun vm(kontoZugriff: KontoZugriff = konto) =
-        EinstellungenViewModel(kontext, darstellung, ziel, sicherung, zutaten, kontoZugriff, scan, TEST_UHR)
+        viewModels.behalten(EinstellungenViewModel(kontext, darstellung, ziel, sicherung, zutaten, kontoZugriff, scan, TEST_UHR))
+
+    /** Für `@After`: erst die ViewModels beenden, dann die Datenbank schließen ([ViewModelHalter]). */
+    fun schliessen() {
+        viewModels.schliessen()
+        db.close()
+    }
 
     fun verbinden() {
         konto.stand.value = VerbindungsZustand(verbunden = true, adresse = "http://10.0.2.2:8081", letzterSync = null, letzterFehler = null)

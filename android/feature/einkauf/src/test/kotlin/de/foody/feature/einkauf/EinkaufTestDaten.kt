@@ -11,6 +11,7 @@ import de.foody.core.data.db.RezeptZutatEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.einkauf.EinkaufRepository
 import de.foody.core.data.einkauf.IgnorierteSchluessel
+import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.MeasureUnit
 import org.robolectric.RuntimeEnvironment
 import java.math.BigDecimal
@@ -88,5 +89,8 @@ class EinkaufTestUmgebung(val db: FoodyDatenbank, val uhr: Clock = TestUhr()) {
     val ignoriert = IgnorierteSchluessel(prefs)
     val repo = EinkaufRepository(db, { uhr.millis() }, ignoriert, EmptyCoroutineContext)
 
-    fun vm(saved: SavedStateHandle = SavedStateHandle()) = EinkaufViewModel(saved, repo, uhr)
+    /** Hält die ViewModels; `viewModels.schliessen()` gehört in `@After` vor `db.close()` ([ViewModelHalter]). */
+    val viewModels = ViewModelHalter()
+
+    fun vm(saved: SavedStateHandle = SavedStateHandle()) = viewModels.behalten(EinkaufViewModel(saved, repo, uhr))
 }

@@ -18,6 +18,7 @@ import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.bestand
 import de.foody.feature.heute.haferflocken
@@ -43,6 +44,8 @@ import java.time.LocalDate
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = android.app.Application::class, qualifiers = "w411dp-h891dp")
 class PackungScreenshotTest {
+    private val halter = ViewModelHalter()
+
     @get:Rule
     val compose = createComposeRule()
 
@@ -59,10 +62,13 @@ class PackungScreenshotTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        halter.schliessen()
+        db.close()
+    }
 
     private fun packung(dunkel: Boolean) {
-        val vm = EintragenViewModel(HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan(packung = haferflocken()))
+        val vm = halter.behalten(EintragenViewModel(HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan(packung = haferflocken())))
         val auftrag = BlattAuftrag(Mahlzeit.FRUEHSTUECK, LocalDate.of(2026, 10, 24))
         compose.setContent {
             FoodyTheme(dunkel = dunkel, unschaerfe = false) { FoodyHintergrund { EintragenBlatt(auftrag, {}, vm) } }

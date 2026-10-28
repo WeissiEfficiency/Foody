@@ -19,6 +19,7 @@ import de.foody.core.data.zutaten.Packungswerte
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.scan.PackungScan
 import de.foody.core.scan.ZutatTreffer
+import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.MitSchrift200
 import de.foody.feature.heute.bestand
@@ -43,6 +44,8 @@ import kotlin.test.assertEquals
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = android.app.Application::class, qualifiers = "h1600dp")
 class EintragenBlattPackungTest {
+    private val halter = ViewModelHalter()
+
     @get:Rule
     val compose = createComposeRule()
 
@@ -56,11 +59,14 @@ class EintragenBlattPackungTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        halter.schliessen()
+        db.close()
+    }
 
     private fun zeigen(scan: PackungScan, schrift200: Boolean = false): EintragenViewModel {
         // ViewModel außerhalb der Komposition, wie in der App
-        val vm = EintragenViewModel(HeuteRepository(db), TagebuchRepository(db) { 1L }, db, scan)
+        val vm = halter.behalten(EintragenViewModel(HeuteRepository(db), TagebuchRepository(db) { 1L }, db, scan))
         val auftrag = BlattAuftrag(Mahlzeit.FRUEHSTUECK, heute)
         compose.setContent {
             FoodyTheme {

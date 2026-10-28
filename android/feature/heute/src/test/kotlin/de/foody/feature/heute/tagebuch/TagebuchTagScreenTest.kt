@@ -19,6 +19,7 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.MitSchrift200
 import de.foody.feature.heute.bestand
@@ -43,6 +44,8 @@ import kotlin.test.assertEquals
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = android.app.Application::class, qualifiers = "w411dp-h891dp")
 class TagebuchTagScreenTest {
+    private val halter = ViewModelHalter()
+
     @get:Rule
     val compose = createComposeRule()
 
@@ -58,12 +61,15 @@ class TagebuchTagScreenTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        halter.schliessen()
+        db.close()
+    }
 
     private fun zeigen(schrift200: Boolean = false) {
         val kontext = RuntimeEnvironment.getApplication()
-        val vm = TagebuchTagViewModel(tagebuch, TageszielSpeicher(kontext))
-        val eintragen = EintragenViewModel(HeuteRepository(db), tagebuch, db, testScan())
+        val vm = halter.behalten(TagebuchTagViewModel(tagebuch, TageszielSpeicher(kontext)))
+        val eintragen = halter.behalten(EintragenViewModel(HeuteRepository(db), tagebuch, db, testScan()))
         compose.setContent {
             FoodyTheme {
                 var datum by remember { mutableStateOf(heute) }

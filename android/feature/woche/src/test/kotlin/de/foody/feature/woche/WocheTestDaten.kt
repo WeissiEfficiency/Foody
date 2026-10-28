@@ -7,6 +7,7 @@ import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.data.woche.WocheRepository
+import de.foody.core.testing.ViewModelHalter
 import org.robolectric.RuntimeEnvironment
 import java.time.Clock
 import java.time.Instant
@@ -49,5 +50,8 @@ class WocheTestUmgebung(val db: FoodyDatenbank, val uhr: TestUhr = TestUhr(Insta
     val repo = WocheRepository(db, RezeptRepository(db, FotoAblage(app)) { 1_000L }) { uhr.millis() }
     val ziel = TageszielSpeicher(app)
 
-    fun vm(saved: SavedStateHandle = SavedStateHandle()) = WocheViewModel(saved, repo, ziel, uhr)
+    /** Hält die ViewModels; `viewModels.schliessen()` gehört in `@After` vor `db.close()` ([ViewModelHalter]). */
+    val viewModels = ViewModelHalter()
+
+    fun vm(saved: SavedStateHandle = SavedStateHandle()) = viewModels.behalten(WocheViewModel(saved, repo, ziel, uhr))
 }

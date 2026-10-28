@@ -50,7 +50,10 @@ class EinkaufScreenshotTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        u.viewModels.schliessen()
+        db.close()
+    }
 
     /** Liste aus Curry (Mo) und Reispfanne (Mi), Reis gekauft, Milch von Hand, danach Curry für 4 (Hinweis). */
     private fun liste() = runBlocking {

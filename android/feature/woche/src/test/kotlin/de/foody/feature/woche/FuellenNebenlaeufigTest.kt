@@ -58,6 +58,7 @@ class FuellenNebenlaeufigTest {
     @After
     fun tearDown() {
         schranke.get().countDown()
+        u.viewModels.schliessen()
         db.close()
         abfragen.shutdownNow()
         Dispatchers.resetMain()

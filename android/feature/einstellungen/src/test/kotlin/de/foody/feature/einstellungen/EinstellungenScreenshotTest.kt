@@ -56,7 +56,7 @@ class EinstellungenScreenshotTest {
     private fun vm(): EinstellungenViewModel = u.vm().also { assertEquals(3, it.zustand.value.zutaten) }
 
     @After
-    fun tearDown() = u.db.close()
+    fun tearDown() = u.schliessen()
 
     private val vergleich = RoborazziOptions(compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f))
 

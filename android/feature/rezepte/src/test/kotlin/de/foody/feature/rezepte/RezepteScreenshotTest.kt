@@ -15,6 +15,7 @@ import de.foody.core.data.rezepte.RezeptEntwurf
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.NutrientBasis
 import de.foody.domain.ZutatZeile
 import de.foody.feature.rezepte.detail.RezeptDetailRoute
@@ -41,6 +42,8 @@ import java.math.BigDecimal
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = android.app.Application::class)
 class RezepteScreenshotTest {
+    private val halter = ViewModelHalter()
+
     private lateinit var db: FoodyDatenbank
     private lateinit var repo: RezeptRepository
 
@@ -54,7 +57,10 @@ class RezepteScreenshotTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        halter.schliessen()
+        db.close()
+    }
 
     private suspend fun zutat(id: String, name: String, kj: String, eiweiss: String) = db.zutatDao().upsert(
         ZutatEntity(
@@ -97,14 +103,14 @@ class RezepteScreenshotTest {
         for (dunkel in listOf(false, true)) {
             val modus = if (dunkel) "dunkel" else "hell"
             bild("liste_${modus}_$geraet", dunkel) {
-                RezeptListeRoute({}, {}, {}, vm = remember { RezeptListeViewModel(repo) })
+                RezeptListeRoute({}, {}, {}, vm = remember { halter.behalten(RezeptListeViewModel(repo)) })
             }
             bild("detail_${modus}_$geraet", dunkel) {
-                RezeptDetailRoute("r1", { _, _ -> }, {}, {}, {}, vm = remember { RezeptDetailViewModel(repo, db.einkauf()) })
+                RezeptDetailRoute("r1", { _, _ -> }, {}, {}, {}, vm = remember { halter.behalten(RezeptDetailViewModel(repo, db.einkauf())) })
             }
             bild("editor_${modus}_$geraet", dunkel) {
                 val ablage = FotoAblage(RuntimeEnvironment.getApplication())
-                EditorRoute("r1", {}, {}, vm = remember { EditorViewModel(repo, db, ablage) })
+                EditorRoute("r1", {}, {}, vm = remember { halter.behalten(EditorViewModel(repo, db, ablage)) })
             }
         }
     }

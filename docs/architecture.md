@@ -171,6 +171,9 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
   Seit Phase 6e3 dazu `:core:scan` (`android/core/scan`, Paket `de.foody.core.scan`) – Packung scannen (`ScanModul`,
   ADR 0013). `:core:scan` → `:core:data`, `:domain` (per `api`), `:core:designsystem`; `:feature:heute`,
   `:feature:zutaten`, `:feature:einstellungen` und `:app3` → `:core:scan`.
+  Nur für Tests: `:core:testing` (`android/core/testing`) mit `ViewModelHalter`; das Feature-Plugin bindet es als
+  `testImplementation` ein. Tests geben ihre ViewModels hinein und rufen in `@After` erst `schliessen()`, dann
+  `db.close()` – sonst fragt ein noch laufender Flow die geschlossene In-Memory-Datenbank ab.
 - **Datenbank `foody.db`, Version 10** (`FoodyDatenbank`, Schemata 1–9 aus der v1 unter `android/core/data/schemas`):
   Schema 9 ohne `pantry_item`, `sync_state.kontoId` (nullable) statt `householdId`; ein Schema-Vergleichstest erzwingt,
   dass sonst alles gleich ist. `baueDatenbank` registriert nur `MIGRATION_9_10` und den Callback für neue Datenbanken,
