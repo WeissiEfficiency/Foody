@@ -1,5 +1,6 @@
 package de.foody.core.sync
 
+import android.util.Log
 import de.foody.api.protocol.ErrorCode
 import de.foody.api.protocol.PhotoHash
 import de.foody.api.protocol.Protocol
@@ -59,11 +60,18 @@ class SyncLauf(
             fehlgeschlagen(e.kennung, voruebergehend(e))
         } catch (_: CursorHaengt) {
             fehlgeschlagen(ServerFehler.CURSOR_HAENGT, voruebergehend = true)
-        } catch (_: Exception) {
-            // Lokaler Fehler (Datenbank, Dateien) oder Unerwartetes: nur die feste Kennung, nie die Meldung.
-            fehlgeschlagen(ServerFehler.SERVER_FEHLER, voruebergehend = false)
+        } catch (e: Exception) {
+            // Lokaler Fehler (Datenbank, Dateien) oder Unerwartetes: in sync_state nur die feste Kennung. Ins Log Klasse
+            // und Stelle, nie die Meldung (sie könnte Daten enthalten). Ein späterer Versuch kann gelingen (Datei
+            // gesperrt, Speicher voll), also wie ein vorübergehender Fehler mit Backoff wiederholen.
+            Log.w(TAG, "Sync-Lauf abgebrochen: ${e.javaClass.name} bei ${eigeneStelle(e)}")
+            fehlgeschlagen(ServerFehler.SERVER_FEHLER, voruebergehend = true)
         }
     }
+
+    /** Erste Stelle im eigenen Code, an der [e] entstand (sonst die oberste). */
+    private fun eigeneStelle(e: Throwable): StackTraceElement? =
+        e.stackTrace.firstOrNull { it.className.startsWith("de.foody.") } ?: e.stackTrace.firstOrNull()
 
     private suspend fun fehlgeschlagen(kennung: String, voruebergehend: Boolean): SyncErgebnis {
         speicher.fehler(kennung)
@@ -268,5 +276,7 @@ class SyncLauf(
 
         /** Problem-Code einer Ablehnung ohne Fehlercode. */
         const val ABGELEHNT = "rejected"
+
+        const val TAG = "SyncLauf"
     }
 }

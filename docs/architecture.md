@@ -212,7 +212,8 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
 - **Fehlerkennungen** in `sync_state.lastError` (nur diese festen Werte, nie Token oder Bodies): `offline`,
   `anmeldung_abgelaufen` (`401`, kein lesbares Token – das Token wird dabei nicht gelöscht), `app_zu_alt`
   (`409 protocol_too_old`), `server_zu_alt` (`409 server_too_old` oder `404`, z. B. Server ohne `/api/v3`), `cursor_haengt`,
-  `server_fehler` (5xx, unlesbare Antworten, lokale Fehler). Anmelden und Aktivieren melden der Oberfläche zusätzlich
+  `server_fehler` (5xx, unlesbare Antworten, lokale Fehler; Unerwartetes wird wie ein vorübergehender Fehler
+  wiederholt und nur mit Klasse und Stelle geloggt, nie mit der Meldung). Anmelden und Aktivieren melden der Oberfläche zusätzlich
   `ungueltige_adresse`, `falsche_zugangsdaten`, `zu_viele_versuche` bzw. `token_nicht_gespeichert` (nicht in `lastError`;
   Sync-Zustand und Daten bleiben dann unverändert, das alte Token aber nicht sicher: Der `TokenSpeicher` verwirft beim
   Fehlschlag den Keystore-Schlüssel, `SyncKonto` legt das alte Token bestmöglich neu ab, sonst folgt „Anmeldung

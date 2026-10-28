@@ -191,6 +191,25 @@ class ZutatenRepositoryTest {
     }
 
     @Test
+    fun loeschenLoestEinkaufsartikel() = runTest {
+        syncAn()
+        zutat("z", "Würze")
+        db.einkaufslisteDao().upsert(EinkaufslisteEntity("l1", "Woche", createdAt = 1, updatedAt = 1))
+        db.einkaufsartikelDao().upsert(EinkaufsartikelEntity(id = "a1", listId = "l1", ingredientId = "z", name = "Würze", sortOrder = 0))
+        db.syncDao().outbox().forEach { db.syncDao().loeschenOutbox(it.type, it.recordId) }
+
+        assertEquals(ZutatErgebnis.Geloescht, repo.loeschen("z"))
+
+        val a1 = db.einkaufsartikelDao().nachId("a1")
+        assertNull(a1?.ingredientId)
+        assertEquals("Würze", a1?.name)
+        assertEquals(
+            setOf("ingredient" to "z", "shopping_item" to "a1"),
+            db.syncDao().outbox().map { it.type to it.recordId }.toSet(),
+        )
+    }
+
+    @Test
     fun loeschenBenutzt() = runTest {
         zutat("z", "Würze")
         rezept("r1", "z")
