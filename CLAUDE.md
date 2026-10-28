@@ -5,12 +5,11 @@ Offline-first Android-App für Rezepte, Nährwerte, Wochenplan und Einkaufsliste
 
 ## Wo neue Arbeit hingehört
 
-- **V3 im Bau** (`ToDoS/v3-plan.md`, Abnahme `ToDoS/v3-abnahme.md`, ADR 0011): Phasen 1–6 fertig, als Nächstes
-  Phase 8 (Umstieg). Die KI-Hilfe ist ein eigenes Projekt danach (`ToDoS/ki-plan.md`).
-- Neuer App-Code nur in `:app3`, `:core:*` und `:feature:*` (unter `android/`).
-- **`:app` (v1) und `:sync-protocol` sind eingefroren** – nicht ändern, außer der Nutzer verlangt es ausdrücklich.
-  Sie dienen als Vorlage für das Verhalten und entfallen in Phase 8.
-- Abhängigkeiten nur nach unten: `:app3` → `:feature:*` → `:core:*` → `:domain`/`:api-protocol`.
+- **V3** (`ToDoS/v3-plan.md`, Abnahme `ToDoS/v3-abnahme.md`, ADR 0011): Phasen 1–6 fertig, Phase 8 (Umstieg) läuft.
+  Die KI-Hilfe ist ein eigenes Projekt danach (`ToDoS/ki-plan.md`).
+- App-Code in `:app` (Hülle), `:core:*` und `:feature:*` (unter `android/`). Die v1 ist aus `main` entfernt; der
+  echte Server läuft bis zum Umstieg vom Branch `v1-server` (Fehlerbehebungen dort per eigenem PR).
+- Abhängigkeiten nur nach unten: `:app` → `:feature:*` → `:core:*` → `:domain`/`:api-protocol`.
   **Features kennen sich nicht**; was zwei Features brauchen, kommt in ein `:core`-Modul (Beispiel ADR 0013).
 - Rechenlogik gehört nach `:domain` (reines Kotlin), jede Korrektur mit einem Test, der vorher fehlschlägt.
 - Neues Modul: in `settings.gradle.kts` mit `modul(name, ordner)` in seiner Gruppe eintragen, Plugin aus `build-logic/`
@@ -31,12 +30,12 @@ JDK 21+ (JBR von Android Studio), Android SDK 37. Befehle in PowerShell mit `.\g
 ```
 
 - Emulator-Sync gegen den Test-Server: `server/README.md`, Abschnitt „Test-Server“.
-- `:app3` und `:app` haben dieselbe App-ID. Ein `:app3:installDebug` auf dem Alltags-Handy ersetzt die v1 – nur auf dem
-  Emulator installieren.
+- Varianten „Foody“, „Foody Vorschau“ (`.vorschau`), „Foody Debug“ (`.debug`); APKs, Schlüssel und Umstieg:
+  `docs/installation.md`. Release-Builds nie aufs Alltags-Handy installieren, das macht der Nutzer selbst.
 
 ## Konventionen
 
-- V3-Code: **Bezeichner, Kommentare (KDoc) und Texte auf Deutsch** (`Sicherung`, `ZutatenRepository`). In der v1 und in älterem
+- V3-Code: **Bezeichner, Kommentare (KDoc) und Texte auf Deutsch** (`Sicherung`, `ZutatenRepository`). In älterem
   `:domain`-Code stehen englische Bezeichner; bestehende nicht umbenennen. Code liest sich wie der umgebende Code.
 - `allWarningsAsErrors` ist überall an; Bytecode Java 17.
 - Tests mit ViewModels und Room im Speicher: ViewModels in einen `ViewModelHalter` (`:core:testing`) geben, in `@After`

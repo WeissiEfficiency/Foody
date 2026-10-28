@@ -64,7 +64,7 @@
 
 ## Tests je Regel
 
-Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/test`, App: `android/app/src/androidTest`).
+Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/test`, App: `android/core/data/src/androidTest` und die Tests der `:feature:*`).
 
 | Regel | Tests |
 |---|---|

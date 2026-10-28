@@ -1,6 +1,7 @@
 package de.foody.core.data.db
 
 import java.io.File
+import java.security.MessageDigest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -105,12 +106,20 @@ class SchemaVergleichTest {
         for (name in erwartet.keys) assertEquals(erwartet.getValue(name), zehn.getValue(name), "Tabelle $name")
     }
 
-    /** Die übernommene Grundlage des Migrationstests muss exakt das Schema 9 der v1 sein. */
+    /**
+     * Die übernommene Grundlage des Migrationstests muss exakt das Schema 9 der v1 sein. Die v1 ist seit Phase 8 aus
+     * dem Repository entfernt; verglichen wird deshalb mit der SHA-256 ihrer Datei (Zeilenenden als LF, wie im Git).
+     */
     @Test
-    fun schemaNeunIstByteGleichZurV1() {
-        val v1 = File("../../app/schemas/de.foody.app.data.db.FoodyDatabase/9.json")
-        assertTrue(v1.isFile, "v1-Schema fehlt: ${v1.absolutePath}")
-        assertTrue(File(ordner, "9.json").readBytes().contentEquals(v1.readBytes()), "9.json weicht von der v1 ab")
+    fun schemaNeunIstGleichDerV1() {
+        val text = File(ordner, "9.json").readText().filterNot { it == '\r' }
+        val hash = MessageDigest.getInstance("SHA-256").digest(text.toByteArray()).joinToString("") { "%02x".format(it) }
+        assertEquals(SCHEMA_NEUN_DER_V1, hash, "9.json weicht von der v1 ab")
+    }
+
+    private companion object {
+        /** `android/app/schemas/de.foody.app.data.db.FoodyDatabase/9.json` der v1 (letzter Stand vor Phase 8). */
+        const val SCHEMA_NEUN_DER_V1 = "15f169c0c630e67b3c61af36c275944f8b555a5d8751dbd626dd63a81fbdc88d"
     }
 
     @Test

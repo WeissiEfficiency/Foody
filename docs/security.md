@@ -7,47 +7,18 @@ werden und welche Restrisiken bewusst bleiben. Bei Änderungen an Import, Sicher
 
 | Bereich | Stand |
 |---|---|
-| Netzwerk | `INTERNET` für die optionale Synchronisation und die abschaltbare Online-Produktsuche (siehe unten). Sync: ausschließlich HTTPS zum selbst gehosteten Sync-Server (Klartext per `network_security_config` verboten, nur System-CAs und keine Nutzer-Zertifikate – einzige Ausnahme: die mitgelieferte lokale CA [`foody_local_ca.crt`](../android/app/src/main/res/raw/foody_local_ca.crt) gilt ausschließlich für `foody.homeserver.lan` ohne Subdomains; `ServerUrl` lehnt andere Schemata sowie Zugangsdaten und Query in der Adresse ab), kein Coil-Netzwerkmodul. Ohne eingerichtetes Konto baut die App keine Verbindung auf |
-| Sync-Token | Gerätetoken: AES-256/GCM-Schlüssel im Android Keystore (Alias `foody_sync_token`, nicht auslesbar), nur das Chiffrat (`IV:Chiffrat`, Base64) liegt in den SharedPreferences `foody_sync`; nicht in Backups (Preferences sind ausgeschlossen), nie im Log. Nicht entschlüsselbar (z. B. Gerätewechsel) → Token gilt als nicht vorhanden, neue Anmeldung nötig |
-| Debug-Ausnahme | Nur der Debug-Build (`android/app/src/debug`) erlaubt Klartext-`http://`, und nur für `10.0.2.2` und `localhost` (Emulator → Entwicklungsrechner); `ServerUrl` akzeptiert `http` nur mit diesem Schalter. Der Release-Build enthält die Ausnahme nicht |
-| Berechtigungen | Nur für Kochtimer: `POST_NOTIFICATIONS` (ab Android 13 abgefragt, ablehnbar), `FOREGROUND_SERVICE(_SPECIAL_USE)`, `WAKE_LOCK`. Bilder über Photo Picker, Dateien über SAF, Fotos über die System-Kamera (`TakePicture`) – ohne Berechtigung |
-| Dienst | `CookTimerService`: nicht exportiert, läuft nur solange ein Timer läuft; Wakelock mit Zeitlimit (nächstes Timer-Ende + 1 min) |
-| Exportierte Komponenten | Nur `MainActivity` (Launcher). Keine Intent-Filter für fremde Daten, keine WebView. Einziger PendingIntent: Öffnen der App aus der Timer-Meldung (`FLAG_IMMUTABLE`, explizit) |
-| FileProvider | Nicht exportiert, gibt nur `files/recipe_images/` und `cache/scan/` frei, Schreibrecht nur befristet an die Kamera-App |
-| Packung scannen | Strichcode über den Google Code Scanner, Texterkennung über ML Kit – beides Play-Dienste, auf dem Gerät, ohne Kamera-Berechtigung. Packungsfotos liegen nur kurz in `cache/scan/` und werden nach der Erkennung gelöscht. Online-Produktsuche: HTTPS-GET an `world.openfoodfacts.org` mit **nur der Produktnummer** (kein Konto, keine Gerätekennung, `User-Agent: Foody/<Version>`), eigener HTTP-Client ohne die lokale CA des Sync-Servers; abschaltbar unter „Mehr“ (ADR 0008) |
+| Netzwerk | `INTERNET` für die optionale Synchronisation und die abschaltbare Online-Produktsuche (siehe unten). Sync: ausschließlich HTTPS zum selbst gehosteten Sync-Server (`network_security_config` in `android/app/src/main/res/xml`: Klartext verboten, nur System-CAs, keine Nutzer-Zertifikate – einzige Ausnahme: die mitgelieferte lokale CA [`foody_local_ca.crt`](../android/app/src/main/res/raw/foody_local_ca.crt) gilt ausschließlich für `foody.homeserver.lan`). `ServerAdresse.pruefen` lehnt andere Schemata sowie Zugangsdaten und Query in der Adresse ab; kein Coil-Netzwerkmodul. Ohne eingerichtetes Konto baut die App keine Verbindung zum Server auf |
+| Sync-Token | Gerätetoken (`TokenSpeicher`, `:core:sync`): AES-256/GCM-Schlüssel im Android Keystore (nicht auslesbar), nur das Chiffrat (`IV:Chiffrat`, Base64) liegt in den SharedPreferences; nie im Log. Nicht entschlüsselbar (z. B. Gerätewechsel) → gilt als abgemeldet, neue Anmeldung nötig |
+| Debug-Ausnahme | Nur der Debug-Build (`android/app/src/debug`) erlaubt Klartext-`http://`, und nur für `10.0.2.2` und `localhost` (Emulator → Entwicklungsrechner); nur dort akzeptiert `ServerAdresse.pruefen` auch `http` (`lokalesHttpErlaubt = BuildConfig.DEBUG`). Release und „Foody Vorschau“ enthalten die Ausnahme nicht |
+| Berechtigungen | Nur für Kochtimer (`:feature:kochen`): `POST_NOTIFICATIONS` (abgefragt, ablehnbar), `FOREGROUND_SERVICE(_SPECIAL_USE)`, `WAKE_LOCK`, `VIBRATE`. Bilder über Photo Picker, Dateien über SAF, Fotos über die System-Kamera (`TakePicture`) – ohne Berechtigung |
+| Dienst | Kochtimer-Dienst: nicht exportiert, läuft nur, solange ein Timer läuft; Wakelock bis zum Timer-Ende |
+| Exportierte Komponenten | Nur `MainActivity` (Launcher und Deep Links, siehe unten). Keine Intent-Filter für fremde Daten, keine WebView. Einziger PendingIntent: der Kochmodus aus der Timer-Meldung (`FLAG_IMMUTABLE`, an das eigene Paket gebunden) |
+| Deep Links | `foody://rezept/{id}`, `foody://einkauf/{listeId}`, `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (`VIEW` mit `BROWSABLE`): jede Webseite oder App kann sie öffnen. Sie **navigieren nur** und ändern keine Daten, bis man selbst etwas antippt. Unbekannte IDs zeigen „nicht gefunden“, ein ungültiges Datum zeigt heute, Portionen sind auf 1–99 begrenzt; Links ohne passendes Ziel werden verworfen (`deepLinkOeffnen`). Bei laufender App navigiert ein Link im bestehenden Stapel (`singleTask`, `onNewIntent`) |
+| FileProvider | Einer: `KameraFotoProvider` in `:core:data` (`${applicationId}.kamera`), nicht exportiert, Schreibrecht nur befristet an die Kamera-App. Gibt nur `cache/kamera/` (Rezeptfotos, verkleinert übernommen) und `cache/scan/` (Nährwerttabelle, nach der Erkennung gelöscht) frei |
+| Packung scannen | Strichcode über den Google Code Scanner, Texterkennung über ML Kit – beides Play-Dienste, auf dem Gerät, ohne Kamera-Berechtigung. Online-Produktsuche (`OffProduktSuche`, `:core:scan`): HTTPS-GET an Open Food Facts mit **nur der Produktnummer** (vorher auf Ziffern gefiltert, `User-Agent: Foody/<Version>`), eigener OkHttp-Client ohne die lokale CA, Zeitlimit 8 s, Antwort gezählt gelesen und auf 256 kB begrenzt; abschaltbar unter „Einstellungen → Zutaten → Online-Produktsuche“ (ADR 0013) |
 | Datenbank | Room mit gebundenen Parametern; `LIKE`-Suche maskiert `%`/`_`; rohes SQL nur in Migrationen |
-| Backup | Kein Cloud-Backup. Gerät-zu-Gerät-Umzug (Android 12+) nimmt Datenbank und eigene Fotos mit |
-
-## V3 (`:app3`)
-
-Die Tabelle oben beschreibt die v1 (`android/app`). Die V3 läuft bis zum Umstieg (Phase 8) daneben und unterscheidet
-sich so:
-
-- **Deep Links:** `MainActivity` nimmt `foody://rezept/{id}`, `foody://einkauf/{listeId}`,
-  `foody://kochen/{rezeptId}?portionen={n}` und `foody://tagebuch/{datum}` an (`VIEW` mit `BROWSABLE`). Damit kann
-  jede Webseite oder App sie öffnen. Sie **navigieren nur** und ändern keine Daten, bis man selbst etwas antippt.
-  Unbekannte IDs zeigen „nicht gefunden“, ein ungültiges Datum zeigt heute, und die Portionen sind auf 1–99 begrenzt.
-  Links ohne passendes Ziel werden verworfen (`deepLinkOeffnen`). Bei laufender App navigiert ein Link im
-  bestehenden Stapel (`singleTask`, `onNewIntent`), statt den Task neu aufzubauen. Der Kochmodus merkt sich nur seine
-  Sitzung lokal (Portionen, Seite).
-- **Network-Security-Config** (`android/app3/src/main/res/xml`): nur HTTPS. Die lokale CA gilt ausschließlich für
-  `foody.homeserver.lan`. Klartext für `10.0.2.2` und `localhost` gibt es nur im Debug-Build (`src/debug`). Nur dort
-  akzeptiert `ServerAdresse.pruefen` auch `http` (`lokalesHttpErlaubt = BuildConfig.DEBUG`).
-- **FileProvider:** einer, `KameraFotoProvider` in `:core:data` (`${applicationId}.kamera`). Er ist nicht exportiert,
-  Schreibrecht bekommt nur befristet die Kamera-App, und er gibt nur zwei Cache-Ordner frei:
-  - `cache/kamera/` für Rezeptfotos (verkleinert übernommen),
-  - `cache/scan/` für Fotos der Nährwerttabelle (nach der Erkennung gelöscht).
-- **Open Food Facts** (`:core:scan`, `OffProduktSuche`):
-  - Der Strichcode wird vorher auf Ziffern gefiltert (EAN/UPC).
-  - Es wird nur die Produktnummer gesendet, mit `User-Agent: Foody/<Version>`.
-  - Ein eigener OkHttp-Client ohne die lokale CA, mit Zeitlimit von 8 s.
-  - Die Antwort wird gezählt gelesen und ist auf 256 kB begrenzt; mehr gilt als kaputt, dann wird ein Foto angeboten.
-  - Abschaltbar unter „Einstellungen → Zutaten → Online-Produktsuche“.
-- **Backup:** `allowBackup="false"`. Daten kommen nur über „Sicherung erstellen/wiederherstellen“ vom Gerät, mit
-  denselben Prüfungen wie unten.
-- **Signatur:** Einen Release-Build gibt es erst in Phase 8. Die Probeversion „Foody Vorschau“ (`assembleVorschau`,
-  `de.foody.app.vorschau`) ist mit dem Debug-Schlüssel signiert. Das ist nur zum Testen gedacht und eignet sich
-  nicht für die Weitergabe.
+| Backup | `allowBackup="false"`, kein Cloud-Backup. Daten verlassen das Gerät nur über „Sicherung erstellen“ (Prüfungen beim Wiederherstellen unten) oder den eigenen Sync-Server |
+| Signatur | Release „Foody“ mit eigenem Schlüssel (nicht im Repository, `keystore.properties`). „Foody Vorschau“ (`.vorschau`) ist mit dem Debug-Schlüssel signiert: nur zum Testen, nicht zur Weitergabe |
 
 ## Fremde Eingaben
 
@@ -101,7 +72,7 @@ Server und Protokoll (`:server`, `:api-protocol`); Fremdeingaben sind hier alle 
 
 - **Produktnummer an Open Food Facts:** Verrät, welches Produkt gescannt wurde (und die IP-Adresse). Abschaltbar;
   dann wird nur im eigenen Katalog gesucht und sonst die Nährwerttabelle fotografiert.
-- **Datenbank unverschlüsselt:** liegt in der App-Sandbox, enthält keine sensiblen Daten (Rezepte, Vorrat).
+- **Datenbank unverschlüsselt:** liegt in der App-Sandbox, enthält keine sensiblen Daten (Rezepte, Plan, Tagebuch).
 - **Sicherungsdatei unverschlüsselt:** Die ZIP-Datei liegt dort, wo der Nutzer sie speichert (z. B. Cloud-Ordner).
 - **Gradle-Abhängigkeiten ohne Prüfsummen-Verifikation** (`verification-metadata.xml`): Aufwand bei jedem Update
   hoch; Dependabot-Sicherheitswarnungen in den Repository-Einstellungen aktivieren.

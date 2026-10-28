@@ -2,57 +2,35 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Bilder über Photo Picker, Dateien über SAF, Fotos über die Kamera-App – dafür keine Berechtigungen.
-         Nur für Kochtimer im Hintergrund: Vordergrunddienst, Wakelock bis zum Timer-Ende und die Meldung
-         „Timer abgelaufen“ (ab Android 13 vom Nutzer freizugeben; abgelehnt piept die App nur, solange sie offen ist). -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <!-- Nur für die optionale Synchronisation mit dem selbst gehosteten Server (ausschließlich HTTPS, siehe network_security_config). -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:name=".FoodyApp"
         android:allowBackup="false"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Foody">
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.Foody.Starting"
-            android:windowSoftInputMode="adjustResize">
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Deep Links foody://rezept|einkauf|kochen|tagebuch/… (Navigation Compose ordnet sie zu) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="foody" />
+            </intent-filter>
         </activity>
-        <service
-            android:name=".timer.CookTimerService"
-            android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Kochtimer: zählt gestartete Timer herunter und meldet das Ende auch bei ausgeschaltetem Bildschirm" />
-        </service>
-        <!-- Kamera-App schreibt Rezeptfotos hierüber in den privaten Speicher (keine Kamera-Berechtigung nötig) -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
-        <!-- WorkManager wird in FoodyApp (Configuration.Provider, Hilt-Worker-Factory) selbst konfiguriert:
-             nur dessen Standard-Initializer entfällt, andere Startup-Initializer (z. B. ProfileInstaller) bleiben. -->
+
+        <!-- WorkManager wird mit der HiltWorkerFactory selbst konfiguriert (FoodyApp) -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"

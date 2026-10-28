@@ -1,49 +1,37 @@
 # Architektur
 
-**Module und Ordner:** Handy-Apps unter `android/`:
-- die V3 `:app3` mit `:feature:*` und `:core:*` (`:core:data`, `:core:sync`, `:core:scan`, `:core:designsystem`,
-  nur für Tests `:core:testing`),
-- die eingefrorene v1 `:app` mit `:baselineprofile`,
+**Module und Ordner:** Handy-App unter `android/`:
+- `:app` (App-Hülle) mit `:feature:*` und `:core:*` (`:core:data`, `:core:sync`, `:core:scan`, `:core:designsystem`,
+  nur für Tests `:core:testing`), dazu `:baselineprofile` (Generator des Baseline-Profils),
 - `:katalog`, eine kleine App zum Ansehen des Designsystems.
 
-Gemeinsamer Code liegt unter `shared/` (`:domain`, `:sync-protocol`, `:api-protocol`). Der Server liegt unter
-`server/`: `:server-sync` (API, Konten, Datenbank, Sync, Fotos, KI-Gerüst) und `:server` (nur `main`).
-Abhängigkeiten laufen nur in eine Richtung: `:app3` → `:feature:*` → `:core:*` → `:domain`/`:api-protocol`
-(Features kennen sich nicht), `:server` → `:server-sync` → `:api-protocol`, `:app` → `:domain`, `:sync-protocol`.
-`:sync-protocol` (Protokoll 2) ist für die v1-App eingefroren und entfällt in Phase 8; der Server nutzt nur
-`:api-protocol` (Protokoll 3). Gradle-Namen sind unabhängig von den Ordnern (`projectDir` in `settings.gradle.kts`). Spec:
-`docs/superpowers/specs/2026-10-11-projektstruktur-design.md`.
+Gemeinsamer Code liegt unter `shared/` (`:domain`, `:api-protocol`). Der Server liegt unter `server/`: `:server-sync`
+(API, Konten, Datenbank, Sync, Fotos, KI-Gerüst) und `:server` (nur `main`). Abhängigkeiten laufen nur in eine
+Richtung: `:app` → `:feature:*` → `:core:*` → `:domain`/`:api-protocol` (Features kennen sich nicht),
+`:server` → `:server-sync` → `:api-protocol`. Gradle-Namen sind unabhängig von den Ordnern (`projectDir` in
+`settings.gradle.kts`). Spec: `docs/superpowers/specs/2026-10-11-projektstruktur-design.md`.
 
-Die Abschnitte bis „Sync (optional)“ beschreiben die v1. Die V3 beginnt mit „Server (V3)“ und „App V3: Daten und Sync“.
+Die heutige App ist die **V3** (Plan `ToDoS/v3-plan.md`). Ihre Vorgängerin, die v1 samt Protokoll 2
+(`:sync-protocol`), ist mit Phase 8 aus `main` entfernt; ihr letzter Stand liegt im Git-Verlauf und der Server dazu
+auf dem Branch `v1-server`. Wo unten „wie v1“ steht, verhält sich die V3 bewusst wie ihre Vorgängerin.
 
-- **UI-Schicht** (`android/app/.../ui`): Compose-Screens + `@HiltViewModel`. Jeder Screen rendert einen unveränderlichen
-  `UiState` aus `StateFlow`; Nutzeraktionen sind Methodenaufrufe am ViewModel (Unidirectional Data Flow).
-  Einmalige Meldungen (Snackbar) sind Zustand, der nach Anzeige quittiert wird (`messageShown()`).
-  Bildschirmzustand, der einen Prozessneustart überleben muss (Suche, Filter, Zeitraum, Editor-Entwurf), liegt im
-  `SavedStateHandle`.
+- **Oberfläche** (`:feature:*`, `:app`): Compose-Bildschirme mit `@HiltViewModel`; jeder Bildschirm zeichnet einen
+  Zustand aus `StateFlow`, Aktionen sind Methodenaufrufe am ViewModel. Eingaben, die ein Prozessende überstehen
+  müssen, liegen im `SavedStateHandle`.
 - **Domain** (`:domain`): reine Kotlin-Logik, vollständig per JVM-Test abgedeckt.
   - Rechnen: `RecipeScaler`, `UnitConverter`, `NutritionCalculator`
   - Einkauf: `GenerateShoppingListUseCase`, `ShoppingDiff`, `ShoppingListExporter`
   - Import: `MarkdownRecipeImporter`, `GermanAmounts` (Einheitenwörter, deutsche Zahlen)
   - Zutatennamen: `IngredientCatalog` (Synonyme, „nie einkaufen“, Abteilungs-Schätzung)
-  - Kochmodus: `StepIngredientMatcher` (Zutaten + Teilmengen im Schritt), `StepTimerParser` (Zeitangaben);
-    laufende Timer hält `CookTimerRepository` (App-weit), `CookTimerService` meldet das Ende auch im Hintergrund
+  - Kochmodus: `StepIngredientMatcher` (Zutaten + Teilmengen im Schritt), `StepTimerParser` (Zeitangaben)
   - Startseite: `DailyPicks` (Rezepte des Tages)
-- **Data** (`android/app/.../data`): Room als Single Source of Truth, Repositories mappen Entities ↔ Domain.
-  Schreibvorgänge über mehrere Tabellen laufen in Transaktionen (Rezept speichern, Listen-Snapshot,
-  Diff anwenden, „gekocht“, Rezept auf Einkaufsliste, Zutaten zusammenführen/vereinheitlichen).
+- **Daten** (`:core:data`): Room als einzige Quelle, Repositories bilden Zeilen auf `:domain`-Modelle ab. Schreibvorgänge
+  über mehrere Tabellen laufen in Transaktionen.
 
-## Navigation
+## Datenbank: Vorgeschichte
 
-Typisierte Routen (Navigation Compose + kotlinx.serialization). `NavigationSuiteScaffold` wählt automatisch
-Bottom Bar (Telefon) oder Navigation Rail (Tablet). Jeder Hauptbereich behält seinen eigenen Verlauf
-(`saveState`/`restoreState`): Wer von einer Rezeptdetailseite zum Einkauf wechselt und zurück, landet wieder dort.
-
-## Datenbank
-
-Version **6**, Schema-Export nach `android/app/schemas` (eingecheckt). Jede Schemaänderung benötigt eine `Migration`
-in `ALL_MIGRATIONS` (`FoodyDatabase.kt`) und einen Migrationstest (`MigrationTestHelper`, `MigrationTest`);
-`fallbackToDestructiveMigration()` ist verboten.
+Die Schemata 1–9 stammen aus der v1 (eingecheckt unter `android/core/data/schemas`); die V3 migriert 9 → 10 (unten,
+„App V3: Daten und Sync“).
 
 | Version | Änderung |
 |---|---|
@@ -57,86 +45,9 @@ in `ALL_MIGRATIONS` (`FoodyDatabase.kt`) und einen Migrationstest (`MigrationTes
 | 8 | Tagebuch: `tagebuch_eintrag` (Nährwerte festgehalten, lose Referenzen auf Rezept/Zutat/Plan-Eintrag); Sync-Trigger neu angelegt. `SyncTriggers.create` legt nur Trigger für vorhandene Tabellen an |
 | 9 | `ingredient.barcode` (Strichcode, Index, nicht eindeutig); optional in Sync-Payload und Sicherung |
 
-## Sync (optional)
-
-Entscheidung: [ADR 0006](adr/0006-optional-self-hosted-sync.md); Server und Betrieb: [`server/README.md`](../server/README.md).
-Dieser Abschnitt beschreibt die v1-App (Protokoll 2, Haushalte); sie synchronisiert bis zum Umstieg (Phase 8) mit
-dem eingefrorenen Server-Stand `v1-server`. Der Server in `main` ist unter „Server (V3)“ beschrieben.
-
-SQLite-Trigger (`SyncTriggers`, Namen `sync_*`) schreiben jede lokale Änderung der Tabellen `ingredient`, `recipe`,
-`meal_slot`, `pantry_item`, `shopping_list` und `shopping_item` (bei Kindtabellen: des Elterndatensatzes) in
-`sync_outbox` – in derselben Transaktion, sodass keine Schreibstelle sie vergessen kann. Die Trigger wirken nur, wenn
-`sync_state.active = 1` und nicht gerade Server-Daten angewendet werden (`applyingRemote = 0`); bis `activate` bleibt
-der Sync vollständig inaktiv. Die Zeile `sync_state(id = 1)` und die Trigger legen `SYNC_CALLBACK` (frische
-Installation) bzw. `MIGRATION_3_4` an. Ein erneut vorgemerkter Datensatz bekommt immer ein streng größeres
-`queuedAt` (auch in derselben Millisekunde), damit der Push Änderungen während eines Laufs sicher erkennt.
-
-### Ablauf eines Laufs
-
-`SyncEngine.run()` (ein Mutex je Server-URL; `SyncEngineFactory` liefert `null` bei inaktivem Sync, fehlendem Token oder
-„unauthorized“): Fotos der Batch-Rezepte hochladen → **Push** der Outbox in Abhängigkeitsreihenfolge (Zutat → Rezept →
-Planposition → Vorrat → Liste → Eintrag) → **Pull** ab dem gespeicherten Cursor (`SyncApplier` wendet in einer
-Transaktion mit `applyingRemote = 1` an, kein Outbox-Echo) → fehlende Fotos laden. `410` (Cursor abgelaufen) löst einen
-Voll-Abgleich aus. Ergebnis und feste Fehlerkennung landen in `sync_state` (`lastSyncAt`, `lastError`), abgelehnte
-Datensätze als `sync_problem` („Sync-Probleme (n)“). Konflikte: Last-Writer-Wins am Server; Einkaufseinträge feldweise
-(`checked` nach `checkedChangedAt`, bei Gleichstand gewinnt „abgehakt“); Löschen gewinnt gegen Bearbeiten ohne Kenntnis
-der Löschung; Zutaten mit gleichem Namen werden zur älteren ID zusammengeführt.
-
-### Hintergrund-Sync
-
-`SyncScheduler` (WorkManager, nur mit Netzwerk): periodisch stündlich (`schedulePeriodic`, `UPDATE` bringt ein
-geändertes Intervall auf bestehende Installationen), beim Öffnen der App (`requestOnAppOpen` aus `MainActivity.onStart`) und nach lokalen
-Änderungen entprellt nach 5 s (`requestSoon`, ausgelöst durch das Beobachten der Outbox-Größe); Backoff exponentiell ab
-30 s. `FoodyApp` plant beim Start nur, wenn der Sync aktiv ist. Wurde während eines Laufs etwas vorgemerkt, hängt der
-Worker einen weiteren Lauf an (`requestSoonIfQueuedSince`).
-
-### Bildschirme
-
-- **Einstellungen, Karte „Synchronisierung“** (`SyncSettingsCard`): „Nicht verbunden“, „Verbunden mit Haushalt …“ oder
-  „Abgemeldet“; „Jetzt synchronisieren“, „Einladen“ (Code `FOODY-XXXX-XXXX`, kopieren/teilen), „Geräte“ (anzeigen/abmelden),
-  „Sync-Probleme“, „Trennen“ (immer mit Rückfrage; die Daten bleiben).
-- **Server verbinden** (`SyncSetupScreen`/`SyncSetupViewModel`): Adresse (`ServerUrl`: https, im Debug-Build zusätzlich
-  `http` für lokale Hosts) → Anmelden oder mit Einladungscode registrieren → Haushalt wählen oder anlegen → bei
-  vorhandenen lokalen Daten und bestehendem Haushalt „Zusammenführen“ oder „Dieses Gerät ersetzen“ (erst Sicherung).
-  Passwort und Token liegen nie im `SavedStateHandle`; das Token speichert `TokenStore` (Keystore).
-
-### Fotos
-
-Rezeptfotos reisen als JPEG-Blobs, adressiert über ihren SHA-256 (`RecipePayload.photo`, Kleinbuchstaben-Hex); nur eigene
-Fotos (`file:` im Fotoordner von `RecipePhotoStore`) werden übertragen, `content:`-Links nie. `PhotoIndex` hasht je Datei
-(Cache `sync_photo_local` mit Größe und Änderungszeit, damit `shrink` erkannt wird) und findet zu einem Hash die lokale Datei.
-
-- **Hochladen vor dem Push:** `SyncEngine` sammelt je Batch die Foto-Hashes der Rezepte, fragt `POST /photos/missing` und
-  lädt jedes fehlende per `PUT /photos/{sha256}` hoch. Hashes ohne lokale Datei (Wunsch, noch nicht geladen) werden
-  übersprungen; Lese-/Upload-Fehler sind `Transient` (Lauf bricht ab, Outbox bleibt).
-- **Herunterladen nach dem Pull** (auch nach dem Voll-Abgleich): Kennt die App das Foto eines Server-Rezepts nicht, merkt
-  `SyncApplier` es in `sync_photo_wanted` vor. Je Wunsch: Rezept weg → Wunsch verwerfen; lokale Datei mit dem Hash
-  vorhanden → nur verknüpfen; sonst `GET /photos/{sha256}`. 404 → der Wunsch bleibt für den nächsten Lauf. Falscher Hash
-  → verwerfen, Problem `photo_mismatch`, Wunsch bleibt (kein Überschreiben des Server-Fotos), kein erneuter Abruf, bis
-  ein neuer Server-Stand das Problem löscht (das Problem hält ein serverseitig gelöschtes Rezept im Voll-Abgleich lokal). Sonst wird über
-  `RecipePhotoStore.newPhotoFile()` (temporäre Datei, dann Umbenennen) gespeichert, in `sync_photo_local` eingetragen und
-  in einer Transaktion mit `applyingRemote = 1` `recipe.imageUri` gesetzt und der Wunsch gelöscht – nur, wenn der Wunsch
-  noch mit demselben Hash besteht (ein lokal neu gewähltes Foto löscht ihn per Trigger). Kein Outbox-Echo.
-- **Nicht übertragbare Fotos** (über 10 MB, leer oder kein JPEG; zuerst wird `shrink` versucht) gehen als `photo = null`
-  mit Problem `photo_unsyncable` raus – die bewusste Ausnahme, weil es dauerhaft ist. Lehnt der Server ein Foto beim Upload
-  ab (4xx/413), bekommt nur das betroffene Rezept dieses Problem und bleibt in der Outbox; der Lauf geht weiter.
-- Der Server räumt Fotos auf, die kein lebender Rezept-Datensatz mehr nennt und die älter als 30 Tage sind.
-
-### Einordnung (seit DB v7)
-
-`RecipePayload` und die Sicherung tragen `mahlzeiten`/`gaenge` optional (`null` wird wegen `explicitNulls = false` nicht
-gesendet). Eingehende `slotType`-Werte (Sync, Sicherung) laufen durch `Mahlzeit.ausText`, damit ältere Daten keinen
-Freitext zurückbringen. **Bekannte Grenze:** Bearbeitet ein Gerät mit App-Version vor DB v7 ein Rezept, fehlen die Felder
-in seinem Payload; die manuelle Einordnung dieses Rezepts geht verloren und es gilt wieder die Vermutung.
-
-### Tagebuch (seit DB v8)
-
-Sync-Typ `tagebuch_eintrag` (wie die übrigen Typen = Tabellenname, den die Trigger in die Outbox schreiben). Der Payload
-trägt die festgehaltenen Nährwerte; Referenzen werden nicht geprüft (`PayloadValidator.references` leer), ein Eintrag
-zu einem gelöschten Rezept wird also trotzdem angewendet. **Ausrollen: erst den Server, dann die Apps.** Seit Protokoll 2
-(`Protocol.VERSION`/`MIN_VERSION`) meldet der Server einer alten App `protocol_too_old` („Bitte App aktualisieren“),
-einer neuen App an einem alten Server antwortet er `server_too_old` („Server aktualisieren“) – statt Dekodierfehlern. Die Sicherung enthält `tagebuch`
-(fehlt in älteren Dateien → leer).
+Room setzt `recursive_triggers = 1`; jeder Trigger-Rumpf muss seine eigene WHEN-Bedingung falsch machen
+(`MAX(jetzt, alt + 1)`). `OnConflictStrategy.REPLACE` auf Wurzeltabellen würde die Lösch-Trigger auslösen und eine
+Löschung vormerken – stattdessen `@Upsert`.
 
 ## Server (V3)
 
@@ -167,8 +78,7 @@ Spec: `docs/superpowers/specs/2026-10-17-v3-phase2-server-schlank-design.md`. Kt
 
 ## App V3: Daten und Sync
 
-Spec: `docs/superpowers/specs/2026-10-18-v3-phase3-app-daten-sync-design.md`. Neu geschrieben, die v1 (`:app`,
-`:sync-protocol`) war Vorlage für das Verhalten und bleibt unverändert. Noch ohne Oberfläche (Phase 4–6); die App liefert
+Spec: `docs/superpowers/specs/2026-10-18-v3-phase3-app-daten-sync-design.md`. Neu geschrieben, die v1 war Vorlage für das Verhalten. Noch ohne Oberfläche (Phase 4–6); die App liefert
 später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAusloeser.beimStart()` auf und stellt die
 `HiltWorkerFactory` bereit (Phase 5).
 
@@ -178,7 +88,7 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
   `:core:data` → `:domain`, `:api-protocol` (per `api`, weil Entities und `FoodyDatenbank` diese Typen zeigen).
   Seit Phase 6e3 dazu `:core:scan` (`android/core/scan`, Paket `de.foody.core.scan`) – Packung scannen (`ScanModul`,
   ADR 0013). `:core:scan` → `:core:data`, `:domain` (per `api`), `:core:designsystem`; `:feature:heute`,
-  `:feature:zutaten`, `:feature:einstellungen` und `:app3` → `:core:scan`.
+  `:feature:zutaten`, `:feature:einstellungen` und `:app` → `:core:scan`.
   Nur für Tests: `:core:testing` (`android/core/testing`) mit `ViewModelHalter`; das Feature-Plugin bindet es als
   `testImplementation` ein. Tests geben ihre ViewModels hinein und rufen in `@After` erst `schliessen()`, dann
   `db.close()` – sonst fragt ein noch laufender Flow die geschlossene In-Memory-Datenbank ab. Dazu
@@ -264,7 +174,7 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
 ## Designsystem V3 (Phase 4)
 
 ADR 0012, Spec `docs/superpowers/specs/2026-10-19-v3-phase4-designsystem-design.md`. Einzige Quelle für das Aussehen
-der V3; die v1 (`android/app`) behält ihr eigenes Theme bis Phase 8.
+der App.
 
 - **`:core:designsystem`** (`de.foody.core.designsystem`, ohne Abhängigkeit zu `:core:data`/`:core:sync`):
   - `token/`: `FoodyFarben` (Hell/Dunkel, Richtung „Ofenwarm“), `GlasStufe` + `glasWerte` (LEICHT/DICHT mit Unschärfe 24 dp,
@@ -291,10 +201,11 @@ der V3; die v1 (`android/app`) behält ihr eigenes Theme bis Phase 8.
 
 ## App V3: Hülle, Heute, Tagebuch (Phase 5)
 
-Spec `docs/superpowers/specs/2026-10-24-v3-phase5-heute-design.md`. Die V3 läuft als eigenes App-Modul neben der v1,
-bis Phase 8 umschaltet.
+Spec `docs/superpowers/specs/2026-10-24-v3-phase5-heute-design.md`. Seit Phase 8 ist die Hülle `:app`
+(bis dahin `:app` neben der v1).
 
-- **`:app3`** (`de.foody.app3`, `applicationId` `de.foody.app`, Debug `.debug` „Foody Debug“, Release noch aus):
+- **`:app`** (`de.foody.app`, `applicationId` `de.foody.app`; Debug `.debug` „Foody Debug“, Release „Foody“,
+  `.vorschau` „Foody Vorschau“; Varianten und APK-Ablage: `docs/installation.md`):
   `FoodyApp` (Hilt, `HiltWorkerFactory`; beim Start `SyncAusloeser.beimStart()` und `StartdatenLader`, bei jedem Wechsel
   in den Vordergrund `appImVordergrund()`), `MainActivity` (`singleTask`; Deep Links aus `onNewIntent` gehen über
   `deepLinkOeffnen`, siehe Navigation), `AppModul` (`SyncKonfiguration`, `KontoZugriff` → `KontoAnbindung` auf `SyncKonto`/`sync_state`/
@@ -360,7 +271,7 @@ und `RezeptDetail(id)`; neu sind die Routen `RezeptNeu` und `RezeptBearbeiten(id
   Detail nebeneinander; ein Tipp links fragt erst, wenn rechts ein Editor ungespeicherte Änderungen hat. Inhalte höchstens 720 dp breit.
 - **Tests:** Repository- und Importtests (Room im Speicher), Filter- und Zeilentests, Bildschirmtests mit echtem
   ViewModel (Schrift 200 %, Doppeltipp auf Speichern, gelöschtes Rezept im Editor, Zustand nach Drehen),
-  Navigationstests in `:app3`. Roborazzi-Bilder von Liste, Detail und Editor (hell/dunkel × Handy/Tablet) in
+  Navigationstests in `:app`. Roborazzi-Bilder von Liste, Detail und Editor (hell/dunkel × Handy/Tablet) in
   `android/feature/rezepte/src/test/screenshots/`, Vergleich in der CI.
 
 ## Kochen (Phase 6b)
@@ -388,7 +299,7 @@ Spec `docs/superpowers/specs/2026-10-25-v3-phase6b-kochen-design.md`. Ersetzt de
   darf. Benachrichtigungs-Freigabe beim ersten Timer; abgelehnt meldet der offene Kochmodus selbst (Ton, Vibration)
   und sagt das einmal.
 - **Tests:** Repository, Schritte, Sitzung, Timer-Speicher und Zeitplan, ViewModel (Doppeltipp „Fertig“, Sync-
-  Änderung, gelöschtes Rezept, Portionen 0/500), Bildschirm (Schrift 200 %, Drehen, Tablet), Navigation in `:app3`.
+  Änderung, gelöschtes Rezept, Portionen 0/500), Bildschirm (Schrift 200 %, Drehen, Tablet), Navigation in `:app`.
   Roborazzi-Bilder in `android/feature/kochen/src/test/screenshots/`, Vergleich in der CI.
 
 ## Woche (Phase 6c)
@@ -440,7 +351,7 @@ Menge in der Basiseinheit und Herkunft je `NeedSource`, manuelle Artikel ohne He
 - **`:core:designsystem`**: `Kachel` mit `aufDerListe` (rot), `onLangdruck` („Details“) und `zustandsText`;
   `KachelEmoji` für die Katalog-Emojis.
 - **`:feature:rezepte`**: „Auf die Einkaufsliste“ im Rezeptdetail (Portionen-Dialog, Snackbar mit „Ansehen“ →
-  `zumEinkauf()` in `:app3`).
+  `zumEinkauf()` in `:app`).
 - **Tests:** Repository (Lesen, Schreiben, Plan, Abgleich, Rezept → Liste), ViewModel, Nebenläufigkeit (Abfragen und
   Transaktionen hinter einer Schranke), Bildschirm und Blätter, Navigation. Roborazzi-Bilder in
   `android/feature/einkauf/src/test/screenshots/`, Vergleich in der CI.
@@ -459,7 +370,7 @@ Einstellungsseite; „Server verbinden“ ist das eigene Ziel `ServerVerbinden`.
   Wiederherstellen, Löschen im `viewModelScope`, eine Aktion zur Zeit, Ergebnis als Meldung) und `EinstellungenRoute`
   (Konto, Darstellung, Tagesziel, Sicherung, Daten, Hinweise; Dateidialoge über SAF in der Route, für Tests als
   `Dateiwahl` austauschbar). Wiederherstellen und Löschen fragen nach und sind bei verbundenem Sync gesperrt.
-- **`:app3`:** `MainActivity` zeichnet nach `DarstellungSpeicher` (`istDunkel`), Änderungen wirken sofort;
+- **`:app`:** `MainActivity` zeichnet nach `DarstellungSpeicher` (`istDunkel`), Änderungen wirken sofort;
   `SystemleistenPassend` richtet die Symbole von Status- und Navigationsleiste nach der gewählten Darstellung (wie v1).
 - **Tests:** Speicher, Löschen (Fotoindex, Sync-Sperre, Startkatalog), ViewModel (Doppeltipp per Mutation geprüft),
   Bildschirm, Navigation, Darstellung. Roborazzi-Bilder in `android/feature/einstellungen/src/test/screenshots/`,
@@ -523,26 +434,6 @@ Keine Schema- und keine Protokolländerung (nur die Abfrage `ZutatDao.mitStrichc
   Knopf-Zustand, ViewModels und Bildschirme mit einem Fake-Scan ohne Play-Dienste; Roborazzi-Bilder „Frei“ mit Packung
   (hell/dunkel), Editor mit markierten Werten und „Neue Zutat“ nach einem Scan, Vergleich in der CI.
 
-## Packung scannen (seit DB v9)
-
-v1 (`:app`); die V3 nutzt `:core:scan` (oben). `PackungScan` (`android/app/.../scan`) steuert den Ablauf hinter Schnittstellen, die Hilt in `ScanModule` bindet und Tests durch
-Fakes ersetzen: `StrichcodeLeser` (Google Code Scanner) → `KatalogSuche` (`ingredient.barcode`) → `ProduktSuche`
-(`OffProduktSuche`, Open Food Facts, nur wenn `ScanPreferences.onlineSuche`) → sonst `TabellenScanner` (ML Kit).
-Fehlende Play-Dienste-Module werden über `ModuleInstallClient` nachgeladen. Die Auswertung ist rein: `NaehrwertScan`
-(`domain`, OCR-Zeilen → Werte je 100 g/ml) und `OpenFoodFacts.auswerten` (JSON → `Packung`). Die Oberfläche
-(`PackungScanKnopf`) füllt nur vor; Speichern übernimmt (Zutaten-Dialog, Tagebuch-Reiter „Frei“). ADR 0008.
-
-Hinweis: Room setzt `recursive_triggers = 1`; jeder Trigger-Rumpf muss seine eigene WHEN-Bedingung falsch machen
-(`MAX(jetzt, alt + 1)`). `OnConflictStrategy.REPLACE` auf Wurzeltabellen würde `sync_*_ad` auslösen und eine Löschung
-vormerken – stattdessen `@Upsert`.
-
-## Startdaten
-
-`SeedData` enthält generische Zutaten mit gerundeten Nährwerten. Der Zähler `SeedData.VERSION` (in
-SharedPreferences `seedVersion`) sorgt dafür, dass Erweiterungen auch bestehende Installationen erreichen.
-Einträge, die noch unverändert aus den Startdaten stammen (`nutrientSource` = „Näherungswert (Startdaten)“),
-übernehmen Korrekturen; vom Nutzer bearbeitete Werte bleiben unangetastet.
-
 ## Build
 
 AGP 9 mit eingebautem Kotlin (kein `org.jetbrains.kotlin.android`-Plugin) und neuer DSL, ohne
@@ -550,7 +441,7 @@ Kompatibilitäts-Flags in `gradle.properties`. Gradle braucht JDK 21+ (z. B. das
 unter Java 21. Der Bytecode bleibt Java 17.
 
 **Convention-Plugins** (`build-logic/`, eingebunden über `pluginManagement { includeBuild(...) }`; der Docker-Build des
-Servers lässt sie mit `FOODY_SERVER_ONLY` weg): `foody.android.application` (`:app`, `:app3`, `:katalog`),
+Servers lässt sie mit `FOODY_SERVER_ONLY` weg): `foody.android.application` (`:app`, `:katalog`),
 `foody.android.library` (`:core:*` ohne Compose: `:core:data`, `:core:sync`, `:core:testing`) und
 `foody.android.feature` (Bibliothek + Compose + Test-Abhängigkeiten samt `:core:testing`): alle `:feature:*` sowie
 `:core:designsystem` und `:core:scan`. Sie setzen die

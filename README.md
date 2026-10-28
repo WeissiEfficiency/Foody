@@ -5,14 +5,14 @@ konsolidierte Einkaufslisten.
 
 `Rezept → Portionierung → Wochenplan → Zutatenaggregation → Einkaufsliste`
 
-**Stand (2026-10-28):** Foody wird als **V3** neu gebaut (Plan [`ToDoS/v3-plan.md`](ToDoS/v3-plan.md), Umfang
-[ADR 0011](docs/adr/0011-v3-umfang-ein-nutzer.md)). Die V3 (`:app3`) läuft bis zum Umstieg in Phase 8 neben der
-**v1** (`:app`), die im Alltag genutzt und **nicht mehr verändert** wird. Neue Arbeit gehört nach `:app3`, `:core:*`
-und `:feature:*`; in Phase 8 entfallen `:app` und `:sync-protocol`, und `:app3` wird zu `:app`.
+**Stand (2026-10-28):** Foody ist als **V3** neu gebaut (Plan [`ToDoS/v3-plan.md`](ToDoS/v3-plan.md), Umfang
+[ADR 0011](docs/adr/0011-v3-umfang-ein-nutzer.md)) und steckt im Umstieg (Phase 8). Die v1 ist aus `main` entfernt;
+bis die Geräte umgestellt sind, läuft der echte Server weiter vom Branch `v1-server`.
+**Installieren und aktualisieren:** [`docs/installation.md`](docs/installation.md).
 
 ## Funktionen (V3)
 
-Phasen 1–6 sind fertig; als Nächstes kommt der Umstieg (Phase 8), danach die KI-Hilfe als eigenes Projekt
+Phasen 1–6 sind fertig, der Umstieg (Phase 8) läuft; danach kommt die KI-Hilfe als eigenes Projekt
 ([`ToDoS/ki-plan.md`](ToDoS/ki-plan.md)). Abnahmeliste: [`ToDoS/v3-abnahme.md`](ToDoS/v3-abnahme.md).
 
 - **Heute:** Plan für heute und morgen mit kcal je Portion, Rezeptvorschläge, offene Einkaufsartikel; **Tagebuch** mit
@@ -29,7 +29,7 @@ Phasen 1–6 sind fertig; als Nächstes kommt der Umstieg (Phase 8), danach die 
   Zusammenführen) und **Packung scannen** (Strichcode, Open Food Facts abschaltbar, Foto der Nährwerttabelle; ADR 0013).
 
 Gestrichen gegenüber der v1 (ADR 0011): Vorrat mit MHD, „Aus dem Vorrat“, Abbuchen bei „Gekocht“, Liste als Text
-teilen, Planer-Modi 1/2/3/7 Tage, Web-App. Was die v1 kann, beschreibt [`docs/architecture.md`](docs/architecture.md).
+teilen, Planer-Modi 1/2/3/7 Tage, Web-App.
 
 ## Synchronisierung (optional)
 
@@ -43,7 +43,7 @@ Die Web-Oberfläche ist mit V3 entfallen (ADR 0011).
 
 | Ordner | Modul | Inhalt |
 |---|---|---|
-| `android/app3/` | `:app3` | **V3-App** (Hülle): Hilt, Navigation mit vier Tabs, Deep Links; bindet alle `:core:*` und `:feature:*` ein |
+| `android/app/` | `:app` | **App-Hülle**: Hilt, Navigation mit vier Tabs, Deep Links; bindet alle `:core:*` und `:feature:*` ein |
 | `android/feature/<bereich>/` | `:feature:heute`, `:rezepte`, `:kochen`, `:woche`, `:einkauf`, `:einstellungen`, `:zutaten` | ein Modul je Bereich (Bildschirme, ViewModels); Features kennen sich nicht |
 | `android/core/data/` | `:core:data` | Room (`foody.db` v10), Repositories, Sync-Speicher, Fotos, Sicherung |
 | `android/core/sync/` | `:core:sync` | Sync-Client: Server-Zugang, Sync-Lauf, Verbinden/Trennen, Token |
@@ -51,16 +51,14 @@ Die Web-Oberfläche ist mit V3 entfallen (ADR 0011).
 | `android/core/designsystem/` | `:core:designsystem` | Tokens, Glas-Flächen, Komponenten, Theme „Ofenwarm“ (ADR 0012) |
 | `android/core/testing/` | `:core:testing` | nur für Tests: `ViewModelHalter` beendet ViewModels vor `db.close()` (ADR 0014), `nachProzessende()` stellt ein Prozessende nach; jedes Feature bekommt es als `testImplementation` |
 | `android/katalog/` | `:katalog` | kleine App zum Ansehen des Designsystems |
-| `android/app/` | `:app` | **v1-App, eingefroren** (Compose, Room, Hilt, Vorrat); entfällt in Phase 8 |
-| `android/baselineprofile/` | `:baselineprofile` | Generator für das Baseline-Profil der v1 |
+| `android/baselineprofile/` | `:baselineprofile` | Generator für das Baseline-Profil der App |
 | `build-logic/` | – | Convention-Plugins (`foody.android.application`, `.library`, `.feature`): SDK-Stände, Java 17, Kotlin ohne Warnungen |
-| `shared/domain/` | `:domain` | Reines Kotlin (keine Android-Abhängigkeiten): Einheiten, Skalierung, Nährwerte, Einkaufsaggregation, Diff, Import, Einordnung – von v1, V3 und Server genutzt |
+| `shared/domain/` | `:domain` | Reines Kotlin (keine Android-Abhängigkeiten): Einheiten, Skalierung, Nährwerte, Einkaufsaggregation, Diff, Import, Einordnung – von App und Server genutzt |
 | `shared/api-protocol/` | `:api-protocol` | Protokoll 3 des Servers (`/api/v3`): DTOs, Validierung, Version |
-| `shared/sync-protocol/` | `:sync-protocol` | Protokoll 2 der v1-App; eingefroren, entfällt in Phase 8 |
 | `server/sync/` | `:server-sync` | Optionaler Sync-Server (Ktor + SQLite): API, Konten, Datenbank, Sync, Fotos, Admin-CLI |
 | `server/start/` | `:server` | Startpunkt (`main`), startet den Sync-Server; Docker-Image |
 
-Abhängigkeiten laufen nur nach unten: `:app3` → `:feature:*` → `:core:*` → `:domain`, `:api-protocol`.
+Abhängigkeiten laufen nur nach unten: `:app` → `:feature:*` → `:core:*` → `:domain`, `:api-protocol`.
 
 Änderungen unter `shared/api-protocol/` betreffen den Server: danach den Server neu bauen (`server/README.md`, Update).
 
@@ -75,60 +73,25 @@ Die App läuft ab **Android 16** (`minSdk` 36, `targetSdk` 37; ADR 0009).
 ./gradlew :domain:test                 # schnelle JVM-Tests des Rechenkerns
 ./gradlew :feature:rezepte:test        # Tests eines Bereichs (Robolectric, Roborazzi-Bilder)
 ./gradlew check                        # alle Unit-Tests + Lint (so prüft auch die CI)
-./gradlew :app3:assembleDebug          # V3 als „Foody Debug“
-./gradlew :app3:installDebug           # V3 auf Emulator/Gerät
-./gradlew :app3:assembleVorschau       # V3 als „Foody Vorschau“ (R8 wie ein Release) zum Testen auf dem Handy
-./gradlew :core:data:connectedCheck    # Room- und Migrationstests der V3 auf Gerät/Emulator
-./gradlew :app:connectedCheck          # Tests der v1 auf Gerät/Emulator
+./gradlew :app:assembleDebug           # „Foody Debug“ (de.foody.app.debug)
+./gradlew :app:installDebug            # auf Emulator/Gerät
+./gradlew :app:assembleVorschau        # „Foody Vorschau“ (R8 wie ein Release, eigene App-ID) zum Testen
+./gradlew :app:assembleRelease         # „Foody“ (Release, mit eigenem Schlüssel signiert)
+./gradlew :core:data:connectedCheck    # Room- und Migrationstests auf Gerät/Emulator
 ```
 
-`:app3` und `:app` haben dieselbe App-ID (`de.foody.app`, Debug `de.foody.app.debug`): Ein Debug-Build der V3 ersetzt
-eine installierte „Foody Debug“ der v1 samt Migration 9 → 10. Auf dem Alltags-Handy daher erst in Phase 8.
-Zum Testen dort gibt es „Foody Vorschau“ (`de.foody.app.vorschau`, mit dem Debug-Schlüssel signiert): eigene Daten,
-läuft neben beiden v1-Varianten. Sie spricht Protokoll 3, synchronisiert also nicht mit dem echten Server (bis
-Phase 8 `v1-server`); echte Daten kommen über „Sicherung wiederherstellen“ mit einer Sicherung der v1.
-Sync gegen einen Test-Server: [`server/README.md`](server/README.md), Abschnitt „Test-Server“.
+Die drei Varianten heißen auf dem Gerät „Foody“ (`de.foody.app`), „Foody Debug“ (`.debug`) und „Foody Vorschau“
+(`.vorschau`) und haben getrennte Daten. Ein Update von „Foody“ übernimmt die Datenbank einer installierten
+v1-Release-App (Migration 9 → 10). Signaturschlüssel, APK-Ablage in OpenCloud, Erstinstallation, Update und
+Umstieg von der v1: [`docs/installation.md`](docs/installation.md). Sync gegen einen Test-Server:
+[`server/README.md`](server/README.md), Abschnitt „Test-Server“.
 
-**Baseline-Profil** (schnellerer App-Start): liegt erzeugt unter
-`android/app/src/release/generated/baselineProfiles/baseline-prof.txt` und kommt automatisch in jeden Release-Build.
-Nach größeren UI-Änderungen neu erzeugen (Emulator/Gerät mit Android 13+ verbunden):
-
-```powershell
-.\gradlew :app:generateReleaseBaselineProfile
-```
-
-Unter Windows scheitert dabei mitunter das Kopieren vom Gerät (Pfad mit „(AVD)“). Dann die Datei
-`android\baselineprofile\build\outputs\connected_android_test_additional_output\nonMinifiedRelease\connected\*\BaselineProfileGenerator_generate-startup-prof.txt`
-als `baseline-prof.txt` an die obige Stelle kopieren. Startzeit messen (am aussagekräftigsten auf dem Handy):
-
-```powershell
-.\gradlew :baselineprofile:connectedBenchmarkReleaseAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=de.foody.baselineprofile.StartupBenchmark"
-```
-
-Debug-Builds heißen auf dem Gerät „Foody Debug“ (App-ID `de.foody.app.debug`) und laufen neben der
-Alltagsversion, ohne deren Daten zu berühren.
-
-## Auf dem eigenen Handy installieren (signierter Release-Build)
-
-Gilt bis Phase 8 für die v1 (`:app`); die V3 hat bis dahin nur „Foody Vorschau“ (siehe oben).
-
-Einmalig einen Signaturschlüssel erzeugen (PowerShell; `keytool` fragt nach Passwort und Namen):
-
-```powershell
-& "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -genkeypair -keystore "$env:USERPROFILE\.android\foody-release.jks" -alias foody -keyalg RSA -keysize 4096 -validity 10000
-```
-
-Dann `keystore.properties.example` als `keystore.properties` kopieren und Pfad sowie Passwörter eintragen.
-Die Datei ist in `.gitignore` und landet nie im Repository. **Schlüssel und Passwort sichern** (z. B. im
-Passwortmanager): Ohne sie lassen sich Updates nicht mehr installieren, ohne die App samt Daten zu entfernen.
-
-```powershell
-.\gradlew :app:assembleRelease   # → android\app\build\outputs\apk\release\app-release.apk
-```
-
-Die APK aufs Handy kopieren und öffnen (einmalig „Installation aus dieser Quelle zulassen“) oder per Kabel:
-`adb install -r android\app\build\outputs\apk\release\app-release.apk`. Ohne `keystore.properties` entsteht
-`app-release-unsigned.apk`, die sich nicht installieren lässt – so baut auch die CI.
+**Baseline-Profil** (schnellerer App-Start): Der Generator `:baselineprofile` geht einmal durch Heute, Rezepte, Woche,
+Einkauf und Einstellungen; das Ergebnis gehört eingecheckt nach
+`android/app/src/release/generated/baselineProfiles/baseline-prof.txt` und kommt dann automatisch in jeden
+Release-Build (für die V3 noch nicht erzeugt, siehe Phase 8 im Plan).
+Neu erzeugen nach größeren UI-Änderungen: Befehle im Kopf von `android/baselineprofile/build.gradle.kts` (nur auf
+einem Emulator ohne echte Daten).
 
 ## Datenschutz
 
