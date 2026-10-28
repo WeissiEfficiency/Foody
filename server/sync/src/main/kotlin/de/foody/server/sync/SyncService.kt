@@ -30,8 +30,10 @@ class SyncService(private val db: Database, private val store: RecordStore, priv
     /** Liefert bis zu [limit] Datensätze mit `rev > since`; `hasMore` zeigt weitere Seiten an. */
     fun pull(konto: String, since: Long, limit: Int): PullResponse {
         val fetched = db.tx { c ->
-            // Ein Cursor vor der Kompaktierungsgrenze hat Löschmarkierungen verpasst: Client muss neu synchronisieren.
-            if (since != 0L && since < compactedBefore(c, konto)) {
+            val (lastRev, compactedBefore) = revisions(c, konto)
+            // Ein Cursor vor der Kompaktierungsgrenze hat Löschmarkierungen verpasst, einer hinter dem Server-Stand stammt
+            // von einer Datenbank, die es so nicht mehr gibt (z. B. nach dem Einspielen einer Sicherung): Neu synchronisieren.
+            if (since != 0L && (since < compactedBefore || since > lastRev)) {
                 throw ApiException(HttpStatusCode.Gone, ErrorCode.CURSOR_EXPIRED)
             }
             store.page(c, konto, since, limit + 1)
@@ -41,15 +43,16 @@ class SyncService(private val db: Database, private val store: RecordStore, priv
         return PullResponse(records, records.lastOrNull()?.rev ?: since, hasMore)
     }
 
-    private fun compactedBefore(c: Connection, konto: String): Long =
-        c.prepareStatement("SELECT compacted_before_rev FROM user WHERE id = ?").use { st ->
+    /** `last_rev` und `compacted_before_rev` des Kontos. */
+    private fun revisions(c: Connection, konto: String): Pair<Long, Long> =
+        c.prepareStatement("SELECT last_rev, compacted_before_rev FROM user WHERE id = ?").use { st ->
             st.setString(1, konto)
-            st.executeQuery().use { if (it.next()) it.getLong(1) else 0L }
+            st.executeQuery().use { if (it.next()) it.getLong(1) to it.getLong(2) else 0L to 0L }
         }
 
     /**
      * Gesamte Logik für einen einzelnen Datensatz. Reihenfolge: Validierung, Zutaten-Merge, Löschen vs. Bearbeiten,
-     * Referenzprüfung, Einkaufseintrag-Merge, sonst Last-Writer-Wins. Jeder Pfad, der einen lebenden Datensatz speichert,
+     * Referenzprüfung, Einkaufseintrag-Merge, Erstsendung ohne `baseRev`, sonst Last-Writer-Wins. Jeder Pfad, der einen lebenden Datensatz speichert,
      * läuft durch die Referenzprüfung.
      */
     private fun applyOne(c: Connection, konto: String, record: SyncRecord): PushResult {
@@ -74,6 +77,11 @@ class SyncService(private val db: Database, private val store: RecordStore, priv
         val payload: JsonObject? = record.payload
         if (!record.deleted && record.type == RecordType.SHOPPING_ITEM && stored != null && !stored.deleted && isConflict(record, stored)) {
             return mergeShoppingItem(c, konto, record, payload!!, stored)
+        }
+        // Erstes Senden eines Datensatzes, den der Server schon hat („Zusammenführen“, feste IDs der Startzutaten): Der
+        // Absender kannte den Server-Stand nie. Nur ein jüngerer Stand gewinnt, sonst bleibt der des Servers.
+        if (!record.deleted && record.baseRev == null && stored != null && !stored.deleted && record.updatedAt <= stored.updatedAt) {
+            return PushResult(record.id, record.type, PushStatus.MERGED, rev = stored.rev, current = stored)
         }
         val raw = payload?.let { Protocol.json.encodeToString(JsonObject.serializer(), it) }
         val rev = if (record.deleted) {

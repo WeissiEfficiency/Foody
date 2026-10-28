@@ -293,3 +293,16 @@ object Startdaten {
         )
     }
 }
+
+/**
+ * Hat diese Zutat noch genau die Werte des Starteintrags [start]? Zeitpunkte und Version zählen nicht, Zahlen nach Wert
+ * (`0.60` = `0.6`).
+ */
+internal fun ZutatEntity.wieStart(start: ZutatEntity): Boolean {
+    fun gleich(a: BigDecimal?, b: BigDecimal?) = if (a == null || b == null) a == b else a.compareTo(b) == 0
+    return id == start.id && canonicalName == start.canonicalName && category == start.category &&
+        nutrientBasis == start.nutrientBasis && nutrientSource == start.nutrientSource && barcode == start.barcode &&
+        gleich(densityGPerMl, start.densityGPerMl) && gleich(pieceWeightG, start.pieceWeightG) &&
+        gleich(energyKj, start.energyKj) && gleich(protein, start.protein) && gleich(carbs, start.carbs) &&
+        gleich(fat, start.fat) && gleich(fiber, start.fiber) && gleich(sugar, start.sugar) && gleich(salt, start.salt)
+}

@@ -191,7 +191,8 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
   zu großer Datensatz → Problem `too_large`), fehlende eigene Fotos vorher hochladen; Ergebnisse verbuchen (angenommen,
   zusammengeführt – auch in eine andere ID –, abgelehnt → `sync_problem`, fehlende Verweisziele nachreichen); alle
   Pull-Seiten holen und erst dann anwenden (`applyingRemote = 1`, je Datensatz eine Transaktion, Cursor zuletzt; lokale
-  Änderungen mit offenem Outbox-Eintrag gewinnen); `410` → Voll-Abgleich, der Unsendetes, Abgelehntes, Verwiesenes und
+  Änderungen mit offenem Outbox-Eintrag gewinnen); `410` (Cursor vor der Kompaktierungsgrenze oder hinter dem
+  Server-Stand, etwa nach dem Einspielen einer Sicherung) → Voll-Abgleich, der Unsendetes, Abgelehntes, Verwiesenes und
   noch Gebrauchtes behält; zuletzt gewünschte Fotos laden. Header `X-Foody-Protocol: 3`, Routen unter `/api/v3`
   (`KtorServerZugang` über OkHttp, Antworten begrenzt gelesen, keine Weiterleitungen).
 - **Auslöser** (`SyncAusloeser`, `SyncAuftrag`): einmaliger WorkManager-Auftrag mit Netz-Bedingung; sofort bei
@@ -216,7 +217,9 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
   gewählt wurde. Die Wahl
   „Zusammenführen“/„Ersetzen“ wirkt nicht (sonst verwürfe „Ersetzen“ direkt nach dem Update die ungesendete
   v1-Outbox). Die Entscheidung fällt unter der `laufSperre`. „Zusammenführen“ merkt alle lokalen
-  Datensätze vor. „Ersetzen“ verwirft Rezepte, Plan, Einkaufslisten, Tagebuch, eigene Fotos und Sync-Vermerke, **behält
+  Datensätze vor, außer unveränderten Startzutaten (feste IDs, Zeitpunkt der Installation). Der Server nimmt einen
+  Datensatz ohne `baseRev`, den er schon hat, nur an, wenn er jünger ist (`updatedAt`); sonst antwortet er „zusammengeführt“
+  mit seinem Stand. So überschreibt ein frisch installiertes Gerät keine im Katalog korrigierten Zutaten. „Ersetzen“ verwirft Rezepte, Plan, Einkaufslisten, Tagebuch, eigene Fotos und Sync-Vermerke, **behält
   aber die Zutaten**: Sie sind großteils Startzutaten, der Server führt gleichnamige Zutaten zusammen, und ein fehlendes
   Verweisziel reicht der Sync bei Bedarf nach. Folge: Eine nur lokal angelegte, nie gesendete Zutat bleibt lokal, bis
   sie geändert oder von einem gesendeten Datensatz gebraucht wird (Hinweis in der Oberfläche: Phase 6). Trennen meldet zuerst mit dem gespeicherten Token beim Server ab (falls erreichbar, höchstens 8 s), löscht

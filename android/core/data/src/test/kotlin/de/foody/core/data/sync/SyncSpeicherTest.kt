@@ -25,6 +25,7 @@ import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.fotos.FotoIndex
+import de.foody.core.data.startdaten.Startdaten
 import de.foody.domain.MeasureUnit
 import de.foody.domain.TagebuchArt
 import java.io.File
@@ -172,6 +173,19 @@ class SyncSpeicherTest {
         )
         // Abhängigkeiten zuerst: Zutat vor Rezept vor Liste
         assertEquals(listOf("z1", "r1", "e1"), paket().map { it.record.id })
+    }
+
+    @Test
+    fun allesHochladenLaesstUnveraenderteStartzutatenAus() = runTest {
+        // R-K1: Unveränderte Startzutaten (feste IDs, Zeitpunkt der Installation) überschrieben sonst die Server-Zutaten.
+        val start = Startdaten.zutaten(1_000).associateBy { it.id }
+        db.zutatDao().upsert(start.getValue("seed-reis"))
+        db.zutatDao().upsert(start.getValue("seed-mehl").copy(category = "Backzutaten", updatedAt = 2_000))
+        db.zutatDao().upsert(start.getValue("seed-salz").copy(salt = BigDecimal("100.0")))
+
+        aktiv(allesHochladen = true)
+
+        assertEquals(setOf("seed-mehl"), dao.outbox().map { it.recordId }.toSet())
     }
 
     @Test

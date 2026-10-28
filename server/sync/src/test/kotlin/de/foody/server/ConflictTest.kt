@@ -117,6 +117,29 @@ class ConflictTest {
     }
 
     @Test
+    fun firstPushOfKnownRecordKeepsNewerServerState() = testServer { env ->
+        // „Zusammenführen“ auf einem frischen Gerät: dieselbe ID, aber der Absender kannte den Server-Stand nie (R-K1).
+        val (token, _) = env.setupKonto()
+        client.pushOk(token, listOf(ingredient("seed-mehl", "Weizenmehl").copy(updatedAt = 5)))
+        val result = client.pushOk(token, listOf(ingredient("seed-mehl", "Weizenmehl", mapOf("category" to "alt")).copy(updatedAt = 5)))
+            .results.single()
+        assertEquals(PushStatus.MERGED, result.status)
+        assertEquals(1L, result.rev)
+        assertNull(result.current!!.payload!!["category"])
+        assertEquals(1, client.pull(token, 0).records.single().rev)
+    }
+
+    @Test
+    fun firstPushOfKnownRecordWinsWhenNewer() = testServer { env ->
+        val (token, _) = env.setupKonto()
+        client.pushOk(token, listOf(ingredient("i1", "Mehl").copy(updatedAt = 5)))
+        val result = client.pushOk(token, listOf(ingredient("i1", "Mehl", mapOf("category" to "neu")).copy(updatedAt = 6)))
+            .results.single()
+        assertEquals(PushStatus.ACCEPTED, result.status)
+        assertEquals(JsonPrimitive("neu"), client.pull(token, 0).records.single().payload!!["category"])
+    }
+
+    @Test
     fun plainLastWriterWins() = testServer { env ->
         val (token, _) = env.setupKonto()
         client.pushOk(token, listOf(ingredient("i1"), recipe("r1", listOf("i1")), mealSlot("m1", "r1", 1, null)))

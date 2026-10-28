@@ -19,6 +19,8 @@ import de.foody.core.data.db.SyncRevisionEntity
 import de.foody.core.data.db.SyncZustandEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.fotos.FotoIndex
+import de.foody.core.data.startdaten.Startdaten
+import de.foody.core.data.startdaten.wieStart
 import de.foody.core.data.zutaten.zusammenfuehrenSchritte
 import java.io.File
 import java.io.IOException
@@ -71,13 +73,21 @@ class SyncSpeicher(
 
     /**
      * Schaltet den Sync ein (Cursor 0: der nächste Lauf holt alles). Mit [allesHochladen] („Zusammenführen“) werden alle
-     * vorhandenen Datensätze zum Senden vorgemerkt. Eine Transaktion.
+     * vorhandenen Datensätze zum Senden vorgemerkt, außer unveränderten Startzutaten: Sie tragen feste IDs und den
+     * Zeitpunkt der Installation und überschrieben sonst die im Katalog korrigierten Zutaten auf dem Server. Fehlt eine
+     * davon dort, reicht der Sync sie als Verweisziel nach ([abgelehnt]). Eine Transaktion.
      */
     suspend fun aktivieren(serverUrl: String, kontoId: String, allesHochladen: Boolean) {
         db.withTransaction {
             val z = dao.zustand() ?: SyncZustandEntity()
             dao.upsertZustand(z.copy(active = true, serverUrl = serverUrl, kontoId = kontoId, cursor = 0, lastError = null))
-            if (allesHochladen) dao.allesVormerken(uhr())
+            if (allesHochladen) {
+                dao.allesVormerken(uhr())
+                val start = Startdaten.zutaten(0).associateBy { it.id }
+                for (zutat in db.zutatDao().alle()) {
+                    if (start[zutat.id]?.let(zutat::wieStart) == true) dao.loeschenOutbox(RecordType.INGREDIENT.wire, zutat.id)
+                }
+            }
         }
     }
 
