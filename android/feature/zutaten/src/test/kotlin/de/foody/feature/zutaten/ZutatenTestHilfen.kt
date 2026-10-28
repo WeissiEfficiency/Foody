@@ -43,8 +43,12 @@ import kotlin.test.assertTrue
 /** Echte Datenbank und echtes Repository; ViewModels außerhalb der Komposition anlegen. */
 internal class ZutatenTestUmgebung {
     val kontext: Context = RuntimeEnvironment.getApplication()
+    // Abfragen und Transaktionen im aufrufenden Thread wie in den anderen Features: Sonst läuft nach dem Zusammenführen
+    // noch eine Abfrage auf Rooms eigenem Thread, wenn [schliessen] die Datenbank zumacht.
     val db: FoodyDatenbank = Room.inMemoryDatabaseBuilder(kontext, FoodyDatenbank::class.java)
-        .addCallback(FoodyDatenbank.CALLBACK).allowMainThreadQueries().build()
+        .addCallback(FoodyDatenbank.CALLBACK).allowMainThreadQueries()
+        .setQueryExecutor { it.run() }.setTransactionExecutor { it.run() }
+        .build()
     val repo = ZutatenRepository(db) { 10L }
     val meldungen = ZutatenMeldungen()
     val scan = TestScan()
