@@ -1,5 +1,8 @@
 # Optimierungsplan – ganzes Repo
 
+> **Abgelöst:** Bestandsaufnahme der v1 vom 2026-10-10. Für die V3 gelten
+> [`v3-plan.md`](v3-plan.md) (Phase 0, Phase 8 „Messen“). Nur noch als Hintergrund.
+
 Stand: 2026-10-10 · Grundlage: Bestandsaufnahme von `main` (e94ffde) plus offener PR #74
 
 ## Ausgangslage (gemessen)

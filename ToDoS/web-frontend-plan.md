@@ -1,5 +1,8 @@
 # Frontend-Umsetzungsplan für Foody
 
+> **Abgelöst:** Die Web-App ist mit V3 gestrichen ([ADR 0011](../docs/adr/0011-v3-umfang-ein-nutzer.md)), `:server-web`
+> wurde entfernt. Nur noch als Hintergrund.
+
 ## Ziel
 Ein leichtes, modernes Web-Frontend bauen, das den bestehenden Foody-Server sauber nutzt, aber bewusst ressourcenschonend und einfach zu betreiben ist. Das Frontend soll schnell, verständlich, mobilfreundlich und unkompliziert in Docker laufen.
 

@@ -3,9 +3,10 @@
 ## Ziel
 Die Projektstruktur soll sauber, verständlich und langlebig bleiben. Sie darf nicht zu groß, zu tief verschachtelt oder zu „kreativ“ werden. Die Hauptregel ist: Ordnung durch Verantwortlichkeiten, nicht durch reine Ordnerzahl.
 
-**Aktuelle Struktur (2026-10-11):** `android/` (Handy-App), `shared/` (von App und Server genutzt), `server/` mit
-`sync/`, `web/` und `start/` – Begründung und Abhängigkeitsrichtung in
-`docs/superpowers/specs/2026-10-11-projektstruktur-design.md`.
+**Aktuelle Struktur (2026-10-28):** `android/` (Handy-App: `app3/`, `core/`, `feature/`, `katalog/`, dazu die
+eingefrorene v1 in `app/`), `shared/` (von App und Server genutzt), `server/` mit `sync/` und `start/` – Modultabelle in
+`README.md`, Abhängigkeitsrichtung in `docs/architecture.md`. Die Web-Oberfläche (`server/web/`) ist mit V3 entfallen
+(ADR 0011); die Begründung von 2026-10-11 steht in `docs/superpowers/specs/2026-10-11-projektstruktur-design.md`.
 
 ## Grundprinzip
 Ein Ordner oder ein Modul sollte immer eine klare Aufgabe haben.
