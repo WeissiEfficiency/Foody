@@ -161,3 +161,40 @@ Scan-Punkten) sowie N1 und N6 in einem Schritt in `architecture.md`.
 - ✅ **W4** `ToDoS/projektstruktur-regeln.md` Strukturzeile korrigiert; `web-frontend-plan.md` und
   `optimierungsplan.md` mit Hinweis „Abgelöst“.
 - Offen: W2 (`security.md` für die V3), N1–N7.
+
+## Nachtrag Delta 2 – 2026-10-28 (`8ce3b79..ffd00c2`)
+
+**Umfang:** #112–#121 (Befunde einsortiert, #113 README/CLAUDE.md, #114/#116 `:core:testing` + ADR 0014, #117 Scan-
+Nacharbeit mit `ScanLauf`, #118 Entwürfe über Prozessende, #119–#121 Einkauf/Woche/Navigation, #115 Sync). Geprüft:
+`settings.gradle.kts`, Convention-Plugin, `:core:testing`, Nutzer von `ScanLauf` und `de.foody.core.testing`, Doku-Diffs
+(README, `CLAUDE.md`, `architecture.md`, ADR 0014, `v3-plan.md`), PR-Text von #115. Bau und Tests nicht ausgeführt.
+Nicht neu gemeldet, weil in Arbeit (Session „Foody V3 Nacharbeit“): S-W2, S-N1/S-N6, S-N4, S-N7.
+
+**Fazit Delta 2:** 🟢 Struktur weiter sauber; zwei Stellen in `architecture.md` hinken dem Code hinterher.
+
+**Was gut ist:**
+- `:core:testing` ist richtig angebunden: Plugin `foody.android.library`, nur über das Feature-Plugin als
+  `testImplementation` (`AndroidFeatureConventionPlugin.kt:35`), kein Produktivmodul hängt davon ab; genutzt in allen
+  sieben Features. Ersetzt sieben gleiche Testhilfen (ADR 0014).
+- `ScanLauf` liegt in `:core:scan` und wird nur von den drei ViewModels in `:feature:heute`/`:feature:zutaten` gehalten –
+  Features kennen sich weiter nicht.
+- README-Tabelle und `CLAUDE.md` wurden für `:core:testing` und `nachProzessende()` gleich mitgezogen; `v3-plan.md`
+  führt alle R-/S-/D-Befunde mit Status. #115 nennt den nötigen Server-Rebuild wie vorgesehen.
+
+**Neue Funde:**
+- ✅ **W5** 🟠 `[Doku]` `docs/architecture.md:285–296` (Navigation `:app3`) beschreibt den Stand von Phase 5: „Einkauf und
+  Einkaufsliste sind bis Phase 6d Platzhalter“ (6d ist fertig), und `MainActivity` „reicht Deep Links an die
+  Navigation“ – seit #121 gibt es genau einen `NavHost` an fester Stelle in `Hauptgeruest` und `deepLinkOeffnen`
+  (`navigate` mit `launchSingleTop`) statt `handleDeepLink` (`FoodyNavHost.kt:178–188`). Folge: Wer an Navigation oder
+  Deep Links arbeitet, baut nach der Doku womöglich wieder `handleDeepLink` ein und holt R-W5 zurück. Vorschlag: den
+  Platzhalter-Satz streichen, zwei Sätze zu „ein NavHost“ und `deepLinkOeffnen` (mit Grund) ergänzen. 1 Datei.
+- ✅ **N8** `[Doku]` `docs/architecture.md:174–176` und ADR 0014 nennen in `:core:testing` nur `ViewModelHalter`;
+  `nachProzessende()` (`Prozessende.kt`, seit #117/#118) steht nur in README und `CLAUDE.md`. Vorschlag: je einen
+  Halbsatz ergänzen (ADR 0014 unter „Folgen“, da ein zweiter Zweck dazukam).
+
+**Alte Funde nach Delta 2:** K1, W1, W3, W4 bleiben ✅ (README und `CLAUDE.md` sind für `:core:testing` aktuell).
+W2 sowie N1, N4, N6, N7 sind in Arbeit; N2, N3, N5 unverändert offen.
+
+**Umgesetzt – 2026-10-28 (Branch `claude/doku-navigation`):** ✅ W5 – Navigation in `docs/architecture.md` mit „ein
+`FoodyNavHost` an fester Stelle“ und `deepLinkOeffnen` statt `handleDeepLink` (mit Grund), Platzhalter-Satz entfernt,
+`MainActivity` verweist darauf. ✅ N8 – `nachProzessende()` in `docs/architecture.md` und als Nachtrag in ADR 0014.
