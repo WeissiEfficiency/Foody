@@ -80,6 +80,20 @@ class WocheVorschlagTest {
     }
 
     @Test
+    fun vorgemerkteZaehlenInDieAbwechslung() = runTest {
+        // Am Folgetag sind Spaghetti vorgeschlagen (noch nicht angelegt): Penne fallen weg, solange es Curry gibt
+        listOf("n1" to "Spaghetti Bolognese", "n2" to "Penne Arrabbiata", "c1" to "Gemüsecurry").forEach { (id, name) ->
+            db.rezeptDao().upsert(rezept(id, name).copy(mahlzeiten = "ABENDESSEN", gaenge = "HAUPTSPEISE"))
+        }
+        val vorgemerkt = mapOf(mittwoch.plusDays(1) to "n1")
+        val ohne = (0L..19L).map { repo.vorschlagen(listOf(mittwoch), Mahlzeit.ABENDESSEN, it, setOf("n1"))[mittwoch] }.toSet()
+        assertEquals(setOf("n2", "c1"), ohne)
+        (0L..19L).forEach { seed ->
+            assertEquals("c1", repo.vorschlagen(listOf(mittwoch), Mahlzeit.ABENDESSEN, seed, setOf("n1"), vorgemerkt)[mittwoch])
+        }
+    }
+
+    @Test
     fun archivierteNie() = runTest {
         hauptspeisen(archiviert = "h5")
         val v = repo.vorschlagen(wocheAbMittwoch, Mahlzeit.ABENDESSEN, 7)

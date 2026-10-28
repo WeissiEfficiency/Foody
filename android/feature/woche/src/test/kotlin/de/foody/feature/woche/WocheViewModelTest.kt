@@ -108,6 +108,22 @@ class WocheViewModelTest {
     }
 
     @Test
+    fun tagNeuOhneAlternativeMeldet() = runTest {
+        // Fünf Hauptspeisen auf fünf Tage: für keinen Tag gibt es ein anderes Rezept
+        db.hauptspeisen()
+        val vm = u.vm()
+        vm.fuellenOeffnen()
+        val vorher = assertNotNull(vm.fuellen.value).vorschlag
+        val tag = vorher.keys.first()
+        vm.tagNeu(tag)
+        val z = assertNotNull(vm.fuellen.value)
+        assertEquals(vorher, z.vorschlag)
+        assertEquals("Kein anderes passendes Rezept für ${tagKurz(tag)}", z.meldung)
+        vm.abwaehlen(tag)
+        assertNull(vm.fuellen.value?.meldung)
+    }
+
+    @Test
     fun abwaehlenWirdNichtAngelegt() = runTest {
         db.hauptspeisen()
         val vm = u.vm()

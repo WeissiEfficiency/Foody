@@ -124,12 +124,16 @@ class WocheRepository(
         return (0L..6L).map { montag.plusDays(it) }.filter { it >= heute && it !in belegt }
     }
 
-    /** Vorschlag „Tag → Rezept-ID“ über [LeereTageFuellen]; gleicher [seed] → gleiches Ergebnis; [ausgeschlossen] nie. */
+    /**
+     * Vorschlag „Tag → Rezept-ID“ über [LeereTageFuellen]; gleicher [seed] → gleiches Ergebnis; [ausgeschlossen] nie.
+     * [vorgemerkt] = noch nicht angelegte Vorschläge anderer Tage; sie zählen wie Geplantes in die Abwechslung.
+     */
     suspend fun vorschlagen(
         tage: List<LocalDate>,
         mahlzeit: Mahlzeit,
         seed: Long,
         ausgeschlossen: Set<String> = emptySet(),
+        vorgemerkt: Map<LocalDate, String> = emptyMap(),
     ): Map<LocalDate, String> {
         if (tage.isEmpty()) return emptyMap()
         val katalog = db.zutatDao().alle().associate { it.id to it.canonicalName }
@@ -143,8 +147,9 @@ class WocheRepository(
         }
         val von = tage.min().minusDays(LeereTageFuellen.OHNE_WIEDERHOLUNG_TAGE)
         val bis = tage.max().plusDays(NACHBARTAGE)
-        val belegt = plan.filter { it.date in von..bis }.groupBy { it.date }
-            .mapValues { (_, p) -> p.flatMap { merkmaleJe[it.recipeId].orEmpty() }.toSet() }
+        val belegt = (plan.filter { it.date in von..bis }.map { it.date to it.recipeId } + vorgemerkt.toList())
+            .groupBy({ it.first }, { merkmaleJe[it.second].orEmpty() })
+            .mapValues { (_, m) -> m.flatten().toSet() }
         return LeereTageFuellen.vorschlagen(kandidaten, tage, mahlzeit, seed, belegt, ausgeschlossen)
     }
 

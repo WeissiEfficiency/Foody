@@ -182,8 +182,9 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
   Nur für Tests: `:core:testing` (`android/core/testing`) mit `ViewModelHalter`; das Feature-Plugin bindet es als
   `testImplementation` ein. Tests geben ihre ViewModels hinein und rufen in `@After` erst `schliessen()`, dann
   `db.close()` – sonst fragt ein noch laufender Flow die geschlossene In-Memory-Datenbank ab. Dazu
-  `SavedStateHandle.nachProzessende()` (`Prozessende.kt`): ein neues Handle, dessen Werte durch die
-  Java-Serialisierung gingen wie im Bundle – Tests für Entwürfe, die ein Prozessende überstehen müssen.
+  `SavedStateHandle.nachProzessende()` (`Prozessende.kt`): ein neues Handle aus dem Bundle, das Android
+  sichern würde (Werte samt `saveable`-Zuständen, einmal durch ein Parcel) – Tests für Entwürfe und den Scan-Knopf,
+  die ein Prozessende überstehen müssen.
 - **Datenbank `foody.db`, Version 10** (`FoodyDatenbank`, Schemata 1–9 aus der v1 unter `android/core/data/schemas`):
   Schema 9 ohne `pantry_item`, `sync_state.kontoId` (nullable) statt `householdId`; ein Schema-Vergleichstest erzwingt,
   dass sonst alles gleich ist. `baueDatenbank` registriert nur `MIGRATION_9_10` und den Callback für neue Datenbanken,

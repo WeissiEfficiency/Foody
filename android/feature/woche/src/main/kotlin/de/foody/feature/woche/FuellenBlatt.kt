@@ -68,6 +68,7 @@ internal fun FuellenBlatt(z: FuellenZustand, namen: Map<String, String>, a: Fuel
             }
             z.hinweis?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext) }
             z.tage.forEach { tag -> VorschlagZeile(tag, z.vorschlag[tag]?.let { namen[it] }, tag !in z.abgewaehlt, a) }
+            z.meldung?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext) }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FoodyKnopf("Neu mischen", a.onNeuMischen, Modifier.weight(1f), art = KnopfArt.UMRISS, aktiv = z.hinweis == null)
                 FoodyKnopf("Übernehmen ($anzahl)", a.onUebernehmen, Modifier.weight(1f), aktiv = anzahl > 0)
