@@ -7,8 +7,8 @@
 5. Eine fehlende Nährwertangabe ist unbekannt, nicht null. Die UI zeigt Vollständigkeit und markiert Untergrenzen.
 6. Energie wird in kJ gespeichert; kcal ist eine abgeleitete Anzeige (÷ 4,184).
 7. Zusammengeführt wird nur bei gleicher kanonischer Zutat und kompatibler Dimension – nie über Freitextähnlichkeit.
-8. Vorrat wird beim Erzeugen einer Liste abgezogen, niemals unter 0. Planung allein verändert den Vorrat nicht;
-   erst „gekocht“ bucht Verbrauch ab.
+8. *(entfallen)* Einen Vorrat gibt es seit der V3 nicht mehr (ADR 0011); die Einkaufsliste enthält den ganzen
+   Bedarf. Die Nummern der übrigen Regeln bleiben.
 9. Optionale Zutaten werden standardmäßig nicht eingekauft.
 10. Eine erzeugte Einkaufsliste ist ein Snapshot und ändert sich nur nach expliziter Neuberechnung;
     diese zeigt hinzugefügt/geändert/entfällt. Abgehakte Einträge werden dabei nie gelöscht; sie kommen nur zurück
@@ -22,7 +22,7 @@
 15. Zutatennamen werden nur über eine feste Synonymliste und einfache Pluralformen vereinheitlicht
     (`IngredientCatalog`), nie über Ähnlichkeit: „saure Sahne“ bleibt eine eigene Zutat (vgl. Regel 7).
 16. Zutaten aus der Liste „nie einkaufen“ (Wasser, Leitungswasser) erscheinen nicht auf der Einkaufsliste.
-17. Ein Rezept direkt auf die Einkaufsliste zu setzen folgt den Regeln 9, 13 und 16, zieht aber keinen Vorrat ab.
+17. Ein Rezept direkt auf die Einkaufsliste zu setzen folgt den Regeln 9, 13 und 16.
     Die Einträge gelten als manuell, damit eine Neuberechnung (Regel 10) sie nicht als „entfällt“ entfernt.
 18. Import: Eine Quelle (URL), die schon als Rezept existiert – auch archiviert –, wird nicht erneut angelegt.
     Eine Kopie eines Rezepts übernimmt die Quelle nicht.
@@ -30,16 +30,16 @@
     gehört zu einer Zutat nur, wenn sie direkt davor steht (höchstens zwei kleingeschriebene Wörter dazwischen).
 20. Import: Mengenspannen („2 - 3 EL“) rechnen mit der unteren Grenze; die obere bleibt als Hinweis („bis 3“).
     Brüche und gemischte Zahlen („1/2“, „1 1/2“, „1½“) werden als Zahl gelesen, nie nur der Zähler.
-21. Stück, Packungen und Dosen werden auf der Einkaufsliste auf ganze Einheiten aufgerundet (nach Vorratsabzug);
+21. Stück, Packungen und Dosen werden auf der Einkaufsliste auf ganze Einheiten aufgerundet;
     Gramm und Milliliter bleiben exakt. Rechenrauschen unter 0,005 löst kein zusätzliches Stück aus.
 22. Einordnung: Ein Rezept passt zu Mahlzeiten (Frühstück, Mittagessen, Abendessen, Snack) und Gängen (Vorspeise,
     Hauptspeise, Nachspeise, Brotzeit). Gespeichert wird nur die eigene Festlegung je Dimension (`null` = vermuten,
     leer = bewusst keine); sonst wird aus Tags und Name vermutet und nie gespeichert. Stichwörter ab 5 Zeichen treffen
     auch als Teilwort, kürzere nur als ganzes Wort; ein längeres Stichwort im selben Wort verdrängt enthaltene kürzere
     („Pfannkuchen“ ist kein Kuchen). Ohne Mahlzeit passt ein Rezept zu jeder Mahlzeit.
-23. Planer: Beim Hinzufügen erscheinen nur Rezepte, die zur gewählten Mahlzeit (und, falls gewählt, zu einem der Gänge)
-    passen; „Alle Rezepte zeigen“ hebt den Filter auf. Der Wochenvorschlag füllt die Tage ab heute, an denen die gewählte
-    Mahlzeit noch fehlt, nur mit passenden Rezepten. Plan-Einträge speichern die Mahlzeit als festen Schlüssel.
+23. Woche: „+ Mahlzeit“ bietet alle nicht archivierten Rezepte an. „Leere Tage füllen“ füllt die Tage ab heute, an
+    denen die gewählte Mahlzeit noch fehlt, nur mit passenden Rezepten (Regel 28). Plan-Einträge speichern die Mahlzeit
+    als festen Schlüssel.
 24. Tagebuch: Ein Eintrag gilt pro Person (eine Portion = was eine Person isst). Nährwerte werden beim Eintragen
     festgehalten und ändern sich nicht, wenn Rezept oder Zutat später geändert oder gelöscht werden (ADR 0007).
     Ein Plan-Eintrag lässt sich höchstens einmal als „gegessen“ übernehmen. Fehlen Energiewerte, zeigen Zeile, Mahlzeit
@@ -75,24 +75,24 @@ Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/te
 | 5 | `DomainTest.missingNutrientsAreIncompleteNotZero`, `DayNutritionTest.missingValuesMakeItALowerBound` |
 | 6 | `DayNutritionTest.kcalWirdEinmalGerundet`, `TagebuchTest.summeAusGerundetenZeilen`, `NaehrwertScanTest.nurKcalWirdUmgerechnet` |
 | 7 | `DomainTest.milkAndFlourNeverMerged`, `DomainTest.aggregatesSameIngredientAcrossRecipesWithSources` |
-| 8 | `DomainTest.pantryIsSubtractedNeverNegative`, `RecipeToShoppingTest.planenAlleinLaesstDenVorratStehen`, `ShoppingFlowTest.markCookedDeductsPantryAcrossUnits` |
-| 9 | `DomainTest.optionalIngredientsExcludedByDefault`, `RecipeToShoppingTest.addsScaledLinesToNewestListAndSkipsAsNeededWaterAndOptional` |
-| 10 | `DomainTest.diffDetectsAddedChangedRemoved`, `ShoppingFlowTest.applyDiffKeepsCheckedWhenLessIsNeeded` |
-| 11 | `DomainTest.aggregatesSameIngredientAcrossRecipesWithSources`, `ShoppingFlowTest.recipeToPlanToShoppingSnapshot` |
+| 8 | entfallen (kein Vorrat) |
+| 9 | `DomainTest.optionalIngredientsExcludedByDefault`, `RezeptAufListeRepoTest.alle` |
+| 10 | `DomainTest.diffDetectsAddedChangedRemoved`, `EinkaufAbgleichTest.gekauftWenigerKeineZeile`, `EinkaufAbgleichTest.gekauftMehrWiederOffen`, `EinkaufAbgleichTest.entfaelltGekauftKeineZeile` |
+| 11 | `DomainTest.aggregatesSameIngredientAcrossRecipesWithSources`, `EinkaufPlanTest.anlegenMitHerkunft` |
 | 12 | `DomainTest.dstDoesNotShiftLocalDay` |
 | 13 | `MarkdownImportTest.ingredientsWithoutAmount`, `DomainTest.asNeededLinesNeverReachShoppingList` |
 | 14 | `MarkdownImportTest.adjectivesGoToNoteAndOptionalIsDetected` |
 | 15 | `IngredientCatalogTest.mapsFrequentImportNamesToCanonicalIngredients`, `IngredientCatalogTest.matchingIgnoresCaseSpacesAndPluralsButKeepsUnknownNames` |
 | 16 | `IngredientCatalogTest.waterIsNeverBought` |
-| 17 | `RecipeToShoppingTest.addsScaledLinesToNewestListAndSkipsAsNeededWaterAndOptional`, `RecipeToShoppingTest.direktAufDieListeZiehtKeinenVorratAb` |
-| 18 | `FavoritesAndDedupTest.importingTheSameSourceTwiceIsSkipped`, `FavoritesAndDedupTest.favoriteAndSourceSurviveEditingButNotDuplicating` |
+| 17 | `RezeptAufListeRepoTest.addiertAufManuelle`, `RezeptAufListeRepoTest.planUndGekaufteUnberuehrt`, `RezeptAufListeRepoTest.ohneWasser` |
+| 18 | `RezeptImportDienstTest.gleicheQuelleUebersprungen`, `RezeptSchreibenTest.duplizierenOhneQuelleUndFavorit` |
 | 19 | `StepTimerParserTest.rangesUseTheLowerBoundSoNothingBurns`, `AmountParsingTest.timerRangeWithBisUsesLowerBound`, `StepMentionTest.findsPartialAmountRightBeforeTheIngredient` |
 | 20 | `AmountParsingTest.rangeKeepsUnitAndUsesTheLowerBound`, `AmountParsingTest.fractionIsNotReadAsItsNumerator`, `AmountParsingTest.mixedNumbersAddTheFraction` |
 | 21 | `ShoppingRoundingTest.countableNeedsAreRoundedUp`, `ShoppingRoundingTest.roundingNoiseDoesNotBuyAnExtraPiece` |
 | 22 | `RezeptEinordnungTest` (u. a. `festgelegtSchlaegtVermutungJeDimension`, `ohneTrefferPasstUeberall`) |
-| 23 | `PlanAuswahlTest.strengNachMahlzeit`, `PlanAuswahlTest.gangFilterSchliesstUneingeordneteAus` |
-| 24 | `TagebuchTest.rezeptPortionenSkalieren`, `TagebuchViewModelTest.festgehaltenNachRezeptAenderung` |
+| 23 | `WocheLesenTest.auswahlOhneArchivierte`, `WocheVorschlagTest.leereTageNurAbHeute`, `WocheVorschlagTest.belegterTagFehlt` |
+| 24 | `TagebuchTest.rezeptPortionenSkalieren`, `TagebuchRepositoryTest.ausRezeptHaeltWerteFest`, `TagebuchRepositoryTest.ausPlanEinePortionUndNurEinmal`, `TagebuchRepositoryTest.geloeschtesRezeptBehaeltEintrag` |
 | 25 | `PlanDurchschnittTest` |
-| 26 | `IngredientScanTest.strichcodeFuelltFelderUndMerktSichCode`, `TagebuchScreenTest.packungImReiterFrei` |
+| 26 | `PackungScanTest.katalogTrefferOhneOnlineAbfrage`, `ZutatEditorScanTest.uebernimmtUndMarkiert`, `TagebuchRepositoryTest.packungOhneHaekchenFrei`, `TagebuchRepositoryTest.packungAktualisiertVorhandene` |
 | 27 | `MarkdownImportTest.servingsFromHeaderLine`, `RezeptImportTest.portionenAusDerDateiStattSchaetzung`, `RezeptImportTest.eineGanzeBackwareWirdGeschaetzt`, `KcalJePortionTest`, `PortionenNachtragenTest` |
 | 28 | `LeereTageFuellenTest`, `AbwechslungTest` |

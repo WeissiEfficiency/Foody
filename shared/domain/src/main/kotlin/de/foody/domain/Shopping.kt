@@ -10,14 +10,12 @@ data class NeedSource(
 
 data class ShoppingNeed(
     val ingredientId: String,
-    /** Bedarf vor Vorratsabzug. */
+    /** Summe der Beiträge, exakt. */
     val required: Quantity,
-    /** Abgezogener Vorrat. */
-    val fromPantry: Quantity,
     val sources: List<NeedSource>,
 ) {
-    /** Was noch zu kaufen ist; Stück, Packungen und Dosen ganzzahlig aufgerundet (niemand kauft 0,3 Zwiebeln). */
-    val toBuy: Quantity get() = required.minusClamped(fromPantry).let { if (it.dimension.countable) it.roundedUpToWhole() else it }
+    /** Was zu kaufen ist; Stück, Packungen und Dosen ganzzahlig aufgerundet (niemand kauft 0,3 Zwiebeln). */
+    val toBuy: Quantity get() = if (required.dimension.countable) required.roundedUpToWhole() else required
     val key: String get() = "$ingredientId|${required.dimension}"
 }
 
@@ -25,8 +23,8 @@ data class ShoppingNeed(
  * Berechnet den Einkaufsbedarf für einen Planzeitraum.
  *
  * 1. Planpositionen im Zeitraum laden, 2. skalieren, 3. optionale Zutaten auflösen,
- * 4. in Basiseinheit umrechnen, 5. nach Zutat + Dimension gruppieren,
- * 6. Vorrat abziehen (nie unter 0), 7./8. Einträge mit Herkunft erzeugen.
+ * 4. in Basiseinheit umrechnen, 5. nach Zutat + Dimension gruppieren, 6. Einträge mit Herkunft erzeugen.
+ * Einen Vorrat gibt es seit der V3 nicht mehr (ADR 0011).
  */
 class GenerateShoppingListUseCase {
     operator fun invoke(
@@ -34,7 +32,6 @@ class GenerateShoppingListUseCase {
         slots: List<MealSlot>,
         recipes: Map<String, Recipe>,
         ingredients: Map<String, Ingredient>,
-        pantry: List<PantryItem> = emptyList(),
         includeOptional: Boolean = false,
         excludedIngredientIds: Set<String> = emptySet(),
     ): List<ShoppingNeed> {
@@ -60,33 +57,11 @@ class GenerateShoppingListUseCase {
             }
         }
 
-        val remainingPantry = pantry.groupBy { it.ingredientId }
-            .mapValues { (_, items) -> items.map { it.quantity }.toMutableList() }
-            .toMutableMap()
-
         val result = mutableListOf<ShoppingNeed>()
         for ((ingredientId, perDim) in groups) {
-            val info = ingredients[ingredientId]?.conversion ?: ConversionInfo()
             for ((dim, sources) in perDim) {
                 val required = sources.map { it.contributed }.fold(Quantity.zero(dim)) { a, b -> a + b }
-                var usedPantry = Quantity.zero(dim)
-                val stock = remainingPantry[ingredientId]
-                if (stock != null) {
-                    val iterator = stock.listIterator()
-                    while (iterator.hasNext()) {
-                        val p = iterator.next()
-                        val pc = UnitConverter.convert(p, dim, info) ?: continue
-                        val stillNeeded = required.minusClamped(usedPantry)
-                        if (stillNeeded.isZero()) break
-                        val take = if (pc.baseAmount <= stillNeeded.baseAmount) pc else stillNeeded
-                        usedPantry += take
-                        val rest = pc.minusClamped(take)
-                        // Restvorrat in ursprünglicher Dimension zurückschreiben
-                        val back = UnitConverter.convert(rest, p.dimension, info) ?: Quantity.zero(p.dimension)
-                        iterator.set(back)
-                    }
-                }
-                result += ShoppingNeed(ingredientId, required, usedPantry, sources)
+                result += ShoppingNeed(ingredientId, required, sources)
             }
         }
         return result

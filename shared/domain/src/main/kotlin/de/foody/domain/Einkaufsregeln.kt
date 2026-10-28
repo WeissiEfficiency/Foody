@@ -3,9 +3,8 @@ package de.foody.domain
 import java.time.LocalDate
 
 /**
- * Einkaufsbedarf für einen Planzeitraum, wie App und Web-Oberfläche ihn bilden: [GenerateShoppingListUseCase] plus
- * Ausschluss von allem, was nie eingekauft wird (Leitungswasser & Co.). Liefert auch Bedarfe, die der Vorrat ganz deckt
- * (`toBuy` = 0) – die Vorschau zeigt sie, eine neue Liste lässt sie weg.
+ * Einkaufsbedarf für einen Planzeitraum: [GenerateShoppingListUseCase] plus Ausschluss von allem, was nie eingekauft
+ * wird (Leitungswasser & Co.).
  */
 object EinkaufsBedarf {
     private val generate = GenerateShoppingListUseCase()
@@ -15,11 +14,10 @@ object EinkaufsBedarf {
         slots: List<MealSlot>,
         recipes: Map<String, Recipe>,
         ingredients: Map<String, Ingredient>,
-        pantry: List<PantryItem>,
         ausgeschlossen: Set<String> = emptySet(),
     ): List<ShoppingNeed> {
         val nieKaufen = ingredients.values.filter { IngredientCatalog.neverBuy(IngredientCatalog.canonicalName(it.name)) }.map { it.id }
-        return generate(range, slots, recipes, ingredients, pantry, excludedIngredientIds = ausgeschlossen + nieKaufen)
+        return generate(range, slots, recipes, ingredients, excludedIngredientIds = ausgeschlossen + nieKaufen)
     }
 }
 
@@ -52,7 +50,6 @@ object RezeptAufListe {
             listOf(MealSlot("recipe:${rezept.id}", heute, "", rezept.id, portionen)),
             mapOf(rezept.id to rezept),
             ingredients,
-            emptyList(),
         ).filter { !it.toBuy.isZero() }
 
     fun zusammenfuehren(bedarf: List<ShoppingNeed>, bestand: List<Bestand>): List<Aenderung> = bedarf.map { n ->
