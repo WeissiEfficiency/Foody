@@ -373,7 +373,9 @@ Entscheidung 2026-10-28: Die KI-Hilfe wird ein eigenes Projekt nach dem Umstieg.
 
 ### Phase 8 – Messen, Umstieg, Release V3 (≈ 1 Woche) – als Nächstes
 - [ ] Probeversion „Foody Vorschau“ (`:app3:assembleVorschau`, eigene App-ID neben der v1) auf dem Handy testen
-- [ ] Android-Studio-Profiler auf Handy und Tablet (Start, Scrollen, Speicher); Baseline-Profil neu erzeugen
+- [ ] Android-Studio-Profiler auf Handy und Tablet (Start, Scrollen, Speicher); Baseline-Profil neu erzeugen.
+      **Baseline-Profil erzeugt (2026-10-28)** auf dem Emulator (Heute, Rezepte, Woche, Einkauf, Einstellungen);
+      offen: Profiler auf den echten Geräten
 - [ ] TalkBack-Durchlauf, Schriftgröße 200 %
 - [ ] Probelauf mit Kopien, dann Umstieg: Sicherungen → Server v3 → Umwandlung → beide Geräte auf V3
 - [x] v1-Code entfernen (`ui/`-Pakete, alte Routen); `README.md`, `docs/architecture.md` aktualisieren.
