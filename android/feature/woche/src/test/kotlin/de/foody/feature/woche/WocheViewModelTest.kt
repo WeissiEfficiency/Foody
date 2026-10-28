@@ -94,12 +94,15 @@ class WocheViewModelTest {
     @Test
     fun tagNeuAendertNurDiesenTag() = runTest {
         db.hauptspeisen()
+        // Die fünf Hauptspeisen füllen Mi–So; frei ist nur ein Rezept ohne bekannten Gang (zweite Stufe)
+        db.rezeptDao().upsert(db.rezeptDao().nachId("h1")!!.copy(id = "h6", name = "Ofengemüse", gaenge = ""))
         val vm = u.vm()
         vm.fuellenOeffnen()
         val vorher = assertNotNull(vm.fuellen.value).vorschlag
         val tag = vorher.keys.first()
         vm.tagNeu(tag)
         val nachher = assertNotNull(vm.fuellen.value).vorschlag
+        assertEquals("h6", nachher[tag])
         assertEquals(vorher - tag, nachher - tag)
         assertEquals(nachher.values.size, nachher.values.toSet().size, "kein Rezept doppelt")
     }

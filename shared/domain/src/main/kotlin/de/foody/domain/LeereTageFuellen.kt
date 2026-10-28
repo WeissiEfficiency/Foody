@@ -39,7 +39,9 @@ object LeereTageFuellen {
 
     /**
      * Vorschlag „Tag → Rezept-ID“ für die [leereTage]. [belegt] = Merkmale der schon geplanten Gerichte je Tag
-     * (Zeitraum und Nachbartage), damit auch sie in die Abwechslung zählen.
+     * (Zeitraum und Nachbartage), damit auch sie in die Abwechslung zählen. [ausgeschlossen] kommt nie vor (beim Neu-
+     * Würfeln eines Tages: die übrigen Vorschläge und der bisherige) – vor der Stufenwahl, damit dann die nächste Stufe
+     * drankommt.
      */
     fun vorschlagen(
         rezepte: List<Rezept>,
@@ -47,6 +49,7 @@ object LeereTageFuellen {
         mahlzeit: Mahlzeit,
         seed: Long,
         belegt: Map<LocalDate, Set<Merkmal>> = emptyMap(),
+        ausgeschlossen: Set<String> = emptySet(),
     ): Map<LocalDate, String> {
         if (leereTage.isEmpty()) return emptyMap()
         val tage = leereTage.sorted()
@@ -59,7 +62,7 @@ object LeereTageFuellen {
 
         val merkmaleAm = belegt.mapValues { it.value.toMutableSet() }.toMutableMap()
         val haeufigkeit = belegt.filterKeys { it in tage.first()..tage.last() }.values.flatten().groupingBy { it }.eachCount().toMutableMap()
-        val vergeben = mutableSetOf<String>()
+        val vergeben = ausgeschlossen.toMutableSet()
         val random = Random(seed)
         val ergebnis = linkedMapOf<LocalDate, String>()
 

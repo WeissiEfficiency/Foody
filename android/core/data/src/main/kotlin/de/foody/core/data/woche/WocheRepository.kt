@@ -119,8 +119,13 @@ class WocheRepository(
         return (0L..6L).map { montag.plusDays(it) }.filter { it >= heute && it !in belegt }
     }
 
-    /** Vorschlag „Tag → Rezept-ID“ über [LeereTageFuellen]; gleicher [seed] → gleiches Ergebnis. */
-    suspend fun vorschlagen(tage: List<LocalDate>, mahlzeit: Mahlzeit, seed: Long): Map<LocalDate, String> {
+    /** Vorschlag „Tag → Rezept-ID“ über [LeereTageFuellen]; gleicher [seed] → gleiches Ergebnis; [ausgeschlossen] nie. */
+    suspend fun vorschlagen(
+        tage: List<LocalDate>,
+        mahlzeit: Mahlzeit,
+        seed: Long,
+        ausgeschlossen: Set<String> = emptySet(),
+    ): Map<LocalDate, String> {
         if (tage.isEmpty()) return emptyMap()
         val katalog = db.zutatDao().alle().associate { it.id to it.canonicalName }
         val pflicht = db.rezeptZutatDao().alle().filterNot { it.optional }.groupBy({ it.recipeId }, { katalog[it.ingredientId].orEmpty() })
@@ -135,7 +140,7 @@ class WocheRepository(
         val bis = tage.max().plusDays(NACHBARTAGE)
         val belegt = plan.filter { it.date in von..bis }.groupBy { it.date }
             .mapValues { (_, p) -> p.flatMap { merkmaleJe[it.recipeId].orEmpty() }.toSet() }
-        return LeereTageFuellen.vorschlagen(kandidaten, tage, mahlzeit, seed, belegt)
+        return LeereTageFuellen.vorschlagen(kandidaten, tage, mahlzeit, seed, belegt, ausgeschlossen)
     }
 
     /**

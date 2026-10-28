@@ -303,9 +303,11 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
       Zeilen wieder aus der Datenbank), `ZutatEditorViewModel` (Entwurf, Markierungen, Packung; ein Scan-Ergebnis vor
       dem Laden wartet) und `KochenViewModel` (Sitzung gilt nach dem Neustart vor den Aufruf-Portionen, „Fertig“
       bleibt). Tests stellen das Prozessende mit `nachProzessende()` aus `:core:testing` nach.
-- [ ] **R-W8** „↻“ in der Woche findet oft nichts; `tagNeuAendertNurDiesenTag` besteht auch ohne Änderung. Fix:
+- [x] **R-W8** „↻“ in der Woche findet oft nichts; `tagNeuAendertNurDiesenTag` besteht auch ohne Änderung. Fix:
       Parameter `ausgeschlossen` in `LeereTageFuellen`.
-- [ ] **R-W9** Ø kcal/Tag ohne „mind.“, wenn Werte fehlen (`WocheScreen.kt:169`).
+      **Erledigt (2026-10-28):** Die übrigen Vorschläge und der bisherige fallen vor der Stufenwahl weg, also kommt
+      die nächste Stufe dran, statt 20-mal dieselben Rezepte zu ziehen; der Test verlangt jetzt einen neuen Vorschlag.
+- [x] **R-W9** Ø kcal/Tag ohne „mind.“, wenn Werte fehlen (`WocheScreen.kt:169`). **Erledigt (2026-10-28).**
 
 **Doku (Einstieg für neue Sessions):**
 - [x] **S-K1 + S-W3** (#113) README auf V3: Modultabelle mit `:app3`, `:core:*`, `:feature:*`, `:katalog` (12 fehlen),
