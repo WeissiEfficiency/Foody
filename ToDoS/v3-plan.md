@@ -265,6 +265,78 @@ Material-Standardhintergrund, weil das Farbschema die `surfaceContainer*`-Farben
 
 **Fertig, wenn** alle App-Abschnitte der Abnahmeliste abgehakt sind und kein Screen über 300 Zeilen hat.
 
+### Nacharbeit aus Code-Review und Struktur-Check (2026-10-27)
+Herkunft: Code-Review V3 gesamt auf `2761ada` plus Delta #110/#111 (IDs **R-…**, Delta **D…**) und Struktur-Check
+`docs/STRUKTUR-CHECK.md` (noch nicht versioniert) mit Nachtrag Delta (IDs **S-…**). Beide Prüfungen ohne Bauen und
+ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
+
+**Blockiert den Umstieg (vor Phase 8):**
+- [ ] **R-K1 „Zusammenführen“ überschreibt korrigierte Zutaten auf dem Server:** Eine frische Installation wählt
+      ohne Rückfrage ZUSAMMENFUEHREN (`VerbindenViewModel.kt:51`, Zutaten zählen nicht, `SyncKonto.kt:291`),
+      `SyncDao.allesVormerken` schickt die ~290 Startzutaten (`seed-*`) vor dem Pull (`SyncLauf.kt:47`), und der
+      Server prüft Konflikte nur bei Einkaufsartikeln (`SyncService.kt:55-84`). Fix: `baseRev == null` bei
+      vorhandenem Datensatz ist ein Konflikt; unveränderte Startzutaten nicht vormerken; Zwei-Geräte-Test.
+      Server-Rebuild nötig.
+- [ ] **R-W1 Pull hinter `last_rev` liefert leer statt 410** (`SyncService.kt:31-43`, z. B. nach einer
+      Server-Wiederherstellung) → Geräte verpassen still Änderungen. Test `pullBeyondHeadIsEmpty` umstellen. Steckt
+      auch im echten Server auf `v1-server`.
+
+**Wichtig (App):**
+- [ ] **R-W2** Zutat löschen, die nur Einkaufsartikel nutzen → Artikel dauerhaft `missing_reference`
+      (`ZutatenRepository.kt:79`). Fix: `ingredientId = NULL` beim Löschen, lokal und per Sync.
+- [ ] **R-W3** Zwei schnelle Tipps ohne Liste legen zwei Listen an (`EinkaufViewModel.kt:52,115`,
+      `EinkaufRepository.kt:313`). Fix: bei `null` die jüngste Liste in der Transaktion nehmen.
+- [ ] **R-W4** `SyncLauf.kt:62-65` fängt jede Exception als „Server-Fehler“: kein Log, kein erneuter Versuch.
+- [ ] **R-W5** Deep Link mit `NEW_TASK` (Timer-Meldung) baut den Task neu auf → ungespeicherte Eingaben weg
+      (`MainActivity.kt:38`). Fix: `navigate(uri) { launchSingleTop }`.
+- [ ] **R-W6** NavHost an drei Stellen (`Hauptgeruest.kt:76-91`) → Kochen-Vollbild oder Drehen über 840 dp verliert
+      `rememberSaveable`.
+- [ ] **R-W7 + D1** Entwürfe ohne `SavedStateHandle` (`EditorViewModel`, `ZutatEditorViewModel`, `KochenViewModel`,
+      `EintragenViewModel`) gehen nach einem Prozess-Ende verloren. Verschärft durch 6e3: Ein Foto-Scan aus dem
+      Tagebuch kommt nach Prozess-Ende nie an, weil `weg` auf REZEPT zurückfällt und der Scan-Knopf nicht aufgebaut
+      wird. Mindestens `weg`, Packungsfelder und Scan-Markierungen sichern.
+- [ ] **R-W8** „↻“ in der Woche findet oft nichts; `tagNeuAendertNurDiesenTag` besteht auch ohne Änderung. Fix:
+      Parameter `ausgeschlossen` in `LeereTageFuellen`.
+- [ ] **R-W9** Ø kcal/Tag ohne „mind.“, wenn Werte fehlen (`WocheScreen.kt:169`).
+
+**Doku (Einstieg für neue Sessions):**
+- [ ] **S-K1 + S-W3** README auf V3: Modultabelle mit `:app3`, `:core:*`, `:feature:*`, `:katalog` (12 fehlen),
+      Hinweis „neue Arbeit nur in V3-Modulen“, Bau-/Testbefehle für `:app3`, Funktionsliste und Datenschutz auf den
+      V3-Umfang.
+- [ ] **S-W1 = R-W10** `CLAUDE.md` anlegen (< 80 Zeilen): Stand, wo neue Arbeit hingehört, Befehle, deutsche
+      Bezeichner in V3, v1 nicht anfassen, Server-Rebuild bei `api-protocol`, ö-Pfad/JAVA_HOME, nicht im E:-Ordner
+      bauen, Emulator und Test-Server.
+- [ ] **S-W4** `ToDoS/projektstruktur-regeln.md:7` (`server/web/`), `web-frontend-plan.md` und
+      `optimierungsplan.md` als abgelöst kennzeichnen.
+- [ ] **S-W2** `docs/security.md` um V3 ergänzen: Deep Links `foody://` (BROWSABLE), Network-Security-Configs,
+      FileProvider `ScanFotoProvider` (`cache/scan`), Open-Food-Facts-Anbindung, Schalter in den Einstellungen.
+- [ ] **S-N1 + S-N6** `docs/architecture.md`: Einleitung mit `:core:*`, `:app3`, `:katalog`; `:core:*` mit Compose
+      nutzen `foody.android.feature`.
+
+**Klein, beim nächsten Anfassen:**
+- [ ] R-N1 `Migrations.kt:199`: kein Abbruch bei unbekannter, höherer DB-Version
+- [ ] R-N2 `PRAGMA synchronous=NORMAL` (Push = ein fsync je Datensatz)
+- [ ] R-N3 `Sicherung.kt:167` ohne `checkedChangedAt`/`updatedAt` der Einkaufsartikel
+- [ ] R-N4 `EinkaufRepository.kt:220`, `WocheRepository.kt:35` ohne `flowOn(rechnen)`
+- [ ] R-N5 + D3 Duplikate: `RezeptBild` ×3, `mengeSkaliert` vs. `RecipeScaler.scale`, Löschliste
+      `SyncKonto`/`Sicherung`, Kamera + FileProvider jetzt dreifach (`ScanFotoProvider`, `FotoWahl`, `FertigBlatt`)
+- [ ] D2 (Muster R-C4) Strichcode-Suche und Texterkennung in `rememberCoroutineScope` (`PackungScanKnopf.kt:328,371`)
+      brechen beim Drehen still ab → ins ViewModel
+- [ ] D4 `OffProduktSuche.kt:89` liest ohne Größengrenze; wie beim eigenen Server `begrenztLesen` (≈ 256 kB)
+- [ ] S-N7 `settings.gradle.kts`: je Modul `include` und `projectDir` untereinander, nach `core`/`feature` gruppiert
+- [ ] S-N4 `gradle/gradle-daemon-jvm.properties` einchecken oder ignorieren
+- [ ] Weitere aus dem Review: `backup.sh` ohne `integrity_check` und Restore-Anleitung, Argon2 auf Request-Threads,
+      Docker ohne Gradle-Cache, toter `RecordStore.lebende()`, Kochmodus rekomponiert sekündlich, Tablet-Editor-VMs
+      nie freigegeben, Tagesziel speichert Zwischenstände, verwaiste Fotos nach Sync, Keystore auf
+      Main, 4 A11y-Lücken (SeitenListe, Timer-Chip, Quellen-Link, Überschriften), falscher Leer-Grund bei
+      „Leere Tage füllen“, kein ktlint/detekt
+
+**Lokal, ohne Commit:** Build-Reste `app/`, `domain/`, `sync-protocol/` im Root (S-N2) und alte Worktrees unter
+`.claude/worktrees/` (S-N3) entfernen.
+
+**Vor dem nächsten Install aufs echte Handy:** `:app3` und `:app` haben dieselbe App-ID samt Debug-Suffix; ein
+`:app3:installDebug` ersetzt eine v1-„Foody Debug“ und migriert 9 → 10 (siehe Phase 0, Alltags-App auf Release).
+
 ### Phase 7 – KI (≈ 1,5–2 Wochen)
 - [ ] `:core:ki` (App) und `/ki/*` (Server); jedes Ergebnis als Vorschau im Rezept-Editor bzw. Planer, nie direkt
       gespeichert; Knöpfe nur sichtbar mit Server und Netz
