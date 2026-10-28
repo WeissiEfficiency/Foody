@@ -5,6 +5,7 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
+import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.domain.TagebuchArt
@@ -38,6 +39,8 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = android.app.Application::class)
 class EintragenViewModelTest {
+    private val halter = ViewModelHalter()
+
     private val heute = LocalDate.of(2026, 10, 24)
     private lateinit var db: FoodyDatenbank
     private lateinit var vm: EintragenViewModel
@@ -46,12 +49,13 @@ class EintragenViewModelTest {
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         db = testDatenbank()
-        vm = EintragenViewModel(HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan())
+        vm = halter.behalten(EintragenViewModel(HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan()))
         vm.oeffnen(heute, Mahlzeit.ABENDESSEN)
     }
 
     @After
     fun tearDown() {
+        halter.schliessen()
         db.close()
         Dispatchers.resetMain()
     }

@@ -50,7 +50,10 @@ class EinkaufScreenTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        u.viewModels.schliessen()
+        db.close()
+    }
 
     private fun zeigen(listeId: String? = null, schrift200: Boolean = false): EinkaufViewModel {
         val vm = u.vm()

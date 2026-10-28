@@ -17,6 +17,7 @@ import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.MeasureUnit
 import de.foody.feature.rezepte.MitSchrift200
 import de.foody.feature.rezepte.bestand
@@ -43,6 +44,8 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = android.app.Application::class, qualifiers = "w411dp-h1600dp")
 class RezeptDetailScreenTest {
+    private val halter = ViewModelHalter()
+
     @get:Rule
     val compose = createComposeRule()
 
@@ -63,10 +66,13 @@ class RezeptDetailScreenTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        halter.schliessen()
+        db.close()
+    }
 
     private fun zeigen(id: String = "r1", schrift200: Boolean = false) {
-        val vm = RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L }, db.einkauf())
+        val vm = halter.behalten(RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L }, db.einkauf()))
         compose.setContent {
             FoodyTheme {
                 val inhalt = @androidx.compose.runtime.Composable {
@@ -149,7 +155,7 @@ class RezeptDetailScreenTest {
                 ),
             )
         }
-        val vm = RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L }, db.einkauf())
+        val vm = halter.behalten(RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L }, db.einkauf()))
         var id by mutableStateOf("r1")
         compose.setContent { FoodyTheme { RezeptDetailRoute(id, { _, _ -> }, {}, {}, {}, vm = vm) } }
         compose.warteAufText("Reispfanne")

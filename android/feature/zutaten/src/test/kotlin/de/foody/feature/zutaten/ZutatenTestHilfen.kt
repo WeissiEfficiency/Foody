@@ -13,9 +13,6 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStore
 import androidx.room.Room
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.RezeptEntity
@@ -28,6 +25,7 @@ import de.foody.core.scan.ProduktSuche
 import de.foody.core.scan.ScanStatus
 import de.foody.core.scan.StrichcodeStatus
 import de.foody.core.scan.ZutatTreffer
+import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
@@ -52,27 +50,15 @@ internal class ZutatenTestUmgebung {
     val uebergabe = ZutatUebergabe()
 
     /** Hält die ViewModels, damit [schliessen] ihre Flows beendet, bevor die Datenbank zugeht. */
-    private val viewModels = ViewModelStore()
-    private var anzahl = 0
+    private val viewModels = ViewModelHalter()
 
-    fun liste() = behalten(ZutatenListeViewModel(repo, meldungen, scan.scan, uebergabe))
+    fun liste() = viewModels.behalten(ZutatenListeViewModel(repo, meldungen, scan.scan, uebergabe))
 
-    fun editor() = behalten(ZutatEditorViewModel(repo, meldungen, scan.scan, { scan.online }, uebergabe))
+    fun editor() = viewModels.behalten(ZutatEditorViewModel(repo, meldungen, scan.scan, { scan.online }, uebergabe))
 
-    private fun <T : ViewModel> behalten(vm: T): T {
-        val fabrik = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <V : ViewModel> create(modelClass: Class<V>): V = vm as V
-        }
-        return ViewModelProvider(viewModels, fabrik)["vm${anzahl++}", vm.javaClass]
-    }
-
-    /**
-     * Für `@After`: erst die ViewModels beenden, dann die Datenbank schließen – sonst fragt ein Flow, den eine letzte
-     * Änderung angestoßen hat, die schon geschlossene Datenbank ab (IllegalStateException im nächsten Test).
-     */
+    /** Für `@After`: erst die ViewModels beenden, dann die Datenbank schließen ([ViewModelHalter]). */
     fun schliessen() {
-        viewModels.clear()
+        viewModels.schliessen()
         db.close()
     }
 

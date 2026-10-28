@@ -60,7 +60,10 @@ class WocheScreenshotTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        u.viewModels.schliessen()
+        db.close()
+    }
 
     private val vergleich = RoborazziOptions(compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f))
 

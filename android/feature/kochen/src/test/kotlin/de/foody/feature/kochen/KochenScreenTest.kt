@@ -38,7 +38,10 @@ class KochenScreenTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        u.viewModels.schliessen()
+        db.close()
+    }
 
     private val angepasst = mutableListOf<Pair<String, Int>>()
 

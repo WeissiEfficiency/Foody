@@ -62,6 +62,9 @@ if (System.getenv("FOODY_SERVER_ONLY") == null) {
     // V3 Phase 6e3: Packung scannen (Tagebuch und Zutatenkatalog, ADR 0013)
     include(":core:scan")
     project(":core:scan").projectDir = file("android/core/scan")
+    // Testhilfen der V3-Module (ViewModels vor der Datenbank schließen)
+    include(":core:testing")
+    project(":core:testing").projectDir = file("android/core/testing")
     project(":core:designsystem").projectDir = file("android/core/designsystem")
     project(":katalog").projectDir = file("android/katalog")
 }

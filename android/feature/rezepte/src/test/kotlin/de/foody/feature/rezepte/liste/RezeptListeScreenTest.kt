@@ -10,6 +10,7 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.testing.ViewModelHalter
 import de.foody.feature.rezepte.MitSchrift200
 import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.pruefeNichtsAbgeschnitten
@@ -30,6 +31,8 @@ import kotlin.test.assertEquals
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = android.app.Application::class, qualifiers = "w411dp-h891dp")
 class RezeptListeScreenTest {
+    private val halter = ViewModelHalter()
+
     @get:Rule
     val compose = createComposeRule()
 
@@ -44,10 +47,13 @@ class RezeptListeScreenTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        halter.schliessen()
+        db.close()
+    }
 
     private fun zeigen(schrift200: Boolean = false) {
-        val vm = RezeptListeViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1L })
+        val vm = halter.behalten(RezeptListeViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1L }))
         compose.setContent {
             FoodyTheme {
                 val inhalt = @androidx.compose.runtime.Composable {

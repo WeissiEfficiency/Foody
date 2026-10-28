@@ -35,6 +35,7 @@ class EinkaufViewModelTest {
 
     @After
     fun tearDown() {
+        u.viewModels.schliessen()
         db.close()
         Dispatchers.resetMain()
     }

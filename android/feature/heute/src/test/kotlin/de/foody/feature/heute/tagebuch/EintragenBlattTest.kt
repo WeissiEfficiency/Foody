@@ -22,6 +22,7 @@ import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.sync.SyncLage
 import de.foody.core.sync.SyncLageQuelle
+import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.HeuteRoute
 import de.foody.feature.heute.HeuteViewModel
@@ -54,6 +55,8 @@ import kotlin.test.assertEquals
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = android.app.Application::class, qualifiers = "h1600dp")
 class EintragenBlattTest {
+    private val halter = ViewModelHalter()
+
     @get:Rule
     val compose = createComposeRule()
 
@@ -69,17 +72,22 @@ class EintragenBlattTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        halter.schliessen()
+        db.close()
+    }
 
     // ViewModels außerhalb der Komposition: Sie überstehen den Neuaufbau wie in der App (Hilt-ViewModel)
     private val vm by lazy {
-        HeuteViewModel(
-            HeuteRepository(db), tagebuch, SyncLageQuelle { flowOf(SyncLage(false, false, null)) },
-            TageszielSpeicher(RuntimeEnvironment.getApplication()),
-            Zeitgeber { MutableStateFlow(LocalDateTime.of(heute, LocalTime.of(8, 0))) },
+        halter.behalten(
+            HeuteViewModel(
+                HeuteRepository(db), tagebuch, SyncLageQuelle { flowOf(SyncLage(false, false, null)) },
+                TageszielSpeicher(RuntimeEnvironment.getApplication()),
+                Zeitgeber { MutableStateFlow(LocalDateTime.of(heute, LocalTime.of(8, 0))) },
+            ),
         )
     }
-    private val eintragen by lazy { EintragenViewModel(HeuteRepository(db), tagebuch, db, testScan()) }
+    private val eintragen by lazy { halter.behalten(EintragenViewModel(HeuteRepository(db), tagebuch, db, testScan())) }
 
     private val heuteInhalt = @androidx.compose.runtime.Composable {
         FoodyTheme { HeuteRoute({ _, _ -> }, {}, {}, {}, {}, vm = vm, eintragenVm = eintragen) }
@@ -121,7 +129,7 @@ class EintragenBlattTest {
     @Test
     fun aendernUeberstehtNeuaufbau() {
         runBlocking { tagebuch.frei(heute, Mahlzeit.SNACK, "Apfel", 52, null, null, null) }
-        val vm = TagebuchTagViewModel(tagebuch, TageszielSpeicher(RuntimeEnvironment.getApplication()))
+        val vm = halter.behalten(TagebuchTagViewModel(tagebuch, TageszielSpeicher(RuntimeEnvironment.getApplication())))
         val wiederherstellen = StateRestorationTester(compose)
         wiederherstellen.setContent { FoodyTheme { TagebuchTagRoute(heute, {}, vm = vm) } }
         compose.warteAufText("Apfel")

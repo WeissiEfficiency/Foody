@@ -14,6 +14,7 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.testing.ViewModelHalter
 import de.foody.feature.rezepte.MitSchrift200
 import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.pruefeNichtsAbgeschnitten
@@ -35,6 +36,8 @@ import kotlin.test.assertEquals
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = android.app.Application::class, qualifiers = "h1600dp")
 class EditorScreenTest {
+    private val halter = ViewModelHalter()
+
     @get:Rule
     val compose = createComposeRule()
 
@@ -45,7 +48,7 @@ class EditorScreenTest {
     // ViewModel außerhalb der Komposition: übersteht den Neuaufbau wie ein Hilt-ViewModel
     private val vm by lazy {
         val ablage = FotoAblage(RuntimeEnvironment.getApplication())
-        EditorViewModel(RezeptRepository(db, ablage) { 1_000L }, db, ablage)
+        halter.behalten(EditorViewModel(RezeptRepository(db, ablage) { 1_000L }, db, ablage))
     }
 
     @Before
@@ -55,7 +58,10 @@ class EditorScreenTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        halter.schliessen()
+        db.close()
+    }
 
     private val inhalt = @androidx.compose.runtime.Composable {
         FoodyTheme { EditorRoute(id = null, onFertig = { fertig += it }, onZurueck = { zurueck++ }, vm = vm) }

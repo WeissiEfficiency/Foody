@@ -32,6 +32,7 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
             add("testImplementation", libs.findLibrary("kotlin-test-junit").get())
             add("testImplementation", libs.findLibrary("robolectric").get())
             add("testImplementation", libs.findLibrary("compose-ui-test-junit4").get())
+            add("testImplementation", project(":core:testing"))
             add("debugImplementation", libs.findLibrary("compose-ui-test-manifest").get())
         }
     }

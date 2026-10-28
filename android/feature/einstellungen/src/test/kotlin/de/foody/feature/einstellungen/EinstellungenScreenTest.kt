@@ -64,7 +64,7 @@ class EinstellungenScreenTest {
     }
 
     @After
-    fun tearDown() = u.db.close()
+    fun tearDown() = u.schliessen()
 
     /** Dateidialoge durch feste Dateien ersetzt: „erstellen“ schreibt nach [zip], „öffnen“ wählt [json]. */
     private val dateien: @Composable ((Uri) -> Unit, (Uri) -> Unit) -> Dateiwahl = { erstellt, gewaehlt ->

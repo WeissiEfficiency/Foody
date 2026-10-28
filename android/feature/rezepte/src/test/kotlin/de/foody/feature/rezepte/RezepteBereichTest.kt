@@ -12,6 +12,7 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.testing.ViewModelHalter
 import de.foody.feature.rezepte.detail.RezeptDetailViewModel
 import de.foody.feature.rezepte.editor.EditorViewModel
 import de.foody.feature.rezepte.liste.RezeptListeViewModel
@@ -31,6 +32,8 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = android.app.Application::class)
 class RezepteBereichTest {
+    private val halter = ViewModelHalter()
+
     @get:Rule
     val compose = createComposeRule()
 
@@ -45,18 +48,21 @@ class RezepteBereichTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        halter.schliessen()
+        db.close()
+    }
 
     private fun zeigen() {
         val ablage = FotoAblage(RuntimeEnvironment.getApplication())
         val repo = RezeptRepository(db, ablage) { 1L }
-        val liste = RezeptListeViewModel(repo)
-        val detail = RezeptDetailViewModel(repo, db.einkauf())
+        val liste = halter.behalten(RezeptListeViewModel(repo))
+        val detail = halter.behalten(RezeptDetailViewModel(repo, db.einkauf()))
         compose.setContent {
             FoodyTheme {
                 RezepteBereich(
                     onOeffnen = { geoeffnet += it }, onNeu = {}, onKochen = { _, _ -> }, onEinkauf = { einkauf++ },
-                    listeVm = liste, detailVm = detail, editorVm = { EditorViewModel(repo, db, ablage) },
+                    listeVm = liste, detailVm = detail, editorVm = { halter.behalten(EditorViewModel(repo, db, ablage)) },
                 )
             }
         }

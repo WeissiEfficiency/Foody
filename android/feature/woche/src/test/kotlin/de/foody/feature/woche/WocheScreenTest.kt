@@ -52,7 +52,10 @@ class WocheScreenTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        u.viewModels.schliessen()
+        db.close()
+    }
 
     private fun prefs() = RuntimeEnvironment.getApplication().getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE)
 

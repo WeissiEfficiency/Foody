@@ -8,6 +8,7 @@ import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.Gespeichert
 import de.foody.core.data.rezepte.RezeptRepository
+import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.feature.rezepte.bestand
@@ -39,6 +40,8 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = android.app.Application::class)
 class EditorViewModelTest {
+    private val halter = ViewModelHalter()
+
     private lateinit var db: FoodyDatenbank
     private lateinit var vm: EditorViewModel
 
@@ -47,11 +50,12 @@ class EditorViewModelTest {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         db = testDatenbank()
         val ablage = FotoAblage(RuntimeEnvironment.getApplication())
-        vm = EditorViewModel(RezeptRepository(db, ablage) { 1_000L }, db, ablage)
+        vm = halter.behalten(EditorViewModel(RezeptRepository(db, ablage) { 1_000L }, db, ablage))
     }
 
     @After
     fun tearDown() {
+        halter.schliessen()
         db.close()
         Dispatchers.resetMain()
     }
@@ -123,7 +127,7 @@ class EditorViewModelTest {
         }
         repeat(2) { runde ->
             val ablage = FotoAblage(RuntimeEnvironment.getApplication())
-            val editor = EditorViewModel(RezeptRepository(db, ablage) { 1_000L }, db, ablage)
+            val editor = halter.behalten(EditorViewModel(RezeptRepository(db, ablage) { 1_000L }, db, ablage))
             editor.laden("r2")
             editor.aendern { it.copy(schritteText = "Schritt $runde") }
             assertIs<Gespeichert.Ok>(editor.speichern())
