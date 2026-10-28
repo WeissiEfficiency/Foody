@@ -1,5 +1,6 @@
 package de.foody.app3.navigation
 
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -7,6 +8,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
+import androidx.navigation.navOptions
 import androidx.navigation.toRoute
 import de.foody.feature.einkauf.EinkaufRoute
 import de.foody.feature.einstellungen.EinstellungenRoute
@@ -171,6 +173,18 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
             bildschirme.tagebuch(tagebuchDatum(it.toRoute<TagebuchTag>().datum, LocalDate.now()), nav)
         }
     }
+}
+
+/**
+ * Deep Link bei laufender App (`onNewIntent`): ins laufende Gerüst navigieren. [NavHostController.handleDeepLink] baut
+ * bei `FLAG_ACTIVITY_NEW_TASK` (Tipp auf die Timer-Meldung) den Task neu auf und verwirft ungespeicherte Eingaben.
+ * Derselbe Link zweimal legt das Ziel nicht doppelt an.
+ */
+fun NavHostController.deepLinkOeffnen(intent: Intent): Boolean {
+    val uri = intent.data ?: return false
+    if (!graph.hasDeepLink(uri)) return false
+    navigate(uri, navOptions { launchSingleTop = true })
+    return true
 }
 
 /** „Rezept anpassen“ nach dem Kochen: der Editor ersetzt den Kochmodus, „Zurück“ führt dorthin, woher man kam. */
