@@ -320,9 +320,9 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
       bauen, Emulator und Test-Server.
 - [x] **S-W4** (#113) `ToDoS/projektstruktur-regeln.md:7` (`server/web/`), `web-frontend-plan.md` und
       `optimierungsplan.md` als abgelöst kennzeichnen.
-- [ ] **S-W2** `docs/security.md` um V3 ergänzen: Deep Links `foody://` (BROWSABLE), Network-Security-Configs,
+- [x] **S-W2** (2026-10-28) `docs/security.md` um V3 ergänzen: Deep Links `foody://` (BROWSABLE), Network-Security-Configs,
       FileProvider `ScanFotoProvider` (`cache/scan`), Open-Food-Facts-Anbindung, Schalter in den Einstellungen.
-- [ ] **S-N1 + S-N6** `docs/architecture.md`: Einleitung mit `:core:*`, `:app3`, `:katalog`; `:core:*` mit Compose
+- [x] **S-N1 + S-N6** (2026-10-28) `docs/architecture.md`: Einleitung mit `:core:*`, `:app3`, `:katalog`; `:core:*` mit Compose
       nutzen `foody.android.feature`.
 
 **Klein, beim nächsten Anfassen:**

@@ -1,12 +1,20 @@
 # Architektur
 
-**Module und Ordner:** Handy-App unter `android/` (`:app`, `:baselineprofile`, `:feature:*`), gemeinsamer Code unter
-`shared/` (`:domain`, `:sync-protocol`, `:api-protocol`), Server unter `server/` – `:server-sync` (API, Konten,
-Datenbank, Sync, Fotos, KI-Gerüst) und `:server` (nur `main`). Abhängigkeiten laufen nur in eine Richtung:
-`:server` → `:server-sync` → `:api-protocol`, `:app` → `:domain`, `:sync-protocol`. `:sync-protocol` (Protokoll 2)
-ist für die v1-App eingefroren und entfällt in Phase 8; der Server nutzt nur `:api-protocol` (Protokoll 3). Gradle-Namen
-sind unabhängig von den Ordnern (`projectDir` in `settings.gradle.kts`). Spec:
+**Module und Ordner:** Handy-Apps unter `android/`:
+- die V3 `:app3` mit `:feature:*` und `:core:*` (`:core:data`, `:core:sync`, `:core:scan`, `:core:designsystem`,
+  nur für Tests `:core:testing`),
+- die eingefrorene v1 `:app` mit `:baselineprofile`,
+- `:katalog`, eine kleine App zum Ansehen des Designsystems.
+
+Gemeinsamer Code liegt unter `shared/` (`:domain`, `:sync-protocol`, `:api-protocol`). Der Server liegt unter
+`server/`: `:server-sync` (API, Konten, Datenbank, Sync, Fotos, KI-Gerüst) und `:server` (nur `main`).
+Abhängigkeiten laufen nur in eine Richtung: `:app3` → `:feature:*` → `:core:*` → `:domain`/`:api-protocol`
+(Features kennen sich nicht), `:server` → `:server-sync` → `:api-protocol`, `:app` → `:domain`, `:sync-protocol`.
+`:sync-protocol` (Protokoll 2) ist für die v1-App eingefroren und entfällt in Phase 8; der Server nutzt nur
+`:api-protocol` (Protokoll 3). Gradle-Namen sind unabhängig von den Ordnern (`projectDir` in `settings.gradle.kts`). Spec:
 `docs/superpowers/specs/2026-10-11-projektstruktur-design.md`.
+
+Die Abschnitte bis „Sync (optional)“ beschreiben die v1. Die V3 beginnt mit „Server (V3)“ und „App V3: Daten und Sync“.
 
 - **UI-Schicht** (`android/app/.../ui`): Compose-Screens + `@HiltViewModel`. Jeder Screen rendert einen unveränderlichen
   `UiState` aus `StateFlow`; Nutzeraktionen sind Methodenaufrufe am ViewModel (Unidirectional Data Flow).
@@ -535,8 +543,10 @@ Kompatibilitäts-Flags in `gradle.properties`. Gradle braucht JDK 21+ (z. B. das
 unter Java 21. Der Bytecode bleibt Java 17.
 
 **Convention-Plugins** (`build-logic/`, eingebunden über `pluginManagement { includeBuild(...) }`; der Docker-Build des
-Servers lässt sie mit `FOODY_SERVER_ONLY` weg): `foody.android.application` (`:app`), `foody.android.library`
-(`:core:*`) und `foody.android.feature` (`:feature:*`, Bibliothek + Compose + Test-Abhängigkeiten). Sie setzen die
+Servers lässt sie mit `FOODY_SERVER_ONLY` weg): `foody.android.application` (`:app`, `:app3`, `:katalog`),
+`foody.android.library` (`:core:*` ohne Compose: `:core:data`, `:core:sync`, `:core:testing`) und
+`foody.android.feature` (Bibliothek + Compose + Test-Abhängigkeiten samt `:core:testing`): alle `:feature:*` sowie
+`:core:designsystem` und `:core:scan`. Sie setzen die
 SDK-Stände aus `FoodySdk` (`compileSdk` 37, `minSdk` 36, `targetSdk` 37), Java 17 und `allWarningsAsErrors`. Die
 Plugins von AGP und Kotlin stehen im Root-Projekt (`apply false`); `build-logic` braucht sie nur zum Kompilieren
 (`compileOnly`). Ein `:feature:x` liegt unter `android/feature/x`; das Elternprojekt `:feature` zeigt auf
