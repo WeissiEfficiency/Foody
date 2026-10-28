@@ -30,8 +30,10 @@ class SyncService(private val db: Database, private val store: RecordStore, priv
     /** Liefert bis zu [limit] Datensätze mit `rev > since`; `hasMore` zeigt weitere Seiten an. */
     fun pull(household: String, since: Long, limit: Int): PullResponse {
         val fetched = db.tx { c ->
-            // Ein Cursor vor der Kompaktierungsgrenze hat Löschmarkierungen verpasst: Client muss neu synchronisieren.
-            if (since != 0L && since < compactedBefore(c, household)) {
+            val (lastRev, compactedBefore) = revisions(c, household)
+            // Ein Cursor vor der Kompaktierungsgrenze hat Löschmarkierungen verpasst, einer hinter dem Server-Stand stammt
+            // von einer Datenbank, die es so nicht mehr gibt (z. B. nach dem Einspielen einer Sicherung): Neu synchronisieren.
+            if (since != 0L && (since < compactedBefore || since > lastRev)) {
                 throw ApiException(HttpStatusCode.Gone, ErrorCode.CURSOR_EXPIRED)
             }
             store.page(c, household, since, limit + 1)
@@ -41,10 +43,11 @@ class SyncService(private val db: Database, private val store: RecordStore, priv
         return PullResponse(records, records.lastOrNull()?.rev ?: since, hasMore)
     }
 
-    private fun compactedBefore(c: Connection, household: String): Long =
-        c.prepareStatement("SELECT compacted_before_rev FROM household WHERE id = ?").use { st ->
+    /** `last_rev` und `compacted_before_rev` des Haushalts. */
+    private fun revisions(c: Connection, household: String): Pair<Long, Long> =
+        c.prepareStatement("SELECT last_rev, compacted_before_rev FROM household WHERE id = ?").use { st ->
             st.setString(1, household)
-            st.executeQuery().use { if (it.next()) it.getLong(1) else 0L }
+            st.executeQuery().use { if (it.next()) it.getLong(1) to it.getLong(2) else 0L to 0L }
         }
 
     /**
