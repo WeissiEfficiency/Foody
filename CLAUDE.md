@@ -39,6 +39,8 @@ JDK 21+ (JBR von Android Studio), Android SDK 37. Befehle in PowerShell mit `.\g
 - V3-Code: **Bezeichner, Kommentare (KDoc) und Texte auf Deutsch** (`Sicherung`, `ZutatenRepository`). In der v1 und in älterem
   `:domain`-Code stehen englische Bezeichner; bestehende nicht umbenennen. Code liest sich wie der umgebende Code.
 - `allWarningsAsErrors` ist überall an; Bytecode Java 17.
+- Tests mit ViewModels und Room im Speicher: ViewModels in einen `ViewModelHalter` (`:core:testing`) geben, in `@After`
+  erst `schliessen()`, dann `db.close()` – sonst fragt ein laufender Flow die geschlossene Datenbank ab (ADR 0014).
 - Room: nie einen destruktiven Fallback; jede Schemaänderung mit Migration und Migrationstest.
 - Änderungen unter `shared/api-protocol/` oder `server/` → der Server muss neu gebaut werden; im PR sagen, ob ein
   Server-Rebuild nötig ist (`server/README.md`, Update).

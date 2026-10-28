@@ -48,6 +48,7 @@ Die Web-Oberfläche ist mit V3 entfallen (ADR 0011).
 | `android/core/sync/` | `:core:sync` | Sync-Client: Server-Zugang, Sync-Lauf, Verbinden/Trennen, Token |
 | `android/core/scan/` | `:core:scan` | Packung scannen für Tagebuch und Zutatenkatalog (ADR 0013) |
 | `android/core/designsystem/` | `:core:designsystem` | Tokens, Glas-Flächen, Komponenten, Theme „Ofenwarm“ (ADR 0012) |
+| `android/core/testing/` | `:core:testing` | nur für Tests: `ViewModelHalter` beendet ViewModels vor `db.close()` (ADR 0014); jedes Feature bekommt es als `testImplementation` |
 | `android/katalog/` | `:katalog` | kleine App zum Ansehen des Designsystems |
 | `android/app/` | `:app` | **v1-App, eingefroren** (Compose, Room, Hilt, Vorrat); entfällt in Phase 8 |
 | `android/baselineprofile/` | `:baselineprofile` | Generator für das Baseline-Profil der v1 |

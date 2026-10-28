@@ -267,7 +267,7 @@ Material-Standardhintergrund, weil das Farbschema die `surfaceContainer*`-Farben
 
 ### Nacharbeit aus Code-Review und Struktur-Check (2026-10-27)
 Herkunft: Code-Review V3 gesamt auf `2761ada` plus Delta #110/#111 (IDs **R-…**, Delta **D…**) und Struktur-Check
-`docs/STRUKTUR-CHECK.md` (noch nicht versioniert) mit Nachtrag Delta (IDs **S-…**). Beide Prüfungen ohne Bauen und
+`docs/STRUKTUR-CHECK.md` (seit #113 im Repo) mit Nachtrag Delta (IDs **S-…**). Beide Prüfungen ohne Bauen und
 ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
 
 **Blockiert den Umstieg (vor Phase 8):**
@@ -300,13 +300,13 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
 - [ ] **R-W9** Ø kcal/Tag ohne „mind.“, wenn Werte fehlen (`WocheScreen.kt:169`).
 
 **Doku (Einstieg für neue Sessions):**
-- [ ] **S-K1 + S-W3** README auf V3: Modultabelle mit `:app3`, `:core:*`, `:feature:*`, `:katalog` (12 fehlen),
+- [x] **S-K1 + S-W3** (#113) README auf V3: Modultabelle mit `:app3`, `:core:*`, `:feature:*`, `:katalog` (12 fehlen),
       Hinweis „neue Arbeit nur in V3-Modulen“, Bau-/Testbefehle für `:app3`, Funktionsliste und Datenschutz auf den
       V3-Umfang.
-- [ ] **S-W1 = R-W10** `CLAUDE.md` anlegen (< 80 Zeilen): Stand, wo neue Arbeit hingehört, Befehle, deutsche
+- [x] **S-W1 = R-W10** (#113) `CLAUDE.md` anlegen (< 80 Zeilen): Stand, wo neue Arbeit hingehört, Befehle, deutsche
       Bezeichner in V3, v1 nicht anfassen, Server-Rebuild bei `api-protocol`, ö-Pfad/JAVA_HOME, nicht im E:-Ordner
       bauen, Emulator und Test-Server.
-- [ ] **S-W4** `ToDoS/projektstruktur-regeln.md:7` (`server/web/`), `web-frontend-plan.md` und
+- [x] **S-W4** (#113) `ToDoS/projektstruktur-regeln.md:7` (`server/web/`), `web-frontend-plan.md` und
       `optimierungsplan.md` als abgelöst kennzeichnen.
 - [ ] **S-W2** `docs/security.md` um V3 ergänzen: Deep Links `foody://` (BROWSABLE), Network-Security-Configs,
       FileProvider `ScanFotoProvider` (`cache/scan`), Open-Food-Facts-Anbindung, Schalter in den Einstellungen.
