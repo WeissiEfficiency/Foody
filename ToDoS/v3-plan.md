@@ -19,7 +19,7 @@ V3 ist der Neubau aus dem v2-Plan, aber nur mit den Funktionen, die das Review b
 | Vorrat | streichen | mit ihm: „Aus dem Vorrat“, Abbuchen bei „Gekocht“, Vorratsabzug, MHD-Erinnerungen |
 | Web-App | streichen | `:server-web` und Haushaltsdienst entfallen |
 | Sync | schlanke API | Push/Pull bleibt, ein Konto, Last-Writer-Wins je Datensatz |
-| KI | erfassen, anpassen, Wochenplan, Nährwerte | neue Phase 7 |
+| KI | erfassen, anpassen, Wochenplan, Nährwerte | eigenes Projekt nach dem Umstieg ([`ki-plan.md`](ki-plan.md)) |
 | Durchspielen | Einkauf, Kochen, Import laufen gut | Planen hakt: kcal je Portion unzuverlässig, Auswahl passt schlecht |
 | Verteilung | APK in OpenCloud | Release-Aufgabe legt die signierte APK dort ab |
 | Messen | Android Studio reicht | kein Macrobenchmark-Aufwand |
@@ -101,7 +101,7 @@ Spec: [`2026-10-17-v3-phase2-server-schlank-design.md`](../docs/superpowers/spec
       DB vom 17.10.: 370 = 370 lebende, 384 = 384 gesamt, `last_rev` 413 = 413, 3 = 3 aktive Geräte; Fotoumzug mit
       echten Fotos noch nicht erprobt (0 Fotos)
 - [x] KI-Gerüst: `FOODY_KI_KEY` nur aus der Server-Umgebung, `KiKontingent` (Anzahl je Konto und Stunde),
-      `GET /ki/status`; `POST /ki/*` mit Größengrenzen folgt mit den Funktionen in Phase 7 (Spec, Abschnitt 3)
+      `GET /ki/status`; `POST /ki/*` mit Größengrenzen folgt mit den Funktionen im KI-Projekt (Spec, Abschnitt 3)
 
 **Fertig, wenn** zwei Test-Geräte mit demselben Konto vollständig synchronisieren.
 
@@ -349,17 +349,13 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
 **Vor dem nächsten Install aufs echte Handy:** `:app3` und `:app` haben dieselbe App-ID samt Debug-Suffix; ein
 `:app3:installDebug` ersetzt eine v1-„Foody Debug“ und migriert 9 → 10 (siehe Phase 0, Alltags-App auf Release).
 
-### Phase 7 – KI (≈ 1,5–2 Wochen)
-- [ ] `:core:ki` (App) und `/ki/*` (Server); jedes Ergebnis als Vorschau im Rezept-Editor bzw. Planer, nie direkt
-      gespeichert; Knöpfe nur sichtbar mit Server und Netz
-- [ ] **Rezept erfassen:** aus Foto (Kochbuch, Zettel) oder Freitext → Zutaten mit Menge/Einheit, Schritte,
-      Portionen; Zutaten über den Katalog vereinheitlicht
-- [ ] **Rezept anpassen:** „vegetarisch“, „weniger kcal“, „ohne Ofen“ … → neue Variante als Kopie
-- [ ] **Wochenplan vorschlagen:** ergänzt „Leere Tage füllen“ um einen KI-Vorschlag aus den eigenen Rezepten
-- [ ] **Nährwerte schätzen:** fehlende Werte einer Zutat vorschlagen, als „geschätzt“ markiert
-- [ ] Datenschutzhinweis in der App; ADR zur Modellwahl und Kosten
+### Phase 7 – KI: ausgelagert
+Entscheidung 2026-10-28: Die KI-Hilfe wird ein eigenes Projekt nach dem Umstieg. Plan und Abnahme stehen in
+[`ki-plan.md`](ki-plan.md). Phase 8 kommt vorher; die V3 wird ohne KI fertig und ausgeliefert. Das Server-Gerüst
+(`GET /ki/status`, `KiKontingent`) bleibt bestehen.
 
-### Phase 8 – Messen, Umstieg, Release V3 (≈ 1 Woche)
+### Phase 8 – Messen, Umstieg, Release V3 (≈ 1 Woche) – als Nächstes
+- [ ] Probeversion „Foody Vorschau“ (`:app3:assembleVorschau`, eigene App-ID neben der v1) auf dem Handy testen
 - [ ] Android-Studio-Profiler auf Handy und Tablet (Start, Scrollen, Speicher); Baseline-Profil neu erzeugen
 - [ ] TalkBack-Durchlauf, Schriftgröße 200 %
 - [ ] Probelauf mit Kopien, dann Umstieg: Sicherungen → Server v3 → Umwandlung → beide Geräte auf V3
@@ -381,6 +377,4 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
 |---|---|---|
 | Beim Neubau geht eine kleine Funktion verloren | hoch | Abnahmeliste, jeder PR hakt seine Punkte ab |
 | Umwandlung der Server-Daten scheitert | hoch | Sicherungen, Probelauf mit Kopien, Umwandlung wiederholbar |
-| KI liefert falsche Mengen oder Nährwerte | mittel | immer Vorschau, „geschätzt“-Markierung, Einheiten über `:domain` geprüft |
-| KI-Kosten oder Ausfall des Dienstes | gering | Grenzen je Stunde, App funktioniert ohne KI vollständig |
 | Gleichzeitige Änderung auf Handy und Tablet | gering | Last-Writer-Wins je Datensatz, Einkaufseinträge feldweise |

@@ -1,7 +1,8 @@
 // App-Hülle der V3 („Foody Debug“): Navigation, Hilt-Zusammenbau, Sync-Verdrahtung, Startdaten (V3, Phase 5).
 // Läuft neben der v1 (:app) und wird in Phase 8 zu :app. Gleiche App-ID wie die v1, damit der Umstieg die
 // vorhandene Datenbank übernimmt; der Release-Build ist bis dahin abgeschaltet, damit nie die Alltags-App
-// überschrieben wird.
+// überschrieben wird. Zum Testen auf dem Handy gibt es „Foody Vorschau“ (`assembleVorschau`): wie ein Release mit R8,
+// aber eigene App-ID neben der v1 und mit dem Debug-Schlüssel signiert.
 plugins {
     alias(libs.plugins.foody.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -27,6 +28,16 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+        }
+        create("vorschau") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".vorschau"
+            versionNameSuffix = "-vorschau"
+            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            matchingFallbacks += "release"
         }
     }
 

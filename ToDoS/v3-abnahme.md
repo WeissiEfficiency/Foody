@@ -71,12 +71,8 @@ ist. Grundlage: [`v2-abnahme.md`](v2-abnahme.md), gekürzt nach dem Review vom 2
 - [x] Tagesziel (Phase 6e1, 500–10.000 kcal)
 - [x] Online-Produktsuche beim Scan an/aus (Phase 6e3, Abschnitt „Zutaten“, v1-Schlüssel, `ScanEinstellungTest`)
 
-## KI – `:core:ki`, `/ki/*`
-- [ ] Rezept aus Foto oder Freitext erfassen
-- [ ] Rezept anpassen („vegetarisch“, „weniger kcal“, …) als neue Variante
-- [ ] Wochenplan-Vorschlag aus den eigenen Rezepten
-- [ ] Fehlende Nährwerte einer Zutat schätzen, als „geschätzt“ markiert
-- [ ] Ergebnisse immer als bearbeitbare Vorschau; ohne Server/Netz ausgeblendet; Datenschutzhinweis
+## KI – ausgelagert
+Eigenes Projekt nach dem Umstieg; die Abnahmepunkte stehen in [`ki-plan.md`](ki-plan.md).
 
 ## Sync – `:core:sync`, `:server-sync`
 - [ ] Opt-in: ohne Verbindung keine Netzwerkzugriffe

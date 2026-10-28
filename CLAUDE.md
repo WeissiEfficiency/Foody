@@ -6,7 +6,7 @@ Offline-first Android-App für Rezepte, Nährwerte, Wochenplan und Einkaufsliste
 ## Wo neue Arbeit hingehört
 
 - **V3 im Bau** (`ToDoS/v3-plan.md`, Abnahme `ToDoS/v3-abnahme.md`, ADR 0011): Phasen 1–6 fertig, als Nächstes
-  Phase 7 (KI), dann Phase 8 (Umstieg).
+  Phase 8 (Umstieg). Die KI-Hilfe ist ein eigenes Projekt danach (`ToDoS/ki-plan.md`).
 - Neuer App-Code nur in `:app3`, `:core:*` und `:feature:*` (unter `android/`).
 - **`:app` (v1) und `:sync-protocol` sind eingefroren** – nicht ändern, außer der Nutzer verlangt es ausdrücklich.
   Sie dienen als Vorlage für das Verhalten und entfallen in Phase 8.
