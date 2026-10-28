@@ -1,6 +1,7 @@
 package de.foody.feature.rezepte.editor
 
 import android.net.Uri
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,7 +29,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
-/** Eingaben des Editors, Zahlen als Text wie getippt; [mahlzeiten]/[gaenge] `null` = automatisch vermuten. */
+/**
+ * Eingaben des Editors, Zahlen als Text wie getippt; [mahlzeiten]/[gaenge] `null` = automatisch vermuten. Serializable:
+ * Sie liegen im SavedStateHandle und überstehen ein Prozessende.
+ */
 data class EditorEingaben(
     val name: String = "",
     val portionen: String = "2",
@@ -42,7 +46,7 @@ data class EditorEingaben(
     val mahlzeiten: Set<Mahlzeit>? = null,
     val gaenge: Set<Gang>? = null,
     val bild: String? = null,
-)
+) : java.io.Serializable
 
 /** Eine Zutatzeile mit dem, was erkannt wurde; [fehler] sperrt das Speichern. */
 data class ZeilenStatus(val zeile: String, val erkannt: ImportedIngredient?, val imKatalog: Boolean, val fehler: String?)
@@ -66,11 +70,13 @@ private val EXPONENT = Regex("""\d[eE][+-]?\d""")
 
 @HiltViewModel
 class EditorViewModel @Inject constructor(
+    /** Eingaben überstehen damit ein Prozessende (etwa während das Kamerafoto entsteht). */
+    private val gespeichert: SavedStateHandle,
     private val repo: RezeptRepository,
     db: FoodyDatenbank,
     private val ablage: FotoAblage,
 ) : ViewModel() {
-    private val eingaben = MutableStateFlow(EditorEingaben())
+    private val eingaben = gespeichert.getMutableStateFlow(EINGABEN, EditorEingaben())
     private val original = MutableStateFlow(EditorEingaben())
     private val kopf = MutableStateFlow(Triple(false, null as String?, null as String?)) // geladen, id, hinweis
     private val gesperrt = MutableStateFlow(false)
@@ -92,10 +98,15 @@ class EditorViewModel @Inject constructor(
     /** Die Eingaben, wie sie geladen (oder zuletzt gespeichert) wurden. */
     val ursprung: StateFlow<EditorEingaben> = original.asStateFlow()
 
-    /** Lädt [id] (oder ein leeres Rezept); derselbe Aufruf nach einem Neuaufbau lässt die Eingaben stehen. */
+    /**
+     * Lädt [id] (oder ein leeres Rezept); derselbe Aufruf nach einem Neuaufbau lässt die Eingaben stehen. Nach einem
+     * Prozessende kommen Ursprung und Zeilen aus der Datenbank, die Eingaben aus dem SavedStateHandle.
+     */
     suspend fun laden(id: String?) {
         if (geladenFuer == id) return
         geladenFuer = id
+        val gerettet = eingaben.value.takeIf { gespeichert.get<String>(EINGABEN_FUER) == (id ?: NEU) }
+        gespeichert[EINGABEN_FUER] = id ?: NEU
         val e = id?.let { repo.entwurf(it) }
         // Unveränderte Zeilen behalten Zutat und Hinweis: Katalognamen wie „Reis (roh)“ lassen sich nicht verlustfrei
         // neu zerlegen
@@ -109,7 +120,7 @@ class EditorViewModel @Inject constructor(
             schritteText = e.schritte.joinToString("\n"), notizen = e.notizen.orEmpty(), quelle = e.quelle.orEmpty(),
             mahlzeiten = e.mahlzeiten, gaenge = e.gaenge, bild = e.bild,
         )
-        eingaben.value = start
+        eingaben.value = gerettet ?: start
         original.value = start
         gesperrt.value = false
         kopf.value = Triple(true, id, if (id != null && e == null) GELOESCHT else null)
@@ -178,6 +189,9 @@ class EditorViewModel @Inject constructor(
         const val GELOESCHT = "Rezept wurde inzwischen gelöscht"
         const val FOTO_FEHLER = "Foto konnte nicht übernommen werden"
         private const val KEINS = "\u0000"
+        private const val EINGABEN = "rezeptEingaben"
+        private const val EINGABEN_FUER = "rezeptEingabenFuer"
+        private const val NEU = "neu"
     }
 }
 

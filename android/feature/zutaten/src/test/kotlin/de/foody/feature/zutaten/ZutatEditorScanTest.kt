@@ -1,8 +1,10 @@
 package de.foody.feature.zutaten
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.lifecycle.SavedStateHandle
 import de.foody.core.data.zutaten.ZutatEntwurf
 import de.foody.core.data.zutaten.ZutatFeld
+import de.foody.core.testing.nachProzessende
 import de.foody.core.scan.ScanAusgang
 import de.foody.core.scan.ScanTexte
 import de.foody.domain.NutrientBasis
@@ -82,6 +84,44 @@ class ZutatEditorScanTest {
             vm.zustand.value.markiert,
         )
         assertEquals("Open Food Facts", vm.zustand.value.scanQuelle)
+    }
+
+    @Test
+    fun ueberstehtProzessende() {
+        // Werte gescannt und eins geändert, dann beendet Android die App (R-W7)
+        reis()
+        val h = SavedStateHandle()
+        val vor = u.editor(h)
+        vor.laden("seed-reis")
+        warte { vor.zustand.value.geladen }
+        vor.packungUebernehmen(haferflocken(kj = "1502"))
+        vor.aendern(vor.entwurf().copy(eiweiss = "14"))
+
+        val nach = u.editor(h.nachProzessende())
+        nach.laden("seed-reis")
+        warte { nach.zustand.value.geladen }
+        assertEquals("14", nach.entwurf().eiweiss)
+        assertEquals("359", nach.entwurf().kcal)
+        assertEquals(true, ZutatFeld.KCAL in nach.zustand.value.markiert)
+        assertEquals(false, ZutatFeld.EIWEISS in nach.zustand.value.markiert)
+        assertEquals("Open Food Facts", nach.zustand.value.scanQuelle)
+        assertEquals(true, nach.zustand.value.geaendert)
+        // Die Packung kam mit: Speichern nimmt die genauen kJ
+        nach.speichern()
+        warte { gespeichert().protein?.compareTo(BigDecimal("14")) == 0 }
+        assertEquals(0, BigDecimal("1502").compareTo(gespeichert().energyKj))
+    }
+
+    @Test
+    fun scanVorDemLadenWartet() {
+        // Nach einem Prozessende kann das Foto erkannt sein, bevor die Zutat geladen ist
+        reis()
+        val vm = u.editor()
+        vm.packungUebernehmen(haferflocken())
+        vm.laden("seed-reis")
+        warte { vm.zustand.value.geladen }
+        assertEquals("359", vm.entwurf().kcal)
+        assertEquals(true, ZutatFeld.KCAL in vm.zustand.value.markiert)
     }
 
     @Test

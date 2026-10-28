@@ -8,6 +8,7 @@ import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.scan.ScanAusgang
 import de.foody.core.testing.ViewModelHalter
+import de.foody.core.testing.nachProzessende
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.domain.NutrientBasis
@@ -30,10 +31,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
 import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.test.assertEquals
@@ -75,14 +72,6 @@ class EintragenPackungTest {
 
     private val e get() = vm.zustand.value.eingaben
 
-    /** Wie ein Bundle beim Prozessende: Jeder Wert muss die Java-Serialisierung überstehen. */
-    private fun nachProzessende(h: SavedStateHandle) = SavedStateHandle(
-        h.keys().associateWith { k ->
-            val bytes = ByteArrayOutputStream().also { aus -> ObjectOutputStream(aus).use { it.writeObject(h.get<Any?>(k)) } }.toByteArray()
-            ObjectInputStream(ByteArrayInputStream(bytes)).use { it.readObject() }
-        },
-    )
-
     @Test
     fun ueberstehtProzessende() {
         // Foto aus dem Tagebuch: Während die Kamera offen ist, beendet Android die App (R-W7/D1)
@@ -93,7 +82,7 @@ class EintragenPackungTest {
         vor.packungUebernehmen(haferflocken())
         vor.pMenge("60")
 
-        val nach = halter.behalten(EintragenViewModel(nachProzessende(h), HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan()))
+        val nach = halter.behalten(EintragenViewModel(h.nachProzessende(), HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan()))
         // Das Blatt baut sich mit demselben Auftrag wieder auf: Die Eingaben bleiben
         nach.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
         val wieder = nach.zustand.value.eingaben

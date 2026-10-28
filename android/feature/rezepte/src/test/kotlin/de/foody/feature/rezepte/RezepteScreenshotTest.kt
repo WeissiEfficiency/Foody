@@ -3,6 +3,7 @@ package de.foody.feature.rezepte
 import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
@@ -110,7 +111,7 @@ class RezepteScreenshotTest {
             }
             bild("editor_${modus}_$geraet", dunkel) {
                 val ablage = FotoAblage(RuntimeEnvironment.getApplication())
-                EditorRoute("r1", {}, {}, vm = remember { halter.behalten(EditorViewModel(repo, db, ablage)) })
+                EditorRoute("r1", {}, {}, vm = remember { halter.behalten(EditorViewModel(SavedStateHandle(), repo, db, ablage)) })
             }
         }
     }

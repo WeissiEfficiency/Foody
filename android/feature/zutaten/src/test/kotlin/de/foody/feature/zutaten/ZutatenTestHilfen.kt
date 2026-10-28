@@ -55,7 +55,9 @@ internal class ZutatenTestUmgebung {
 
     fun liste() = viewModels.behalten(ZutatenListeViewModel(SavedStateHandle(), repo, meldungen, scan.scan, uebergabe))
 
-    fun editor() = viewModels.behalten(ZutatEditorViewModel(SavedStateHandle(), repo, meldungen, scan.scan, { scan.online }, uebergabe))
+    /** [gespeichert]: SavedStateHandle wie nach einem Prozessende; sonst ein neues. */
+    fun editor(gespeichert: SavedStateHandle = SavedStateHandle()) =
+        viewModels.behalten(ZutatEditorViewModel(gespeichert, repo, meldungen, scan.scan, { scan.online }, uebergabe))
 
     /** Für `@After`: erst die ViewModels beenden, dann die Datenbank schließen ([ViewModelHalter]). */
     fun schliessen() {

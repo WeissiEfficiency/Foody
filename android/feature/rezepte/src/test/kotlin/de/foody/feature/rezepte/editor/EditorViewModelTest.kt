@@ -1,5 +1,6 @@
 package de.foody.feature.rezepte.editor
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.RezeptEntity
@@ -8,6 +9,7 @@ import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.Gespeichert
 import de.foody.core.data.rezepte.RezeptRepository
+import de.foody.core.testing.nachProzessende
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
@@ -50,7 +52,7 @@ class EditorViewModelTest {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         db = testDatenbank()
         val ablage = FotoAblage(RuntimeEnvironment.getApplication())
-        vm = halter.behalten(EditorViewModel(RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+        vm = halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage) { 1_000L }, db, ablage))
     }
 
     @After
@@ -112,6 +114,28 @@ class EditorViewModelTest {
     }
 
     @Test
+    fun ueberstehtProzessende() = runTest {
+        // Eingaben eines Rezepts überstehen ein Prozessende (R-W7); ein anderes Rezept bekommt sie nicht
+        db.bestand()
+        val ablage = FotoAblage(RuntimeEnvironment.getApplication())
+        val h = SavedStateHandle()
+        val vor = halter.behalten(EditorViewModel(h, RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+        vor.laden("r1")
+        vor.aendern { it.copy(name = "Reistopf neu", zutatenText = "400 g Reis\n1 Prise Salz") }
+
+        val nach = halter.behalten(EditorViewModel(h.nachProzessende(), RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+        nach.laden("r1")
+        assertEquals("Reistopf neu", nach.zustand.first().eingaben.name)
+        assertEquals("400 g Reis\n1 Prise Salz", nach.zustand.first().eingaben.zutatenText)
+        assertTrue(nach.geaendert.first())
+        assertEquals("400 g Reis", nach.ursprung.value.zutatenText)
+
+        val neu = halter.behalten(EditorViewModel(h.nachProzessende(), RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+        neu.laden(null)
+        assertEquals("", neu.zustand.first().eingaben.name)
+    }
+
+    @Test
     fun katalognamenBleibenBeimBearbeiten() = runTest {
         // Katalognamen mit Klammer, Komma oder kleinem Wort: unveränderte Zeilen behalten Zutat und Hinweis
         val namen = listOf("z-roh" to "Reis (roh)", "z-milch" to "Milch 3,5 %", "z-joghurt" to "Joghurt griechisch")
@@ -127,7 +151,7 @@ class EditorViewModelTest {
         }
         repeat(2) { runde ->
             val ablage = FotoAblage(RuntimeEnvironment.getApplication())
-            val editor = halter.behalten(EditorViewModel(RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+            val editor = halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage) { 1_000L }, db, ablage))
             editor.laden("r2")
             editor.aendern { it.copy(schritteText = "Schritt $runde") }
             assertIs<Gespeichert.Ok>(editor.speichern())
