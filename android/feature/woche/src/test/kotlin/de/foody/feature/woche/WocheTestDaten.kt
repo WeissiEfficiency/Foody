@@ -14,6 +14,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
+import kotlin.coroutines.EmptyCoroutineContext
 
 /** Verstellbare Uhr für Tests („heute“ wechselt). */
 class TestUhr(var jetzt: Instant) : Clock() {
@@ -47,7 +48,7 @@ suspend fun FoodyDatenbank.hauptspeisen() = listOf(
 /** Repository und ViewModel wie in der App, mit fester bzw. verstellbarer Uhr; außerhalb der Komposition anlegen. */
 class WocheTestUmgebung(val db: FoodyDatenbank, val uhr: TestUhr = TestUhr(Instant.EPOCH).apply { auf(MITTWOCH) }) {
     private val app = RuntimeEnvironment.getApplication()
-    val repo = WocheRepository(db, RezeptRepository(db, FotoAblage(app)) { 1_000L }) { uhr.millis() }
+    val repo = WocheRepository(db, RezeptRepository(db, FotoAblage(app)) { 1_000L }, { uhr.millis() }, EmptyCoroutineContext)
     val ziel = TageszielSpeicher(app)
 
     /** Hält die ViewModels; `viewModels.schliessen()` gehört in `@After` vor `db.close()` ([ViewModelHalter]). */

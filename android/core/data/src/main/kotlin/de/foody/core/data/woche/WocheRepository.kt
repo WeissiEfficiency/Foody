@@ -15,12 +15,15 @@ import de.foody.domain.Mahlzeit
 import de.foody.domain.PlanDurchschnitt
 import de.foody.domain.PlanTag
 import de.foody.domain.RecipeProfiles
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.util.UUID
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Der Wochenplan: lesen, ändern, „Leere Tage füllen“. kcal und Nährwerte über dieselben Abbildungen wie Karte,
@@ -30,6 +33,8 @@ class WocheRepository(
     private val db: FoodyDatenbank,
     private val rezepte: RezeptRepository,
     private val uhr: () -> Long,
+    /** Wo [woche] rechnet; Tests geben `EmptyCoroutineContext`, damit nichts auf einem fremden Thread nachläuft. */
+    private val rechnen: CoroutineContext = Dispatchers.Default,
 ) {
     /** Die sieben Tage ab [montag]; neu bei jeder Änderung an Plan, Rezepten, Zeilen oder Zutaten. */
     fun woche(montag: LocalDate): Flow<WochenAnsicht> = combine(
@@ -63,7 +68,7 @@ class WocheRepository(
             tage.mapNotNull { t -> t.naehrwerte?.let { PlanTag(t.eintraege.map { it.mahlzeit }, it) } },
         )
         WochenAnsicht(montag, tage, durchschnitt)
-    }
+    }.flowOn(rechnen)
 
     /** Rezepte für die Auswahl beim Hinzufügen: die Karten ohne archivierte. */
     fun rezeptAuswahl(): Flow<List<RezeptKarte>> = rezepte.karten().map { k -> k.filterNot { it.archiviert } }

@@ -50,7 +50,7 @@ class EinkaufRepository(
     private val db: FoodyDatenbank,
     private val uhr: () -> Long,
     private val ignoriert: IgnorierteSchluessel,
-    /** Wo [zuletzt] rechnet; Tests geben `EmptyCoroutineContext`, damit nichts auf einem fremden Thread nachläuft. */
+    /** Wo [zuletzt] und [abgleich] rechnen; Tests geben `EmptyCoroutineContext`, damit nichts auf einem fremden Thread nachläuft. */
     private val rechnen: CoroutineContext = Dispatchers.Default,
 ) {
     fun aktuelleListeId(): Flow<String?> = db.einkaufslisteDao().alleFlow().map { it.firstOrNull()?.id }.distinctUntilChanged()
@@ -230,7 +230,7 @@ class EinkaufRepository(
         ) { artikel, _, _, _, _ -> artikel }
             .combine(ignoriert.fluss(listeId)) { artikel, ign -> artikel to ign }
             .map { (artikel, ign) -> aenderungen(artikel, PlanBedarf.laden(db, von, bis), ign).map { it.zeile } }
-    }.distinctUntilChanged()
+    }.flowOn(rechnen).distinctUntilChanged()
 
     /** Wendet alle Zeilen außer den abgewählten an (die ignoriert werden); gibt die Zahl der angewendeten zurück. */
     suspend fun abgleichen(listeId: String, abgewaehlt: Set<String>): Int {

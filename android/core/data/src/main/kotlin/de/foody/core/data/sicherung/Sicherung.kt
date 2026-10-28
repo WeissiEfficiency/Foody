@@ -169,7 +169,7 @@ class Sicherung(
             SicherungDaten.Einkaufsartikel(
                 id = it.id, listId = it.listId, ingredientId = it.ingredientId, name = it.name, amount = it.amount.text(),
                 unit = it.unit?.name, checked = it.checked, manual = it.manual, category = it.category, sortOrder = it.sortOrder,
-                note = it.note,
+                note = it.note, updatedAt = it.updatedAt, checkedChangedAt = it.checkedChangedAt,
             )
         },
         shoppingSources = db.einkaufsartikelQuelleDao().alle().map {
@@ -369,7 +369,7 @@ class Sicherung(
             EinkaufsartikelEntity(
                 id = it.id, listId = it.listId, ingredientId = it.ingredientId, name = it.name, amount = it.amount.zahlOderNull(),
                 unit = it.unit?.let(MeasureUnit::valueOf), checked = it.checked, manual = it.manual, category = it.category,
-                sortOrder = it.sortOrder, note = it.note,
+                sortOrder = it.sortOrder, note = it.note, updatedAt = it.updatedAt, checkedChangedAt = it.checkedChangedAt,
             )
         },
         quellen = d.shoppingSources.map {
