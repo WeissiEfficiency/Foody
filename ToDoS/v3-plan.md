@@ -271,13 +271,13 @@ Herkunft: Code-Review V3 gesamt auf `2761ada` plus Delta #110/#111 (IDs **R-…*
 ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
 
 **Blockiert den Umstieg (vor Phase 8):**
-- [ ] **R-K1 „Zusammenführen“ überschreibt korrigierte Zutaten auf dem Server:** Eine frische Installation wählt
+- [x] **R-K1 „Zusammenführen“ überschreibt korrigierte Zutaten auf dem Server:** Eine frische Installation wählt
       ohne Rückfrage ZUSAMMENFUEHREN (`VerbindenViewModel.kt:51`, Zutaten zählen nicht, `SyncKonto.kt:291`),
       `SyncDao.allesVormerken` schickt die ~290 Startzutaten (`seed-*`) vor dem Pull (`SyncLauf.kt:47`), und der
       Server prüft Konflikte nur bei Einkaufsartikeln (`SyncService.kt:55-84`). Fix: `baseRev == null` bei
       vorhandenem Datensatz ist ein Konflikt; unveränderte Startzutaten nicht vormerken; Zwei-Geräte-Test.
       Server-Rebuild nötig.
-- [ ] **R-W1 Pull hinter `last_rev` liefert leer statt 410** (`SyncService.kt:31-43`, z. B. nach einer
+- [x] **R-W1 Pull hinter `last_rev` liefert leer statt 410** (`SyncService.kt:31-43`, z. B. nach einer
       Server-Wiederherstellung) → Geräte verpassen still Änderungen. Test `pullBeyondHeadIsEmpty` umstellen. Steckt
       auch im echten Server auf `v1-server`.
 
