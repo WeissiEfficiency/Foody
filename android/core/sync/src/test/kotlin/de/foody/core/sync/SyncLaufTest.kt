@@ -29,6 +29,7 @@ import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.fotos.FotoIndex
+import de.foody.core.data.startdaten.Startdaten
 import de.foody.core.data.sync.SyncSpeicher
 import de.foody.core.data.zutaten.ZutatErgebnis
 import de.foody.core.data.zutaten.ZutatenRepository
@@ -400,6 +401,30 @@ class SyncLaufTest {
         assertTrue(a.ausfuehren() is SyncErgebnis.Fertig)
         assertEquals(emptyList(), a.dao.outbox())
         assertNull(fotoVon(serverStand(a.zugang)[RecordType.RECIPE to "r1"]))
+    }
+
+    @Test
+    fun zusammenfuehrenAufFrischemGeraetBehaeltKorrigierteStartzutaten() = syncServerTest { server ->
+        // R-K1: A hat eine Startzutat im Katalog korrigiert; B wird neu installiert (Startzutaten später angelegt) und
+        // verbindet sich mit „Zusammenführen“. Die Korrektur bleibt auf dem Server und kommt auf B an.
+        val (name, konto) = server.kontoAnlegen()
+        val a = geraet(name, konto)
+        val mehl = Startdaten.zutaten(1_000).single { it.id == "seed-mehl" }
+        a.db.zutatDao().upsert(mehl.copy(category = "Backzutaten", energyKj = BigDecimal("1460"), updatedAt = 2_000))
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig)
+
+        val bDb = neueDb()
+        for (z in Startdaten.zutaten(9_000)) bDb.zutatDao().upsert(z)
+        val b = Geraet(bDb, StoerZugang(anmelden(name)))
+        b.speicher.aktivieren(TEST_BASIS, konto, allesHochladen = true)
+        assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
+
+        val aufServer = serverStand(a.zugang).getValue(RecordType.INGREDIENT to "seed-mehl").payload!!
+        assertEquals(JsonPrimitive("Backzutaten"), aufServer["category"])
+        assertEquals("Backzutaten", b.db.zutatDao().nachId("seed-mehl")!!.category)
+        assertEquals(0, BigDecimal("1460").compareTo(b.db.zutatDao().nachId("seed-mehl")!!.energyKj))
+        assertEquals(emptyList(), b.dao.outbox())
+        assertEquals(emptyList(), b.dao.probleme())
     }
 
     @Test
