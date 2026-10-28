@@ -217,7 +217,7 @@ class SicherungTest {
         db.einkaufsartikelDao().upsert(
             EinkaufsartikelEntity(
                 id = "a1", listId = "l1", ingredientId = "z1", name = "Joghurt", amount = BigDecimal("300"), unit = MeasureUnit.GRAM,
-                checked = true, manual = false, category = "Milch", sortOrder = 0, note = "Bio",
+                checked = true, manual = false, category = "Milch", sortOrder = 0, note = "Bio", updatedAt = 7, checkedChangedAt = 6,
             ),
         )
         db.einkaufsartikelDao().upsert(EinkaufsartikelEntity(id = "a2", listId = "l1", name = "Kerzen", manual = true, sortOrder = 1))
@@ -241,15 +241,15 @@ class SicherungTest {
         val ergebnis = lesen(bytes, sicherungFuer(ziel))
         assertEquals(ImportErgebnis.Fertig(rezepte = 1, zutaten = 2, fotos = 0, vorratUebersprungen = 0), ergebnis)
 
-        // Zeitstempel der Einkaufsartikel pflegen die Trigger beim Einfügen selbst
-        fun List<EinkaufsartikelEntity>.ohneStempel() = map { it.copy(updatedAt = 0, checkedChangedAt = 0) }
         assertEquals(db.zutatDao().alle(), ziel.zutatDao().alle())
         assertEquals(db.rezeptDao().alle(), ziel.rezeptDao().alle())
         assertEquals(db.rezeptZutatDao().alle(), ziel.rezeptZutatDao().alle())
         assertEquals(db.arbeitsschrittDao().alle(), ziel.arbeitsschrittDao().alle())
         assertEquals(db.planEintragDao().alle(), ziel.planEintragDao().alle())
         assertEquals(db.einkaufslisteDao().alle(), ziel.einkaufslisteDao().alle())
-        assertEquals(db.einkaufsartikelDao().alle().ohneStempel(), ziel.einkaufsartikelDao().alle().ohneStempel())
+        // Mit Zeitstempeln: „Zuletzt gekauft“ sortiert nach checkedChangedAt, der Sync vergleicht updatedAt
+        assertEquals(db.einkaufsartikelDao().alle(), ziel.einkaufsartikelDao().alle())
+        assertEquals(6, ziel.einkaufsartikelDao().nachId("a1")?.checkedChangedAt)
         assertEquals(db.einkaufsartikelQuelleDao().alle(), ziel.einkaufsartikelQuelleDao().alle())
         assertEquals(db.tagebuchDao().alle(), ziel.tagebuchDao().alle())
         // Inaktiver Sync: die Trigger merken beim Import nichts vor, später geht nichts Falsches hinaus

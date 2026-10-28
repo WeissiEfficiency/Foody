@@ -30,41 +30,35 @@ project(":sync-protocol").projectDir = file("shared/sync-protocol")
 project(":api-protocol").projectDir = file("shared/api-protocol")
 // Docker-Build des Servers läuft ohne Android-SDK: FOODY_SERVER_ONLY lässt die Android-Module weg.
 if (System.getenv("FOODY_SERVER_ONLY") == null) {
-    include(":app")
-    include(":baselineprofile")
-    // Handy-App unter android/ (Gradle-Namen bleiben gleich)
-    project(":app").projectDir = file("android/app")
-    project(":baselineprofile").projectDir = file("android/baselineprofile")
-    // v2: ein Modul je Bereich unter android/feature/ (ADR 0009)
-    include(":feature:heute")
-    project(":feature").projectDir = file("android/feature")
-    project(":feature:heute").projectDir = file("android/feature/heute")
-    // V3: Datenbank und Sync-Client der App unter android/core/
-    include(":core:data", ":core:sync")
+    /** Ein Modul: Gradle-Name und Ordner untereinander (Gradle-Namen sind unabhängig von den Ordnern). */
+    fun modul(name: String, ordner: String) {
+        include(name)
+        project(name).projectDir = file(ordner)
+    }
+
+    // v1-App, eingefroren; entfällt in Phase 8
+    modul(":app", "android/app")
+    modul(":baselineprofile", "android/baselineprofile")
+
+    // V3: App-Hülle (wird in Phase 8 zu :app) und Katalog-App zum Ansehen des Designsystems
+    modul(":app3", "android/app3")
+    modul(":katalog", "android/katalog")
+
+    // V3: gemeinsame Bausteine unter android/core/ (Abhängigkeiten nur nach unten)
+    modul(":core:data", "android/core/data")
+    modul(":core:sync", "android/core/sync")
+    modul(":core:designsystem", "android/core/designsystem")
+    modul(":core:scan", "android/core/scan")
+    modul(":core:testing", "android/core/testing") // nur für Tests
     project(":core").projectDir = file("android/core")
-    project(":core:data").projectDir = file("android/core/data")
-    project(":core:sync").projectDir = file("android/core/sync")
-    // V3: Designsystem (Tokens, Glas, Komponenten) und Katalog-App zum Ansehen (Phase 4)
-    include(":core:designsystem", ":katalog")
-    // V3: App-Hülle neben der v1 (Phase 5); wird in Phase 8 zu :app
-    include(":app3", ":feature:einstellungen")
-    project(":app3").projectDir = file("android/app3")
-    project(":feature:einstellungen").projectDir = file("android/feature/einstellungen")
-    // V3 Phase 6: Bereiche neu bauen (6a Rezepte, 6b Kochen, 6c Woche, 6d Einkauf)
-    include(":feature:rezepte", ":feature:kochen", ":feature:woche", ":feature:einkauf")
-    project(":feature:rezepte").projectDir = file("android/feature/rezepte")
-    project(":feature:kochen").projectDir = file("android/feature/kochen")
-    project(":feature:woche").projectDir = file("android/feature/woche")
-    project(":feature:einkauf").projectDir = file("android/feature/einkauf")
-    // V3 Phase 6e2: Zutatenkatalog
-    include(":feature:zutaten")
-    project(":feature:zutaten").projectDir = file("android/feature/zutaten")
-    // V3 Phase 6e3: Packung scannen (Tagebuch und Zutatenkatalog, ADR 0013)
-    include(":core:scan")
-    project(":core:scan").projectDir = file("android/core/scan")
-    // Testhilfen der V3-Module (ViewModels vor der Datenbank schließen)
-    include(":core:testing")
-    project(":core:testing").projectDir = file("android/core/testing")
-    project(":core:designsystem").projectDir = file("android/core/designsystem")
-    project(":katalog").projectDir = file("android/katalog")
+
+    // V3: ein Modul je Bereich unter android/feature/ (ADR 0009); Features kennen sich nicht
+    modul(":feature:heute", "android/feature/heute")
+    modul(":feature:rezepte", "android/feature/rezepte")
+    modul(":feature:kochen", "android/feature/kochen")
+    modul(":feature:woche", "android/feature/woche")
+    modul(":feature:einkauf", "android/feature/einkauf")
+    modul(":feature:einstellungen", "android/feature/einstellungen")
+    modul(":feature:zutaten", "android/feature/zutaten")
+    project(":feature").projectDir = file("android/feature")
 }

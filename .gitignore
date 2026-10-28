@@ -12,3 +12,5 @@ keystore.properties
 server/.env
 # Echte Nutzerdaten (Datenbank-Kopien) nie ins Repository
 *.foody-echt.db*
+# Von Android Studio erzeugt (:updateDaemonJvm); die CI und die README geben JDK 21 selbst vor
+gradle/gradle-daemon-jvm.properties

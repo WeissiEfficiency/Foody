@@ -33,7 +33,7 @@ class WocheLesenTest {
         db = Room.inMemoryDatabaseBuilder(RuntimeEnvironment.getApplication(), FoodyDatenbank::class.java)
             .addCallback(FoodyDatenbank.CALLBACK).allowMainThreadQueries().build()
         val rezepte = RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L }
-        repo = WocheRepository(db, rezepte) { 1_000L }
+        repo = WocheRepository(db, rezepte, { 1_000L })
     }
 
     @After

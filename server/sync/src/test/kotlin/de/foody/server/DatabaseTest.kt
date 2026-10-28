@@ -2,6 +2,7 @@ package de.foody.server
 
 import de.foody.api.protocol.Protocol
 import de.foody.server.db.Database
+import de.foody.server.db.MigrationAbgebrochen
 import de.foody.server.db.Migrations
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -37,6 +38,29 @@ class DatabaseTest {
             db.tx { Migrations.apply(it) }
             assertEquals(Migrations.all.size, db.userVersion())
         }
+    }
+
+    @Test
+    fun neuereDatenbankBrichtAb() {
+        Database("jdbc:sqlite::memory:").use { db ->
+            val e = assertFailsWith<MigrationAbgebrochen> { db.tx { Migrations.apply(it, Migrations.all.dropLast(1)) } }
+            assertEquals("Datenbank hat Version ${Migrations.all.size}, dieser Server kennt nur ${Migrations.all.size - 1} – neueren Server starten", e.message)
+            assertEquals(Migrations.all.size, db.userVersion())
+        }
+    }
+
+    @Test
+    fun dateiMitWalUndSynchronousNormal() {
+        val ordner = kotlin.io.path.createTempDirectory("foody-db")
+        Database("jdbc:sqlite:${ordner.resolve("foody.db")}").use { db ->
+            db.tx { c ->
+                c.createStatement().use { s ->
+                    assertEquals("wal", s.executeQuery("PRAGMA journal_mode").use { it.next(); it.getString(1) })
+                    assertEquals(1, s.executeQuery("PRAGMA synchronous").use { it.next(); it.getInt(1) })
+                }
+            }
+        }
+        ordner.toFile().deleteRecursively()
     }
 
     @Test
