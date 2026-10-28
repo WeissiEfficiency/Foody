@@ -48,11 +48,6 @@ data class Quantity(val baseAmount: BigDecimal, val dimension: Dimension) {
         return Quantity(baseAmount + other.baseAmount, dimension)
     }
 
-    fun minusClamped(other: Quantity): Quantity {
-        require(dimension == other.dimension)
-        return Quantity((baseAmount - other.baseAmount).max(BigDecimal.ZERO), dimension)
-    }
-
     fun isZero(): Boolean = baseAmount.signum() == 0
 
     /**

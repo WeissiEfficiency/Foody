@@ -77,7 +77,6 @@ internal class PlanBedarf(
                 slots,
                 rezepte.mapValues { (id, r) -> r.alsRecipe(zeilenJe[id].orEmpty()) },
                 zutaten.mapValues { it.value.alsIngredient() },
-                emptyList(),
             ).filter { !it.toBuy.isZero() }
             val reihenfolge = ShoppingCatalog.sectionOrder.withIndex().associate { (i, s) -> s to i }
             val namen = zutaten.mapValues { it.value.canonicalName }

@@ -4,20 +4,18 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 /** Stück, Packungen und Dosen kauft man ganz: der Einkaufsbedarf wird aufgerundet, Gramm und Milliliter nicht. */
 class ShoppingRoundingTest {
     private fun bd(s: String) = BigDecimal(s)
     private val day = LocalDate.of(2026, 10, 5)
 
-    private fun needs(vararg lines: RecipeIngredient, servings: Int = 2, pantry: List<PantryItem> = emptyList(), ingredients: Map<String, Ingredient> = emptyMap()) =
+    private fun needs(vararg lines: RecipeIngredient, servings: Int = 2, ingredients: Map<String, Ingredient> = emptyMap()) =
         GenerateShoppingListUseCase()(
             DateRange(day, day),
             listOf(MealSlot("s", day, "Abend", "r", servings)),
             mapOf("r" to Recipe("r", "R", 2, lines.toList())),
             ingredients,
-            pantry,
         ).associateBy { it.ingredientId }
 
     @Test fun countableNeedsAreRoundedUp() {
@@ -28,11 +26,10 @@ class ShoppingRoundingTest {
             RecipeIngredient("c", "tomato", bd("1"), MeasureUnit.CAN),
             RecipeIngredient("d", "rice", bd("150"), MeasureUnit.GRAM),
             servings = 3,
-            pantry = listOf(PantryItem("onion", Quantity.of(bd("120"), MeasureUnit.GRAM))),
             ingredients = mapOf("onion" to onion),
         )
-        // Zwiebel: (1 Stk. + 50 g) × 1,5 = 2,25 Stk., davon 1,2 Stk. im Vorrat → 1,05 → 2 Stk.
-        assertEquals("2 Stk.", QuantityFormatter.format(result.getValue("onion").toBuy))
+        // Zwiebel: (1 Stk. + 50 g) × 1,5 = 2,25 Stk. → 3 Stk.
+        assertEquals("3 Stk.", QuantityFormatter.format(result.getValue("onion").toBuy))
         assertEquals("2 Dose", QuantityFormatter.format(result.getValue("tomato").toBuy)) // 1,5 Dosen
         assertEquals("225 g", QuantityFormatter.format(result.getValue("rice").toBuy)) // Gramm bleibt exakt
     }
@@ -43,12 +40,6 @@ class ShoppingRoundingTest {
         val recipe = Recipe("r", "R", 3, listOf(RecipeIngredient("a", "egg", bd("1"), MeasureUnit.PIECE)))
         val need = GenerateShoppingListUseCase()(DateRange(day, day), slots, mapOf("r" to recipe), emptyMap()).single()
         assertEquals("2 Stk.", QuantityFormatter.format(need.toBuy)) // nicht 3
-        // Mit zwei Eiern im Vorrat bleibt nichts zu kaufen – auch nicht 0,000001 Stk. → 1 Stk.
-        val covered = GenerateShoppingListUseCase()(
-            DateRange(day, day), slots, mapOf("r" to recipe), emptyMap(),
-            pantry = listOf(PantryItem("egg", Quantity.of(bd("2"), MeasureUnit.PIECE))),
-        ).single()
-        assertTrue(covered.toBuy.isZero())
     }
 
     @Test fun missingEnergyIsNamedAsGap() {

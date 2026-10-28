@@ -7,7 +7,6 @@ import java.time.ZonedDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -146,17 +145,6 @@ class ShoppingTest {
         assertEquals(2, out.size)
     }
 
-    @Test fun pantryIsSubtractedNeverNegative() {
-        val r = recipe("x", 1, Triple("rice", "500", MeasureUnit.GRAM))
-        val slots = listOf(MealSlot("s", today, "F", "x", 1))
-        val out1 = useCase(DateRange.ofDays(today, 1), slots, mapOf("x" to r), ingredients,
-            listOf(PantryItem("rice", Quantity.of(bd("300"), MeasureUnit.GRAM))))
-        assertAmount("200", out1.single().toBuy.baseAmount)
-        val out2 = useCase(DateRange.ofDays(today, 1), slots, mapOf("x" to r), ingredients,
-            listOf(PantryItem("rice", Quantity.of(bd("700"), MeasureUnit.GRAM))))
-        assertAmount("0", out2.single().toBuy.baseAmount)
-    }
-
     @Test fun slotsOutsideRangeIgnored() {
         val r = recipe("x", 1, Triple("rice", "500", MeasureUnit.GRAM))
         val out = useCase(
@@ -188,9 +176,9 @@ class ShoppingTest {
         val g = { s: String -> Quantity.of(bd(s), MeasureUnit.GRAM) }
         val old = listOf(Old("rice|MASS", g("100")), Old("flour|MASS", g("50")), Old("salt|MASS", g("5")))
         val new = listOf(
-            ShoppingNeed("rice", g("200"), g("0"), emptyList()),
-            ShoppingNeed("flour", g("50"), g("0"), emptyList()),
-            ShoppingNeed("sugar", g("10"), g("0"), emptyList()),
+            ShoppingNeed("rice", g("200"), emptyList()),
+            ShoppingNeed("flour", g("50"), emptyList()),
+            ShoppingNeed("sugar", g("10"), emptyList()),
         )
         val d = ShoppingDiff.diff(old, { it.key }, { it.q }, new).associateBy { it.key }
         assertEquals(DiffType.CHANGED, d.getValue("rice|MASS").type)
@@ -199,14 +187,6 @@ class ShoppingTest {
         assertEquals(DiffType.REMOVED, d.getValue("salt|MASS").type)
     }
 
-    @Test fun textExportSkipsCheckedItems() {
-        val s = ShoppingListSnapshot("Einkauf", listOf(
-            ShoppingListSnapshot.SnapshotItem("Reis", Quantity.of(bd("450"), MeasureUnit.GRAM), false, null),
-            ShoppingListSnapshot.SnapshotItem("Salz", null, true, null),
-        ))
-        assertEquals("Einkauf\n- Reis (450 g)", ShoppingListTextFormatter.format(s))
-        assertNotNull(s)
-    }
 }
 
 class AsNeededTest {

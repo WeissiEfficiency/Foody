@@ -43,17 +43,14 @@ class EinkaufsregelnTest {
 
     @Test fun bedarfOhneWasserUndOhneNachBedarf() {
         val slot = MealSlot("s1", heute, "ABENDESSEN", "r1", 2)
-        val bedarf = EinkaufsBedarf.berechnen(DateRange.ofDays(heute, 7), listOf(slot), mapOf("r1" to rezept), zutaten, emptyList())
+        val bedarf = EinkaufsBedarf.berechnen(DateRange.ofDays(heute, 7), listOf(slot), mapOf("r1" to rezept), zutaten)
         assertEquals(listOf("reis"), bedarf.map { it.ingredientId })
         assertEquals(0, bedarf.single().toBuy.baseAmount.compareTo(BigDecimal(200)))
     }
 
-    @Test fun bedarfMitVorratUndAusschluss() {
+    @Test fun bedarfMitAusschluss() {
         val slot = MealSlot("s1", heute, "ABENDESSEN", "r1", 2)
-        val voll = EinkaufsBedarf.berechnen(DateRange.ofDays(heute, 7), listOf(slot), mapOf("r1" to rezept), zutaten,
-            listOf(PantryItem("reis", g(500))))
-        assertTrue(voll.single().toBuy.isZero(), "Bedarf aus Vorrat gedeckt bleibt in der Liste (Vorschau)")
-        assertTrue(EinkaufsBedarf.berechnen(DateRange.ofDays(heute, 7), listOf(slot), mapOf("r1" to rezept), zutaten, emptyList(), setOf("reis")).isEmpty())
+        assertTrue(EinkaufsBedarf.berechnen(DateRange.ofDays(heute, 7), listOf(slot), mapOf("r1" to rezept), zutaten, setOf("reis")).isEmpty())
     }
 
     @Test fun rezeptAufListeAddiertInBasiseinheit() {

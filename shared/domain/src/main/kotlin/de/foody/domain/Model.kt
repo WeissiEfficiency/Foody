@@ -48,11 +48,6 @@ data class MealSlot(
     val servings: Int,
 )
 
-data class PantryItem(
-    val ingredientId: String,
-    val quantity: Quantity,
-)
-
 data class DateRange(val start: LocalDate, val endInclusive: LocalDate) {
     init {
         require(!endInclusive.isBefore(start)) { "Ende liegt vor Start" }

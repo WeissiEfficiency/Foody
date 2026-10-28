@@ -20,7 +20,7 @@ auf dem Branch `v1-server`. Wo unten „wie v1“ steht, verhält sich die V3 be
   müssen, liegen im `SavedStateHandle`.
 - **Domain** (`:domain`): reine Kotlin-Logik, vollständig per JVM-Test abgedeckt.
   - Rechnen: `RecipeScaler`, `UnitConverter`, `NutritionCalculator`
-  - Einkauf: `GenerateShoppingListUseCase`, `ShoppingDiff`, `ShoppingListExporter`
+  - Einkauf: `GenerateShoppingListUseCase`, `ShoppingDiff`, `EinkaufsBedarf`, `RezeptAufListe`
   - Import: `MarkdownRecipeImporter`, `GermanAmounts` (Einheitenwörter, deutsche Zahlen)
   - Zutatennamen: `IngredientCatalog` (Synonyme, „nie einkaufen“, Abteilungs-Schätzung)
   - Kochmodus: `StepIngredientMatcher` (Zutaten + Teilmengen im Schritt), `StepTimerParser` (Zeitangaben)

@@ -379,8 +379,11 @@ Entscheidung 2026-10-28: Die KI-Hilfe wird ein eigenes Projekt nach dem Umstieg.
 - [x] v1-Code entfernen (`ui/`-Pakete, alte Routen); `README.md`, `docs/architecture.md` aktualisieren.
       **Erledigt (2026-10-28):** `:app` (v1) und `:sync-protocol` entfernt, `:app3` ist jetzt `:app`
       (`de.foody.app`, Release mit eigenem Schlüssel, `versionCode` 300), App-Icon der v1 übernommen, CI angepasst.
-- [ ] Vorrats-Regeln aus `docs/domain-rules.md` und `:domain` entfernen (8, 17, 21 anpassen), dazu
-      `MealSuggestions`/`PlanVorschlag`/`PantryCoverage`; Tests nachziehen
+- [x] Vorrats-Regeln aus `docs/domain-rules.md` und `:domain` entfernen (8, 17, 21 anpassen), dazu
+      `MealSuggestions`/`PlanVorschlag`/`PantryCoverage`; Tests nachziehen.
+      **Erledigt (2026-10-28):** dazu `Kochen` (Vorrat abbuchen), `PlanAuswahl` (Planer-Filter der v1), `Export`
+      (Liste als Text) und `PantryItem`; `ShoppingNeed` ohne `fromPantry`. Regel 23 beschreibt jetzt die Woche der V3,
+      die Testtabelle nennt nur noch vorhandene Tests.
 - [x] **APK-Ablage:** `apkNachOpenCloud` auf die V3 übertragen (erst `:app3`, nach dem Umbenennen `:app`), auch für
       „Foody Vorschau“. Ziel je Rechner über `foody.apkZiel` in `local.properties`, z. B.
       `E:/OpenCloud/Persönlich (2)/foody.apk`. Von dort kommt die APK über OpenCloud aufs Handy und aufs Tablet.
