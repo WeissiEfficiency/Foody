@@ -55,4 +55,5 @@ class WocheTestUmgebung(val db: FoodyDatenbank, val uhr: TestUhr = TestUhr(Insta
     val viewModels = ViewModelHalter()
 
     fun vm(saved: SavedStateHandle = SavedStateHandle()) = viewModels.behalten(WocheViewModel(saved, repo, ziel, uhr))
+        .also { viewModels.zusehen(it.woche, it.tagesziel, it.zeigtHeute, it.rezeptAuswahl) }
 }

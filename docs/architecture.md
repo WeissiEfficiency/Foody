@@ -18,8 +18,10 @@ auf dem Branch `v1-server`. Wo unten „wie v1“ steht, verhält sich die V3 be
 - **Oberfläche** (`:feature:*`, `:app`): Compose-Bildschirme mit `@HiltViewModel`; jeder Bildschirm zeichnet einen
   Zustand aus `StateFlow`, Aktionen sind Methodenaufrufe am ViewModel. Eingaben, die ein Prozessende überstehen
   müssen, liegen im `SavedStateHandle`. Bildschirmzustände laufen mit `SolangeSichtbar` (`:core:designsystem`,
-  `WhileSubscribed(5 s)`), damit geschlossene Bildschirme nicht weiterrechnen; Nährwerte und kcal rechnen die
-  Repositories mit `flowOn(rechnen)` (Standard `Dispatchers.Default`, Tests mit festem Ablauf `EmptyCoroutineContext`).
+  `WhileSubscribed(5 s)`), damit geschlossene Bildschirme und die App im Hintergrund nicht weiterrechnen; einzige
+  Ausnahme ist der Kochmodus (`Eagerly`, er hält den Bildschirm an); Tests sehen mit `ViewModelHalter.zusehen` zu.
+  Nährwerte und kcal rechnen die Repositories mit `flowOn(rechnen)` (Standard `Dispatchers.Default`, Tests mit festem
+  Ablauf `EmptyCoroutineContext`).
 - **Domain** (`:domain`): reine Kotlin-Logik, vollständig per JVM-Test abgedeckt.
   - Rechnen: `RecipeScaler`, `UnitConverter`, `NutritionCalculator`
   - Einkauf: `GenerateShoppingListUseCase`, `ShoppingDiff`, `EinkaufsBedarf`, `RezeptAufListe`

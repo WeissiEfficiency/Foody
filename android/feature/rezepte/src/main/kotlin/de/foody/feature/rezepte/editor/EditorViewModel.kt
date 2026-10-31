@@ -11,6 +11,7 @@ import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.Gespeichert
 import de.foody.core.data.rezepte.RezeptEntwurf
 import de.foody.core.data.rezepte.RezeptRepository
+import de.foody.core.designsystem.SolangeSichtbar
 import de.foody.domain.Einordnung
 import de.foody.domain.Gang
 import de.foody.domain.ImportedIngredient
@@ -20,7 +21,6 @@ import de.foody.domain.RezeptEinordnung
 import de.foody.domain.ZutatZeile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -87,13 +87,13 @@ class EditorViewModel @Inject constructor(
 
     val zustand: StateFlow<EditorZustand> = combine(eingaben, katalog, kopf, vorlagen) { e, namen, (geladen, id, hinweis), v ->
         EditorZustand(geladen, id, e, zeilenStatus(e.zutatenText, namen, v), einordnung(e), hinweis)
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, EditorZustand())
+    }.stateIn(viewModelScope, SolangeSichtbar, EditorZustand())
 
     val speichernMoeglich: StateFlow<Boolean> = combine(zustand, gesperrt) { z, sperre -> !sperre && z.geladen && gueltig(z) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+        .stateIn(viewModelScope, SolangeSichtbar, false)
 
     val geaendert: StateFlow<Boolean> = combine(eingaben, original) { e, o -> e != o }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+        .stateIn(viewModelScope, SolangeSichtbar, false)
 
     /** Die Eingaben, wie sie geladen (oder zuletzt gespeichert) wurden. */
     val ursprung: StateFlow<EditorEingaben> = original.asStateFlow()
