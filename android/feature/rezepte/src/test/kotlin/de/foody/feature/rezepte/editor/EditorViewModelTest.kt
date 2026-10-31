@@ -15,6 +15,7 @@ import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.testDatenbank
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -52,7 +53,7 @@ class EditorViewModelTest {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         db = testDatenbank()
         val ablage = FotoAblage(RuntimeEnvironment.getApplication())
-        vm = halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+        vm = halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage, EmptyCoroutineContext) { 1_000L }, db, ablage))
     }
 
     @After
@@ -119,18 +120,18 @@ class EditorViewModelTest {
         db.bestand()
         val ablage = FotoAblage(RuntimeEnvironment.getApplication())
         val h = SavedStateHandle()
-        val vor = halter.behalten(EditorViewModel(h, RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+        val vor = halter.behalten(EditorViewModel(h, RezeptRepository(db, ablage, EmptyCoroutineContext) { 1_000L }, db, ablage))
         vor.laden("r1")
         vor.aendern { it.copy(name = "Reistopf neu", zutatenText = "400 g Reis\n1 Prise Salz") }
 
-        val nach = halter.behalten(EditorViewModel(h.nachProzessende(), RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+        val nach = halter.behalten(EditorViewModel(h.nachProzessende(), RezeptRepository(db, ablage, EmptyCoroutineContext) { 1_000L }, db, ablage))
         nach.laden("r1")
         assertEquals("Reistopf neu", nach.zustand.first().eingaben.name)
         assertEquals("400 g Reis\n1 Prise Salz", nach.zustand.first().eingaben.zutatenText)
         assertTrue(nach.geaendert.first())
         assertEquals("400 g Reis", nach.ursprung.value.zutatenText)
 
-        val neu = halter.behalten(EditorViewModel(h.nachProzessende(), RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+        val neu = halter.behalten(EditorViewModel(h.nachProzessende(), RezeptRepository(db, ablage, EmptyCoroutineContext) { 1_000L }, db, ablage))
         neu.laden(null)
         assertEquals("", neu.zustand.first().eingaben.name)
     }
@@ -151,7 +152,7 @@ class EditorViewModelTest {
         }
         repeat(2) { runde ->
             val ablage = FotoAblage(RuntimeEnvironment.getApplication())
-            val editor = halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+            val editor = halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage, EmptyCoroutineContext) { 1_000L }, db, ablage))
             editor.laden("r2")
             editor.aendern { it.copy(schritteText = "Schritt $runde") }
             assertIs<Gespeichert.Ok>(editor.speichern())

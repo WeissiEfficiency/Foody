@@ -21,6 +21,7 @@ import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.pruefeNichtsAbgeschnitten
 import de.foody.feature.rezepte.testDatenbank
 import de.foody.feature.rezepte.warteAufText
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -49,7 +50,7 @@ class EditorScreenTest {
     // ViewModel außerhalb der Komposition: übersteht den Neuaufbau wie ein Hilt-ViewModel
     private val vm by lazy {
         val ablage = FotoAblage(RuntimeEnvironment.getApplication())
-        halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+        halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage, EmptyCoroutineContext) { 1_000L }, db, ablage))
     }
 
     @Before

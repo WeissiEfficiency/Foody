@@ -16,6 +16,7 @@ import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.pruefeNichtsAbgeschnitten
 import de.foody.feature.rezepte.testDatenbank
 import de.foody.feature.rezepte.warteAufText
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -53,7 +54,7 @@ class RezeptListeScreenTest {
     }
 
     private fun zeigen(schrift200: Boolean = false) {
-        val vm = halter.behalten(RezeptListeViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1L }))
+        val vm = halter.behalten(RezeptListeViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1L }))
         compose.setContent {
             FoodyTheme {
                 val inhalt = @androidx.compose.runtime.Composable {

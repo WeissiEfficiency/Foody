@@ -29,6 +29,7 @@ import de.foody.feature.heute.pruefeNichtsAbgeschnitten
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testScan
 import de.foody.feature.heute.warteAufText
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -67,7 +68,7 @@ class EintragenBlattPackungTest {
 
     private fun zeigen(scan: PackungScan, schrift200: Boolean = false): EintragenViewModel {
         // ViewModel außerhalb der Komposition, wie in der App
-        val vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db), TagebuchRepository(db) { 1L }, db, scan))
+        val vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, scan))
         val auftrag = BlattAuftrag(Mahlzeit.FRUEHSTUECK, heute)
         compose.setContent {
             FoodyTheme {
