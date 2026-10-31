@@ -37,7 +37,41 @@ erste Konto an (ohne Sonderrechte). Danach beide Variablen leeren und mit `docke
 - KI-Hilfe (ab Phase 7): `FOODY_KI_KEY` in `.env` setzen (leer = aus), Kontingent je Konto und Stunde mit
   `FOODY_KI_PRO_STUNDE` (Standard 30). Bisher meldet der Server nur, ob ein Schlüssel eingerichtet ist.
 
-Weitere Admin-Befehle: `reset-password`, `compact` (siehe `foody-admin` ohne Argumente).
+Weitere Admin-Befehle (`docker compose exec foody-server foody-admin …`, Übersicht ohne Argumente):
+
+- `geraete`: alle Geräte mit letzter Anfrage; `abmelden-ungenutzt <tage>` widerruft Geräte, die sich so lange nicht
+  gemeldet haben (Tokens laufen sonst nie ab).
+- `konto-loeschen <name>`: nur für Konten ohne Datensätze und Fotos.
+- `reset-password <name>`, `compact`, `pruefen <datei>` (Sicherung prüfen), `wiederhergestellt` (siehe unten).
+
+### Sicherung einspielen
+
+Befehle im Ordner `server/`; die Volume-Namen (hier `foody_foody-data`, `foody_foody-photos`) vorher mit
+`docker volume ls` prüfen, `<sicherung>` ist der Ordner aus `FOODY_BACKUP_DIR`.
+
+1. Server stoppen: `docker compose stop foody-server`.
+2. Jetzigen Stand aufheben: `docker compose run --rm --no-deps foody-server admin backup /data/vor-einspielen.db`.
+3. Sicherung ins Volume legen und prüfen (Ausgabe `ok`):
+   ```sh
+   docker run --rm --user 0 --entrypoint sh -v foody_foody-data:/data -v <sicherung>:/einspielen:ro foody-server:local -c \
+     'cp /einspielen/foody-<JJJJ-MM-TT-HHMM>.db /data/einspielen.db && chown 10001:10001 /data/einspielen.db'
+   docker compose run --rm --no-deps foody-server admin pruefen /data/einspielen.db
+   ```
+4. Einspielen und WAL-Reste entfernen:
+   ```sh
+   docker run --rm --user 0 --entrypoint sh -v foody_foody-data:/data foody-server:local -c \
+     'rm -f /data/foody.db-wal /data/foody.db-shm && mv /data/einspielen.db /data/foody.db'
+   ```
+5. Fotos zurückkopieren (vorhandene bleiben, Namen sind Prüfsummen):
+   ```sh
+   docker run --rm --user 0 --entrypoint sh -v foody_foody-photos:/data/photos -v <sicherung>/fotos:/einspielen:ro \
+     foody-server:local -c 'cp -rn /einspielen/. /data/photos/ && chown -R 10001:10001 /data/photos'
+   ```
+6. **Vor dem Start:** `docker compose run --rm --no-deps foody-server admin wiederhergestellt`. Danach gleichen alle
+   Geräte beim nächsten Sync voll ab und senden zurück, was nach der Sicherung entstanden ist. Ohne diesen Schritt
+   gingen Änderungen der Geräte seit der Sicherung verloren. Stammt die Sicherung von einer älteren Version, stellt der
+   Befehl die Datenbank vorher um (mit `vor-migration-*.db` wie beim Start).
+7. Starten: `docker compose up -d`.
 
 ## Test-Server (Entwicklung)
 

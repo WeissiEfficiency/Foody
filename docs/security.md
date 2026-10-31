@@ -50,7 +50,8 @@ Server und Protokoll (`:server`, `:api-protocol`); Fremdeingaben sind hier alle 
 - **Authentifizierung:** Jede Sync- und Foto-Route verlangt `Authorization: Bearer <Gerätetoken>` (32 Zufallsbytes,
   serverseitig nur als SHA-256 gespeichert); widerrufene Geräte werden abgewiesen. Passwörter: Argon2id, Mindestlänge
   10 Zeichen; „unbekannter Benutzer“ und „falsches Passwort“ sehen gleich aus. Keine Registrierung über die API;
-  Konten legt nur `foody-admin konto-anlegen` an.
+  Konten legt nur `foody-admin konto-anlegen` an. Tokens laufen nicht von selbst ab: `foody-admin geraete` zeigt die
+  letzte Anfrage je Gerät, `abmelden-ungenutzt <tage>` widerruft lange ungenutzte.
 - **Konto-Trennung:** Die Konto-ID kommt immer aus dem Gerät, nie aus der Anfrage; Datensätze und Fotos
   (`photos/<Konto>/<sha256>.jpg`) sind nur im eigenen Konto les- und schreibbar, auch nicht per geratener ID.
 - **Drosselung:** 5 Fehlversuche je IP und Benutzername sperren den Login 15 Minuten (`429 throttled`, Zustand

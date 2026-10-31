@@ -97,6 +97,8 @@ jobs:
             if [ "$i" = 30 ]; then docker logs foody; exit 1; fi
             sleep 2
           done
+          # Der Docker-Healthcheck fragt mit curl im Container (D5)
+          docker exec foody curl -fsS http://127.0.0.1:8080/health
           # Protokoll 3: Login liefert Token und Konto-ID.
           curl -fsS -H 'X-Foody-Protocol: 3' -H 'Content-Type: application/json' \
             -d '{"username":"admin","password":"ci-passwort-123","deviceName":"ci"}' \

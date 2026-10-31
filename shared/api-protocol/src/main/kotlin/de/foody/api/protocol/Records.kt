@@ -59,5 +59,24 @@ data class PushResult(
 @Serializable
 data class PushResponse(val results: List<PushResult>)
 
+/**
+ * Antwort auf `GET /sync/pull`. [verloren]: Revisionen, die der Server nach dem Einspielen einer Sicherung nicht mehr
+ * hat (`foody-admin wiederhergestellt`); fehlt, solange nie eine Sicherung eingespielt wurde.
+ */
 @Serializable
-data class PullResponse(val records: List<SyncRecord>, val nextCursor: Long, val hasMore: Boolean)
+data class PullResponse(
+    val records: List<SyncRecord>,
+    val nextCursor: Long,
+    val hasMore: Boolean,
+    val verloren: VerloreneRevisionen? = null,
+)
+
+/**
+ * Revisionen zwischen [nach] und [vor] (beide ausgenommen) hat der Server verloren: Er wurde auf den Stand [nach]
+ * zurückgesetzt und vergibt neue Revisionen erst ab [vor]. Ein Gerät, das einen Datensatz mit einer solchen Revision
+ * kennt, hat einen neueren Stand als der Server und sendet ihn erneut.
+ */
+@Serializable
+data class VerloreneRevisionen(val nach: Long, val vor: Long) {
+    operator fun contains(rev: Long): Boolean = rev > nach && rev < vor
+}

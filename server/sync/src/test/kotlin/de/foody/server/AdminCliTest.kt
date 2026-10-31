@@ -21,6 +21,7 @@ import java.io.PrintStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.sql.DriverManager
+import java.time.Duration
 import kotlin.io.path.listDirectoryEntries
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -126,6 +127,29 @@ class AdminCliTest {
     }
 
     @Test
+    fun pruefenErkenntHeileUndKaputteSicherung() = testServer { env ->
+        val ordner = Files.createTempDirectory("foody-pruefen")
+        try {
+            env.deps.accounts.createUser("stefan", "geheimgeheim")
+            val heil = ordner.resolve("heil.db")
+            assertEquals(0, cli(env.deps, listOf("backup", heil.toString())).first)
+            assertEquals(0 to "ok", cli(env.deps, listOf("pruefen", heil.toString())).let { it.first to it.second.trim() })
+
+            // Seiten hinter dem Kopf mit Unsinn überschreiben: Die Datei öffnet sich noch, ist aber kaputt.
+            val bytes = Files.readAllBytes(heil)
+            for (i in 4096 until bytes.size) bytes[i] = 0x5A
+            val kaputt = Files.write(ordner.resolve("kaputt.db"), bytes)
+            val (code, output) = cliErr(env.deps, listOf("pruefen", kaputt.toString()))
+            assertEquals(1, code)
+            assertEquals(1, output.trim().lines().size, output)
+
+            assertEquals(1, cliErr(env.deps, listOf("pruefen", ordner.resolve("fehlt.db").toString())).first)
+        } finally {
+            ordner.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun backupIntoMissingDirectoryReportsOneLineError() = testServer { env ->
         val target = Files.createTempDirectory("foody-missing").resolve("nope").resolve("x.db")
         val (code, output) = cliErr(env.deps, listOf("backup", target.toString()))
@@ -138,6 +162,94 @@ class AdminCliTest {
         val (code, output) = cli(env.deps, listOf("compact"))
         assertEquals(0, code)
         assertEquals("0", output.trim())
+    }
+
+    @Test
+    fun geraeteListetAlleGeraete() = testServer { env ->
+        val stefan = env.deps.accounts.createUser("stefan", "geheimgeheim")
+        env.deps.accounts.createDevice(stefan, "Handy")
+        env.clock.advance(Duration.ofDays(2))
+        val tablet = env.deps.accounts.createDevice(stefan, "Tablet")
+        env.deps.accounts.abmelden(assertNotNull(env.deps.accounts.deviceForToken(tablet)).deviceId)
+
+        val (code, output) = cli(env.deps, listOf("geraete"))
+        assertEquals(0, code)
+        assertEquals(
+            listOf("stefan · Handy · zuletzt 2026-10-04 · aktiv", "stefan · Tablet · zuletzt 2026-10-06 · widerrufen 2026-10-06"),
+            output.trim().lines(),
+        )
+    }
+
+    @Test
+    fun abmeldenUngenutztWiderruftNurAlteGeraete() = testServer { env ->
+        val stefan = env.deps.accounts.createUser("stefan", "geheimgeheim")
+        val alt = env.deps.accounts.createDevice(stefan, "Handy alt")
+        env.clock.advance(Duration.ofDays(40))
+        val neu = env.deps.accounts.createDevice(stefan, "Handy neu")
+
+        val (code, output) = cli(env.deps, listOf("abmelden-ungenutzt", "30"))
+        assertEquals(0, code)
+        assertEquals(listOf("Widerrufen: stefan · Handy alt · zuletzt 2026-10-04", "1 Gerät widerrufen"), output.trim().lines())
+        assertEquals(HttpStatusCode.Unauthorized, client.get("/api/v3/sync/pull") { protocol(); bearerAuth(alt) }.status)
+        assertEquals(HttpStatusCode.OK, client.get("/api/v3/sync/pull") { protocol(); bearerAuth(neu) }.status)
+        // Ein zweiter Lauf findet nichts mehr
+        assertEquals(listOf("0 Geräte widerrufen"), cli(env.deps, listOf("abmelden-ungenutzt", "30")).second.trim().lines())
+    }
+
+    @Test
+    fun abmeldenUngenutztBrauchtTage() = testServer { env ->
+        for (args in listOf(listOf("abmelden-ungenutzt"), listOf("abmelden-ungenutzt", "x"), listOf("abmelden-ungenutzt", "0"))) {
+            assertEquals(2, cliErr(env.deps, args).first, args.toString())
+        }
+    }
+
+    @Test
+    fun kontoLoeschenLoeschtLeeresKonto() = testServer { env ->
+        val ben = env.deps.accounts.createUser("ben", "geheimgeheim")
+        val token = env.deps.accounts.createDevice(ben, "Handy")
+
+        val (code, output) = cli(env.deps, listOf("konto-loeschen", "BEN"))
+        assertEquals(0, code)
+        assertEquals("Konto BEN gelöscht", output.trim())
+        assertEquals(HttpStatusCode.Unauthorized, client.login("ben", "geheimgeheim").status)
+        assertEquals(HttpStatusCode.Unauthorized, client.get("/api/v3/sync/pull") { protocol(); bearerAuth(token) }.status)
+        assertEquals("", cli(env.deps, listOf("geraete")).second.trim())
+        // Der Name ist danach wieder frei
+        assertEquals(0, cli(env.deps, listOf("konto-anlegen", "ben")).first)
+    }
+
+    @Test
+    fun kontoLoeschenLaesstKontoMitDatenStehen() = testServer { env ->
+        val (token, _) = env.setupKonto()
+        val name = env.deps.db.tx { c ->
+            c.createStatement().use { s -> s.executeQuery("SELECT username FROM user").use { it.next(); it.getString(1) } }
+        }
+        env.deps.db.tx { c ->
+            c.createStatement().use { s ->
+                s.executeUpdate(
+                    "INSERT INTO sync_record (konto_id, type, id, rev, deleted, payload, updated_at) " +
+                        "SELECT id, 'recipe', 'r1', 1, 1, NULL, 0 FROM user",
+                )
+            }
+        }
+
+        val (code, output) = cliErr(env.deps, listOf("konto-loeschen", name))
+        assertEquals(1, code)
+        assertEquals("Konto $name hat Daten – nicht gelöscht", output.trim())
+        assertEquals(HttpStatusCode.OK, client.get("/api/v3/sync/pull") { protocol(); bearerAuth(token) }.status)
+        assertEquals(1, cliErr(env.deps, listOf("konto-loeschen", "niemand")).first)
+    }
+
+    @Test
+    fun kontoLoeschenLaesstKontoMitFotosStehen() = testServer { env ->
+        val ben = env.deps.accounts.createUser("ben", "geheimgeheim")
+        val ordner = Files.createDirectories(env.photoDir.resolve(ben))
+        Files.write(ordner.resolve("${"a".repeat(64)}.jpg"), byteArrayOf(1))
+
+        val (code, output) = cliErr(env.deps, listOf("konto-loeschen", "ben"))
+        assertEquals(1, code)
+        assertEquals("Konto ben hat Daten – nicht gelöscht", output.trim())
+        assertEquals(HttpStatusCode.OK, client.login("ben", "geheimgeheim").status)
     }
 
     /** Legt eine Datenbank auf Version 1 (vor dem Umstieg auf Konten) an und liefert die Konfiguration dazu. */
@@ -181,6 +293,21 @@ class AdminCliTest {
         }
     }
 
+    /** Nach dem Einspielen einer alten Sicherung stellt `wiederhergestellt` sie selbst um – vor dem ersten Sync. */
+    @Test
+    fun wiederhergestelltMigriertMitSicherung() {
+        val ordner = Files.createTempDirectory("foody-admin-alt")
+        try {
+            val config = v1Datenbank(ordner)
+            val (code, _, err) = admin(config, listOf("wiederhergestellt"))
+            assertEquals(0, code, err)
+            assertEquals(Migrations.all.size, userVersion(config.dbPath))
+            assertEquals(1, ordner.listDirectoryEntries("vor-migration-*").size)
+        } finally {
+            ordner.toFile().deleteRecursively()
+        }
+    }
+
     @Test
     fun adminBackupAufAlterVersion() {
         val ordner = Files.createTempDirectory("foody-admin-alt")
@@ -217,7 +344,9 @@ class AdminCliTest {
     fun unknownCommandShowsHelp() = testServer { env ->
         val (code, output) = cliErr(env.deps, listOf("unsinn"))
         assertEquals(2, code)
-        for (name in listOf("reset-password", "konto-anlegen", "backup", "compact")) assertTrue(output.contains(name), name)
+        for (name in listOf("reset-password", "konto-anlegen", "konto-loeschen", "geraete", "abmelden-ungenutzt", "backup", "pruefen", "compact")) {
+            assertTrue(output.contains(name), name)
+        }
         assertEquals(2, cli(env.deps, emptyList()).first)
         assertEquals(2, cli(env.deps, listOf("backup")).first)
     }

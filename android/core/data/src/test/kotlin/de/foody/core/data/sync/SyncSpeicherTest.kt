@@ -12,6 +12,7 @@ import de.foody.api.protocol.Protocol
 import de.foody.api.protocol.RecipePayload
 import de.foody.api.protocol.RecordType
 import de.foody.api.protocol.SyncRecord
+import de.foody.api.protocol.VerloreneRevisionen
 import de.foody.api.protocol.decode
 import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.db.EinkaufsartikelEntity
@@ -771,6 +772,61 @@ class SyncSpeicherTest {
         assertNull(db.zutatDao().nachId("z2"))
         assertTrue(dao.outbox().isEmpty())
         assertEquals(80L, speicher.zustand().cursor)
+    }
+
+    // --- Voll-Abgleich nach dem Einspielen einer Server-Sicherung (D4) ---
+
+    /** Der Server steht wieder auf Revision 5; was das Gerät von 6 bis vor dem Sprung kennt, fehlt ihm. */
+    private val verloren = VerloreneRevisionen(nach = 5, vor = 1_000_000_005)
+
+    @Test
+    fun vollabgleichNachWiederherstellungSendetNeuereStaendeErneut() = runTest {
+        aktiv()
+        speicher.anwenden(
+            listOf(
+                zutatRecord("z1", "Mehl", rev = 9), // nach der Sicherung geändert
+                zutatRecord("z2", "Zucker", rev = 7), // nach der Sicherung angelegt
+                zutatRecord("z3", "Salz", rev = 3), // unverändert in der Sicherung
+                zutatRecord("z4", "Hefe", rev = 2), // vor der Sicherung gelöscht (Löschmarkierung kompaktiert)
+                zutatRecord("z5", "Öl", rev = 8), // nach der Sicherung wiederbelebt
+            ),
+            9,
+        )
+
+        speicher.vollabgleich(
+            listOf(
+                zutatRecord("z1", "Mehl alt", rev = 3),
+                zutatRecord("z3", "Salz", rev = 3),
+                zutatRecord("z5", "Öl", rev = 4).copy(deleted = true, payload = null),
+            ),
+            cursor = 1_000_000_005,
+            verloren = verloren,
+        )
+
+        assertEquals("Mehl", db.zutatDao().nachId("z1")?.canonicalName)
+        assertNotNull(db.zutatDao().nachId("z2"))
+        assertNotNull(db.zutatDao().nachId("z3"))
+        assertNull(db.zutatDao().nachId("z4"))
+        assertNotNull(db.zutatDao().nachId("z5"))
+        assertEquals(setOf("z1", "z2", "z5"), dao.outbox().filter { !it.deleted }.map { it.recordId }.toSet())
+        assertEquals(1_000_000_005L, speicher.zustand().cursor)
+        // Gesendet wird auf dem eigenen Stand: Der Server nimmt ihn an, weil er neuer ist als seiner
+        assertEquals(mapOf("z1" to 9L, "z2" to 7L, "z5" to 8L), paket().associate { it.record.id to it.record.baseRev })
+    }
+
+    @Test
+    fun vollabgleichNachWiederherstellungSendetLoeschungErneut() = runTest {
+        aktiv()
+        speicher.anwenden(listOf(zutatRecord("z1", "Mehl", rev = 3)), 3)
+        speicher.anwenden(listOf(zutatRecord("z1", "Mehl", rev = 8).copy(deleted = true, payload = null)), 8)
+
+        speicher.vollabgleich(listOf(zutatRecord("z1", "Mehl", rev = 3)), cursor = 1_000_000_005, verloren = verloren)
+
+        assertNull(db.zutatDao().nachId("z1"))
+        assertEquals(listOf(Triple("ingredient", "z1", true)), dao.outbox().map { Triple(it.type, it.recordId, it.deleted) })
+        val gesendet = paket().single().record
+        assertTrue(gesendet.deleted)
+        assertEquals(8L, gesendet.baseRev)
     }
 
     // --- Trennen, Fehler ---

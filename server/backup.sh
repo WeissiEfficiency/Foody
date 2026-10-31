@@ -5,6 +5,8 @@
 #
 # Aufruf im Ordner server/:   FOODY_BACKUP_DIR=/pfad/zum/sync-ordner ./backup.sh
 # Nächtlich per Cron, z. B.:  15 3 * * * cd /pfad/zu/Foody/server && FOODY_BACKUP_DIR=/pfad ./backup.sh >> /var/log/foody-backup.log 2>&1
+# `foody-admin backup` prüft die Kopie mit `PRAGMA integrity_check`; ist sie kaputt, bricht das Skript ab und die
+# Sicherungen der Vortage bleiben. Einspielen: server/README.md, Abschnitt „Sicherung einspielen“.
 set -eu
 
 ziel="${FOODY_BACKUP_DIR:?FOODY_BACKUP_DIR fehlt: Zielordner der Sicherung}"

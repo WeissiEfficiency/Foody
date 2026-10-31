@@ -22,6 +22,6 @@ RUN printf '#!/bin/sh\nexec /opt/foody/bin/foody-server admin "$@"\n' > /usr/loc
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75"
 USER 10001
 EXPOSE 8080
-# Jede Prüfung startet eine JVM – daher nur alle 60 s
-HEALTHCHECK --interval=60s --timeout=10s --start-period=30s CMD ["/opt/foody/bin/foody-server","healthcheck"]
+# curl bringt das Basis-Image mit: keine zweite JVM je Prüfung (D5)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s CMD curl -fsS "http://127.0.0.1:${FOODY_PORT:-8080}/health" > /dev/null || exit 1
 ENTRYPOINT ["/opt/foody/bin/foody-server"]

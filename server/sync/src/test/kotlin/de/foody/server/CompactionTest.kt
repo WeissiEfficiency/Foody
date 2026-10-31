@@ -40,6 +40,21 @@ class CompactionTest {
         assertEquals(HttpStatusCode.OK, client.pullRaw(token, "?since=2").status)
     }
 
+    /** N1: Der Cursor nach dem vollen Abgleich liegt hinter der Kompaktierung, sonst folgte bei jedem Lauf wieder `410`. */
+    @Test
+    fun vollerAbgleichNachKompaktierungEndetAufAktuellemStand() = testServer { env ->
+        val (token, _) = env.setupKonto()
+        client.pushOk(token, listOf(ingredient("i1", "Mehl"), ingredient("i2", "Salz")))
+        client.pushOk(token, listOf(deletion("i1")))
+        env.clock.advance(Duration.ofDays(91))
+        assertEquals(1, Compactor(env.deps.db, env.clock).run())
+
+        val voll = client.pull(token, 0)
+        assertEquals(listOf("i2"), voll.records.map { it.id })
+        assertEquals(3, voll.nextCursor)
+        assertEquals(HttpStatusCode.OK, client.pullRaw(token, "?since=${voll.nextCursor}").status)
+    }
+
     @Test
     fun recentTombstonesStay() = testServer { env ->
         val (token, _) = env.setupKonto()
