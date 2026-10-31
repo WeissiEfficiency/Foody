@@ -1,5 +1,6 @@
 package de.foody.core.data.db
 
+import android.database.sqlite.SQLiteDatabase
 import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -80,12 +81,17 @@ class MigrationTest {
     @Test
     fun aeltereVersionScheitert() {
         // Wie auf dem Handy: Die v1 (Room, JournalMode.AUTOMATIC) hat foody.db im WAL-Modus angelegt. Sonst stellt
-        // Room beim Öffnen den Dateikopf auf WAL um – eine Änderung, die mit den Daten nichts zu tun hat.
-        helper.createDatabase(DB, 8).use { db ->
-            db.execSQL("INSERT INTO recipe (id, name, defaultServings, tags, createdAt, updatedAt, version, favorite) VALUES ('r1', 'Suppe', 2, '', 1, 1, 1, 0)")
-            db.query("PRAGMA journal_mode = WAL").use { c -> c.moveToFirst(); assertEquals("wal", c.getString(0)) }
-        }
+        // Room beim Öffnen den Dateikopf auf WAL um – eine Änderung, die mit den Daten nichts zu tun hat. Das Schema 8
+        // ist nicht mehr eingecheckt; Room prüft vor allem anderen die Version, eine Tabelle mit Daten genügt.
+        kontext.deleteDatabase(DB)
         val datei = kontext.getDatabasePath(DB)
+        datei.parentFile?.mkdirs()
+        SQLiteDatabase.openOrCreateDatabase(datei, null).use { db ->
+            db.rawQuery("PRAGMA journal_mode = WAL", null).use { c -> c.moveToFirst(); assertEquals("wal", c.getString(0)) }
+            db.execSQL("CREATE TABLE recipe (id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL)")
+            db.execSQL("INSERT INTO recipe (id, name) VALUES ('r1', 'Suppe')")
+            db.version = 8
+        }
         val vorher = pruefsummen(datei)
 
         val room = baueDatenbank(kontext, DB)
