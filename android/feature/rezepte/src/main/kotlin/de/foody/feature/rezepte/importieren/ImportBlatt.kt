@@ -25,7 +25,8 @@ private val TYPEN = arrayOf("text/*", "application/octet-stream")
 
 /**
  * Markdown-Import als Blatt: „Dateien wählen“ (mehrere) oder „Ordner wählen“ über das Android-Dateisystem (auch die
- * OpenCloud-App), Fortschritt, danach die Zusammenfassung. Während des Imports schließt Wischen das Blatt nicht ab.
+ * OpenCloud-App), Fortschritt, danach die Zusammenfassung. „Portionen nachtragen“ liest einen Ordner nur für
+ * [de.foody.core.data.rezeptimport.PortionenNachtrag]. Während des Imports schließt Wischen das Blatt nicht ab.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,6 +36,7 @@ fun ImportBlatt(onSchliessen: () -> Unit, vm: ImportViewModel = hiltViewModel())
         if (uris.isNotEmpty()) vm.dateien(uris)
     }
     val ordner = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { baum -> baum?.let(vm::ordner) }
+    val nachtragOrdner = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { baum -> baum?.let(vm::portionen) }
     val schliessen = {
         vm.zuruecksetzen()
         onSchliessen()
@@ -53,6 +55,11 @@ fun ImportBlatt(onSchliessen: () -> Unit, vm: ImportViewModel = hiltViewModel())
                     )
                     FoodyKnopf("Dateien wählen", { dateien.launch(TYPEN) }, Modifier.fillMaxWidth())
                     FoodyKnopf("Ordner wählen", { ordner.launch(null) }, Modifier.fillMaxWidth(), art = KnopfArt.UMRISS)
+                    Text(
+                        "Früher importierte Rezepte mit geschätzten Portionen bekommen die Portionenzahl aus ihrer Datei; Mengen bleiben.",
+                        style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext,
+                    )
+                    FoodyKnopf("Portionen nachtragen", { nachtragOrdner.launch(null) }, Modifier.fillMaxWidth(), art = KnopfArt.TEXT)
                 }
                 is ImportZustand.Laeuft -> Text(
                     if (s.gesamt == 0) "Dateien werden gelesen …" else "Importiere ${s.fertig} von ${s.gesamt} …",
@@ -60,6 +67,10 @@ fun ImportBlatt(onSchliessen: () -> Unit, vm: ImportViewModel = hiltViewModel())
                 )
                 is ImportZustand.Fertig -> {
                     Text(zusammenfassung(s.ergebnis), style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
+                    FoodyKnopf("Fertig", schliessen, Modifier.fillMaxWidth())
+                }
+                is ImportZustand.NachtragFertig -> {
+                    Text(nachtragText(s.ergebnis), style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
                     FoodyKnopf("Fertig", schliessen, Modifier.fillMaxWidth())
                 }
             }
