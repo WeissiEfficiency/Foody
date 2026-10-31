@@ -81,7 +81,7 @@ Reihenfolge wie im Gesamt-Review empfohlen; jede Korrektur mit einem Test, der v
 
 | ID | Was | Warum jetzt |
 |---|---|---|
-| **W1** | Einkauf: Einheit je Zutat unabhängig von der Reihenfolge der Planzeilen wählen (`Shopping.kt:53`), Regel 7/10 in `docs/domain-rules.md` | Gekauftes erscheint nach einer Planänderung wieder als „neu“ – bei Zwiebel, Ei, Knoblauch der Normalfall |
+| ✅ **W1** | Einkauf: Einheit je Zutat unabhängig von der Reihenfolge der Planzeilen wählen (`Shopping.kt:53`), Regel 7/10 in `docs/domain-rules.md`. **Erledigt:** feste Rangfolge Stück → Packung → Dose → Gewicht → Volumen (Regel 7) | Gekauftes erscheint nach einer Planänderung wieder als „neu“ – bei Zwiebel, Ei, Knoblauch der Normalfall |
 | **W2** | Sync: abgelehnte Datensätze unter Einstellungen → Konto anzeigen (`SyncDao.probleme()` ist schon da), fehlgeschlagene Abholungen wiederholen, bei vollem Speicher abbrechen | Datensätze bleiben still auf einem Gerät liegen; nach dem Import von 435 Rezepten wahrscheinlicher |
 | **W3 + W4** | Nährwerte nicht auf dem Haupt-Thread: `flowOn(rechnen)` in `HeuteRepository.kt:44`, `RezeptRepository.kt:38/51`, Rezept-Flow teilen; `WhileSubscribed(5_000)` statt `Eagerly` in `EintragenViewModel`/`EditorViewModel`, fester Schlüssel für den Tablet-Editor | Mit jetzt 296 Rezepten und 494 Zutaten spürbar; vorher einmal mit dem Baseline-Profil messen (Start, Wechsel auf „Heute“), damit der Gewinn belegt ist |
 | N1 | Server: nach `compact` kein Voll-Download bei jedem Start (`SyncService.kt:43`) | Akku/Datenvolumen |
