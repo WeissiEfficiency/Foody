@@ -3,6 +3,7 @@ package de.foody.feature.rezepte.detail
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -221,6 +222,19 @@ class RezeptDetailScreenTest {
         zeigen(schrift200 = true)
         compose.warteAufText("Reispfanne")
         compose.pruefeNichtsAbgeschnitten()
+    }
+
+    @Test
+    fun schrift200LangerNameImKopf() {
+        // Kopf wächst mit dem Namen statt 260 dp fest: nichts abgeschnitten, der Name liegt nicht unter „Zurück“ (N5)
+        val name = "Gebratener Reis mit Gemüse, Ei und Frühlingszwiebeln nach Art des Hauses"
+        runBlocking { db.rezeptDao().upsert(db.rezeptDao().nachId("r1")!!.copy(name = name)) }
+        zeigen(schrift200 = true)
+        compose.warteAufText(name)
+        compose.pruefeNichtsAbgeschnitten()
+        val zurueck = compose.onNodeWithContentDescription("Zurück").getUnclippedBoundsInRoot()
+        val titel = compose.onNodeWithText(name).getUnclippedBoundsInRoot()
+        assertTrue(titel.top >= zurueck.bottom, "Name ab ${titel.top}, Zurück bis ${zurueck.bottom}")
     }
 
     @Test

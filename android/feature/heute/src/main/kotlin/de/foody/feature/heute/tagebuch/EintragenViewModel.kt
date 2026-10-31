@@ -22,6 +22,7 @@ import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
 import de.foody.feature.heute.mahlzeitNachUhrzeit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.update
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 enum class EintragenWeg { REZEPT, ZUTAT, PLAN, FREI }
@@ -222,10 +224,22 @@ class EintragenViewModel @Inject constructor(
 
     private fun vorhandene(name: String): String? = zutatMitNamen(katalog.value, name)?.canonicalName
 
-    /** Speichert nach dem gewählten Weg; `null`, wenn die Eingaben ungültig sind oder Rezept/Zutat/Plan fehlen. */
+    /**
+     * Speichert nach dem gewählten Weg; `null`, wenn die Eingaben ungültig sind oder Rezept/Zutat/Plan fehlen. Das
+     * Schreiben läuft zu Ende, auch wenn das Blatt mittendrin gedreht wird; nur ein Fehler gibt „Speichern“ wieder frei.
+     */
     suspend fun speichern(): String? {
         val e = eingaben.value
         if (!gueltig(e) || !gesperrt.compareAndSet(expect = false, update = true)) return null
+        var fertig = false
+        try {
+            return withContext(NonCancellable) { schreiben(e).also { fertig = true } }
+        } finally {
+            if (!fertig) gesperrt.value = false
+        }
+    }
+
+    private suspend fun schreiben(e: Eingaben): String? {
         val id = when (e.weg) {
             EintragenWeg.REZEPT -> tagebuch.ausRezept(e.datum, e.mahlzeit, e.rezeptId!!, zahl(e.portionen)!!)
             EintragenWeg.ZUTAT -> tagebuch.ausZutat(e.datum, e.mahlzeit, e.zutatId!!, zahl(e.menge)!!, e.einheit)

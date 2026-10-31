@@ -16,6 +16,7 @@ import de.foody.domain.MeasureUnit
 import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.testDatenbank
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.test.assertFails
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -69,6 +70,22 @@ class EditorViewModelTest {
     private suspend fun neu(name: String = "Bowl", zutaten: String = "200 g Reis") {
         vm.laden(null)
         vm.aendern { it.copy(name = name, zutatenText = zutaten) }
+    }
+
+
+    /** Schreibzugriffe scheitern (wie bei einem Datenbankfehler), Lesen geht weiter. */
+    private fun nurLesen(an: Boolean) = db.openHelper.writableDatabase.query("PRAGMA query_only = ${if (an) 1 else 0}").close()
+
+    @Test
+    fun fehlerBeimSpeichernGibtSpeichernFrei() = runTest {
+        // Scheitert das Schreiben, bleibt „Speichern“ nicht gesperrt (N2)
+        db.bestand()
+        neu()
+        nurLesen(true)
+        assertFails { vm.speichern() }
+        nurLesen(false)
+        assertTrue(vm.speichernMoeglich.first())
+        assertIs<Gespeichert.Ok>(vm.speichern())
     }
 
     @Test

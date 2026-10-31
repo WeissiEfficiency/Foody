@@ -9,6 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.lifecycle.SavedStateHandle
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.testing.nachProzessende
+import kotlin.test.assertFails
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -196,6 +197,23 @@ class KochenViewModelTest {
         assertEquals(1, ergebnisse.count { it })
         assertEquals(1, db.planEintragDao().alle().count { it.cookedAt != null })
         assertTrue(vm.fertigOffen.value)
+    }
+
+
+    /** Schreibzugriffe scheitern (wie bei einem Datenbankfehler), Lesen geht weiter. */
+    private fun nurLesen(an: Boolean) = db.openHelper.writableDatabase.query("PRAGMA query_only = ${if (an) 1 else 0}").close()
+
+    @Test
+    fun fehlerBeiFertigGibtFertigFrei() = runTest {
+        // Scheitert das Markieren, bleibt „Fertig“ nicht gesperrt, ohne dass etwas markiert wurde (N6)
+        db.reistopf()
+        db.planHeute("p1")
+        val vm = u.vm().apply { starten("r1", null) }
+        nurLesen(true)
+        assertFails { vm.fertig() }
+        nurLesen(false)
+        assertTrue(vm.fertig())
+        assertEquals(1, db.planEintragDao().alle().count { it.cookedAt != null })
     }
 
     @Test
