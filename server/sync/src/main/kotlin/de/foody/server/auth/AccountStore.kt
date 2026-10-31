@@ -5,11 +5,17 @@ import de.foody.server.db.Database
 import de.foody.api.protocol.ErrorCode
 import io.ktor.http.HttpStatusCode
 import java.sql.Connection
+import java.sql.PreparedStatement
 import java.time.Clock
+import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 
 /** Ein Konto mit diesem Namen (ohne Beachtung der Groß-/Kleinschreibung) gibt es schon; nur intern (Admin-CLI). */
 class KontoExistiert(username: String) : IllegalStateException("Konto $username existiert bereits")
+
+/** Ein Gerät für die Admin-CLI: Kontoname, Gerätename, letzte Anfrage und Widerruf (`null` = aktiv). */
+data class GeraetInfo(val konto: String, val name: String, val zuletzt: Instant, val widerrufen: Instant?)
 
 /** Authentifiziertes Gerät des Kontos [kontoId] (= `user.id`). */
 data class DevicePrincipal(val deviceId: String, val kontoId: String)
@@ -195,6 +201,68 @@ class AccountStore(
             true
         }
     }
+
+    /** Alle Geräte aller Konten, nach Konto und Anmeldezeit; für die Admin-CLI. */
+    fun geraete(): List<GeraetInfo> = db.tx { c -> geraeteAbfragen(c, "1 = 1") {} }
+
+    /**
+     * Widerruft alle Geräte, die sich seit [ungenutzt] nicht gemeldet haben, und liefert sie (Stand vor dem Widerruf).
+     * Für die Admin-CLI: Alte Tokens wären sonst unbegrenzt gültig.
+     */
+    fun abmeldenUngenutzt(ungenutzt: Duration): List<GeraetInfo> = db.tx { c ->
+        val grenze = clock.millis() - ungenutzt.toMillis()
+        val alt = geraeteAbfragen(c, "d.revoked_at IS NULL AND d.last_seen_at < ?") { it.setLong(1, grenze) }
+        c.prepareStatement("UPDATE device SET revoked_at = ? WHERE revoked_at IS NULL AND last_seen_at < ?").use { st ->
+            st.setLong(1, clock.millis())
+            st.setLong(2, grenze)
+            st.executeUpdate()
+        }
+        alt
+    }
+
+    /** Konto-ID zum Namen (ohne Beachtung der Groß-/Kleinschreibung), `null` wenn es ihn nicht gibt. */
+    fun kontoId(username: String): String? = db.tx { c -> kontoIdIn(c, username) }
+
+    /**
+     * Löscht das Konto [kontoId] samt Geräten, aber nur, wenn es keine Datensätze hat (auch keine Löschmarkierungen).
+     * `false` bei einem Konto mit Daten. Fotos prüft der Aufrufer. Für die Admin-CLI.
+     */
+    fun kontoLoeschenWennLeer(kontoId: String): Boolean = db.tx { c ->
+        val hatDaten = c.prepareStatement("SELECT 1 FROM sync_record WHERE konto_id = ? LIMIT 1").use { st ->
+            st.setString(1, kontoId)
+            st.executeQuery().use { it.next() }
+        }
+        if (hatDaten) return@tx false
+        for (sql in listOf("DELETE FROM device WHERE user_id = ?", "DELETE FROM user WHERE id = ?")) {
+            c.prepareStatement(sql).use { st ->
+                st.setString(1, kontoId)
+                st.executeUpdate()
+            }
+        }
+        true
+    }
+
+    private fun kontoIdIn(c: Connection, username: String): String? =
+        c.prepareStatement("SELECT id FROM user WHERE username_lower = ?").use { st ->
+            st.setString(1, username.lowercase())
+            st.executeQuery().use { rs -> if (rs.next()) rs.getString(1) else null }
+        }
+
+    private fun geraeteAbfragen(c: Connection, bedingung: String, binden: (PreparedStatement) -> Unit): List<GeraetInfo> =
+        c.prepareStatement(
+            "SELECT u.username, d.name, d.last_seen_at, d.revoked_at FROM device d JOIN user u ON u.id = d.user_id " +
+                "WHERE $bedingung ORDER BY u.username_lower, d.created_at",
+        ).use { st ->
+            binden(st)
+            st.executeQuery().use { rs ->
+                buildList {
+                    while (rs.next()) {
+                        val widerrufen = rs.getLong(4).takeUnless { rs.wasNull() }
+                        add(GeraetInfo(rs.getString(1), rs.getString(2), Instant.ofEpochMilli(rs.getLong(3)), widerrufen?.let(Instant::ofEpochMilli)))
+                    }
+                }
+            }
+        }
 
     private fun validateUsername(username: String) {
         if (!USERNAME.matches(username)) throw ApiException(HttpStatusCode.BadRequest, ErrorCode.INVALID_INPUT)

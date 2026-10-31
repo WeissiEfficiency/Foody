@@ -10,6 +10,9 @@ import de.foody.server.sync.Compactor
 import java.io.File
 import java.io.PrintStream
 import java.security.SecureRandom
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
 
 /**
  * Administrationsbefehle (`foody admin …`). Erfolgsausgaben gehen an [out], Fehlerzeilen und Hilfe bei falschem Aufruf an [err]; Exit-Codes: 0 Erfolg,
@@ -32,6 +35,10 @@ class AdminCli(
     private fun dispatch(args: List<String>): Int = when (args.firstOrNull()) {
         "reset-password" -> if (args.size == 2) resetPassword(args[1]) else usage()
         "konto-anlegen" -> if (args.size == 2) kontoAnlegen(args[1]) else usage()
+        "konto-loeschen" -> if (args.size == 2) kontoLoeschen(args[1]) else usage()
+        "geraete" -> if (args.size == 1) geraete() else usage()
+        "abmelden-ungenutzt" -> args.getOrNull(1)?.toLongOrNull()?.takeIf { args.size == 2 && it > 0 }
+            ?.let(::abmeldenUngenutzt) ?: usage()
         "backup" -> if (args.size == 2) backup(args[1]) else usage()
         "compact" -> if (args.size == 1) compact() else usage()
         else -> usage()
@@ -62,6 +69,34 @@ class AdminCli(
         return 0
     }
 
+    /** Löscht ein Konto ohne Datensätze und Fotos samt Geräten (z. B. ein versehentlich angelegtes). */
+    private fun kontoLoeschen(name: String): Int {
+        val id = deps.accounts.kontoId(name) ?: return fail("Unbekanntes Konto: $name")
+        if (deps.photos.listHashes(id).isNotEmpty() || !deps.accounts.kontoLoeschenWennLeer(id)) {
+            return fail("Konto $name hat Daten – nicht gelöscht")
+        }
+        out.println("Konto $name gelöscht")
+        return 0
+    }
+
+    private fun geraete(): Int {
+        for (g in deps.accounts.geraete()) {
+            val stand = g.widerrufen?.let { "widerrufen ${tag(it)}" } ?: "aktiv"
+            out.println("${g.konto} · ${g.name} · zuletzt ${tag(g.zuletzt)} · $stand")
+        }
+        return 0
+    }
+
+    /** Widerruft Geräte, die sich seit [tage] Tagen nicht gemeldet haben. */
+    private fun abmeldenUngenutzt(tage: Long): Int {
+        val widerrufen = deps.accounts.abmeldenUngenutzt(Duration.ofDays(tage))
+        for (g in widerrufen) out.println("Widerrufen: ${g.konto} · ${g.name} · zuletzt ${tag(g.zuletzt)}")
+        out.println(if (widerrufen.size == 1) "1 Gerät widerrufen" else "${widerrufen.size} Geräte widerrufen")
+        return 0
+    }
+
+    private fun tag(zeit: Instant): String = LocalDate.ofInstant(zeit, deps.clock.zone).toString()
+
     private fun backup(target: String): Int {
         if (File(target).exists()) return fail("Ziel existiert bereits: $target")
         deps.db.outsideTx { c ->
@@ -90,6 +125,9 @@ class AdminCli(
             Verwendung: admin <Befehl>
               reset-password <benutzer>  Neues Zufallspasswort setzen und alle Geräte des Benutzers widerrufen
               konto-anlegen <name>       Neues Konto mit Zufallspasswort anlegen (Passwort wird einmal ausgegeben)
+              konto-loeschen <name>      Konto ohne Daten und Fotos samt Geräten löschen
+              geraete                    Alle Geräte mit letzter Anfrage und Widerruf auflisten
+              abmelden-ungenutzt <tage>  Geräte widerrufen, die sich seit <tage> Tagen nicht gemeldet haben
               backup <zieldatei>         Konsistente Kopie der Datenbank schreiben (Ziel darf nicht existieren)
               compact                    Alte Löschmarkierungen sofort kompaktieren
             """.trimIndent(),
