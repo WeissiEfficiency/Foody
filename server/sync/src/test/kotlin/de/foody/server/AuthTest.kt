@@ -118,6 +118,24 @@ class AuthTest {
         assertEquals(HttpStatusCode.OK, client.login("stefan", pw).status)
     }
 
+    /** N4: Viele Fehlversuche einer IP mit wechselnden Namen sperren die IP, auch für einen richtigen Namen. */
+    @Test
+    fun vieleNamenVonEinerIpSperrenDieIp() = testServer { env ->
+        env.deps.accounts.createUser("stefan", pw)
+        repeat(20) { i -> assertEquals(HttpStatusCode.Unauthorized, client.login("rater$i", "falschfalsch").status) }
+        assertEquals(HttpStatusCode.TooManyRequests, client.login("stefan", pw).status)
+        env.clock.advance(Duration.ofMinutes(15))
+        assertEquals(HttpStatusCode.OK, client.login("stefan", pw).status)
+    }
+
+    /** Erfolgreiche Anmeldungen zählen nicht gegen die IP (mehrere Geräte hinter einem Router). */
+    @Test
+    fun erfolgreicheAnmeldungenSperrenDieIpNicht() = testServer { env ->
+        env.deps.accounts.createUser("stefan", pw)
+        repeat(25) { assertEquals(HttpStatusCode.OK, client.login("stefan", pw).status) }
+        assertEquals(0, env.deps.throttle.size())
+    }
+
     @Test
     fun passwordPolicy() = testServer { env ->
         val e1 = assertFailsWith<ApiException> { env.deps.accounts.createUser("stefan", "123456789") }

@@ -13,10 +13,14 @@ import io.ktor.server.plugins.origin
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.slf4j.LoggerFactory
 
 private const val MAX_DEVICE_NAME = 64
 private const val MAX_USERNAME = 32
 private const val MAX_PASSWORD = 200
+private val log = LoggerFactory.getLogger("de.foody.server.auth")
 
 /** Öffentliche Auth-Routen (ohne Token); unterhalb von `/api/v3` einzuhängen. */
 fun Route.publicAuthRoutes(deps: ServerDeps) {
@@ -28,8 +32,12 @@ fun Route.publicAuthRoutes(deps: ServerDeps) {
         }
         val ip = call.request.origin.remoteHost
         deps.throttle.check(ip, request.username)
-        val kontoId = deps.accounts.authenticate(request.username, request.password)
-            ?: throw ApiException(HttpStatusCode.Unauthorized, ErrorCode.INVALID_CREDENTIALS)
+        // Argon2 rechnet spürbar: nicht auf dem Thread der Anfrage
+        val kontoId = withContext(Dispatchers.Default) { deps.accounts.authenticate(request.username, request.password) }
+        if (kontoId == null) {
+            log.warn("Fehlgeschlagene Anmeldung für {} von {}", request.username, ip)
+            throw ApiException(HttpStatusCode.Unauthorized, ErrorCode.INVALID_CREDENTIALS)
+        }
         deps.throttle.success(ip, request.username)
         val token = deps.accounts.createDevice(kontoId, request.deviceName.take(MAX_DEVICE_NAME))
         call.respond(AuthResponse(token, kontoId))
@@ -53,7 +61,9 @@ fun Route.deviceAuthRoutes(deps: ServerDeps) {
         val ip = call.request.origin.remoteHost
         val key = "password:${device.kontoId}"
         deps.throttle.check(ip, key)
-        deps.accounts.changePassword(device.kontoId, device.deviceId, request.oldPassword, request.newPassword)
+        withContext(Dispatchers.Default) {
+            deps.accounts.changePassword(device.kontoId, device.deviceId, request.oldPassword, request.newPassword)
+        }
         deps.throttle.success(ip, key)
         call.respond(HttpStatusCode.NoContent)
     }

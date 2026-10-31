@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Build-Kontext ist das Repo-Root: docker build -f server/Dockerfile -t foody-server:local .
 
 # Stufe 1: Server bauen (FOODY_SERVER_ONLY lässt die Android-Module weg, kein Android-SDK nötig)
@@ -8,7 +9,8 @@ COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY gradle/ gradle/
 COPY shared/ shared/
 COPY server/ server/
-RUN ./gradlew --no-daemon :server:installDist
+# Gradle-Cache zwischen Builds behalten (BuildKit): Abhängigkeiten nicht bei jedem Rebuild neu laden (E3)
+RUN --mount=type=cache,target=/root/.gradle ./gradlew --no-daemon :server:installDist
 
 # Stufe 2: schlankes Laufzeit-Image ohne Root-Rechte
 FROM eclipse-temurin:21-jre
