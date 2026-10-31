@@ -11,5 +11,6 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
             configureAndroid(this)
             defaultConfig.targetSdk = FoodySdk.TARGET
         }
+        unitTestsNurDebug()
     }
 }

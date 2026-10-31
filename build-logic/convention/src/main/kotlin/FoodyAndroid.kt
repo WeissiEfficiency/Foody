@@ -1,4 +1,7 @@
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.variant.AndroidComponentsExtension
+import com.android.build.api.variant.HasHostTestsBuilder
+import com.android.build.api.variant.HostTestBuilder
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalog
@@ -25,6 +28,18 @@ internal fun Project.configureAndroid(android: CommonExtension) {
     android.compileOptions.sourceCompatibility = JavaVersion.VERSION_17
     android.compileOptions.targetCompatibility = JavaVersion.VERSION_17
     configureKotlin()
+}
+
+/**
+ * Unit-Tests nur in der Debug-Variante (E1): Release und Vorschau unterscheiden sich in Unit-Tests nicht (R8 läuft dort
+ * nicht), `check` ließe sonst jeden Robolectric-Test zwei- bis dreimal laufen.
+ */
+internal fun Project.unitTestsNurDebug() {
+    extensions.getByType(AndroidComponentsExtension::class.java).beforeVariants { variante ->
+        if (variante.buildType != "debug") {
+            (variante as? HasHostTestsBuilder)?.hostTests?.get(HostTestBuilder.UNIT_TEST_TYPE)?.enable = false
+        }
+    }
 }
 
 internal fun Project.configureKotlin() {
