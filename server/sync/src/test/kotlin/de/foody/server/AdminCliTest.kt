@@ -293,6 +293,21 @@ class AdminCliTest {
         }
     }
 
+    /** Nach dem Einspielen einer alten Sicherung stellt `wiederhergestellt` sie selbst um – vor dem ersten Sync. */
+    @Test
+    fun wiederhergestelltMigriertMitSicherung() {
+        val ordner = Files.createTempDirectory("foody-admin-alt")
+        try {
+            val config = v1Datenbank(ordner)
+            val (code, _, err) = admin(config, listOf("wiederhergestellt"))
+            assertEquals(0, code, err)
+            assertEquals(Migrations.all.size, userVersion(config.dbPath))
+            assertEquals(1, ordner.listDirectoryEntries("vor-migration-*").size)
+        } finally {
+            ordner.toFile().deleteRecursively()
+        }
+    }
+
     @Test
     fun adminBackupAufAlterVersion() {
         val ordner = Files.createTempDirectory("foody-admin-alt")

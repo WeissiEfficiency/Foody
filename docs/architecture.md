@@ -55,7 +55,19 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-17-v3-phase2-server-schlank-desi
   Datei; liegt für dieses Ziel schon eine Sicherung (gescheiterter Versuch), keine weitere. Migration 1 → 2
   (Haushalt → Konto) prüft vorab (je Haushalt genau ein Mitglied, kein Konto in mehreren Haushalten, keine verwaisten
   Datensätze), löscht Vorrats-Datensätze und zählt in der Transaktion gegen; scheitert etwas, startet der Server
-  nicht (`MigrationAbgebrochen`, Grund im Log). Gerätetokens bleiben gültig.
+  nicht (`MigrationAbgebrochen`, Grund im Log). Gerätetokens bleiben gültig. Migration 2 → 3 ergänzt
+  `user.verloren_nach`/`verloren_vor` (siehe Wiederherstellung).
+- **Pull-Cursor:** Die letzte Seite endet auf `last_rev` des Kontos, nicht auf der letzten gelieferten Revision – sonst
+  läge der Cursor nach einer Kompaktierung der neuesten Löschungen vor `compacted_before_rev`, und jeder Lauf begänne
+  mit `410` und einem vollen Abgleich (N1).
+- **Wiederherstellung:** Nach dem Einspielen einer Sicherung `foody-admin wiederhergestellt`: je Konto springen
+  `last_rev` und `compacted_before_rev` um `SyncService.SPRUNG_NACH_WIEDERHERSTELLUNG` (10⁹), und `(verloren_nach,
+  verloren_vor)` hält den Bereich, den der Server nicht mehr hat (bei einer zweiten Wiederherstellung wächst er). Jeder
+  alte Cursor bekommt `410`; jede Pull-Antwort trägt den Bereich als `verloren` (`VerloreneRevisionen`).
+- **Admin-Befehle** (`foody-admin`, ohne Netty direkt auf der Datei): `konto-anlegen`, `konto-loeschen` (nur ohne
+  Datensätze und Fotos), `reset-password`, `geraete`, `abmelden-ungenutzt <tage>`, `backup` (prüft die Kopie mit
+  `integrity_check`, eine kaputte wird gelöscht), `pruefen <datei>`, `wiederhergestellt` (migriert als einziger Befehl selbst,
+  damit er vor dem ersten Sync wirkt), `compact`.
 - **Fotos:** `<FOODY_PHOTO_DIR>/<Konto-ID>/<sha256>.jpg`. `FotoUmzug` benennt nach Migration 2 je Zeile in
   `haushalt_umzug` den alten Haushaltsordner in den Kontoordner um (beide vorhanden → zusammenführen, fehlt → Warnung)
   und löscht die Zeile; läuft bei jedem Start, bis die Tabelle leer ist.
@@ -101,7 +113,9 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-18-v3-phase3-app-daten-sync-desi
   Pull-Seiten holen und erst dann anwenden (`applyingRemote = 1`, je Datensatz eine Transaktion, Cursor zuletzt; lokale
   Änderungen mit offenem Outbox-Eintrag gewinnen); `410` (Cursor vor der Kompaktierungsgrenze oder hinter dem
   Server-Stand, etwa nach dem Einspielen einer Sicherung) → Voll-Abgleich, der Unsendetes, Abgelehntes, Verwiesenes und
-  noch Gebrauchtes behält. Beim Anwenden gescheiterte Datensätze (`missing_reference`, `invalid_payload`, `apply_failed`)
+  noch Gebrauchtes behält. Nennt der Server verlorene Revisionen, sendet der Voll-Abgleich alles erneut, dessen bekannte
+  Revision darin liegt und neuer ist als der Server-Stand – lebend oder als Löschung –, statt es zu löschen oder zu
+  überschreiben (D4). Beim Anwenden gescheiterte Datensätze (`missing_reference`, `invalid_payload`, `apply_failed`)
   holt der Lauf nach einem Tag erneut: alles ab 0, ohne Cursor zu bewegen oder zu löschen (`erneutHolenFaellig`,
   `erneutAnwenden`). Ist der Gerätespeicher voll, bricht er mit `speicher_voll` ab, statt Datensätze aufzugeben
   (SQLite rollt dann selbst zurück, Rooms Zurückrollen verdeckt die `SQLiteFullException`; `einzeln` bemerkt sie in der

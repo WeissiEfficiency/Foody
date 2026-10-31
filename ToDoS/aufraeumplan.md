@@ -69,10 +69,10 @@ Erst, wenn vier Wochen nichts schiefging. Danach gibt es keinen Weg zurück zur 
 
 | ID | Was | Wer | Folge, wenn man es lässt |
 |---|---|---|---|
-| D1 | Drei verwaiste Anmeldungen (Handy und Tablet vom 11.10., „Browser (Chrome)“ vom 18.10.) widerrufen. Dafür fehlt ein Befehl: `foody-admin abmelden-ungenutzt <tage>` (widerruft Tokens ohne Anfrage seit n Tagen) | 🤖 PR, Server-Rebuild | Alte Tokens bleiben unbegrenzt gültig; geht ein altes Gerät verloren, hat es weiter Zugriff |
-| D2 | Leeres Konto „stefan“ löschen; dafür ebenfalls ein Admin-Befehl `konto-loeschen` (nur für leere Konten) | 🤖 PR, Server-Rebuild | Ein zweites, ungenutztes Login am Server |
-| D3 | Offenes aus dem ersten Review: `backup.sh` mit `PRAGMA integrity_check` und eine Restore-Anleitung | 🤖 PR | Eine kaputte Sicherung fällt erst beim Einspielen auf |
-| D4 | **W5** vor der ersten Wiederherstellung des Servers: Admin-Befehl, der nach dem Einspielen alle Gerätestände ungültig macht, und App sendet Datensätze mit höherer Revision erneut statt sie zu löschen | 🤖 PR, Server-Rebuild | Nach einer Wiederherstellung gehen Daten auf den Geräten verloren |
+| ✅ D1 | Drei verwaiste Anmeldungen (Handy und Tablet vom 11.10., „Browser (Chrome)“ vom 18.10.) widerrufen. Dafür fehlt ein Befehl: `foody-admin abmelden-ungenutzt <tage>` (widerruft Tokens ohne Anfrage seit n Tagen) | 🤖 PR, Server-Rebuild | Alte Tokens bleiben unbegrenzt gültig; geht ein altes Gerät verloren, hat es weiter Zugriff. **Befehl da:** `geraete` und `abmelden-ungenutzt <tage>`; 👤 nach dem Rebuild ausführen |
+| ✅ D2 | Leeres Konto „stefan“ löschen; dafür ebenfalls ein Admin-Befehl `konto-loeschen` (nur für leere Konten) | 🤖 PR, Server-Rebuild | Ein zweites, ungenutztes Login am Server. **Befehl da:** `konto-loeschen` (nur ohne Datensätze und Fotos); 👤 nach dem Rebuild ausführen |
+| ✅ D3 | Offenes aus dem ersten Review: `backup.sh` mit `PRAGMA integrity_check` und eine Restore-Anleitung | 🤖 PR | Eine kaputte Sicherung fällt erst beim Einspielen auf. **Erledigt:** `foody-admin backup` prüft jede Kopie, `pruefen <datei>`, Anleitung in `server/README.md` („Sicherung einspielen“) |
+| ✅ D4 | **W5** vor der ersten Wiederherstellung des Servers: Admin-Befehl, der nach dem Einspielen alle Gerätestände ungültig macht, und App sendet Datensätze mit höherer Revision erneut statt sie zu löschen | 🤖 PR, Server-Rebuild | Nach einer Wiederherstellung gehen Daten auf den Geräten verloren. **Erledigt:** `foody-admin wiederhergestellt` (Revisionssprung, Migration 3), Pull meldet `verloren`, der Voll-Abgleich sendet Neueres erneut (auch Löschungen) |
 | D5 | **N3** Speicher im Container: `docker inspect` auf OOMKilled prüfen; Healthcheck ohne zweite JVM (z. B. `wget`/`curl`) | 👤 / 🤖 | Bei 512 MB knapp, mit 296 Rezepten mehr Last als vorher. **Geprüft 2026-10-31:** 206 MB von 512 MB, kein Handlungsbedarf beim Limit; offen ist nur der Healthcheck (mit D1–D4) |
 
 ## Stufe 5 – Optimierung (Review-Befunde aus dem Alltag)
@@ -84,7 +84,7 @@ Reihenfolge wie im Gesamt-Review empfohlen; jede Korrektur mit einem Test, der v
 | ✅ **W1** | Einkauf: Einheit je Zutat unabhängig von der Reihenfolge der Planzeilen wählen (`Shopping.kt:53`), Regel 7/10 in `docs/domain-rules.md`. **Erledigt:** feste Rangfolge Stück → Packung → Dose → Gewicht → Volumen (Regel 7) | Gekauftes erscheint nach einer Planänderung wieder als „neu“ – bei Zwiebel, Ei, Knoblauch der Normalfall |
 | ✅ **W2** | Sync: abgelehnte Datensätze unter Einstellungen → Konto anzeigen (`SyncDao.probleme()` ist schon da), fehlgeschlagene Abholungen wiederholen, bei vollem Speicher abbrechen. **Erledigt:** Liste unter „Konto“, erneutes Holen nach einem Tag, Abbruch mit `speicher_voll` | Datensätze bleiben still auf einem Gerät liegen; nach dem Import von 435 Rezepten wahrscheinlicher |
 | ✅ **W3 + W4** | Nährwerte nicht auf dem Haupt-Thread: `flowOn(rechnen)` in `HeuteRepository.kt:44`, `RezeptRepository.kt:38/51`, Rezept-Flow teilen; `WhileSubscribed(5_000)` statt `Eagerly` in `EintragenViewModel`/`EditorViewModel`, fester Schlüssel für den Tablet-Editor. **Erledigt:** beide Repositories mit `flowOn`, „Heute“ und Eintragen teilen den Rezept-Flow; Eintragen nur noch sichtbar; Tablet-Editor mit festem Schlüssel (ein ViewModel, neuer Auftrag beginnt frisch) – der Editor bleibt `Eagerly`, weil `speichern()` `zustand.value` liest. Gemessen: ~20 ms je Neuberechnung auf dem PC (300 Rezepte, 500 Zutaten), bisher auf dem Haupt-Thread und auf „Heute“ doppelt | Mit jetzt 296 Rezepten und 494 Zutaten spürbar; vorher einmal mit dem Baseline-Profil messen (Start, Wechsel auf „Heute“), damit der Gewinn belegt ist |
-| N1 | Server: nach `compact` kein Voll-Download bei jedem Start (`SyncService.kt:43`) | Akku/Datenvolumen |
+| ✅ N1 | Server: nach `compact` kein Voll-Download bei jedem Start (`SyncService.kt:43`). **Erledigt:** Die letzte Pull-Seite endet auf `last_rev` (mit D4, das es braucht) | Akku/Datenvolumen |
 | ✅ N2 | Speichern-Knöpfe nach Drehen nicht gesperrt lassen (`EditorViewModel.kt:162`, `KochenViewModel.kt:167`, `EintragenViewModel.kt:224`). **Erledigt:** Das Schreiben läuft in `withContext(NonCancellable)` zu Ende, auch wenn der Bildschirm mittendrin gedreht wird; nur ein Fehler gibt den Knopf wieder frei (ein Freigeben bei jedem Abbruch legte nach dem Drehen doppelt an). Tests `fehlerBeimSpeichernGibtSpeichernFrei` | Selten, aber ärgerlich |
 | N4 | Login-Bremse auch je IP, Fehlversuche loggen (`LoginThrottle.kt:19`) | Heimnetz, geringe Wirkung |
 | ✅ N5 | Rezeptkopf ohne feste Höhe 260 dp (`DetailBereiche.kt:96`). **Erledigt:** mindestens 260 dp, wächst mit dem Namen; Pfeil und Namensfeld liegen untereinander. Test `schrift200LangerNameImKopf`, Referenzbilder unverändert | Bei großer Schrift abgeschnitten |
@@ -172,7 +172,7 @@ Ressourcen schlank (381 KB), Features ohne Querverweise.
    ✅ Doku-PR R5–R8 (#143).
 2. **Danach:** W1 und W2 (je ein PR), dann W3+W4 zusammen mit Q3 und Q5 (gleiche Stellen), mit Messung vorher/nachher.
    Q1, Q2 und Q4 als ein Designsystem-PR (Bildvergleich neu aufnehmen).
-3. **Server, ein Rebuild für alles:** D1–D4 zusammen, D5 prüfen.
+3. ✅ **Server, ein Rebuild für alles:** D1–D4 zusammen (mit N1); D5 offen (Healthcheck).
 4. **Ab 25.11.:** Stufe 3 (C1–C7), C8 nur auf deinen Wunsch.
 5. Danach ist die Bahn frei für die KI-Hilfe (`ToDoS/ki-plan.md`).
 

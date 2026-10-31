@@ -542,6 +542,38 @@ class SyncLaufTest {
         assertEquals(listOf("kaputt" to SyncSpeicher.UNGUELTIGER_PAYLOAD), b.dao.probleme().map { it.recordId to it.code })
     }
 
+    /** D4: Nach dem Einspielen einer älteren Server-Sicherung bringt das Gerät zurück, was dem Server fehlt. */
+    @Test
+    fun nachWiederherstellungSendetDasGeraetFehlendesErneut() = syncServerTest { server ->
+        val (name, konto) = server.kontoAnlegen()
+        val a = geraet(name, konto)
+        a.db.zutatDao().upsert(zutat("alt"))
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig) // Revision 1: Stand der Sicherung
+        a.db.zutatDao().upsert(zutat("neu"))
+        a.db.zutatDao().upsert(zutat("alt", name = "Alt, geändert"))
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig) // Revisionen 2 und 3: fehlen nach dem Einspielen
+
+        // Sicherung mit Stand 1 einspielen, dann `foody-admin wiederhergestellt`
+        server.deps.db.tx { c ->
+            c.createStatement().use { s ->
+                s.executeUpdate("DELETE FROM sync_record WHERE id = 'neu'")
+                s.executeUpdate("UPDATE sync_record SET rev = 1, payload = json_set(payload, '$.name', 'Zutat alt') WHERE id = 'alt'")
+                s.executeUpdate("UPDATE user SET last_rev = 1")
+            }
+        }
+        server.deps.sync.wiederhergestellt()
+
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig) // 410, Voll-Abgleich: beides wird vorgemerkt
+        assertEquals("Alt, geändert", a.db.zutatDao().nachId("alt")?.canonicalName)
+        assertNotNull(a.db.zutatDao().nachId("neu"))
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig) // und gesendet
+
+        val b = geraet(name, konto)
+        assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
+        assertEquals("Alt, geändert", b.db.zutatDao().nachId("alt")?.canonicalName)
+        assertNotNull(b.db.zutatDao().nachId("neu"))
+    }
+
     @Test
     fun festhaengenderCursorIstVoruebergehend() = syncServerTest { server ->
         val (name, konto) = server.kontoAnlegen()

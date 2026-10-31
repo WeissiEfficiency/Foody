@@ -181,11 +181,14 @@ class AdminCli(
 
         /**
          * Führt einen Admin-Befehl direkt gegen die Datenbankdatei aus `config` aus (für `foody-admin`, ohne Netty; läuft
-         * auch parallel zum Server, WAL). Migriert nie: Steht eine Migration aus, geht nur `backup`, alles andere bricht mit
-         * Exit-Code 1 ab – Sicherung und Umwandlung sind Sache des Serverstarts.
+         * auch parallel zum Server, WAL). Migriert sonst nie: Steht eine Migration aus, geht nur `backup`, alles andere bricht
+         * mit Exit-Code 1 ab – Sicherung und Umwandlung sind Sache des Serverstarts. Ausnahme `wiederhergestellt`: Es läuft
+         * nach dem Einspielen einer (vielleicht älteren) Sicherung bei gestopptem Server und muss vor dem ersten Sync
+         * wirken, also migriert es selbst (mit Sicherung wie beim Start).
          */
-        fun ausfuehren(config: ServerConfig, args: List<String>, out: PrintStream = System.out, err: PrintStream = System.err): Int =
-            Database("jdbc:sqlite:${config.dbPath}", migrieren = false).use { db ->
+        fun ausfuehren(config: ServerConfig, args: List<String>, out: PrintStream = System.out, err: PrintStream = System.err): Int {
+            val migrieren = args.firstOrNull() == "wiederhergestellt"
+            return Database("jdbc:sqlite:${config.dbPath}", migrieren = migrieren).use { db ->
                 val version = db.outsideTx { Migrations.aktuell(it) }
                 if (version < Migrations.all.size && args.firstOrNull() != "backup") {
                     err.println("Datenbank auf Version $version – erst den Server mit V3 starten (er sichert und wandelt um).")
@@ -194,5 +197,6 @@ class AdminCli(
                     AdminCli(ServerDeps.create(config, db), out, err).run(args)
                 }
             }
+        }
     }
 }

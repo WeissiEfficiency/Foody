@@ -10,6 +10,7 @@ import de.foody.api.protocol.Protocol
 import de.foody.api.protocol.RecipePayload
 import de.foody.api.protocol.RecordType
 import de.foody.api.protocol.SyncRecord
+import de.foody.api.protocol.VerloreneRevisionen
 import de.foody.api.protocol.decode
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.SyncFotoGewuenschtEntity
@@ -592,9 +593,14 @@ class SyncSpeicher(
      *   wieder übereinstimmen.
      * Gelöscht wird mit `applyingRemote = 1`, Kinder vor Eltern. Der Cursor wird erst danach auf [cursor] gesetzt; bricht
      * es vorher ab, wird der Voll-Abgleich wiederholt.
+     *
+     * Nach dem Einspielen einer Server-Sicherung nennt der Server die Revisionen, die ihm fehlen ([verloren]). Kennt das
+     * Gerät einen Datensatz mit einer solchen Revision, ist sein Stand neuer als der des Servers: Er wird erneut gesendet
+     * (auch eine Löschung), statt ihn mit dem älteren Server-Stand zu überschreiben oder zu löschen.
      */
-    suspend fun vollabgleich(serverDatensaetze: List<SyncRecord>, cursor: Long) {
-        anwendenIntern(serverDatensaetze, neuerCursor = null, bekannteUeberspringen = true)
+    suspend fun vollabgleich(serverDatensaetze: List<SyncRecord>, cursor: Long, verloren: VerloreneRevisionen? = null) {
+        val neuerAufGeraet = serverDatensaetze.filter { verloren != null && erneutSenden(it, verloren) }
+        anwendenIntern(serverDatensaetze - neuerAufGeraet.toSet(), neuerCursor = null, bekannteUeberspringen = true)
         val lebend = serverDatensaetze.filter { !it.deleted }
         val beimServer = lebend.mapTo(HashSet()) { it.type to it.id }
         // Unlesbare Datensätze hat das Anwenden schon als Problem vermerkt; hier überspringen.
@@ -607,12 +613,25 @@ class SyncSpeicher(
         }
         for (typ in LOESCH_REIHENFOLGE) {
             for (id in ids(typ)) {
-                if ((typ to id) !in beimServer) veraltetEntfernen(typ, id, verwiesen)
+                if ((typ to id) !in beimServer) veraltetEntfernen(typ, id, verwiesen, verloren)
             }
         }
         db.withTransaction {
             dao.upsertZustand((dao.zustand() ?: SyncZustandEntity()).copy(applyingRemote = false, cursor = cursor, lastSyncAt = uhr()))
         }
+    }
+
+    /**
+     * Kennt das Gerät von [r] eine Revision, die dem Server fehlt und neuer ist als seine? Dann wird der eigene Stand
+     * vorgemerkt – lebend, wenn es den Datensatz lokal gibt, sonst als Löschung – und `true` geliefert.
+     */
+    private suspend fun erneutSenden(r: SyncRecord, verloren: VerloreneRevisionen): Boolean = db.withTransaction {
+        val bekannt = dao.revision(r.type.wire, r.id)?.rev ?: return@withTransaction false
+        if (bekannt !in verloren || bekannt <= (r.rev ?: 0L)) return@withTransaction false
+        if (dao.outboxEintrag(r.type.wire, r.id) == null) {
+            dao.upsertOutbox(SyncOutboxEntity(r.type.wire, r.id, deleted = !existiert(r.type, r.id), queuedAt = uhr()))
+        }
+        true
     }
 
     private suspend fun ids(typ: RecordType): List<String> = when (typ) {
@@ -624,11 +643,18 @@ class SyncSpeicher(
         RecordType.TAGEBUCH_EINTRAG -> dao.tagebuchIds()
     }
 
-    private suspend fun veraltetEntfernen(typ: RecordType, id: String, verwiesen: Set<Pair<RecordType, String>>) {
+    private suspend fun veraltetEntfernen(
+        typ: RecordType,
+        id: String,
+        verwiesen: Set<Pair<RecordType, String>>,
+        verloren: VerloreneRevisionen?,
+    ) {
         db.withTransaction {
             if (dao.outboxEintrag(typ.wire, id) != null) return@withTransaction
             if (dao.problem(typ.wire, id) != null) return@withTransaction
-            if ((typ to id) in verwiesen || nochGebraucht(typ, id)) {
+            // Nach dem Einspielen einer Server-Sicherung: dem Server fehlt dieser Datensatz, das Gerät hat ihn
+            val nachDerSicherung = verloren != null && dao.revision(typ.wire, id)?.rev?.let { it in verloren } == true
+            if (nachDerSicherung || (typ to id) in verwiesen || nochGebraucht(typ, id)) {
                 dao.upsertOutbox(SyncOutboxEntity(typ.wire, id, deleted = false, queuedAt = uhr()))
                 return@withTransaction
             }
