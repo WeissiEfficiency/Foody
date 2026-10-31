@@ -127,6 +127,29 @@ class AdminCliTest {
     }
 
     @Test
+    fun pruefenErkenntHeileUndKaputteSicherung() = testServer { env ->
+        val ordner = Files.createTempDirectory("foody-pruefen")
+        try {
+            env.deps.accounts.createUser("stefan", "geheimgeheim")
+            val heil = ordner.resolve("heil.db")
+            assertEquals(0, cli(env.deps, listOf("backup", heil.toString())).first)
+            assertEquals(0 to "ok", cli(env.deps, listOf("pruefen", heil.toString())).let { it.first to it.second.trim() })
+
+            // Seiten hinter dem Kopf mit Unsinn überschreiben: Die Datei öffnet sich noch, ist aber kaputt.
+            val bytes = Files.readAllBytes(heil)
+            for (i in 4096 until bytes.size) bytes[i] = 0x5A
+            val kaputt = Files.write(ordner.resolve("kaputt.db"), bytes)
+            val (code, output) = cliErr(env.deps, listOf("pruefen", kaputt.toString()))
+            assertEquals(1, code)
+            assertEquals(1, output.trim().lines().size, output)
+
+            assertEquals(1, cliErr(env.deps, listOf("pruefen", ordner.resolve("fehlt.db").toString())).first)
+        } finally {
+            ordner.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun backupIntoMissingDirectoryReportsOneLineError() = testServer { env ->
         val target = Files.createTempDirectory("foody-missing").resolve("nope").resolve("x.db")
         val (code, output) = cliErr(env.deps, listOf("backup", target.toString()))
@@ -306,7 +329,7 @@ class AdminCliTest {
     fun unknownCommandShowsHelp() = testServer { env ->
         val (code, output) = cliErr(env.deps, listOf("unsinn"))
         assertEquals(2, code)
-        for (name in listOf("reset-password", "konto-anlegen", "konto-loeschen", "geraete", "abmelden-ungenutzt", "backup", "compact")) {
+        for (name in listOf("reset-password", "konto-anlegen", "konto-loeschen", "geraete", "abmelden-ungenutzt", "backup", "pruefen", "compact")) {
             assertTrue(output.contains(name), name)
         }
         assertEquals(2, cli(env.deps, emptyList()).first)

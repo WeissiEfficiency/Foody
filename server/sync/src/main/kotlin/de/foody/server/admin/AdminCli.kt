@@ -10,9 +10,11 @@ import de.foody.server.sync.Compactor
 import java.io.File
 import java.io.PrintStream
 import java.security.SecureRandom
+import java.sql.DriverManager
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import org.sqlite.SQLiteConfig
 
 /**
  * Administrationsbefehle (`foody admin …`). Erfolgsausgaben gehen an [out], Fehlerzeilen und Hilfe bei falschem Aufruf an [err]; Exit-Codes: 0 Erfolg,
@@ -40,6 +42,7 @@ class AdminCli(
         "abmelden-ungenutzt" -> args.getOrNull(1)?.toLongOrNull()?.takeIf { args.size == 2 && it > 0 }
             ?.let(::abmeldenUngenutzt) ?: usage()
         "backup" -> if (args.size == 2) backup(args[1]) else usage()
+        "pruefen" -> if (args.size == 2) pruefen(args[1]) else usage()
         "compact" -> if (args.size == 1) compact() else usage()
         else -> usage()
     }
@@ -105,8 +108,33 @@ class AdminCli(
                 st.execute()
             }
         }
+        integritaet(target)?.let { fehler ->
+            File(target).delete()
+            return fail("Sicherung beschädigt, nicht behalten: $fehler")
+        }
         out.println(target)
         return 0
+    }
+
+    /** Prüft eine Sicherung (oder die Datenbank) mit `PRAGMA integrity_check`, ohne sie zu ändern. */
+    private fun pruefen(datei: String): Int {
+        if (!File(datei).isFile) return fail("Datei fehlt: $datei")
+        integritaet(datei)?.let { return fail("Beschädigt: $it") }
+        out.println("ok")
+        return 0
+    }
+
+    /**
+     * `null`, wenn [datei] heil ist, sonst die Meldungen von `integrity_check` auf einer Zeile (gekürzt). Öffnet nur
+     * lesend.
+     */
+    private fun integritaet(datei: String): String? {
+        val nurLesen = SQLiteConfig().apply { setReadOnly(true) }.toProperties()
+        return DriverManager.getConnection("jdbc:sqlite:$datei", nurLesen).use { c ->
+            c.createStatement().use { s ->
+                s.executeQuery("PRAGMA integrity_check").use { rs -> rs.next(); rs.getString(1) }
+            }
+        }.takeUnless { it == "ok" }?.lines()?.filter { it.isNotBlank() }?.joinToString(" · ")?.take(MELDUNG_MAX)
     }
 
     private fun compact(): Int {
@@ -128,7 +156,8 @@ class AdminCli(
               konto-loeschen <name>      Konto ohne Daten und Fotos samt Geräten löschen
               geraete                    Alle Geräte mit letzter Anfrage und Widerruf auflisten
               abmelden-ungenutzt <tage>  Geräte widerrufen, die sich seit <tage> Tagen nicht gemeldet haben
-              backup <zieldatei>         Konsistente Kopie der Datenbank schreiben (Ziel darf nicht existieren)
+              backup <zieldatei>         Konsistente Kopie der Datenbank schreiben und prüfen (Ziel darf nicht existieren)
+              pruefen <datei>            Sicherung mit integrity_check prüfen, z. B. vor dem Einspielen
               compact                    Alte Löschmarkierungen sofort kompaktieren
             """.trimIndent(),
         )
@@ -137,6 +166,7 @@ class AdminCli(
 
     companion object {
         private const val PASSWORD_LENGTH = 20
+        private const val MELDUNG_MAX = 200
         private const val ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
         /**
