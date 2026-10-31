@@ -12,8 +12,8 @@ Richtung: `:app` → `:feature:*` → `:core:*` → `:domain`/`:api-protocol` (F
 `settings.gradle.kts`). Spec: `docs/superpowers/archiv/specs/2026-10-11-projektstruktur-design.md`.
 
 Die heutige App ist die **V3** (Plan archiviert in `ToDoS/archiv/v3-plan.md`, Offenes in `ToDoS/aufraeumplan.md`). Ihre Vorgängerin, die v1 samt Protokoll 2
-(`:sync-protocol`), ist seit dem Umstieg am 2026-10-28 aus `main` entfernt; ihr letzter Stand liegt im Git-Verlauf und der Server dazu
-auf dem Branch `v1-server`. Wo unten „wie v1“ steht, verhält sich die V3 bewusst wie ihre Vorgängerin.
+(`:sync-protocol`), ist seit dem Umstieg am 2026-10-28 aus `main` entfernt; ihr letzter Stand samt Server ist der Tag `v1-final`;
+einen Rückweg gibt es seit dem 2026-10-31 nicht mehr. Wo unten „wie v1“ steht, verhält sich die V3 bewusst wie ihre Vorgängerin.
 
 - **Oberfläche** (`:feature:*`, `:app`): Compose-Bildschirme mit `@HiltViewModel`; jeder Bildschirm zeichnet einen
   Zustand aus `StateFlow`, Aktionen sind Methodenaufrufe am ViewModel. Eingaben, die ein Prozessende überstehen
@@ -40,7 +40,7 @@ auf dem Branch `v1-server`. Wo unten „wie v1“ steht, verhält sich die V3 be
 
 Spec: `docs/superpowers/archiv/v3/specs/2026-10-17-v3-phase2-server-schlank-design.md`. Ktor + SQLite, Routen unter
 **`/api/v3`**, Header `X-Foody-Protocol` (`Protocol.VERSION = MIN_VERSION = 3` in `:api-protocol`, Paket
-`de.foody.api.protocol`). `/api/v1/*` und Header < 3 → `409 protocol_too_old`, Header > 3 → `409 server_too_old`.
+`de.foody.api.protocol`). Header < 3 → `409 protocol_too_old`, Header > 3 → `409 server_too_old`; unter `/api/v1` antwortet nichts mehr.
 
 - **Konto statt Haushalt:** Konto = Zeile in `user`, Konto-ID = `user.id`; das Konto trägt `last_rev` und
   `compacted_before_rev`. `sync_record` ist nach `(konto_id, type, id)` geschlüsselt, `device` hat keinen Haushalt,
@@ -52,11 +52,11 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-17-v3-phase2-server-schlank-desi
   bisher; den Typ `pantry_item` kennt Protokoll 3 nicht mehr.
 - **Migrationen:** `Migrations.apply` beim Start, jede in einer Transaktion, Stand in `PRAGMA user_version`. Steht eine
   Migration aus, schreibt `Database` vorher `vor-migration-<ziel>-<JJJJ-MM-TT-HHMM>.db` per `VACUUM INTO` neben die
-  Datei; liegt für dieses Ziel schon eine Sicherung (gescheiterter Versuch), keine weitere. Migration 1 → 2
-  (Haushalt → Konto) prüft vorab (je Haushalt genau ein Mitglied, kein Konto in mehreren Haushalten, keine verwaisten
-  Datensätze), löscht Vorrats-Datensätze und zählt in der Transaktion gegen; scheitert etwas, startet der Server
-  nicht (`MigrationAbgebrochen`, Grund im Log). Gerätetokens bleiben gültig. Migration 2 → 3 ergänzt
-  `user.verloren_nach`/`verloren_vor` (siehe Wiederherstellung).
+  Datei; liegt für dieses Ziel schon eine Sicherung (gescheiterter Versuch), keine weitere. Eine neue Datenbank
+  bekommt in einem Schritt das Grundschema in Version 2 (`Migrations.GRUNDVERSION`, Konten); die Umwandlung der
+  Version 1 (Haushalte) ist mit dem Rückweg entfallen, eine solche Datenbank bricht den Start ab. Migration 2 → 3
+  ergänzt `user.verloren_nach`/`verloren_vor` (siehe Wiederherstellung), 3 → 4 löscht `haushalt_umzug` (bricht ab,
+  solange dort Einträge stehen). Scheitert etwas, startet der Server nicht (`MigrationAbgebrochen`, Grund im Log).
 - **Pull-Cursor:** Die letzte Seite endet auf `last_rev` des Kontos, nicht auf der letzten gelieferten Revision – sonst
   läge der Cursor nach einer Kompaktierung der neuesten Löschungen vor `compacted_before_rev`, und jeder Lauf begänne
   mit `410` und einem vollen Abgleich (N1).
@@ -68,9 +68,7 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-17-v3-phase2-server-schlank-desi
   Datensätze und Fotos), `reset-password`, `geraete`, `abmelden-ungenutzt <tage>`, `backup` (prüft die Kopie mit
   `integrity_check`, eine kaputte wird gelöscht), `pruefen <datei>`, `wiederhergestellt` (migriert als einziger Befehl selbst,
   damit er vor dem ersten Sync wirkt), `compact`.
-- **Fotos:** `<FOODY_PHOTO_DIR>/<Konto-ID>/<sha256>.jpg`. `FotoUmzug` benennt nach Migration 2 je Zeile in
-  `haushalt_umzug` den alten Haushaltsordner in den Kontoordner um (beide vorhanden → zusammenführen, fehlt → Warnung)
-  und löscht die Zeile; läuft bei jedem Start, bis die Tabelle leer ist.
+- **Fotos:** `<FOODY_PHOTO_DIR>/<Konto-ID>/<sha256>.jpg`.
 - **KI-Gerüst:** `FOODY_KI_KEY` (fehlt → `GET /ki/status` meldet `eingerichtet: false`) und `KiKontingent` (Anfragen je
   Konto und Stunde, `FOODY_KI_PRO_STUNDE`, Standard 30). Noch kein Modellaufruf und keine Modellwahl (KI-Projekt nach dem Umstieg, `ToDoS/ki-plan.md`).
 - Die Web-Oberfläche (`:server-web`) ist entfallen (ADR 0011); ihre Specs vom 2026-10-11 beschreiben den alten Stand.
