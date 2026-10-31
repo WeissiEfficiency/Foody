@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.token.FoodyAbstaende
 
 /** Filter-Chip (an/aus); meldet „ausgewählt“ an TalkBack, Berührfläche mindestens 48 dp hoch. */
 @Composable
@@ -27,7 +28,7 @@ fun FoodyChip(text: String, ausgewaehlt: Boolean, onKlick: () -> Unit, modifier:
         contentColor = if (ausgewaehlt) farben.grund else farben.text,
         border = if (ausgewaehlt) null else BorderStroke(1.dp, farben.nebentext),
     ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s3)) {
             Text(text, style = MaterialTheme.typography.labelLarge)
         }
     }

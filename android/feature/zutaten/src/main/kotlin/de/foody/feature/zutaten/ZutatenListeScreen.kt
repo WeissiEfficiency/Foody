@@ -50,12 +50,12 @@ import de.foody.core.data.zutaten.ZutatKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyChip
+import de.foody.core.designsystem.komponenten.kcalText
+import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.scan.PackungScanKnopf
 import de.foody.core.scan.ScanTexte
 import kotlinx.coroutines.launch
-
-/** Lesebreite der Seiten. */
-internal val INHALT_MAX = 720.dp
 
 /** Abstand zum unteren Rand für Knöpfe und Snackbars: darunter schwebt auf dem Handy die Navigationsleiste. */
 internal val UEBER_LEISTE = 88.dp
@@ -95,38 +95,38 @@ fun ZutatenListeRoute(onZutat: (String) -> Unit, onZurueck: () -> Unit, vm: Zuta
     }
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.widthIn(max = INHALT_MAX).fillMaxSize().safeDrawingPadding()) {
+        Column(Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxSize().safeDrawingPadding()) {
             Kopf(onZurueck, onVereinheitlichen = vm::vorschauLaden)
             OutlinedTextField(
-                suche, { suche = it; vm.suchen(it) }, Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                suche, { suche = it; vm.suchen(it) }, Modifier.fillMaxWidth().padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s2),
                 label = { Text("Suchen") }, singleLine = true,
                 leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
             )
-            LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyRow(contentPadding = PaddingValues(horizontal = FoodyAbstaende.s4), horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 items(FILTER) { (f, text) -> FoodyChip(text, f in z.filter, { vm.filterUmschalten(f) }) }
             }
             if (z.geladen) {
                 Text(
-                    zaehlzeile(z.treffer), Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    zaehlzeile(z.treffer), Modifier.padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s2),
                     style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext,
                 )
             }
             if (z.geladen && z.treffer.isEmpty()) {
                 Text(
-                    "Keine Zutat gefunden", Modifier.padding(16.dp),
+                    "Keine Zutat gefunden", Modifier.padding(FoodyAbstaende.s4),
                     style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.nebentext,
                 )
             }
             LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = UEBER_LEISTE + 72.dp)) {
                 items(z.treffer, key = { it.id }) { zutat ->
                     ZutatZeile(zutat) { onZutat(zutat.id) }
-                    HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = FoodyTheme.farben.nebentext.copy(alpha = 0.2f))
+                    HorizontalDivider(Modifier.padding(horizontal = FoodyAbstaende.s4), color = FoodyTheme.farben.nebentext.copy(alpha = 0.2f))
                 }
             }
         }
         FloatingActionButton(
             onClick = { gibtEsSchon = null; neu = true },
-            modifier = Modifier.align(Alignment.BottomEnd).safeDrawingPadding().padding(end = 16.dp, bottom = UEBER_LEISTE),
+            modifier = Modifier.align(Alignment.BottomEnd).safeDrawingPadding().padding(end = FoodyAbstaende.s4, bottom = UEBER_LEISTE),
         ) { Icon(Icons.Outlined.Add, contentDescription = "Neue Zutat") }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = UEBER_LEISTE + 72.dp))
     }
@@ -148,7 +148,7 @@ fun ZutatenListeRoute(onZutat: (String) -> Unit, onZurueck: () -> Unit, vm: Zuta
 @Composable
 private fun Kopf(onZurueck: () -> Unit, onVereinheitlichen: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
-    Row(Modifier.fillMaxWidth().padding(end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(end = FoodyAbstaende.s1, top = FoodyAbstaende.s2), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onZurueck) {
             Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
         }
@@ -169,7 +169,7 @@ private fun Kopf(onZurueck: () -> Unit, onVereinheitlichen: () -> Unit) {
 private fun ZutatZeile(z: ZutatKurz, onKlick: () -> Unit) {
     Column(
         Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.Button, onClick = onKlick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = FoodyAbstaende.s4, vertical = 10.dp),
     ) {
         z.kategorie?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = FoodyTheme.farben.nebentext) }
         Row(verticalAlignment = Alignment.CenterVertically) {

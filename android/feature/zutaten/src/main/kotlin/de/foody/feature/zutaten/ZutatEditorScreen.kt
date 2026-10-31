@@ -40,6 +40,8 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
+import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.scan.PackungScanKnopf
 import kotlinx.coroutines.launch
 
@@ -85,11 +87,11 @@ fun ZutatEditorRoute(id: String, onFertig: () -> Unit, vm: ZutatEditorViewModel 
     BackHandler(enabled = z.geaendert) { verwerfen = true }
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.widthIn(max = INHALT_MAX).fillMaxSize().safeDrawingPadding()) {
+        Column(Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxSize().safeDrawingPadding()) {
             Kopf(z.vorher?.name.orEmpty(), zurueck, onZusammenfuehren = { zielwahl = true }, onLoeschen = { frage = Frage.Loeschen })
             Column(
-                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(FoodyAbstaende.s4),
+                verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
             ) {
                 z.entwurf?.let { entwurf ->
                     EditorFelder(
@@ -102,7 +104,7 @@ fun ZutatEditorRoute(id: String, onFertig: () -> Unit, vm: ZutatEditorViewModel 
             }
             FoodyKnopf(
                 "Speichern", vm::speichern,
-                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = UEBER_LEISTE),
+                Modifier.fillMaxWidth().padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = UEBER_LEISTE),
                 aktiv = z.geladen && !z.laeuft,
             )
         }
@@ -139,7 +141,7 @@ fun ZutatEditorRoute(id: String, onFertig: () -> Unit, vm: ZutatEditorViewModel 
 @Composable
 private fun Kopf(titel: String, onZurueck: () -> Unit, onZusammenfuehren: () -> Unit, onLoeschen: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
-    Row(Modifier.fillMaxWidth().padding(end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(end = FoodyAbstaende.s1, top = FoodyAbstaende.s2), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onZurueck) {
             Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
         }

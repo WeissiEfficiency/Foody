@@ -24,10 +24,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.feature.kochen.timer.LaufenderTimer
 
@@ -35,8 +35,8 @@ import de.foody.feature.kochen.timer.LaufenderTimer
 @Composable
 internal fun TimerLeiste(timer: List<LaufenderTimer>, rezeptId: String?, jetzt: Long, onEntfernen: (String) -> Unit) {
     if (timer.isEmpty()) return
-    GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+    GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth().padding(horizontal = FoodyAbstaende.s4)) {
+        Column(Modifier.padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s1)) {
             timer.sortedBy { it.endeUm }.forEach { t ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {

@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,7 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.FoodyTextfeld
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.domain.Mahlzeit
 
 /**
@@ -45,13 +46,16 @@ internal fun RezeptAuswahlBlatt(mahlzeit: String, karten: List<RezeptKarte>, onW
     var suche by rememberSaveable { mutableStateOf("") }
     val treffer = auswahlSortiert(karten, suche, Mahlzeit.ausText(mahlzeit))
     ModalBottomSheet(onDismissRequest = onSchliessen, containerColor = FoodyTheme.farben.grund) {
-        Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            Modifier.padding(horizontal = FoodyAbstaende.s4).padding(bottom = FoodyAbstaende.s4),
+            verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
+        ) {
             Text("${mahlzeitAnzeige(mahlzeit)}: Rezept wählen", style = MaterialTheme.typography.titleLarge, color = FoodyTheme.farben.text)
-            OutlinedTextField(suche, { suche = it }, Modifier.fillMaxWidth(), label = { Text("Rezept suchen") }, singleLine = true)
+            FoodyTextfeld("Rezept suchen", suche) { suche = it }
             LazyColumn(Modifier.heightIn(max = 480.dp)) {
                 items(treffer, key = { it.id }) { k ->
                     Row(
-                        Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onWahl(k) }.padding(vertical = 8.dp),
+                        Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onWahl(k) }.padding(vertical = FoodyAbstaende.s2),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(k.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)

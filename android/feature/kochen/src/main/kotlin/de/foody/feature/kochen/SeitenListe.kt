@@ -20,18 +20,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.token.FoodyAbstaende
 
 /** Tablet: alle Seiten links zum Springen – „Bereitlegen“ und die Schritte, je auf eine Zeile gekürzt. */
 @Composable
 internal fun SeitenListe(z: KochZustand.Da, aktuell: Int, onSeite: (Int) -> Unit) {
-    Column(Modifier.width(280.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(12.dp)) {
+    Column(Modifier.width(280.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(FoodyAbstaende.s3)) {
         (0 until z.seitenzahl).forEach { seite ->
             val schritt = z.schritt(seite)
             val titel = if (schritt == null) "Bereitlegen" else "Schritt ${seite + if (z.hatBereitlegen) 0 else 1}"
             Column(
                 Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
                     .background(if (seite == aktuell) FoodyTheme.farben.primaerBehaelter else Color.Transparent)
-                    .clickable { onSeite(seite) }.padding(horizontal = 12.dp, vertical = 8.dp),
+                    .clickable { onSeite(seite) }.padding(horizontal = FoodyAbstaende.s3, vertical = FoodyAbstaende.s2),
             ) {
                 Text(titel, style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.text)
                 schritt?.let {

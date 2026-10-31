@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
+import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.tagebuch.BlattAuftrag
 import de.foody.feature.heute.tagebuch.EintragenBlatt
@@ -75,9 +77,9 @@ fun HeuteScreen(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modif
 @Composable
 private fun HeuteInhalt(zustand: HeuteZustand?, aktionen: HeuteAktionen) {
     Column(
-        Modifier.widthIn(max = INHALT_MAX_BREITE).fillMaxWidth().safeDrawingPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = PLATZ_FUER_LEISTE).testTag(HEUTE_INHALT),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
+        Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().safeDrawingPadding()
+            .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = PLATZ_FUER_LEISTE).testTag(HEUTE_INHALT),
+        verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s5),
     ) {
         HeuteKopf(zustand?.datum, zustand?.sync, aktionen.onEinstellungen)
         if (zustand == null) return@Column

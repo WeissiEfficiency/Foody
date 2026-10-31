@@ -14,7 +14,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,8 +36,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.Augenbraue
+import de.foody.core.designsystem.komponenten.FoodyFrage
 import de.foody.core.designsystem.komponenten.FoodyKnopf
+import de.foody.core.designsystem.komponenten.FoodyTextfeld
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.core.sync.ErsterSync
 
@@ -49,9 +52,6 @@ object Verbinden {
 
     /** Kennung: angemeldet an anderem Server/Konto, während eine Verbindung besteht. */
     const val ERST_TRENNEN = "erst_trennen"
-
-    /** Lesebreite: Auf dem Tablet bleibt das Formular schmal und mittig. */
-    val MAX_BREITE = 720.dp
 }
 
 @Composable
@@ -72,9 +72,9 @@ private fun VerbindenScreen(ui: VerbindenUi, vm: VerbindenViewModel, onZurueck: 
 private fun VerbindenInhalt(ui: VerbindenUi, vm: VerbindenViewModel, onZurueck: () -> Unit) {
     val verbindung = ui.verbindung?.takeIf { it.verbunden }
     Column(
-        Modifier.widthIn(max = Verbinden.MAX_BREITE).fillMaxWidth().safeDrawingPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp).testTag(Verbinden.INHALT),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().safeDrawingPadding()
+            .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = 104.dp).testTag(Verbinden.INHALT),
+        verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onZurueck) {
@@ -104,8 +104,8 @@ private fun Anmelden(ui: VerbindenUi, vorbelegt: String, vm: VerbindenViewModel)
         "Melde dich mit deinem Foody-Konto an. Danach gleicht die App Rezepte, Plan, Einkauf und Tagebuch mit dem Server ab.",
         style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext,
     )
-    Feld("Server-Adresse", adresse, KeyboardType.Uri) { adresse = it }
-    Feld("Benutzername", benutzer, KeyboardType.Text) { benutzer = it }
+    FoodyTextfeld("Server-Adresse", adresse, tastatur = KeyboardType.Uri) { adresse = it }
+    FoodyTextfeld("Benutzername", benutzer) { benutzer = it }
     OutlinedTextField(
         passwort, { passwort = it }, Modifier.fillMaxWidth(), label = { Text("Passwort") }, singleLine = true,
         visualTransformation = PasswordVisualTransformation(),
@@ -116,14 +116,6 @@ private fun Anmelden(ui: VerbindenUi, vorbelegt: String, vm: VerbindenViewModel)
     FoodyKnopf(
         "Anmelden", { vm.anmelden(adresse, benutzer, passwort) }, Modifier.fillMaxWidth(),
         aktiv = !laeuft && adresse.isNotBlank() && benutzer.isNotBlank() && passwort.isNotEmpty(),
-    )
-}
-
-@Composable
-private fun Feld(beschriftung: String, wert: String, tastatur: KeyboardType, onWert: (String) -> Unit) {
-    OutlinedTextField(
-        wert, onWert, Modifier.fillMaxWidth(), label = { Text(beschriftung) }, singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = tastatur),
     )
 }
 
@@ -143,7 +135,7 @@ private fun ErsterAbgleich(vm: VerbindenViewModel) {
 @Composable
 private fun Wahl(titel: String, erklaerung: String, onWahl: () -> Unit) {
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
             Text(erklaerung, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.text)
             FoodyKnopf(titel, onWahl, Modifier.fillMaxWidth(), art = KnopfArt.UMRISS)
         }
@@ -154,7 +146,7 @@ private fun Wahl(titel: String, erklaerung: String, onWahl: () -> Unit) {
 private fun Verbunden(z: VerbindungsZustand, vm: VerbindenViewModel, onNeuAnmelden: () -> Unit) {
     var fragen by remember { mutableStateOf(false) }
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
             Text("Verbunden mit ${z.adresse.orEmpty()}", style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
             Text(
                 "Zuletzt synchronisiert: ${zuletztText(z.letzterSync, System.currentTimeMillis())}",
@@ -167,17 +159,9 @@ private fun Verbunden(z: VerbindungsZustand, vm: VerbindenViewModel, onNeuAnmeld
     if (z.letzterFehler == "anmeldung_abgelaufen") FoodyKnopf("Neu anmelden", onNeuAnmelden, Modifier.fillMaxWidth(), art = KnopfArt.UMRISS)
     FoodyKnopf("Trennen", { fragen = true }, Modifier.fillMaxWidth(), art = KnopfArt.UMRISS)
     if (fragen) {
-        AlertDialog(
-            onDismissRequest = { fragen = false },
-            title = { Text("Sync trennen?") },
-            text = { Text("Dieses Gerät wird beim Server abgemeldet. Die Daten auf dem Gerät bleiben erhalten.") },
-            confirmButton = {
-                FoodyKnopf(Verbinden.TRENNEN_BESTAETIGEN, {
-                    fragen = false
-                    vm.trennen()
-                }, art = KnopfArt.TEXT)
-            },
-            dismissButton = { FoodyKnopf("Abbrechen", { fragen = false }, art = KnopfArt.TEXT) },
+        FoodyFrage(
+            "Sync trennen?", "Dieses Gerät wird beim Server abgemeldet. Die Daten auf dem Gerät bleiben erhalten.",
+            Verbinden.TRENNEN_BESTAETIGEN, onJa = { fragen = false; vm.trennen() }, onNein = { fragen = false },
         )
     }
 }

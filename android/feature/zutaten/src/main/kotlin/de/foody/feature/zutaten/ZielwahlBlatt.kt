@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.data.zutaten.ZutatKurz
 import de.foody.core.data.zutaten.filtern
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.token.FoodyAbstaende
 
 /** Ziel fürs Zusammenführen wählen: Suche und Liste der übrigen Zutaten ([ziele] enthält die eigene nicht). */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,20 +32,20 @@ import de.foody.core.designsystem.FoodyTheme
 internal fun ZielwahlBlatt(ziele: List<ZutatKurz>, onGewaehlt: (ZutatKurz) -> Unit, onSchliessen: () -> Unit) {
     var suche by rememberSaveable { mutableStateOf("") }
     ModalBottomSheet(onDismissRequest = onSchliessen, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+        Column(Modifier.fillMaxWidth().padding(bottom = FoodyAbstaende.s4)) {
             Text(
-                "Zusammenführen mit …", Modifier.padding(horizontal = 16.dp),
+                "Zusammenführen mit …", Modifier.padding(horizontal = FoodyAbstaende.s4),
                 style = MaterialTheme.typography.titleLarge, color = FoodyTheme.farben.text,
             )
             OutlinedTextField(
-                suche, { suche = it }, Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                suche, { suche = it }, Modifier.fillMaxWidth().padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s2),
                 label = { Text("Suchen") }, singleLine = true,
             )
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = 480.dp)) {
                 items(filtern(ziele, suche, emptySet()), key = { it.id }) { z ->
                     Column(
                         Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button) { onGewaehlt(z) }
-                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                            .padding(horizontal = FoodyAbstaende.s4, vertical = 10.dp),
                     ) {
                         z.kategorie?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = FoodyTheme.farben.nebentext) }
                         Text(z.name, style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)

@@ -4,12 +4,12 @@ import android.database.sqlite.SQLiteConstraintException
 import androidx.room.withTransaction
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.ZutatEntity
+import de.foody.core.data.neueId
 import de.foody.domain.IngredientCatalog
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.text.Collator
 import java.util.Locale
-import java.util.UUID
 
 /**
  * Zutatenkatalog (Phase 6e2): lesen, anlegen, bearbeiten, löschen, zusammenführen und Namen vereinheitlichen. Jede
@@ -47,7 +47,7 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
         db.withTransaction {
             andereMitNamen(n, ausser = null)?.let { return@withTransaction ZutatErgebnis.NameVergeben(it.id, it.canonicalName) }
             val jetzt = uhr()
-            val id = UUID.randomUUID().toString()
+            val id = neueId()
             val neu = ZutatEntity(
                 id = id, canonicalName = n, category = IngredientCatalog.guessCategory(n), createdAt = jetzt, updatedAt = jetzt,
             )

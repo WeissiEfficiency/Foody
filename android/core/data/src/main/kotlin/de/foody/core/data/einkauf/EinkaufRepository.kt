@@ -7,6 +7,7 @@ import de.foody.core.data.db.EinkaufslisteEntity
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.alsIngredient
 import de.foody.core.data.alsRecipe
+import de.foody.core.data.neueId
 import de.foody.domain.EinkaufEingabe
 import de.foody.domain.IngredientCatalog
 import de.foody.domain.MeasureUnit
@@ -26,7 +27,6 @@ import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.UUID
 import kotlin.coroutines.CoroutineContext
 
 /** Höchstens so viele Kacheln unter „Zuletzt verwendet“. */
@@ -37,8 +37,6 @@ private const val NAME_MAX = 60
 
 /** Name einer Liste ohne Zeitraum. */
 internal const val LEERE_LISTE = "Einkauf"
-
-private fun neueId() = UUID.randomUUID().toString()
 
 /**
  * Einkaufslisten der V3: lesen als Flows, schreiben in Transaktionen (die Trigger tragen alles in die Outbox).

@@ -16,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,11 +36,9 @@ import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.komponenten.FoodyKnopf
-import de.foody.core.designsystem.komponenten.KnopfArt
-
-/** Lesebreite der Seite. */
-private val INHALT_MAX = 720.dp
+import de.foody.core.designsystem.komponenten.FoodyFrage
+import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyBreiten
 
 /** Dateidialoge der Seite: Sicherung anlegen und Datei zum Wiederherstellen wählen (in Tests ersetzbar). */
 class Dateiwahl(val erstellen: () -> Unit, val oeffnen: () -> Unit)
@@ -90,9 +87,9 @@ fun EinstellungenRoute(
     Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
             Column(
-                Modifier.widthIn(max = INHALT_MAX).fillMaxWidth().safeDrawingPadding()
-                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().safeDrawingPadding()
+                    .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = 104.dp),
+                verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onZurueck) {
@@ -117,28 +114,17 @@ fun EinstellungenRoute(
     }
 
     ersetzen?.let { uri ->
-        Rueckfrage(
+        FoodyFrage(
             "Alle Daten ersetzen?", "Alle Daten auf diesem Gerät werden durch den Inhalt der Datei ersetzt.", "Ersetzen",
             onJa = { ersetzen = null; vm.wiederherstellen(uri.toUri()) }, onNein = { ersetzen = null },
         )
     }
     if (loeschen) {
-        Rueckfrage(
+        FoodyFrage(
             "Alle Daten löschen?",
             "Alle Rezepte, Pläne, Einkaufslisten, Tagebuch und Fotos auf diesem Gerät löschen? Der Startkatalog wird neu eingespielt.",
             "Löschen",
             onJa = { loeschen = false; vm.allesLoeschen() }, onNein = { loeschen = false },
         )
     }
-}
-
-@Composable
-private fun Rueckfrage(titel: String, text: String, ja: String, onJa: () -> Unit, onNein: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onNein,
-        title = { Text(titel) },
-        text = { Text(text) },
-        confirmButton = { FoodyKnopf(ja, onJa, art = KnopfArt.TEXT) },
-        dismissButton = { FoodyKnopf("Abbrechen", onNein, art = KnopfArt.TEXT) },
-    )
 }

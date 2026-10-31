@@ -23,26 +23,27 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyChip
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 
 /** Ein Arbeitsschritt: Text groß, „Du brauchst“ mit Teilmengen, Timer-Chips. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun SchrittSeite(s: KochSchritt, abgehakt: Set<Int>, a: KochAktionen) {
-    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s5)) {
         // Groß für Armlänge, aber normal gewichtet: lange fette Absätze lesen sich schlechter
         Text(
             s.text, style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal),
             color = FoodyTheme.farben.text,
         )
         if (s.timer.isNotEmpty()) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 s.timer.forEach { t -> FoodyChip("▶ ${t.label}", ausgewaehlt = false, onKlick = { a.onTimerStarten(t) }) }
             }
         }
         if (s.zutaten.isNotEmpty()) {
             GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                     Augenbraue("Du brauchst")
                     s.zutaten.forEach { z -> SchrittZutatZeile(z, z.zeilenIndex in abgehakt) }
                 }

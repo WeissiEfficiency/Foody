@@ -30,10 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
+import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyBreiten
 import kotlinx.coroutines.launch
-
-/** Lesebreite des Detail-Inhalts. */
-private val INHALT_MAX = 720.dp
 
 /** Was das Detail auslösen kann; die Navigation liegt in der App. */
 internal class DetailAktionen(
@@ -91,12 +90,12 @@ fun RezeptDetailRoute(
             DetailZustand.Laden -> Unit
             DetailZustand.NichtGefunden -> LeererZustandFlaeche(
                 Icons.AutoMirrored.Outlined.MenuBook, "Rezept nicht gefunden", "Es wurde vielleicht gelöscht.",
-                aktionText = "Zurück", onAktion = onZurueck, modifier = Modifier.safeDrawingPadding().padding(16.dp),
+                aktionText = "Zurück", onAktion = onZurueck, modifier = Modifier.safeDrawingPadding().padding(FoodyAbstaende.s4),
             )
             is DetailZustand.Da -> Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
                 Column(
-                    Modifier.widthIn(max = INHALT_MAX).fillMaxWidth().safeDrawingPadding().padding(bottom = 104.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().safeDrawingPadding().padding(bottom = 104.dp),
+                    verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
                 ) { DetailInhalt(z, aktionen) }
             }
         }
