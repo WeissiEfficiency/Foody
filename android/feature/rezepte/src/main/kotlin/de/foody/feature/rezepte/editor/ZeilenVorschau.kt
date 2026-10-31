@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.domain.ImportedIngredient
 import de.foody.domain.MeasureUnit
 
@@ -14,7 +14,7 @@ import de.foody.domain.MeasureUnit
 @Composable
 internal fun ZeilenVorschau(zeilen: List<ZeilenStatus>) {
     if (zeilen.isEmpty()) return
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1)) {
         zeilen.forEach { s ->
             val fehler = s.fehler
             val erkannt = s.erkannt

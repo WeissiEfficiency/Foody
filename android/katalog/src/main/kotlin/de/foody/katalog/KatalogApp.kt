@@ -31,10 +31,9 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
 import de.foody.core.designsystem.komponenten.Abschnittskopf
 import de.foody.core.designsystem.komponenten.FoodyChip
+import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.katalog.seiten.KatalogSeitenInhalt
-
-/** Breite, ab der Seitenliste und Inhalt nebeneinander stehen (Tablet). */
-private val ZWEISPALTIG_AB = 840.dp
 
 /**
  * Katalog aller Komponenten. Handy: Seiten als Chip-Reihe oben; Tablet: Seitenliste links, Inhalt rechts. Die
@@ -61,19 +60,19 @@ fun KatalogApp(start: KatalogSeite = KatalogSeite.FARBEN_SCHRIFT, einstellung: K
                             m.testTag(INHALT_TAG)
                                 .semantics { darstellung = if (dunkel) "dunkel" else "hell" }
                                 .verticalScroll(rememberScrollState())
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                                .padding(FoodyAbstaende.s4),
+                            verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
                         ) {
                             Umschalter(e) { e = it }
                             Abschnittskopf(seite.titel)
                             KatalogSeitenInhalt(seite)
                         }
                     }
-                    if (maxWidth >= ZWEISPALTIG_AB) {
+                    if (maxWidth >= FoodyBreiten.zweispaltig) {
                         Row(Modifier.fillMaxSize()) {
                             Column(
-                                Modifier.width(260.dp).testTag(SEITENLISTE_TAG).verticalScroll(rememberScrollState()).padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                Modifier.width(260.dp).testTag(SEITENLISTE_TAG).verticalScroll(rememberScrollState()).padding(FoodyAbstaende.s4),
+                                verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
                             ) {
                                 KatalogSeite.entries.forEach { s ->
                                     FoodyChip(s.titel, ausgewaehlt = s == seite, onKlick = { seite = s }, modifier = Modifier.fillMaxWidth())
@@ -84,8 +83,9 @@ fun KatalogApp(start: KatalogSeite = KatalogSeite.FARBEN_SCHRIFT, einstellung: K
                     } else {
                         Column(Modifier.fillMaxSize()) {
                             Row(
-                                Modifier.testTag(SEITENREIHE_TAG).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                Modifier.testTag(SEITENREIHE_TAG).horizontalScroll(rememberScrollState())
+                                    .padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s2),
+                                horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
                             ) {
                                 KatalogSeite.entries.forEach { s ->
                                     FoodyChip(s.titel, ausgewaehlt = s == seite, onKlick = { seite = s })
@@ -102,7 +102,7 @@ fun KatalogApp(start: KatalogSeite = KatalogSeite.FARBEN_SCHRIFT, einstellung: K
 
 @Composable
 private fun Umschalter(e: KatalogEinstellung, aendern: (KatalogEinstellung) -> Unit) {
-    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         FoodyChip("System", e.darstellung == Darstellung.SYSTEM, { aendern(e.copy(darstellung = Darstellung.SYSTEM)) })
         FoodyChip("Hell", e.darstellung == Darstellung.HELL, { aendern(e.copy(darstellung = Darstellung.HELL)) })
         FoodyChip("Dunkel", e.darstellung == Darstellung.DUNKEL, { aendern(e.copy(darstellung = Darstellung.DUNKEL)) })

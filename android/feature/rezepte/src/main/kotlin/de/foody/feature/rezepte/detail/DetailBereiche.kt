@@ -38,6 +38,7 @@ import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.RezeptPlatzhalter
 import de.foody.core.designsystem.komponenten.rezeptBild
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.domain.Einordnung
 import de.foody.domain.Gang
@@ -51,10 +52,10 @@ internal fun DetailInhalt(z: DetailZustand.Da, a: DetailAktionen) {
     val r = z.voll.rezept
     val angaben = listOfNotNull(zeit(r.prepMinutes, r.cookMinutes), kcalJePortion(z.voll), kcalFuerPortionen(z.voll, z.portionen))
     Kopfbild(r.name, angaben.joinToString(" · "), r.imageUri, a.onZurueck)
-    Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(Modifier.padding(horizontal = FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4)) {
         if (r.archivedAt != null) {
             GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                     Text("Dieses Rezept ist archiviert.", style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
                     FoodyKnopf("Wiederherstellen", { a.onArchivieren(false) }, Modifier.fillMaxWidth(), art = KnopfArt.UMRISS)
                 }
@@ -97,13 +98,13 @@ private fun Kopfbild(name: String, meta: String, bild: String?, onZurueck: () ->
     Box(Modifier.fillMaxWidth().height(260.dp)) {
         rezeptBild(bild)?.invoke() ?: RezeptPlatzhalter(Modifier.fillMaxSize())
         // Glaskreis hinter dem Pfeil, damit er auch auf dunklen Fotos lesbar bleibt
-        GlasFlaeche(GlasStufe.BILD, Modifier.padding(8.dp), form = CircleShape) {
+        GlasFlaeche(GlasStufe.BILD, Modifier.padding(FoodyAbstaende.s2), form = CircleShape) {
             IconButton(onClick = onZurueck) {
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
             }
         }
-        GlasFlaeche(GlasStufe.BILD, Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(12.dp)) {
-            Column(Modifier.padding(16.dp)) {
+        GlasFlaeche(GlasStufe.BILD, Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(FoodyAbstaende.s3)) {
+            Column(Modifier.padding(FoodyAbstaende.s4)) {
                 Text(name, style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
                 if (meta.isNotEmpty()) Text(meta, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
             }

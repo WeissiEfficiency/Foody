@@ -20,11 +20,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.unit.dp
 import de.foody.core.data.zutaten.Angleichung
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.token.FoodyAbstaende
 
 /**
  * „Neue Zutat“: Name eingeben; gibt es ihn schon ([gibtEsSchon] = vorhandener Name), bietet der Dialog „Öffnen“ an.
@@ -48,7 +48,7 @@ internal fun NeueZutatDialog(
         onDismissRequest = onAbbrechen,
         title = { Text("Neue Zutat") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 OutlinedTextField(
                     name, { name = it }, Modifier.fillMaxWidth(), label = { Text("Name") }, singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
@@ -89,7 +89,7 @@ internal fun VereinheitlichenDialog(schritte: List<Angleichung>, onAnwenden: () 
         onDismissRequest = onAbbrechen,
         title = { Text("Namen vereinheitlichen") },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1)) {
                 vorschauZeilen(schritte).forEach { Text(it) }
                 if (kategorien > 0) Text(kategorienText(kategorien))
             }

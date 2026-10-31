@@ -4,14 +4,31 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 
-/** „Änderungen verwerfen?“ – vor dem Verlassen eines Editors mit ungespeicherten Änderungen. */
+/**
+ * Rückfrage vor einer Aktion: [text], optional mit [titel]; [ja] löst [onJa] aus, [nein] (oder Danebentippen)
+ * [onNein].
+ */
 @Composable
-fun VerwerfenFrage(onVerwerfen: () -> Unit, onWeiter: () -> Unit) {
+fun FoodyFrage(
+    titel: String?,
+    text: String,
+    ja: String,
+    onJa: () -> Unit,
+    onNein: () -> Unit,
+    nein: String = "Abbrechen",
+) {
     AlertDialog(
-        onDismissRequest = onWeiter,
-        title = { Text("Änderungen verwerfen?") },
-        text = { Text("Die ungespeicherten Änderungen gehen verloren.") },
-        confirmButton = { FoodyKnopf("Verwerfen", onVerwerfen, art = KnopfArt.TEXT) },
-        dismissButton = { FoodyKnopf("Weiter bearbeiten", onWeiter, art = KnopfArt.TEXT) },
+        onDismissRequest = onNein,
+        title = titel?.let { { Text(it) } },
+        text = { Text(text) },
+        confirmButton = { FoodyKnopf(ja, onJa, art = KnopfArt.TEXT) },
+        dismissButton = { FoodyKnopf(nein, onNein, art = KnopfArt.TEXT) },
     )
 }
+
+/** „Änderungen verwerfen?“ – vor dem Verlassen eines Editors mit ungespeicherten Änderungen. */
+@Composable
+fun VerwerfenFrage(onVerwerfen: () -> Unit, onWeiter: () -> Unit) = FoodyFrage(
+    "Änderungen verwerfen?", "Die ungespeicherten Änderungen gehen verloren.", "Verwerfen", onVerwerfen, onWeiter,
+    nein = "Weiter bearbeiten",
+)

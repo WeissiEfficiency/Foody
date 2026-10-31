@@ -2,6 +2,7 @@ package de.foody.feature.zutaten
 
 import de.foody.core.data.zutaten.Angleichung
 import de.foody.core.data.zutaten.ZutatKurz
+import de.foody.core.designsystem.komponenten.kcalText
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -27,6 +28,8 @@ class ZutatenTexteTest {
     fun kcal() {
         assertEquals("359 kcal", kcalText(359))
         assertEquals("– kcal", kcalText(null))
+        // Wie im Tagebuch, mit Tausenderpunkt
+        assertEquals("1.234 kcal", kcalText(1234))
     }
 
     @Test

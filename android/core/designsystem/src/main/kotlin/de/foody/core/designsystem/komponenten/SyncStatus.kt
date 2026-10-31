@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.animationenErlaubt
 import de.foody.core.designsystem.glas.GlasFlaeche
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 
 /** Was der Sync-Status zeigt; die Zuordnung der Kennungen aus `:core:sync` folgt in Phase 5. */
@@ -73,7 +74,7 @@ fun SyncStatus(anzeige: SyncAnzeige, modifier: Modifier = Modifier) {
     }
     GlasFlaeche(GlasStufe.LEICHT, modifier.semantics { liveRegion = LiveRegionMode.Polite }, form = CircleShape) {
         Row(
-            Modifier.heightIn(min = 32.dp).padding(horizontal = 12.dp, vertical = 4.dp),
+            Modifier.heightIn(min = 32.dp).padding(horizontal = FoodyAbstaende.s3, vertical = FoodyAbstaende.s1),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {

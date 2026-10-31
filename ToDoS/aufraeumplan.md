@@ -128,10 +128,10 @@ prüfen.
 
 | ID | Befund | Vorschlag | Prio |
 |---|---|---|---|
-| Q1 | **Abstände hart kodiert:** `FoodyAbstaende` (4-dp-Raster, `FoodyFormen.kt:14`) wird nirgends benutzt; in Features und `:app` stehen 313 feste `.dp`, davon 8.dp 84×, 16.dp 78×, 12.dp 33×, 24.dp 15× | Werte des Rasters durch `FoodyAbstaende.s1…s6` ersetzen (deckt ~230 Stellen), Rest bleibt bewusst | mittel |
-| Q2 | **Breiten mehrfach:** 840 dp (zwei Spalten/Rail) 4× als eigene Konstante (`Hauptgeruest`, `EinkaufScreen`, `KochenScreen`, `RezepteBereich`), 720 dp (Inhaltsbreite) 3× zusätzlich zu `INHALT_MAX_BREITE` im Designsystem | Eine Stelle im Designsystem (`FoodyBreiten.zweispaltig`, `.inhalt`) | mittel |
+| ✅ Q1 | **Abstände hart kodiert:** `FoodyAbstaende` (4-dp-Raster, `FoodyFormen.kt:14`) wird nirgends benutzt; in Features und `:app` stehen 313 feste `.dp`, davon 8.dp 84×, 16.dp 78×, 12.dp 33×, 24.dp 15× | Werte des Rasters durch `FoodyAbstaende.s1…s6` ersetzen (deckt ~230 Stellen), Rest bleibt bewusst. **Erledigt:** 243 Stellen in `padding`, `spacedBy`, `PaddingValues` und `Spacer` (auch im Designsystem und `:katalog`); Größen, Ecken und andere Werte bleiben `.dp`. Bilder unverändert | mittel |
+| ✅ Q2 | **Breiten mehrfach:** 840 dp (zwei Spalten/Rail) 4× als eigene Konstante (`Hauptgeruest`, `EinkaufScreen`, `KochenScreen`, `RezepteBereich`), 720 dp (Inhaltsbreite) 3× zusätzlich zu `INHALT_MAX_BREITE` im Designsystem | Eine Stelle im Designsystem (`FoodyBreiten.zweispaltig`, `.inhalt`). **Erledigt:** dazu `.zweiBereiche` (1100 dp, Woche und Einkauf); 15 eigene Konstanten weg | mittel |
 | ✅ Q3 | **`STOPP_MS = 5_000L` 5× definiert**, dazu `SharingStarted.Eagerly` an 17 Stellen in 8 ViewModels | Eine gemeinsame Konstante in `:core`, `Eagerly` → `WhileSubscribed` (zusammen mit W4). **Erledigt:** `SolangeSichtbar` in `:core:designsystem`, Eintragen umgestellt. Im Folge-PR (Wunsch des Nutzers: bei offener App darf alles laufen und gespeichert bleiben, geschlossen nichts) daraus `SolangeAppOffen`: läuft, solange die App offen ist oder jemand zusieht; jetzt in allen ViewModels außer dem Kochmodus (`Eagerly`, hält den Bildschirm an). Einkauf liest die angezeigte Liste in Aktionen frisch. Der Sync plant nur bei offener App; beim Schließen geht eine wartende Änderung einmal sofort hinaus | mittel |
-| Q4 | **Doppelte Hilfen:** `kcalText` 2× und **uneinheitlich** (Tagebuch „1.234 kcal“, Zutaten „1234 kcal“), `zahlText` 2× gleich (`ZutatEntwurf`, `EintragZeile`), `tagKurz` 2× mit verschiedenem Format, `neueId` 2×, Textfeld `Feld` 3× (Verbinden, Rezept-Editor, Zutat-Editor), `LoeschenFrage` 2× | Zahlen- und kcal-Texte an einer Stelle (`:core:data` bzw. `:domain`), Textfeld und Frage-Dialog ins Designsystem | mittel |
+| ✅ Q4 | **Doppelte Hilfen:** `kcalText` 2× und **uneinheitlich** (Tagebuch „1.234 kcal“, Zutaten „1234 kcal“), `zahlText` 2× gleich (`ZutatEntwurf`, `EintragZeile`), `tagKurz` 2× mit verschiedenem Format, `neueId` 2×, Textfeld `Feld` 3× (Verbinden, Rezept-Editor, Zutat-Editor), `LoeschenFrage` 2× | Zahlen- und kcal-Texte an einer Stelle (`:core:data` bzw. `:domain`), Textfeld und Frage-Dialog ins Designsystem. **Erledigt:** `kcalText` im Designsystem (Zutaten jetzt auch „1.234 kcal“), `zahlText`/`zahlAus`, `wochentagKurz`/`datumKurz` und `neueId` in `:core:data`; `FoodyTextfeld` (3 `Feld` und 5 einfache Felder) und `FoodyFrage` (5 Rückfragen) im Designsystem | mittel |
 | ✅ Q5 | **Dispatcher fest verdrahtet:** `Dispatchers.IO/Default` direkt in 14 Dateien, nur `EinkaufRepository` und `WocheRepository` nehmen einen `rechnen`-Kontext an | Hilt-Qualifier `@Rechnen`/`@EinAusgabe` und überall injizieren; macht W3 einfach und Tests schneller. **Erledigt:** Qualifier `@Rechnen` (`:core:data`, `DatenModul.rechnen`) für Rezept-, Heute-, Woche- und Einkauf-Repository und den Sync-Bereich, ohne Standardwert; Tests geben `EmptyCoroutineContext`. `@EinAusgabe` bewusst nicht: Dateizugriffe (`withContext(Dispatchers.IO)`) rechnen nichts und laufen in Tests genauso | mittel |
 | Q6 | **UI-Texte im Code:** keine `strings.xml`-Texte, rund 70 `Text("…")` plus Texte als Parameter | Für eine deutschsprachige Ein-Nutzer-App vertretbar; als ADR festhalten statt umbauen | niedrig |
 | Q7 | `:baselineprofile` setzt `compileSdk/minSdk/targetSdk` und Java 17 selbst statt über `build-logic` | Werte aus dem Convention-Plugin nehmen | niedrig |
@@ -149,7 +149,7 @@ Ressourcen schlank (381 KB), Features ohne Querverweise.
 |---|---|---|
 | ✅ R1 | `:domain`: `RecipeSort`, `IngredientCatalog.assumedAtHome`, `RecipeProfile.carbsPerServing`/`reliable`, `NutritionResult.overallCompleteness`/`missingIngredientIds`/`lineGaps`/`lineEnergyPerServingKj`, `Mahlzeit.vorschlagFuer`, `DateRange.days` | Reste der v1-Oberfläche; vor dem Löschen je Regel in `docs/domain-rules.md` prüfen (dieser PR) |
 | ✅ R2 | `SyncDao.loeschenRevision`, `Einstellungsschluessel.EINKAUF_ANSICHT` | ungenutzt (dieser PR) |
-| R3 | `FoodyAbstaende` | nur wenn Q1 nicht umgesetzt wird |
+| ~~R3~~ | `FoodyAbstaende` | entfällt: mit Q1 benutzt |
 | R4 | B5, B7–B9 und Stufe 3 (C1–C8, ab 25.11.) | stehen oben |
 
 **Doku:**
@@ -171,7 +171,7 @@ Ressourcen schlank (381 KB), Features ohne Querverweise.
 1. **Diese Woche:** ✅ Doku-PR B1–B4 (#140), ✅ Z1 (#139), A3/A4 größtenteils erledigt. ✅ B7–B9, R1–R2 (B5 entfällt),
    ✅ Doku-PR R5–R8 (#143).
 2. **Danach:** W1 und W2 (je ein PR), dann W3+W4 zusammen mit Q3 und Q5 (gleiche Stellen), mit Messung vorher/nachher.
-   Q1, Q2 und Q4 als ein Designsystem-PR (Bildvergleich neu aufnehmen).
+   ✅ Q1, Q2 und Q4 als ein Designsystem-PR (Bilder blieben gleich).
 3. **Server, ein Rebuild für alles:** D1–D4 zusammen, D5 prüfen.
 4. **Ab 25.11.:** Stufe 3 (C1–C7), C8 nur auf deinen Wunsch.
 5. Danach ist die Bahn frei für die KI-Hilfe (`ToDoS/ki-plan.md`).

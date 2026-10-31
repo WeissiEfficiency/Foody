@@ -14,10 +14,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.domain.Mahlzeit
 
 private const val MAX_NAME = 30
@@ -32,8 +32,11 @@ internal fun MahlzeitWahl(titel: String, onWahl: (String) -> Unit, onAbbrechen: 
         onDismissRequest = onAbbrechen,
         title = { Text(titel) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
+                    verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
+                ) {
                     listOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.SNACK, Mahlzeit.ABENDESSEN).forEach { m ->
                         FoodyChip(mahlzeitAnzeige(m), ausgewaehlt = false, onKlick = { onWahl(m.name) })
                     }

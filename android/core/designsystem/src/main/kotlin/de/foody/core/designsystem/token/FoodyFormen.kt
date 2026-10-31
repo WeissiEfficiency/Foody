@@ -19,3 +19,15 @@ object FoodyAbstaende {
     val s5 = 20.dp
     val s6 = 24.dp
 }
+
+/** Breiten für große Bildschirme (Tablet). */
+object FoodyBreiten {
+    /** Ab dieser Fensterbreite zwei Spalten und die Navigation links (Material „expanded“). */
+    val zweispaltig = 840.dp
+
+    /** Lesebreite: Eine Inhaltsspalte wird nicht breiter und steht auf dem Tablet mittig. */
+    val inhalt = 720.dp
+
+    /** Höchstbreite der Seiten mit zwei Bereichen nebeneinander (Woche, Einkauf). */
+    val zweiBereiche = 1100.dp
+}

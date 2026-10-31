@@ -25,9 +25,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyChip
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.domain.Diet
 import de.foody.domain.Mahlzeit
 
@@ -44,7 +44,10 @@ private val MAHLZEITEN = listOf(
 @Composable
 internal fun ListeKopf(onNeu: () -> Unit, onImport: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
-    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        Modifier.fillMaxWidth().padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s1, top = FoodyAbstaende.s2),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Text("Rezepte", Modifier.weight(1f), style = MaterialTheme.typography.headlineLarge, color = FoodyTheme.farben.text)
         Box {
             IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, contentDescription = "Mehr", tint = FoodyTheme.farben.text) }
@@ -59,7 +62,7 @@ internal fun ListeKopf(onNeu: () -> Unit, onImport: () -> Unit) {
 @Composable
 internal fun Suche(text: String, onText: (String) -> Unit) {
     OutlinedTextField(
-        text, onText, Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        text, onText, Modifier.fillMaxWidth().padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s2),
         label = { Text("Rezepte suchen") }, singleLine = true,
         leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
     )
@@ -69,7 +72,7 @@ internal fun Suche(text: String, onText: (String) -> Unit) {
 @Composable
 internal fun FilterChips(f: ListeFilter, tags: List<String>, aendern: ((ListeFilter) -> ListeFilter) -> Unit) {
     var sortierMenu by remember { mutableStateOf(false) }
-    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyRow(contentPadding = PaddingValues(horizontal = FoodyAbstaende.s4), horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         item {
             Box {
                 FoodyChip("Sortierung: ${f.sortierung.text}", false, { sortierMenu = true })

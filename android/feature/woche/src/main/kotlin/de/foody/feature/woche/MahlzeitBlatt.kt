@@ -22,16 +22,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import de.foody.core.data.woche.PlanEintrag
+import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.token.FoodyAbstaende
 import java.time.LocalDate
-
-private val TAGE = listOf("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
 
 /** Was das Mahlzeit-Blatt auslösen kann. */
 internal class MahlzeitAktionen(
@@ -56,7 +55,11 @@ internal fun MahlzeitBlatt(e: PlanEintrag, montag: LocalDate, a: MahlzeitAktione
         onDismissRequest = onSchliessen, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = FoodyTheme.farben.grund,
     ) {
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(
+            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = FoodyAbstaende.s6)
+                .padding(bottom = FoodyAbstaende.s6).navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
+        ) {
             Text(e.rezeptName, style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
             Text(mahlzeitAnzeige(e.mahlzeit), style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -68,21 +71,21 @@ internal fun MahlzeitBlatt(e: PlanEintrag, montag: LocalDate, a: MahlzeitAktione
                     Icon(Icons.Outlined.Add, contentDescription = "Mehr Portionen", tint = FoodyTheme.farben.text)
                 }
             }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 FoodyChip("Gekocht", ausgewaehlt = e.gekocht, onKlick = { a.onGekocht(!e.gekocht) })
                 FoodyKnopf("Kochen", a.onKochen)
                 FoodyKnopf("Rezept ansehen", a.onRezept, art = KnopfArt.UMRISS)
             }
             Augenbraue("Verschieben")
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                TAGE.forEachIndexed { i, name ->
-                    val tag = montag.plusDays(i.toLong())
-                    FoodyChip(name, ausgewaehlt = tag == e.datum, onKlick = { if (tag != e.datum) a.onVerschieben(tag) })
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
+                (0L..6L).forEach { i ->
+                    val tag = montag.plusDays(i)
+                    FoodyChip(wochentagKurz(tag), ausgewaehlt = tag == e.datum, onKlick = { if (tag != e.datum) a.onVerschieben(tag) })
                 }
                 FoodyChip("Vorige Woche", ausgewaehlt = false, onKlick = { a.onVerschieben(e.datum.minusDays(7)) })
                 FoodyChip("Nächste Woche", ausgewaehlt = false, onKlick = { a.onVerschieben(e.datum.plusDays(7)) })
             }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 FoodyKnopf("Umbenennen", a.onUmbenennen, art = KnopfArt.TEXT)
                 FoodyKnopf("Entfernen", a.onEntfernen, art = KnopfArt.TEXT)
             }

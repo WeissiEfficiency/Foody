@@ -30,6 +30,7 @@ import de.foody.core.designsystem.komponenten.Naehrwertbalken
 import de.foody.core.designsystem.komponenten.RezeptPlatzhalter
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.rezeptBild
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 
 /**
@@ -40,7 +41,7 @@ import de.foody.core.designsystem.token.GlasStufe
 internal fun TagKarte(tag: WochenTag, heute: Boolean, ziel: Int?, onEintrag: (PlanEintrag) -> Unit, onPlus: () -> Unit, modifier: Modifier = Modifier) {
     val n = tag.naehrwerte
     GlasFlaeche(GlasStufe.DICHT, modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     tagKurz(tag.datum), Modifier.weight(1f),
@@ -72,7 +73,7 @@ internal fun TagKarte(tag: WochenTag, heute: Boolean, ziel: Int?, onEintrag: (Pl
 private fun EintragZeile(e: PlanEintrag, onKlick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClick = onKlick),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
     ) {
         Box(Modifier.size(40.dp).clip(RoundedCornerShape(10.dp))) {
             rezeptBild(e.bild)?.invoke() ?: RezeptPlatzhalter(Modifier.size(40.dp), mitSymbol = false)

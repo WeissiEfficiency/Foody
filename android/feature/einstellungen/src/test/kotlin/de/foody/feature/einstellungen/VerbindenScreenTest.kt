@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.sync.Ergebnis
 import de.foody.core.sync.ErsterSync
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -141,7 +142,7 @@ class VerbindenScreenTest {
     fun tabletSchmal() {
         zeigen()
         val b = compose.onNodeWithTag(Verbinden.INHALT).getUnclippedBoundsInRoot()
-        assertTrue(b.width <= Verbinden.MAX_BREITE, "zu breit: ${b.width}")
+        assertTrue(b.width <= FoodyBreiten.inhalt, "zu breit: ${b.width}")
     }
 
     private fun neuAnmelden() {

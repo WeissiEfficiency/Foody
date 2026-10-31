@@ -33,6 +33,7 @@ import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 
@@ -40,7 +41,7 @@ import de.foody.core.designsystem.token.GlasStufe
 @Composable
 internal fun Abschnitt(titel: String, inhalt: @Composable ColumnScope.() -> Unit) {
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth(), form = FoodyFormen.gross) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth().padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
             Augenbraue(titel)
             inhalt()
         }
@@ -80,7 +81,7 @@ internal fun KontoAbschnitt(konto: VerbindungsZustand?, jetzt: Long, onServer: (
 
 @Composable
 internal fun DarstellungAbschnitt(gewaehlt: Darstellung, onWahl: (Darstellung) -> Unit) = Abschnitt("Darstellung") {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         listOf(Darstellung.SYSTEM to "System", Darstellung.HELL to "Hell", Darstellung.DUNKEL to "Dunkel").forEach { (d, text) ->
             FoodyChip(text, ausgewaehlt = d == gewaehlt, onKlick = { onWahl(d) })
         }
@@ -116,7 +117,7 @@ internal fun ZutatenAbschnitt(anzahl: Int?, onlineSuche: Boolean, onZutaten: () 
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(onlineSuche, role = Role.Switch, onValueChange = onOnlineSuche),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
     ) {
         Column(Modifier.weight(1f)) {
             Text("Online-Produktsuche", style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)

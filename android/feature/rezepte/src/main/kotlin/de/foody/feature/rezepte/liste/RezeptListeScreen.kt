@@ -25,6 +25,7 @@ import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.RezeptkarteRaster
 import de.foody.core.designsystem.komponenten.rezeptBild
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyFormen
 
 /**
@@ -43,7 +44,7 @@ fun RezeptListeRoute(
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
         ListeKopf(onNeu, onImport)
         if (z.geladen && z.keineRezepte) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
                 LeererZustandFlaeche(
                     Icons.AutoMirrored.Outlined.MenuBook, "Noch keine Rezepte",
                     "Lege ein Rezept an oder importiere Markdown-Dateien.", aktionText = "Anlegen", onAktion = onNeu,
@@ -57,15 +58,15 @@ fun RezeptListeRoute(
         if (z.geladen && z.treffer.isEmpty()) {
             LeererZustandFlaeche(
                 Icons.AutoMirrored.Outlined.MenuBook, "Nichts gefunden", "Kein Rezept passt zu Suche und Filtern.",
-                aktionText = "Filter zurücksetzen", onAktion = vm::zuruecksetzen, modifier = Modifier.padding(16.dp),
+                aktionText = "Filter zurücksetzen", onAktion = vm::zuruecksetzen, modifier = Modifier.padding(FoodyAbstaende.s4),
             )
             return@Column
         }
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 160.dp),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = 104.dp),
+            horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
+            verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
             items(z.treffer, key = { it.id }) { k ->
                 val markiert = if (k.id == ausgewaehlt) Modifier.border(2.dp, FoodyTheme.farben.primaer, FoodyFormen.mittel) else Modifier
