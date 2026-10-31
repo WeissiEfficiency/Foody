@@ -8,7 +8,7 @@ import de.foody.core.data.einkauf.EinkaufRepository
 import de.foody.core.data.einkauf.GeloeschterArtikel
 import de.foody.core.data.einkauf.ListenKopf
 import de.foody.core.data.einkauf.ZuletztArtikel
-import de.foody.core.designsystem.SolangeSichtbar
+import de.foody.core.designsystem.SolangeAppOffen
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -66,12 +66,12 @@ class EinkaufViewModel @Inject constructor(
         repo.zuletzt(),
         suchText,
     ) { z, zuletzt, suche -> z.copy(zuletzt = zuletzt, suche = suche) }
-        .stateIn(viewModelScope, SolangeSichtbar, EinkaufZustand())
+        .stateIn(viewModelScope, SolangeAppOffen, EinkaufZustand())
 
-    val fruehere: StateFlow<List<ListenKopf>> = repo.fruehere().stateIn(viewModelScope, SolangeSichtbar, emptyList())
+    val fruehere: StateFlow<List<ListenKopf>> = repo.fruehere().stateIn(viewModelScope, SolangeAppOffen, emptyList())
 
     val blatt: StateFlow<Blatt?> = saved.getStateFlow<String?>(BLATT, null).map { Blatt.ausText(it) }
-        .stateIn(viewModelScope, SolangeSichtbar, Blatt.ausText(saved[BLATT]))
+        .stateIn(viewModelScope, SolangeAppOffen, Blatt.ausText(saved[BLATT]))
 
     private val vorschauStand = MutableStateFlow<VorschauZustand?>(null)
     val vorschau: StateFlow<VorschauZustand?> = vorschauStand.asStateFlow()

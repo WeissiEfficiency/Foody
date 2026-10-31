@@ -16,7 +16,7 @@ import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.sicherung.LoeschErgebnis
 import de.foody.core.data.sicherung.Sicherung
 import de.foody.core.data.zutaten.ZutatenRepository
-import de.foody.core.designsystem.SolangeSichtbar
+import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.core.scan.ScanEinstellung
 import java.io.File
 import java.time.Clock
@@ -76,7 +76,7 @@ class EinstellungenViewModel @Inject constructor(
         combine(darstellungen.darstellung(), ziel.tagesziel(), konto.zustand, laufend, zutaten.anzahl()) { d, t, k, l, n ->
             EinstellungenZustand(d, t, k, l, n)
         }.combine(scan.onlineSuche) { z, online -> z.copy(onlineSuche = online) }.stateIn(
-            viewModelScope, SolangeSichtbar,
+            viewModelScope, SolangeAppOffen,
             // Startwerte sofort aus den Prefs: kein Umspringen, bis der Kontostand da ist
             EinstellungenZustand(darstellung = darstellungen.aktuell(), tagesziel = ziel.aktuell(), onlineSuche = scan.onlineSuche.value),
         )

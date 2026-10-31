@@ -10,7 +10,7 @@ import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.heute.OffenerEinkauf
 import de.foody.core.data.heute.RezeptKurz
 import de.foody.core.data.tagebuch.TagebuchRepository
-import de.foody.core.designsystem.SolangeSichtbar
+import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.core.designsystem.komponenten.SyncAnzeige
 import de.foody.core.sync.SyncLage
 import de.foody.core.sync.SyncLageQuelle
@@ -61,10 +61,10 @@ class HeuteViewModel @Inject constructor(
     ziel: TageszielSpeicher,
     zeit: Zeitgeber,
 ) : ViewModel() {
-    private val jetzt = zeit.jetzt().shareIn(viewModelScope, SolangeSichtbar, replay = 1)
+    private val jetzt = zeit.jetzt().shareIn(viewModelScope, SolangeAppOffen, replay = 1)
 
     /** Einmal gerechnet für Plan und Vorschläge. */
-    private val rezepte = heute.rezepteKurz().shareIn(viewModelScope, SolangeSichtbar, replay = 1)
+    private val rezepte = heute.rezepteKurz().shareIn(viewModelScope, SolangeAppOffen, replay = 1)
 
     /** Plan und Tagebuch des Tages; wechselt um Mitternacht auf den neuen Tag. */
     private val tag = jetzt.map { it.toLocalDate() }.distinctUntilChanged().flatMapLatest { datum ->
@@ -76,7 +76,7 @@ class HeuteViewModel @Inject constructor(
     val zustand: StateFlow<HeuteZustand?> =
         combine(jetzt, tag, heute.rezeptVorschlaege(rezepte), heute.offenerEinkauf(), umfeld) { j, t, rezepte, einkauf, (lage, kcalZiel) ->
             heuteZustand(j, t, rezepte, einkauf, lage, kcalZiel)
-        }.stateIn(viewModelScope, SolangeSichtbar, null)
+        }.stateIn(viewModelScope, SolangeAppOffen, null)
 
     /** „Gegessen?“: trägt den Plan-Eintrag mit einer Portion ein (höchstens einmal). */
     fun gegessen(planEintragId: String) {

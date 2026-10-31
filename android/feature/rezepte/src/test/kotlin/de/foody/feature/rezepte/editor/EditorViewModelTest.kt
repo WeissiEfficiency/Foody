@@ -56,7 +56,7 @@ class EditorViewModelTest {
         vm = halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage, EmptyCoroutineContext) { 1_000L }, db, ablage)).sichtbar()
     }
 
-    /** Wie die Oberfläche zusehen, damit die `SolangeSichtbar`-Zustände rechnen. */
+    /** Wie die Oberfläche zusehen, damit die `SolangeAppOffen`-Zustände rechnen. */
     private fun EditorViewModel.sichtbar() = also { halter.zusehen(zustand, speichernMoeglich, geaendert) }
 
     @After

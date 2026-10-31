@@ -30,8 +30,9 @@ class ViewModelHalter {
     }
 
     /**
-     * Sammelt [flows] auf `Dispatchers.Main.immediate`, wie es die sichtbare Oberfläche tut. Zustände mit `SolangeSichtbar`
-     * rechnen nur, solange jemand zusieht; ein Test, der `.value` liest, muss deshalb erst zusehen.
+     * Sammelt [flows] auf `Dispatchers.Main.immediate`, wie es die sichtbare Oberfläche tut. Im Test gilt die App als
+     * geschlossen (`AppOffen`); Zustände mit `SolangeAppOffen` rechnen dann nur, solange jemand zusieht. Ein Test, der
+     * `.value` liest, muss deshalb erst zusehen.
      */
     fun zusehen(vararg flows: Flow<*>) {
         val scope = zuseher ?: CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).also { zuseher = it }

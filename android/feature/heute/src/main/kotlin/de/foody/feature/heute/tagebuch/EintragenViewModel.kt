@@ -12,7 +12,7 @@ import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.data.zutaten.Packungswerte
 import de.foody.core.data.zutaten.nameBereinigt
 import de.foody.core.data.zutaten.zutatMitNamen
-import de.foody.core.designsystem.SolangeSichtbar
+import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.core.scan.PackungScan
 import de.foody.core.scan.ScanAusgang
 import de.foody.core.scan.ScanLauf
@@ -112,7 +112,7 @@ class EintragenViewModel @Inject constructor(
     private val gesperrt = MutableStateFlow(false)
 
     /** Einmal gerechnet für Plan und Rezeptsuche; nur solange das Blatt offen ist. */
-    private val rezepte = heute.rezepteKurz().shareIn(viewModelScope, SolangeSichtbar, replay = 1)
+    private val rezepte = heute.rezepteKurz().shareIn(viewModelScope, SolangeAppOffen, replay = 1)
 
     /** Heutige, noch nicht eingetragene Plan-Einträge des gewählten Tags. */
     private val offenerPlan = eingaben.map { it.datum }.distinctUntilChanged().flatMapLatest { tag ->
@@ -123,7 +123,7 @@ class EintragenViewModel @Inject constructor(
     }
 
     /** Der ganze Katalog, auch für die Häkchen-Vorgabe beim Packungsnamen. */
-    private val katalog = db.zutatDao().alleFlow().stateIn(viewModelScope, SolangeSichtbar, emptyList())
+    private val katalog = db.zutatDao().alleFlow().stateIn(viewModelScope, SolangeAppOffen, emptyList())
 
     private val zutatenKatalog = katalog.map { z -> z.map { ZutatKurz(it.id, it.canonicalName) }.sortedBy { it.name.lowercase() } }
 
@@ -137,10 +137,10 @@ class EintragenViewModel @Inject constructor(
                 plan = plan,
                 vorhandeneZutat = e.packung?.let { vorhandene(e.pName) },
             )
-        }.stateIn(viewModelScope, SolangeSichtbar, EintragenZustand(Eingaben(), emptyList(), emptyList(), emptyList()))
+        }.stateIn(viewModelScope, SolangeAppOffen, EintragenZustand(Eingaben(), emptyList(), emptyList(), emptyList()))
 
     val speichernMoeglich: StateFlow<Boolean> =
-        combine(eingaben, gesperrt) { e, sperre -> !sperre && gueltig(e) }.stateIn(viewModelScope, SolangeSichtbar, false)
+        combine(eingaben, gesperrt) { e, sperre -> !sperre && gueltig(e) }.stateIn(viewModelScope, SolangeAppOffen, false)
 
     private var letzterAuftrag: String?
         get() = gespeichert[AUFTRAG]

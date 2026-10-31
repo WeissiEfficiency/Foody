@@ -9,7 +9,7 @@ import de.foody.core.data.db.PlanEintragEntity
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.data.woche.WochenAnsicht
 import de.foody.core.data.woche.WocheRepository
-import de.foody.core.designsystem.SolangeSichtbar
+import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.domain.Mahlzeit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -51,16 +51,16 @@ class WocheViewModel @Inject constructor(
     private val montag = saved.getStateFlow(MONTAG, montagVon(LocalDate.now(clock)).toEpochDay())
 
     val woche: StateFlow<WochenAnsicht?> = montag.flatMapLatest { repo.woche(LocalDate.ofEpochDay(it)) }
-        .stateIn(viewModelScope, SolangeSichtbar, null)
+        .stateIn(viewModelScope, SolangeAppOffen, null)
 
-    val tagesziel: StateFlow<Int?> = ziel.tagesziel().stateIn(viewModelScope, SolangeSichtbar, null)
+    val tagesziel: StateFlow<Int?> = ziel.tagesziel().stateIn(viewModelScope, SolangeAppOffen, null)
 
     val zeigtHeute: StateFlow<Boolean> = montag.map { it == montagVon(LocalDate.now(clock)).toEpochDay() }
-        .stateIn(viewModelScope, SolangeSichtbar, true)
+        .stateIn(viewModelScope, SolangeAppOffen, true)
 
     /** Rezepte für „+ Mahlzeit“ (ohne archivierte). */
     val rezeptAuswahl: StateFlow<List<RezeptKarte>> = repo.rezeptAuswahl()
-        .stateIn(viewModelScope, SolangeSichtbar, emptyList())
+        .stateIn(viewModelScope, SolangeAppOffen, emptyList())
 
     private val fuellenStand = MutableStateFlow<FuellenZustand?>(null)
     val fuellen: StateFlow<FuellenZustand?> = fuellenStand.asStateFlow()

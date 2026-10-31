@@ -17,9 +17,11 @@ auf dem Branch `v1-server`. Wo unten „wie v1“ steht, verhält sich die V3 be
 
 - **Oberfläche** (`:feature:*`, `:app`): Compose-Bildschirme mit `@HiltViewModel`; jeder Bildschirm zeichnet einen
   Zustand aus `StateFlow`, Aktionen sind Methodenaufrufe am ViewModel. Eingaben, die ein Prozessende überstehen
-  müssen, liegen im `SavedStateHandle`. Bildschirmzustände laufen mit `SolangeSichtbar` (`:core:designsystem`,
-  `WhileSubscribed(5 s)`), damit geschlossene Bildschirme und die App im Hintergrund nicht weiterrechnen; einzige
-  Ausnahme ist der Kochmodus (`Eagerly`, er hält den Bildschirm an); Tests sehen mit `ViewModelHalter.zusehen` zu.
+  müssen, liegen im `SavedStateHandle`. Bildschirmzustände laufen mit `SolangeAppOffen` (`:core:designsystem`): solange
+  die App offen ist (`AppOffen`, gesetzt von `FoodyApp`) oder jemand zusieht, und noch 5 s danach. Werte bleiben
+  gespeichert, ein Bildschirm im Verlauf zeigt sie beim Zurückkehren sofort; im Hintergrund ruht alles, beim Öffnen
+  wird neu gerechnet. Einzige Ausnahme ist der Kochmodus (`Eagerly`, er hält den Bildschirm an). Im Test gilt die App
+  als geschlossen; Tests sehen mit `ViewModelHalter.zusehen` zu.
   Nährwerte und kcal rechnen die Repositories mit `flowOn(rechnen)` (Standard `Dispatchers.Default`, Tests mit festem
   Ablauf `EmptyCoroutineContext`).
 - **Domain** (`:domain`): reine Kotlin-Logik, vollständig per JVM-Test abgedeckt.
@@ -106,7 +108,9 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-18-v3-phase3-app-daten-sync-desi
 - **Auslöser** (`SyncAusloeser`, `SyncAuftrag`): einmaliger WorkManager-Auftrag mit Netz-Bedingung; sofort bei
   Vordergrund und „Jetzt synchronisieren“, nach Outbox-Änderungen entprellt um 5 s. Kein periodischer Auftrag; der
   v1-Aufträge `foody-sync-periodic` und `foody-sync-now` werden beim Start abgemeldet. Ein laufender Auftrag wird nie ersetzt, sondern plant
-  einen Nachlauf. Nur vorübergehende Fehler werden mit Backoff wiederholt.
+  einen Nachlauf. Nur vorübergehende Fehler werden mit Backoff wiederholt. Alles nur bei offener App: Beim Schließen
+  (`appImHintergrund()`) geht eine noch wartende Änderung einmal sofort hinaus (ohne Netz-Bedingung, ohne
+  Wiederholung), danach plant nichts mehr bis zum nächsten Öffnen.
 - **Fehlerkennungen** in `sync_state.lastError` (nur diese festen Werte, nie Token oder Bodies): `offline`,
   `anmeldung_abgelaufen` (`401`, kein lesbares Token – das Token wird dabei nicht gelöscht), `app_zu_alt`
   (`409 protocol_too_old`), `server_zu_alt` (`409 server_too_old` oder `404`, z. B. Server ohne `/api/v3`), `cursor_haengt`, `speicher_voll`,
@@ -193,7 +197,7 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
 - **`:app`** (`de.foody.app`, `applicationId` `de.foody.app`; Debug `.debug` „Foody Debug“, Release „Foody“,
   `.vorschau` „Foody Vorschau“; Varianten und APK-Ablage: `docs/installation.md`):
   `FoodyApp` (Hilt, `HiltWorkerFactory`; beim Start `SyncAusloeser.beimStart()` und `StartdatenLader`, bei jedem Wechsel
-  in den Vordergrund `appImVordergrund()`), `MainActivity` (`singleTask`; Deep Links aus `onNewIntent` gehen über
+  in den Vordergrund `AppOffen` und `appImVordergrund()`, beim Wechsel in den Hintergrund `appImHintergrund()`), `MainActivity` (`singleTask`; Deep Links aus `onNewIntent` gehen über
   `deepLinkOeffnen`, siehe Navigation), `AppModul` (`SyncKonfiguration`, `KontoZugriff` → `KontoAnbindung` auf `SyncKonto`/`sync_state`/
   `SyncAusloeser`, Gerätename „Hersteller Modell“ wie v1).
 - **Navigation** (`navigation/`): typisierte Routen (`Heute`, `Rezepte`, `Woche`, `Einkauf`, `Einstellungen`,

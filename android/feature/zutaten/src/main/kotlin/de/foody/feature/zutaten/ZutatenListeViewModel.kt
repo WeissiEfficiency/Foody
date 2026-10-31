@@ -11,7 +11,7 @@ import de.foody.core.data.zutaten.ZutatFilter
 import de.foody.core.data.zutaten.ZutatKurz
 import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.data.zutaten.filtern
-import de.foody.core.designsystem.SolangeSichtbar
+import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.core.scan.PackungScan
 import de.foody.core.scan.ScanAusgang
 import de.foody.core.scan.ScanLauf
@@ -66,7 +66,7 @@ class ZutatenListeViewModel @Inject constructor(
 
     val zustand: StateFlow<ListeZustand> = combine(repo.liste(), suche, filter, laufend) { liste, s, f, l ->
         ListeZustand(s, f, filtern(liste, s, f), geladen = true, laeuft = l)
-    }.stateIn(viewModelScope, SolangeSichtbar, ListeZustand())
+    }.stateIn(viewModelScope, SolangeAppOffen, ListeZustand())
 
     private val vorschauStand = MutableStateFlow<List<Angleichung>?>(null)
 

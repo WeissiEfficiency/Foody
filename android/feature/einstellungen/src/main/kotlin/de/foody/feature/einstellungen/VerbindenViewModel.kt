@@ -3,7 +3,7 @@ package de.foody.feature.einstellungen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import de.foody.core.designsystem.SolangeSichtbar
+import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.core.sync.Ergebnis
 import de.foody.core.sync.ErsterSync
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +29,7 @@ class VerbindenViewModel @Inject constructor(private val konto: KontoZugriff) : 
     private val neuAnmelden = MutableStateFlow(false)
 
     val ui: StateFlow<VerbindenUi> = combine(konto.zustand, schritt, fehler, neuAnmelden) { z, s, f, n -> VerbindenUi(z, s, f, n) }
-        .stateIn(viewModelScope, SolangeSichtbar, VerbindenUi(null, Schritt.EINGABE, null))
+        .stateIn(viewModelScope, SolangeAppOffen, VerbindenUi(null, Schritt.EINGABE, null))
 
     /**
      * Meldet an. Wiederanmeldung (gleicher Server, gleiches Konto) und Geräte ohne lokale Daten werden sofort aktiviert;
