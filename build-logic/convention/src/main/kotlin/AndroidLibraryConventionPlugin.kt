@@ -12,5 +12,6 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
             testOptions.targetSdk = FoodySdk.TARGET
             lint.targetSdk = FoodySdk.TARGET
         }
+        unitTestsNurDebug()
     }
 }

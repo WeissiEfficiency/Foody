@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
@@ -23,11 +23,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
       - name: Domain-Tests
         run: ./gradlew :domain:test
-      - name: Unit-Tests, Lint, Debug-Build
-        run: ./gradlew check :app:assembleDebug :katalog:assembleDebug
-      # Katalog des V3-Designsystems und die V3-Bereiche gegen die eingecheckten Referenzbilder vergleichen
-      - name: Screenshot-Vergleich (Katalog, Heute, Rezepte)
-        run: ./gradlew :katalog:verifyRoborazziDebug :feature:heute:verifyRoborazziDebug :feature:rezepte:verifyRoborazziDebug :feature:kochen:verifyRoborazziDebug :feature:woche:verifyRoborazziDebug :feature:einkauf:verifyRoborazziDebug :feature:einstellungen:verifyRoborazziDebug :feature:zutaten:verifyRoborazziDebug
+      # Unit-Tests einmal (nur Debug, siehe build-logic) und dabei die Referenzbilder vergleichen: ein eigener
+      # verifyRoborazzi-Schritt ließe alle Robolectric-Tests ein zweites Mal laufen (E1)
+      - name: Unit-Tests mit Bildvergleich, Lint, Debug-Build
+        run: ./gradlew check :app:assembleDebug :katalog:assembleDebug -Proborazzi.test.verify=true
       # R8 entfernt nur im Release-Build Code – Fehler in Keep-Regeln fallen sonst erst beim Veröffentlichen auf
       - name: Release-Build (R8)
         run: ./gradlew :app:assembleRelease
@@ -35,7 +34,7 @@ jobs:
   # Room- und Migrationstests auf einem Emulator (Gradle Managed Device, siehe android/core/data/build.gradle.kts).
   # Schützt vor allem die Datenbank-Migrationen: ein Fehler dort bedeutet Datenverlust beim App-Update.
   instrumented:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -71,7 +70,7 @@ jobs:
 
   # Sync-Server: Tests, Docker-Image (ohne Android-SDK) und ein Smoke-Test des laufenden Containers.
   server:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
