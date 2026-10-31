@@ -6,8 +6,8 @@ künftig die KI-Hilfe über den eigenen Server.
 
 ## Erledigt: V3
 
-Seit dem 28.10.2026 auf Handy, Tablet und Server – Plan: [`ToDoS/v3-plan.md`](../ToDoS/v3-plan.md),
-Abnahme: [`ToDoS/v3-abnahme.md`](../ToDoS/v3-abnahme.md), Entscheidung: [ADR 0011](adr/0011-v3-umfang-ein-nutzer.md).
+Seit dem 28.10.2026 auf Handy, Tablet und Server – Plan: [`v3-plan.md`](../ToDoS/archiv/v3-plan.md),
+Abnahme: [`v3-abnahme.md`](../ToDoS/archiv/v3-abnahme.md) (beide archiviert), Entscheidung: [ADR 0011](adr/0011-v3-umfang-ein-nutzer.md).
 Gestrichen gegenüber der v1: Vorrat, Web-App, Haushalte/Einladungen, Teilen als Text, Sterne.
 
 ## Jetzt: Aufräumen und Alltagsbefunde

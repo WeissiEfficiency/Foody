@@ -1,7 +1,7 @@
 # V3 Phase 4: Designsystem
 
-Stand: 2026-10-19 · Grundlage: [ADR 0009](../../adr/0009-neubau-v2-module-navigation.md),
-[ADR 0011](../../adr/0011-v3-umfang-ein-nutzer.md), [`ToDoS/v3-plan.md`](../../../ToDoS/v3-plan.md) (Phase 4) · im Chat
+Stand: 2026-10-19 · Grundlage: [ADR 0009](../../../../adr/0009-neubau-v2-module-navigation.md),
+[ADR 0011](../../../../adr/0011-v3-umfang-ein-nutzer.md), [`ToDoS/v3-plan.md`](../../../../../ToDoS/archiv/v3-plan.md) (Phase 4) · im Chat
 abschnittsweise abgestimmt; Richtungen im Canvas „Foody App-Design“, Seite „V3-Richtungen“ (gewählt: A · Ofenwarm).
 
 ## Ziel

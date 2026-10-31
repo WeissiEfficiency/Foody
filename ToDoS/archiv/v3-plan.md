@@ -1,8 +1,8 @@
 # Foody V3 – Bauplan
 
-Stand: 2026-10-17 · Entscheidung: [ADR 0011](../docs/adr/0011-v3-umfang-ein-nutzer.md) (baut auf
-[ADR 0009](../docs/adr/0009-neubau-v2-module-navigation.md) auf, löst [ADR 0010](../docs/adr/0010-sync-v2-haushaltsdienst.md)
-weitgehend ab) · Abnahme: [`v3-abnahme.md`](v3-abnahme.md) · Löst [`v2-plan.md`](archiv/v2-plan.md) ab.
+Stand: 2026-10-17 · Entscheidung: [ADR 0011](../../docs/adr/0011-v3-umfang-ein-nutzer.md) (baut auf
+[ADR 0009](../../docs/adr/0009-neubau-v2-module-navigation.md) auf, löst [ADR 0010](../../docs/adr/0010-sync-v2-haushaltsdienst.md)
+weitgehend ab) · Abnahme: [`v3-abnahme.md`](v3-abnahme.md) · Löst [`v2-plan.md`](v2-plan.md) ab.
 
 V3 ist der Neubau aus dem v2-Plan, aber nur mit den Funktionen, die das Review bestätigt hat, plus KI-Hilfe.
 
@@ -19,7 +19,7 @@ V3 ist der Neubau aus dem v2-Plan, aber nur mit den Funktionen, die das Review b
 | Vorrat | streichen | mit ihm: „Aus dem Vorrat“, Abbuchen bei „Gekocht“, Vorratsabzug, MHD-Erinnerungen |
 | Web-App | streichen | `:server-web` und Haushaltsdienst entfallen |
 | Sync | schlanke API | Push/Pull bleibt, ein Konto, Last-Writer-Wins je Datensatz |
-| KI | erfassen, anpassen, Wochenplan, Nährwerte | eigenes Projekt nach dem Umstieg ([`ki-plan.md`](ki-plan.md)) |
+| KI | erfassen, anpassen, Wochenplan, Nährwerte | eigenes Projekt nach dem Umstieg ([`ki-plan.md`](../ki-plan.md)) |
 | Durchspielen | Einkauf, Kochen, Import laufen gut | Planen hakt: kcal je Portion unzuverlässig, Auswahl passt schlecht |
 | Verteilung | APK in OpenCloud | Release-Aufgabe legt die signierte APK dort ab |
 | Messen | Android Studio reicht | kein Macrobenchmark-Aufwand |
@@ -55,7 +55,7 @@ build-logic/                                     Convention-Plugins
 ```
 
 Scan liegt in `:core:scan` und wird von Tagebuch (`:feature:heute`) und Zutatenkatalog (`:feature:zutaten`) genutzt
-([ADR 0013](../docs/adr/0013-core-scan-fuer-tagebuch-und-katalog.md)); Timer liegt in `:feature:kochen`.
+([ADR 0013](../../docs/adr/0013-core-scan-fuer-tagebuch-und-katalog.md)); Timer liegt in `:feature:kochen`.
 `:core:testing` erst, wenn zwei Module dieselben Test-Helfer brauchen. Abhängigkeiten nur nach unten; Features kennen sich nicht.
 
 ## Phasen
@@ -71,7 +71,7 @@ Aufwände: grobe Schätzung für eine Person.
 - [x] Server: `server/backup.sh` – Datenbank datiert (14 Tage) und Fotos gespiegelt in einen Ordner, den ein
       OpenCloud-Client abgleicht; Cron-Zeile im `server/README.md`. Auf dem Server noch einzurichten.
 - [x] Release-Aufgabe `./gradlew :app:apkNachOpenCloud` (Ziel `foody.apkZiel` in `local.properties`)
-- [ ] **Alltags-App auf Release umstellen:** Im Alltag lief bisher „Foody Debug“ (Debug-Schlüssel, 24,7 MB, ohne R8
+- [x] **Alltags-App auf Release umstellen** (2026-10-28, „Foody“ 3.0.0 auf Handy und Tablet): Im Alltag lief bisher „Foody Debug“ (Debug-Schlüssel, 24,7 MB, ohne R8
       und Baseline-Profil). Release-Schlüssel anlegen (`keystore.properties`), „Foody“ installieren, anmelden, Sync
       holt die Daten, „Foody Debug“ deinstallieren. Erst danach ist „Foody Debug“ frei für die V3.
 - [x] `docs/roadmap.md` auf den echten Stand bringen (#90)
@@ -89,7 +89,7 @@ Aufwände: grobe Schätzung für eine Person.
 **Fertig, wenn** die Szenarien „Sonntag: Woche planen“ mit echten Daten plausible kcal und Vorschläge liefert.
 
 ### Phase 2 – Server schlank (≈ 1 Woche)
-Spec: [`2026-10-17-v3-phase2-server-schlank-design.md`](../docs/superpowers/specs/2026-10-17-v3-phase2-server-schlank-design.md)
+Spec: [`2026-10-17-v3-phase2-server-schlank-design.md`](../../docs/superpowers/archiv/v3/specs/2026-10-17-v3-phase2-server-schlank-design.md)
 (harter Schnitt: echter Server bleibt bis Phase 8 auf `v1-server`; `:sync-protocol` eingefroren, neu `:api-protocol`).
 - [x] Protokoll 3: ein Konto, keine Haushalte; Typ „Vorrat“ entfällt – als neues Modul `:api-protocol`
       (`/api/v3`), `:sync-protocol` bleibt eingefroren (Spec, Abschnitt 1)
@@ -106,7 +106,7 @@ Spec: [`2026-10-17-v3-phase2-server-schlank-design.md`](../docs/superpowers/spec
 **Fertig, wenn** zwei Test-Geräte mit demselben Konto vollständig synchronisieren.
 
 ### Phase 3 – App-Daten und Sync-Client (≈ 1 Woche)
-Spec: [`2026-10-18-v3-phase3-app-daten-sync-design.md`](../docs/superpowers/specs/2026-10-18-v3-phase3-app-daten-sync-design.md)
+Spec: [`2026-10-18-v3-phase3-app-daten-sync-design.md`](../../docs/superpowers/archiv/v3/specs/2026-10-18-v3-phase3-app-daten-sync-design.md)
 (neu geschrieben, v1 als Vorlage; Nachweis über Tests und eine echte v1-Datenbank, siehe Ergebnis).
 - [x] `:core:data`: Room v10, Migration 9 → 10 (Vorratstabelle entfernen, Haushalt → Konto) mit Migrationstest
 - [x] `:core:sync`: Client für Protokoll v3; Sync beim Öffnen/Fortsetzen und nach Änderungen (entprellt), kein
@@ -138,7 +138,7 @@ Spec: [`2026-10-18-v3-phase3-app-daten-sync-design.md`](../docs/superpowers/spec
   an (Token im Hardware-Keystore, nicht kopierbar); „ohne neue Anmeldung“ auf dem Gerät prüft Phase 8.
 
 ### Phase 4 – Designsystem (≈ 4 Tage)
-Spec: [`2026-10-19-v3-phase4-designsystem-design.md`](../docs/superpowers/specs/2026-10-19-v3-phase4-designsystem-design.md)
+Spec: [`2026-10-19-v3-phase4-designsystem-design.md`](../../docs/superpowers/archiv/v3/specs/2026-10-19-v3-phase4-designsystem-design.md)
 (Richtung „Ofenwarm“, Glas mit Haze, Katalog-App `:katalog`).
 - [x] `:core:designsystem`: zwei Glasstufen, Kachel, Rezeptkarte, Nährwertbalken, Sync-Status, leere Zustände
 - [x] Katalog-Screen im Debug-Build, hell und dunkel, Handy und Tablet (eigene Debug-App `:katalog`)
@@ -153,7 +153,7 @@ der Bilder gefunden und behoben: fehlende deutsche Silbentrennung, Platzhalter-S
 überlappende Abzeichen bei großer Schrift.
 
 ### Phase 5 – Navigation und „Heute“ (≈ 1 Woche)
-Spec: [`2026-10-24-v3-phase5-heute-design.md`](../docs/superpowers/specs/2026-10-24-v3-phase5-heute-design.md)
+Spec: [`2026-10-24-v3-phase5-heute-design.md`](../../docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md)
 (App-Modul `:app3` als „Foody Debug“, ganzes Tagebuch ohne Scan, schlichtes „Server verbinden“).
 - [x] Vier Tabs (Heute · Rezepte · Woche · Einkauf), adaptive Navigation für das Tablet, Einstellungen über das
       Profilsymbol
@@ -170,20 +170,20 @@ Bilder gefunden und behoben: Inhalte auf dem Tablet über die volle Breite (jetz
 
 ### Phase 6 – Bereiche neu bauen (≈ 3 Wochen)
 - [x] Rezepte (inkl. Tablet zweispaltig, Favorit + „Oft gekocht“) – Spec
-      [`2026-10-24-v3-phase6a-rezepte-design.md`](../docs/superpowers/specs/2026-10-24-v3-phase6a-rezepte-design.md)
+      [`2026-10-24-v3-phase6a-rezepte-design.md`](../../docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase6a-rezepte-design.md)
 - [x] Kochen (inkl. „Änderungen ins Rezept übernehmen“ nach dem Kochen) – Spec
-      [`2026-10-25-v3-phase6b-kochen-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6b-kochen-design.md)
+      [`2026-10-25-v3-phase6b-kochen-design.md`](../../docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6b-kochen-design.md)
 - [x] Woche (eine fortlaufende Wochenansicht) – Spec
-      [`2026-10-25-v3-phase6c-woche-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6c-woche-design.md)
+      [`2026-10-25-v3-phase6c-woche-design.md`](../../docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6c-woche-design.md)
 - [x] Einkauf (eine Ansicht, ohne Vorratsabzug) – Spec
-      [`2026-10-25-v3-phase6d-einkauf-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6d-einkauf-design.md)
+      [`2026-10-25-v3-phase6d-einkauf-design.md`](../../docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6d-einkauf-design.md)
 - [x] Einstellungen 6e1 (Server/Anmelden/Status, Sicherung, Darstellung, Tagesziel) – Spec
-      [`2026-10-25-v3-phase6e1-einstellungen-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6e1-einstellungen-design.md);
+      [`2026-10-25-v3-phase6e1-einstellungen-design.md`](../../docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6e1-einstellungen-design.md);
       „Erneut anmelden“ nach dem v1-Update (übernimmt nur Token und Konto-ID) gibt es seit Phase 5
 - [x] Einstellungen 6e2: Zutatenkatalog – Spec
-      [`2026-10-25-v3-phase6e2-zutaten-design.md`](../docs/superpowers/specs/2026-10-25-v3-phase6e2-zutaten-design.md)
+      [`2026-10-25-v3-phase6e2-zutaten-design.md`](../../docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6e2-zutaten-design.md)
 - [x] Einstellungen 6e3: „Packung scannen“, Online-Produktsuche an/aus – Spec
-      [`2026-10-26-v3-phase6e3-scan-design.md`](../docs/superpowers/specs/2026-10-26-v3-phase6e3-scan-design.md)
+      [`2026-10-26-v3-phase6e3-scan-design.md`](../../docs/superpowers/archiv/v3/specs/2026-10-26-v3-phase6e3-scan-design.md)
 
 **Ergebnis 6a Rezepte** (2026-10-24): `:feature:rezepte` mit Bildraster, Suche und Filterchips, Detail mit
 Portionen und Nährwerttabelle, Editor mit Zutaten als Freitext je Zeile und Foto, Markdown-Import (Dateien oder
@@ -368,11 +368,11 @@ ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
 
 ### Phase 7 – KI: ausgelagert
 Entscheidung 2026-10-28: Die KI-Hilfe wird ein eigenes Projekt nach dem Umstieg. Plan und Abnahme stehen in
-[`ki-plan.md`](ki-plan.md). Phase 8 kommt vorher; die V3 wird ohne KI fertig und ausgeliefert. Das Server-Gerüst
+[`ki-plan.md`](../ki-plan.md). Phase 8 kommt vorher; die V3 wird ohne KI fertig und ausgeliefert. Das Server-Gerüst
 (`GET /ki/status`, `KiKontingent`) bleibt bestehen.
 
 ### Phase 8 – Messen, Umstieg, Release V3 (≈ 1 Woche) – erledigt bis auf Messen und TalkBack
-- [ ] Probeversion „Foody Vorschau“ (`:app:assembleVorschau`, eigene App-ID neben der v1) auf dem Handy testen
+- [x] (entfällt, direkt umgestiegen) Probeversion „Foody Vorschau“ (`:app:assembleVorschau`, eigene App-ID neben der v1) auf dem Handy testen
 - [ ] Android-Studio-Profiler auf Handy und Tablet (Start, Scrollen, Speicher); Baseline-Profil neu erzeugen.
       **Baseline-Profil erzeugt (2026-10-28)** auf dem Emulator (Heute, Rezepte, Woche, Einkauf, Einstellungen);
       offen: Profiler auf den echten Geräten
@@ -409,7 +409,7 @@ Entscheidung 2026-10-28: Die KI-Hilfe wird ein eigenes Projekt nach dem Umstieg.
 - [x] **Abschluss: Code-Review** mit dem Skill `code-review` über die ganze V3 nach dem Umstieg; Befunde hier
       eintragen und die blockierenden vor dem Release beheben.
       **Erledigt (2026-10-28, Nachprüfung 2026-10-31):** nichts Blockierendes. Befunde W1–W6 und N1–N5 sowie vier
-      kleine aus der Nachprüfung (N6–N9) stehen mit Stand in [`aufraeumplan.md`](aufraeumplan.md). Gefunden und
+      kleine aus der Nachprüfung (N6–N9) stehen mit Stand in [`aufraeumplan.md`](../aufraeumplan.md). Gefunden und
       behoben: Release stürzte bei „Frei“ im Tagebuch ab, weil R8 die Konstruktoren der ML-Kit-Registrare entfernte
       (#139).
 

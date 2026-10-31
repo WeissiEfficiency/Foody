@@ -1,6 +1,6 @@
 # Foody – KI-Hilfe (eigenes Projekt)
 
-Stand: 2026-10-28. Ursprünglich Phase 7 der V3 ([`v3-plan.md`](v3-plan.md)), auf Wunsch des Nutzers ausgelagert:
+Stand: 2026-10-28. Ursprünglich Phase 7 der V3 ([`v3-plan.md`](archiv/v3-plan.md)), auf Wunsch des Nutzers ausgelagert:
 erst Umstieg auf die V3 (Phase 8), danach dieses Projekt. Rahmen aus [ADR 0011](../docs/adr/0011-v3-umfang-ein-nutzer.md):
 KI nur über den eigenen Server (`POST /ki/…`), nur auf Knopfdruck, jedes Ergebnis als bearbeitbare Vorschau, ohne
 Server oder Netz ausgeblendet.
