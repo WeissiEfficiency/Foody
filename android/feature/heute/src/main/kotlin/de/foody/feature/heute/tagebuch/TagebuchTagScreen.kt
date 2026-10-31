@@ -50,9 +50,10 @@ import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.LeererZustandZeile
 import de.foody.core.designsystem.komponenten.Naehrwertbalken
+import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.domain.Mahlzeit
-import de.foody.feature.heute.INHALT_MAX_BREITE
 import de.foody.feature.heute.TAGEBUCH_INHALT
 import de.foody.feature.heute.anzeigename
 import kotlinx.coroutines.launch
@@ -143,9 +144,9 @@ fun TagebuchTagInhalt(
 ) {
     Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         Column(
-            Modifier.widthIn(max = INHALT_MAX_BREITE).fillMaxWidth().safeDrawingPadding()
-                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp).testTag(TAGEBUCH_INHALT),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().safeDrawingPadding()
+                .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = 104.dp).testTag(TAGEBUCH_INHALT),
+            verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
         ) { TagInhalt(datum, zustand, onDatum, onWahl, onAendern, onLoeschen, onEintragen) }
     }
 }
@@ -163,10 +164,10 @@ private fun TagInhalt(
     TagKopf(datum, onDatum, onWahl)
     val z = zustand?.takeIf { it.datum == datum } ?: return
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
-        Naehrwertbalken(z.summe.kcal, z.ziel, z.summe.eiweiss, z.summe.kohlenhydrate, z.summe.fett, Modifier.padding(16.dp))
+        Naehrwertbalken(z.summe.kcal, z.ziel, z.summe.eiweiss, z.summe.kohlenhydrate, z.summe.fett, Modifier.padding(FoodyAbstaende.s4))
     }
     z.abschnitte.forEach { a ->
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1)) {
             Augenbraue(a.mahlzeit.anzeigename())
             a.eintraege.forEach { e -> EintragZeile(e, onAendern = { onAendern(e) }, onLoeschen = { onLoeschen(e) }) }
             if (a.eintraege.isEmpty()) {

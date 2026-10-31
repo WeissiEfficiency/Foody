@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.data.einkauf.EinkaufsAnsicht
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 
@@ -45,7 +46,7 @@ internal fun AbgleichHinweis(onKlick: () -> Unit) {
         Modifier.fillMaxWidth().clip(FoodyFormen.mittel).clickable(role = Role.Button, onClick = onKlick),
         form = FoodyFormen.mittel,
     ) {
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(horizontal = FoodyAbstaende.s4, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 "Plan geändert – abgleichen", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.primaer,
                 modifier = Modifier.weight(1f),

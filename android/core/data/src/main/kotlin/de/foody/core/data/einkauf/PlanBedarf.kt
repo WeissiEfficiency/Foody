@@ -6,6 +6,7 @@ import de.foody.core.data.db.EinkaufsartikelEntity
 import de.foody.core.data.db.EinkaufsartikelQuelleEntity
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.ZutatEntity
+import de.foody.core.data.neueId
 import de.foody.domain.DateRange
 import de.foody.domain.EinkaufsBedarf
 import de.foody.domain.MealSlot
@@ -14,7 +15,6 @@ import de.foody.domain.ShoppingCatalog
 import de.foody.domain.ShoppingNeed
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
-import java.util.UUID
 
 /** Eine Zeile der Vorschau „Neue Liste aus dem Plan“. */
 data class VorschauZeile(
@@ -53,14 +53,14 @@ internal class PlanBedarf(
     fun quellen(n: ShoppingNeed, artikelId: String): List<EinkaufsartikelQuelleEntity> = n.sources.map { s ->
         val b = MeasureUnit.baseOf(s.contributed.dimension)
         EinkaufsartikelQuelleEntity(
-            UUID.randomUUID().toString(), artikelId, s.mealSlotId, s.recipeIngredientId, rezeptNamen[s.recipeId].orEmpty(),
+            neueId(), artikelId, s.mealSlotId, s.recipeIngredientId, rezeptNamen[s.recipeId].orEmpty(),
             slotDaten[s.mealSlotId] ?: LocalDate.MIN, s.contributed.amountIn(b), b,
         )
     }
 
     /** Neuer Plan-Artikel für [n] auf der Liste [listeId]. */
     fun artikel(n: ShoppingNeed, listeId: String, reihenfolge: Int, jetzt: Long) = EinkaufsartikelEntity(
-        id = UUID.randomUUID().toString(), listId = listeId, ingredientId = n.ingredientId, name = name(n),
+        id = neueId(), listId = listeId, ingredientId = n.ingredientId, name = name(n),
         amount = n.toBuy.amountIn(basis(n)), unit = basis(n), manual = false, category = kategorie(n),
         sortOrder = reihenfolge, updatedAt = jetzt,
     )

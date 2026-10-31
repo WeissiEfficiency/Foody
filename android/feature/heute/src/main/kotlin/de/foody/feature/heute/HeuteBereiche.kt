@@ -15,12 +15,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import de.foody.core.data.heute.OffenerEinkauf
 import de.foody.core.data.heute.RezeptKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
-import de.foody.core.designsystem.token.GlasStufe
 import de.foody.core.designsystem.komponenten.Abschnittskopf
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyKnopf
@@ -32,18 +30,21 @@ import de.foody.core.designsystem.komponenten.Naehrwertbalken
 import de.foody.core.designsystem.komponenten.RezeptkarteGross
 import de.foody.core.designsystem.komponenten.SyncAnzeige
 import de.foody.core.designsystem.komponenten.SyncStatus
+import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.rezeptBild
-import de.foody.feature.heute.tagebuch.kcalText
+import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.GlasStufe
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+
 
 private val DATUM = DateTimeFormatter.ofPattern("EEEE, d. MMMM", Locale.GERMAN)
 
 /** Augenbraue mit Datum, Titel, Sync-Status (nur verbunden) und Profilsymbol für die Einstellungen. */
 @Composable
 internal fun HeuteKopf(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         Column(Modifier.weight(1f)) {
             datum?.let { Augenbraue(DATUM.format(it)) }
             Text("Heute", style = MaterialTheme.typography.headlineLarge, color = FoodyTheme.farben.text)
@@ -89,10 +90,10 @@ internal fun meta(portionen: Int?, kcal: Int?, minuten: Int?): String = listOfNo
 
 @Composable
 internal fun TagebuchBereich(t: TagebuchHeute, aktionen: HeuteAktionen) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         Abschnittskopf("Tagebuch", linkText = "Alle Einträge", onLink = aktionen.onAlleEintraege)
         GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
                 Naehrwertbalken(t.summe.kcal, t.ziel, t.summe.eiweiss, t.summe.kohlenhydrate, t.summe.fett)
                 t.mahlzeiten.forEach { MahlzeitZeilen(it, aktionen) }
                 FoodyKnopf("Eintragen", { aktionen.onEintragen(null) }, Modifier.fillMaxWidth(), art = KnopfArt.UMRISS)
@@ -104,12 +105,12 @@ internal fun TagebuchBereich(t: TagebuchHeute, aktionen: HeuteAktionen) {
 @Composable
 private fun MahlzeitZeilen(a: MahlzeitAbschnitt, aktionen: HeuteAktionen) {
     val name = a.mahlzeit.anzeigename()
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1)) {
         Augenbraue(name)
         a.eintraege.forEach { e ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(e.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
-                Spacer(Modifier.padding(4.dp))
+                Spacer(Modifier.padding(FoodyAbstaende.s1))
                 Text(kcalText(e.kcal, e.vollstaendig), style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
             }
         }
@@ -131,10 +132,10 @@ private fun MahlzeitZeilen(a: MahlzeitAbschnitt, aktionen: HeuteAktionen) {
 /** Bis zu sechs offene Artikel der jüngsten Liste als Kacheln, zwei je Reihe. */
 @Composable
 internal fun EinkaufBereich(e: OffenerEinkauf, onEinkauf: (String) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         Abschnittskopf("Einkauf", linkText = "${e.anzahl} offen", onLink = { onEinkauf(e.listeId) })
         e.artikel.take(MAX_KACHELN).chunked(2).forEach { reihe ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 reihe.forEach { a -> Kachel(a.name, a.menge.orEmpty(), { onEinkauf(e.listeId) }, Modifier.weight(1f)) }
                 if (reihe.size == 1) Spacer(Modifier.weight(1f))
             }

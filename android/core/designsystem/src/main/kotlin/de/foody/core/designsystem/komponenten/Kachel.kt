@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 import java.util.Locale
@@ -62,7 +63,7 @@ fun Kachel(
         .combinedClickable(onLongClickLabel = onLangdruck?.let { "Details" }, onLongClick = onLangdruck, onClick = onKlick)
         .semantics { if (zustand != null) stateDescription = zustand }
     val inhalt = @Composable {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.padding(FoodyAbstaende.s3), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (symbol != null) {
                 symbol()
             } else {

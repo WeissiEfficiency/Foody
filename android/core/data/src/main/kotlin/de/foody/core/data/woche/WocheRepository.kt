@@ -5,6 +5,7 @@ import de.foody.core.data.alsIngredient
 import de.foody.core.data.alsRecipe
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.PlanEintragEntity
+import de.foody.core.data.neueId
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.data.rezepte.einordnung
@@ -21,7 +22,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
-import java.util.UUID
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -82,7 +82,7 @@ class WocheRepository(
             val r = db.rezeptDao().nachId(rezeptId) ?: return@withTransaction null
             val jetzt = uhr()
             val e = PlanEintragEntity(
-                UUID.randomUUID().toString(), datum, text, rezeptId, (portionen ?: r.defaultServings).coerceIn(MIN_PORTIONEN, MAX_PORTIONEN),
+                neueId(), datum, text, rezeptId, (portionen ?: r.defaultServings).coerceIn(MIN_PORTIONEN, MAX_PORTIONEN),
                 createdAt = jetzt, updatedAt = jetzt,
             )
             db.planEintragDao().upsert(e)
@@ -161,7 +161,7 @@ class WocheRepository(
         vorschlag.entries.count { (datum, rezeptId) ->
             val r = db.rezeptDao().nachId(rezeptId) ?: return@count false
             db.planEintragDao().upsert(
-                PlanEintragEntity(UUID.randomUUID().toString(), datum, mahlzeit.name, r.id, r.defaultServings.coerceIn(MIN_PORTIONEN, MAX_PORTIONEN), createdAt = jetzt, updatedAt = jetzt),
+                PlanEintragEntity(neueId(), datum, mahlzeit.name, r.id, r.defaultServings.coerceIn(MIN_PORTIONEN, MAX_PORTIONEN), createdAt = jetzt, updatedAt = jetzt),
             )
             true
         }

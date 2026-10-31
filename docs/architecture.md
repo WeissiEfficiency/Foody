@@ -172,8 +172,9 @@ der App.
 - **`:core:designsystem`** (`de.foody.core.designsystem`, ohne Abhängigkeit zu `:core:data`/`:core:sync`):
   - `token/`: `FoodyFarben` (Hell/Dunkel, Richtung „Ofenwarm“), `GlasStufe` + `glasWerte` (LEICHT/DICHT mit Unschärfe 24 dp,
     BILD fast deckend ohne Unschärfe; Tönung, Lichtkante), `VerlaufHell`/`VerlaufDunkel`, `FoodyTypografie` (Fraunces bis `titleLarge`, sonst
-    Figtree; Deutsch mit Silbentrennung), `FoodyFormen` (12/20/28 dp), `FoodyAbstaende` (4-dp-Raster), `Kontrast.kt`
-    (`kontrast`, `mischen`, `kontrastPaare`).
+    Figtree; Deutsch mit Silbentrennung), `FoodyFormen` (12/20/28 dp), `FoodyAbstaende` (4-dp-Raster `s1`–`s6`, für
+    alle Abstände in `padding`, `spacedBy` und `Spacer`; andere Werte stehen bewusst als `.dp`), `FoodyBreiten`
+    (`zweispaltig` 840 dp, `inhalt` 720 dp, `zweiBereiche` 1100 dp), `Kontrast.kt` (`kontrast`, `mischen`, `kontrastPaare`).
   - `FoodyTheme { … }` füllt Material 3 und stellt `FoodyTheme.farben/dunkel/unschaerfe` bereit; keine Dynamic Color.
     `animationenErlaubt()` liest die Animator-Dauer des Systems – ist sie 0, entfallen Unschärfe und Drehungen.
   - `glas/`: `FoodyHintergrund` (Grund + zwei Radialverläufe, Quelle der Unschärfe) und `GlasFlaeche(stufe)` (Haze
@@ -181,8 +182,10 @@ der App.
     nur die Tönung).
   - `komponenten/`: `RezeptkarteGross`/`RezeptkarteRaster`, `Kachel`, `Naehrwertbalken`, `SyncStatus` (`SyncAnzeige`),
     `LeererZustandZeile`/`LeererZustandFlaeche`, `FoodyKnopf`, `FoodyChip`, `Abschnittskopf`, `Augenbraue`,
-    `FoodyNavigationsleiste`/`FoodyNavigationsRail`. Zustandslos, nur einfache Werte und Slots; Berührflächen ≥ 48 dp;
-    ab Schriftskalierung 1,5 mehr Zeilen und Knöpfe unter dem Text statt Abschneiden.
+    `FoodyNavigationsleiste`/`FoodyNavigationsRail`, `FoodyTextfeld`, `FoodyFrage` (Rückfrage-Dialog, darauf
+    `VerwerfenFrage`), `kcalText`/`ganzzahlDeutsch` (überall „1.234 kcal“). Zustandslos, nur einfache Werte und Slots;
+    Berührflächen ≥ 48 dp; ab Schriftskalierung 1,5 mehr Zeilen und Knöpfe unter dem Text statt Abschneiden.
+  - Gemeinsame Texte ohne Oberfläche liegen in `:core:data` (`wochentagKurz`, `datumKurz`, `zahlText`, `zahlAus`).
 - **Kontrast:** WCAG 2.2 AA (Text 4,5:1, Grafik 3:1) gilt ohne Unschärfe gegen die ungünstigste Stelle des Verlaufs;
   `KontrastTest` rechnet jedes Paar aus `kontrastPaare` nach, hell und dunkel.
 - **`:katalog`** (`de.foody.katalog`, nie ausgeliefert): alle Komponenten in allen Zuständen, Umschalter

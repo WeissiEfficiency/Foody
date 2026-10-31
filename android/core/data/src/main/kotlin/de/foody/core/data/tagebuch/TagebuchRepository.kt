@@ -6,6 +6,7 @@ import de.foody.core.data.alsRecipe
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.data.db.ZutatEntity
+import de.foody.core.data.neueId
 import de.foody.core.data.zutaten.Packungswerte
 import de.foody.core.data.zutaten.mitPackungswerten
 import de.foody.core.data.zutaten.nameBereinigt
@@ -22,7 +23,6 @@ import de.foody.domain.TagebuchArt
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.util.UUID
 
 /**
  * Schreiben und Lesen des Tagebuchs. Werte werden beim Eintragen aus Rezept bzw. Zutat berechnet und festgehalten;
@@ -89,7 +89,7 @@ class TagebuchRepository(private val db: FoodyDatenbank, private val uhr: () -> 
         val jetzt = uhr()
         val basis = zutatMitNamen(zutaten.alle(), n) ?: IngredientCatalog.canonicalName(n).let { k ->
             ZutatEntity(
-                id = UUID.randomUUID().toString(), canonicalName = k, category = IngredientCatalog.guessCategory(k),
+                id = neueId(), canonicalName = k, category = IngredientCatalog.guessCategory(k),
                 createdAt = jetzt, updatedAt = jetzt,
             )
         }
@@ -134,7 +134,7 @@ class TagebuchRepository(private val db: FoodyDatenbank, private val uhr: () -> 
     private fun neu(datum: LocalDate, mahlzeit: Mahlzeit, art: TagebuchArt, name: String, w: Naehrwerte): TagebuchEintragEntity {
         val jetzt = uhr()
         return TagebuchEintragEntity(
-            id = UUID.randomUUID().toString(), datum = datum, mahlzeit = mahlzeit.name, art = art, name = name,
+            id = neueId(), datum = datum, mahlzeit = mahlzeit.name, art = art, name = name,
             energieKj = w.energieKj, eiweiss = w.eiweiss, kohlenhydrate = w.kohlenhydrate, fett = w.fett,
             vollstaendig = w.vollstaendig, createdAt = jetzt, updatedAt = jetzt,
         )

@@ -9,6 +9,7 @@ import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.db.RezeptZutatEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
+import de.foody.core.data.neueId
 import de.foody.domain.Einordnung
 import de.foody.domain.Gang
 import de.foody.domain.ImportedIngredient
@@ -24,7 +25,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import java.math.BigDecimal
-import java.util.UUID
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -183,8 +183,6 @@ class RezeptRepository(
         return neu.id
     }
 }
-
-private fun neueId() = UUID.randomUUID().toString()
 
 
 internal fun RezeptEntity.einordnung(): Einordnung =

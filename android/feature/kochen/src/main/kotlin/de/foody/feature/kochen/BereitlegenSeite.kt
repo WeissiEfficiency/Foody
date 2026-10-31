@@ -25,11 +25,12 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.token.FoodyAbstaende
 
 /** Seite „Bereitlegen“: alle Zutaten zum Abhaken, Portionen-Stepper; ändern skaliert alle Mengen. */
 @Composable
 internal fun BereitlegenSeite(z: KochZustand.Da, a: KochAktionen) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 "${z.abgehakt.size} von ${z.bereit.size} bereit", Modifier.weight(1f),
@@ -57,7 +58,7 @@ internal fun BereitlegenSeite(z: KochZustand.Da, a: KochAktionen) {
 private fun BereitZeileAnzeige(zeile: BereitZeile, bereit: Boolean, onUmschalten: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(bereit, role = Role.Checkbox, onValueChange = { onUmschalten() })
-            .padding(vertical = 4.dp),
+            .padding(vertical = FoodyAbstaende.s1),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -65,7 +66,7 @@ private fun BereitZeileAnzeige(zeile: BereitZeile, bereit: Boolean, onUmschalten
             tint = if (bereit) FoodyTheme.farben.primaer else FoodyTheme.farben.nebentext,
         )
         Text(
-            zeile.menge.orEmpty(), Modifier.padding(start = 12.dp).width(88.dp),
+            zeile.menge.orEmpty(), Modifier.padding(start = FoodyAbstaende.s3).width(88.dp),
             style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text,
         )
         Column(Modifier.weight(1f)) {

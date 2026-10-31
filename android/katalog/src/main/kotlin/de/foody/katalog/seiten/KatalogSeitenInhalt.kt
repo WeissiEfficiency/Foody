@@ -46,13 +46,14 @@ import de.foody.core.designsystem.komponenten.RezeptkarteGross
 import de.foody.core.designsystem.komponenten.RezeptkarteRaster
 import de.foody.core.designsystem.komponenten.SyncAnzeige
 import de.foody.core.designsystem.komponenten.SyncStatus
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.katalog.KatalogSeite
 
 /** Alle Zustände der Komponenten einer Seite, mit erfundenen Beispielen. */
 @Composable
 fun KatalogSeitenInhalt(seite: KatalogSeite) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4)) {
         when (seite) {
             KatalogSeite.FARBEN_SCHRIFT -> FarbenUndSchrift()
             KatalogSeite.GLAS -> Glas()
@@ -105,7 +106,7 @@ private fun Glas() {
     for (stufe in GlasStufe.entries) {
         Beschriftung("Glas ${stufe.name.lowercase()}")
         GlasFlaeche(stufe, Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1)) {
                 Text("Tagebuch", style = MaterialTheme.typography.titleLarge, color = FoodyTheme.farben.text)
                 Text("Noch 760 kcal bis zum Tagesziel.", style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
             }
@@ -120,7 +121,7 @@ private fun Rezeptkarten() {
     Beschriftung("Groß, langer Titel, ohne Aktion")
     RezeptkarteGross("Rinderrouladen-Schmorgericht mit Rotkohl und Klößen und Rahmsoße", "6 Portionen · 812 kcal", {}, augenbraue = "Sonntag")
     Beschriftung("Raster")
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
         RezeptkarteRaster("Kürbissuppe mit Ingwer", {}, Modifier.weight(1f), favorit = true, zeit = "25 Min.")
         RezeptkarteRaster("Spaghetti Carbonara", {}, Modifier.weight(1f), zeit = "20 Min.", kcal = "640 kcal")
     }
@@ -151,7 +152,7 @@ private fun Naehrwerte() {
     )
     faelle.forEach { (titel, balken) ->
         Beschriftung(titel)
-        GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) { Box(Modifier.padding(16.dp)) { balken() } }
+        GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) { Box(Modifier.padding(FoodyAbstaende.s4)) { balken() } }
     }
 }
 
@@ -168,7 +169,7 @@ private fun Sync() {
 @Composable
 private fun Leer() {
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
-        Box(Modifier.padding(12.dp)) { LeererZustandZeile("Noch kein Snack eingetragen", "Eintragen", {}) }
+        Box(Modifier.padding(FoodyAbstaende.s3)) { LeererZustandZeile("Noch kein Snack eingetragen", "Eintragen", {}) }
     }
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
         LeererZustandFlaeche(Icons.Outlined.ShoppingBag, "Nichts einzukaufen", "Plane Rezepte für die Woche oder lege Artikel direkt an.", "Artikel hinzufügen", {})
@@ -192,7 +193,7 @@ private fun Grundbausteine() {
         FoodyKnopf("Deaktiviert", {}, aktiv = false)
     }
     Beschriftung("Chips")
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         FoodyChip("Alle", true, {})
         FoodyChip("Favoriten", false, {})
         FoodyChip("vegetarisch", false, {})

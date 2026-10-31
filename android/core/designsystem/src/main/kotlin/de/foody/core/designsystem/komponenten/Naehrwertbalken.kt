@@ -23,10 +23,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
-import java.util.Locale
-
-/** Ganzzahl mit deutschem Tausenderpunkt (1240 → „1.240“). */
-fun ganzzahlDeutsch(wert: Int): String = String.format(Locale.GERMAN, "%,d", wert)
+import de.foody.core.designsystem.token.FoodyAbstaende
 
 /** Anteile der drei Segmente an der Balkenlänge (zusammen höchstens 1). */
 data class Balkenanteile(val eiweiss: Float, val kh: Float, val fett: Float, val ueberZiel: Boolean)
@@ -62,7 +59,7 @@ fun Naehrwertbalken(kcal: Int, ziel: Int?, eiweissG: Int, khG: Int, fettG: Int, 
     val beschreibung = (if (a.ueberZiel) "$satzStand, über Ziel" else satzStand) +
         ": Eiweiß $eiweissG g, Kohlenhydrate $khG g, Fett $fettG g"
 
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         Text(kopf, style = MaterialTheme.typography.titleSmall, color = f.text)
         Box(
             Modifier
@@ -80,7 +77,7 @@ fun Naehrwertbalken(kcal: Int, ziel: Int?, eiweissG: Int, khG: Int, fettG: Int, 
                 if (rest > 0.0001f) Spacer(Modifier.weight(rest))
             }
         }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1)) {
             Legende("Eiweiß $eiweissG g", f.oliv)
             Legende("KH $khG g", f.safran)
             Legende("Fett $fettG g", f.primaer)

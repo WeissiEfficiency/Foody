@@ -24,6 +24,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
+import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.rezepte.detail.RezeptDetailRoute
 import de.foody.feature.rezepte.detail.RezeptDetailViewModel
 import de.foody.feature.rezepte.editor.EditorRoute
@@ -33,8 +35,6 @@ import de.foody.feature.rezepte.importieren.ImportViewModel
 import de.foody.feature.rezepte.liste.RezeptListeRoute
 import de.foody.feature.rezepte.liste.RezeptListeViewModel
 
-/** Ab dieser Breite stehen Liste und Rezept nebeneinander. */
-private val ZWEISPALTIG_AB = 840.dp
 private val LISTENBREITE = 360.dp
 
 private enum class Rechts { DETAIL, NEU, BEARBEITEN }
@@ -65,7 +65,7 @@ fun RezepteBereich(
     // Wechsel links, der wartet, bis „Änderungen verwerfen?“ beantwortet ist
     var wartenderWechsel by remember { mutableStateOf<(() -> Unit)?>(null) }
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        if (maxWidth < ZWEISPALTIG_AB) {
+        if (maxWidth < FoodyBreiten.zweispaltig) {
             RezeptListeRoute(onOeffnen, onNeu, onImport = { importOffen = true }, vm = listeVm)
         } else {
             val editor = if (rechts == Rechts.DETAIL) {
@@ -97,7 +97,7 @@ fun RezepteBereich(
                             id, onKochen, onBearbeiten = { auftrag++; rechts = Rechts.BEARBEITEN },
                             onDupliziert = { ausgewaehlt = it }, onZurueck = { ausgewaehlt = null }, onEinkauf = onEinkauf, vm = detailVm,
                         )
-                        else -> Box(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), contentAlignment = Alignment.Center) {
+                        else -> Box(Modifier.fillMaxSize().safeDrawingPadding().padding(FoodyAbstaende.s6), contentAlignment = Alignment.Center) {
                             LeererZustandFlaeche(
                                 Icons.AutoMirrored.Outlined.MenuBook, "Wähle ein Rezept", "Links ein Rezept antippen, um es hier zu sehen.",
                                 aktionText = null, onAktion = null,

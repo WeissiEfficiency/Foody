@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.token.FoodyAbstaende
 
 /** Leerer Zustand als Zeile mit gestrichelter Kante („Noch kein Snack eingetragen · Eintragen“). */
 @Composable
@@ -34,12 +35,12 @@ fun LeererZustandZeile(text: String, aktionText: String, onAktion: () -> Unit, m
                 style = Stroke(width = 1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))),
             )
         }
-        .padding(horizontal = 14.dp, vertical = 8.dp)
+        .padding(horizontal = 14.dp, vertical = FoodyAbstaende.s2)
     val textTeil: @Composable (Modifier) -> Unit = { tm ->
         Text(text, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext, modifier = tm)
     }
     if (grosseSchrift()) {
-        Column(m, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(m, verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
             textTeil(Modifier)
             FoodyKnopf(aktionText, onKlick = onAktion, art = KnopfArt.UMRISS)
         }
@@ -62,7 +63,7 @@ fun LeererZustandFlaeche(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier.fillMaxWidth().padding(24.dp),
+        modifier.fillMaxWidth().padding(FoodyAbstaende.s6),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
