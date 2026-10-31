@@ -110,8 +110,8 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-18-v3-phase3-app-daten-sync-desi
   zusammengeführt – auch in eine andere ID –, abgelehnt → `sync_problem`, fehlende Verweisziele nachreichen); alle
   Pull-Seiten holen und erst dann anwenden (`applyingRemote = 1`, je Datensatz eine Transaktion, Cursor zuletzt; lokale
   Änderungen mit offenem Outbox-Eintrag gewinnen); `410` (Cursor vor der Kompaktierungsgrenze oder hinter dem
-  Server-Stand, etwa nach dem Einspielen einer Sicherung) → Voll-Abgleich, der Unsendetes, Abgelehntes, Verwiesenes und
-  noch Gebrauchtes behält. Nennt der Server verlorene Revisionen, sendet der Voll-Abgleich alles erneut, dessen bekannte
+  Server-Stand, etwa nach dem Einspielen einer Sicherung) → Voll-Abgleich, der Unsendetes, Abgelehntes, Verwiesenes,
+  noch Gebrauchtes und nie vom Server Bestätigtes (keine Revision, etwa unveränderte Startzutaten) behält. Nennt der Server verlorene Revisionen, sendet der Voll-Abgleich alles erneut, dessen bekannte
   Revision darin liegt und neuer ist als der Server-Stand – lebend oder als Löschung –, statt es zu löschen oder zu
   überschreiben (D4). Beim Anwenden gescheiterte Datensätze (`missing_reference`, `invalid_payload`, `apply_failed`)
   holt der Lauf nach einem Tag erneut: alles ab 0, ohne Cursor zu bewegen oder zu löschen (`erneutHolenFaellig`,
