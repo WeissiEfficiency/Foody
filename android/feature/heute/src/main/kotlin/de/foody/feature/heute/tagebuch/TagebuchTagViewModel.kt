@@ -6,7 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.data.tagebuch.TagebuchRepository
-import de.foody.core.designsystem.SolangeSichtbar
+import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.domain.EintragWerte
 import de.foody.domain.Mahlzeit
 import de.foody.domain.Naehrwerte
@@ -48,7 +48,7 @@ class TagebuchTagViewModel @Inject constructor(
                 abschnitte = MAHLZEITEN.map { m -> TagAbschnitt(m, eintraege.filter { it.eintragMahlzeit() == m }) },
             )
         }
-    }.stateIn(viewModelScope, SolangeSichtbar, null)
+    }.stateIn(viewModelScope, SolangeAppOffen, null)
 
     fun zeigen(tag: LocalDate) {
         datum.value = tag

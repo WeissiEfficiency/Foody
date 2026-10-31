@@ -92,5 +92,6 @@ class EinkaufTestUmgebung(val db: FoodyDatenbank, val uhr: Clock = TestUhr()) {
     /** Hält die ViewModels; `viewModels.schliessen()` gehört in `@After` vor `db.close()` ([ViewModelHalter]). */
     val viewModels = ViewModelHalter()
 
-    fun vm(saved: SavedStateHandle = SavedStateHandle()) = viewModels.behalten(EinkaufViewModel(saved, repo, uhr))
+    fun vm(saved: SavedStateHandle = SavedStateHandle()) =
+        viewModels.behalten(EinkaufViewModel(saved, repo, uhr)).also { viewModels.zusehen(it.zustand, it.fruehere, it.blatt) }
 }

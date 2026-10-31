@@ -8,14 +8,14 @@ import de.foody.core.data.einkauf.EinkaufRepository
 import de.foody.core.data.einkauf.GeloeschterArtikel
 import de.foody.core.data.einkauf.ListenKopf
 import de.foody.core.data.einkauf.ZuletztArtikel
+import de.foody.core.designsystem.SolangeAppOffen
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -48,9 +48,8 @@ class EinkaufViewModel @Inject constructor(
     private val verlangt = saved.getStateFlow<String?>(LISTE, null)
     private val suchText = saved.getStateFlow(SUCHE, "")
 
-    /** Angezeigte Liste: die verlangte oder die aktuelle. */
-    private val angezeigt: StateFlow<String?> = verlangt.flatMapLatest { v -> if (v != null) flowOf(v) else repo.aktuelleListeId() }
-        .distinctUntilChanged().stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    /** Angezeigte Liste: die verlangte oder die aktuelle; in Aktionen frisch gelesen statt im Hintergrund beobachtet. */
+    private suspend fun angezeigt(): String? = verlangt.value ?: repo.aktuelleListeId().first()
 
     val zustand: StateFlow<EinkaufZustand> = combine(
         verlangt.flatMapLatest { v ->
@@ -67,12 +66,12 @@ class EinkaufViewModel @Inject constructor(
         repo.zuletzt(),
         suchText,
     ) { z, zuletzt, suche -> z.copy(zuletzt = zuletzt, suche = suche) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, EinkaufZustand())
+        .stateIn(viewModelScope, SolangeAppOffen, EinkaufZustand())
 
-    val fruehere: StateFlow<List<ListenKopf>> = repo.fruehere().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val fruehere: StateFlow<List<ListenKopf>> = repo.fruehere().stateIn(viewModelScope, SolangeAppOffen, emptyList())
 
     val blatt: StateFlow<Blatt?> = saved.getStateFlow<String?>(BLATT, null).map { Blatt.ausText(it) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, Blatt.ausText(saved[BLATT]))
+        .stateIn(viewModelScope, SolangeAppOffen, Blatt.ausText(saved[BLATT]))
 
     private val vorschauStand = MutableStateFlow<VorschauZustand?>(null)
     val vorschau: StateFlow<VorschauZustand?> = vorschauStand.asStateFlow()
@@ -107,15 +106,15 @@ class EinkaufViewModel @Inject constructor(
         val text = suchText.value
         if (text.isBlank()) return
         saved[SUCHE] = ""
-        viewModelScope.launch { repo.eingeben(angezeigt.value, text) }
+        viewModelScope.launch { repo.eingeben(angezeigt(), text) }
     }
 
     fun abhaken(id: String, an: Boolean) = viewModelScope.launch { repo.abhaken(id, an) }
 
     fun antippen(name: String, abteilung: String, ingredientId: String?) =
-        viewModelScope.launch { repo.antippen(angezeigt.value, name, abteilung, ingredientId) }
+        viewModelScope.launch { repo.antippen(angezeigt(), name, abteilung, ingredientId) }
 
-    fun zuletztAntippen(z: ZuletztArtikel) = viewModelScope.launch { repo.zuletztAntippen(angezeigt.value, z) }
+    fun zuletztAntippen(z: ZuletztArtikel) = viewModelScope.launch { repo.zuletztAntippen(angezeigt(), z) }
 
     fun details(id: String, name: String, notiz: String, abteilung: String) = viewModelScope.launch {
         // Die Oberfläche lässt einen ungültigen Namen nicht zu; kommt er doch, bleibt der Artikel wie er war
@@ -127,10 +126,11 @@ class EinkaufViewModel @Inject constructor(
     fun wiederherstellen(g: GeloeschterArtikel) = viewModelScope.launch { repo.wiederherstellen(g) }
 
     /** Löscht [listeId] (Vorgabe: die angezeigte); war sie angezeigt, folgt der Bereich danach der aktuellen Liste. */
-    fun listeLoeschen(listeId: String? = null) {
-        val id = listeId ?: angezeigt.value ?: return
-        if (id == angezeigt.value) saved[LISTE] = null
-        viewModelScope.launch { repo.listeLoeschen(id) }
+    fun listeLoeschen(listeId: String? = null) = viewModelScope.launch {
+        val angezeigt = angezeigt()
+        val id = listeId ?: angezeigt ?: return@launch
+        if (id == angezeigt) saved[LISTE] = null
+        repo.listeLoeschen(id)
     }
 
     fun blattOeffnen(b: Blatt) {
@@ -186,7 +186,7 @@ class EinkaufViewModel @Inject constructor(
     suspend fun abgleichen(): Int? {
         if (!gesperrt.compareAndSet(expect = false, update = true)) return null
         try {
-            val id = angezeigt.value ?: return null
+            val id = angezeigt() ?: return null
             val n = repo.abgleichen(id, abgleichAus.value)
             blattSchliessen()
             return n

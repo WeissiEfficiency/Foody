@@ -1,5 +1,6 @@
 package de.foody.feature.einstellungen
 
+import android.os.Looper
 import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -22,6 +23,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import kotlin.test.assertEquals
@@ -53,7 +55,11 @@ class EinstellungenScreenshotTest {
     }
 
     /** ViewModel mit fertigem Zustand: Die Katalog-Anzahl muss vor der Aufnahme da sein, sonst fehlt sie im Bild. */
-    private fun vm(): EinstellungenViewModel = u.vm().also { assertEquals(3, it.zustand.value.zutaten) }
+    private fun vm(): EinstellungenViewModel = u.vm().also {
+        // SolangeAppOffen startet über die Hauptschleife
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals(3, it.zustand.value.zutaten)
+    }
 
     @After
     fun tearDown() = u.schliessen()

@@ -95,7 +95,7 @@ class SyncAusloeserTest {
         val db = neueDb()
         val ablage = FotoAblage(context)
         val speicher = SyncSpeicher(db, ablage, FotoIndex(db.syncDao(), ablage))
-        val ausloeser = SyncAusloeser(context, speicher, db, bereich)
+        val ausloeser = SyncAusloeser(context, speicher, db, bereich).also { it.appOffen = true }
         val lauf = SyncLauf(speicher, zugang)
 
         init {
@@ -293,6 +293,48 @@ class SyncAusloeserTest {
         val zweiter = TestListenableWorkerBuilder<SyncAuftrag>(context).setWorkerFactory(fabrik).build()
         assertEquals(ListenableWorker.Result.success(), zweiter.doWork(), "Anmeldung abgelaufen: steht in lastError")
         assertEquals(ServerFehler.ANMELDUNG_ABGELAUFEN, ohneToken.speicher.zustand().letzterFehler)
+    }
+
+    @Test
+    fun schliessenSendetWartendeAenderungSofortUndEinmalig() = runBlocking {
+        val g = Geraet { null }
+        g.speicher.aktivieren("http://localhost:1", "konto", allesHochladen = false)
+        g.ausloeser.beimStart()
+        g.zutat("a")
+        warteBis { wartend().size == 1 }
+
+        // Die App geht in den Hintergrund: nicht 5 s und auf Netz warten, sondern gleich und ohne Bedingung
+        g.ausloeser.appImHintergrund().join()
+        val auftrag = auftraege().single { it.state != WorkInfo.State.CANCELLED }
+        assertEquals(0, auftrag.initialDelayMillis)
+        assertEquals(NetworkType.NOT_REQUIRED, auftrag.constraints.requiredNetworkType)
+    }
+
+    @Test
+    fun geschlosseneAppPlantNichts() = runBlocking {
+        val g = Geraet { null }
+        g.speicher.aktivieren("http://localhost:1", "konto", allesHochladen = false)
+        g.ausloeser.appImHintergrund().join()
+        assertTrue(auftraege().none { it.state == WorkInfo.State.ENQUEUED }, "ohne Änderungen: nichts wartet")
+
+        // Eine beim Start offene Änderung zählte bei offener App als Zuwachs (outboxBeobachten)
+        g.zutat("a")
+        g.ausloeser.beimStart()
+        warteBis { g.ausloeser.outboxStaendeGesehen.get() >= 1 }
+        g.ausloeser.jetzt().join()
+        assertTrue(wartend().isEmpty(), "App zu: Änderungen und Auslöser planen nichts")
+
+        g.ausloeser.nachLauf(SyncErgebnis.Fertig(gesendet = 1, geholt = 0))
+        assertTrue(wartend().isEmpty(), "kein Nachlauf im Hintergrund")
+    }
+
+    @Test
+    fun geschlosseneAppWiederholtNicht() = runBlocking {
+        val offline = Geraet { KtorServerZugang("http://localhost:1", standardHttpClient()) { "token" } }
+        offline.speicher.aktivieren("http://localhost:1", "konto", allesHochladen = false)
+        offline.ausloeser.appOffen = false
+        val auftrag = TestListenableWorkerBuilder<SyncAuftrag>(context).setWorkerFactory(fabrik).build()
+        assertEquals(ListenableWorker.Result.success(), auftrag.doWork(), "offline und App zu: erst beim Öffnen wieder")
     }
 
     @Test

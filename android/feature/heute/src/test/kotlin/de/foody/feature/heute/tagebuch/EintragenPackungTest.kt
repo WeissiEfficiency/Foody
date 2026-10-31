@@ -6,7 +6,7 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
-import de.foody.core.designsystem.SolangeSichtbar
+import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.core.scan.ScanAusgang
 import de.foody.core.testing.ViewModelHalter
 import de.foody.core.testing.nachProzessende
@@ -79,7 +79,7 @@ class EintragenPackungTest {
 
     private val e get() = vm.zustand.value.eingaben
 
-    /** Wie das offene Blatt: Der Zustand rechnet nur, solange ihn jemand beobachtet ([SolangeSichtbar]). */
+    /** Wie das offene Blatt: Im Test ist die App zu, der Zustand rechnet nur mit Zuseher ([SolangeAppOffen]). */
     private val zuseher = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private fun EintragenViewModel.sichtbar() = also { vm ->

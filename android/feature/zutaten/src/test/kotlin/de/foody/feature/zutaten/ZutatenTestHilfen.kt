@@ -58,6 +58,7 @@ internal class ZutatenTestUmgebung {
     private val viewModels = ViewModelHalter()
 
     fun liste() = viewModels.behalten(ZutatenListeViewModel(SavedStateHandle(), repo, meldungen, scan.scan, uebergabe))
+        .also { viewModels.zusehen(it.zustand) }
 
     /** [gespeichert]: SavedStateHandle wie nach einem Prozessende; sonst ein neues. */
     fun editor(gespeichert: SavedStateHandle = SavedStateHandle()) =

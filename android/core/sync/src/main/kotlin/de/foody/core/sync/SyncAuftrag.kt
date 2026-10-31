@@ -12,7 +12,8 @@ import kotlinx.coroutines.withContext
 /**
  * Ein Sync-Lauf im Hintergrund (eingeplant vom [SyncAusloeser]). Wie der Worker der v1: Nur vorübergehende Fehler
  * (Netz, `5xx`, Drosselung, Cursor) werden mit Backoff wiederholt; dauerhafte Zustände (abgemeldet, Versionen) stehen in
- * `sync_state.lastError`, ein Wiederholen änderte nichts – daher `success`. Inaktiver Sync: `success`.
+ * `sync_state.lastError`, ein Wiederholen änderte nichts – daher `success`. Inaktiver Sync: `success`. Ist die App
+ * geschlossen, wird nicht wiederholt: Der nächste Lauf kommt beim Öffnen.
  */
 @HiltWorker
 class SyncAuftrag @AssistedInject constructor(
@@ -32,7 +33,7 @@ class SyncAuftrag @AssistedInject constructor(
         }
         ausloeser.nachLauf(ergebnis)
         return when (ergebnis) {
-            is SyncErgebnis.Fehlgeschlagen -> if (ergebnis.voruebergehend) Result.retry() else Result.success()
+            is SyncErgebnis.Fehlgeschlagen -> if (ergebnis.voruebergehend && ausloeser.appOffen) Result.retry() else Result.success()
             SyncErgebnis.Inaktiv, is SyncErgebnis.Fertig -> Result.success()
         }
     }

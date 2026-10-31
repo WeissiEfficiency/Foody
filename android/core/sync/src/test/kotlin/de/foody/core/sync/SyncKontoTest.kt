@@ -119,7 +119,7 @@ class SyncKontoTest {
         val fabrik = ZugangFabrik { adresse ->
             KtorServerZugang(adresse, client) { token.laden().also { synchronized(gesendet) { gesendet += adresse to it } } }
         }
-        val ausloeser = SyncAusloeser(context, speicher, db, bereich)
+        val ausloeser = SyncAusloeser(context, speicher, db, bereich).also { it.appOffen = true }
         val konto = SyncKonto(db, speicher, ablage, token, fabrik, ausloeser, SyncKonfiguration(lokalesHttpErlaubt = httpErlaubt))
         val lauf = SyncLauf(speicher, zugangFuerLauf(speicher, token, fabrik))
         val dao get() = db.syncDao()
