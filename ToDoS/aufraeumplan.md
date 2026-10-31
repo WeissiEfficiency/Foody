@@ -27,7 +27,7 @@ ML-Kit-Registrare (`firebase-components` 16.1.0 behält nur die Klasse); Keep-Re
 | A4 | Lokale Branches löschen, deren Inhalt in `main` ist: alle 16 `claude/*` (web-teil1–4, v2-phase0, projektstruktur, aufraeumen, v3-befunde-review …) | 🤖 | Squash-Merges, Git hält sie deshalb für „nicht gemergt“; vorher je Branch prüfen, dass der PR gemergt ist |
 | A5 | Remote-Branches `origin/claude/phase8-probelauf` und `…/phase8-umstieg` löschen | 🤖 | PRs gemergt |
 | A6 | Probelauf-Ordner `~/foody-probelauf-20261028-1829/` auf dem Homeserver löschen | 👤 / 🤖 | Enthält eine Kopie der echten Datenbank – auch aus Datenschutzsicht besser weg |
-| A7 | Zwei Checkouts → einer: Gearbeitet wird in `C:\Users\Stefan\Downloads\Foody`, gezogen in `E:\OpenCloud\…\Foody`. Festlegen, welcher bleibt, und den anderen löschen | 👤 | Spart den doppelten `git pull` nach jedem Merge und Verwechslungen; im OpenCloud-Ordner synchronisiert jeder Build Hunderte MB mit |
+| A7 | Zwei Checkouts → einer. **Entschieden (31.10.): `E:\OpenCloud\…\Foody` bleibt**, dort und in seinen Worktrees wird weitergearbeitet. `C:\Users\Stefan\Downloads\Foody` wird gelöscht, sobald #150 gemergt ist (dessen Worktree liegt noch dort). Darin liegt nichts, was nicht auf GitHub ist: alle lokalen Branches sind gemergt oder überholt (`claude/v3-vorschau-build` betraf das alte `app3`), keine Schlüssel, kein Stash | 👤 / 🤖 | Spart den doppelten `git pull` nach jedem Merge und Verwechslungen; im OpenCloud-Ordner synchronisiert jeder Build Hunderte MB mit (in Kauf genommen) |
 
 ## Stufe 2 – Repo aufräumen (Doku, Build), je ein PR
 
@@ -163,8 +163,8 @@ Ressourcen schlank (381 KB), Features ohne Querverweise.
 | R9 | `server/README.md`, `installation.md`: Rückweg zur v1 | mit Stufe 3 entfernen |
 | R10 | `PortionenNachtrag` (`:core:data`) samt Hilt-Bereitstellung: in der App ohne Knopf (geplant für Phase 6, nie gebaut). Re-Importe laufen über die Dublettenerkennung | 👤 entscheidet: Knopf in den Einstellungen bauen oder entfernen (auch `RezeptImport.portionenNachtragen` in `:domain`) |
 
-**Lokal (kein Repo):** `.claude\worktrees\offene-fehler` (283 MB, lose v1-Kopie vom 11.10.), Build-Reste `app/`, `domain/`,
-`sync-protocol/` (125 MB), sechs geparkte Worktrees archivierter Sessions, der Checkout in `Downloads` (A7).
+**Lokal (kein Repo):** der Checkout in `Downloads` (A7) samt `.claude\worktrees\offene-fehler` (283 MB, lose v1-Kopie vom
+11.10.) und seinen geparkten Worktrees; im E:-Checkout Build-Reste `app/`, `domain/`, `sync-protocol/`, `android/app3/`.
 
 ## Empfohlene Reihenfolge
 
