@@ -13,8 +13,8 @@ data class NachtragErgebnis(val aktualisiert: Int, val uebersprungen: Int, val o
 
 /**
  * Trägt bei Rezepten, die vor Regel 27 importiert wurden, die Portionenzahl der Markdown-Datei nach
- * ([RezeptImport.portionenNachtragen]): nur `defaultServings` und Notiz, die Mengen nie. Den Knopf dafür bekommt die
- * App in Phase 6.
+ * ([RezeptImport.portionenNachtragen]): nur `defaultServings` und Notiz, die Mengen nie. Aufgerufen über
+ * „Portionen nachtragen“ im Import-Blatt der Rezepte (`RezeptImportDienst.portionenNachtragen`).
  *
  * - **Zuordnung:** `recipe.sourceUrl` = die vom [MarkdownRecipeImporter] gelesene Quelle, genau verglichen. Der Import
  *   speichert die Quelle unverändert so, wie der Parser sie liefert (bereits getrimmt); eine weitere Normalisierung

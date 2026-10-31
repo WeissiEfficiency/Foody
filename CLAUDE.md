@@ -9,7 +9,7 @@ Offline-first Android-App für Rezepte, Nährwerte, Wochenplan und Einkaufsliste
   `v3-abnahme.md`); was offen ist, steht in `ToDoS/aufraeumplan.md`.
   Die KI-Hilfe ist ein eigenes Projekt danach (`ToDoS/ki-plan.md`).
 - App-Code in `:app` (Hülle), `:core:*` und `:feature:*` (unter `android/`). Die v1 ist aus `main` entfernt; der
-  echte Server läuft seit dem Umstieg von `main` (`v1-server` ist nur noch der Rückweg).
+  echte Server läuft seit dem Umstieg von `main` (letzter v1-Stand: Tag `v1-final`).
 - Abhängigkeiten nur nach unten: `:app` → `:feature:*` → `:core:*` → `:domain`/`:api-protocol`.
   **Features kennen sich nicht**; was zwei Features brauchen, kommt in ein `:core`-Modul (Beispiel ADR 0013).
 - Rechenlogik gehört nach `:domain` (reines Kotlin), jede Korrektur mit einem Test, der vorher fehlschlägt.

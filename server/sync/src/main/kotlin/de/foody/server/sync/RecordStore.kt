@@ -93,24 +93,6 @@ class RecordStore {
             st.executeQuery().use { rs -> buildList { while (rs.next()) add(rs.toRecord()) } }
         }
 
-    /**
-     * Alle nicht gelöschten Datensätze des Kontos und seine höchste Revision (gelöschte zählen mit; 0 ohne Datensätze).
-     */
-    fun lebende(c: Connection, konto: String): Pair<List<SyncRecord>, Long> {
-        val records = c.prepareStatement("SELECT $columns FROM sync_record WHERE konto_id = ? AND deleted = 0").use { st ->
-            st.setString(1, konto)
-            st.executeQuery().use { rs -> buildList { while (rs.next()) add(rs.toRecord()) } }
-        }
-        return records to hoechsteRevision(c, konto)
-    }
-
-    /** Höchste Revision des Kontos (0 ohne Datensätze) – ändert sich bei jedem Schreiben. */
-    fun hoechsteRevision(c: Connection, konto: String): Long =
-        c.prepareStatement("SELECT COALESCE(MAX(rev), 0) FROM sync_record WHERE konto_id = ?").use { st ->
-            st.setString(1, konto)
-            st.executeQuery().use { if (it.next()) it.getLong(1) else 0L }
-        }
-
     private fun ResultSet.toRecord(): SyncRecord {
         val raw = getString("payload")
         return SyncRecord(

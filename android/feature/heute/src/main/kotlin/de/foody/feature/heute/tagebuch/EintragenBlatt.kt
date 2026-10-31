@@ -41,6 +41,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.FoodyTextfeld
+import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.scan.PackungScanKnopf
 import de.foody.feature.heute.anzeigename
@@ -71,7 +72,7 @@ fun EintragenBlatt(auftrag: BlattAuftrag, onFertig: () -> Unit, vm: EintragenVie
             Modifier.verticalScroll(rememberScrollState()).padding(horizontal = FoodyAbstaende.s4).padding(bottom = FoodyAbstaende.s6),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
-            Text("Eintragen", style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+            Text("Eintragen", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 MAHLZEITEN.forEach { m -> FoodyChip(m.anzeigename(), m == e.mahlzeit, { vm.mahlzeit(m) }) }
             }

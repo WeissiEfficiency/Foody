@@ -32,6 +32,7 @@ import de.foody.core.designsystem.komponenten.SyncAnzeige
 import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.rezeptBild
+import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 import java.time.LocalDate
@@ -47,7 +48,7 @@ internal fun HeuteKopf(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: (
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         Column(Modifier.weight(1f)) {
             datum?.let { Augenbraue(DATUM.format(it)) }
-            Text("Heute", style = MaterialTheme.typography.headlineLarge, color = FoodyTheme.farben.text)
+            Text("Heute", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineLarge, color = FoodyTheme.farben.text)
         }
         sync?.let { SyncStatus(it) }
         IconButton(onClick = onEinstellungen) {

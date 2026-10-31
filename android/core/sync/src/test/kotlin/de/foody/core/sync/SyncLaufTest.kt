@@ -25,6 +25,7 @@ import de.foody.core.data.db.PlanEintragEntity
 import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.db.RezeptZutatEntity
 import de.foody.core.data.db.SyncTrigger
+import de.foody.core.data.db.SyncRevisionEntity
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
@@ -504,9 +505,13 @@ class SyncLaufTest {
         server.uhr.vorstellen(Duration.ofDays(91))
         assertEquals(1, Compactor(server.deps.db, server.uhr).run())
 
-        // B: eine lokale Zutat, die der Server nicht kennt und die nicht vorgemerkt ist (veraltet), und eine neue.
+        // B: eine früher vom Server bestätigte Zutat, die er nicht mehr kennt (veraltet), eine nie gesendete
+        // (unveränderte Startzutat nach „Zusammenführen“) und eine neue.
         b.db.zutatDao().upsert(zutat("veraltet"))
         b.dao.loeschenOutbox("ingredient", "veraltet")
+        b.dao.upsertRevision(SyncRevisionEntity("ingredient", "veraltet", 1))
+        b.db.zutatDao().upsert(zutat("nie-gesendet"))
+        b.dao.loeschenOutbox("ingredient", "nie-gesendet")
         b.db.zutatDao().upsert(zutat("neu"))
         b.zugang.pulls.clear()
         assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
@@ -514,6 +519,7 @@ class SyncLaufTest {
         assertNotNull(b.db.zutatDao().nachId("x"))
         assertNotNull(b.db.zutatDao().nachId("neu"), "vor dem Abgleich gesendet, also beim Server")
         assertNull(b.db.zutatDao().nachId("veraltet"))
+        assertNotNull(b.db.zutatDao().nachId("nie-gesendet"), "der Server kannte sie nie, hat sie also nicht gelöscht (N8)")
         assertNull(b.db.zutatDao().nachId("y"))
         assertEquals(emptyList(), b.dao.outbox(), "das Löschen im Abgleich merkt nichts vor")
         assertFalse(b.dao.zustand()!!.applyingRemote)
@@ -527,6 +533,7 @@ class SyncLaufTest {
         val b = geraet(name, konto)
         b.db.zutatDao().upsert(zutat("veraltet"))
         b.dao.loeschenOutbox("ingredient", "veraltet")
+        b.dao.upsertRevision(SyncRevisionEntity("ingredient", "veraltet", 1))
         b.dao.upsertZustand(b.dao.zustand()!!.copy(cursor = 5))
         val kaputt = SyncRecord(
             id = "kaputt", type = RecordType.RECIPE, updatedAt = 10, rev = 3,

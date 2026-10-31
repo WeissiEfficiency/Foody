@@ -8,6 +8,8 @@ import androidx.room.withTransaction
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.foody.core.data.alsIngredient
 import de.foody.core.data.db.FoodyDatenbank
+import de.foody.core.data.rezeptimport.NachtragErgebnis
+import de.foody.core.data.rezeptimport.PortionenNachtrag
 import de.foody.domain.ImportedIngredient
 import de.foody.domain.ImportedRecipe
 import de.foody.domain.MarkdownRecipeImporter
@@ -28,6 +30,9 @@ interface RezeptImporter {
     suspend fun dateien(uris: List<Uri>, onFortschritt: (Int, Int) -> Unit = { _, _ -> }): ImportErgebnis
 
     suspend fun ordner(baum: Uri, onFortschritt: (Int, Int) -> Unit = { _, _ -> }): ImportErgebnis
+
+    /** Portionenzahl der Markdown-Dateien im Ordner bei früher importierten Rezepten nachtragen (R10). */
+    suspend fun portionenNachtragen(baum: Uri): NachtragErgebnis
 }
 
 /**
@@ -39,6 +44,7 @@ class RezeptImportDienst @Inject constructor(
     @ApplicationContext private val kontext: Context,
     private val db: FoodyDatenbank,
     private val rezepte: RezeptRepository,
+    private val nachtrag: PortionenNachtrag,
 ) : RezeptImporter {
     override suspend fun dateien(uris: List<Uri>, onFortschritt: (Int, Int) -> Unit): ImportErgebnis =
         importieren(uris, TAG_DATEIEN, onFortschritt)
@@ -46,6 +52,12 @@ class RezeptImportDienst @Inject constructor(
     /** Alle Markdown-Dateien des freigegebenen Ordners (ohne Unterordner), nach Namen sortiert. */
     override suspend fun ordner(baum: Uri, onFortschritt: (Int, Int) -> Unit): ImportErgebnis =
         importieren(withContext(Dispatchers.IO) { markdownIn(baum) }, TAG_ORDNER, onFortschritt)
+
+    /** Liest alle Markdown-Dateien des Ordners (wie [ordner]); unlesbare fallen weg. Geändert werden nur Portionen und Notiz. */
+    override suspend fun portionenNachtragen(baum: Uri): NachtragErgebnis {
+        val dateien = withContext(Dispatchers.IO) { markdownIn(baum).mapNotNull { uri -> text(uri)?.let { dateiname(uri) to it } } }
+        return nachtrag.anwenden(dateien)
+    }
 
     private suspend fun importieren(uris: List<Uri>, tag: String, onFortschritt: (Int, Int) -> Unit): ImportErgebnis {
         val importiert = mutableListOf<String>()
@@ -92,7 +104,16 @@ class RezeptImportDienst @Inject constructor(
 
     /** Text der Datei als Rezept; `null`, wenn unlesbar, zu groß oder nicht zu zerlegen. */
     private fun lesen(uri: Uri): ImportedRecipe? = try {
-        kontext.contentResolver.openInputStream(uri)?.use { it.textBis(MAX_BYTES) }?.let(MarkdownRecipeImporter::parse)
+        text(uri)?.let(MarkdownRecipeImporter::parse)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
+    }
+
+    /** Inhalt der Datei; `null`, wenn unlesbar oder größer als [MAX_BYTES]. */
+    private fun text(uri: Uri): String? = try {
+        kontext.contentResolver.openInputStream(uri)?.use { it.textBis(MAX_BYTES) }
     } catch (e: CancellationException) {
         throw e
     } catch (_: Exception) {

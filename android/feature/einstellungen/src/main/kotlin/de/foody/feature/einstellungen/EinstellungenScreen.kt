@@ -23,10 +23,12 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,6 +39,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyFrage
+import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 
@@ -83,6 +86,9 @@ fun EinstellungenRoute(
     var zielUngueltig by rememberSaveable { mutableStateOf(false) }
     var zielFehler by rememberSaveable { mutableStateOf(false) }
     val dateien = dateiwahl({ vm.sicherungErstellen(it) }, { ersetzen = it.toString() })
+    // Ohne „Fertig“ verlassen: die letzte gültige Eingabe trotzdem speichern
+    val letzteEingabe by rememberUpdatedState(zielText)
+    DisposableEffect(vm) { onDispose { letzteEingabe?.let(vm::tageszielSpeichern) } }
 
     Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
@@ -95,11 +101,17 @@ fun EinstellungenRoute(
                     IconButton(onClick = onZurueck) {
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
                     }
-                    Text("Einstellungen", style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+                    Text("Einstellungen", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
                 }
                 KontoAbschnitt(z.konto, System.currentTimeMillis(), onServer)
                 DarstellungAbschnitt(z.darstellung, vm::darstellungSetzen)
-                TageszielAbschnitt(zielText ?: z.tagesziel?.toString().orEmpty(), zielFehler, onFertig = { zielFehler = zielUngueltig }) { neu ->
+                TageszielAbschnitt(
+                    zielText ?: z.tagesziel?.toString().orEmpty(), zielFehler,
+                    onFertig = {
+                        zielFehler = zielUngueltig
+                        zielText?.let(vm::tageszielSpeichern)
+                    },
+                ) { neu ->
                     zielText = neu
                     zielUngueltig = !vm.tageszielEingabe(neu)
                     if (!zielUngueltig) zielFehler = false

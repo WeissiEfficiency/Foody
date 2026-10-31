@@ -211,4 +211,24 @@ class PhotoTest {
         assertTrue(Files.exists(file(viaMissing)))
         assertTrue(Files.exists(file(viaPut)))
     }
+
+    /** N7: Braucht ein Gerät das Foto zwischen Auflisten und Löschen wieder (`/photos/missing`), bleibt es liegen. */
+    @Test
+    fun aufraeumenPrueftDieZeitDirektVorDemLoeschen() = testServer { env ->
+        val (token, konto) = env.setupKonto()
+        val b = jpeg(5)
+        val sha = PhotoHash.of(b)
+        client.upload(token, sha, b)
+        val datei = env.photoDir.resolve(konto).resolve("$sha.jpg")
+        val alt = FileTime.from(env.clock.instant().minus(Duration.ofDays(31)))
+        val grenze = env.clock.instant().minus(Duration.ofDays(30))
+        Files.setLastModifiedTime(datei, alt)
+        // Die Aufräumung hat das Foto als alt aufgelistet; jetzt fragt ein Gerät danach.
+        client.missing(token, listOf(sha))
+        assertFalse(env.deps.photos.loeschenWennAelter(konto, sha, grenze))
+        assertTrue(Files.exists(datei))
+        Files.setLastModifiedTime(datei, alt)
+        assertTrue(env.deps.photos.loeschenWennAelter(konto, sha, grenze))
+        assertFalse(Files.exists(datei))
+    }
 }

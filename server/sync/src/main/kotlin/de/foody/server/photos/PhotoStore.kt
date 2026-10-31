@@ -66,8 +66,18 @@ class PhotoStore(private val root: Path) {
         }
     }
 
-    fun delete(konto: String, sha: String) {
-        Files.deleteIfExists(fileOf(konto, sha))
+    /**
+     * Löscht das Foto nur, wenn es *jetzt* noch älter als [grenze] ist (N7): Zwischen Auflisten und Löschen kann ein
+     * Gerät es über `/photos/missing` wieder angefordert haben. Liefert, ob gelöscht wurde.
+     */
+    fun loeschenWennAelter(konto: String, sha: String, grenze: Instant): Boolean {
+        val datei = fileOf(konto, sha)
+        val geaendert = try {
+            Files.getLastModifiedTime(datei).toInstant()
+        } catch (_: IOException) {
+            return false
+        }
+        return geaendert.isBefore(grenze) && Files.deleteIfExists(datei)
     }
 
     internal companion object {

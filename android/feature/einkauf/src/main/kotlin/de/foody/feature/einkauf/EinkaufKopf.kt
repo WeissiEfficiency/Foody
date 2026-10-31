@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.data.einkauf.EinkaufsAnsicht
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
+import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
@@ -29,7 +30,7 @@ import de.foody.core.designsystem.token.GlasStufe
 internal fun EinkaufKopf(ansicht: EinkaufsAnsicht?, aktionen: @Composable RowScope.() -> Unit = {}) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text("Einkauf", style = MaterialTheme.typography.headlineLarge, color = FoodyTheme.farben.text)
+            Text("Einkauf", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineLarge, color = FoodyTheme.farben.text)
             ansicht?.let {
                 Text("${it.name} · ${it.anzahlOffen} offen", style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
             }

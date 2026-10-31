@@ -51,8 +51,7 @@ class Compactor(
                 }
             }
             for ((sha, modified) in files) {
-                if (sha !in referenced && modified.isBefore(cutoff)) {
-                    store.delete(konto, sha)
+                if (sha !in referenced && modified.isBefore(cutoff) && store.loeschenWennAelter(konto, sha, cutoff)) {
                     log.info("Foto {} des Kontos {} entfernt (nicht mehr referenziert)", sha, konto)
                 }
             }

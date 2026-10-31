@@ -252,11 +252,11 @@ class AdminCliTest {
         assertEquals(HttpStatusCode.OK, client.login("ben", "geheimgeheim").status)
     }
 
-    /** Legt eine Datenbank auf Version 1 (vor dem Umstieg auf Konten) an und liefert die Konfiguration dazu. */
-    private fun v1Datenbank(ordner: Path): ServerConfig {
+    /** Legt eine Datenbank auf Version 3 (vor der letzten Migration) an und liefert die Konfiguration dazu. */
+    private fun alteDatenbank(ordner: Path): ServerConfig {
         val config = ServerConfig(dbPath = ordner.resolve("foody.db").toString(), port = 0, adminUser = null, adminPassword = null,
             photoDir = ordner.resolve("photos").toString())
-        Database("jdbc:sqlite:${config.dbPath}", migrationen = listOf(Migrations.all[0])).close()
+        Database("jdbc:sqlite:${config.dbPath}", migrationen = Migrations.all.take(3)).close()
         return config
     }
 
@@ -279,13 +279,13 @@ class AdminCliTest {
     fun adminMigriertNicht() {
         val ordner = Files.createTempDirectory("foody-admin-alt")
         try {
-            val config = v1Datenbank(ordner)
+            val config = alteDatenbank(ordner)
             for (args in listOf(listOf("compact"), listOf("konto-anlegen", "ben"))) {
                 val (code, out, err) = admin(config, args)
                 assertEquals(1, code, args.toString())
                 assertEquals("", out)
-                assertEquals("Datenbank auf Version 1 – erst den Server mit V3 starten (er sichert und wandelt um).", err.trim())
-                assertEquals(1, userVersion(config.dbPath))
+                assertEquals("Datenbank auf Version 3 – erst den Server mit V3 starten (er sichert und wandelt um).", err.trim())
+                assertEquals(3, userVersion(config.dbPath))
                 assertEquals(emptyList(), ordner.listDirectoryEntries("vor-migration-*"))
             }
         } finally {
@@ -298,7 +298,7 @@ class AdminCliTest {
     fun wiederhergestelltMigriertMitSicherung() {
         val ordner = Files.createTempDirectory("foody-admin-alt")
         try {
-            val config = v1Datenbank(ordner)
+            val config = alteDatenbank(ordner)
             val (code, _, err) = admin(config, listOf("wiederhergestellt"))
             assertEquals(0, code, err)
             assertEquals(Migrations.all.size, userVersion(config.dbPath))
@@ -312,13 +312,13 @@ class AdminCliTest {
     fun adminBackupAufAlterVersion() {
         val ordner = Files.createTempDirectory("foody-admin-alt")
         try {
-            val config = v1Datenbank(ordner)
+            val config = alteDatenbank(ordner)
             val ziel = ordner.resolve("vor-neustart.db").toString()
             val (code, out, _) = admin(config, listOf("backup", ziel))
             assertEquals(0, code)
             assertEquals(ziel, out.trim())
-            assertEquals(1, userVersion(ziel))
-            assertEquals(1, userVersion(config.dbPath))
+            assertEquals(3, userVersion(ziel))
+            assertEquals(3, userVersion(config.dbPath))
             assertEquals(emptyList(), ordner.listDirectoryEntries("vor-migration-*"))
         } finally {
             ordner.toFile().deleteRecursively()

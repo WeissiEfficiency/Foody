@@ -22,12 +22,12 @@ ML-Kit-Registrare (`firebase-components` 16.1.0 behält nur die Klasse); Keep-Re
 | ID | Was | Wer | Hinweis |
 |---|---|---|---|
 | ✅ A1 | Alte Apps auf den Geräten deinstallieren, falls noch da: die bis 18.10. verbundene App auf dem Handy und die bis 27.10. verbundene auf dem Tablet (beide haben sich beim Umstieg nicht als Update gemeldet) | 👤 | Vorher kurz öffnen: Liegt dort seitdem etwas Ungesendetes, das du brauchst? Mit der Deinstallation ist es weg |
-| A2 | Lokale Build-Reste im Repo-Ordner löschen: `app/`, `domain/`, `sync-protocol/` (nur `build/`, von Git nicht verfolgt) | 🤖 | Rest der alten Modulpfade |
-| A3 | Alte Worktrees entfernen: `.claude/worktrees/` (3 Stück, Stand v2) und der Temp-Worktree `v3-befunde` | 🤖 | `git worktree remove`, danach `git worktree prune` |
-| A4 | Lokale Branches löschen, deren Inhalt in `main` ist: alle 16 `claude/*` (web-teil1–4, v2-phase0, projektstruktur, aufraeumen, v3-befunde-review …) | 🤖 | Squash-Merges, Git hält sie deshalb für „nicht gemergt“; vorher je Branch prüfen, dass der PR gemergt ist |
-| A5 | Remote-Branches `origin/claude/phase8-probelauf` und `…/phase8-umstieg` löschen | 🤖 | PRs gemergt |
+| ✅ A2 | Lokale Build-Reste im Repo-Ordner löschen: `app/`, `domain/`, `sync-protocol/` (nur `build/`, von Git nicht verfolgt) **Erledigt 31.10.: `app/`, `domain/`, `sync-protocol/`, `android/app3/`, `shared/sync-protocol/` (nur `build/`) gelöscht.** | 🤖 | Rest der alten Modulpfade |
+| ✅ A3 | Alte Worktrees entfernen: `.claude/worktrees/` (3 Stück, Stand v2) und der Temp-Worktree `v3-befunde` **Erledigt 31.10.: `v3-befunde`, `youthful-visvesvaraya` und `server-d1-d4` entfernt; es bleiben die Worktrees laufender Sitzungen.** | 🤖 | `git worktree remove`, danach `git worktree prune` |
+| ✅ A4 | Lokale Branches löschen, deren Inhalt in `main` ist: alle 16 `claude/*` (web-teil1–4, v2-phase0, projektstruktur, aufraeumen, v3-befunde-review …) **Erledigt 31.10.: 21 Branches gelöscht, alle mit gemergtem PR (#81–#155) oder ohne eigenen Commit.** | 🤖 | Squash-Merges, Git hält sie deshalb für „nicht gemergt“; vorher je Branch prüfen, dass der PR gemergt ist |
+| ✅ A5 | Remote-Branches `origin/claude/phase8-probelauf` und `…/phase8-umstieg` löschen **Erledigt: beide waren schon weg; ebenso die Remote-Branches der gemergten PRs #152–#155.** | 🤖 | PRs gemergt |
 | ✅ A6 | Probelauf-Ordner `~/foody-probelauf-20261028-1829/` auf dem Homeserver löschen | 👤 / 🤖 | Enthält eine Kopie der echten Datenbank – auch aus Datenschutzsicht besser weg |
-| A7 | Zwei Checkouts → einer. **Entschieden (31.10.): `E:\OpenCloud\…\Foody` bleibt**, dort und in seinen Worktrees wird weitergearbeitet. `C:\Users\Stefan\Downloads\Foody` wird gelöscht, sobald #150 gemergt ist (dessen Worktree liegt noch dort). Darin liegt nichts, was nicht auf GitHub ist: alle lokalen Branches sind gemergt oder überholt (`claude/v3-vorschau-build` betraf das alte `app3`), keine Schlüssel, kein Stash | 👤 / 🤖 | Spart den doppelten `git pull` nach jedem Merge und Verwechslungen; im OpenCloud-Ordner synchronisiert jeder Build Hunderte MB mit (in Kauf genommen) |
+| ✅ A7 | Zwei Checkouts → einer. **Entschieden (31.10.): `E:\OpenCloud\…\Foody` bleibt**, dort und in seinen Worktrees wird weitergearbeitet. `C:\Users\Stefan\Downloads\Foody` wird gelöscht, sobald #150 gemergt ist (dessen Worktree liegt noch dort). Darin liegt nichts, was nicht auf GitHub ist: alle lokalen Branches sind gemergt oder überholt (`claude/v3-vorschau-build` betraf das alte `app3`), keine Schlüssel, kein Stash **Erledigt 31.10.: `Downloads\Foody` gelöscht.** | 👤 / 🤖 | Spart den doppelten `git pull` nach jedem Merge und Verwechslungen; im OpenCloud-Ordner synchronisiert jeder Build Hunderte MB mit (in Kauf genommen) |
 
 ## Stufe 2 – Repo aufräumen (Doku, Build), je ein PR
 
@@ -43,17 +43,17 @@ ML-Kit-Registrare (`firebase-components` 16.1.0 behält nur die Klasse); Keep-Re
 | ✅ B8 | `Platzhalter.kt` und `Bildschirme.platzhalter` aus dem Produktivcode in die Tests von `:app` verschieben; Text „Kommt in Phase 6“ entfällt | 🤖 PR | Bauzeit-Gerüst landet im Release (R8 entfernt es zwar, aber es liest sich wie unfertiger Code) (dieser PR) |
 | ✅ B9 | Doppelte Konstante `SEEDED_ALT` (`Einstellungsschluessel.kt:15` und `StartdatenLader.kt:74`) auf eine reduzieren | 🤖 PR | Klein (dieser PR) |
 
-## Stufe 3 – Rückweg zur v1 schließen (ab 2026-11-25)
+## Stufe 3 – Rückweg zur v1 schließen (vorgezogen auf 2026-10-31)
 
 Erst, wenn vier Wochen nichts schiefging. Danach gibt es keinen Weg zurück zur v1 mehr – das ist gewollt.
 
 | ID | Was | Wer | Hinweis |
 |---|---|---|---|
-| C1 | Branch `v1-server` auf GitHub und Forgejo löschen (vorher Tag `v1-final` setzen, damit der Stand auffindbar bleibt) | 🤖 | `CLAUDE.md` und `server/README.md` (Rückweg) nennen ihn – im selben Schritt anpassen |
-| C2 | `foody-v1.apk` aus OpenCloud löschen; die v1-Sicherungsdateien der Geräte noch behalten oder ins Archiv | 👤 | |
-| C3 | Server: Sicherung `vor-migration-2-*.db` im Daten-Volume löschen | 👤 / 🤖 | Enthält den Stand vor der Umwandlung |
-| C4 | Server: Altlast-Route `/api/v1/{...}` für Protokoll 1/2 (`Application.kt:100`) entfernen | 🤖 PR, Server-Rebuild | Gibt alten Apps „Bitte aktualisieren“; nach A1 gibt es keine mehr |
-| C5 | Server: Migration 1 → 2 (Haushalt → Konto, `Migrations.kt:69-180`), Vorprüfung, `haushalt_umzug` und `FotoUmzug` samt Tests entfernen. Die Migrationsliste beginnt dann mit einem Grundschema in Version 2 | 🤖 PR, Server-Rebuild | ~250 Zeilen Code + Tests weniger. Danach lässt sich eine Server-Sicherung von vor dem 28.10. nicht mehr einspielen – deshalb erst nach C3 |
+| ✅ C1 | Branch `v1-server` auf GitHub und Forgejo löschen (vorher Tag `v1-final` setzen, damit der Stand auffindbar bleibt) **Erledigt 31.10.: Tag `v1-final` (auf `580dc23`) auf GitHub und Forgejo, Branch `v1-server` dort gelöscht; Doku nennt den Tag.** | 🤖 | `CLAUDE.md` und `server/README.md` (Rückweg) nennen ihn – im selben Schritt anpassen |
+| ✅ C2 | `foody-v1.apk` aus OpenCloud löschen; die v1-Sicherungsdateien der Geräte noch behalten oder ins Archiv **Erledigt: `foody-v1.apk` liegt nicht mehr in OpenCloud.** | 👤 | |
+| ✅ C3 | Server: Sicherung `vor-migration-2-*.db` im Daten-Volume löschen **Erledigt: Im Daten-Volume liegt keine `vor-migration-2-*.db` mehr.** | 👤 / 🤖 | Enthält den Stand vor der Umwandlung |
+| ✅ C4 | Server: Altlast-Route `/api/v1/{...}` für Protokoll 1/2 (`Application.kt:100`) entfernen **Erledigt 31.10.: Route entfernt, `/api/v1/…` antwortet mit `404`.** | 🤖 PR, Server-Rebuild | Gibt alten Apps „Bitte aktualisieren“; nach A1 gibt es keine mehr |
+| ✅ C5 | Server: Migration 1 → 2 (Haushalt → Konto, `Migrations.kt:69-180`), Vorprüfung, `haushalt_umzug` und `FotoUmzug` samt Tests entfernen. Die Migrationsliste beginnt dann mit einem Grundschema in Version 2 **Erledigt 31.10.: Grundschema in Version 2, Version 1 bricht den Start ab; Migration 3 → 4 löscht `haushalt_umzug`; `FotoUmzug`, `MigrationKontoTest` und `FotoUmzugTest` entfernt.** | 🤖 PR, Server-Rebuild | ~250 Zeilen Code + Tests weniger. Danach lässt sich eine Server-Sicherung von vor dem 28.10. nicht mehr einspielen – deshalb erst nach C3 |
 | C6 | App: Abmelden der v1-WorkManager-Aufträge (`SyncAusloeser.kt:60-61`, `ALTER_AUFTRAG`, `ALTER_EINMALAUFTRAG`) entfernen | 🤖 PR | Beide Geräte sind mehrfach gestartet, die Aufträge sind längst weg |
 | C7 | App: Lesen des alten Schlüssels `seeded` (`StartdatenLader.kt`) entfernen | 🤖 PR | Wie C6 |
 | C8 | App: Einspielen von **v1-Sicherungen** (Vorrat überspringen, alte Feldnamen in `SicherungFormat.kt`/`Sicherung.kt`) prüfen – nur entfernen, wenn du die v1-Sicherungsdateien nicht mehr brauchst | 🤖 PR | Bewusst die letzte Stufe: Das ist dein letzter Rettungsweg für Daten von vor dem Umstieg |
@@ -114,8 +114,8 @@ Beim Archivieren von `v3-plan.md` und `v3-abnahme.md` noch offen:
 | V2 | TalkBack-Durchlauf und Schriftgröße 200 % (dazu N5 und die A11y-Lücken aus E3) | 👤 / 🤖 |
 | V3 | Abnahme „Opt-in: ohne Verbindung keine Netzwerkzugriffe“ prüfen: frisch installiert, nicht angemeldet – kein Aufruf an Server oder Open Food Facts außer auf Knopfdruck | 🤖 |
 | V4 | Abnahme „Betrieb“: Speicherlimit (512 MB) ist im Compose; nachzuweisen sind der nächtliche Lauf von `backup.sh` (Cron) und dass die Sicherung im OpenCloud-Ordner ankommt; dazu D3 und D5 | 👤 |
-| V5 | Abnahme „Signierte Release-APK im OpenCloud-Ordner“ (`:app:apkNachOpenCloud`): ablegen und abhaken, sobald 3.0.0 dort liegt | 👤 |
-| V6 | **R2-N3** Maschinenspezifisches (JAVA_HOME, ö-Pfad, Emulator) aus `CLAUDE.md` in eine nicht eingecheckte `CLAUDE.local.md`? | 👤 entscheidet |
+| ✅ V5 | Abnahme „Signierte Release-APK im OpenCloud-Ordner“ (`:app:apkNachOpenCloud`): ablegen und abhaken, sobald 3.0.0 dort liegt **Erledigt: `foody.apk` 3.0.0 (`de.foody.app`, versionCode 300) liegt seit dem 28.10. in OpenCloud.** | 👤 |
+| ~~V6~~ | **R2-N3** Maschinenspezifisches (JAVA_HOME, ö-Pfad, Emulator) aus `CLAUDE.md` in eine nicht eingecheckte `CLAUDE.local.md`? — **entfällt:** `CLAUDE.md` enthält nichts Maschinenspezifisches mehr (nur „JDK 21+, JBR“); Pfade, Emulator und Schlüssel stehen im Gedächtnis der Sitzungen | — |
 
 ## Stufe 6 – Gesamtprüfung 2026-10-31: Best Practice und Altbestand
 
@@ -160,7 +160,7 @@ Ressourcen schlank (381 KB), Features ohne Querverweise.
 | ✅ R6 | `ToDoS/v3-plan.md` (430 Zeilen, 6 offene Punkte) und `v3-abnahme.md` (3 offen) | übernommen unter „Aus V3-Plan und Abnahme“, beide in `ToDoS/archiv/` |
 | ✅ R7 | `docs/architecture.md` (451 Zeilen): Abschnitte nach Phasen benannt, Tabelle „Datenbank: Vorgeschichte“ der v1 | nach Bereichen (Modulen) gegliedert, v1-Tabelle als Anhang ans Ende; kürzen mit Stufe 3 |
 | ✅ R8 | ADR 0005 (Bring!) nennt `ShoppingListExporter`, den es seit der V3 nicht mehr gibt (Teilen als Text gestrichen) | Status „abgelöst durch ADR 0011“ |
-| R9 | `server/README.md`, `installation.md`: Rückweg zur v1 | mit Stufe 3 entfernen |
+| ✅ R9 | `server/README.md`, `installation.md`: Rückweg zur v1 **Erledigt 31.10. mit C1.** | mit Stufe 3 entfernen |
 | R10 | `PortionenNachtrag` (`:core:data`) samt Hilt-Bereitstellung: in der App ohne Knopf (geplant für Phase 6, nie gebaut). Re-Importe laufen über die Dublettenerkennung | 👤 entscheidet: Knopf in den Einstellungen bauen oder entfernen (auch `RezeptImport.portionenNachtragen` in `:domain`) |
 
 **Lokal (kein Repo):** der Checkout in `Downloads` (A7) samt `.claude\worktrees\offene-fehler` (283 MB, lose v1-Kopie vom

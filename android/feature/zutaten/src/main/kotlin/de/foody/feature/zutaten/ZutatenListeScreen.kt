@@ -51,6 +51,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.kcalText
+import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.scan.PackungScanKnopf
@@ -154,7 +155,7 @@ private fun Kopf(onZurueck: () -> Unit, onVereinheitlichen: () -> Unit) {
         }
         Column(Modifier.weight(1f)) {
             Augenbraue("Einstellungen")
-            Text("Zutatenkatalog", style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+            Text("Zutatenkatalog", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
         }
         Box {
             IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, contentDescription = "Mehr", tint = FoodyTheme.farben.text) }

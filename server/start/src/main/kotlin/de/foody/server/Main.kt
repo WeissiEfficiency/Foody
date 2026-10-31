@@ -3,13 +3,11 @@ package de.foody.server
 import de.foody.server.admin.AdminCli
 import de.foody.server.db.Database
 import de.foody.server.db.MigrationAbgebrochen
-import de.foody.server.photos.FotoUmzug
 import de.foody.server.sync.Compactor
 import io.ktor.server.application.Application
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import org.slf4j.LoggerFactory
-import java.nio.file.Path
 import kotlin.system.exitProcess
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -39,9 +37,6 @@ private fun startServer(config: ServerConfig) {
     }
     val deps = ServerDeps.create(config, db)
     if (!bootstrapAdmin(config, deps)) exitProcess(1)
-    // Vor dem Start des HTTP-Servers, damit die Fotos im Konto-Ordner liegen, bevor Geräte sie anfragen.
-    val umgezogen = FotoUmzug(deps.db, Path.of(config.photoDir)).ausfuehren()
-    if (umgezogen > 0) LoggerFactory.getLogger("de.foody.server.photos").info("Fotoumzug: {} Haushaltsordner erledigt", umgezogen)
     embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
         foodyModule(deps)
         launchCompaction(deps)

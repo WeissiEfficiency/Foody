@@ -97,10 +97,6 @@ fun Application.foodyModule(deps: ServerDeps) {
     }
     routing {
         get("/health") { call.respond(HealthDto("ok")) }
-        // Alte Clients (Protokoll 1/2): jede Methode, jeder Pfad – ohne Anmeldung und ohne den Body zu lesen.
-        route("/api/v1/{...}") {
-            handle { throw ApiException(HttpStatusCode.Conflict, ErrorCode.PROTOCOL_TOO_OLD) }
-        }
         route("/api/v3") {
             install(ProtocolCheck)
             publicAuthRoutes(deps)
