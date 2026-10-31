@@ -21,12 +21,12 @@ ML-Kit-Registrare (`firebase-components` 16.1.0 behält nur die Klasse); Keep-Re
 
 | ID | Was | Wer | Hinweis |
 |---|---|---|---|
-| A1 | Alte Apps auf den Geräten deinstallieren, falls noch da: die bis 18.10. verbundene App auf dem Handy und die bis 27.10. verbundene auf dem Tablet (beide haben sich beim Umstieg nicht als Update gemeldet) | 👤 | Vorher kurz öffnen: Liegt dort seitdem etwas Ungesendetes, das du brauchst? Mit der Deinstallation ist es weg |
+| ✅ A1 | Alte Apps auf den Geräten deinstallieren, falls noch da: die bis 18.10. verbundene App auf dem Handy und die bis 27.10. verbundene auf dem Tablet (beide haben sich beim Umstieg nicht als Update gemeldet) | 👤 | Vorher kurz öffnen: Liegt dort seitdem etwas Ungesendetes, das du brauchst? Mit der Deinstallation ist es weg |
 | A2 | Lokale Build-Reste im Repo-Ordner löschen: `app/`, `domain/`, `sync-protocol/` (nur `build/`, von Git nicht verfolgt) | 🤖 | Rest der alten Modulpfade |
 | A3 | Alte Worktrees entfernen: `.claude/worktrees/` (3 Stück, Stand v2) und der Temp-Worktree `v3-befunde` | 🤖 | `git worktree remove`, danach `git worktree prune` |
 | A4 | Lokale Branches löschen, deren Inhalt in `main` ist: alle 16 `claude/*` (web-teil1–4, v2-phase0, projektstruktur, aufraeumen, v3-befunde-review …) | 🤖 | Squash-Merges, Git hält sie deshalb für „nicht gemergt“; vorher je Branch prüfen, dass der PR gemergt ist |
 | A5 | Remote-Branches `origin/claude/phase8-probelauf` und `…/phase8-umstieg` löschen | 🤖 | PRs gemergt |
-| A6 | Probelauf-Ordner `~/foody-probelauf-20261028-1829/` auf dem Homeserver löschen | 👤 / 🤖 | Enthält eine Kopie der echten Datenbank – auch aus Datenschutzsicht besser weg |
+| ✅ A6 | Probelauf-Ordner `~/foody-probelauf-20261028-1829/` auf dem Homeserver löschen | 👤 / 🤖 | Enthält eine Kopie der echten Datenbank – auch aus Datenschutzsicht besser weg |
 | A7 | Zwei Checkouts → einer. **Entschieden (31.10.): `E:\OpenCloud\…\Foody` bleibt**, dort und in seinen Worktrees wird weitergearbeitet. `C:\Users\Stefan\Downloads\Foody` wird gelöscht, sobald #150 gemergt ist (dessen Worktree liegt noch dort). Darin liegt nichts, was nicht auf GitHub ist: alle lokalen Branches sind gemergt oder überholt (`claude/v3-vorschau-build` betraf das alte `app3`), keine Schlüssel, kein Stash | 👤 / 🤖 | Spart den doppelten `git pull` nach jedem Merge und Verwechslungen; im OpenCloud-Ordner synchronisiert jeder Build Hunderte MB mit (in Kauf genommen) |
 
 ## Stufe 2 – Repo aufräumen (Doku, Build), je ein PR
@@ -73,7 +73,7 @@ Erst, wenn vier Wochen nichts schiefging. Danach gibt es keinen Weg zurück zur 
 | D2 | Leeres Konto „stefan“ löschen; dafür ebenfalls ein Admin-Befehl `konto-loeschen` (nur für leere Konten) | 🤖 PR, Server-Rebuild | Ein zweites, ungenutztes Login am Server |
 | D3 | Offenes aus dem ersten Review: `backup.sh` mit `PRAGMA integrity_check` und eine Restore-Anleitung | 🤖 PR | Eine kaputte Sicherung fällt erst beim Einspielen auf |
 | D4 | **W5** vor der ersten Wiederherstellung des Servers: Admin-Befehl, der nach dem Einspielen alle Gerätestände ungültig macht, und App sendet Datensätze mit höherer Revision erneut statt sie zu löschen | 🤖 PR, Server-Rebuild | Nach einer Wiederherstellung gehen Daten auf den Geräten verloren |
-| D5 | **N3** Speicher im Container: `docker inspect` auf OOMKilled prüfen; Healthcheck ohne zweite JVM (z. B. `wget`/`curl`) | 👤 / 🤖 | Bei 512 MB knapp, mit 296 Rezepten mehr Last als vorher |
+| D5 | **N3** Speicher im Container: `docker inspect` auf OOMKilled prüfen; Healthcheck ohne zweite JVM (z. B. `wget`/`curl`) | 👤 / 🤖 | Bei 512 MB knapp, mit 296 Rezepten mehr Last als vorher. **Geprüft 2026-10-31:** 206 MB von 512 MB, kein Handlungsbedarf beim Limit; offen ist nur der Healthcheck (mit D1–D4) |
 
 ## Stufe 5 – Optimierung (Review-Befunde aus dem Alltag)
 
@@ -110,7 +110,7 @@ Beim Archivieren von `v3-plan.md` und `v3-abnahme.md` noch offen:
 
 | ID | Was | Wer |
 |---|---|---|
-| V1 | Android-Studio-Profiler auf Handy und Tablet (Start, Scrollen, Speicher); das Baseline-Profil vom 28.10. stammt vom Emulator. Zusammen mit der Messung vor W3+W4 | 👤 |
+| ~~V1~~ | Android-Studio-Profiler auf Handy und Tablet (Start, Scrollen, Speicher); das Baseline-Profil vom 28.10. stammt vom Emulator. Zusammen mit der Messung vor W3+W4 — **gestrichen:** kein bekanntes Leistungsproblem; nur nachholen, wenn sich etwas langsam anfühlt | 👤 |
 | V2 | TalkBack-Durchlauf und Schriftgröße 200 % (dazu N5 und die A11y-Lücken aus E3) | 👤 / 🤖 |
 | V3 | Abnahme „Opt-in: ohne Verbindung keine Netzwerkzugriffe“ prüfen: frisch installiert, nicht angemeldet – kein Aufruf an Server oder Open Food Facts außer auf Knopfdruck | 🤖 |
 | V4 | Abnahme „Betrieb“: Speicherlimit (512 MB) ist im Compose; nachzuweisen sind der nächtliche Lauf von `backup.sh` (Cron) und dass die Sicherung im OpenCloud-Ordner ankommt; dazu D3 und D5 | 👤 |
