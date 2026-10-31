@@ -69,8 +69,8 @@ Erst, wenn vier Wochen nichts schiefging. Danach gibt es keinen Weg zurück zur 
 
 | ID | Was | Wer | Folge, wenn man es lässt |
 |---|---|---|---|
-| ✅ D1 | Drei verwaiste Anmeldungen (Handy und Tablet vom 11.10., „Browser (Chrome)“ vom 18.10.) widerrufen. Dafür fehlt ein Befehl: `foody-admin abmelden-ungenutzt <tage>` (widerruft Tokens ohne Anfrage seit n Tagen) | 🤖 PR, Server-Rebuild | Alte Tokens bleiben unbegrenzt gültig; geht ein altes Gerät verloren, hat es weiter Zugriff. **Befehl da:** `geraete` und `abmelden-ungenutzt <tage>`; 👤 nach dem Rebuild ausführen |
-| ✅ D2 | Leeres Konto „stefan“ löschen; dafür ebenfalls ein Admin-Befehl `konto-loeschen` (nur für leere Konten) | 🤖 PR, Server-Rebuild | Ein zweites, ungenutztes Login am Server. **Befehl da:** `konto-loeschen` (nur ohne Datensätze und Fotos); 👤 nach dem Rebuild ausführen |
+| ✅ D1 | Drei verwaiste Anmeldungen (Handy und Tablet vom 11.10., „Browser (Chrome)“ vom 18.10.) widerrufen. Dafür fehlt ein Befehl: `foody-admin abmelden-ungenutzt <tage>` (widerruft Tokens ohne Anfrage seit n Tagen) | 🤖 PR, Server-Rebuild | Alte Tokens bleiben unbegrenzt gültig; geht ein altes Gerät verloren, hat es weiter Zugriff. **Befehl da:** `geraete` und `abmelden-ungenutzt <tage>`. **Ausgeführt 2026-10-31** (`abmelden-ungenutzt 4`): altes Handy und Browser (beide zuletzt 18.10.) widerrufen. Das alte Tablet (zuletzt 27.10. abends) liegt zu nah am aktuellen (28.10.) – sobald die V3-App auf dem Tablet wieder synchronisiert hat, `abmelden-ungenutzt 3` |
+| ✅ D2 | Leeres Konto „stefan“ löschen; dafür ebenfalls ein Admin-Befehl `konto-loeschen` (nur für leere Konten) | 🤖 PR, Server-Rebuild | Ein zweites, ungenutztes Login am Server. **Befehl da:** `konto-loeschen` (nur ohne Datensätze und Fotos). **Ausgeführt 2026-10-31:** Konto „stefan“ gelöscht |
 | ✅ D3 | Offenes aus dem ersten Review: `backup.sh` mit `PRAGMA integrity_check` und eine Restore-Anleitung | 🤖 PR | Eine kaputte Sicherung fällt erst beim Einspielen auf. **Erledigt:** `foody-admin backup` prüft jede Kopie, `pruefen <datei>`, Anleitung in `server/README.md` („Sicherung einspielen“) |
 | ✅ D4 | **W5** vor der ersten Wiederherstellung des Servers: Admin-Befehl, der nach dem Einspielen alle Gerätestände ungültig macht, und App sendet Datensätze mit höherer Revision erneut statt sie zu löschen | 🤖 PR, Server-Rebuild | Nach einer Wiederherstellung gehen Daten auf den Geräten verloren. **Erledigt:** `foody-admin wiederhergestellt` (Revisionssprung, Migration 3), Pull meldet `verloren`, der Voll-Abgleich sendet Neueres erneut (auch Löschungen) |
 | ✅ D5 | **N3** Speicher im Container: `docker inspect` auf OOMKilled prüfen; Healthcheck ohne zweite JVM (z. B. `wget`/`curl`) | 👤 / 🤖 | Bei 512 MB knapp, mit 296 Rezepten mehr Last als vorher. **Geprüft 2026-10-31:** 206 MB von 512 MB, kein Handlungsbedarf beim Limit. **Erledigt:** Healthcheck mit `curl` (liegt im Basis-Image), alle 30 s; der Befehl `foody-server healthcheck` entfällt |
@@ -172,7 +172,7 @@ Ressourcen schlank (381 KB), Features ohne Querverweise.
    ✅ Doku-PR R5–R8 (#143).
 2. **Danach:** W1 und W2 (je ein PR), dann W3+W4 zusammen mit Q3 und Q5 (gleiche Stellen), mit Messung vorher/nachher.
    ✅ Q1, Q2 und Q4 als ein Designsystem-PR (Bilder blieben gleich).
-3. ✅ **Server, ein Rebuild für alles:** D1–D5 zusammen (mit N1).
+3. ✅ **Server, ein Rebuild für alles:** D1–D5 zusammen (mit N1). Server läuft seit 2026-10-31 auf #154 (Migration 3, Sicherung `vor-migration-3-2026-10-31-1959.db`).
 4. **Ab 25.11.:** Stufe 3 (C1–C7), C8 nur auf deinen Wunsch.
 5. Danach ist die Bahn frei für die KI-Hilfe (`ToDoS/ki-plan.md`).
 
