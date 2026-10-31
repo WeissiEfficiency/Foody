@@ -25,6 +25,9 @@ data class ShoppingNeed(
  * 1. Planpositionen im Zeitraum laden, 2. skalieren, 3. optionale Zutaten auflösen,
  * 4. in Basiseinheit umrechnen, 5. nach Zutat + Dimension gruppieren, 6. Einträge mit Herkunft erzeugen.
  * Einen Vorrat gibt es seit der V3 nicht mehr (ADR 0011).
+ *
+ * Die Zieldimension einer Zutat hängt nur davon ab, welche Dimensionen im Zeitraum vorkommen, nie von der
+ * Reihenfolge der Planzeilen ([EINKAUFS_VORRANG]); sonst wechselt der Schlüssel nach einer Planänderung (Regeln 7 und 10).
  */
 class GenerateShoppingListUseCase {
     operator fun invoke(
@@ -35,8 +38,8 @@ class GenerateShoppingListUseCase {
         includeOptional: Boolean = false,
         excludedIngredientIds: Set<String> = emptySet(),
     ): List<ShoppingNeed> {
-        // key = ingredientId, value = Gruppen je Dimension (Reihenfolge = erste Dimension zuerst)
-        val groups = LinkedHashMap<String, LinkedHashMap<Dimension, MutableList<NeedSource>>>()
+        // key = ingredientId, value = Beiträge in Planreihenfolge, noch in ihrer eigenen Dimension
+        val lines = LinkedHashMap<String, MutableList<Pair<NeedSource, Quantity>>>()
 
         for (slot in slots.filter { it.date in range }.sortedWith(compareBy({ it.date }, { it.slotType }))) {
             val recipe = recipes[slot.recipeId] ?: continue
@@ -47,24 +50,47 @@ class GenerateShoppingListUseCase {
                 if (line.amount.signum() == 0) continue
                 val scaledAmount = RecipeScaler.scale(line.amount, recipe.defaultServings, slot.servings)
                 val q = Quantity.of(scaledAmount, line.unit)
-                val info = ingredients[line.ingredientId]?.conversion ?: ConversionInfo()
-                val perDim = groups.getOrPut(line.ingredientId) { LinkedHashMap() }
-                // In eine bestehende Dimension umrechnen, sofern sicher möglich.
-                val target = perDim.keys.firstOrNull { UnitConverter.convert(q, it, info) != null } ?: q.dimension
-                val converted = UnitConverter.convert(q, target, info)!!
-                perDim.getOrPut(target) { mutableListOf() } +=
-                    NeedSource(slot.id, recipe.id, line.id, converted)
+                lines.getOrPut(line.ingredientId) { mutableListOf() } += NeedSource(slot.id, recipe.id, line.id, q) to q
             }
         }
 
         val result = mutableListOf<ShoppingNeed>()
-        for ((ingredientId, perDim) in groups) {
+        for ((ingredientId, beitraege) in lines) {
+            val info = ingredients[ingredientId]?.conversion ?: ConversionInfo()
+            val ziel = zieldimensionen(beitraege.map { it.second }, info)
+            val perDim = LinkedHashMap<Dimension, MutableList<NeedSource>>()
+            for (dim in EINKAUFS_VORRANG) if (dim in ziel.values) perDim[dim] = mutableListOf()
+            for ((source, q) in beitraege) {
+                val target = ziel.getValue(q.dimension)
+                perDim.getValue(target) += source.copy(contributed = UnitConverter.convert(q, target, info)!!)
+            }
             for ((dim, sources) in perDim) {
                 val required = sources.map { it.contributed }.fold(Quantity.zero(dim)) { a, b -> a + b }
                 result += ShoppingNeed(ingredientId, required, sources)
             }
         }
         return result
+    }
+
+    /**
+     * Ordnet jeder vorkommenden Dimension ihr Ziel zu: die erste nach [EINKAUFS_VORRANG], in die sie sicher umrechenbar
+     * ist und die schon Ziel ist; sonst bleibt sie für sich.
+     */
+    private fun zieldimensionen(mengen: List<Quantity>, info: ConversionInfo): Map<Dimension, Dimension> {
+        val jeDimension = mengen.associateBy { it.dimension }
+        val ziele = mutableListOf<Dimension>()
+        val zuordnung = mutableMapOf<Dimension, Dimension>()
+        for (dim in EINKAUFS_VORRANG) {
+            val menge = jeDimension[dim] ?: continue
+            val ziel = ziele.firstOrNull { UnitConverter.convert(menge, it, info) != null } ?: dim.also { ziele += it }
+            zuordnung[dim] = ziel
+        }
+        return zuordnung
+    }
+
+    companion object {
+        /** Gekauft wird in Stück, Packungen und Dosen, sonst nach Gewicht, zuletzt nach Volumen. */
+        val EINKAUFS_VORRANG = listOf(Dimension.COUNT, Dimension.PACKAGE, Dimension.CAN, Dimension.MASS, Dimension.VOLUME)
     }
 }
 

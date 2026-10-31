@@ -66,7 +66,8 @@ class EinkaufPlanTest {
         db.planen("s2", MITTWOCH, "p")
         val v = repo.planVorschau(MONTAG, sonntag)
         assertEquals(setOf("z-knobi|MASS", "z-knobi|COUNT"), v.filter { it.name == "Knoblauch" }.map { it.schluessel }.toSet())
-        assertEquals("380 g", v.single { it.name == "Zwiebeln" }.menge)
+        // 300 g + 1 Stk. bei 80 g/Stück: gekauft wird in Stück (Regel 10), egal welche Planzeile zuerst kommt
+        assertEquals("5 Stk.", v.single { it.name == "Zwiebeln" }.menge)
     }
 
     @Test

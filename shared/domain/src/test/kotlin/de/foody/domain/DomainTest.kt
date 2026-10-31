@@ -144,6 +144,27 @@ class ShoppingTest {
         assertEquals(2, out.size)
     }
 
+    @Test fun unitDoesNotDependOnPlanOrder() {
+        // Zwiebel als Gramm und als Stück: Welche Zeile zuerst im Plan steht, darf die Einheit nicht ändern – sonst
+        // wechselt der Schlüssel, und schon Gekauftes erscheint nach einer Planänderung wieder als neu (W1).
+        val onion = Ingredient("onion", "Zwiebel", ConversionInfo(pieceWeightG = bd("100")))
+        val catalog = ingredients + ("onion" to onion)
+        val inGrams = recipe("soup", 1, Triple("onion", "200", MeasureUnit.GRAM))
+        val inPieces = recipe("salad", 1, Triple("onion", "1", MeasureUnit.PIECE))
+        val recipes = mapOf("soup" to inGrams, "salad" to inPieces)
+        fun plan(first: String, second: String) = useCase(
+            DateRange.ofDays(today, 2),
+            listOf(MealSlot("s1", today, "Abend", first, 1), MealSlot("s2", today.plusDays(1), "Abend", second, 1)),
+            recipes, catalog,
+        ).single()
+        val gramsFirst = plan("soup", "salad")
+        val piecesFirst = plan("salad", "soup")
+        assertEquals("onion|COUNT", gramsFirst.key)
+        assertEquals(piecesFirst.key, gramsFirst.key)
+        assertEquals("3 Stk.", QuantityFormatter.format(gramsFirst.toBuy))
+        assertEquals(listOf("s1", "s2"), gramsFirst.sources.map { it.mealSlotId })
+    }
+
     @Test fun slotsOutsideRangeIgnored() {
         val r = recipe("x", 1, Triple("rice", "500", MeasureUnit.GRAM))
         val out = useCase(
