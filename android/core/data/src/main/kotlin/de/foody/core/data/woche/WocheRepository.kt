@@ -123,6 +123,10 @@ class WocheRepository(
         return (0L..6L).map { montag.plusDays(it) }.filter { it >= heute && it !in belegt }
     }
 
+    /** Warum [vorschlagen] für [mahlzeit] nichts fand ([LeereTageFuellen.leerGrund]). */
+    suspend fun leerGrund(mahlzeit: Mahlzeit): LeereTageFuellen.LeerGrund =
+        LeereTageFuellen.leerGrund(db.rezeptDao().alle().filter { it.archivedAt == null }.map { it.einordnung() }, mahlzeit)
+
     /**
      * Vorschlag „Tag → Rezept-ID“ über [LeereTageFuellen]; gleicher [seed] → gleiches Ergebnis; [ausgeschlossen] nie.
      * [vorgemerkt] = noch nicht angelegte Vorschläge anderer Tage; sie zählen wie Geplantes in die Abwechslung.

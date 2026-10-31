@@ -10,6 +10,7 @@ import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.data.woche.WochenAnsicht
 import de.foody.core.data.woche.WocheRepository
 import de.foody.core.designsystem.SolangeAppOffen
+import de.foody.domain.LeereTageFuellen
 import de.foody.domain.Mahlzeit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -117,7 +118,12 @@ class WocheViewModel @Inject constructor(
         val vorschlag = repo.vorschlagen(tage, mahlzeit, seed)
         val hinweis = when {
             tage.isEmpty() -> "Alle Tage ab heute haben schon ein ${mahlzeitAnzeige(mahlzeit)}"
-            vorschlag.isEmpty() -> "Keine passenden Rezepte – alles schon in den letzten 14 Tagen geplant"
+            vorschlag.isEmpty() -> when (repo.leerGrund(mahlzeit)) {
+                LeereTageFuellen.LeerGrund.KEINE_REZEPTE -> "Noch keine Rezepte – erst welche anlegen oder importieren"
+                LeereTageFuellen.LeerGrund.KEINE_PASSENDEN ->
+                    "Kein Rezept passt zum ${mahlzeitAnzeige(mahlzeit)} – Einordnung im Rezept prüfen"
+                LeereTageFuellen.LeerGrund.KUERZLICH_GEPLANT -> "Keine passenden Rezepte – alles schon in den letzten 14 Tagen geplant"
+            }
             else -> null
         }
         fuellenStand.value = FuellenZustand(mahlzeit, tage, vorschlag, emptySet(), hinweis)

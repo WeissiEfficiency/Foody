@@ -136,9 +136,27 @@ class WocheViewModelTest {
     }
 
     @Test
-    fun ohnePassendeHinweis() = runTest {
+    fun ohneRezepteHinweis() = runTest {
         val vm = u.vm()
         vm.fuellenOeffnen()
+        assertEquals("Noch keine Rezepte – erst welche anlegen oder importieren", vm.fuellen.value?.hinweis)
+    }
+
+    /** E3: Nur Hauptspeisen fürs Abendessen, gefragt ist Frühstück – nicht „alles schon geplant“. */
+    @Test
+    fun ohnePassendeHinweis() = runTest {
+        db.hauptspeisen()
+        val vm = u.vm()
+        vm.fuellenOeffnen(Mahlzeit.FRUEHSTUECK)
+        assertEquals("Kein Rezept passt zum Frühstück – Einordnung im Rezept prüfen", vm.fuellen.value?.hinweis)
+    }
+
+    @Test
+    fun alleKuerzlichGeplantHinweis() = runTest {
+        db.hauptspeisen()
+        val vm = u.vm()
+        (1..5).forEach { vm.hinzufuegen(MONTAG.minusDays(it.toLong()), "ABENDESSEN", "h$it", 2) }
+        vm.fuellenOeffnen(Mahlzeit.ABENDESSEN)
         assertEquals("Keine passenden Rezepte – alles schon in den letzten 14 Tagen geplant", vm.fuellen.value?.hinweis)
     }
 
