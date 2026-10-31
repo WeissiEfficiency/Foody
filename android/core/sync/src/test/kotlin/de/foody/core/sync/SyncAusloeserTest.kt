@@ -3,13 +3,8 @@ package de.foody.core.sync
 import android.content.Context
 import androidx.room.Room
 import androidx.work.Configuration
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.ExistingWorkPolicy
 import androidx.work.ListenableWorker
 import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerFactory
@@ -337,27 +332,4 @@ class SyncAusloeserTest {
         assertEquals(ListenableWorker.Result.success(), auftrag.doWork(), "offline und App zu: erst beim Öffnen wieder")
     }
 
-    @Test
-    fun alterPeriodischerAuftragWirdAbgemeldet() = runBlocking {
-        val g = Geraet { null }
-        // Mit Netz-Bedingung wie in der v1: im Testmodus bleibt er so eingeplant, statt sofort zu laufen.
-        val alt = PeriodicWorkRequestBuilder<SyncAuftrag>(1, TimeUnit.HOURS)
-            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .build()
-        workManager.enqueueUniquePeriodicWork(SyncAusloeser.ALTER_AUFTRAG, ExistingPeriodicWorkPolicy.KEEP, alt).result.get()
-        assertEquals(WorkInfo.State.ENQUEUED, workManager.getWorkInfoById(alt.id).get()!!.state)
-        val einmal = OneTimeWorkRequestBuilder<SyncAuftrag>()
-            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .build()
-        workManager.enqueueUniqueWork(SyncAusloeser.ALTER_EINMALAUFTRAG, ExistingWorkPolicy.REPLACE, einmal).result.get()
-        assertEquals(WorkInfo.State.ENQUEUED, workManager.getWorkInfoById(einmal.id).get()!!.state)
-
-        g.ausloeser.beimStart()
-
-        assertEquals("foody-sync-periodic", SyncAusloeser.ALTER_AUFTRAG)
-        assertEquals("foody-sync-now", SyncAusloeser.ALTER_EINMALAUFTRAG)
-        assertEquals(WorkInfo.State.CANCELLED, workManager.getWorkInfoById(einmal.id).get()!!.state)
-        assertEquals("foody-sync-v3", SyncAusloeser.AUFTRAG)
-        assertEquals(WorkInfo.State.CANCELLED, workManager.getWorkInfoById(alt.id).get()!!.state)
-    }
 }

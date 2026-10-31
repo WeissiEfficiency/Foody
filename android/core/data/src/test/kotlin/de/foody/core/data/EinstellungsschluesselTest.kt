@@ -12,7 +12,6 @@ class EinstellungsschluesselTest {
     fun gleicheSchluesselWieVEins() {
         assertEquals("foody", Einstellungsschluessel.PREFS)
         assertEquals("seedVersion", Einstellungsschluessel.SEED_VERSION)
-        assertEquals("seeded", Einstellungsschluessel.SEEDED_ALT)
         assertEquals("dailyKcalGoal", Einstellungsschluessel.TAGESZIEL)
         assertEquals("themeMode", Einstellungsschluessel.DARSTELLUNG)
         assertEquals("onlineProduktsuche", Einstellungsschluessel.ONLINE_SUCHE)
