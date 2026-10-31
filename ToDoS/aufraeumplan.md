@@ -34,7 +34,7 @@ ML-Kit-Registrare (`firebase-components` 16.1.0 behält nur die Klasse); Keep-Re
 | ID | Was | Wer | Folge, wenn man es lässt |
 |---|---|---|---|
 | ✅ B1 | **Alte Pläne archivieren (= W6):** `docs/superpowers/` (44 Dateien) – Sync-Etappen, Essenstracking, Scan, Einordnung, Projektstruktur, Web-Teil 1–4 nach `docs/superpowers/archiv/`; ebenso `ToDoS/v2-plan.md`, `v2-abnahme.md`, `web-frontend-plan.md`, `optimierungsplan.md`, `projektstruktur-regeln.md` nach `ToDoS/archiv/` | 🤖 PR | Eine neue Session findet bei „Tagebuch“ oder „Sync“ den alten Plan mit Haushalt und Vorrat und baut danach (dieser PR) |
-| ✅ B2 | `docs/STRUKTUR-CHECK.md` (Stand 27.10., vor dem Umstieg) ins Archiv oder löschen; die offenen Punkte stehen in `v3-plan.md` | 🤖 PR | Doppelte, veraltete Befundliste (dieser PR) |
+| ✅ B2 | `docs/STRUKTUR-CHECK.md` (Stand 27.10., vor dem Umstieg) ins Archiv oder löschen; die offenen Punkte stehen in `v3-plan.md` (jetzt hier, R6) | 🤖 PR | Doppelte, veraltete Befundliste (dieser PR) |
 | ✅ B3 | **Doku auf „nach dem Umstieg“:** `CLAUDE.md`, `README.md` und `server/README.md` sind mit #137 schon nachgezogen. Offen: `docs/architecture.md:16`, `docs/roadmap.md` (Stand 17.10.), `docs/installation.md` (Abschnitt „Umstieg von der v1“ auf einen Satz + Verweis auf die Git-Historie kürzen) | 🤖 PR | Neue Sessions arbeiten mit falschem Stand (dieser PR) |
 | ✅ B4 | Phase 8 in `ToDoS/v3-plan.md` abschließen: Umstieg ist mit #137 abgehakt; offen ist das Abschluss-Review – abhaken, Befunde W1–W6/N1–N5 eintragen und auf diesen Plan verweisen | 🤖 PR | Plan zeigt das Review als offen, die Befunde stehen nur im Chat (dieser PR) |
 | ~~B5~~ | Ungenutzte Einträge im Versionskatalog entfernen: `androidx-lifecycle-runtime-compose`, `compose-ui-tooling`, `compose-ui-tooling-preview` (laut Suche in allen `*.kts` nicht referenziert – vor dem Löschen per Build bestätigen) | 🤖 PR | Nur Ballast, Renovate/Updates prüfen sie mit — **entfällt:** `build-logic` (`AndroidFeatureConventionPlugin`) bindet alle drei für jedes Compose-Modul ein |
@@ -93,7 +93,7 @@ Reihenfolge wie im Gesamt-Review empfohlen; jede Korrektur mit einem Test, der v
 | E4 | **CI: Release einmal starten**, nicht nur bauen: Kurztest der R8-Variante auf dem Emulator (Start, „Frei“ im Tagebuch öffnen) | Z1 fiel erst auf dem Handy auf – der Release-Build war grün |
 | E5 | Referenzbilder (111 PNG, 36 MB) in Git LFS oder kleiner aufnehmen | Jedes Neuaufnehmen vergrößert das Repo dauerhaft; im OpenCloud-Checkout wird alles mitsynchronisiert |
 | E6 | `:core:data` (6.000 Zeilen, ein Drittel der App) beobachten; bei weiterem Wachstum die Sicherung als `:core:sicherung` abtrennen | Jede Änderung dort baut alle Features neu – heute noch kein Handlungsbedarf |
-| E3 | Rest der Liste „Weitere aus dem Review“ in `v3-plan.md` (Kochmodus rekomponiert sekündlich, Tagesziel speichert Zwischenstände, verwaiste Fotos nach Sync, 4 A11y-Lücken, ktlint/detekt) | Beim nächsten Anfassen der Bereiche |
+| E3 | Rest der Liste „Weitere aus dem Review“ (erstes V3-Review): Kochmodus rekomponiert sekündlich, Tagesziel speichert Zwischenstände, verwaiste Fotos nach Sync, 4 A11y-Lücken (SeitenListe, Timer-Chip, Quellen-Link, Überschriften), falscher Leer-Grund bei „Leere Tage füllen“, Argon2 auf Request-Threads, Docker ohne Gradle-Cache, toter `RecordStore.lebende()` (nur noch im Test), ktlint/detekt | Beim nächsten Anfassen der Bereiche |
 
 ### Nachprüfung 2026-10-31 (neu, klein)
 
@@ -103,6 +103,19 @@ Reihenfolge wie im Gesamt-Review empfohlen; jede Korrektur mit einem Test, der v
 | N7 | Server `Compactor.kt:42-58`: Änderungszeit der Fotos wird vor der Referenzabfrage gelesen; ein `/photos/missing` dazwischen verhindert das Löschen nicht. Zeit direkt vor `delete` erneut prüfen | Sehr kleines Zeitfenster; dann fehlt ein Foto dauerhaft auf dem anderen Gerät |
 | N8 | `SyncSpeicher.vollabgleich`: unbenutzte Zutaten, die der Server nicht kennt (unveränderte Startzutaten nach „Zusammenführen“, alle nach „Ersetzen“), werden nach einem `410` still gelöscht | Nur nach Wiederherstellung des Servers oder > 90 Tagen offline |
 | N9 | `docs/security.md:75`: Datenbank und Sicherungs-ZIP als „keine sensiblen Daten“ eingestuft, enthalten aber das Ernährungstagebuch (Gesundheitsdaten). Einstufung korrigieren, optional Passwort für die Sicherung | Sicherung liegt unverschlüsselt im Cloud-Ordner |
+
+### Aus V3-Plan und Abnahme (R6, 2026-10-31)
+
+Beim Archivieren von `v3-plan.md` und `v3-abnahme.md` noch offen:
+
+| ID | Was | Wer |
+|---|---|---|
+| V1 | Android-Studio-Profiler auf Handy und Tablet (Start, Scrollen, Speicher); das Baseline-Profil vom 28.10. stammt vom Emulator. Zusammen mit der Messung vor W3+W4 | 👤 |
+| V2 | TalkBack-Durchlauf und Schriftgröße 200 % (dazu N5 und die A11y-Lücken aus E3) | 👤 / 🤖 |
+| V3 | Abnahme „Opt-in: ohne Verbindung keine Netzwerkzugriffe“ prüfen: frisch installiert, nicht angemeldet – kein Aufruf an Server oder Open Food Facts außer auf Knopfdruck | 🤖 |
+| V4 | Abnahme „Betrieb“: Speicherlimit (512 MB) ist im Compose; nachzuweisen sind der nächtliche Lauf von `backup.sh` (Cron) und dass die Sicherung im OpenCloud-Ordner ankommt; dazu D3 und D5 | 👤 |
+| V5 | Abnahme „Signierte Release-APK im OpenCloud-Ordner“ (`:app:apkNachOpenCloud`): ablegen und abhaken, sobald 3.0.0 dort liegt | 👤 |
+| V6 | **R2-N3** Maschinenspezifisches (JAVA_HOME, ö-Pfad, Emulator) aus `CLAUDE.md` in eine nicht eingecheckte `CLAUDE.local.md`? | 👤 entscheidet |
 
 ## Stufe 6 – Gesamtprüfung 2026-10-31: Best Practice und Altbestand
 
@@ -143,19 +156,20 @@ Ressourcen schlank (381 KB), Features ohne Querverweise.
 
 | ID | Was | Vorschlag |
 |---|---|---|
-| R5 | 22 Pläne und Specs der V3-Phasen 2–6e3 (3.900 Zeilen) – alle umgesetzt, beschreiben Zwischenstände (`app3`, Platzhalter) | nach `docs/superpowers/archiv/v3/`; `architecture.md` beschreibt den Ist-Stand |
-| R6 | `ToDoS/v3-plan.md` (430 Zeilen, 6 offene Punkte) und `v3-abnahme.md` (3 offen) | offene Punkte (Profiler, TalkBack, Opt-in-Prüfung) hierher übernehmen, dann beide archivieren |
-| R7 | `docs/architecture.md` (451 Zeilen): Abschnitte nach Phasen benannt, Tabelle „Datenbank: Vorgeschichte“ der v1 | nach Bereichen gliedern; v1-Tabelle mit Stufe 3 kürzen |
-| R8 | ADR 0005 (Bring!) nennt `ShoppingListExporter`, den es seit der V3 nicht mehr gibt (Teilen als Text gestrichen) | Status „abgelöst durch ADR 0011“ |
+| ✅ R5 | 22 Pläne und Specs der V3-Phasen 2–6e3 (3.900 Zeilen) – alle umgesetzt, beschreiben Zwischenstände (`app3`, Platzhalter) | nach `docs/superpowers/archiv/v3/`; `architecture.md` beschreibt den Ist-Stand |
+| ✅ R6 | `ToDoS/v3-plan.md` (430 Zeilen, 6 offene Punkte) und `v3-abnahme.md` (3 offen) | übernommen unter „Aus V3-Plan und Abnahme“, beide in `ToDoS/archiv/` |
+| ✅ R7 | `docs/architecture.md` (451 Zeilen): Abschnitte nach Phasen benannt, Tabelle „Datenbank: Vorgeschichte“ der v1 | nach Bereichen (Modulen) gegliedert, v1-Tabelle als Anhang ans Ende; kürzen mit Stufe 3 |
+| ✅ R8 | ADR 0005 (Bring!) nennt `ShoppingListExporter`, den es seit der V3 nicht mehr gibt (Teilen als Text gestrichen) | Status „abgelöst durch ADR 0011“ |
 | R9 | `server/README.md`, `installation.md`: Rückweg zur v1 | mit Stufe 3 entfernen |
+| R10 | `PortionenNachtrag` (`:core:data`) samt Hilt-Bereitstellung: in der App ohne Knopf (geplant für Phase 6, nie gebaut). Re-Importe laufen über die Dublettenerkennung | 👤 entscheidet: Knopf in den Einstellungen bauen oder entfernen (auch `RezeptImport.portionenNachtragen` in `:domain`) |
 
 **Lokal (kein Repo):** `.claude\worktrees\offene-fehler` (283 MB, lose v1-Kopie vom 11.10.), Build-Reste `app/`, `domain/`,
 `sync-protocol/` (125 MB), sechs geparkte Worktrees archivierter Sessions, der Checkout in `Downloads` (A7).
 
 ## Empfohlene Reihenfolge
 
-1. **Diese Woche:** ✅ Doku-PR B1–B4 (#140), ✅ Z1 (#139), A3/A4 größtenteils erledigt. ✅ B7–B9, R1–R2 (B5 entfällt).
-   Offen: ein Doku-PR mit R5–R8.
+1. **Diese Woche:** ✅ Doku-PR B1–B4 (#140), ✅ Z1 (#139), A3/A4 größtenteils erledigt. ✅ B7–B9, R1–R2 (B5 entfällt),
+   ✅ Doku-PR R5–R8 (#143).
 2. **Danach:** W1 und W2 (je ein PR), dann W3+W4 zusammen mit Q3 und Q5 (gleiche Stellen), mit Messung vorher/nachher.
    Q1, Q2 und Q4 als ein Designsystem-PR (Bildvergleich neu aufnehmen).
 3. **Server, ein Rebuild für alles:** D1–D4 zusammen, D5 prüfen.

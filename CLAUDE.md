@@ -5,7 +5,8 @@ Offline-first Android-App für Rezepte, Nährwerte, Wochenplan und Einkaufsliste
 
 ## Wo neue Arbeit hingehört
 
-- **V3** (`ToDoS/v3-plan.md`, Abnahme `ToDoS/v3-abnahme.md`, ADR 0011): Phasen 1–6 fertig, Umstieg (Phase 8) am 2026-10-28 erledigt.
+- **V3** (ADR 0011): fertig, Umstieg am 2026-10-28. Plan und Abnahme sind archiviert (`ToDoS/archiv/v3-plan.md`,
+  `v3-abnahme.md`); was offen ist, steht in `ToDoS/aufraeumplan.md`.
   Die KI-Hilfe ist ein eigenes Projekt danach (`ToDoS/ki-plan.md`).
 - App-Code in `:app` (Hülle), `:core:*` und `:feature:*` (unter `android/`). Die v1 ist aus `main` entfernt; der
   echte Server läuft seit dem Umstieg von `main` (`v1-server` ist nur noch der Rückweg).
@@ -49,8 +50,9 @@ JDK 21+ (JBR von Android Studio), Android SDK 37. Befehle in PowerShell mit `.\g
 
 ## Doku mitpflegen
 
-- Jede Phase: Spec in `docs/superpowers/specs/`, Plan in `docs/superpowers/plans/`, danach „Ergebnis“ in
-  `ToDoS/v3-plan.md` und ein Abschnitt in `docs/architecture.md`.
+- Jede Phase: Spec in `docs/superpowers/specs/`, Plan in `docs/superpowers/plans/`, danach „Ergebnis“ im Projektplan
+  (für die KI-Hilfe `ToDoS/ki-plan.md`) und ein Abschnitt in `docs/architecture.md`. Specs und Pläne der V3-Phasen liegen
+  in `docs/superpowers/archiv/v3/`.
 - Strukturentscheidungen (neues Modul, Umzug, gestrichene Funktion) als ADR in `docs/adr/`.
 - Fachliche Regeln mit zugehörigen Tests: `docs/domain-rules.md`. Sicherheit: `docs/security.md`.
 - Neue Module in die Tabelle in `README.md` und die Befehle oben.

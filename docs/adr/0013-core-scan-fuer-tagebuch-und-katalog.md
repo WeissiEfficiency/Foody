@@ -1,6 +1,6 @@
 # ADR 0013: `:core:scan` für Tagebuch und Zutatenkatalog
 
-Status: angenommen (2026-10-26). Spec: `docs/superpowers/specs/2026-10-26-v3-phase6e3-scan-design.md`. Ändert
+Status: angenommen (2026-10-26). Spec: `docs/superpowers/archiv/v3/specs/2026-10-26-v3-phase6e3-scan-design.md`. Ändert
 einen Punkt von ADR 0011.
 
 **Kontext:** ADR 0011 hat `:core:scan` aufgelöst: Der Scan sollte in sein Feature wandern, laut v3-Plan in

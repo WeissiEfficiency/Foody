@@ -2,8 +2,8 @@
 
 > **Abgelöst** durch [`v3-plan.md`](v3-plan.md) (Review vom 2026-10-17, ADR 0011). Nur noch als Hintergrund.
 
-Stand: 2026-10-13 · Entscheidungen: [ADR 0009](../docs/adr/0009-neubau-v2-module-navigation.md),
-[ADR 0010](../docs/adr/0010-sync-v2-haushaltsdienst.md) · Abnahme: [`v2-abnahme.md`](v2-abnahme.md)
+Stand: 2026-10-13 · Entscheidungen: [ADR 0009](../../docs/adr/0009-neubau-v2-module-navigation.md),
+[ADR 0010](../../docs/adr/0010-sync-v2-haushaltsdienst.md) · Abnahme: [`v2-abnahme.md`](v2-abnahme.md)
 
 Neubau von Handy-App, Web-App und Sync. Der Funktionsumfang bleibt gleich und wird nach dem Release 2.0 ausgebaut.
 

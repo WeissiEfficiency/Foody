@@ -59,7 +59,7 @@ Protokoll 3; die v1-App verbindet sich damit nicht mehr (erst der Sync-Client de
 
 Seit V3 Phase 2 kennt der Server in `main` nur noch ein Konto je Person, Push/Pull, Fotos und das KI-Gerüst
 (API v3, Protokoll 3). Haushalte, Einladungen, Registrierung, Geräteliste und Web-Oberfläche gibt es nicht mehr
-(ADR 0011, Spec `docs/superpowers/specs/2026-10-17-v3-phase2-server-schlank-design.md`).
+(ADR 0011, Spec `docs/superpowers/archiv/v3/specs/2026-10-17-v3-phase2-server-schlank-design.md`).
 
 - **Echter Server:** `~/docker/foody` läuft seit dem Umstieg am 2026-10-28 auf `main` (Sicherung davor:
   `vor-migration-2-2026-10-28-1859.db`). Der eingefrorene Branch `v1-server` (Protokoll 2) bleibt nur für den
