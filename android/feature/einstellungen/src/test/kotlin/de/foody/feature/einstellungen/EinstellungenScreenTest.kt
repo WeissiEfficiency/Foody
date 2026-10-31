@@ -21,6 +21,7 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.Darstellung
 import de.foody.core.data.db.RezeptEntity
+import de.foody.core.data.db.SyncProblemMitName
 import de.foody.core.designsystem.FoodyTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -133,6 +134,18 @@ class EinstellungenScreenTest {
         u.verbinden()
         zeigen()
         compose.warteAufText("Verbunden mit http://10.0.2.2:8081")
+    }
+
+    @Test
+    fun kontoZeigtNichtUebertragene() {
+        u.konto.stand.value = VerbindungsZustand(
+            verbunden = true, adresse = "http://10.0.2.2:8081", letzterSync = null, letzterFehler = null,
+            nichtUebertragen = (1..7).map { SyncProblemMitName("recipe", "r$it", "photo_unsyncable", it.toLong(), "Rezept $it") },
+        )
+        zeigen()
+        compose.warteAufText("7 Einträge nicht vollständig übertragen")
+        compose.onNodeWithText("Rezept „Rezept 1“: ohne Foto übertragen (zu groß oder kein JPEG)").assertExists()
+        compose.onNodeWithText("… und 2 weitere").assertExists()
     }
 
     @Test

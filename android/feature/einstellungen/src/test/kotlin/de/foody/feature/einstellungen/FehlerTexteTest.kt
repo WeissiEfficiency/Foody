@@ -27,7 +27,17 @@ class FehlerTexteTest {
         assertEquals("Anmeldung abgelaufen – bitte neu anmelden.", syncFehlerText("anmeldung_abgelaufen"))
         assertEquals("Der Server ist zu alt für diese App.", syncFehlerText("server_zu_alt"))
         assertEquals("Diese App ist zu alt für den Server.", syncFehlerText("app_zu_alt"))
+        assertEquals("Gerätespeicher voll – bitte Platz schaffen.", syncFehlerText("speicher_voll"))
         assertEquals("Synchronisieren fehlgeschlagen.", syncFehlerText("cursor_haengt"))
+    }
+
+    @Test
+    fun nichtUebertrageneEintraege() {
+        assertEquals("1 Eintrag nicht vollständig übertragen", nichtUebertragenTitel(1))
+        assertEquals("3 Einträge nicht vollständig übertragen", nichtUebertragenTitel(3))
+        assertEquals("Zutat „Mehl“: ungültige Daten", problemText("ingredient", "Mehl", "invalid_payload"))
+        assertEquals("Plan-Eintrag (nicht auf diesem Gerät): verweist auf etwas, das fehlt", problemText("meal_slot", null, "missing_reference"))
+        assertEquals("Rezept „Suppe“: vom Server abgelehnt", problemText("recipe", "Suppe", "name_too_long"))
     }
 
     @Test

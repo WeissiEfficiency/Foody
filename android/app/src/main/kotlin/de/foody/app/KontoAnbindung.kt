@@ -9,8 +9,8 @@ import de.foody.core.sync.SyncKonto
 import de.foody.feature.einstellungen.KontoZugriff
 import de.foody.feature.einstellungen.VerbindungsZustand
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 
 /** „Server verbinden“ auf dem echten Sync: Konto, Zeile `sync_state`, Auslöser. */
 class KontoAnbindung(
@@ -18,12 +18,13 @@ class KontoAnbindung(
     private val db: FoodyDatenbank,
     private val ausloeser: SyncAusloeser,
 ) : KontoZugriff {
-    override val zustand: Flow<VerbindungsZustand> = db.syncDao().zustandFlow().map { z ->
+    override val zustand: Flow<VerbindungsZustand> = combine(db.syncDao().zustandFlow(), db.syncDao().problemeMitNamen()) { z, p ->
         VerbindungsZustand(
             verbunden = z?.active == true,
             adresse = z?.serverUrl,
             letzterSync = z?.lastSyncAt,
             letzterFehler = z?.lastError,
+            nichtUebertragen = p,
         )
     }.distinctUntilChanged()
 

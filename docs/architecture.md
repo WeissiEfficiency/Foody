@@ -93,7 +93,11 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-18-v3-phase3-app-daten-sync-desi
   Pull-Seiten holen und erst dann anwenden (`applyingRemote = 1`, je Datensatz eine Transaktion, Cursor zuletzt; lokale
   Änderungen mit offenem Outbox-Eintrag gewinnen); `410` (Cursor vor der Kompaktierungsgrenze oder hinter dem
   Server-Stand, etwa nach dem Einspielen einer Sicherung) → Voll-Abgleich, der Unsendetes, Abgelehntes, Verwiesenes und
-  noch Gebrauchtes behält; zuletzt gewünschte Fotos laden. Header `X-Foody-Protocol: 3`, Routen unter `/api/v3`
+  noch Gebrauchtes behält. Beim Anwenden gescheiterte Datensätze (`missing_reference`, `invalid_payload`, `apply_failed`)
+  holt der Lauf nach einem Tag erneut: alles ab 0, ohne Cursor zu bewegen oder zu löschen (`erneutHolenFaellig`,
+  `erneutAnwenden`). Ist der Gerätespeicher voll, bricht er mit `speicher_voll` ab, statt Datensätze aufzugeben
+  (SQLite rollt dann selbst zurück, Rooms Zurückrollen verdeckt die `SQLiteFullException`; `einzeln` bemerkt sie in der
+  Transaktion). Zuletzt gewünschte Fotos laden. Header `X-Foody-Protocol: 3`, Routen unter `/api/v3`
   (`KtorServerZugang` über OkHttp, Antworten begrenzt gelesen, keine Weiterleitungen).
 - **Auslöser** (`SyncAusloeser`, `SyncAuftrag`): einmaliger WorkManager-Auftrag mit Netz-Bedingung; sofort bei
   Vordergrund und „Jetzt synchronisieren“, nach Outbox-Änderungen entprellt um 5 s. Kein periodischer Auftrag; der
@@ -101,7 +105,7 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-18-v3-phase3-app-daten-sync-desi
   einen Nachlauf. Nur vorübergehende Fehler werden mit Backoff wiederholt.
 - **Fehlerkennungen** in `sync_state.lastError` (nur diese festen Werte, nie Token oder Bodies): `offline`,
   `anmeldung_abgelaufen` (`401`, kein lesbares Token – das Token wird dabei nicht gelöscht), `app_zu_alt`
-  (`409 protocol_too_old`), `server_zu_alt` (`409 server_too_old` oder `404`, z. B. Server ohne `/api/v3`), `cursor_haengt`,
+  (`409 protocol_too_old`), `server_zu_alt` (`409 server_too_old` oder `404`, z. B. Server ohne `/api/v3`), `cursor_haengt`, `speicher_voll`,
   `server_fehler` (5xx, unlesbare Antworten, lokale Fehler; Unerwartetes wird wie ein vorübergehender Fehler
   wiederholt und nur mit Klasse und Stelle geloggt, nie mit der Meldung). Anmelden und Aktivieren melden der Oberfläche zusätzlich
   `ungueltige_adresse`, `falsche_zugangsdaten`, `zu_viele_versuche` bzw. `token_nicht_gespeichert` (nicht in `lastError`;
@@ -348,6 +352,8 @@ Einstellungsseite; „Server verbinden“ ist das eigene Ziel `ServerVerbinden`.
   Wiederherstellen, Löschen im `viewModelScope`, eine Aktion zur Zeit, Ergebnis als Meldung) und `EinstellungenRoute`
   (Konto, Darstellung, Tagesziel, Sicherung, Daten, Hinweise; Dateidialoge über SAF in der Route, für Tests als
   `Dateiwahl` austauschbar). Wiederherstellen und Löschen fragen nach und sind bei verbundenem Sync gesperrt.
+  Unter „Konto“ stehen die Einträge aus `sync_problem` mit Namen und Grund (`SyncDao.problemeMitNamen`, höchstens 5
+  einzeln).
 - **`:app`:** `MainActivity` zeichnet nach `DarstellungSpeicher` (`istDunkel`), Änderungen wirken sofort;
   `SystemleistenPassend` richtet die Symbole von Status- und Navigationsleiste nach der gewählten Darstellung (wie v1).
 - **Tests:** Speicher, Löschen (Fotoindex, Sync-Sperre, Startkatalog), ViewModel (Doppeltipp per Mutation geprüft),

@@ -50,7 +50,10 @@ internal fun Abschnitt(titel: String, inhalt: @Composable ColumnScope.() -> Unit
 @Composable
 private fun Klein(text: String) = Text(text, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
 
-/** Konto: Status, Tipp öffnet „Server verbinden“. */
+/** Höchstens so viele nicht übertragene Einträge zeigt „Konto“ einzeln. */
+private const val MAX_PROBLEME = 5
+
+/** Konto: Status, Tipp öffnet „Server verbinden“; darunter, was nicht vollständig übertragen wurde. */
 @Composable
 internal fun KontoAbschnitt(konto: VerbindungsZustand?, jetzt: Long, onServer: () -> Unit) = Abschnitt("Konto") {
     val verbunden = konto?.takeIf { it.verbunden }
@@ -66,6 +69,12 @@ internal fun KontoAbschnitt(konto: VerbindungsZustand?, jetzt: Long, onServer: (
             Klein(if (verbunden != null) "Zuletzt synchronisiert: ${zuletztText(verbunden.letzterSync, jetzt)}" else "Server verbinden")
         }
         Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = FoodyTheme.farben.text)
+    }
+    val probleme = verbunden?.nichtUebertragen.orEmpty()
+    if (probleme.isNotEmpty()) {
+        Text(nichtUebertragenTitel(probleme.size), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
+        probleme.take(MAX_PROBLEME).forEach { Klein(problemText(it.typ, it.name, it.code)) }
+        if (probleme.size > MAX_PROBLEME) Klein("… und ${probleme.size - MAX_PROBLEME} weitere")
     }
 }
 
