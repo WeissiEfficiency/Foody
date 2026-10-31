@@ -31,6 +31,11 @@ private val NAEHRSTOFFE = listOf(
 internal fun kcalJePortion(v: RezeptVoll): String? =
     v.naehrwerte.perServing(Nutrient.ENERGY_KJ)?.let { "${ganzzahlDeutsch(NutritionResult.kcal(it))} kcal je Portion" }
 
+/** „1.434 kcal für 2 Portionen“ (das Rezept skaliert); `null` ohne Energiewerte und bei einer Portion (wie je Portion). */
+internal fun kcalFuerPortionen(v: RezeptVoll, portionen: Int): String? =
+    v.naehrwerte.perServing(Nutrient.ENERGY_KJ)?.takeIf { portionen > 1 }
+        ?.let { "${kcal(it.multiply(BigDecimal(portionen)))} für $portionen Portionen" }
+
 /** Gramm mit höchstens einer Nachkommastelle, deutsch. */
 private fun gramm(wert: BigDecimal): String =
     wert.setScale(1, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString().replace('.', ',') + " g"
