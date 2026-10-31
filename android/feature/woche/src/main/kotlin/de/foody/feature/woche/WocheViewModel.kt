@@ -9,6 +9,7 @@ import de.foody.core.data.db.PlanEintragEntity
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.data.woche.WochenAnsicht
 import de.foody.core.data.woche.WocheRepository
+import de.foody.core.designsystem.SolangeSichtbar
 import de.foody.domain.Mahlzeit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -39,7 +40,6 @@ data class FuellenZustand(
 )
 
 private const val MONTAG = "montag"
-private const val STOPP_MS = 5_000L
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -61,7 +61,7 @@ class WocheViewModel @Inject constructor(
 
     /** Rezepte für „+ Mahlzeit“ (ohne archivierte). */
     val rezeptAuswahl: StateFlow<List<RezeptKarte>> = repo.rezeptAuswahl()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOPP_MS), emptyList())
+        .stateIn(viewModelScope, SolangeSichtbar, emptyList())
 
     private val fuellenStand = MutableStateFlow<FuellenZustand?>(null)
     val fuellen: StateFlow<FuellenZustand?> = fuellenStand.asStateFlow()

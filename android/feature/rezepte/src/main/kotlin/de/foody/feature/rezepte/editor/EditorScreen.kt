@@ -50,9 +50,11 @@ fun EditorRoute(
     onFertig: (String) -> Unit,
     onZurueck: () -> Unit,
     gekochtMit: Int? = null,
+    /** Tablet: Nummer des Editor-Auftrags (siehe [EditorViewModel.laden]). */
+    auftrag: Int = 0,
     vm: EditorViewModel = hiltViewModel(),
 ) {
-    LaunchedEffect(id) { vm.laden(id) }
+    LaunchedEffect(id, auftrag) { vm.laden(id, auftrag) }
     val z by vm.zustand.collectAsStateWithLifecycle()
     val ursprung by vm.ursprung.collectAsStateWithLifecycle()
     val moeglich by vm.speichernMoeglich.collectAsStateWithLifecycle()

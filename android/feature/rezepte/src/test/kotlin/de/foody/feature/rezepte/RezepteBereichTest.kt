@@ -59,11 +59,12 @@ class RezepteBereichTest {
         val repo = RezeptRepository(db, ablage) { 1L }
         val liste = halter.behalten(RezeptListeViewModel(repo))
         val detail = halter.behalten(RezeptDetailViewModel(repo, db.einkauf()))
+        val editor = halter.behalten(EditorViewModel(SavedStateHandle(), repo, db, ablage))
         compose.setContent {
             FoodyTheme {
                 RezepteBereich(
                     onOeffnen = { geoeffnet += it }, onNeu = {}, onKochen = { _, _ -> }, onEinkauf = { einkauf++ },
-                    listeVm = liste, detailVm = detail, editorVm = { halter.behalten(EditorViewModel(SavedStateHandle(), repo, db, ablage)) },
+                    listeVm = liste, detailVm = detail, editorVm = editor,
                 )
             }
         }
@@ -87,6 +88,25 @@ class RezepteBereichTest {
         compose.onNodeWithText("Reispfanne").performClick()
         compose.onNodeWithText("Verwerfen").performClick()
         compose.warteAufText("400 g")
+    }
+
+    @Test
+    @Config(qualifiers = "w1280dp-h800dp")
+    fun tabletZweitesNeuesRezeptBeginntLeer() {
+        // Ein Editor-ViewModel für alle Aufträge: Eingaben des ersten Auftrags dürfen im zweiten nicht stehen
+        zeigen()
+        compose.warteAufText("Wähle ein Rezept")
+        compose.onNodeWithText("Reispfanne").performClick()
+        compose.warteAufText("400 g")
+        compose.onNodeWithContentDescription("Bearbeiten").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasSetTextAction() and hasText("Reispfanne")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasSetTextAction() and hasText("Reispfanne")).performTextReplacement("Reispfanne scharf")
+        compose.onNodeWithText("Reispfanne").performClick()
+        compose.onNodeWithText("Verwerfen").performClick()
+        compose.warteAufText("400 g")
+        compose.onNodeWithContentDescription("Bearbeiten").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasSetTextAction() and hasText("Reispfanne")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasSetTextAction() and hasText("Reispfanne scharf")).assertDoesNotExist()
     }
 
     @Test

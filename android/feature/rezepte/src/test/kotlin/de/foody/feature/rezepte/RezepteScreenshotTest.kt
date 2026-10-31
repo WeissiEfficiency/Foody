@@ -34,6 +34,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.math.BigDecimal
+import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * Referenzbilder von Liste, Detail und Editor mit erfundenen Rezepten: hell/dunkel × Handy/Tablet. Robolectric rendert
@@ -53,7 +54,7 @@ class RezepteScreenshotTest {
         val resolver = ApplicationProvider.getApplicationContext<android.app.Application>().contentResolver
         Settings.Global.putFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 0f)
         db = testDatenbank()
-        repo = RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L }
+        repo = RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1_000L }
         runBlocking { beispiele() }
     }
 

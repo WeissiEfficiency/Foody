@@ -101,8 +101,18 @@ class EditorViewModel @Inject constructor(
     /**
      * Lädt [id] (oder ein leeres Rezept); derselbe Aufruf nach einem Neuaufbau lässt die Eingaben stehen. Nach einem
      * Prozessende kommen Ursprung und Zeilen aus der Datenbank, die Eingaben aus dem SavedStateHandle.
+     *
+     * [auftrag]: Auf dem Tablet dient ein ViewModel allen Editor-Aufträgen; ein neuer Auftrag beginnt frisch, auch mit
+     * derselben [id] (ein zweites „Neues Rezept“ ist leer). Er steht im SavedStateHandle, damit ein Prozessende die
+     * Eingaben des laufenden Auftrags nicht verwirft.
      */
-    suspend fun laden(id: String?) {
+    suspend fun laden(id: String?, auftrag: Int = 0) {
+        if (gespeichert.get<Int>(AUFTRAG) != auftrag) {
+            if (gespeichert.contains(AUFTRAG)) gespeichert.remove<String>(EINGABEN_FUER)
+            gespeichert[AUFTRAG] = auftrag
+            geladenFuer = KEINS
+            kopf.value = Triple(false, null, null)
+        }
         if (geladenFuer == id) return
         geladenFuer = id
         val gerettet = eingaben.value.takeIf { gespeichert.get<String>(EINGABEN_FUER) == (id ?: NEU) }
@@ -191,6 +201,7 @@ class EditorViewModel @Inject constructor(
         private const val KEINS = "\u0000"
         private const val EINGABEN = "rezeptEingaben"
         private const val EINGABEN_FUER = "rezeptEingabenFuer"
+        private const val AUFTRAG = "rezeptAuftrag"
         private const val NEU = "neu"
     }
 }

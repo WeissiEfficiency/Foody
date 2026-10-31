@@ -83,7 +83,7 @@ object DatenModul {
 
     @Provides
     @Singleton
-    fun rezeptRepository(db: FoodyDatenbank, ablage: FotoAblage): RezeptRepository = RezeptRepository(db, ablage, System::currentTimeMillis)
+    fun rezeptRepository(db: FoodyDatenbank, ablage: FotoAblage): RezeptRepository = RezeptRepository(db, ablage, uhr = System::currentTimeMillis)
 
     @Provides
     @Singleton
