@@ -588,6 +588,8 @@ class SyncSpeicher(
      * Wurzeldatensätze löschen, die der Server nicht (mehr) kennt – ohne zu verlieren, was lokal noch nicht gesendet oder
      * abgelehnt ist. Es bleiben:
      * - Datensätze mit offener lokaler Änderung (Outbox) und vom Server abgelehnte (Problem vermerkt, die einzige Kopie);
+     * - nie vom Server bestätigte (keine Revision: unveränderte Startzutaten nach „Zusammenführen“, Zutaten nach
+     *   „Ersetzen“) – der Server hat sie nicht gelöscht, er kannte sie nie; sie bleiben ungesendet;
      * - Ziele von Verweisen der Server-Datensätze (z. B. ein Rezept, auf das ein Plan-Eintrag zeigt) und noch gebrauchte
      *   (benutzte Zutaten, Listen mit wartenden Einträgen) – diese werden zum Senden vorgemerkt, damit beide Seiten
      *   wieder übereinstimmen.
@@ -658,6 +660,9 @@ class SyncSpeicher(
                 dao.upsertOutbox(SyncOutboxEntity(typ.wire, id, deleted = false, queuedAt = uhr()))
                 return@withTransaction
             }
+            // Nie vom Server bestätigt (unveränderte Startzutaten, Zutaten nach „Ersetzen“): Der Server hat ihn nicht
+            // gelöscht, er kannte ihn nie. Bleibt lokal und ungesendet (N8).
+            if (dao.revision(typ.wire, id) == null) return@withTransaction
             dao.upsertZustand((dao.zustand() ?: SyncZustandEntity()).copy(applyingRemote = true))
             try {
                 loeschenLokal(typ, id)

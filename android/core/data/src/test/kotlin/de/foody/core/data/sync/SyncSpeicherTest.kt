@@ -774,6 +774,24 @@ class SyncSpeicherTest {
         assertEquals(80L, speicher.zustand().cursor)
     }
 
+    /**
+     * N8: Unveränderte Startzutaten nach „Zusammenführen“ und alle Zutaten nach „Ersetzen“ werden nie gesendet. Der
+     * Server hat sie nie gekannt, ein Voll-Abgleich nach `410` darf sie deshalb nicht als veraltet löschen.
+     */
+    @Test
+    fun vollabgleichBehaeltNieGesendetenDatensatz() = runTest {
+        aktiv()
+        db.zutatDao().upsert(zutat("z1"))
+        dao.loeschenOutbox("ingredient", "z1")
+
+        speicher.vollabgleich(emptyList(), cursor = 90)
+
+        assertNotNull(db.zutatDao().nachId("z1"))
+        // Auch nicht nachträglich senden: Startzutaten überschrieben sonst den Katalog auf dem Server (siehe aktivieren)
+        assertTrue(dao.outbox().isEmpty())
+        assertEquals(90L, speicher.zustand().cursor)
+    }
+
     // --- Voll-Abgleich nach dem Einspielen einer Server-Sicherung (D4) ---
 
     /** Der Server steht wieder auf Revision 5; was das Gerät von 6 bis vor dem Sprung kennt, fehlt ihm. */
