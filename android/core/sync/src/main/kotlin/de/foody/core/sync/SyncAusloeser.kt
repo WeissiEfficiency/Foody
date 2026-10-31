@@ -61,10 +61,8 @@ class SyncAusloeser @Inject constructor(
     /** Für Tests: Zahl der verarbeiteten Outbox-Stände der Beobachtung. */
     internal val outboxStaendeGesehen = AtomicInteger()
 
-    /** Beim App-Start: die Aufträge der v1 (periodisch und einmalig) abmelden und die Outbox beobachten. */
+    /** Beim App-Start: die Outbox beobachten. */
     fun beimStart() {
-        workManager.cancelUniqueWork(ALTER_AUFTRAG)
-        workManager.cancelUniqueWork(ALTER_EINMALAUFTRAG)
         outboxBeobachten()
     }
 
@@ -166,12 +164,6 @@ class SyncAusloeser @Inject constructor(
     companion object {
         /** Eindeutiger Name des einmaligen Sync-Auftrags der V3. */
         const val AUFTRAG = "foody-sync-v3"
-
-        /** Periodischer Auftrag der v1; wird beim Start abgemeldet. */
-        const val ALTER_AUFTRAG = "foody-sync-periodic"
-
-        /** Einmaliger Auftrag der v1 (`SyncScheduler.NOW_WORK`); wird beim Start abgemeldet. */
-        const val ALTER_EINMALAUFTRAG = "foody-sync-now"
 
         /** Entprellung nach lokalen Änderungen. */
         const val ENTPRELLUNG_SEKUNDEN = 5L

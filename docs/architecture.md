@@ -120,8 +120,7 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-18-v3-phase3-app-daten-sync-desi
   Transaktion). Zuletzt gewünschte Fotos laden. Header `X-Foody-Protocol: 3`, Routen unter `/api/v3`
   (`KtorServerZugang` über OkHttp, Antworten begrenzt gelesen, keine Weiterleitungen).
 - **Auslöser** (`SyncAusloeser`, `SyncAuftrag`): einmaliger WorkManager-Auftrag mit Netz-Bedingung; sofort bei
-  Vordergrund und „Jetzt synchronisieren“, nach Outbox-Änderungen entprellt um 5 s. Kein periodischer Auftrag; der
-  v1-Aufträge `foody-sync-periodic` und `foody-sync-now` werden beim Start abgemeldet. Ein laufender Auftrag wird nie ersetzt, sondern plant
+  Vordergrund und „Jetzt synchronisieren“, nach Outbox-Änderungen entprellt um 5 s. Kein periodischer Auftrag. Ein laufender Auftrag wird nie ersetzt, sondern plant
   einen Nachlauf. Nur vorübergehende Fehler werden mit Backoff wiederholt. Alles nur bei offener App: Beim Schließen
   (`appImHintergrund()`) geht eine noch wartende Änderung einmal sofort hinaus (ohne Netz-Bedingung, ohne
   Wiederholung), danach plant nichts mehr bis zum nächsten Öffnen.

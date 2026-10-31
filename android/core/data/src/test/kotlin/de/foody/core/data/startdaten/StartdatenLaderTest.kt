@@ -60,13 +60,6 @@ class StartdatenLaderTest {
     }
 
     @Test
-    fun altesSeededGiltAlsEins() = runTest {
-        prefs.edit().putBoolean("seeded", true).commit()
-        assertTrue(lader.ladenWennNoetig() > 0)
-        assertEquals(Startdaten.VERSION, prefs.getInt("seedVersion", 0))
-    }
-
-    @Test
     fun eigeneGleichnamigeZutatWirdNurErgaenzt() = runTest {
         db.zutatDao().upsert(ZutatEntity(id = "eigen-butter", canonicalName = "Butter", createdAt = 1, updatedAt = 1))
         lader.ladenWennNoetig()
