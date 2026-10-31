@@ -4,6 +4,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 /** Stück, Packungen und Dosen kauft man ganz: der Einkaufsbedarf wird aufgerundet, Gramm und Milliliter nicht. */
 class ShoppingRoundingTest {
@@ -42,12 +43,12 @@ class ShoppingRoundingTest {
         assertEquals("2 Stk.", QuantityFormatter.format(need.toBuy)) // nicht 3
     }
 
-    @Test fun missingEnergyIsNamedAsGap() {
-        // Nährwerte vorhanden, aber ohne Energie → kein kcal-Beitrag, also Lücke „keine Werte“
+    @Test fun missingEnergyStillCountsOtherNutrients() {
+        // Nährwerte vorhanden, aber ohne Energie → kein kcal-Beitrag, Fett zählt trotzdem
         val oil = Ingredient("oil", "Öl", nutrients = NutrientProfile(NutrientBasis.PER_100_G, mapOf(Nutrient.FAT_G to bd("100"))))
         val recipe = Recipe("r", "R", 1, listOf(RecipeIngredient("a", "oil", bd("10"), MeasureUnit.GRAM)))
         val result = NutritionCalculator.calculate(recipe, mapOf("oil" to oil))
-        assertEquals(mapOf("a" to LineGap.NO_VALUES), result.lineGaps)
+        assertNull(result.totals[Nutrient.ENERGY_KJ])
         assertEquals(0, bd("10").compareTo(result.totals.getValue(Nutrient.FAT_G)))
     }
 }

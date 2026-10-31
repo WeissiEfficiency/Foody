@@ -11,7 +11,7 @@ In diesem Plan steht es unter Stufe 3. Alles in Stufe 1 und 2 kann sofort weg.
 Legende: 👤 = machst du (Gerät, Homeserver), 🤖 = Claude, PR = eigener kleiner PR gegen `main`. ✅ = erledigt.
 
 **Stand 2026-10-31** (Nachprüfung, `main` nach #139): Stufe 1 noch offen (10 Worktrees, 61 lokale `claude/*`-Branches,
-Build-Reste und zwei Checkouts). Stufe 2 bis auf B5 und B7–B9 erledigt (dieser PR und #139). Stufe 4 und 5 offen.
+Build-Reste und zwei Checkouts). Stufe 2 erledigt (#139, #140 und der PR zu B7–B9; B5 entfällt). Stufe 4 und 5 offen.
 Zusätzlich erledigt: **Z1** Release stürzte bei „Frei“ im Tagebuch ab – R8 entfernte die Konstruktoren der
 ML-Kit-Registrare (`firebase-components` 16.1.0 behält nur die Klasse); Keep-Regel in `proguard-rules.pro` (#139).
 
@@ -37,11 +37,11 @@ ML-Kit-Registrare (`firebase-components` 16.1.0 behält nur die Klasse); Keep-Re
 | ✅ B2 | `docs/STRUKTUR-CHECK.md` (Stand 27.10., vor dem Umstieg) ins Archiv oder löschen; die offenen Punkte stehen in `v3-plan.md` | 🤖 PR | Doppelte, veraltete Befundliste (dieser PR) |
 | ✅ B3 | **Doku auf „nach dem Umstieg“:** `CLAUDE.md`, `README.md` und `server/README.md` sind mit #137 schon nachgezogen. Offen: `docs/architecture.md:16`, `docs/roadmap.md` (Stand 17.10.), `docs/installation.md` (Abschnitt „Umstieg von der v1“ auf einen Satz + Verweis auf die Git-Historie kürzen) | 🤖 PR | Neue Sessions arbeiten mit falschem Stand (dieser PR) |
 | ✅ B4 | Phase 8 in `ToDoS/v3-plan.md` abschließen: Umstieg ist mit #137 abgehakt; offen ist das Abschluss-Review – abhaken, Befunde W1–W6/N1–N5 eintragen und auf diesen Plan verweisen | 🤖 PR | Plan zeigt das Review als offen, die Befunde stehen nur im Chat (dieser PR) |
-| B5 | Ungenutzte Einträge im Versionskatalog entfernen: `androidx-lifecycle-runtime-compose`, `compose-ui-tooling`, `compose-ui-tooling-preview` (laut Suche in allen `*.kts` nicht referenziert – vor dem Löschen per Build bestätigen) | 🤖 PR | Nur Ballast, Renovate/Updates prüfen sie mit |
+| ~~B5~~ | Ungenutzte Einträge im Versionskatalog entfernen: `androidx-lifecycle-runtime-compose`, `compose-ui-tooling`, `compose-ui-tooling-preview` (laut Suche in allen `*.kts` nicht referenziert – vor dem Löschen per Build bestätigen) | 🤖 PR | Nur Ballast, Renovate/Updates prüfen sie mit — **entfällt:** `build-logic` (`AndroidFeatureConventionPlugin`) bindet alle drei für jedes Compose-Modul ein |
 | ✅ B6 | `proguard-rules.pro:1`: Kommentar „Nur für die Variante vorschau“ ist falsch, die Regeln gelten auch fürs Release | 🤖 PR | Wer dem Kommentar glaubt und die Regeln löscht, bricht Sicherung und Sync im Release (#139) |
-| B7 | Room-Schemata `1.json`–`8.json` in `android/core/data/schemas/` löschen; `9.json` (Migrationstest) und `10.json` bleiben | 🤖 PR | ~8 Dateien Ballast; die V3 kennt nur die Migration 9 → 10 |
-| B8 | `Platzhalter.kt` und `Bildschirme.platzhalter` aus dem Produktivcode in die Tests von `:app` verschieben; Text „Kommt in Phase 6“ entfällt | 🤖 PR | Bauzeit-Gerüst landet im Release (R8 entfernt es zwar, aber es liest sich wie unfertiger Code) |
-| B9 | Doppelte Konstante `SEEDED_ALT` (`Einstellungsschluessel.kt:15` und `StartdatenLader.kt:74`) auf eine reduzieren | 🤖 PR | Klein |
+| ✅ B7 | Room-Schemata `1.json`–`8.json` in `android/core/data/schemas/` löschen; `9.json` (Migrationstest) und `10.json` bleiben | 🤖 PR | ~8 Dateien Ballast; die V3 kennt nur die Migration 9 → 10 (dieser PR) |
+| ✅ B8 | `Platzhalter.kt` und `Bildschirme.platzhalter` aus dem Produktivcode in die Tests von `:app` verschieben; Text „Kommt in Phase 6“ entfällt | 🤖 PR | Bauzeit-Gerüst landet im Release (R8 entfernt es zwar, aber es liest sich wie unfertiger Code) (dieser PR) |
+| ✅ B9 | Doppelte Konstante `SEEDED_ALT` (`Einstellungsschluessel.kt:15` und `StartdatenLader.kt:74`) auf eine reduzieren | 🤖 PR | Klein (dieser PR) |
 
 ## Stufe 3 – Rückweg zur v1 schließen (ab 2026-11-25)
 
@@ -134,8 +134,8 @@ Ressourcen schlank (381 KB), Features ohne Querverweise.
 
 | ID | Was | Hinweis |
 |---|---|---|
-| R1 | `:domain`: `RecipeSort`, `IngredientCatalog.assumedAtHome`, `RecipeProfile.carbsPerServing`/`reliable`, `NutritionResult.overallCompleteness`/`missingIngredientIds`/`lineGaps`/`lineEnergyPerServingKj`, `Mahlzeit.vorschlagFuer`, `DateRange.days` | Reste der v1-Oberfläche; vor dem Löschen je Regel in `docs/domain-rules.md` prüfen |
-| R2 | `SyncDao.loeschenRevision`, `Einstellungsschluessel.EINKAUF_ANSICHT` | ungenutzt |
+| ✅ R1 | `:domain`: `RecipeSort`, `IngredientCatalog.assumedAtHome`, `RecipeProfile.carbsPerServing`/`reliable`, `NutritionResult.overallCompleteness`/`missingIngredientIds`/`lineGaps`/`lineEnergyPerServingKj`, `Mahlzeit.vorschlagFuer`, `DateRange.days` | Reste der v1-Oberfläche; vor dem Löschen je Regel in `docs/domain-rules.md` prüfen (dieser PR) |
+| ✅ R2 | `SyncDao.loeschenRevision`, `Einstellungsschluessel.EINKAUF_ANSICHT` | ungenutzt (dieser PR) |
 | R3 | `FoodyAbstaende` | nur wenn Q1 nicht umgesetzt wird |
 | R4 | B5, B7–B9 und Stufe 3 (C1–C8, ab 25.11.) | stehen oben |
 
@@ -154,8 +154,8 @@ Ressourcen schlank (381 KB), Features ohne Querverweise.
 
 ## Empfohlene Reihenfolge
 
-1. **Diese Woche:** ✅ Doku-PR B1–B4 (#140), ✅ Z1 (#139), A3/A4 größtenteils erledigt. Offen: ein Aufräum-PR mit
-   B5, B7–B9 und R1–R2 (toter Code), ein Doku-PR mit R5–R8.
+1. **Diese Woche:** ✅ Doku-PR B1–B4 (#140), ✅ Z1 (#139), A3/A4 größtenteils erledigt. ✅ B7–B9, R1–R2 (B5 entfällt).
+   Offen: ein Doku-PR mit R5–R8.
 2. **Danach:** W1 und W2 (je ein PR), dann W3+W4 zusammen mit Q3 und Q5 (gleiche Stellen), mit Messung vorher/nachher.
    Q1, Q2 und Q4 als ein Designsystem-PR (Bildvergleich neu aufnehmen).
 3. **Server, ein Rebuild für alles:** D1–D4 zusammen, D5 prüfen.

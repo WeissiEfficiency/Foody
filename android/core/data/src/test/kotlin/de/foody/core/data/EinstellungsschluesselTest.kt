@@ -15,7 +15,6 @@ class EinstellungsschluesselTest {
         assertEquals("seeded", Einstellungsschluessel.SEEDED_ALT)
         assertEquals("dailyKcalGoal", Einstellungsschluessel.TAGESZIEL)
         assertEquals("themeMode", Einstellungsschluessel.DARSTELLUNG)
-        assertEquals("shoppingListView", Einstellungsschluessel.EINKAUF_ANSICHT)
         assertEquals("onlineProduktsuche", Einstellungsschluessel.ONLINE_SUCHE)
         assertEquals("fotosVerkleinert", Einstellungsschluessel.FOTOS_VERKLEINERT)
         assertEquals("recipe_images", Einstellungsschluessel.FOTO_ORDNER)

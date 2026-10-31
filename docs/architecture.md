@@ -30,8 +30,8 @@ auf dem Branch `v1-server`. Wo unten „wie v1“ steht, verhält sich die V3 be
 
 ## Datenbank: Vorgeschichte
 
-Die Schemata 1–9 stammen aus der v1 (eingecheckt unter `android/core/data/schemas`); die V3 migriert 9 → 10 (unten,
-„App V3: Daten und Sync“).
+Die Schemata 1–9 stammen aus der v1; eingecheckt ist davon nur noch 9 (`android/core/data/schemas`, für den
+Migrationstest), 1–8 liegen im Git-Verlauf. Die V3 migriert 9 → 10 (unten, „App V3: Daten und Sync“).
 
 | Version | Änderung |
 |---|---|

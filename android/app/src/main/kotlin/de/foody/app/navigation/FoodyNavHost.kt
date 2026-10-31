@@ -24,7 +24,7 @@ import de.foody.feature.zutaten.ZutatEditorRoute
 import de.foody.feature.zutaten.ZutatenListeRoute
 import java.time.LocalDate
 
-/** Die Bildschirme mit ViewModel (Hilt); Navigationstests setzen [Bildschirme.platzhalter] ein. */
+/** Die Bildschirme mit ViewModel (Hilt); Navigationstests setzen eigene Platzhalter ein (`Platzhalter.kt` in den Tests). */
 class Bildschirme(
     val heute: @Composable (NavHostController) -> Unit,
     val tagebuch: @Composable (LocalDate, NavHostController) -> Unit,
@@ -114,24 +114,6 @@ class Bildschirme(
             einkauf = { listeId, nav ->
                 EinkaufRoute(listeId, onListe = { nav.navigate(EinkaufListe(it)) }, onAktuelle = { nav.zumEinkauf() })
             },
-        )
-        val platzhalter = Bildschirme(
-            heute = { Platzhalter("Heute") },
-            tagebuch = { datum, _ -> Platzhalter("Tagebuch", "Tagebuch $datum") },
-            einstellungen = { Platzhalter("Einstellungen") },
-            serverVerbinden = { Platzhalter("Server verbinden") },
-            zutaten = { Platzhalter("Zutatenkatalog") },
-            zutat = { id, _ -> Platzhalter("Zutat", "Zutat $id") },
-            rezepte = { Platzhalter("Rezepte", "Rezeptliste") },
-            rezeptDetail = { id, _ -> Platzhalter("Rezept", "Rezept $id") },
-            editor = { id, gekochtMit, _ ->
-                Platzhalter("Editor", if (id == null) "Neues Rezept" else "Rezept $id bearbeiten" + gekochtMit?.let { " · gekocht mit $it" }.orEmpty())
-            },
-            kochen = { id, portionen, _ ->
-                Platzhalter("Kochen", "Rezept $id" + portionen?.let { n -> " · $n ${if (n == 1) "Portion" else "Portionen"}" }.orEmpty())
-            },
-            woche = { Platzhalter("Woche", "Wochenplan") },
-            einkauf = { listeId, _ -> Platzhalter("Einkauf", listeId?.let { "Liste $it" } ?: "Einkaufsliste") },
         )
     }
 }

@@ -1,6 +1,5 @@
 package de.foody.domain
 
-import java.time.LocalTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -32,11 +31,5 @@ class MahlzeitTest {
     @Test fun reihenfolgeImTag() {
         val sortiert = listOf("ABENDESSEN", "Brunch", "SNACK", "FRUEHSTUECK", "MITTAGESSEN").sortedBy(Mahlzeit::reihenfolge)
         assertEquals(listOf("FRUEHSTUECK", "MITTAGESSEN", "SNACK", "ABENDESSEN", "Brunch"), sortiert)
-    }
-
-    @Test fun vorschlagNachUhrzeit() {
-        assertEquals(Mahlzeit.FRUEHSTUECK, Mahlzeit.vorschlagFuer(LocalTime.of(9, 59)))
-        assertEquals(Mahlzeit.MITTAGESSEN, Mahlzeit.vorschlagFuer(LocalTime.of(10, 0)))
-        assertEquals(Mahlzeit.ABENDESSEN, Mahlzeit.vorschlagFuer(LocalTime.of(14, 0)))
     }
 }

@@ -94,13 +94,12 @@ class NutritionTest {
         )
         val r = NutritionCalculator.calculate(recipe, mapOf("rice" to rice, "x" to unknown))
         assertFalse(r.isComplete(Nutrient.ENERGY_KJ))
-        assertEquals(0.5, r.overallCompleteness, 1e-9)
-        assertTrue("x" in r.missingIngredientIds)
+        assertEquals(0.5, r.completeness.getValue(Nutrient.ENERGY_KJ), 1e-9)
 
         val onlyUnknown = Recipe("r2", "U", 1, listOf(RecipeIngredient("l", "x", bd("1"), MeasureUnit.GRAM)))
         val u = NutritionCalculator.calculate(onlyUnknown, mapOf("x" to unknown))
         assertNull(u.totals[Nutrient.ENERGY_KJ])
-        assertEquals(0.0, u.overallCompleteness)
+        assertEquals(0.0, u.completeness.getValue(Nutrient.ENERGY_KJ))
     }
 }
 
@@ -168,7 +167,7 @@ class ShoppingTest {
         val lateEvening = ZonedDateTime.of(2026, 3, 29, 23, 30, 0, 0, zone).toLocalDate()
         val range = DateRange(LocalDate.of(2026, 3, 29), LocalDate.of(2026, 3, 29))
         assertTrue(lateEvening in range)
-        assertEquals(3, DateRange.ofDays(LocalDate.of(2026, 3, 28), 3).days.size)
+        assertEquals(LocalDate.of(2026, 3, 30), DateRange.ofDays(LocalDate.of(2026, 3, 28), 3).endInclusive)
     }
 
     @Test fun diffDetectsAddedChangedRemoved() {

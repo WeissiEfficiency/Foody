@@ -54,9 +54,6 @@ interface SyncDao {
 
     @Upsert suspend fun upsertRevision(e: SyncRevisionEntity)
 
-    @Query("DELETE FROM sync_record_rev WHERE type = :type AND recordId = :recordId")
-    suspend fun loeschenRevision(type: String, recordId: String)
-
     @Query("DELETE FROM sync_record_rev") suspend fun revisionenLeeren()
 
     // sync_state (genau eine Zeile, id = 1)

@@ -11,26 +11,12 @@ data class NutritionResult(
     val totals: Map<Nutrient, BigDecimal>,
     val completeness: Map<Nutrient, Double>,
     val servings: Int,
-    val missingIngredientIds: Set<String>,
-    /** Energie (kJ) je Rezeptzeile (ID der Zeile) für die angezeigte Portionenzahl – Menge × Wert je 100 g. */
-    val lineEnergyKj: Map<String, BigDecimal> = emptyMap(),
-    /** Warum eine Zeile mit Menge nicht eingerechnet werden konnte. */
-    val lineGaps: Map<String, LineGap> = emptyMap(),
 ) {
-    val overallCompleteness: Double
-        get() = if (completeness.isEmpty()) 0.0 else completeness.values.average()
-
     fun isComplete(n: Nutrient) = (completeness[n] ?: 0.0) >= 1.0
 
     fun perServing(n: Nutrient): BigDecimal? {
         if (servings <= 0) return null
         return totals[n]?.divide(BigDecimal(servings), MATH_SCALE, RoundingMode.HALF_UP)
-    }
-
-    /** Energie (kJ) einer Zeile je Portion; die Summe über alle Zeilen ergibt [perServing] der Energie. */
-    fun lineEnergyPerServingKj(lineId: String): BigDecimal? {
-        if (servings <= 0) return null
-        return lineEnergyKj[lineId]?.divide(BigDecimal(servings), MATH_SCALE, RoundingMode.HALF_UP)
     }
 
     companion object {
@@ -48,15 +34,6 @@ data class NutritionResult(
 
         fun kcalToKj(kcal: BigDecimal): BigDecimal = kcal.multiply(KJ_JE_KCAL)
     }
-}
-
-/** Grund, warum eine Zutat mit Menge nicht in die Nährwerte eingeht. */
-enum class LineGap {
-    /** Für die Zutat sind keine Nährwerte hinterlegt. */
-    NO_VALUES,
-
-    /** Menge lässt sich nicht in Gramm/ml umrechnen (z. B. Stück ohne Stückgewicht). */
-    NO_WEIGHT,
 }
 
 object NutritionCalculator {
@@ -77,9 +54,6 @@ object NutritionCalculator {
         val lines = scaled.ingredients.filter { (includeOptional || !it.optional) && it.amount.signum() > 0 }
         val totals = mutableMapOf<Nutrient, BigDecimal>()
         val known = mutableMapOf<Nutrient, Int>()
-        val missing = mutableSetOf<String>()
-        val lineEnergy = mutableMapOf<String, BigDecimal>()
-        val gaps = mutableMapOf<String, LineGap>()
 
         for (line in lines) {
             val ing = ingredients[line.ingredientId]
@@ -94,31 +68,18 @@ object NutritionCalculator {
             } else {
                 null
             }
-            if (profile == null || used == null) {
-                missing += line.ingredientId
-                gaps[line.id] = if (profile == null || profile.values[Nutrient.ENERGY_KJ] == null) LineGap.NO_VALUES else LineGap.NO_WEIGHT
-                continue
-            }
-            var anyMissing = false
+            if (profile == null || used == null) continue
             for (n in Nutrient.entries) {
-                val per100 = profile.values[n]
-                if (per100 == null) {
-                    anyMissing = true
-                    continue
-                }
+                val per100 = profile.values[n] ?: continue
                 // Explizite Skala: Kotlins `/` behielte die Skala des Dividenden (bei 5E+1 → −1) und rundete auf Zehner.
                 val contribution = (per100 * used.baseAmount).divide(HUNDRED, MATH_SCALE, RoundingMode.HALF_UP)
                 totals[n] = (totals[n] ?: BigDecimal.ZERO) + contribution
                 known[n] = (known[n] ?: 0) + 1
-                if (n == Nutrient.ENERGY_KJ) lineEnergy[line.id] = contribution
             }
-            if (anyMissing) missing += line.ingredientId
-            // Ohne Energiewert fehlt die Zeile in den kcal je Zutat – dann mit Grund statt stillschweigend
-            if (profile.values[Nutrient.ENERGY_KJ] == null) gaps[line.id] = LineGap.NO_VALUES
         }
         val completeness = Nutrient.entries.associateWith { n ->
             if (lines.isEmpty()) 0.0 else (known[n] ?: 0).toDouble() / lines.size
         }
-        return NutritionResult(totals, completeness, servings, missing, lineEnergy, gaps)
+        return NutritionResult(totals, completeness, servings)
     }
 }
