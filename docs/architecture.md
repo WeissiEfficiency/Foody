@@ -22,7 +22,7 @@ auf dem Branch `v1-server`. Wo unten „wie v1“ steht, verhält sich die V3 be
   gespeichert, ein Bildschirm im Verlauf zeigt sie beim Zurückkehren sofort; im Hintergrund ruht alles, beim Öffnen
   wird neu gerechnet. Einzige Ausnahme ist der Kochmodus (`Eagerly`, er hält den Bildschirm an). Im Test gilt die App
   als geschlossen; Tests sehen mit `ViewModelHalter.zusehen` zu.
-  Nährwerte und kcal rechnen die Repositories mit `flowOn(rechnen)` (Standard `Dispatchers.Default`, Tests mit festem
+  Nährwerte und kcal rechnen die Repositories mit `flowOn(rechnen)` (Hilt-Qualifier `@Rechnen`: `Dispatchers.Default`, Tests mit festem
   Ablauf `EmptyCoroutineContext`).
 - **Domain** (`:domain`): reine Kotlin-Logik, vollständig per JVM-Test abgedeckt.
   - Rechnen: `RecipeScaler`, `UnitConverter`, `NutritionCalculator`

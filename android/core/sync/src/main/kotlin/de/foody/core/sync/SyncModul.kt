@@ -8,12 +8,13 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import de.foody.core.data.Rechnen
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.sync.SyncSpeicher
 import javax.inject.Qualifier
 import javax.inject.Singleton
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.map
 
@@ -64,7 +65,7 @@ object SyncModul {
     @Provides
     @Singleton
     @SyncBereich
-    fun bereich(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    fun bereich(@Rechnen rechnen: CoroutineContext): CoroutineScope = CoroutineScope(SupervisorJob() + rechnen)
 
     /** „Läuft“ = der einmalige Auftrag [SyncAusloeser.AUFTRAG] ist gerade in Arbeit. */
     @Provides

@@ -7,6 +7,7 @@ import de.foody.core.data.heute.bestand
 import de.foody.core.data.heute.plan
 import de.foody.core.data.heute.rezept
 import de.foody.core.data.rezepte.RezeptRepository
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -32,8 +33,8 @@ class WocheLesenTest {
     fun setUp() {
         db = Room.inMemoryDatabaseBuilder(RuntimeEnvironment.getApplication(), FoodyDatenbank::class.java)
             .addCallback(FoodyDatenbank.CALLBACK).allowMainThreadQueries().build()
-        val rezepte = RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L }
-        repo = WocheRepository(db, rezepte, { 1_000L })
+        val rezepte = RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1_000L }
+        repo = WocheRepository(db, rezepte, { 1_000L }, EmptyCoroutineContext)
     }
 
     @After

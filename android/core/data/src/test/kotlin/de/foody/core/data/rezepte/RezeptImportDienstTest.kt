@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.room.Room
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.fotos.FotoAblage
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -29,7 +30,7 @@ class RezeptImportDienstTest {
         db = Room.inMemoryDatabaseBuilder(RuntimeEnvironment.getApplication(), FoodyDatenbank::class.java)
             .addCallback(FoodyDatenbank.CALLBACK).allowMainThreadQueries().build()
         val kontext = RuntimeEnvironment.getApplication()
-        dienst = RezeptImportDienst(kontext, db, RezeptRepository(db, FotoAblage(kontext)) { 1_000L })
+        dienst = RezeptImportDienst(kontext, db, RezeptRepository(db, FotoAblage(kontext), EmptyCoroutineContext) { 1_000L })
     }
 
     @After

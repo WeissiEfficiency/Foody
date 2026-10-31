@@ -2,6 +2,7 @@ package de.foody.core.data.einkauf
 
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.domain.MeasureUnit
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -28,7 +29,7 @@ class EinkaufPlanTest {
     fun setUp() {
         db = testDatenbank()
         ign = ignoriert()
-        repo = EinkaufRepository(db, { JETZT }, ign)
+        repo = EinkaufRepository(db, { JETZT }, ign, EmptyCoroutineContext)
     }
 
     @After

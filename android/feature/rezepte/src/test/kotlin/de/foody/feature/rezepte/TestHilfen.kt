@@ -23,6 +23,7 @@ import de.foody.core.data.einkauf.IgnorierteSchluessel
 import de.foody.core.data.db.ZutatEntity
 import de.foody.domain.MeasureUnit
 import de.foody.domain.NutrientBasis
+import kotlin.coroutines.EmptyCoroutineContext
 import org.robolectric.RuntimeEnvironment
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -95,5 +96,5 @@ fun ComposeTestRule.pruefeNichtsAbgeschnitten() {
 fun FoodyDatenbank.einkauf(): EinkaufRepository {
     val prefs = RuntimeEnvironment.getApplication().getSharedPreferences("einkauf-test", Context.MODE_PRIVATE)
     prefs.edit().clear().commit()
-    return EinkaufRepository(this, { 1_000L }, IgnorierteSchluessel(prefs))
+    return EinkaufRepository(this, { 1_000L }, IgnorierteSchluessel(prefs), EmptyCoroutineContext)
 }

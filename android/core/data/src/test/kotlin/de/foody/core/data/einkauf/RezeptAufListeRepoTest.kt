@@ -2,6 +2,7 @@ package de.foody.core.data.einkauf
 
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.domain.MeasureUnit
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -22,7 +23,7 @@ class RezeptAufListeRepoTest {
     @Before
     fun setUp() {
         db = testDatenbank()
-        repo = EinkaufRepository(db, { JETZT }, ignoriert())
+        repo = EinkaufRepository(db, { JETZT }, ignoriert(), EmptyCoroutineContext)
     }
 
     @After
