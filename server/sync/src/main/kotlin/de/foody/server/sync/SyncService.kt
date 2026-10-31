@@ -1,5 +1,6 @@
 package de.foody.server.sync
 
+import de.foody.api.protocol.VerloreneRevisionen
 import de.foody.server.ApiException
 import de.foody.server.db.Database
 import de.foody.api.protocol.ErrorCode
@@ -27,27 +28,57 @@ class SyncService(private val db: Database, private val store: RecordStore, priv
     fun push(konto: String, records: List<SyncRecord>): PushResponse =
         PushResponse(records.map { record -> db.tx { c -> applyOne(c, konto, record) } })
 
-    /** Liefert bis zu [limit] Datensätze mit `rev > since`; `hasMore` zeigt weitere Seiten an. */
-    fun pull(konto: String, since: Long, limit: Int): PullResponse {
-        val fetched = db.tx { c ->
-            val (lastRev, compactedBefore) = revisions(c, konto)
-            // Ein Cursor vor der Kompaktierungsgrenze hat Löschmarkierungen verpasst, einer hinter dem Server-Stand stammt
-            // von einer Datenbank, die es so nicht mehr gibt (z. B. nach dem Einspielen einer Sicherung): Neu synchronisieren.
-            if (since != 0L && (since < compactedBefore || since > lastRev)) {
-                throw ApiException(HttpStatusCode.Gone, ErrorCode.CURSOR_EXPIRED)
-            }
-            store.page(c, konto, since, limit + 1)
+    /**
+     * Liefert bis zu [limit] Datensätze mit `rev > since`; `hasMore` zeigt weitere Seiten an. Die letzte Seite endet auf
+     * dem Stand des Kontos (`last_rev`), auch wenn die neuesten Revisionen kompaktierte Löschmarkierungen waren – sonst
+     * läge der Cursor vor der Kompaktierungsgrenze und jeder Lauf begänne wieder mit `410` (N1).
+     */
+    fun pull(konto: String, since: Long, limit: Int): PullResponse = db.tx { c ->
+        val stand = stand(c, konto)
+        // Ein Cursor vor der Kompaktierungsgrenze hat Löschmarkierungen verpasst, einer hinter dem Server-Stand stammt
+        // von einer Datenbank, die es so nicht mehr gibt (z. B. nach dem Einspielen einer Sicherung): Neu synchronisieren.
+        if (since != 0L && (since < stand.compactedBefore || since > stand.lastRev)) {
+            throw ApiException(HttpStatusCode.Gone, ErrorCode.CURSOR_EXPIRED)
         }
+        val fetched = store.page(c, konto, since, limit + 1)
         val hasMore = fetched.size > limit
         val records = if (hasMore) fetched.take(limit) else fetched
-        return PullResponse(records, records.lastOrNull()?.rev ?: since, hasMore)
+        val cursor = if (hasMore) records.last().rev!! else maxOf(stand.lastRev, since)
+        PullResponse(records, cursor, hasMore, stand.verloren)
     }
 
-    /** `last_rev` und `compacted_before_rev` des Kontos. */
-    private fun revisions(c: Connection, konto: String): Pair<Long, Long> =
-        c.prepareStatement("SELECT last_rev, compacted_before_rev FROM user WHERE id = ?").use { st ->
+    /**
+     * Nach dem Einspielen einer Sicherung (`foody-admin wiederhergestellt`): Je Konto springen die Revisionen um
+     * [SPRUNG_NACH_WIEDERHERSTELLUNG] nach vorn, und die Kompaktierungsgrenze folgt. Jeder alte Cursor läuft damit ab, auch
+     * einer, der nach dem Einspielen sonst wieder gültig würde; die Geräte gleichen voll ab und erfahren den Bereich, der
+     * dem Server fehlt (bei einer zweiten Wiederherstellung wächst er). Liefert je Konto Name und Stand vor dem Sprung.
+     */
+    fun wiederhergestellt(): List<Pair<String, Long>> = db.tx { c ->
+        val konten = c.prepareStatement("SELECT username, last_rev FROM user ORDER BY username_lower").use { st ->
+            st.executeQuery().use { rs -> buildList { while (rs.next()) add(rs.getString(1) to rs.getLong(2)) } }
+        }
+        c.prepareStatement(
+            "UPDATE user SET verloren_nach = MIN(COALESCE(verloren_nach, last_rev), last_rev), " +
+                "verloren_vor = last_rev + ?, last_rev = last_rev + ?, compacted_before_rev = last_rev + ?",
+        ).use { st ->
+            for (i in 1..3) st.setLong(i, SPRUNG_NACH_WIEDERHERSTELLUNG)
+            st.executeUpdate()
+        }
+        konten
+    }
+
+    /** Stand des Kontos: `last_rev`, `compacted_before_rev` und der Bereich verlorener Revisionen. */
+    private class Stand(val lastRev: Long, val compactedBefore: Long, val verloren: VerloreneRevisionen?)
+
+    private fun stand(c: Connection, konto: String): Stand =
+        c.prepareStatement("SELECT last_rev, compacted_before_rev, verloren_nach, verloren_vor FROM user WHERE id = ?").use { st ->
             st.setString(1, konto)
-            st.executeQuery().use { if (it.next()) it.getLong(1) to it.getLong(2) else 0L to 0L }
+            st.executeQuery().use { rs ->
+                if (!rs.next()) return@use Stand(0L, 0L, null)
+                val nach = rs.getLong(3).takeUnless { rs.wasNull() }
+                val vor = rs.getLong(4).takeUnless { rs.wasNull() }
+                Stand(rs.getLong(1), rs.getLong(2), if (nach != null && vor != null) VerloreneRevisionen(nach, vor) else null)
+            }
         }
 
     /**
@@ -123,4 +154,12 @@ class SyncService(private val db: Database, private val store: RecordStore, priv
 
     private fun rejected(record: SyncRecord, code: ErrorCode) =
         PushResult(record.id, record.type, PushStatus.REJECTED, code = code)
+
+    companion object {
+        /**
+         * Sprung der Revisionen nach dem Einspielen einer Sicherung: größer als alles, was ein Server zwischen Sicherung
+         * und Einspielen vergeben haben kann.
+         */
+        const val SPRUNG_NACH_WIEDERHERSTELLUNG = 1_000_000_000L
+    }
 }

@@ -122,6 +122,11 @@ object Migrations {
         DROP TABLE household;
         ALTER TABLE user DROP COLUMN is_admin
         """.trimIndent(),
+        // 2 → 3: Bereich verlorener Revisionen nach dem Einspielen einer Sicherung (`foody-admin wiederhergestellt`)
+        """
+        ALTER TABLE user ADD COLUMN verloren_nach INTEGER;
+        ALTER TABLE user ADD COLUMN verloren_vor INTEGER
+        """.trimIndent(),
     )
 
     /**

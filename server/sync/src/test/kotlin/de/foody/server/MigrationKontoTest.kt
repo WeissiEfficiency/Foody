@@ -112,7 +112,7 @@ class MigrationKontoTest {
                 zeilen,
             )
             assertEquals(0, c.zahl("SELECT COUNT(*) FROM sync_record WHERE type = 'pantry_item'"))
-            assertEquals(2, Migrations.aktuell(c))
+            assertEquals(Migrations.all.size, Migrations.aktuell(c))
         }
     }
 
@@ -282,7 +282,8 @@ class MigrationKontoTest {
             val sync = SyncService(db, RecordStore(), clock)
             val page = sync.pull(stefan, since = 2, limit = 100)
             assertEquals(listOf("r1" to 3L, "i3" to 4L), page.records.map { it.id to it.rev })
-            assertEquals(4L, page.nextCursor)
+            // Die letzte Seite endet auf dem Kontostand (7, mit entfallenem Vorrat und Löschungen), nicht auf der letzten Revision
+            assertEquals(7L, page.nextCursor)
             val abgelaufen = assertFailsWith<ApiException> { sync.pull(stefan, since = 1, limit = 100) }
             assertEquals(ErrorCode.CURSOR_EXPIRED, abgelaufen.code)
         }

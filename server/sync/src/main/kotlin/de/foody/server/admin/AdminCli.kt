@@ -43,6 +43,7 @@ class AdminCli(
             ?.let(::abmeldenUngenutzt) ?: usage()
         "backup" -> if (args.size == 2) backup(args[1]) else usage()
         "pruefen" -> if (args.size == 2) pruefen(args[1]) else usage()
+        "wiederhergestellt" -> if (args.size == 1) wiederhergestellt() else usage()
         "compact" -> if (args.size == 1) compact() else usage()
         else -> usage()
     }
@@ -137,6 +138,14 @@ class AdminCli(
         }.takeUnless { it == "ok" }?.lines()?.filter { it.isNotBlank() }?.joinToString(" · ")?.take(MELDUNG_MAX)
     }
 
+    /** Nach dem Einspielen einer Sicherung, vor dem ersten Sync: Geräte gleichen voll ab und senden Fehlendes erneut. */
+    private fun wiederhergestellt(): Int {
+        for ((name, rev) in deps.sync.wiederhergestellt()) {
+            out.println("$name: Stand der Sicherung bis Revision $rev, die Geräte gleichen beim nächsten Sync voll ab")
+        }
+        return 0
+    }
+
     private fun compact(): Int {
         out.println(Compactor(deps.db, deps.clock, deps.photos).run())
         return 0
@@ -158,6 +167,7 @@ class AdminCli(
               abmelden-ungenutzt <tage>  Geräte widerrufen, die sich seit <tage> Tagen nicht gemeldet haben
               backup <zieldatei>         Konsistente Kopie der Datenbank schreiben und prüfen (Ziel darf nicht existieren)
               pruefen <datei>            Sicherung mit integrity_check prüfen, z. B. vor dem Einspielen
+              wiederhergestellt          Nach dem Einspielen einer Sicherung: Geräte gleichen voll ab, senden Fehlendes erneut
               compact                    Alte Löschmarkierungen sofort kompaktieren
             """.trimIndent(),
         )
