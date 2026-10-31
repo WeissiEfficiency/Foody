@@ -8,6 +8,7 @@ import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.heute.bestand
 import de.foody.domain.IngredientCatalog
 import de.foody.domain.ZutatZeile
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -37,7 +38,7 @@ class RezeptSchreibenTest {
         db = Room.inMemoryDatabaseBuilder(RuntimeEnvironment.getApplication(), FoodyDatenbank::class.java)
             .addCallback(FoodyDatenbank.CALLBACK).allowMainThreadQueries().build()
         ablage = FotoAblage(RuntimeEnvironment.getApplication())
-        repo = RezeptRepository(db, ablage) { 1_000L }
+        repo = RezeptRepository(db, ablage, EmptyCoroutineContext) { 1_000L }
     }
 
     @After

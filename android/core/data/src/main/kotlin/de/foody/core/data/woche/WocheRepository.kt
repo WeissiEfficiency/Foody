@@ -15,7 +15,6 @@ import de.foody.domain.Mahlzeit
 import de.foody.domain.PlanDurchschnitt
 import de.foody.domain.PlanTag
 import de.foody.domain.RecipeProfiles
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -33,8 +32,8 @@ class WocheRepository(
     private val db: FoodyDatenbank,
     private val rezepte: RezeptRepository,
     private val uhr: () -> Long,
-    /** Wo [woche] rechnet; Tests geben `EmptyCoroutineContext`, damit nichts auf einem fremden Thread nachläuft. */
-    private val rechnen: CoroutineContext = Dispatchers.Default,
+    /** Wo [woche] rechnet ([de.foody.core.data.Rechnen]). */
+    private val rechnen: CoroutineContext,
 ) {
     /** Die sieben Tage ab [montag]; neu bei jeder Änderung an Plan, Rezepten, Zeilen oder Zutaten. */
     fun woche(montag: LocalDate): Flow<WochenAnsicht> = combine(

@@ -14,7 +14,6 @@ import de.foody.domain.Quantity
 import de.foody.domain.RezeptAufListe
 import de.foody.domain.ShoppingCatalog
 import java.math.BigDecimal
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -50,8 +49,8 @@ class EinkaufRepository(
     private val db: FoodyDatenbank,
     private val uhr: () -> Long,
     private val ignoriert: IgnorierteSchluessel,
-    /** Wo [zuletzt] und [abgleich] rechnen; Tests geben `EmptyCoroutineContext`, damit nichts auf einem fremden Thread nachläuft. */
-    private val rechnen: CoroutineContext = Dispatchers.Default,
+    /** Wo [zuletzt] und [abgleich] rechnen ([de.foody.core.data.Rechnen]). */
+    private val rechnen: CoroutineContext,
 ) {
     fun aktuelleListeId(): Flow<String?> = db.einkaufslisteDao().alleFlow().map { it.firstOrNull()?.id }.distinctUntilChanged()
 

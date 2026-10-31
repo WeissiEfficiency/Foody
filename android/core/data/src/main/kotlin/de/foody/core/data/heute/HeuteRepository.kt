@@ -1,5 +1,6 @@
 package de.foody.core.data.heute
 
+import de.foody.core.data.Rechnen
 import de.foody.core.data.alsIngredient
 import de.foody.core.data.alsRecipe
 import de.foody.core.data.db.FoodyDatenbank
@@ -9,7 +10,6 @@ import de.foody.domain.Ingredient
 import de.foody.domain.Quantity
 import de.foody.domain.QuantityFormatter
 import de.foody.domain.RecipeProfiles
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
@@ -43,8 +43,7 @@ data class OffenerEinkauf(val listeId: String, val anzahl: Int, val artikel: Lis
 /**
  * Lesezugriffe für den Bereich „Heute“. [rechnen]: wo die kcal aller Rezepte entstehen – nie auf dem Haupt-Thread.
  */
-class HeuteRepository(private val db: FoodyDatenbank, private val rechnen: CoroutineContext) {
-    @Inject constructor(db: FoodyDatenbank) : this(db, Dispatchers.Default)
+class HeuteRepository @Inject constructor(private val db: FoodyDatenbank, @Rechnen private val rechnen: CoroutineContext) {
 
     /**
      * Aktive Rezepte mit kcal je Portion, neu berechnet, sobald sich Rezepte, Zeilen oder Zutaten ändern. Jeder Sammler

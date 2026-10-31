@@ -20,7 +20,6 @@ import de.foody.domain.NutritionCalculator
 import de.foody.domain.RecipeProfiles
 import de.foody.domain.RezeptEinordnung
 import de.foody.domain.alsText
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
@@ -36,7 +35,7 @@ import kotlin.coroutines.CoroutineContext
 class RezeptRepository(
     private val db: FoodyDatenbank,
     private val ablage: FotoAblage,
-    private val rechnen: CoroutineContext = Dispatchers.Default,
+    private val rechnen: CoroutineContext,
     private val uhr: () -> Long,
 ) {
     /** Alle Rezepte (auch archivierte); neu berechnet bei jeder Änderung an Rezepten, Zeilen, Zutaten oder Plan. */
