@@ -11,9 +11,6 @@ object Einstellungsschluessel {
     /** Version der zuletzt eingespielten Startdaten (Int). */
     const val SEED_VERSION = "seedVersion"
 
-    /** Alter Schlüssel (Boolean) vor [SEED_VERSION]; `true` entspricht Version 1. */
-    const val SEEDED_ALT = "seeded"
-
     /** Tagesziel in kcal. */
     const val TAGESZIEL = "dailyKcalGoal"
 
