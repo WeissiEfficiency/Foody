@@ -3,6 +3,7 @@ package de.foody.feature.einstellungen
 import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.Darstellung
+import de.foody.core.designsystem.token.Farbwelt
 import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.sicherung.ImportErgebnis
@@ -113,6 +114,15 @@ class EinstellungenViewModelTest {
         vm.darstellungSetzen(Darstellung.DUNKEL)
         assertEquals(Darstellung.DUNKEL, u.darstellung.darstellung().first())
         warte { vm.zustand.value.darstellung == Darstellung.DUNKEL }
+    }
+
+    @Test
+    fun farbweltStandardUndSetzen() = runTest {
+        val vm = u.vm()
+        assertEquals(Farbwelt.MANGO, vm.zustand.value.farbwelt)
+        vm.farbweltSetzen(Farbwelt.LAGUNE)
+        assertEquals("LAGUNE", u.darstellung.farbweltAktuell())
+        warte { vm.zustand.value.farbwelt == Farbwelt.LAGUNE }
     }
 
     @Test

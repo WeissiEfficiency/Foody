@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.StateRestorationTester
@@ -141,6 +142,16 @@ class EinstellungenScreenTest {
         compose.warteAufText("Dunkel")
         compose.onNodeWithText("Dunkel").performClick()
         compose.waitUntil(5_000) { runBlocking { u.darstellung.darstellung().first() } == Darstellung.DUNKEL }
+    }
+
+    @Test
+    fun farbmusterSetztFarbwelt() {
+        zeigen()
+        compose.warteAufText("Pflaume")
+        compose.onNodeWithText("Mango").assertIsSelected()
+        compose.onNodeWithText("Pflaume").performScrollTo().performClick()
+        compose.waitUntil(5_000) { u.darstellung.farbweltAktuell() == "PFLAUME" }
+        compose.onNodeWithText("Pflaume").assertIsSelected()
     }
 
     @Test

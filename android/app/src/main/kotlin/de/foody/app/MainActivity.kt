@@ -16,6 +16,7 @@ import de.foody.app.navigation.Hauptgeruest
 import de.foody.app.navigation.deepLinkOeffnen
 import de.foody.core.data.DarstellungSpeicher
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.token.Farbwelt
 import de.foody.core.designsystem.glas.FoodyHintergrund
 import de.foody.feature.kochen.timer.KochTimerDienst
 import de.foody.feature.kochen.timer.KochTimerSpeicher
@@ -42,9 +43,10 @@ class MainActivity : ComponentActivity() {
             }
             // Startwert sofort aus den Prefs: kein Aufblitzen der falschen Darstellung beim Start
             val d by remember { darstellung.darstellung() }.collectAsStateWithLifecycle(darstellung.aktuell())
+            val farbwelt by remember { darstellung.farbwelt() }.collectAsStateWithLifecycle(darstellung.farbweltAktuell())
             val dunkel = istDunkel(d)
             SystemleistenPassend(dunkel)
-            FoodyTheme(dunkel = dunkel) { FoodyHintergrund { Hauptgeruest(nav) } }
+            FoodyTheme(dunkel = dunkel, farbwelt = Farbwelt.ausName(farbwelt)) { FoodyHintergrund { Hauptgeruest(nav) } }
         }
     }
 

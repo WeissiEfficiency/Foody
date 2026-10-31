@@ -25,10 +25,17 @@ class KontrastTest {
     }
 
     @Test
-    fun allePaareHell() = pruefe(kontrastPaare(dunkel = false))
+    fun allePaareHell() = pruefe(Farbwelt.entries.flatMap { w -> kontrastPaare(dunkel = false, farbwelt = w).map { it.copy(name = "${w.name}: ${it.name}") } })
 
     @Test
-    fun allePaareDunkel() = pruefe(kontrastPaare(dunkel = true))
+    fun allePaareDunkel() = pruefe(Farbwelt.entries.flatMap { w -> kontrastPaare(dunkel = true, farbwelt = w).map { it.copy(name = "${w.name}: ${it.name}") } })
+
+    @Test
+    fun farbweltAusNameMitStandard() {
+        assertEquals(Farbwelt.LAGUNE, Farbwelt.ausName("LAGUNE"))
+        assertEquals(Farbwelt.MANGO, Farbwelt.ausName(null))
+        assertEquals(Farbwelt.MANGO, Farbwelt.ausName("OFENWARM"))
+    }
 
     @Test
     fun paareDeckenAlleRollenAb() {

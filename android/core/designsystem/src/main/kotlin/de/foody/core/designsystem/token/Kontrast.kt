@@ -34,11 +34,14 @@ data class KontrastPaar(val name: String, val vorne: Color, val hinten: Color, v
 private const val TEXT = 4.5
 private const val GRAFIK = 3.0
 
-/** Alle Paare, die das Designsystem zusagt – Text 4,5:1, Grafik 3:1, auf Glas ohne Unschärfe. */
-fun kontrastPaare(dunkel: Boolean): List<KontrastPaar> {
-    val f = if (dunkel) FoodyFarben.Dunkel else FoodyFarben.Hell
-    val verlauf = if (dunkel) VerlaufDunkel else VerlaufHell
-    val untergruende = ungünstigsteUntergruende(f, verlauf)
+/**
+ * Alle Paare, die das Designsystem für eine [farbwelt] zusagt – Text 4,5:1, Grafik 3:1, auf Glas ohne Unschärfe und
+ * Korn, gegen den Grund und die vollen Stellen beider Verläufe.
+ */
+fun kontrastPaare(dunkel: Boolean, farbwelt: Farbwelt = Farbwelt.Standard): List<KontrastPaar> {
+    val werte = farbwelt.werte(dunkel)
+    val f = werte.farben
+    val untergruende = ungünstigsteUntergruende(f, werte.verlauf)
     return buildList {
         untergruende.forEachIndexed { i, u ->
             add(KontrastPaar("Text ohne Glas @$i", f.text, u, TEXT))
@@ -47,7 +50,7 @@ fun kontrastPaare(dunkel: Boolean): List<KontrastPaar> {
             add(KontrastPaar("Primär als Text ohne Glas @$i", f.primaer, u, TEXT))
             add(KontrastPaar("Primär als Kante ohne Glas @$i", f.primaer, u, GRAFIK))
             for (stufe in GlasStufe.entries) {
-                val glas = mischen(glasWerte(stufe, dunkel).toenung, u)
+                val glas = mischen(glasWerte(stufe, dunkel, farbwelt).toenung, u)
                 add(KontrastPaar("Text auf Glas ${stufe.name} @$i", f.text, glas, TEXT))
                 add(KontrastPaar("Nebentext auf Glas ${stufe.name} @$i", f.nebentext, glas, TEXT))
                 add(KontrastPaar("Primär als Text auf Glas ${stufe.name} @$i", f.primaer, glas, TEXT))
@@ -57,13 +60,14 @@ fun kontrastPaare(dunkel: Boolean): List<KontrastPaar> {
                 add(KontrastPaar("aufPrimärBehälter auf Behälter (Glas ${stufe.name})", f.aufPrimaerBehaelter, f.primaerBehaelter, TEXT))
             }
         }
-        // Über Fotos: alles von Schwarz bis Weiß möglich, dazu der Platzhalter-Verlauf
-        for ((name, bild) in BildUntergruende) {
-            val leiste = mischen(glasWerte(GlasStufe.BILD, dunkel).toenung, bild)
+        // Über Fotos: alles von Schwarz bis Weiß möglich, dazu hellste und dunkelste Stelle des Platzhalter-Verlaufs
+        val bilder = BildUntergruende + listOf("Platzhalter hell" to werte.platzhalter.first(), "Platzhalter dunkel" to werte.platzhalter.last())
+        for ((name, bild) in bilder) {
+            val leiste = mischen(glasWerte(GlasStufe.BILD, dunkel, farbwelt).toenung, bild)
             add(KontrastPaar("Text über Bild $name", f.text, leiste, TEXT))
             add(KontrastPaar("Nebentext über Bild $name", f.nebentext, leiste, TEXT))
             add(KontrastPaar("Primär als Text über Bild $name", f.primaer, leiste, TEXT))
-            add(KontrastPaar("Herz auf Abzeichen über Bild $name", FoodyFarben.Hell.primaer, mischen(Color.White.copy(alpha = 0.9f), bild), GRAFIK))
+            add(KontrastPaar("Herz auf Abzeichen über Bild $name", herzFarbe(farbwelt), mischen(Color.White.copy(alpha = 0.9f), bild), GRAFIK))
             add(KontrastPaar("Abzeichen-Text über Bild $name", Color.White, mischen(Color.Black.copy(alpha = 0.6f), bild), TEXT))
         }
     }
@@ -72,6 +76,7 @@ fun kontrastPaare(dunkel: Boolean): List<KontrastPaar> {
 private val BildUntergruende = listOf(
     "Schwarz" to Color.Black,
     "Weiß" to Color.White,
-    "Platzhalter hell" to Color(0xFFE9A86B),
-    "Platzhalter dunkel" to Color(0xFF6E2A12),
 )
+
+/** Herz auf dem hellen Abzeichen: in beiden Modi die helle Primärfarbe der Farbwelt (die dunkle hielte dort keine 3:1). */
+fun herzFarbe(farbwelt: Farbwelt): Color = farbwelt.werte(dunkel = false).farben.primaer

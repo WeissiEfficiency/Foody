@@ -60,7 +60,7 @@ fun rememberDateiwahl(dateiname: String, onErstellt: (Uri) -> Unit, onGewaehlt: 
 }
 
 /**
- * Einstellungen: Konto (→ „Server verbinden“), Darstellung, Tagesziel, Zutatenkatalog und Online-Produktsuche, Sicherung,
+ * Einstellungen: Konto (→ „Server verbinden“), Darstellung mit Farbwelt, Tagesziel, Zutatenkatalog und Online-Produktsuche, Sicherung,
  * alle Daten löschen, Hinweise.
  * Wiederherstellen und Löschen fragen nach; bei verbundenem Sync sind beide gesperrt.
  */
@@ -101,7 +101,7 @@ fun EinstellungenRoute(
                     Text("Einstellungen", style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
                 }
                 KontoAbschnitt(z.konto, System.currentTimeMillis(), onServer)
-                DarstellungAbschnitt(z.darstellung, vm::darstellungSetzen)
+                DarstellungAbschnitt(z.darstellung, z.farbwelt, vm::darstellungSetzen, vm::farbweltSetzen)
                 TageszielAbschnitt(zielText ?: z.tagesziel?.toString().orEmpty(), zielFehler, onFertig = { zielFehler = zielUngueltig }) { neu ->
                     zielText = neu
                     zielUngueltig = !vm.tageszielEingabe(neu)

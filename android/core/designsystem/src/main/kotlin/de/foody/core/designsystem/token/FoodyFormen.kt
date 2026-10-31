@@ -3,11 +3,15 @@ package de.foody.core.designsystem.token
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 
-/** Ecken: klein für Chips und Felder, mittel für Kacheln und Bilder, groß für Karten und Glasflächen. */
+/**
+ * Ecken „Rund“: klein für Chips und Felder, mittel für Kacheln und Bilder, groß für Karten und Glasflächen, [leiste]
+ * für die schwebende Navigation. Knöpfe und Chips sind Pillen (`CircleShape`).
+ */
 object FoodyFormen {
-    val klein = RoundedCornerShape(12.dp)
-    val mittel = RoundedCornerShape(20.dp)
-    val gross = RoundedCornerShape(28.dp)
+    val klein = RoundedCornerShape(14.dp)
+    val mittel = RoundedCornerShape(23.dp)
+    val gross = RoundedCornerShape(32.dp)
+    val leiste = RoundedCornerShape(39.dp)
 }
 
 /** Abstände im 4-dp-Raster. */

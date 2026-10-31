@@ -173,15 +173,19 @@ später `SyncKonfiguration` (Debug-Build → `lokalesHttpErlaubt`), ruft `SyncAu
 
 ## Designsystem V3 (Phase 4)
 
-ADR 0012, Spec `docs/superpowers/specs/2026-10-19-v3-phase4-designsystem-design.md`. Einzige Quelle für das Aussehen
-der App.
+ADR 0012, Spec `docs/superpowers/specs/2026-10-19-v3-phase4-designsystem-design.md`; Farbwelten und Milchglas seit
+ADR 0015 (Spec `docs/superpowers/specs/2026-10-31-farbwelten-milchglas-design.md`, Entwürfe `docs/design/milchglas/`).
+Einzige Quelle für das Aussehen der App.
 
 - **`:core:designsystem`** (`de.foody.core.designsystem`, ohne Abhängigkeit zu `:core:data`/`:core:sync`):
-  - `token/`: `FoodyFarben` (Hell/Dunkel, Richtung „Ofenwarm“), `GlasStufe` + `glasWerte` (LEICHT/DICHT mit Unschärfe 24 dp,
-    BILD fast deckend ohne Unschärfe; Tönung, Lichtkante), `VerlaufHell`/`VerlaufDunkel`, `FoodyTypografie` (Fraunces bis `titleLarge`, sonst
-    Figtree; Deutsch mit Silbentrennung), `FoodyFormen` (12/20/28 dp), `FoodyAbstaende` (4-dp-Raster), `Kontrast.kt`
-    (`kontrast`, `mischen`, `kontrastPaare`).
-  - `FoodyTheme { … }` füllt Material 3 und stellt `FoodyTheme.farben/dunkel/unschaerfe` bereit; keine Dynamic Color.
+  - `token/`: `Farbwelt` (acht wählbare Paletten, Standard Mango; je Modus `FarbweltWerte` = `FoodyFarben`, `Verlauf`,
+    Glastönung, Platzhalter – seit ADR 0015), `GlasStufe` + `glasWerte(stufe, dunkel, farbwelt)` (Milchglas: LEICHT/DICHT
+    mit Unschärfe 40 dp und Korn, BILD fast deckend ohne Unschärfe; Tönung, Lichtkante), `FoodyTypografie` (Fraunces bis
+    `titleLarge`, sonst Figtree; Deutsch mit Silbentrennung), `FoodyFormen` (14/23/32 dp, Leiste 39 dp), `FoodyAbstaende`
+    (4-dp-Raster), `Kontrast.kt` (`kontrast`, `mischen`, `kontrastPaare(dunkel, farbwelt)`, `herzFarbe`).
+  - `FoodyTheme(dunkel, farbwelt) { … }` füllt Material 3 und stellt `FoodyTheme.farben/dunkel/farbwelt/werte/unschaerfe`
+    bereit; keine Dynamic Color. Die gewählte Farbwelt speichert `DarstellungSpeicher` (`:core:data`) als Namen unter
+    `farbwelt`; die `MainActivity` gibt sie wie die Darstellung an das Theme.
     `animationenErlaubt()` liest die Animator-Dauer des Systems – ist sie 0, entfallen Unschärfe und Drehungen.
   - `glas/`: `FoodyHintergrund` (Grund + zwei Radialverläufe, Quelle der Unschärfe) und `GlasFlaeche(stufe)` (Haze
     `hazeBlur` mit Tönung; ohne Hintergrund, ohne Unschärfe, bei Stufe BILD oder `unschaerfeErlaubt = false` – Kacheln –
@@ -191,7 +195,7 @@ der App.
     `FoodyNavigationsleiste`/`FoodyNavigationsRail`. Zustandslos, nur einfache Werte und Slots; Berührflächen ≥ 48 dp;
     ab Schriftskalierung 1,5 mehr Zeilen und Knöpfe unter dem Text statt Abschneiden.
 - **Kontrast:** WCAG 2.2 AA (Text 4,5:1, Grafik 3:1) gilt ohne Unschärfe gegen die ungünstigste Stelle des Verlaufs;
-  `KontrastTest` rechnet jedes Paar aus `kontrastPaare` nach, hell und dunkel.
+  `KontrastTest` rechnet jedes Paar aus `kontrastPaare` nach, für jede Farbwelt hell und dunkel.
 - **`:katalog`** (`de.foody.katalog`, nie ausgeliefert): alle Komponenten in allen Zuständen, Umschalter
   hell/dunkel/System, Schrift 200 %, ohne Unschärfe; ab 840 dp zweispaltig.
 - **Tests:** Robolectric-Komponententests mit nativer Grafik (echte Textmessung) und 200-%-Prüfung

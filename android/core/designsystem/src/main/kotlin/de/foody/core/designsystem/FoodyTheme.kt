@@ -14,32 +14,37 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
+import de.foody.core.designsystem.token.Farbwelt
+import de.foody.core.designsystem.token.FarbweltWerte
 import de.foody.core.designsystem.token.FoodyFarben
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.FoodyTypografie
 
 private val LocalFarben = staticCompositionLocalOf { FoodyFarben.Hell }
+private val LocalFarbwelt = staticCompositionLocalOf { Farbwelt.Standard }
 private val LocalDunkel = staticCompositionLocalOf { false }
 private val LocalUnschaerfe = staticCompositionLocalOf { true }
 
 /**
- * Theme der V3: Ofenwarm-Farben, Fraunces/Figtree, eigene Ecken; bewusst ohne Dynamic Color.
- * [unschaerfe] = false zeigt Glas nur getönt – automatisch, wenn Animationen systemweit aus sind.
+ * Theme der V3: wählbare [Farbwelt] (Standard Mango) mit Milchglas, Fraunces/Figtree, runde Ecken; bewusst ohne
+ * Dynamic Color. [unschaerfe] = false zeigt Glas nur getönt – automatisch, wenn Animationen systemweit aus sind.
  */
 @Composable
 fun FoodyTheme(
     dunkel: Boolean = isSystemInDarkTheme(),
+    farbwelt: Farbwelt = Farbwelt.Standard,
     unschaerfe: Boolean = unschaerfeErlaubt(),
     inhalt: @Composable () -> Unit,
 ) {
-    val farben = if (dunkel) FoodyFarben.Dunkel else FoodyFarben.Hell
+    val farben = farbwelt.werte(dunkel).farben
     CompositionLocalProvider(
         LocalFarben provides farben,
+        LocalFarbwelt provides farbwelt,
         LocalDunkel provides dunkel,
         LocalUnschaerfe provides unschaerfe,
     ) {
         MaterialTheme(
-            colorScheme = farbschema(farben, dunkel),
+            colorScheme = farbschema(farben, farbwelt.werte(!dunkel).farben, dunkel),
             typography = FoodyTypografie,
             shapes = Shapes(small = FoodyFormen.klein, medium = FoodyFormen.mittel, large = FoodyFormen.gross),
             content = inhalt,
@@ -56,6 +61,15 @@ object FoodyTheme {
     val dunkel: Boolean
         @Composable @ReadOnlyComposable
         get() = LocalDunkel.current
+
+    val farbwelt: Farbwelt
+        @Composable @ReadOnlyComposable
+        get() = LocalFarbwelt.current
+
+    /** Verlauf, Glastönung und Platzhalter der aktuellen Farbwelt im aktuellen Modus. */
+    val werte: FarbweltWerte
+        @Composable @ReadOnlyComposable
+        get() = LocalFarbwelt.current.werte(LocalDunkel.current)
 
     val unschaerfe: Boolean
         @Composable @ReadOnlyComposable
@@ -81,9 +95,8 @@ fun unschaerfeErlaubt(): Boolean = animationenErlaubt()
  * Material-Rollen aus den Foody-Farben. Die Behälterflächen (Menü, Dialog, Sheet) staffeln sich vom Grund zur
  * Balkenspur, damit nirgends die lila Baseline von Material 3 durchscheint.
  */
-private fun farbschema(f: FoodyFarben, dunkel: Boolean): ColorScheme {
+private fun farbschema(f: FoodyFarben, gegenstueck: FoodyFarben, dunkel: Boolean): ColorScheme {
     val stufe = { anteil: Float -> lerp(f.grund, f.balkenSpur, anteil) }
-    val gegenstueck = if (dunkel) FoodyFarben.Hell else FoodyFarben.Dunkel
     return (if (dunkel) darkColorScheme() else lightColorScheme()).copy(
         primary = f.primaer, onPrimary = f.aufPrimaer,
         primaryContainer = f.primaerBehaelter, onPrimaryContainer = f.aufPrimaerBehaelter,
