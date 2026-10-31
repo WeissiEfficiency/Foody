@@ -3,6 +3,7 @@ package de.foody.core.data.einkauf
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.ZutatEntity
 import de.foody.domain.MeasureUnit
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -34,7 +35,7 @@ class EinkaufAbgleichTest {
     fun setUp() {
         db = testDatenbank()
         ign = ignoriert()
-        repo = EinkaufRepository(db, { JETZT }, ign)
+        repo = EinkaufRepository(db, { JETZT }, ign, EmptyCoroutineContext)
     }
 
     @After

@@ -7,6 +7,7 @@ import de.foody.core.data.heute.plan
 import de.foody.core.data.heute.rezept
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.domain.Mahlzeit
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -33,7 +34,8 @@ class WocheVorschlagTest {
     fun setUp() {
         db = Room.inMemoryDatabaseBuilder(RuntimeEnvironment.getApplication(), FoodyDatenbank::class.java)
             .addCallback(FoodyDatenbank.CALLBACK).allowMainThreadQueries().build()
-        repo = WocheRepository(db, RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1L }, { 5_000L })
+        val rezepte = RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1L }
+        repo = WocheRepository(db, rezepte, { 5_000L }, EmptyCoroutineContext)
     }
 
     @After

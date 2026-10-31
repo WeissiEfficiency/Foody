@@ -24,7 +24,7 @@ auf dem Branch `v1-server`. Wo unten „wie v1“ steht, verhält sich die V3 be
   als geschlossen; Tests sehen mit `ViewModelHalter.zusehen` zu.
   Speichern-Aktionen (Editor, Eintragen, Kochen „Fertig“) sperren gegen Doppeltipp und schreiben in
   `withContext(NonCancellable)`: Drehen mittendrin bricht nichts ab, nur ein Fehler gibt den Knopf wieder frei.
-  Nährwerte und kcal rechnen die Repositories mit `flowOn(rechnen)` (Standard `Dispatchers.Default`, Tests mit festem
+  Nährwerte und kcal rechnen die Repositories mit `flowOn(rechnen)` (Hilt-Qualifier `@Rechnen`: `Dispatchers.Default`, Tests mit festem
   Ablauf `EmptyCoroutineContext`).
 - **Domain** (`:domain`): reine Kotlin-Logik, vollständig per JVM-Test abgedeckt.
   - Rechnen: `RecipeScaler`, `UnitConverter`, `NutritionCalculator`
@@ -253,7 +253,7 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase6a-rezepte-design.md`.
   schon vorhandener Quelle werden übersprungen, Ergebnis `importiert/übersprungen/fehler`.
 - **`:feature:rezepte`**: Liste (`liste/`: ein Bildraster mit Suche über Name, Tags und Zutaten, Chips Favoriten ·
   Oft gekocht · Ernährung · häufige Tags, Sortierung Name/Neueste/kcal/Eiweiß/Oft gekocht), Detail (`detail/`: Kopfbild mit
-  Glasfläche, Portionen skalieren, Zutaten, Schritte, Einordnung, Nährwerttabelle je Portion und gesamt mit
+  Glasfläche und kcal je Portion sowie für die gewählten Portionen, Portionen skalieren, Zutaten, Schritte, Einordnung, Nährwerttabelle je Portion und gesamt mit
   Vollständigkeit, Archivieren mit „Rückgängig“, Duplizieren, Kochen), Editor (`editor/`: alle Felder auf einer
   Seite, Zutaten als Freitext je Zeile mit Vorschau „im Katalog / neu / ungültig“ – unveränderte Zeilen behalten ihre
   Zutat und ihren Hinweis (`RezeptEntwurf.zutatIds`), ein nicht angefasstes Foto bleibt, auch wenn der Sync es

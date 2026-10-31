@@ -95,6 +95,8 @@ class RezeptDetailScreenTest {
         compose.onNodeWithText("400 g").assertExists()
         compose.onNodeWithText("Reis kochen.", substring = true).assertExists()
         compose.warteAufText("717 kcal je Portion")
+        // Kopf: dazu die kcal für alle gewählten Portionen
+        compose.warteAufText("30 Min. · 717 kcal je Portion · 1.434 kcal für 2 Portionen")
     }
 
     @Test
@@ -105,6 +107,11 @@ class RezeptDetailScreenTest {
         compose.warteAufText("600 g")
         compose.warteAufText("3 Portionen")
         compose.warteAufText("717 kcal je Portion")
+        compose.warteAufText("30 Min. · 717 kcal je Portion · 2.151 kcal für 3 Portionen")
+        compose.onNodeWithContentDescription("Weniger Portionen").performClick()
+        compose.onNodeWithContentDescription("Weniger Portionen").performClick()
+        // Eine Portion: gesamt = je Portion, nichts doppelt
+        compose.warteAufText("30 Min. · 717 kcal je Portion")
     }
 
     @Test

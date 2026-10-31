@@ -49,7 +49,8 @@ import de.foody.domain.RecipeScaler
 @Composable
 internal fun DetailInhalt(z: DetailZustand.Da, a: DetailAktionen) {
     val r = z.voll.rezept
-    Kopfbild(r.name, listOfNotNull(zeit(r.prepMinutes, r.cookMinutes), kcalJePortion(z.voll)).joinToString(" · "), r.imageUri, a.onZurueck)
+    val angaben = listOfNotNull(zeit(r.prepMinutes, r.cookMinutes), kcalJePortion(z.voll), kcalFuerPortionen(z.voll, z.portionen))
+    Kopfbild(r.name, angaben.joinToString(" · "), r.imageUri, a.onZurueck)
     Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (r.archivedAt != null) {
             GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {

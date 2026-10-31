@@ -2,6 +2,7 @@ package de.foody.core.data.heute
 
 import androidx.room.Room
 import de.foody.core.data.db.FoodyDatenbank
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -27,7 +28,7 @@ class HeuteRepositoryTest {
     fun setUp() {
         db = Room.inMemoryDatabaseBuilder(RuntimeEnvironment.getApplication(), FoodyDatenbank::class.java)
             .addCallback(FoodyDatenbank.CALLBACK).allowMainThreadQueries().build()
-        repo = HeuteRepository(db)
+        repo = HeuteRepository(db, EmptyCoroutineContext)
     }
 
     @After

@@ -12,6 +12,7 @@ import de.foody.core.data.heute.plan
 import de.foody.core.data.heute.rezept
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Nutrient
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -37,7 +38,7 @@ class RezeptLesenTest {
     fun setUp() {
         db = Room.inMemoryDatabaseBuilder(RuntimeEnvironment.getApplication(), FoodyDatenbank::class.java)
             .addCallback(FoodyDatenbank.CALLBACK).allowMainThreadQueries().build()
-        repo = RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L }
+        repo = RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1_000L }
     }
 
     @After
@@ -59,7 +60,7 @@ class RezeptLesenTest {
     @Test
     fun gleicheKcalWieHeute() = runTest {
         db.bestand()
-        assertEquals(HeuteRepository(db).rezeptVorschlaege().first().single().kcalJePortion, repo.karten().first().single().kcalJePortion)
+        assertEquals(HeuteRepository(db, EmptyCoroutineContext).rezeptVorschlaege().first().single().kcalJePortion, repo.karten().first().single().kcalJePortion)
     }
 
     @Test
