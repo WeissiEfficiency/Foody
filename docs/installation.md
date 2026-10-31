@@ -1,7 +1,7 @@
 # Foody installieren und aktualisieren
 
 Foody kommt nicht über Google Play, sondern als APK-Datei über OpenCloud auf Handy und Tablet. Diese Anleitung
-beschreibt die drei Varianten, wo die APKs liegen, die Erstinstallation, Updates und den einmaligen Umstieg von der v1.
+beschreibt die drei Varianten, wo die APKs liegen, die Erstinstallation und Updates.
 
 ## Die drei Varianten
 
@@ -11,8 +11,7 @@ beschreibt die drei Varianten, wo die APKs liegen, die Erstinstallation, Updates
 | **Foody Vorschau** | `de.foody.app.vorschau` | Probeversion neben „Foody“ (R8 wie ein Release) | Debug-Schlüssel |
 | **Foody Debug** | `de.foody.app.debug` | Entwicklung, Emulator | Debug-Schlüssel |
 
-Jede Variante hat ihre eigenen Daten; sie laufen nebeneinander, ohne sich zu stören. Nur „Foody“ übernimmt beim
-Update die Daten der früheren v1-App gleichen Namens.
+Jede Variante hat ihre eigenen Daten; sie laufen nebeneinander, ohne sich zu stören.
 
 ## Wo die APKs liegen
 
@@ -71,10 +70,8 @@ deshalb eine Sicherung erstellen.
 ## Umstieg von der v1 (erledigt am 2026-10-28)
 
 Handy, Tablet und Server laufen seit dem 28.10. auf der V3; die Schritte des Umstiegs stehen im Git-Verlauf dieser
-Datei (Stand 9a98ac2). Bis zum **2026-11-25** bleibt der Rückweg offen (`ToDoS/aufraeumplan.md`, Stufe 3): Die v1 lässt
-sich nicht über die V3 installieren (gleiche Daten, neueres Schema). Zurück geht es nur über Deinstallieren, die
-v1-APK aus der Sicherung neu installieren und die v1-Sicherung wiederherstellen; der Server kehrt mit seiner
-Sicherung `vor-migration-*.db` auf den Branch `v1-server` zurück.
+Datei (Stand 9a98ac2). Einen Rückweg zur v1 gibt es seit dem 2026-10-31 nicht mehr (`ToDoS/aufraeumplan.md`, Stufe 3;
+letzter Stand der v1 und des v1-Servers: Tag `v1-final`).
 
 ## Wenn etwas nicht klappt
 

@@ -21,8 +21,8 @@ import kotlin.test.assertTrue
 class MigrationSicherungTest {
     private val uhr = Clock.fixed(Instant.parse("2026-10-17T10:00:00Z"), ZoneOffset.UTC)
     private val probe = "CREATE TABLE probe (x INTEGER)"
-    private val ersteMigration = listOf(Migrations.all[0])
-    private val zweiMigrationen = listOf(Migrations.all[0], probe)
+    private val ersteMigration = Migrations.all.take(Migrations.GRUNDVERSION)
+    private val zweiMigrationen = ersteMigration + probe
 
     private fun neueDb(): Pair<Path, String> {
         val ordner = Files.createTempDirectory("foody-sicherung")
@@ -41,9 +41,9 @@ class MigrationSicherungTest {
         val (ordner, url) = neueDb()
         Database(url, migrationen = ersteMigration).close()
         Database(url, uhr, zweiMigrationen).close()
-        val sicherung = ordner.resolve("vor-migration-2-2026-10-17-1200.db")
+        val sicherung = ordner.resolve("vor-migration-3-2026-10-17-1200.db")
         assertTrue(sicherung.exists())
-        assertEquals(1, userVersion(sicherung))
+        assertEquals(2, userVersion(sicherung))
     }
 
     @Test
@@ -67,16 +67,16 @@ class MigrationSicherungTest {
     fun sicherungScheitertKeineMigration() {
         val (ordner, url) = neueDb()
         Database(url, migrationen = ersteMigration).close()
-        Files.createDirectory(ordner.resolve("vor-migration-2-2026-10-17-1200.db"))
+        Files.createDirectory(ordner.resolve("vor-migration-3-2026-10-17-1200.db"))
         assertFailsWith<MigrationAbgebrochen> { Database(url, uhr, zweiMigrationen) }
-        assertEquals(1, userVersion(ordner.resolve("foody.db")))
+        assertEquals(2, userVersion(ordner.resolve("foody.db")))
     }
 
     @Test
     fun keineZweiteSicherungNachGescheiterterMigration() {
         val (ordner, url) = neueDb()
         Database(url, migrationen = ersteMigration).close()
-        val kaputt = listOf(Migrations.all[0], "SELECT * FROM gibt_es_nicht")
+        val kaputt = ersteMigration + "SELECT * FROM gibt_es_nicht"
         val e1 = assertFailsWith<Exception> { Database(url, uhr, kaputt) }
         assertTrue(e1 !is MigrationAbgebrochen)
         assertEquals(1, sicherungen(ordner).size)
@@ -91,12 +91,12 @@ class MigrationSicherungTest {
         val (ordner, url) = neueDb()
         Database(url, migrationen = ersteMigration).close()
         // Reste eines abgebrochenen Versuchs: leere Sicherung und halb geschriebene .tmp-Datei.
-        Files.createFile(ordner.resolve("vor-migration-2-2026-10-17-1100.db"))
-        Files.write(ordner.resolve("vor-migration-2-2026-10-17-1200.db.tmp"), byteArrayOf(1, 2, 3))
+        Files.createFile(ordner.resolve("vor-migration-3-2026-10-17-1100.db"))
+        Files.write(ordner.resolve("vor-migration-3-2026-10-17-1200.db.tmp"), byteArrayOf(1, 2, 3))
         Database(url, uhr, zweiMigrationen).close()
-        val sicherung = ordner.resolve("vor-migration-2-2026-10-17-1200.db")
+        val sicherung = ordner.resolve("vor-migration-3-2026-10-17-1200.db")
         assertTrue(sicherung.exists())
-        assertEquals(1, userVersion(sicherung))
+        assertEquals(2, userVersion(sicherung))
     }
 
     @Test
@@ -112,7 +112,7 @@ class MigrationSicherungTest {
     fun alteSicherungWirdErneuert() {
         val (ordner, url) = neueDb()
         Database(url, migrationen = ersteMigration).close()
-        val kaputt = listOf(Migrations.all[0], "SELECT * FROM gibt_es_nicht")
+        val kaputt = ersteMigration + "SELECT * FROM gibt_es_nicht"
         assertFailsWith<Exception> { Database(url, uhr, kaputt) }
         val alt = sicherungen(ordner).single()
         Files.setLastModifiedTime(alt, FileTime.from(uhr.instant().minus(Duration.ofHours(25))))
@@ -133,7 +133,7 @@ class MigrationSicherungTest {
             }
             assertTrue(Files.size(ordner.resolve("foody.db-wal")) > 0)
             Database(url, uhr, zweiMigrationen).close()
-            val sicherung = ordner.resolve("vor-migration-2-2026-10-17-1200.db")
+            val sicherung = ordner.resolve("vor-migration-3-2026-10-17-1200.db")
             val anzahl = DriverManager.getConnection("jdbc:sqlite:$sicherung").use { c ->
                 c.createStatement().use { s -> s.executeQuery("SELECT COUNT(*) FROM user WHERE username = 'nurwal'").use { it.next(); it.getInt(1) } }
             }
