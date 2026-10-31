@@ -157,7 +157,9 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-18-v3-phase3-app-daten-sync-desi
 - **Fotos** (`FotoAblage`, `FotoIndex`): `filesDir/recipe_images`, `file:`-Links wie in der v1; höchstens 1.600 px an
   der längeren Seite und 600 KB, JPEG 85, Bestand einmal je Verkleinerungs-Version (`fotosVerkleinert`). Übertragen
   werden nur eigene Dateien; Galerie-Links (`content:`) gehen nie hinaus und bleiben stehen. Nicht übertragbare Fotos
-  (> 10 MB oder kein JPEG nach Verkleinern) → Rezept ohne Foto mit Problem `photo_unsyncable`.
+  (> 10 MB oder kein JPEG nach Verkleinern) → Rezept ohne Foto mit Problem `photo_unsyncable`. Verliert ein Rezept beim
+  Anwenden ein eigenes Foto (gelöscht, ersetzt, entfernt), löscht der Sync die Datei nach dem Commit, wenn kein Rezept
+  sie mehr nutzt.
 - **Sicherung** (`Sicherung`): ZIP mit `backup.json` (Format 3, ohne Vorrat) und `photos/`; liest Format 3 und alle
   v1-Formate (Vorrat übersprungen). Import ersetzt alles, ist atomar und bei aktivem Sync gesperrt; Zip-Slip und
   Größengrenzen wie v1.

@@ -630,6 +630,68 @@ class SyncSpeicherTest {
         assertTrue(dao.outbox().isEmpty())
     }
 
+    // --- Verwaiste Fotos (E3) ---
+
+    /** Entfernt der Sync ein eigenes Foto (Rezept gelöscht, Foto weg), verschwindet die Datei – solange kein Rezept sie nutzt. */
+    @Test
+    fun syncLoeschtVerwaisteFotodateien() = runTest {
+        aktiv()
+        val geteilt = eigeneDatei("geteilt.jpg", jpeg(10))
+        val allein = eigeneDatei("allein.jpg", jpeg(11))
+        val ohne = eigeneDatei("ohne.jpg", jpeg(12))
+        index.hash(allein)
+        db.rezeptDao().upsert(rezept("r1", bild = geteilt))
+        db.rezeptDao().upsert(rezept("r2", bild = geteilt))
+        db.rezeptDao().upsert(rezept("r3", bild = allein))
+        db.rezeptDao().upsert(rezept("r4", bild = ohne))
+        listOf("r1", "r2", "r3", "r4").forEach { dao.loeschenOutbox("recipe", it) }
+
+        speicher.anwenden(
+            listOf(
+                rezeptRecord("r1", foto = null, rev = 2),
+                rezeptRecord("r3", foto = null, rev = 3).copy(deleted = true, payload = null),
+                rezeptRecord("r4", foto = null, rev = 4),
+            ),
+            neuerCursor = 4,
+        )
+
+        assertTrue(ablage.datei(geteilt)!!.exists(), "r2 nutzt es noch")
+        assertFalse(ablage.datei(allein)!!.exists())
+        assertFalse(ablage.datei(ohne)!!.exists())
+        assertTrue(dao.fotosLokal().none { it.uri == allein })
+    }
+
+    @Test
+    fun geladenesFotoErsetztAltesUndLoeschtEs() = runTest {
+        aktiv()
+        val alt = eigeneDatei("alt.jpg", jpeg(13))
+        db.rezeptDao().upsert(rezept("r1", bild = alt))
+        dao.loeschenOutbox("recipe", "r1")
+        val bytes = jpeg(14)
+        val hash = PhotoHash.of(bytes)
+        speicher.anwenden(listOf(rezeptRecord("r1", foto = hash, rev = 2)), neuerCursor = 2)
+        assertTrue(ablage.datei(alt)!!.exists(), "bis das neue Foto da ist, bleibt das alte")
+
+        speicher.fotoErhalten("r1", hash, bytes)
+
+        assertFalse(ablage.datei(alt)!!.exists())
+        assertTrue(ablage.datei(db.rezeptDao().nachId("r1")!!.imageUri!!)!!.exists())
+    }
+
+    @Test
+    fun vollabgleichLoeschtFotoDesVeraltetenRezepts() = runTest {
+        aktiv()
+        val link = eigeneDatei("veraltet.jpg", jpeg(15))
+        db.rezeptDao().upsert(rezept("r1", bild = link))
+        dao.loeschenOutbox("recipe", "r1")
+        dao.upsertRevision(SyncRevisionEntity("recipe", "r1", 1))
+
+        speicher.vollabgleich(emptyList(), cursor = 20)
+
+        assertNull(db.rezeptDao().nachId("r1"))
+        assertFalse(ablage.datei(link)!!.exists())
+    }
+
     // --- Fotos beim Senden ---
 
     @Test
