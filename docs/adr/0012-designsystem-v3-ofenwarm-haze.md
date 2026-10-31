@@ -1,7 +1,7 @@
 # ADR 0012: Designsystem V3 – „Ofenwarm“ und Glas mit Haze
 
 Status: angenommen (2026-10-19). Präzisiert ADR 0009 („Design“) und ADR 0011 („Design nur in Compose“). Spec:
-`docs/superpowers/specs/2026-10-19-v3-phase4-designsystem-design.md`.
+`docs/superpowers/archiv/v3/specs/2026-10-19-v3-phase4-designsystem-design.md`.
 
 **Kontext:** Für die V3 sollte das Aussehen „spürbar frischer“ werden – Farben, Schrift, Glas und Tiefe, Dichte und
 Formen –, in der Stimmung „warm und appetitlich“. Glas-Optik und Kacheln bleiben (ADR 0009/0011). Drei Richtungen

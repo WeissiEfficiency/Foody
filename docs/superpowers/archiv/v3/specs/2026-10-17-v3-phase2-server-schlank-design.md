@@ -1,6 +1,6 @@
 # V3 Phase 2: Server schlank
 
-Stand: 2026-10-17 · Grundlage: [ADR 0011](../../adr/0011-v3-umfang-ein-nutzer.md), [`ToDoS/v3-plan.md`](../../../ToDoS/v3-plan.md)
+Stand: 2026-10-17 · Grundlage: [ADR 0011](../../../../adr/0011-v3-umfang-ein-nutzer.md), [`ToDoS/v3-plan.md`](../../../../../ToDoS/archiv/v3-plan.md)
 (Phase 2) · im Chat abschnittsweise abgestimmt.
 
 ## Ziel

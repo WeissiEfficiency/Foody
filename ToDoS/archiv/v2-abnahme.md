@@ -2,7 +2,7 @@
 
 > **Abgelöst** durch [`v3-abnahme.md`](v3-abnahme.md) (Review vom 2026-10-17, ADR 0011).
 
-Jede Funktion der v1 muss in v2 wieder funktionieren ([ADR 0009](../docs/adr/0009-neubau-v2-module-navigation.md)).
+Jede Funktion der v1 muss in v2 wieder funktionieren ([ADR 0009](../../docs/adr/0009-neubau-v2-module-navigation.md)).
 Jeder PR hakt die Punkte ab, die er fertigstellt, und nennt sie in der Beschreibung. Release 2.0 erst, wenn alles
 abgehakt ist. Quelle: `README.md` und Web-Oberfläche Teil 1–4 (Stand 2026-10-13).
 

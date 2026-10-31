@@ -1,7 +1,7 @@
 # V3 Phase 6a: Rezepte
 
-Stand: 2026-10-24 · Grundlage: [ADR 0011](../../adr/0011-v3-umfang-ein-nutzer.md), [ADR 0012](../../adr/0012-designsystem-v3-ofenwarm-haze.md),
-[`ToDoS/v3-plan.md`](../../../ToDoS/v3-plan.md) (Phase 6), [`ToDoS/v3-abnahme.md`](../../../ToDoS/v3-abnahme.md)
+Stand: 2026-10-24 · Grundlage: [ADR 0011](../../../../adr/0011-v3-umfang-ein-nutzer.md), [ADR 0012](../../../../adr/0012-designsystem-v3-ofenwarm-haze.md),
+[`ToDoS/v3-plan.md`](../../../../../ToDoS/archiv/v3-plan.md) (Phase 6), [`ToDoS/v3-abnahme.md`](../../../../../ToDoS/archiv/v3-abnahme.md)
 („Rezepte“), Phase 5 ([Spec](2026-10-24-v3-phase5-heute-design.md)) · im Chat abschnittsweise abgestimmt.
 
 ## Ziel

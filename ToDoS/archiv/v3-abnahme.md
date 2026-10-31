@@ -1,8 +1,11 @@
 # Foody V3 – Abnahmeliste
 
-Jede hier genannte Funktion muss in V3 funktionieren ([ADR 0011](../docs/adr/0011-v3-umfang-ein-nutzer.md)). Jeder
+> **Archiviert (2026-10-31).** Die V3 ist fertig und seit dem 28.10. im Einsatz. Offene Punkte stehen in
+> [`aufraeumplan.md`](../aufraeumplan.md) (R6); den Ist-Stand beschreibt [`docs/architecture.md`](../../docs/architecture.md).
+
+Jede hier genannte Funktion muss in V3 funktionieren ([ADR 0011](../../docs/adr/0011-v3-umfang-ein-nutzer.md)). Jeder
 PR hakt die Punkte ab, die er fertigstellt, und nennt sie in der Beschreibung. Release V3 erst, wenn alles abgehakt
-ist. Grundlage: [`v2-abnahme.md`](archiv/v2-abnahme.md), gekürzt nach dem Review vom 2026-10-17. Gestrichenes steht am Ende.
+ist. Grundlage: [`v2-abnahme.md`](v2-abnahme.md), gekürzt nach dem Review vom 2026-10-17. Gestrichenes steht am Ende.
 
 ## Rezepte – `:feature:rezepte`
 - [x] Anlegen, bearbeiten, duplizieren, archivieren
@@ -72,7 +75,7 @@ ist. Grundlage: [`v2-abnahme.md`](archiv/v2-abnahme.md), gekürzt nach dem Revie
 - [x] Online-Produktsuche beim Scan an/aus (Phase 6e3, Abschnitt „Zutaten“, v1-Schlüssel, `ScanEinstellungTest`)
 
 ## KI – ausgelagert
-Eigenes Projekt nach dem Umstieg; die Abnahmepunkte stehen in [`ki-plan.md`](ki-plan.md).
+Eigenes Projekt nach dem Umstieg; die Abnahmepunkte stehen in [`ki-plan.md`](../ki-plan.md).
 
 ## Sync – `:core:sync`, `:server-sync`
 - [ ] Opt-in: ohne Verbindung keine Netzwerkzugriffe
