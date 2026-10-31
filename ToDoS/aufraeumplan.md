@@ -104,10 +104,60 @@ Reihenfolge wie im Gesamt-Review empfohlen; jede Korrektur mit einem Test, der v
 | N8 | `SyncSpeicher.vollabgleich`: unbenutzte Zutaten, die der Server nicht kennt (unveränderte Startzutaten nach „Zusammenführen“, alle nach „Ersetzen“), werden nach einem `410` still gelöscht | Nur nach Wiederherstellung des Servers oder > 90 Tagen offline |
 | N9 | `docs/security.md:75`: Datenbank und Sicherungs-ZIP als „keine sensiblen Daten“ eingestuft, enthalten aber das Ernährungstagebuch (Gesundheitsdaten). Einstufung korrigieren, optional Passwort für die Sicherung | Sicherung liegt unverschlüsselt im Cloud-Ordner |
 
+## Stufe 6 – Gesamtprüfung 2026-10-31: Best Practice und Altbestand
+
+Bisherige Reviews (27.10. R, 28.10. R2 und Gesamt-Review W/N, 31.10. Nachprüfung) suchten Fehler und Sicherheitslücken.
+Diese Prüfung schaut auf Aufbau, Wiederverwendung und Hardcoding im ganzen V3-Code (App, `:domain`, Server) und auf
+Altbestand. Werkzeug: Suche über alle `src/main`-Dateien; ein Linter (ktlint/detekt, E3) würde das künftig automatisch
+prüfen.
+
+### Teil 1 – Code-Qualität
+
+| ID | Befund | Vorschlag | Prio |
+|---|---|---|---|
+| Q1 | **Abstände hart kodiert:** `FoodyAbstaende` (4-dp-Raster, `FoodyFormen.kt:14`) wird nirgends benutzt; in Features und `:app` stehen 313 feste `.dp`, davon 8.dp 84×, 16.dp 78×, 12.dp 33×, 24.dp 15× | Werte des Rasters durch `FoodyAbstaende.s1…s6` ersetzen (deckt ~230 Stellen), Rest bleibt bewusst | mittel |
+| Q2 | **Breiten mehrfach:** 840 dp (zwei Spalten/Rail) 4× als eigene Konstante (`Hauptgeruest`, `EinkaufScreen`, `KochenScreen`, `RezepteBereich`), 720 dp (Inhaltsbreite) 3× zusätzlich zu `INHALT_MAX_BREITE` im Designsystem | Eine Stelle im Designsystem (`FoodyBreiten.zweispaltig`, `.inhalt`) | mittel |
+| Q3 | **`STOPP_MS = 5_000L` 5× definiert**, dazu `SharingStarted.Eagerly` an 17 Stellen in 8 ViewModels | Eine gemeinsame Konstante in `:core`, `Eagerly` → `WhileSubscribed` (zusammen mit W4) | mittel |
+| Q4 | **Doppelte Hilfen:** `kcalText` 2× und **uneinheitlich** (Tagebuch „1.234 kcal“, Zutaten „1234 kcal“), `zahlText` 2× gleich (`ZutatEntwurf`, `EintragZeile`), `tagKurz` 2× mit verschiedenem Format, `neueId` 2×, Textfeld `Feld` 3× (Verbinden, Rezept-Editor, Zutat-Editor), `LoeschenFrage` 2× | Zahlen- und kcal-Texte an einer Stelle (`:core:data` bzw. `:domain`), Textfeld und Frage-Dialog ins Designsystem | mittel |
+| Q5 | **Dispatcher fest verdrahtet:** `Dispatchers.IO/Default` direkt in 14 Dateien, nur `EinkaufRepository` und `WocheRepository` nehmen einen `rechnen`-Kontext an | Hilt-Qualifier `@Rechnen`/`@EinAusgabe` und überall injizieren; macht W3 einfach und Tests schneller | mittel |
+| Q6 | **UI-Texte im Code:** keine `strings.xml`-Texte, rund 70 `Text("…")` plus Texte als Parameter | Für eine deutschsprachige Ein-Nutzer-App vertretbar; als ADR festhalten statt umbauen | niedrig |
+| Q7 | `:baselineprofile` setzt `compileSdk/minSdk/targetSdk` und Java 17 selbst statt über `build-logic` | Werte aus dem Convention-Plugin nehmen | niedrig |
+| Q8 | Schrift `fraunces.ttf` 312 KB (Variable Font, alle Schriftsysteme) | Auf Latein beschneiden (~60 KB) | niedrig |
+
+Gut: Build-Cache, Configuration-Cache und parallele Builds an, alle Versionen im Katalog, keine festen Farben
+außerhalb des Designsystems, keine `.sp` außerhalb, nur zwei feste URLs (Open Food Facts, lokaler Healthcheck),
+Ressourcen schlank (381 KB), Features ohne Querverweise.
+
+### Teil 2 – Was weg kann
+
+**Code ohne Nutzen in der V3** (nur noch von Tests oder gar nicht benutzt; mit den Tests entfernen):
+
+| ID | Was | Hinweis |
+|---|---|---|
+| R1 | `:domain`: `RecipeSort`, `IngredientCatalog.assumedAtHome`, `RecipeProfile.carbsPerServing`/`reliable`, `NutritionResult.overallCompleteness`/`missingIngredientIds`/`lineGaps`/`lineEnergyPerServingKj`, `Mahlzeit.vorschlagFuer`, `DateRange.days` | Reste der v1-Oberfläche; vor dem Löschen je Regel in `docs/domain-rules.md` prüfen |
+| R2 | `SyncDao.loeschenRevision`, `Einstellungsschluessel.EINKAUF_ANSICHT` | ungenutzt |
+| R3 | `FoodyAbstaende` | nur wenn Q1 nicht umgesetzt wird |
+| R4 | B5, B7–B9 und Stufe 3 (C1–C8, ab 25.11.) | stehen oben |
+
+**Doku:**
+
+| ID | Was | Vorschlag |
+|---|---|---|
+| R5 | 22 Pläne und Specs der V3-Phasen 2–6e3 (3.900 Zeilen) – alle umgesetzt, beschreiben Zwischenstände (`app3`, Platzhalter) | nach `docs/superpowers/archiv/v3/`; `architecture.md` beschreibt den Ist-Stand |
+| R6 | `ToDoS/v3-plan.md` (430 Zeilen, 6 offene Punkte) und `v3-abnahme.md` (3 offen) | offene Punkte (Profiler, TalkBack, Opt-in-Prüfung) hierher übernehmen, dann beide archivieren |
+| R7 | `docs/architecture.md` (451 Zeilen): Abschnitte nach Phasen benannt, Tabelle „Datenbank: Vorgeschichte“ der v1 | nach Bereichen gliedern; v1-Tabelle mit Stufe 3 kürzen |
+| R8 | ADR 0005 (Bring!) nennt `ShoppingListExporter`, den es seit der V3 nicht mehr gibt (Teilen als Text gestrichen) | Status „abgelöst durch ADR 0011“ |
+| R9 | `server/README.md`, `installation.md`: Rückweg zur v1 | mit Stufe 3 entfernen |
+
+**Lokal (kein Repo):** `.claude\worktrees\offene-fehler` (283 MB, lose v1-Kopie vom 11.10.), Build-Reste `app/`, `domain/`,
+`sync-protocol/` (125 MB), sechs geparkte Worktrees archivierter Sessions, der Checkout in `Downloads` (A7).
+
 ## Empfohlene Reihenfolge
 
-1. **Diese Woche:** A1–A7 (lokal, 30 min), dann ein Doku-PR mit B1–B4 und ein Aufräum-PR mit B5–B9.
-2. **Danach:** W1 und W2 (je ein PR), dann W3+W4 mit Messung vorher/nachher.
+1. **Diese Woche:** ✅ Doku-PR B1–B4 (#140), ✅ Z1 (#139), A3/A4 größtenteils erledigt. Offen: ein Aufräum-PR mit
+   B5, B7–B9 und R1–R2 (toter Code), ein Doku-PR mit R5–R8.
+2. **Danach:** W1 und W2 (je ein PR), dann W3+W4 zusammen mit Q3 und Q5 (gleiche Stellen), mit Messung vorher/nachher.
+   Q1, Q2 und Q4 als ein Designsystem-PR (Bildvergleich neu aufnehmen).
 3. **Server, ein Rebuild für alles:** D1–D4 zusammen, D5 prüfen.
 4. **Ab 25.11.:** Stufe 3 (C1–C7), C8 nur auf deinen Wunsch.
 5. Danach ist die Bahn frei für die KI-Hilfe (`ToDoS/ki-plan.md`).
