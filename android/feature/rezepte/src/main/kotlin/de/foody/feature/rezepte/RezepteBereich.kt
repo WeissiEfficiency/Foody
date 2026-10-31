@@ -53,13 +53,14 @@ fun RezepteBereich(
     listeVm: RezeptListeViewModel = hiltViewModel(),
     detailVm: RezeptDetailViewModel = hiltViewModel(),
     importVm: ImportViewModel? = null,
-    /** Nur für Tests: Editor je Auftrag ohne Hilt. */
-    editorVm: ((Int) -> EditorViewModel)? = null,
+    /** Nur für Tests: der Editor ohne Hilt. */
+    editorVm: EditorViewModel? = null,
 ) {
     var importOffen by rememberSaveable { mutableStateOf(false) }
     var ausgewaehlt by rememberSaveable { mutableStateOf<String?>(null) }
     var rechts by rememberSaveable { mutableStateOf(Rechts.DETAIL) }
-    // Je Editor-Auftrag ein eigenes ViewModel: ein zweites „Neues Rezept“ beginnt leer
+    // Ein Editor-ViewModel für alle Aufträge (fester Schlüssel, sonst bliebe je Auftrag eines liegen); ein neuer Auftrag
+    // beginnt darin frisch, ein zweites „Neues Rezept“ also leer
     var auftrag by rememberSaveable { mutableIntStateOf(0) }
     // Wechsel links, der wartet, bis „Änderungen verwerfen?“ beantwortet ist
     var wartenderWechsel by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -70,7 +71,7 @@ fun RezepteBereich(
             val editor = if (rechts == Rechts.DETAIL) {
                 null
             } else {
-                editorVm?.let { remember(auftrag) { it(auftrag) } } ?: hiltViewModel<EditorViewModel>(key = "editor-$auftrag")
+                editorVm ?: hiltViewModel<EditorViewModel>(key = "editor")
             }
             val ungespeichert = editor?.geaendert?.collectAsStateWithLifecycle()?.value == true
             val wechseln = { aktion: () -> Unit -> if (ungespeichert) wartenderWechsel = aktion else aktion() }
@@ -89,6 +90,7 @@ fun RezepteBereich(
                             id = id.takeIf { rechts == Rechts.BEARBEITEN },
                             onFertig = { neu -> ausgewaehlt = neu; rechts = Rechts.DETAIL },
                             onZurueck = { rechts = Rechts.DETAIL },
+                            auftrag = auftrag,
                             vm = editor,
                         )
                         id != null -> RezeptDetailRoute(

@@ -25,6 +25,7 @@ import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.testing.ViewModelHalter
 import de.foody.feature.kochen.timer.KochTimerSpeicher
 import de.foody.domain.MeasureUnit
+import kotlin.coroutines.EmptyCoroutineContext
 import org.robolectric.RuntimeEnvironment
 import java.math.BigDecimal
 import java.time.Clock
@@ -69,7 +70,8 @@ class KochTestUmgebung(val db: FoodyDatenbank, val clock: Clock = TEST_UHR) {
     private val app = RuntimeEnvironment.getApplication()
     val sitzungen = KochSitzungSpeicher(prefs("test_kochen_sitzungen"), clock)
     val timer = KochTimerSpeicher(prefs("test_kochen_timer"), clock)
-    val repo = RezeptRepository(db, FotoAblage(app)) { clock.millis() }
+    // Ohne eigenen Rechen-Thread: der Test-Dispatcher wartet sonst nicht auf das Rezept
+    val repo = RezeptRepository(db, FotoAblage(app), EmptyCoroutineContext) { clock.millis() }
 
     /** Hält die ViewModels; `viewModels.schliessen()` gehört in `@After` vor `db.close()` ([ViewModelHalter]). */
     val viewModels = ViewModelHalter()

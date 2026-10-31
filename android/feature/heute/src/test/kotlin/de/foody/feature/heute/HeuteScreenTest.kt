@@ -13,6 +13,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.sync.SyncLage
 import de.foody.core.sync.SyncLageQuelle
 import de.foody.core.testing.ViewModelHalter
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -59,7 +60,7 @@ class HeuteScreenTest {
     private fun zeigen(schrift200: Boolean = false) {
         val vm = halter.behalten(
             HeuteViewModel(
-                HeuteRepository(db), TagebuchRepository(db) { 1L }, SyncLageQuelle { lage },
+                HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, SyncLageQuelle { lage },
                 TageszielSpeicher(RuntimeEnvironment.getApplication()), Zeitgeber { zeit },
             ),
         )

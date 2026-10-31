@@ -28,6 +28,7 @@ import de.foody.feature.heute.pruefeNichtsAbgeschnitten
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testScan
 import de.foody.feature.heute.warteAufText
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -70,7 +71,7 @@ class TagebuchTagScreenTest {
     private fun zeigen(schrift200: Boolean = false) {
         val kontext = RuntimeEnvironment.getApplication()
         val vm = halter.behalten(TagebuchTagViewModel(tagebuch, TageszielSpeicher(kontext)))
-        val eintragen = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db), tagebuch, db, testScan()))
+        val eintragen = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), tagebuch, db, testScan()))
         compose.setContent {
             FoodyTheme {
                 var datum by remember { mutableStateOf(heute) }

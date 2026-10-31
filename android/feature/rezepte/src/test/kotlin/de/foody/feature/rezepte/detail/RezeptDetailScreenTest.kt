@@ -25,6 +25,7 @@ import de.foody.feature.rezepte.einkauf
 import de.foody.feature.rezepte.pruefeNichtsAbgeschnitten
 import de.foody.feature.rezepte.testDatenbank
 import de.foody.feature.rezepte.warteAufText
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -72,7 +73,7 @@ class RezeptDetailScreenTest {
     }
 
     private fun zeigen(id: String = "r1", schrift200: Boolean = false) {
-        val vm = halter.behalten(RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L }, db.einkauf()))
+        val vm = halter.behalten(RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1_000L }, db.einkauf()))
         compose.setContent {
             FoodyTheme {
                 val inhalt = @androidx.compose.runtime.Composable {
@@ -155,7 +156,7 @@ class RezeptDetailScreenTest {
                 ),
             )
         }
-        val vm = halter.behalten(RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L }, db.einkauf()))
+        val vm = halter.behalten(RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1_000L }, db.einkauf()))
         var id by mutableStateOf("r1")
         compose.setContent { FoodyTheme { RezeptDetailRoute(id, { _, _ -> }, {}, {}, {}, vm = vm) } }
         compose.warteAufText("Reispfanne")

@@ -20,18 +20,23 @@ import de.foody.domain.NutritionCalculator
 import de.foody.domain.RecipeProfiles
 import de.foody.domain.RezeptEinordnung
 import de.foody.domain.alsText
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import java.math.BigDecimal
 import java.util.UUID
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Rezepte lesen und schreiben. kcal und Nährwerte immer über `:domain` mit denselben Abbildungen wie „Heute“
- * (`DomainAbbildung`), damit Karte, Detail und „Heute“ dieselbe Zahl zeigen.
+ * (`DomainAbbildung`), damit Karte, Detail und „Heute“ dieselbe Zahl zeigen. Gerechnet wird in [rechnen], nie auf dem
+ * Haupt-Thread.
  */
 class RezeptRepository(
     private val db: FoodyDatenbank,
     private val ablage: FotoAblage,
+    private val rechnen: CoroutineContext = Dispatchers.Default,
     private val uhr: () -> Long,
 ) {
     /** Alle Rezepte (auch archivierte); neu berechnet bei jeder Änderung an Rezepten, Zeilen, Zutaten oder Plan. */
@@ -45,7 +50,7 @@ class RezeptRepository(
         val jeRezept = zeilen.groupBy { it.recipeId }
         val gekochtJe = gekocht.associate { it.recipeId to it.anzahl }
         rezepte.map { it.karte(jeRezept[it.id].orEmpty(), katalog, gekochtJe[it.id] ?: 0) }
-    }
+    }.flowOn(rechnen)
 
     /** Ein Rezept vollständig; `null`, wenn es die ID nicht (mehr) gibt. */
     fun voll(id: String): Flow<RezeptVoll?> = combine(
@@ -66,7 +71,7 @@ class RezeptRepository(
             naehrwerte = NutritionCalculator.calculate(rezept.alsRecipe(zeilen), katalog),
             einordnung = rezept.einordnung(),
         )
-    }
+    }.flowOn(rechnen)
 
     /**
      * Legt an oder ändert in einer Transaktion; Zeilen und Schritte werden ersetzt. Unbekannte Zutaten kommen in den
