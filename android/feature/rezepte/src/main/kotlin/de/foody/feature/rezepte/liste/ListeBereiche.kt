@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyChip
+import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.domain.Diet
 import de.foody.domain.Mahlzeit
@@ -48,7 +49,7 @@ internal fun ListeKopf(onNeu: () -> Unit, onImport: () -> Unit) {
         Modifier.fillMaxWidth().padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s1, top = FoodyAbstaende.s2),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("Rezepte", Modifier.weight(1f), style = MaterialTheme.typography.headlineLarge, color = FoodyTheme.farben.text)
+        Text("Rezepte", Modifier.weight(1f).ueberschrift(), style = MaterialTheme.typography.headlineLarge, color = FoodyTheme.farben.text)
         Box {
             IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, contentDescription = "Mehr", tint = FoodyTheme.farben.text) }
             DropdownMenu(menu, onDismissRequest = { menu = false }) {

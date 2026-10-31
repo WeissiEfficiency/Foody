@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyFrage
+import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 
 /**
@@ -34,7 +35,7 @@ internal fun BlattRahmen(titel: String, onSchliessen: () -> Unit, knopf: (@Compo
                 Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
             ) {
-                Text(titel, style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+                Text(titel, Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
                 inhalt()
             }
             knopf?.let { Column(Modifier.fillMaxWidth().padding(top = FoodyAbstaende.s4)) { it() } }

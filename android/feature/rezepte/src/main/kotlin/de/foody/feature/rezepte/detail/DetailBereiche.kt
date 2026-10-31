@@ -1,6 +1,5 @@
 package de.foody.feature.rezepte.detail
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +28,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
@@ -38,6 +42,7 @@ import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.RezeptPlatzhalter
 import de.foody.core.designsystem.komponenten.rezeptBild
+import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.domain.Einordnung
@@ -107,7 +112,7 @@ private fun Kopfbild(name: String, meta: String, bild: String?, onZurueck: () ->
             }
             GlasFlaeche(GlasStufe.BILD, Modifier.fillMaxWidth().padding(FoodyAbstaende.s3)) {
                 Column(Modifier.padding(FoodyAbstaende.s4)) {
-                    Text(name, style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+                    Text(name, Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
                     if (meta.isNotEmpty()) Text(meta, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
                 }
             }
@@ -157,9 +162,16 @@ private fun Einordnungszeile(e: Einordnung) {
 @Composable
 private fun Quelle(url: String) {
     val uri = LocalUriHandler.current
+    // Als Link-Annotation: TalkBack meldet einen Link; ohne Browser stürzt das Öffnen nicht ab
+    val link = LinkAnnotation.Url(
+        url, TextLinkStyles(SpanStyle(color = FoodyTheme.farben.primaer, textDecoration = TextDecoration.Underline)),
+    ) { runCatching { uri.openUri(url) } }
     Text(
-        "Quelle: $url", Modifier.clickable { runCatching { uri.openUri(url) } },
-        style = MaterialTheme.typography.bodyMedium.copy(textDecoration = TextDecoration.Underline), color = FoodyTheme.farben.primaer,
+        buildAnnotatedString {
+            append("Quelle: ")
+            withLink(link) { append(url) }
+        },
+        style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext,
     )
 }
 

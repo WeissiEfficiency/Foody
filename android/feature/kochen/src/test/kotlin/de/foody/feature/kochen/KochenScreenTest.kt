@@ -1,5 +1,9 @@
 package de.foody.feature.kochen
 
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -102,6 +106,8 @@ class KochenScreenTest {
     fun fertigBlattMitFoto() {
         zeigen()
         bisFertig()
+        // Blatttitel als Überschrift für TalkBack (E3)
+        compose.onNode(hasText("Guten Appetit!") and isHeading()).assertExists()
         compose.onNodeWithText("Foto aufnehmen").assertExists()
         compose.onNodeWithText("Schließen").performClick()
         assertEquals(1, geschlossen)
@@ -130,6 +136,9 @@ class KochenScreenTest {
         compose.warteAufText("Bereitlegen")
         compose.onNodeWithText("Schritt 2").performClick()
         compose.warteAufText("Schritt 2 von 3")
+        // Die offene Seite ist für TalkBack als gewählt markiert (E3)
+        compose.onNodeWithText("Schritt 2").assertIsSelected()
+        compose.onNodeWithText("Schritt 1").assertIsNotSelected()
     }
 
     @Test

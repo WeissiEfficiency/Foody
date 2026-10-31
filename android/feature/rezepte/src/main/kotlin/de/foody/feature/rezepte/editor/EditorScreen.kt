@@ -35,6 +35,7 @@ import de.foody.core.data.rezepte.Gespeichert
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
+import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import kotlinx.coroutines.launch
@@ -75,7 +76,7 @@ fun EditorRoute(
                     Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
                 }
                 Text(
-                    if (id == null) "Neues Rezept" else "Bearbeiten", Modifier.weight(1f),
+                    if (id == null) "Neues Rezept" else "Bearbeiten", Modifier.weight(1f).ueberschrift(),
                     style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text,
                 )
                 FoodyKnopf("Speichern", {

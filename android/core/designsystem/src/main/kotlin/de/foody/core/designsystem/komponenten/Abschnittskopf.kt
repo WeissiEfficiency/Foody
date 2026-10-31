@@ -26,13 +26,16 @@ fun Abschnittskopf(
             titel,
             style = MaterialTheme.typography.titleLarge,
             color = FoodyTheme.farben.text,
-            modifier = Modifier.weight(1f).semantics { heading() },
+            modifier = Modifier.weight(1f).ueberschrift(),
         )
         if (linkText != null && onLink != null) {
             FoodyKnopf(linkText, onKlick = onLink, art = KnopfArt.TEXT)
         }
     }
 }
+
+/** Markiert einen Titel für TalkBack als Überschrift (Seiten- und Blatttitel, Abschnittsköpfe). */
+fun Modifier.ueberschrift(): Modifier = semantics { heading() }
 
 /** Kleine Zeile in Großbuchstaben über Überschriften („ABENDESSEN · 18:30“). */
 @Composable
