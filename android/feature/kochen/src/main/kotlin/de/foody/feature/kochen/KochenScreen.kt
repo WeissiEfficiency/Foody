@@ -77,7 +77,8 @@ fun KochenRoute(
     LaunchedEffect(rezeptId, portionen) { vm.starten(rezeptId, portionen) }
     val zustand by vm.zustand.collectAsStateWithLifecycle()
     val timer by vm.timer.collectAsStateWithLifecycle()
-    val jetzt by vm.jetzt.collectAsStateWithLifecycle()
+    // Die Uhr tickt sekündlich: nur Timerleiste und Ablaufmeldung lesen sie, nicht der ganze Bildschirm
+    val jetzt = vm.jetzt.collectAsStateWithLifecycle()
     val fertigOffen by vm.fertigOffen.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val view = LocalView.current
@@ -105,7 +106,7 @@ fun KochenRoute(
             }
         },
     )
-    AblaufMelden(timer, jetzt)
+    AblaufMelden(timer) { jetzt.value }
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
         val breit = maxWidth >= FoodyBreiten.zweispaltig
         Row(Modifier.fillMaxSize()) {
@@ -124,10 +125,10 @@ fun KochenRoute(
                         is KochZustand.Da -> KochInhalt(
                             z, aktionen, onSeite = vm::seiteWaehlen, onFertig = { bereich.launch { vm.fertig() } },
                             onSchliessen = onSchliessen, Modifier.weight(1f),
-                            timerLeiste = { TimerLeiste(timer, rezeptId, jetzt, vm::timerEntfernen) },
+                            timerLeiste = { TimerLeiste(timer, rezeptId, { jetzt.value }, vm::timerEntfernen) },
                         )
                     }
-                    if (z !is KochZustand.Da) TimerLeiste(timer, rezeptId, jetzt, vm::timerEntfernen)
+                    if (z !is KochZustand.Da) TimerLeiste(timer, rezeptId, { jetzt.value }, vm::timerEntfernen)
                 }
             }
         }

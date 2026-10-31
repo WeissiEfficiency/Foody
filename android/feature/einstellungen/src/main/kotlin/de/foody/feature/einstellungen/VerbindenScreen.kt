@@ -40,6 +40,7 @@ import de.foody.core.designsystem.komponenten.FoodyFrage
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.FoodyTextfeld
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.designsystem.token.GlasStufe
@@ -82,7 +83,7 @@ private fun VerbindenInhalt(ui: VerbindenUi, vm: VerbindenViewModel, onZurueck: 
             }
             Column {
                 Augenbraue("Einstellungen")
-                Text("Server verbinden", style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+                Text("Server verbinden", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
             }
         }
         when {

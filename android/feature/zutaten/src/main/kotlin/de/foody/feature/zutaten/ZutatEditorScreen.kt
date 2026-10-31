@@ -40,6 +40,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
+import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.scan.PackungScanKnopf
@@ -147,7 +148,7 @@ private fun Kopf(titel: String, onZurueck: () -> Unit, onZusammenfuehren: () -> 
         }
         Column(Modifier.weight(1f)) {
             Augenbraue("Zutat")
-            Text(titel, style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+            Text(titel, Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
         }
         Box {
             IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, contentDescription = "Mehr", tint = FoodyTheme.farben.text) }

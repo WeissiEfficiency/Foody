@@ -177,7 +177,21 @@ class EinstellungenScreenTest {
         compose.warteAufText("500 bis 10.000 kcal")
         assertNull(runBlocking { u.ziel.tagesziel().first() })
         compose.onNode(hasSetTextAction()).performTextReplacement("2000")
+        compose.onNode(hasSetTextAction()).performImeAction()
         compose.waitUntil(5_000) { runBlocking { u.ziel.tagesziel().first() } == 2000 }
+    }
+
+    /** Beim Tippen wird nichts gespeichert, erst mit „Fertig“ (E3: keine Zwischenstände wie „500“ auf dem Weg zu „5000“). */
+    @Test
+    fun tageszielErstMitFertigGespeichert() {
+        zeigen()
+        compose.warteAufText("TAGESZIEL")
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextInput("500")
+        compose.waitForIdle()
+        assertNull(runBlocking { u.ziel.tagesziel().first() })
+        compose.onNode(hasSetTextAction()).performTextInput("0")
+        compose.onNode(hasSetTextAction()).performImeAction()
+        compose.waitUntil(5_000) { runBlocking { u.ziel.tagesziel().first() } == 5000 }
     }
 
     @Test

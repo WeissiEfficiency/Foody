@@ -42,10 +42,11 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
-import kotlinx.coroutines.launch
 import java.time.LocalDate
+import kotlinx.coroutines.launch
 
 /** Abstand des Füllen-Knopfs über der schwebenden Navigationsleiste; die Liste endet darüber. */
 private val UEBER_LEISTE = 96.dp
@@ -155,7 +156,7 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
 
 @Composable
 private fun Kopf(woche: WochenAnsicht?, zeigtHeute: Boolean, onBlaettern: (Long) -> Unit, onHeute: () -> Unit) {
-    Text("Woche", style = MaterialTheme.typography.headlineLarge, color = FoodyTheme.farben.text)
+    Text("Woche", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineLarge, color = FoodyTheme.farben.text)
     Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = { onBlaettern(-1) }) {
             Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = "Vorige Woche", tint = FoodyTheme.farben.text)
