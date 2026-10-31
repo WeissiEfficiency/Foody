@@ -8,7 +8,12 @@ gebaut wurde. Dieser Plan sammelt alles an einer Stelle: Altlasten, Doku und off
 **Rückweg-Frist:** Was den Rückweg zur v1 offenhält, bleibt bis **2026-11-25** (4 Wochen Alltag ohne Probleme).
 In diesem Plan steht es unter Stufe 3. Alles in Stufe 1 und 2 kann sofort weg.
 
-Legende: 👤 = machst du (Gerät, Homeserver), 🤖 = Claude, PR = eigener kleiner PR gegen `main`.
+Legende: 👤 = machst du (Gerät, Homeserver), 🤖 = Claude, PR = eigener kleiner PR gegen `main`. ✅ = erledigt.
+
+**Stand 2026-10-31** (Nachprüfung, `main` nach #139): Stufe 1 noch offen (10 Worktrees, 61 lokale `claude/*`-Branches,
+Build-Reste und zwei Checkouts). Stufe 2 bis auf B5 und B7–B9 erledigt (dieser PR und #139). Stufe 4 und 5 offen.
+Zusätzlich erledigt: **Z1** Release stürzte bei „Frei“ im Tagebuch ab – R8 entfernte die Konstruktoren der
+ML-Kit-Registrare (`firebase-components` 16.1.0 behält nur die Klasse); Keep-Regel in `proguard-rules.pro` (#139).
 
 ---
 
@@ -28,12 +33,12 @@ Legende: 👤 = machst du (Gerät, Homeserver), 🤖 = Claude, PR = eigener klei
 
 | ID | Was | Wer | Folge, wenn man es lässt |
 |---|---|---|---|
-| B1 | **Alte Pläne archivieren (= W6):** `docs/superpowers/` (44 Dateien) – Sync-Etappen, Essenstracking, Scan, Einordnung, Projektstruktur, Web-Teil 1–4 nach `docs/superpowers/archiv/`; ebenso `ToDoS/v2-plan.md`, `v2-abnahme.md`, `web-frontend-plan.md`, `optimierungsplan.md`, `projektstruktur-regeln.md` nach `ToDoS/archiv/` | 🤖 PR | Eine neue Session findet bei „Tagebuch“ oder „Sync“ den alten Plan mit Haushalt und Vorrat und baut danach |
-| B2 | `docs/STRUKTUR-CHECK.md` (Stand 27.10., vor dem Umstieg) ins Archiv oder löschen; die offenen Punkte stehen in `v3-plan.md` | 🤖 PR | Doppelte, veraltete Befundliste |
-| B3 | **Doku auf „nach dem Umstieg“:** `CLAUDE.md`, `README.md` und `server/README.md` sind mit #137 schon nachgezogen. Offen: `docs/architecture.md:16`, `docs/roadmap.md` (Stand 17.10.), `docs/installation.md` (Abschnitt „Umstieg von der v1“ auf einen Satz + Verweis auf die Git-Historie kürzen) | 🤖 PR | Neue Sessions arbeiten mit falschem Stand |
-| B4 | Phase 8 in `ToDoS/v3-plan.md` abschließen: Umstieg ist mit #137 abgehakt; offen ist das Abschluss-Review – abhaken, Befunde W1–W6/N1–N5 eintragen und auf diesen Plan verweisen | 🤖 PR | Plan zeigt das Review als offen, die Befunde stehen nur im Chat |
+| ✅ B1 | **Alte Pläne archivieren (= W6):** `docs/superpowers/` (44 Dateien) – Sync-Etappen, Essenstracking, Scan, Einordnung, Projektstruktur, Web-Teil 1–4 nach `docs/superpowers/archiv/`; ebenso `ToDoS/v2-plan.md`, `v2-abnahme.md`, `web-frontend-plan.md`, `optimierungsplan.md`, `projektstruktur-regeln.md` nach `ToDoS/archiv/` | 🤖 PR | Eine neue Session findet bei „Tagebuch“ oder „Sync“ den alten Plan mit Haushalt und Vorrat und baut danach (dieser PR) |
+| ✅ B2 | `docs/STRUKTUR-CHECK.md` (Stand 27.10., vor dem Umstieg) ins Archiv oder löschen; die offenen Punkte stehen in `v3-plan.md` | 🤖 PR | Doppelte, veraltete Befundliste (dieser PR) |
+| ✅ B3 | **Doku auf „nach dem Umstieg“:** `CLAUDE.md`, `README.md` und `server/README.md` sind mit #137 schon nachgezogen. Offen: `docs/architecture.md:16`, `docs/roadmap.md` (Stand 17.10.), `docs/installation.md` (Abschnitt „Umstieg von der v1“ auf einen Satz + Verweis auf die Git-Historie kürzen) | 🤖 PR | Neue Sessions arbeiten mit falschem Stand (dieser PR) |
+| ✅ B4 | Phase 8 in `ToDoS/v3-plan.md` abschließen: Umstieg ist mit #137 abgehakt; offen ist das Abschluss-Review – abhaken, Befunde W1–W6/N1–N5 eintragen und auf diesen Plan verweisen | 🤖 PR | Plan zeigt das Review als offen, die Befunde stehen nur im Chat (dieser PR) |
 | B5 | Ungenutzte Einträge im Versionskatalog entfernen: `androidx-lifecycle-runtime-compose`, `compose-ui-tooling`, `compose-ui-tooling-preview` (laut Suche in allen `*.kts` nicht referenziert – vor dem Löschen per Build bestätigen) | 🤖 PR | Nur Ballast, Renovate/Updates prüfen sie mit |
-| B6 | `proguard-rules.pro:1`: Kommentar „Nur für die Variante vorschau“ ist falsch, die Regeln gelten auch fürs Release | 🤖 PR | Wer dem Kommentar glaubt und die Regeln löscht, bricht Sicherung und Sync im Release |
+| ✅ B6 | `proguard-rules.pro:1`: Kommentar „Nur für die Variante vorschau“ ist falsch, die Regeln gelten auch fürs Release | 🤖 PR | Wer dem Kommentar glaubt und die Regeln löscht, bricht Sicherung und Sync im Release (#139) |
 | B7 | Room-Schemata `1.json`–`8.json` in `android/core/data/schemas/` löschen; `9.json` (Migrationstest) und `10.json` bleiben | 🤖 PR | ~8 Dateien Ballast; die V3 kennt nur die Migration 9 → 10 |
 | B8 | `Platzhalter.kt` und `Bildschirme.platzhalter` aus dem Produktivcode in die Tests von `:app` verschieben; Text „Kommt in Phase 6“ entfällt | 🤖 PR | Bauzeit-Gerüst landet im Release (R8 entfernt es zwar, aber es liest sich wie unfertiger Code) |
 | B9 | Doppelte Konstante `SEEDED_ALT` (`Einstellungsschluessel.kt:15` und `StartdatenLader.kt:74`) auf eine reduzieren | 🤖 PR | Klein |
@@ -85,7 +90,19 @@ Reihenfolge wie im Gesamt-Review empfohlen; jede Korrektur mit einem Test, der v
 | N5 | Rezeptkopf ohne feste Höhe 260 dp (`DetailBereiche.kt:96`) | Bei großer Schrift abgeschnitten |
 | E1 | CI: doppelt laufende Tests zusammenlegen; Basis-Image und Gradle-Download pinnen | Schnellere, reproduzierbare CI |
 | E2 | Gradle-Deprecations (`--warning-mode all`) und die Manifest-Warnung zu `WorkManagerInitializer` (`AndroidManifest.xml:39`) beheben | Vor dem nächsten Gradle-Hauptversionswechsel |
+| E4 | **CI: Release einmal starten**, nicht nur bauen: Kurztest der R8-Variante auf dem Emulator (Start, „Frei“ im Tagebuch öffnen) | Z1 fiel erst auf dem Handy auf – der Release-Build war grün |
+| E5 | Referenzbilder (111 PNG, 36 MB) in Git LFS oder kleiner aufnehmen | Jedes Neuaufnehmen vergrößert das Repo dauerhaft; im OpenCloud-Checkout wird alles mitsynchronisiert |
+| E6 | `:core:data` (6.000 Zeilen, ein Drittel der App) beobachten; bei weiterem Wachstum die Sicherung als `:core:sicherung` abtrennen | Jede Änderung dort baut alle Features neu – heute noch kein Handlungsbedarf |
 | E3 | Rest der Liste „Weitere aus dem Review“ in `v3-plan.md` (Kochmodus rekomponiert sekündlich, Tagesziel speichert Zwischenstände, verwaiste Fotos nach Sync, 4 A11y-Lücken, ktlint/detekt) | Beim nächsten Anfassen der Bereiche |
+
+### Nachprüfung 2026-10-31 (neu, klein)
+
+| ID | Was | Warum |
+|---|---|---|
+| N6 | `KochenViewModel.fertig()`: `fertigGetippt` wird vor `gekochtMarkieren` gesetzt; wirft die Datenbank, bleibt „Fertig“ gesperrt, ohne dass etwas markiert wurde. Zusammen mit N2 beheben | Selten, dann aber ohne Ausweg bis zum Neustart |
+| N7 | Server `Compactor.kt:42-58`: Änderungszeit der Fotos wird vor der Referenzabfrage gelesen; ein `/photos/missing` dazwischen verhindert das Löschen nicht. Zeit direkt vor `delete` erneut prüfen | Sehr kleines Zeitfenster; dann fehlt ein Foto dauerhaft auf dem anderen Gerät |
+| N8 | `SyncSpeicher.vollabgleich`: unbenutzte Zutaten, die der Server nicht kennt (unveränderte Startzutaten nach „Zusammenführen“, alle nach „Ersetzen“), werden nach einem `410` still gelöscht | Nur nach Wiederherstellung des Servers oder > 90 Tagen offline |
+| N9 | `docs/security.md:75`: Datenbank und Sicherungs-ZIP als „keine sensiblen Daten“ eingestuft, enthalten aber das Ernährungstagebuch (Gesundheitsdaten). Einstufung korrigieren, optional Passwort für die Sicherung | Sicherung liegt unverschlüsselt im Cloud-Ordner |
 
 ## Empfohlene Reihenfolge
 

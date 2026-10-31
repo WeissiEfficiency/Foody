@@ -2,7 +2,7 @@
 
 Jede hier genannte Funktion muss in V3 funktionieren ([ADR 0011](../docs/adr/0011-v3-umfang-ein-nutzer.md)). Jeder
 PR hakt die Punkte ab, die er fertigstellt, und nennt sie in der Beschreibung. Release V3 erst, wenn alles abgehakt
-ist. Grundlage: [`v2-abnahme.md`](v2-abnahme.md), gekürzt nach dem Review vom 2026-10-17. Gestrichenes steht am Ende.
+ist. Grundlage: [`v2-abnahme.md`](archiv/v2-abnahme.md), gekürzt nach dem Review vom 2026-10-17. Gestrichenes steht am Ende.
 
 ## Rezepte – `:feature:rezepte`
 - [x] Anlegen, bearbeiten, duplizieren, archivieren

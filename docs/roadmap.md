@@ -1,24 +1,22 @@
 # Roadmap
 
-Stand: 17. Oktober 2026. Foody ist offline-first (ADR 0001); ein eigener Sync-Server ist der Normalfall, aber
+Stand: 31. Oktober 2026. Foody ist offline-first (ADR 0001); ein eigener Sync-Server ist der Normalfall, aber
 optional (ADR 0006, 0011). Die App nutzt das Internet nur für den Sync, die Produktsuche beim Scan (abschaltbar) und
 künftig die KI-Hilfe über den eigenen Server.
 
-## Nächster Schritt: V3
+## Erledigt: V3
 
-Neubau mit dem im Review bestätigten Funktionsumfang – Plan: [`ToDoS/v3-plan.md`](../ToDoS/v3-plan.md),
+Seit dem 28.10.2026 auf Handy, Tablet und Server – Plan: [`ToDoS/v3-plan.md`](../ToDoS/v3-plan.md),
 Abnahme: [`ToDoS/v3-abnahme.md`](../ToDoS/v3-abnahme.md), Entscheidung: [ADR 0011](adr/0011-v3-umfang-ein-nutzer.md).
+Gestrichen gegenüber der v1: Vorrat, Web-App, Haushalte/Einladungen, Teilen als Text, Sterne.
 
-| Bereich | V3 |
-|---|---|
-| Rechenkern | kcal je Portion überall gleich, neue Auswahl für „Leere Tage füllen“ |
-| Kochen | Änderungen ins Rezept übernehmen |
-| Sync | ein Konto, schlankes Push/Pull, Sync beim Öffnen und nach Änderungen |
-| Gestrichen | Vorrat, Web-App, Haushalte/Einladungen, Teilen als Text, Sterne |
+## Jetzt: Aufräumen und Alltagsbefunde
+
+Altlasten der v1, offene Review-Befunde (W1–W6) und Optimierungen: [`ToDoS/aufraeumplan.md`](../ToDoS/aufraeumplan.md).
 
 ## Danach: KI-Hilfe
 
-Eigenes Projekt nach dem Umstieg auf die V3 (über den eigenen Server): Rezept erfassen und anpassen, Wochenplan
+Eigenes Projekt nach dem Aufräumen (über den eigenen Server): Rezept erfassen und anpassen, Wochenplan
 vorschlagen, Nährwerte schätzen – Plan: [`ToDoS/ki-plan.md`](../ToDoS/ki-plan.md).
 
 ## Später

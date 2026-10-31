@@ -2,7 +2,7 @@
 
 Stand: 2026-10-17 · Entscheidung: [ADR 0011](../docs/adr/0011-v3-umfang-ein-nutzer.md) (baut auf
 [ADR 0009](../docs/adr/0009-neubau-v2-module-navigation.md) auf, löst [ADR 0010](../docs/adr/0010-sync-v2-haushaltsdienst.md)
-weitgehend ab) · Abnahme: [`v3-abnahme.md`](v3-abnahme.md) · Löst [`v2-plan.md`](v2-plan.md) ab.
+weitgehend ab) · Abnahme: [`v3-abnahme.md`](v3-abnahme.md) · Löst [`v2-plan.md`](archiv/v2-plan.md) ab.
 
 V3 ist der Neubau aus dem v2-Plan, aber nur mit den Funktionen, die das Review bestätigt hat, plus KI-Hilfe.
 
@@ -267,7 +267,7 @@ Material-Standardhintergrund, weil das Farbschema die `surfaceContainer*`-Farben
 
 ### Nacharbeit aus Code-Review und Struktur-Check (2026-10-27)
 Herkunft: Code-Review V3 gesamt auf `2761ada` plus Delta #110/#111 (IDs **R-…**, Delta **D…**) und Struktur-Check
-`docs/STRUKTUR-CHECK.md` (seit #113 im Repo) mit Nachtrag Delta (IDs **S-…**). Beide Prüfungen ohne Bauen und
+`ToDoS/archiv/STRUKTUR-CHECK.md` (seit #113 im Repo) mit Nachtrag Delta (IDs **S-…**). Beide Prüfungen ohne Bauen und
 ohne Gerät; R-K1, R-W1–W3, R-W6 und R-W9 sind am Code gegengeprüft.
 
 **Blockiert den Umstieg (vor Phase 8):**
@@ -371,7 +371,7 @@ Entscheidung 2026-10-28: Die KI-Hilfe wird ein eigenes Projekt nach dem Umstieg.
 [`ki-plan.md`](ki-plan.md). Phase 8 kommt vorher; die V3 wird ohne KI fertig und ausgeliefert. Das Server-Gerüst
 (`GET /ki/status`, `KiKontingent`) bleibt bestehen.
 
-### Phase 8 – Messen, Umstieg, Release V3 (≈ 1 Woche) – als Nächstes
+### Phase 8 – Messen, Umstieg, Release V3 (≈ 1 Woche) – erledigt bis auf Messen und TalkBack
 - [ ] Probeversion „Foody Vorschau“ (`:app:assembleVorschau`, eigene App-ID neben der v1) auf dem Handy testen
 - [ ] Android-Studio-Profiler auf Handy und Tablet (Start, Scrollen, Speicher); Baseline-Profil neu erzeugen.
       **Baseline-Profil erzeugt (2026-10-28)** auf dem Emulator (Heute, Rezepte, Woche, Einkauf, Einstellungen);
@@ -406,8 +406,12 @@ Entscheidung 2026-10-28: Die KI-Hilfe wird ein eigenes Projekt nach dem Umstieg.
 - [x] **Installationsanleitung** `docs/installation.md` (aus dem README verlinkt): wo die APK liegt, Erstinstallation
       und Update auf Handy und Tablet („Installation aus dieser Quelle zulassen“), Signaturschlüssel sichern,
       Umstieg von der v1 (Sicherung → V3 → Wiederherstellen), Server verbinden, was bei Problemen hilft.
-- [ ] **Abschluss: Code-Review** mit dem Skill `code-review` über die ganze V3 nach dem Umstieg; Befunde hier
+- [x] **Abschluss: Code-Review** mit dem Skill `code-review` über die ganze V3 nach dem Umstieg; Befunde hier
       eintragen und die blockierenden vor dem Release beheben.
+      **Erledigt (2026-10-28, Nachprüfung 2026-10-31):** nichts Blockierendes. Befunde W1–W6 und N1–N5 sowie vier
+      kleine aus der Nachprüfung (N6–N9) stehen mit Stand in [`aufraeumplan.md`](aufraeumplan.md). Gefunden und
+      behoben: Release stürzte bei „Frei“ im Tagebuch ab, weil R8 die Konstruktoren der ML-Kit-Registrare entfernte
+      (#139).
 
 ## Leitplanken
 

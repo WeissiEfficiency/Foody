@@ -9,7 +9,7 @@ Gemeinsamer Code liegt unter `shared/` (`:domain`, `:api-protocol`). Der Server 
 (API, Konten, Datenbank, Sync, Fotos, KI-Gerüst) und `:server` (nur `main`). Abhängigkeiten laufen nur in eine
 Richtung: `:app` → `:feature:*` → `:core:*` → `:domain`/`:api-protocol` (Features kennen sich nicht),
 `:server` → `:server-sync` → `:api-protocol`. Gradle-Namen sind unabhängig von den Ordnern (`projectDir` in
-`settings.gradle.kts`). Spec: `docs/superpowers/specs/2026-10-11-projektstruktur-design.md`.
+`settings.gradle.kts`). Spec: `docs/superpowers/archiv/specs/2026-10-11-projektstruktur-design.md`.
 
 Die heutige App ist die **V3** (Plan `ToDoS/v3-plan.md`). Ihre Vorgängerin, die v1 samt Protokoll 2
 (`:sync-protocol`), ist mit Phase 8 aus `main` entfernt; ihr letzter Stand liegt im Git-Verlauf und der Server dazu

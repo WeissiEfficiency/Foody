@@ -68,27 +68,13 @@ Neue APK wie oben öffnen und „Aktualisieren“ wählen; Daten und Anmeldung b
 Nach einem Update mit Datenbank-Änderung lässt sich nicht auf eine ältere Version zurück. Vor größeren Updates
 deshalb eine Sicherung erstellen.
 
-## Umstieg von der v1 (einmalig)
+## Umstieg von der v1 (erledigt am 2026-10-28)
 
-Die v1 („Foody“ mit Vorrat, Protokoll 2) und die V3 nutzen dieselbe App-ID und denselben Schlüssel. Das Update
-übernimmt die Datenbank (Migration 9 → 10, der Vorrat entfällt) und die Anmeldung am Server. Reihenfolge:
-
-1. **Sicherungen:** auf Handy und Tablet in der v1 „Sicherung erstellen“ und die Dateien aufheben; dazu eine
-   Sicherung des Servers (`server/README.md`, Betrieb).
-2. **Probelauf mit Kopien:** die Server-Sicherung auf dem Test-Server einspielen und eine v1-Sicherung in „Foody
-   Vorschau“ wiederherstellen; prüfen, dass Rezepte, Plan, Einkauf und Tagebuch stimmen und der Sync läuft.
-3. **Server umstellen:** den echten Server von `v1-server` auf `main` bringen (`git checkout main && git pull &&
-   docker compose up -d --build`). Er sichert die Datenbank vorher selbst und wandelt Haushalt in Konto um. Bis die
-   Geräte folgen, melden die v1-Apps „Bitte App aktualisieren“ – Daten gehen dabei nicht verloren, sie warten in der
-   Outbox.
-4. **Handy:** neue `foody.apk` über die v1 installieren („Aktualisieren“). Beim ersten Start läuft die Migration;
-   danach synchronisiert die App mit dem umgestellten Server ohne neue Anmeldung.
-5. **Tablet:** genauso.
-6. Prüfen: auf beiden Geräten eine Änderung machen und auf dem anderen sehen.
-
-Geht etwas schief: Die v1 lässt sich nicht über die V3 installieren (gleiche Daten, neueres Schema). Zurück geht es
-nur über Deinstallieren, die v1-APK aus der Sicherung neu installieren und die Sicherung aus Schritt 1
-wiederherstellen; der Server kehrt mit seiner Sicherung `vor-migration-*.db` auf `v1-server` zurück.
+Handy, Tablet und Server laufen seit dem 28.10. auf der V3; die Schritte des Umstiegs stehen im Git-Verlauf dieser
+Datei (Stand 9a98ac2). Bis zum **2026-11-25** bleibt der Rückweg offen (`ToDoS/aufraeumplan.md`, Stufe 3): Die v1 lässt
+sich nicht über die V3 installieren (gleiche Daten, neueres Schema). Zurück geht es nur über Deinstallieren, die
+v1-APK aus der Sicherung neu installieren und die v1-Sicherung wiederherstellen; der Server kehrt mit seiner
+Sicherung `vor-migration-*.db` auf den Branch `v1-server` zurück.
 
 ## Wenn etwas nicht klappt
 
