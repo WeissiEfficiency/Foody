@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.withTransaction
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.foody.core.data.Einstellungsschluessel
+import de.foody.core.data.Einstellungsschluessel.SEEDED_ALT
+import de.foody.core.data.Einstellungsschluessel.SEED_VERSION
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.zutaten.ergaenztUm
 import javax.inject.Inject
@@ -67,10 +69,5 @@ class StartdatenLader @Inject constructor(
     /** Setzt die Version zurück auf [vorher] (Löschen war gesperrt, es wurde nichts geleert). */
     fun versionWiederherstellen(vorher: Int) {
         kontext.getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE).edit().putInt(SEED_VERSION, vorher).commit()
-    }
-
-    private companion object {
-        const val SEED_VERSION = "seedVersion"
-        const val SEEDED_ALT = "seeded"
     }
 }

@@ -20,9 +20,6 @@ object Einstellungsschluessel {
     /** Hell/Dunkel/System. */
     const val DARSTELLUNG = "themeMode"
 
-    /** Ansicht der Einkaufsliste. */
-    const val EINKAUF_ANSICHT = "shoppingListView"
-
     /** Ob beim Scannen online nach Produkten gesucht werden darf. */
     const val ONLINE_SUCHE = "onlineProduktsuche"
 

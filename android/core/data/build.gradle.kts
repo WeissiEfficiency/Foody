@@ -35,7 +35,7 @@ android {
     }
 }
 
-// Room-Gradle-Plugin exportiert die Schemata nach schemas/ (1–9 aus v1 übernommen, ab 10 FoodyDatenbank).
+// Room-Gradle-Plugin exportiert die Schemata nach schemas/ (9 = letztes der v1, für den Migrationstest 9 → 10; ab 10 FoodyDatenbank).
 room {
     schemaDirectory("$projectDir/schemas")
 }

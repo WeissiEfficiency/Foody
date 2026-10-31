@@ -430,7 +430,8 @@ Plugins von AGP und Kotlin stehen im Root-Projekt (`apply false`); `build-logic`
 
 ## Anhang: Datenbank-Schemata 1–9 (v1), Trigger-Regeln
 
-Die Schemata 1–9 stammen aus der v1 (eingecheckt unter `android/core/data/schemas`); die V3 migriert 9 → 10 („Daten und Sync“).
+Die Schemata 1–9 stammen aus der v1; eingecheckt ist davon nur noch 9 (`android/core/data/schemas`, für den
+Migrationstest), 1–8 liegen im Git-Verlauf. Die V3 migriert 9 → 10 („Daten und Sync“).
 
 | Version | Änderung |
 |---|---|

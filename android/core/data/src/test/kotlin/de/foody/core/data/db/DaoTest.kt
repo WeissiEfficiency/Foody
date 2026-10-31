@@ -207,7 +207,7 @@ class DaoTest {
         dao.upsertRevision(rev)
         assertEquals(listOf(rev), dao.revisionen())
         assertEquals(rev, dao.revision("recipe", "r1"))
-        dao.loeschenRevision("recipe", "r1")
+        dao.revisionenLeeren()
         assertNull(dao.revision("recipe", "r1"))
 
         assertNull(dao.zustand())

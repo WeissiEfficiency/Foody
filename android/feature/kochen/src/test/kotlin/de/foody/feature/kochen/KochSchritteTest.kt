@@ -28,7 +28,7 @@ class KochSchritteTest {
             id = "r1", name = "Reistopf", defaultServings = 2, prepMinutes = null, cookMinutes = null, imageUri = null,
             notes = null, tags = "", archivedAt = null, createdAt = 1, updatedAt = 1,
         ),
-        zeilen = zeilen, schritte = schritte, naehrwerte = NutritionResult(emptyMap(), emptyMap(), 2, emptySet()),
+        zeilen = zeilen, schritte = schritte, naehrwerte = NutritionResult(emptyMap(), emptyMap(), 2),
         einordnung = Einordnung(emptySet(), emptySet(), true, true),
     )
 
