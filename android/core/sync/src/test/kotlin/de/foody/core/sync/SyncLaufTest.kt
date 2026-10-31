@@ -222,6 +222,63 @@ class SyncLaufTest {
     }
 
     @Test
+    fun gescheiterteAbholungHoltDerLaufErneut() = syncServerTest { server ->
+        val (name, konto) = server.kontoAnlegen()
+        val a = geraet(name, konto)
+        a.rezeptMitZutat("r1")
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig)
+
+        // B bekommt das Rezept einmal unlesbar: Problem vermerkt, der Cursor ist trotzdem vorbei.
+        val b = geraet(name, konto)
+        b.zugang.beiPull = { since, limit ->
+            val echt = a.zugang.pull(since, limit)
+            echt.copy(records = echt.records.map { if (it.type == RecordType.RECIPE) it.copy(payload = JsonObject(emptyMap())) else it })
+        }
+        assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
+        assertEquals("invalid_payload", b.dao.problem("recipe", "r1")?.code)
+        assertNull(b.db.rezeptDao().nachId("r1"))
+
+        // Einen Tag später: Der Lauf holt alles ab 0 erneut und übernimmt das Rezept; der Cursor bleibt.
+        b.dao.upsertProblem(b.dao.problem("recipe", "r1")!!.copy(at = 0))
+        val cursor = b.dao.zustand()!!.cursor
+        b.zugang.beiPull = { since, limit -> a.zugang.pull(since, limit) }
+        b.zugang.pulls.clear()
+        assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
+        assertEquals(listOf(cursor, 0L), b.zugang.pulls.map { it.first })
+        assertEquals("Rezept r1", b.db.rezeptDao().nachId("r1")?.name)
+        assertNull(b.dao.problem("recipe", "r1"))
+        assertEquals(cursor, b.dao.zustand()!!.cursor)
+
+        // Ohne wartende Probleme kein zweites Holen.
+        b.zugang.pulls.clear()
+        assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
+        assertEquals(listOf(cursor), b.zugang.pulls.map { it.first })
+    }
+
+    @Test
+    fun vollerSpeicherBrichtAbOhneDatenAufzugeben() = syncServerTest { server ->
+        val (name, konto) = server.kontoAnlegen()
+        val a = geraet(name, konto)
+        (1..300).forEach { a.db.zutatDao().upsert(zutat("z$it", "Zutat mit langem Namen Nummer $it")) }
+        a.speicher.aktivieren(TEST_BASIS, konto, allesHochladen = true)
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig)
+
+        val b = geraet(name, konto)
+        val sql = b.db.openHelper.writableDatabase
+        val seiten = sql.query("PRAGMA page_count").use { it.moveToFirst(); it.getLong(0) }
+        sql.query("PRAGMA max_page_count = $seiten").use { it.moveToFirst() }
+        assertEquals(SyncErgebnis.Fehlgeschlagen(ServerFehler.SPEICHER_VOLL, voruebergehend = true), b.ausfuehren())
+        assertEquals(emptyList(), b.dao.probleme())
+        assertEquals(0L, b.dao.zustand()!!.cursor)
+
+        // Wieder Platz: Der nächste Lauf holt alles.
+        sql.query("PRAGMA max_page_count = 1073741823").use { it.moveToFirst() }
+        assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
+        assertNotNull(b.db.zutatDao().nachId("z300"))
+        assertEquals(emptyList(), b.dao.probleme())
+    }
+
+    @Test
     fun rundreiseZweiGeraete() = syncServerTest { server ->
         val (name, konto) = server.kontoAnlegen()
         val a = geraet(name, konto)

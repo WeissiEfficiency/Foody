@@ -1,11 +1,21 @@
 package de.foody.feature.einstellungen
 
+import de.foody.core.data.db.SyncProblemMitName
 import de.foody.core.sync.Ergebnis
 import de.foody.core.sync.ErsterSync
 import kotlinx.coroutines.flow.Flow
 
-/** Stand der Verbindung für die Anzeige; [letzterFehler] ist eine Kennung (`offline`, …), nie ein Server-Text. */
-data class VerbindungsZustand(val verbunden: Boolean, val adresse: String?, val letzterSync: Long?, val letzterFehler: String?)
+/**
+ * Stand der Verbindung für die Anzeige; [letzterFehler] ist eine Kennung (`offline`, …), nie ein Server-Text.
+ * [nichtUebertragen]: Einträge aus `sync_problem` (vom Server abgelehnt oder beim Abholen gescheitert), neueste zuerst.
+ */
+data class VerbindungsZustand(
+    val verbunden: Boolean,
+    val adresse: String?,
+    val letzterSync: Long?,
+    val letzterFehler: String?,
+    val nichtUebertragen: List<SyncProblemMitName> = emptyList(),
+)
 
 /**
  * Was „Server verbinden“ vom Sync braucht. Die App bindet es an `SyncKonto`, `sync_state` und `SyncAusloeser` (und

@@ -1,6 +1,7 @@
 package de.foody.core.data.sync
 
 import android.content.Context
+import android.database.sqlite.SQLiteFullException
 import android.net.Uri
 import androidx.room.Room
 import androidx.room.withTransaction
@@ -31,10 +32,12 @@ import de.foody.domain.TagebuchArt
 import java.io.File
 import java.math.BigDecimal
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import kotlinx.coroutines.test.runTest
@@ -83,6 +86,8 @@ class SyncSpeicherTest {
     }
 
     // --- Hilfen ---
+
+    private val STUNDE = 3_600_000L
 
     private fun zutat(id: String, name: String = "Zutat $id") = ZutatEntity(id = id, canonicalName = name, createdAt = 1, updatedAt = 1)
 
@@ -390,6 +395,59 @@ class SyncSpeicherTest {
         assertNull(db.rezeptDao().nachId("r1"))
         assertEquals("Salz", db.zutatDao().nachId("z2")?.canonicalName)
         assertEquals(9L, speicher.zustand().cursor)
+    }
+
+    @Test
+    fun vollerSpeicherBrichtAbStattAufzugeben() = runTest {
+        // Speicher voll: Der Lauf bricht ab, der Cursor bleibt stehen, nichts wird als Problem aufgegeben (W2).
+        aktiv()
+        speicher.anwenden(listOf(zutatRecord("z1", "Salz")), neuerCursor = 3)
+        val sql = db.openHelper.writableDatabase
+        val seiten = sql.query("PRAGMA page_count").use { it.moveToFirst(); it.getLong(0) }
+        sql.query("PRAGMA max_page_count = $seiten").use { it.moveToFirst() }
+
+        assertFailsWith<SpeicherVollFehler> {
+            speicher.anwenden((1..500).map { zutatRecord("n$it", "Zutat mit langem Namen Nummer $it") }, neuerCursor = 9)
+        }
+
+        sql.query("PRAGMA max_page_count = 1073741823").use { it.moveToFirst() }
+        assertEquals(3L, speicher.zustand().cursor)
+        assertTrue(dao.probleme().isEmpty())
+    }
+
+    @Test
+    fun gescheiterteAbholungWirdNachEinemTagWiederholt() = runTest {
+        var jetzt = 1_000L
+        speicher = SyncSpeicher(db, ablage, index) { jetzt }
+        aktiv()
+        speicher.anwenden(listOf(planRecord("m1", "r1")), neuerCursor = 5) // Rezept r1 fehlt
+        assertEquals("missing_reference", dao.problem("meal_slot", "m1")?.code)
+        assertFalse(speicher.erneutHolenFaellig())
+
+        jetzt += 25 * STUNDE
+        assertTrue(speicher.erneutHolenFaellig())
+        speicher.erneutAnwenden(listOf(planRecord("m2", "r2"))) // m1 kommt wieder nicht, r2 fehlt auch
+        assertFalse(speicher.erneutHolenFaellig()) // nächster Versuch erst wieder in einem Tag
+
+        jetzt += 25 * STUNDE
+        speicher.erneutAnwenden(listOf(rezeptRecord("r1", foto = null), planRecord("m1", "r1")))
+        assertNull(dao.problem("meal_slot", "m1"))
+        assertNotNull(dao.revision("meal_slot", "m1"))
+        assertEquals(5L, speicher.zustand().cursor) // der Cursor bleibt, wie er war
+    }
+
+    @Test
+    fun problemeMitNamenDesDatensatzes() = runTest {
+        db.zutatDao().upsert(zutat("z1", name = "Mehl"))
+        db.rezeptDao().upsert(rezept("r1"))
+        dao.upsertProblem(SyncProblemEntity("ingredient", "z1", "invalid_payload", 3))
+        dao.upsertProblem(SyncProblemEntity("recipe", "r1", "photo_unsyncable", 2))
+        dao.upsertProblem(SyncProblemEntity("meal_slot", "m9", "missing_reference", 1)) // lokal nicht vorhanden
+
+        val probleme = dao.problemeMitNamen().first()
+
+        assertEquals(listOf("Mehl", "Rezept r1", null), probleme.map { it.name })
+        assertEquals(listOf("ingredient", "recipe", "meal_slot"), probleme.map { it.typ })
     }
 
     @Test

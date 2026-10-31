@@ -4,7 +4,7 @@ import de.foody.api.protocol.ErrorCode
 
 /**
  * Fehler beim Zugriff auf den Sync-Server. [kennung] ist eine der festen Kennungen für `sync_state.lastError`
- * (`offline`, `anmeldung_abgelaufen`, `app_zu_alt`, `server_zu_alt`, `cursor_haengt`, `server_fehler`).
+ * (`offline`, `anmeldung_abgelaufen`, `app_zu_alt`, `server_zu_alt`, `cursor_haengt`, `speicher_voll`, `server_fehler`).
  *
  * Meldung und Ursachen enthalten nie Token oder Antwort-Bodies: Die Meldung ist die Kennung, Ursachen werden nur bei
  * Netzfehlern behalten (deren Meldungen nennen höchstens Host und Port).
@@ -42,6 +42,10 @@ sealed class ServerFehler(val kennung: String, ursache: Throwable? = null) : Exc
 
         /** Der Pull-Cursor rückt nicht vor (vergibt der Sync-Lauf, nicht der Server-Zugang). */
         const val CURSOR_HAENGT = "cursor_haengt"
+
+        /** Der Gerätespeicher ist voll; Server-Daten ließen sich nicht schreiben (vergibt der Sync-Lauf). */
+        const val SPEICHER_VOLL = "speicher_voll"
+
         const val SERVER_FEHLER = "server_fehler"
     }
 }

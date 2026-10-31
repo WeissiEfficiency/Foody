@@ -1,6 +1,7 @@
 package de.foody.core.data.sync
 
 import android.database.SQLException
+import android.database.sqlite.SQLiteFullException
 import androidx.room.withTransaction
 import de.foody.api.protocol.IngredientPayload
 import de.foody.api.protocol.PayloadValidator
@@ -357,6 +358,22 @@ class SyncSpeicher(
         }
     }
 
+    /**
+     * Beim Anwenden gescheiterte Datensätze (Probleme aus [ABHOL_PROBLEME]) holt der nächste Lauf nach einem Tag erneut:
+     * Der Cursor ist an ihnen schon vorbei, und der Server schickt sie sonst erst nach ihrer nächsten Änderung wieder.
+     * Probleme vom Push mit demselben Code zählen mit; sie lösen höchstens einen Versuch am Tag aus.
+     */
+    suspend fun erneutHolenFaellig(): Boolean = dao.problemeAelterAls(ABHOL_PROBLEME, uhr() - ERNEUT_HOLEN_NACH_MS) > 0
+
+    /**
+     * Wendet den vollständigen Server-Stand [records] (alles ab 0) noch einmal an, ohne den Cursor zu bewegen und ohne
+     * etwas zu löschen; bekannte Revisionen werden übersprungen. Was weiter scheitert, wartet wieder einen Tag.
+     */
+    suspend fun erneutAnwenden(records: List<SyncRecord>) {
+        anwendenIntern(records, neuerCursor = null, bekannteUeberspringen = true)
+        dao.problemeVersucht(ABHOL_PROBLEME, uhr())
+    }
+
     private suspend fun einzeln(
         r: SyncRecord,
         jetzt: Long,
@@ -365,19 +382,29 @@ class SyncSpeicher(
         block: suspend () -> Unit,
     ) {
         val vorher = HashMap(selbstVorgemerkt)
+        // Bei vollem Speicher rollt SQLite die Transaktion selbst zurück; Rooms eigenes Zurückrollen scheitert dann und
+        // verdeckt die SQLiteFullException. Deshalb wird sie schon in der Transaktion bemerkt.
+        var voll = false
         val code = try {
             db.withTransaction {
-                if (offeneLokaleAenderung(r, selbstVorgemerkt)) return@withTransaction
-                if (bekannteUeberspringen && !r.deleted && bekannteRevision(r)) return@withTransaction
-                dao.upsertZustand((dao.zustand() ?: SyncZustandEntity()).copy(applyingRemote = true))
                 try {
-                    block()
-                } finally {
-                    dao.applyingRemoteSetzen(false)
+                    if (offeneLokaleAenderung(r, selbstVorgemerkt)) return@withTransaction
+                    if (bekannteUeberspringen && !r.deleted && bekannteRevision(r)) return@withTransaction
+                    dao.upsertZustand((dao.zustand() ?: SyncZustandEntity()).copy(applyingRemote = true))
+                    try {
+                        block()
+                    } finally {
+                        dao.applyingRemoteSetzen(false)
+                    }
+                } catch (e: SQLiteFullException) {
+                    voll = true
+                    throw e
                 }
             }
             null
-        } catch (_: SQLException) {
+        } catch (e: SQLException) {
+            // Nicht aufgeben: Der Lauf bricht ab, der Cursor bleibt, derselbe Datensatz kommt beim nächsten Lauf wieder.
+            if (voll) throw SpeicherVollFehler(e)
             ANWENDEN_FEHLGESCHLAGEN
         } catch (_: IllegalArgumentException) {
             UNGUELTIGER_PAYLOAD // auch SerializationException, NumberFormatException
@@ -699,6 +726,12 @@ class SyncSpeicher(
 
         /** Problem-Code beim Anwenden: Schreiben scheiterte an der Datenbank (Constraint). */
         const val ANWENDEN_FEHLGESCHLAGEN = "apply_failed"
+
+        /** Problem-Codes des Anwendens, die [erneutHolenFaellig] erneut versucht. */
+        private val ABHOL_PROBLEME = listOf(FEHLENDER_VERWEIS, UNGUELTIGER_PAYLOAD, ANWENDEN_FEHLGESCHLAGEN)
+
+        /** Abstand zwischen zwei erneuten Abholungen. */
+        private const val ERNEUT_HOLEN_NACH_MS = 24 * 60 * 60 * 1000L
 
         /** `{"records":[]}` – die Hülle des Push-Bodys. */
         private const val HUELLE_BYTES = 14L

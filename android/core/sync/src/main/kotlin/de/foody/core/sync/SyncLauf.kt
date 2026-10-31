@@ -1,5 +1,7 @@
 package de.foody.core.sync
 
+import android.database.SQLException
+import android.database.sqlite.SQLiteFullException
 import android.util.Log
 import de.foody.api.protocol.ErrorCode
 import de.foody.api.protocol.PhotoHash
@@ -9,6 +11,7 @@ import de.foody.api.protocol.PushStatus
 import de.foody.api.protocol.SyncRecord
 import de.foody.core.data.sync.Ausstehend
 import de.foody.core.data.sync.Fassung
+import de.foody.core.data.sync.SpeicherVollFehler
 import de.foody.core.data.sync.SyncSpeicher
 import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
@@ -24,8 +27,11 @@ private class CursorHaengt : Exception(ServerFehler.CURSOR_HAENGT)
  * 1. Outbox in Paketen senden (höchstens [Protocol.MAX_PUSH_RECORDS] bzw. [Protocol.MAX_PUSH_BYTES]); fehlende Fotos
  *    vorher hochladen.
  * 2. Ergebnisse verbuchen (angenommen, zusammengeführt, abgelehnt; fehlende Verweisziele werden nachgereicht).
- * 3. Alle Seiten ab dem Cursor holen und einmal anwenden; `410` → Voll-Abgleich.
+ * 3. Alle Seiten ab dem Cursor holen und einmal anwenden; `410` → Voll-Abgleich. Ist eine erneute Abholung fällig
+ *    ([SyncSpeicher.erneutHolenFaellig]), danach alles ab 0 holen und nur das noch Fehlende anwenden.
  * 4. Gewünschte Fotos laden und verknüpfen.
+ *
+ * Ist der Gerätespeicher voll, bricht der Lauf mit `speicher_voll` ab, ohne einen Datensatz aufzugeben.
  *
  * Alles läuft unter [SyncSpeicher.laufSperre] (ein Lauf zur Zeit; Trennen wartet). [zugang] wird erst bei aktivem Sync
  * gebaut (suspend: Adresse und Token kommen aus Datenbank und Token-Speicher, siehe [zugangFuerLauf]); `null` heißt:
@@ -51,6 +57,7 @@ class SyncLauf(
             } ?: return@withLock fehlgeschlagen(ServerFehler.ANMELDUNG_ABGELAUFEN, voruebergehend = false)
             val gesendet = pushen(server)
             val geholt = holen(server)
+            erneutHolen(server)
             fotosLaden(server)
             speicher.fehler(null)
             SyncErgebnis.Fertig(gesendet, geholt)
@@ -60,6 +67,10 @@ class SyncLauf(
             fehlgeschlagen(e.kennung, voruebergehend(e))
         } catch (_: CursorHaengt) {
             fehlgeschlagen(ServerFehler.CURSOR_HAENGT, voruebergehend = true)
+        } catch (_: SpeicherVollFehler) {
+            speicherVoll()
+        } catch (_: SQLiteFullException) {
+            speicherVoll()
         } catch (e: Exception) {
             // Lokaler Fehler (Datenbank, Dateien) oder Unerwartetes: in sync_state nur die feste Kennung. Ins Log Klasse
             // und Stelle, nie die Meldung (sie könnte Daten enthalten). Ein späterer Versuch kann gelingen (Datei
@@ -67,6 +78,16 @@ class SyncLauf(
             Log.w(TAG, "Sync-Lauf abgebrochen: ${e.javaClass.name} bei ${eigeneStelle(e)}")
             fehlgeschlagen(ServerFehler.SERVER_FEHLER, voruebergehend = true)
         }
+    }
+
+    /** Auch das Vermerken kann am vollen Speicher scheitern; das Ergebnis kommt trotzdem an. */
+    private suspend fun speicherVoll(): SyncErgebnis {
+        try {
+            speicher.fehler(ServerFehler.SPEICHER_VOLL)
+        } catch (_: SQLException) {
+            // nichts zu tun: der Auslöser versucht es ohnehin erneut
+        }
+        return SyncErgebnis.Fehlgeschlagen(ServerFehler.SPEICHER_VOLL, voruebergehend = true)
     }
 
     /** Erste Stelle im eigenen Code, an der [e] entstand (sonst die oberste). */
@@ -208,6 +229,12 @@ class SyncLauf(
             speicher.vollabgleich(datensaetze, naechster)
             datensaetze.size
         }
+    }
+
+    /** Holt alles ab 0 erneut, wenn beim Anwenden gescheiterte Datensätze seit einem Tag warten; der Cursor bleibt. */
+    private suspend fun erneutHolen(server: ServerZugang) {
+        if (!speicher.erneutHolenFaellig()) return
+        speicher.erneutAnwenden(seitenHolen(server, 0).first)
     }
 
     /**
