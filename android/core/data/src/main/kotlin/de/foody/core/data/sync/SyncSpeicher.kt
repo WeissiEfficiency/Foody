@@ -68,6 +68,12 @@ class SyncSpeicher(
      */
     val laufSperre = Mutex()
 
+    /**
+     * Eigene Fotos, die ein Rezept beim Anwenden verloren hat (Rezept gelöscht, anderes oder kein Foto). Nach dem Commit
+     * prüft [verwaisteFotosEntfernen], ob noch ein Rezept sie nutzt. Nur unter der [laufSperre] (bzw. einzeln im Test).
+     */
+    private val abgeloesteFotos = mutableSetOf<String>()
+
     suspend fun zustand(): SyncZustand {
         val z = dao.zustand() ?: SyncZustandEntity()
         return SyncZustand(z.active, z.serverUrl, z.kontoId, z.cursor, z.lastSyncAt, z.lastError)
@@ -357,6 +363,7 @@ class SyncSpeicher(
             val z = (dao.zustand() ?: SyncZustandEntity()).copy(applyingRemote = false)
             dao.upsertZustand(if (neuerCursor != null) z.copy(cursor = neuerCursor, lastSyncAt = jetzt) else z)
         }
+        verwaisteFotosEntfernen()
     }
 
     /**
@@ -476,7 +483,10 @@ class SyncSpeicher(
             else -> vorher?.imageUri
         }
         Abbildung.anwenden(db, r) // übernimmt imageUri der vorhandenen Zeile
-        if (bild != vorher?.imageUri) dao.rezeptFotoSetzen(r.id, bild)
+        if (bild != vorher?.imageUri) {
+            dao.rezeptFotoSetzen(r.id, bild)
+            vorher?.imageUri?.let(abgeloesteFotos::add)
+        }
         val gewuenscht = p.photo?.takeIf { bekannt == null }
         if (gewuenscht != null) dao.upsertFotoGewuenscht(SyncFotoGewuenschtEntity(r.id, gewuenscht)) else dao.loeschenFotoGewuenscht(r.id)
         return p.photo == null && bild != null && nichtUebertragbar
@@ -562,6 +572,7 @@ class SyncSpeicher(
                 db.zutatDao().loeschen(id)
             }
             RecordType.RECIPE -> {
+                db.rezeptDao().nachId(id)?.imageUri?.let(abgeloesteFotos::add)
                 db.rezeptDao().loeschen(id)
                 dao.loeschenFotoGewuenscht(id)
             }
@@ -619,6 +630,7 @@ class SyncSpeicher(
         db.withTransaction {
             dao.upsertZustand((dao.zustand() ?: SyncZustandEntity()).copy(applyingRemote = false, cursor = cursor, lastSyncAt = uhr()))
         }
+        verwaisteFotosEntfernen()
     }
 
     /**
@@ -726,6 +738,7 @@ class SyncSpeicher(
     private suspend fun verknuepfen(rezeptId: String, sha256: String, link: String) {
         db.withTransaction {
             if (dao.fotoGewuenscht(rezeptId)?.sha256 != sha256) return@withTransaction
+            db.rezeptDao().nachId(rezeptId)?.imageUri?.takeIf { it != link }?.let(abgeloesteFotos::add)
             dao.upsertZustand((dao.zustand() ?: SyncZustandEntity()).copy(applyingRemote = true))
             try {
                 dao.rezeptFotoSetzen(rezeptId, link)
@@ -734,6 +747,22 @@ class SyncSpeicher(
             }
             dao.loeschenFotoGewuenscht(rezeptId)
             if (hatProblem(rezeptId, FOTO_FALSCH)) dao.loeschenProblem(RecordType.RECIPE.wire, rezeptId)
+        }
+        verwaisteFotosEntfernen()
+    }
+
+    /**
+     * Löscht die [abgeloesteFotos], die kein Rezept mehr nutzt (E3) – erst nach dem Commit, damit ein zurückgerolltes
+     * Anwenden keine noch verknüpfte Datei verliert. Nur diese, nicht alle unverknüpften Dateien: ein offener Editor kann
+     * gerade ein neues, noch nicht gespeichertes Foto halten (wie `RezeptRepository.fotoSetzen`).
+     */
+    private suspend fun verwaisteFotosEntfernen() {
+        val kandidaten = abgeloesteFotos.toList()
+        abgeloesteFotos.clear()
+        for (link in kandidaten) {
+            if (!ablage.istEigeneDatei(link) || db.rezeptDao().anzahlMitBild(link) > 0) continue
+            ablage.datei(link)?.delete()
+            dao.loeschenFotoLokal(link)
         }
     }
 
