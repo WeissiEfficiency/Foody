@@ -1,6 +1,6 @@
 # ADR 0009: Neubau v2 – Module, Navigation, Designsystem
 
-Status: angenommen (2026-10-13), teilweise abgelöst durch ADR 0011 (Umfang, Web-App, Navigation, Tokens). Plan: `ToDoS/v2-plan.md`, Abnahme: `ToDoS/v2-abnahme.md`.
+Status: angenommen (2026-10-13), teilweise abgelöst durch ADR 0011 (Umfang, Web-App, Navigation, Tokens). Plan: `ToDoS/archiv/v2-plan.md`, Abnahme: `ToDoS/archiv/v2-abnahme.md`.
 
 **Kontext:** Die Handy-App ist ein einziges Modul `:app` (13.319 Zeilen, 84 Dateien); einzelne Screens haben über
 500 Zeilen. Vorrat und Zutaten liegen versteckt unter „Mehr“, das Tagebuch hat einen eigenen Tab. Web-Oberfläche
@@ -9,9 +9,9 @@ werden; neue Funktionen sollen dabei keine bestehenden Bereiche berühren.
 
 **Entscheidung:**
 - **Neubau statt Umbau:** App und Web-Oberfläche werden neu aufgebaut, der Funktionsumfang bleibt gleich
-  (`ToDoS/v2-abnahme.md`). Neue Funktionen folgen erst nach dem Release 2.0. `:domain` bleibt mit allen Tests und wird
+  (`ToDoS/archiv/v2-abnahme.md`). Neue Funktionen folgen erst nach dem Release 2.0. `:domain` bleibt mit allen Tests und wird
   nur ergänzt.
-- **Module** (höchstens zwei Ordnerebenen, `projektstruktur-regeln.md`):
+- **Module** (höchstens zwei Ordnerebenen, `ToDoS/archiv/projektstruktur-regeln.md`):
   `:app` (nur Navigation und Hilt-Zusammenbau) → `:feature:{heute, rezepte, kochen, woche, einkauf, kueche,
   einstellungen}` → `:core:{designsystem, data, sync, scan, timer, testing}` → `shared/` (`:domain`, `:api-protocol`,
   `:design-tokens`). Features hängen nicht voneinander ab; jedes veröffentlicht seine typisierte Route und eine

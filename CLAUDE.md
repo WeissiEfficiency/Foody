@@ -54,4 +54,4 @@ JDK 21+ (JBR von Android Studio), Android SDK 37. Befehle in PowerShell mit `.\g
 - Strukturentscheidungen (neues Modul, Umzug, gestrichene Funktion) als ADR in `docs/adr/`.
 - Fachliche Regeln mit zugehörigen Tests: `docs/domain-rules.md`. Sicherheit: `docs/security.md`.
 - Neue Module in die Tabelle in `README.md` und die Befehle oben.
-- Dokumente mit dem Hinweis „Abgelöst“ (v2-Plan, Web-Pläne und -Specs) beschreiben einen alten Stand.
+- Alte Pläne und Specs (v1, v2, Web) liegen in `docs/superpowers/archiv/` und `ToDoS/archiv/`; sie beschreiben einen alten Stand.
