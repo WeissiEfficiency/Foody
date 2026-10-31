@@ -20,6 +20,7 @@ import de.foody.domain.Mahlzeit
 import de.foody.domain.RezeptEinordnung
 import de.foody.domain.ZutatZeile
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -166,10 +168,22 @@ class EditorViewModel @Inject constructor(
 
     fun hinweis(text: String?) = kopf.update { it.copy(third = text) }
 
-    /** Speichert; `null` bei ungültiger Eingabe oder laufendem/abgeschlossenem Speichern (Doppeltipp). */
+    /**
+     * Speichert; `null` bei ungültiger Eingabe oder laufendem/abgeschlossenem Speichern (Doppeltipp). Das Schreiben läuft
+     * zu Ende, auch wenn der Bildschirm mittendrin gedreht wird; nur ein Fehler gibt „Speichern“ wieder frei.
+     */
     suspend fun speichern(): Gespeichert? {
         val z = zustand.value
         if (!z.geladen || !gueltig(z) || !gesperrt.compareAndSet(expect = false, update = true)) return null
+        var fertig = false
+        try {
+            return withContext(NonCancellable) { schreiben(z).also { fertig = true } }
+        } finally {
+            if (!fertig) gesperrt.value = false
+        }
+    }
+
+    private suspend fun schreiben(z: EditorZustand): Gespeichert {
         val e = z.eingaben
         val zeilen = z.zeilen.filter { it.erkannt != null }
         val ergebnis = repo.speichern(

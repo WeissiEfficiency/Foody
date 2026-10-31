@@ -160,15 +160,24 @@ class KochenViewModel @Inject constructor(
 
     /**
      * Gekocht: markiert den heutigen Plan-Eintrag (falls es einen gibt), beendet die Sitzung und öffnet das Blatt.
-     * `false` bei einem zweiten Tipp – es wird nie mehr als ein Eintrag je Kochen markiert.
+     * `false` bei einem zweiten Tipp – es wird nie mehr als ein Eintrag je Kochen markiert. Läuft zu Ende, auch wenn
+     * der Bildschirm mittendrin gedreht wird; scheitert das Markieren, ist „Fertig“ wieder frei.
      */
     suspend fun fertig(): Boolean {
         val id = rezeptId.value ?: return false
         if (!fertigGetippt.compareAndSet(expect = false, update = true)) return false
-        kochen.gekochtMarkieren(id, LocalDate.now(clock))
-        gespeichert[FERTIG] = true
-        schliessen()
-        blatt.value = true
+        var fertig = false
+        try {
+            withContext(NonCancellable) {
+                kochen.gekochtMarkieren(id, LocalDate.now(clock))
+                gespeichert[FERTIG] = true
+                schliessen()
+                blatt.value = true
+                fertig = true
+            }
+        } finally {
+            if (!fertig) fertigGetippt.value = false
+        }
         return true
     }
 

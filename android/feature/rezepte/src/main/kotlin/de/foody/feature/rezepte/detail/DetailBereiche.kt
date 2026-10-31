@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -95,18 +95,21 @@ internal fun DetailInhalt(z: DetailZustand.Da, a: DetailAktionen) {
 
 @Composable
 private fun Kopfbild(name: String, meta: String, bild: String?, onZurueck: () -> Unit) {
-    Box(Modifier.fillMaxWidth().height(260.dp)) {
-        rezeptBild(bild)?.invoke() ?: RezeptPlatzhalter(Modifier.fillMaxSize())
-        // Glaskreis hinter dem Pfeil, damit er auch auf dunklen Fotos lesbar bleibt
-        GlasFlaeche(GlasStufe.BILD, Modifier.padding(FoodyAbstaende.s2), form = CircleShape) {
-            IconButton(onClick = onZurueck) {
-                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
+    // Mindestens 260 dp; bei großer Schrift wächst der Kopf, statt den Namen abzuschneiden oder über den Pfeil zu legen
+    Box(Modifier.fillMaxWidth()) {
+        Box(Modifier.matchParentSize()) { rezeptBild(bild)?.invoke() ?: RezeptPlatzhalter(Modifier.fillMaxSize()) }
+        Column(Modifier.fillMaxWidth().heightIn(min = 260.dp), verticalArrangement = Arrangement.SpaceBetween) {
+            // Glaskreis hinter dem Pfeil, damit er auch auf dunklen Fotos lesbar bleibt
+            GlasFlaeche(GlasStufe.BILD, Modifier.padding(FoodyAbstaende.s2), form = CircleShape) {
+                IconButton(onClick = onZurueck) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
+                }
             }
-        }
-        GlasFlaeche(GlasStufe.BILD, Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(FoodyAbstaende.s3)) {
-            Column(Modifier.padding(FoodyAbstaende.s4)) {
-                Text(name, style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
-                if (meta.isNotEmpty()) Text(meta, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
+            GlasFlaeche(GlasStufe.BILD, Modifier.fillMaxWidth().padding(FoodyAbstaende.s3)) {
+                Column(Modifier.padding(FoodyAbstaende.s4)) {
+                    Text(name, style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+                    if (meta.isNotEmpty()) Text(meta, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
+                }
             }
         }
     }

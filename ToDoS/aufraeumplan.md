@@ -27,7 +27,7 @@ ML-Kit-Registrare (`firebase-components` 16.1.0 behält nur die Klasse); Keep-Re
 | A4 | Lokale Branches löschen, deren Inhalt in `main` ist: alle 16 `claude/*` (web-teil1–4, v2-phase0, projektstruktur, aufraeumen, v3-befunde-review …) | 🤖 | Squash-Merges, Git hält sie deshalb für „nicht gemergt“; vorher je Branch prüfen, dass der PR gemergt ist |
 | A5 | Remote-Branches `origin/claude/phase8-probelauf` und `…/phase8-umstieg` löschen | 🤖 | PRs gemergt |
 | A6 | Probelauf-Ordner `~/foody-probelauf-20261028-1829/` auf dem Homeserver löschen | 👤 / 🤖 | Enthält eine Kopie der echten Datenbank – auch aus Datenschutzsicht besser weg |
-| A7 | Zwei Checkouts → einer: Gearbeitet wird in `C:\Users\Stefan\Downloads\Foody`, gezogen in `E:\OpenCloud\…\Foody`. Festlegen, welcher bleibt, und den anderen löschen | 👤 | Spart den doppelten `git pull` nach jedem Merge und Verwechslungen; im OpenCloud-Ordner synchronisiert jeder Build Hunderte MB mit |
+| A7 | Zwei Checkouts → einer. **Entschieden (31.10.): `E:\OpenCloud\…\Foody` bleibt**, dort und in seinen Worktrees wird weitergearbeitet. `C:\Users\Stefan\Downloads\Foody` wird gelöscht, sobald #150 gemergt ist (dessen Worktree liegt noch dort). Darin liegt nichts, was nicht auf GitHub ist: alle lokalen Branches sind gemergt oder überholt (`claude/v3-vorschau-build` betraf das alte `app3`), keine Schlüssel, kein Stash | 👤 / 🤖 | Spart den doppelten `git pull` nach jedem Merge und Verwechslungen; im OpenCloud-Ordner synchronisiert jeder Build Hunderte MB mit (in Kauf genommen) |
 
 ## Stufe 2 – Repo aufräumen (Doku, Build), je ein PR
 
@@ -85,9 +85,9 @@ Reihenfolge wie im Gesamt-Review empfohlen; jede Korrektur mit einem Test, der v
 | ✅ **W2** | Sync: abgelehnte Datensätze unter Einstellungen → Konto anzeigen (`SyncDao.probleme()` ist schon da), fehlgeschlagene Abholungen wiederholen, bei vollem Speicher abbrechen. **Erledigt:** Liste unter „Konto“, erneutes Holen nach einem Tag, Abbruch mit `speicher_voll` | Datensätze bleiben still auf einem Gerät liegen; nach dem Import von 435 Rezepten wahrscheinlicher |
 | ✅ **W3 + W4** | Nährwerte nicht auf dem Haupt-Thread: `flowOn(rechnen)` in `HeuteRepository.kt:44`, `RezeptRepository.kt:38/51`, Rezept-Flow teilen; `WhileSubscribed(5_000)` statt `Eagerly` in `EintragenViewModel`/`EditorViewModel`, fester Schlüssel für den Tablet-Editor. **Erledigt:** beide Repositories mit `flowOn`, „Heute“ und Eintragen teilen den Rezept-Flow; Eintragen nur noch sichtbar; Tablet-Editor mit festem Schlüssel (ein ViewModel, neuer Auftrag beginnt frisch) – der Editor bleibt `Eagerly`, weil `speichern()` `zustand.value` liest. Gemessen: ~20 ms je Neuberechnung auf dem PC (300 Rezepte, 500 Zutaten), bisher auf dem Haupt-Thread und auf „Heute“ doppelt | Mit jetzt 296 Rezepten und 494 Zutaten spürbar; vorher einmal mit dem Baseline-Profil messen (Start, Wechsel auf „Heute“), damit der Gewinn belegt ist |
 | N1 | Server: nach `compact` kein Voll-Download bei jedem Start (`SyncService.kt:43`) | Akku/Datenvolumen |
-| N2 | Speichern-Knöpfe nach Drehen nicht gesperrt lassen (`EditorViewModel.kt:162`, `KochenViewModel.kt:167`, `EintragenViewModel.kt:224`) | Selten, aber ärgerlich |
+| ✅ N2 | Speichern-Knöpfe nach Drehen nicht gesperrt lassen (`EditorViewModel.kt:162`, `KochenViewModel.kt:167`, `EintragenViewModel.kt:224`). **Erledigt:** Das Schreiben läuft in `withContext(NonCancellable)` zu Ende, auch wenn der Bildschirm mittendrin gedreht wird; nur ein Fehler gibt den Knopf wieder frei (ein Freigeben bei jedem Abbruch legte nach dem Drehen doppelt an). Tests `fehlerBeimSpeichernGibtSpeichernFrei` | Selten, aber ärgerlich |
 | N4 | Login-Bremse auch je IP, Fehlversuche loggen (`LoginThrottle.kt:19`) | Heimnetz, geringe Wirkung |
-| N5 | Rezeptkopf ohne feste Höhe 260 dp (`DetailBereiche.kt:96`) | Bei großer Schrift abgeschnitten |
+| ✅ N5 | Rezeptkopf ohne feste Höhe 260 dp (`DetailBereiche.kt:96`). **Erledigt:** mindestens 260 dp, wächst mit dem Namen; Pfeil und Namensfeld liegen untereinander. Test `schrift200LangerNameImKopf`, Referenzbilder unverändert | Bei großer Schrift abgeschnitten |
 | E1 | CI: doppelt laufende Tests zusammenlegen; Basis-Image und Gradle-Download pinnen | Schnellere, reproduzierbare CI |
 | E2 | Gradle-Deprecations (`--warning-mode all`) und die Manifest-Warnung zu `WorkManagerInitializer` (`AndroidManifest.xml:39`) beheben | Vor dem nächsten Gradle-Hauptversionswechsel |
 | E4 | **CI: Release einmal starten**, nicht nur bauen: Kurztest der R8-Variante auf dem Emulator (Start, „Frei“ im Tagebuch öffnen) | Z1 fiel erst auf dem Handy auf – der Release-Build war grün |
@@ -99,7 +99,7 @@ Reihenfolge wie im Gesamt-Review empfohlen; jede Korrektur mit einem Test, der v
 
 | ID | Was | Warum |
 |---|---|---|
-| N6 | `KochenViewModel.fertig()`: `fertigGetippt` wird vor `gekochtMarkieren` gesetzt; wirft die Datenbank, bleibt „Fertig“ gesperrt, ohne dass etwas markiert wurde. Zusammen mit N2 beheben | Selten, dann aber ohne Ausweg bis zum Neustart |
+| ✅ N6 | `KochenViewModel.fertig()`: `fertigGetippt` wird vor `gekochtMarkieren` gesetzt; wirft die Datenbank, bleibt „Fertig“ gesperrt, ohne dass etwas markiert wurde. Zusammen mit N2 beheben. **Erledigt** mit N2, Test `fehlerBeiFertigGibtFertigFrei` | Selten, dann aber ohne Ausweg bis zum Neustart |
 | N7 | Server `Compactor.kt:42-58`: Änderungszeit der Fotos wird vor der Referenzabfrage gelesen; ein `/photos/missing` dazwischen verhindert das Löschen nicht. Zeit direkt vor `delete` erneut prüfen | Sehr kleines Zeitfenster; dann fehlt ein Foto dauerhaft auf dem anderen Gerät |
 | N8 | `SyncSpeicher.vollabgleich`: unbenutzte Zutaten, die der Server nicht kennt (unveränderte Startzutaten nach „Zusammenführen“, alle nach „Ersetzen“), werden nach einem `410` still gelöscht | Nur nach Wiederherstellung des Servers oder > 90 Tagen offline |
 | N9 | `docs/security.md:75`: Datenbank und Sicherungs-ZIP als „keine sensiblen Daten“ eingestuft, enthalten aber das Ernährungstagebuch (Gesundheitsdaten). Einstufung korrigieren, optional Passwort für die Sicherung | Sicherung liegt unverschlüsselt im Cloud-Ordner |
@@ -163,8 +163,8 @@ Ressourcen schlank (381 KB), Features ohne Querverweise.
 | R9 | `server/README.md`, `installation.md`: Rückweg zur v1 | mit Stufe 3 entfernen |
 | R10 | `PortionenNachtrag` (`:core:data`) samt Hilt-Bereitstellung: in der App ohne Knopf (geplant für Phase 6, nie gebaut). Re-Importe laufen über die Dublettenerkennung | 👤 entscheidet: Knopf in den Einstellungen bauen oder entfernen (auch `RezeptImport.portionenNachtragen` in `:domain`) |
 
-**Lokal (kein Repo):** `.claude\worktrees\offene-fehler` (283 MB, lose v1-Kopie vom 11.10.), Build-Reste `app/`, `domain/`,
-`sync-protocol/` (125 MB), sechs geparkte Worktrees archivierter Sessions, der Checkout in `Downloads` (A7).
+**Lokal (kein Repo):** der Checkout in `Downloads` (A7) samt `.claude\worktrees\offene-fehler` (283 MB, lose v1-Kopie vom
+11.10.) und seinen geparkten Worktrees; im E:-Checkout Build-Reste `app/`, `domain/`, `sync-protocol/`, `android/app3/`.
 
 ## Empfohlene Reihenfolge
 
