@@ -251,7 +251,11 @@ class EinkaufRepository(
                     AbgleichArt.MEHR, AbgleichArt.WENIGER, AbgleichArt.WIEDER_OFFEN -> {
                         val alt = a.alt!!
                         speichern(
-                            alt.copy(amount = neu!!.toBuy.amountIn(p.basis(neu)), unit = p.basis(neu), checked = alt.checked && a.zeile.art != AbgleichArt.WIEDER_OFFEN),
+                            alt.copy(
+                                amount = neu!!.toBuy.amountIn(p.basis(neu)),
+                                unit = p.basis(neu),
+                                checked = alt.checked && a.zeile.art != AbgleichArt.WIEDER_OFFEN,
+                            ),
                         )
                         db.einkaufsartikelQuelleDao().loeschenNachArtikel(alt.id)
                         p.quellen(neu, alt.id).forEach { db.einkaufsartikelQuelleDao().upsert(it) }
@@ -306,7 +310,6 @@ class EinkaufRepository(
         aenderungen.size
     }
 
-    /** Die gegebene Liste, wenn es sie gibt; sonst eine neue leere „Einkauf“. Nur innerhalb einer Transaktion. */
     /**
      * Die gewünschte Liste; fehlt sie (noch keine angezeigt oder inzwischen gelöscht), die aktuelle. Erst wenn es gar
      * keine gibt, eine neue – in der Transaktion, damit zwei schnelle Tipps nicht zwei Listen anlegen.

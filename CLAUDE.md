@@ -26,6 +26,8 @@ JDK 21+ (JBR von Android Studio), Android SDK 37. Befehle in PowerShell mit `.\g
 ./gradlew :feature:<bereich>:verifyRoborazziDebug   # Bildvergleich wie in der CI
 ./gradlew :feature:<bereich>:recordRoborazziDebug   # Bilder nach gewollter UI-Änderung neu aufnehmen
 ./gradlew check                               # alles + Lint, wie die CI
+./gradlew ktlintPruefen                       # Kotlin-Stil (Regeln in .editorconfig), wie die CI
+./gradlew ktlintKorrigieren                   # behebt, was ktlint selbst kann
 ./gradlew :core:data:connectedCheck           # Room/Migration auf dem Emulator
 ./gradlew :api-protocol:test :server-sync:test   # Server
 ```

@@ -88,7 +88,7 @@ class SyncSpeicherTest {
 
     // --- Hilfen ---
 
-    private val STUNDE = 3_600_000L
+    private val stunde = 3_600_000L
 
     private fun zutat(id: String, name: String = "Zutat $id") = ZutatEntity(id = id, canonicalName = name, createdAt = 1, updatedAt = 1)
 
@@ -425,12 +425,12 @@ class SyncSpeicherTest {
         assertEquals("missing_reference", dao.problem("meal_slot", "m1")?.code)
         assertFalse(speicher.erneutHolenFaellig())
 
-        jetzt += 25 * STUNDE
+        jetzt += 25 * stunde
         assertTrue(speicher.erneutHolenFaellig())
         speicher.erneutAnwenden(listOf(planRecord("m2", "r2"))) // m1 kommt wieder nicht, r2 fehlt auch
         assertFalse(speicher.erneutHolenFaellig()) // nächster Versuch erst wieder in einem Tag
 
-        jetzt += 25 * STUNDE
+        jetzt += 25 * stunde
         speicher.erneutAnwenden(listOf(rezeptRecord("r1", foto = null), planRecord("m1", "r1")))
         assertNull(dao.problem("meal_slot", "m1"))
         assertNotNull(dao.revision("meal_slot", "m1"))

@@ -52,7 +52,7 @@ Die Web-Oberfläche ist mit V3 entfallen (ADR 0011).
 | `android/core/designsystem/` | `:core:designsystem` | Tokens, Glas-Flächen, Komponenten, Theme „Ofenwarm“ (ADR 0012) |
 | `android/core/testing/` | `:core:testing` | nur für Tests: `ViewModelHalter` beendet ViewModels vor `db.close()` (ADR 0014), `nachProzessende()` stellt ein Prozessende nach; jedes Feature bekommt es als `testImplementation` |
 | `android/katalog/` | `:katalog` | kleine App zum Ansehen des Designsystems |
-| `android/baselineprofile/` | `:baselineprofile` | Generator für das Baseline-Profil der App |
+| `android/baselineprofile/` | `:baselineprofile` | Generator für das Baseline-Profil der App, Kurztest der R8-Variante (CI) |
 | `build-logic/` | – | Convention-Plugins (`foody.android.application`, `.library`, `.feature`): SDK-Stände, Java 17, Kotlin ohne Warnungen |
 | `shared/domain/` | `:domain` | Reines Kotlin (keine Android-Abhängigkeiten): Einheiten, Skalierung, Nährwerte, Einkaufsaggregation, Diff, Import, Einordnung – von App und Server genutzt |
 | `shared/api-protocol/` | `:api-protocol` | Protokoll 3 des Servers (`/api/v3`): DTOs, Validierung, Version |
@@ -74,6 +74,8 @@ Die App läuft ab **Android 16** (`minSdk` 36, `targetSdk` 37; ADR 0009).
 ./gradlew :domain:test                 # schnelle JVM-Tests des Rechenkerns
 ./gradlew :feature:rezepte:test        # Tests eines Bereichs (Robolectric, Roborazzi-Bilder)
 ./gradlew check                        # alle Unit-Tests + Lint (so prüft auch die CI)
+./gradlew ktlintPruefen                # Kotlin-Stil (ktlint, Regeln in .editorconfig; auch in der CI)
+./gradlew ktlintKorrigieren            # behebt, was ktlint selbst beheben kann
 ./gradlew :app:assembleDebug           # „Foody Debug“ (de.foody.app.debug)
 ./gradlew :app:installDebug            # auf Emulator/Gerät
 ./gradlew :app:assembleVorschau        # „Foody Vorschau“ (R8 wie ein Release, eigene App-ID) zum Testen
@@ -92,6 +94,10 @@ Einkauf und Einstellungen; das Ergebnis liegt eingecheckt unter
 `android/app/src/release/generated/baselineProfiles/baseline-prof.txt` und kommt automatisch in jeden Release-Build.
 Neu erzeugen nach größeren UI-Änderungen: Befehle im Kopf von `android/baselineprofile/build.gradle.kts` (nur auf
 einem Emulator ohne echte Daten).
+
+**Kurztest der R8-Variante:** `ReleaseStartTest` startet „Foody Vorschau“ mit R8 wie im Release und öffnet „Frei“ im
+Tagebuch – fehlende Keep-Regeln fielen sonst erst auf dem Handy auf (Z1). Die CI führt ihn auf einem Emulator aus
+(`:baselineprofile:ciDeviceBenchmarkVorschauAndroidTest`).
 
 ## Datenschutz
 

@@ -6,6 +6,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 /** Datensatztyp und Tabelle des Vorrats der v1; in Version 10 entfällt beides. */
 private const val VORRAT = "pantry_item"
 
+/** v1-`lastError` → feste Kennung der V3; sonst `NULL`. */
+private const val LETZTER_FEHLER_V3 =
+    "CASE lastError WHEN 'unauthorized' THEN 'anmeldung_abgelaufen' WHEN 'protocol_too_old' THEN 'app_zu_alt' " +
+        "WHEN 'protocol_server_too_old' THEN 'server_zu_alt' ELSE NULL END"
+
 /**
  * Migration 9 → 10: wandelt die v1-Datenbank auf dem Handy in die V3-Datenbank um (gleiche App-ID, kein Neuinstallieren).
  * Läuft komplett in Rooms Migrationstransaktion – scheitert ein Schritt, bleibt die v9-Datenbank unverändert.
@@ -21,11 +26,6 @@ private const val VORRAT = "pantry_item"
  *    `transient: …`) wird `NULL`.
  * 4. Die Sync-Trigger von Version 10 anlegen.
  */
-/** v1-`lastError` → feste Kennung der V3; sonst `NULL`. */
-private const val LETZTER_FEHLER_V3 =
-    "CASE lastError WHEN 'unauthorized' THEN 'anmeldung_abgelaufen' WHEN 'protocol_too_old' THEN 'app_zu_alt' " +
-        "WHEN 'protocol_server_too_old' THEN 'server_zu_alt' ELSE NULL END"
-
 val MIGRATION_9_10: Migration = object : Migration(9, 10) {
     override fun migrate(db: SupportSQLiteDatabase) {
         // 1.

@@ -37,6 +37,8 @@ bouncycastle = "1.86"
 logback = "1.5.37"
 # JVM-Tests mit Android-Klassen (App-Ende-zu-Ende-Test gegen :server)
 robolectric = "4.16.1"
+# Kotlin-Stil (Aufgaben ktlintPruefen/ktlintKorrigieren im Wurzel-Buildskript)
+ktlint = "1.8.0"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -112,6 +114,8 @@ haze-blur = { module = "dev.chrisbanes.haze:haze-blur", version.ref = "haze" }
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
 roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
 roborazzi-junit-rule = { module = "io.github.takahirom.roborazzi:roborazzi-junit-rule", version.ref = "roborazzi" }
+# Nur als Werkzeug (Aufgaben ktlintPruefen/ktlintKorrigieren), nicht im Build der Module
+ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -129,3 +133,4 @@ roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 foody-android-application = { id = "foody.android.application" }
 foody-android-library = { id = "foody.android.library" }
 foody-android-feature = { id = "foody.android.feature" }
+foody-android-test = { id = "foody.android.test" }

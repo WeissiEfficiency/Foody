@@ -168,6 +168,10 @@ private fun Kopf(woche: WochenAnsicht?, zeigtHeute: Boolean, onBlaettern: (Long)
         if (!zeigtHeute) FoodyChip("Heute", ausgewaehlt = false, onKlick = onHeute)
     }
     woche?.durchschnitt?.let {
-        Text("Ø ${if (it.vollstaendig) "" else "mind. "}${ganzzahlDeutsch(it.kcal)} kcal/Tag", style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
+        Text(
+            "Ø ${if (it.vollstaendig) "" else "mind. "}${ganzzahlDeutsch(it.kcal)} kcal/Tag",
+            style = MaterialTheme.typography.bodyMedium,
+            color = FoodyTheme.farben.nebentext,
+        )
     }
 }

@@ -44,7 +44,9 @@ class Database(
                     s.execute("PRAGMA busy_timeout=5000")
                 }
                 if (migrieren) {
-                    if (bestand && Migrations.aktuell(c) < migrationen.size && !hatSicherung(datei, migrationen.size, clock)) sichere(c, datei, clock, migrationen.size)
+                    if (bestand && Migrations.aktuell(c) < migrationen.size && !hatSicherung(datei, migrationen.size, clock)) {
+                        sichere(c, datei, clock, migrationen.size)
+                    }
                     Migrations.apply(c, migrationen)
                 }
             } catch (e: Throwable) {

@@ -331,5 +331,4 @@ class SyncAusloeserTest {
         val auftrag = TestListenableWorkerBuilder<SyncAuftrag>(context).setWorkerFactory(fabrik).build()
         assertEquals(ListenableWorker.Result.success(), auftrag.doWork(), "offline und App zu: erst beim Öffnen wieder")
     }
-
 }

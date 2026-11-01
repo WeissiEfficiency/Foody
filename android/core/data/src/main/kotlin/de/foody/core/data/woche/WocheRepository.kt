@@ -165,7 +165,10 @@ class WocheRepository(
         vorschlag.entries.count { (datum, rezeptId) ->
             val r = db.rezeptDao().nachId(rezeptId) ?: return@count false
             db.planEintragDao().upsert(
-                PlanEintragEntity(neueId(), datum, mahlzeit.name, r.id, r.defaultServings.coerceIn(MIN_PORTIONEN, MAX_PORTIONEN), createdAt = jetzt, updatedAt = jetzt),
+                PlanEintragEntity(
+                    neueId(), datum, mahlzeit.name, r.id, r.defaultServings.coerceIn(MIN_PORTIONEN, MAX_PORTIONEN),
+                    createdAt = jetzt, updatedAt = jetzt,
+                ),
             )
             true
         }

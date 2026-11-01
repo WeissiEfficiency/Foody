@@ -48,13 +48,13 @@ class EinstellungenScreenTest {
     private var server = 0
     private var zutatenGeoeffnet = 0
     private lateinit var zip: File
-    private lateinit var json: File
+    private lateinit var sicherung: File
 
     @Before
     fun setUp() {
         u = EinstellungenTestUmgebung()
         zip = File(u.kontext.cacheDir, "test.zip").also { it.delete() }
-        json = File(u.kontext.cacheDir, "v1.json").also { it.writeText(V1_SICHERUNG) }
+        sicherung = File(u.kontext.cacheDir, "sicherung.zip").also { it.writeBytes(sicherungZip()) }
         runBlocking {
             u.db.rezeptDao().upsert(
                 RezeptEntity(
@@ -68,9 +68,9 @@ class EinstellungenScreenTest {
     @After
     fun tearDown() = u.schliessen()
 
-    /** Dateidialoge durch feste Dateien ersetzt: „erstellen“ schreibt nach [zip], „öffnen“ wählt [json]. */
+    /** Dateidialoge durch feste Dateien ersetzt: „erstellen“ schreibt nach [zip], „öffnen“ wählt [sicherung]. */
     private val dateien: @Composable ((Uri) -> Unit, (Uri) -> Unit) -> Dateiwahl = { erstellt, gewaehlt ->
-        remember { Dateiwahl(erstellen = { erstellt(Uri.fromFile(zip)) }, oeffnen = { gewaehlt(Uri.fromFile(json)) }) }
+        remember { Dateiwahl(erstellen = { erstellt(Uri.fromFile(zip)) }, oeffnen = { gewaehlt(Uri.fromFile(sicherung)) }) }
     }
 
     private fun zeigen(schrift200: Boolean = false): EinstellungenViewModel {
@@ -232,7 +232,7 @@ class EinstellungenScreenTest {
         knopf("Wiederherstellen").performClick()
         compose.warteAufText("Alle Daten ersetzen?")
         compose.onNodeWithText("Ersetzen").performClick()
-        compose.warteAufText("1 Rezept, 1 Zutat, 0 Fotos wiederhergestellt · Vorrat übersprungen: 2")
+        compose.warteAufText("1 Rezept, 1 Zutat, 0 Fotos wiederhergestellt")
     }
 
     @Test
