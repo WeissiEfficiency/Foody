@@ -103,7 +103,8 @@ class HeuteScreenTest {
         // Frühstück ist um 17:30 vorbei: keine Karte, aber der Plan existiert – also auch keine Inspiration
         runBlocking { db.bestand(); db.planen("p1", heute, "FRUEHSTUECK") }
         zeigen()
-        compose.warteAufText("Reispfanne · geplant")
+        compose.warteAufText("FRÜHSTÜCK · GEPLANT")
+        compose.onNodeWithText("Reispfanne").assertExists()
         compose.onNodeWithText("Ansehen").assertDoesNotExist()
         compose.onNodeWithText("Kochen").assertDoesNotExist()
     }

@@ -1,5 +1,6 @@
 package de.foody.feature.heute
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,14 +8,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountCircle
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import de.foody.core.data.heute.OffenerEinkauf
 import de.foody.core.data.heute.RezeptKurz
@@ -29,12 +29,14 @@ import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.LeererZustandZeile
 import de.foody.core.designsystem.komponenten.Naehrwertbalken
 import de.foody.core.designsystem.komponenten.RezeptkarteGross
+import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.komponenten.SyncAnzeige
 import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.rezeptBild
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -56,9 +58,7 @@ internal fun HeuteKopf(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: (
             if (syncDarunter) sync?.let { SyncStatus(it, Modifier.padding(top = FoodyAbstaende.s2)) }
         }
         if (!syncDarunter) sync?.let { SyncStatus(it) }
-        IconButton(onClick = onEinstellungen) {
-            Icon(Icons.Outlined.AccountCircle, contentDescription = "Einstellungen", tint = FoodyTheme.farben.text)
-        }
+        RunderKnopf(Icons.Outlined.PersonOutline, "Einstellungen", onEinstellungen)
     }
 }
 
@@ -94,16 +94,15 @@ internal fun meta(portionen: Int?, kcal: Int?, minuten: Int?): String = listOfNo
     minuten?.let { "$it Min." },
 ).joinToString(" · ")
 
+/** Tagebuch-Karte wie im Entwurf: Titel und „Alle Einträge“ in der Karte, Bilanz, Einträge je Mahlzeit, geplante Mahlzeiten hervorgehoben. */
 @Composable
 internal fun TagebuchBereich(t: TagebuchHeute, aktionen: HeuteAktionen) {
-    Column(verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-        Abschnittskopf("Tagebuch", linkText = "Alle Einträge", onLink = aktionen.onAlleEintraege)
-        GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
-                Naehrwertbalken(t.summe.kcal, t.ziel, t.summe.eiweiss, t.summe.kohlenhydrate, t.summe.fett)
-                t.mahlzeiten.forEach { MahlzeitZeilen(it, aktionen) }
-                FoodyKnopf("Eintragen", { aktionen.onEintragen(null) }, Modifier.fillMaxWidth(), art = KnopfArt.UMRISS)
-            }
+    GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
+            Abschnittskopf("Tagebuch", linkText = "Alle Einträge", onLink = aktionen.onAlleEintraege)
+            Naehrwertbalken(t.summe.kcal, t.ziel, t.summe.eiweiss, t.summe.kohlenhydrate, t.summe.fett)
+            t.mahlzeiten.forEach { MahlzeitZeilen(it, aktionen) }
+            FoodyKnopf("+ Eintragen", { aktionen.onEintragen(null) }, art = KnopfArt.TEXT)
         }
     }
 }
@@ -112,21 +111,26 @@ internal fun TagebuchBereich(t: TagebuchHeute, aktionen: HeuteAktionen) {
 private fun MahlzeitZeilen(a: MahlzeitAbschnitt, aktionen: HeuteAktionen) {
     val name = a.mahlzeit.anzeigename()
     Column(verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1)) {
-        Augenbraue(name)
+        if (a.eintraege.isNotEmpty() || a.vorschlaege.isEmpty()) Augenbraue(name)
         a.eintraege.forEach { e ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(e.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
                 Spacer(Modifier.padding(FoodyAbstaende.s1))
-                Text(kcalText(e.kcal, e.vollstaendig), style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
+                Text(kcalText(e.kcal, e.vollstaendig), style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text)
             }
         }
         a.vorschlaege.forEach { v ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "${v.titel} · geplant", Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.nebentext,
-                )
-                FoodyKnopf("Gegessen?", { aktionen.onGegessen(v.planEintragId) }, art = KnopfArt.TEXT)
+            // Geplant, noch nicht eingetragen: hervorgehoben mit „Gegessen?“ wie im Entwurf
+            Row(
+                Modifier.fillMaxWidth().clip(FoodyFormen.mittel).background(FoodyTheme.farben.primaerBehaelter.copy(alpha = 0.6f))
+                    .padding(horizontal = FoodyAbstaende.s3, vertical = FoodyAbstaende.s2),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Augenbraue("$name · geplant", farbe = FoodyTheme.farben.aufPrimaerBehaelter)
+                    Text(v.titel, style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.aufPrimaerBehaelter)
+                }
+                FoodyKnopf("Gegessen?", { aktionen.onGegessen(v.planEintragId) })
             }
         }
         if (a.eintraege.isEmpty() && a.vorschlaege.isEmpty()) {
