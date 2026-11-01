@@ -1,7 +1,7 @@
 # Design „Milchglas“ – Entwurf vom 31. Oktober 2026
 
 Gerenderte Entwürfe aus dem Design-Canvas „Foody Design“ (Handy, 411 dp breit), Standardfarbe Mango.
-Grundlage: Oberfläche Milchglas, Formen Rund, Farbe frei wählbar unter Einstellungen › Erscheinungsbild.
+Grundlage: Oberfläche Milchglas, Formen Rund, Farbe frei wählbar unter Einstellungen › Darstellung. Stand nach dem Abgleich mit dem Code Review: [abgleich.md](abgleich.md).
 
 ## Bildschirme
 
@@ -21,12 +21,12 @@ Grundlage: Oberfläche Milchglas, Formen Rund, Farbe frei wählbar unter Einstel
 ## Material und Formen
 
 - **Milchglas:** Glasflächen mit Unschärfe 40 dp, feinem Korn (Rauschen 8 % hell, 5 % dunkel) und Lichtkante (weiß 78 % hell, 12 % dunkel). Deckkraft leicht 0,55/0,50, dicht 0,78/0,72, auf Bildern 0,92. Glas ist mit 4 % der Hauptfarbe getönt.
-- **Verlauf:** Ton 1 oben links, Ton 2 unten rechts über dem Grund, beide aus der Hauptfarbe (Ton 2 um 28° verschoben, bei Grün Richtung Gelb). Die Bilder zeigen den Canvas mit zwei zusätzlichen Flecken; die App bleibt bei zwei, weil überlagerte Flecken den Kontrast unter AA drücken.
+- **Verlauf:** Ton 1 oben links, Ton 2 unten rechts über dem Grund, beide aus der Hauptfarbe (Ton 2 um 28° verschoben, bei Grün Richtung Gelb). Bilder und App zeigen nur diese zwei Flecken; zwei weitere aus dem ersten Canvas-Stand drückten den Kontrast unter AA.
 - **Formen Rund:** Ecken klein 14 dp, mittel 23 dp, groß 32 dp, Leiste 39 dp; Knöpfe, Chips und Kreise als Pille.
 
 ## Farben (Stand App)
 
-Maßgeblich ist `Farbwelt.kt` in `:core:designsystem`; der Kontrast-Test prüft jede Farbwelt hell und dunkel (WCAG 2.2 AA ohne Unschärfe, gegen Grund und volle Stellen des Verlaufs, Glas per Alpha gemischt; Text ≥ 4,5 : 1, Grafik ≥ 3 : 1). Gegenüber den Bildern ist der Nebentext im hellen Modus etwas dunkler, weil er auch direkt auf dem Verlauf AA halten muss.
+Maßgeblich ist `Farbwelt.kt` in `:core:designsystem`; der Kontrast-Test prüft jede Farbwelt hell und dunkel (WCAG 2.2 AA ohne Unschärfe, gegen Grund und volle Stellen des Verlaufs, Glas per Alpha gemischt; Text ≥ 4,5 : 1, Grafik ≥ 3 : 1). Die Bilder sind mit genau diesen Werten gerendert (Nebentext im hellen Modus dunkler als im ersten Canvas-Stand, weil er auch direkt auf dem Verlauf AA halten muss).
 
 ### Hell
 

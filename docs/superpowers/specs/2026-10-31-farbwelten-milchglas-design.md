@@ -1,7 +1,8 @@
 # Farbwelten und Milchglas – Design
 
 Stand 2026-10-31. Entscheidung: ADR 0015. Entwürfe: `docs/design/milchglas/` (zehn Bildschirme hell und dunkel,
-Farbtabellen in der `README.md`). Grundlage war der Design-Canvas „Foody Design“.
+Farbtabellen in der `README.md`). Grundlage war der Design-Canvas „Foody Design“. Abgleich mit dem Code Review (main bis #164):
+`docs/design/milchglas/abgleich.md`.
 
 ## Ziel
 
