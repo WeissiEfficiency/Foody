@@ -27,19 +27,3 @@ internal fun TagebuchEintragEntity.werte() = Naehrwerte(energieKj, eiweiss, kohl
 
 /** Höchstlänge eines Namens (wie der Server). */
 internal const val MAX_NAME = 200
-
-/** Ein Eintrag mit kcal und den Aktionen Ändern und Löschen. */
-@Composable
-internal fun EintragZeile(e: TagebuchEintragEntity, onAendern: () -> Unit, onLoeschen: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(e.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
-        Spacer(Modifier.width(FoodyAbstaende.s2))
-        Text(kcalText(e.werte().kcal, e.vollstaendig), style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
-        IconButton(onClick = onAendern) {
-            Icon(Icons.Outlined.Edit, contentDescription = "${e.name} ändern", tint = FoodyTheme.farben.text)
-        }
-        IconButton(onClick = onLoeschen) {
-            Icon(Icons.Outlined.Delete, contentDescription = "${e.name} löschen", tint = FoodyTheme.farben.text)
-        }
-    }
-}

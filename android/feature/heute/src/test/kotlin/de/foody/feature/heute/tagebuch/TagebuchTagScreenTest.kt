@@ -11,6 +11,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -86,12 +87,12 @@ class TagebuchTagScreenTest {
     @Test
     fun blaetternVorUndZurueck() {
         zeigen()
-        compose.warteAufText("Samstag, 24. Oktober 2026")
+        compose.warteAufText("SAMSTAG, 24. OKTOBER 2026")
         compose.onNodeWithContentDescription("Vorheriger Tag").performClick()
-        compose.warteAufText("Freitag, 23. Oktober 2026")
+        compose.warteAufText("FREITAG, 23. OKTOBER 2026")
         compose.onNodeWithContentDescription("Nächster Tag").performClick()
         compose.onNodeWithContentDescription("Nächster Tag").performClick()
-        compose.warteAufText("Sonntag, 25. Oktober 2026")
+        compose.warteAufText("SONNTAG, 25. OKTOBER 2026")
         assertEquals(heute.plusDays(1), aktuell)
     }
 
@@ -101,7 +102,7 @@ class TagebuchTagScreenTest {
             .edit().putInt(Einstellungsschluessel.TAGESZIEL, 2000).commit()
         runBlocking { tagebuch.frei(heute, Mahlzeit.SNACK, "Apfel", 500, null, null, null) }
         zeigen()
-        compose.warteAufText("500 / 2.000 kcal")
+        compose.warteAufText("von 2.000 kcal")
         compose.onNodeWithText("Apfel").assertExists()
     }
 
@@ -113,7 +114,7 @@ class TagebuchTagScreenTest {
         runBlocking { db.bestand(); tagebuch.ausRezept(heute, Mahlzeit.ABENDESSEN, "r1", BigDecimal.ONE) }
         zeigen()
         compose.warteAufText("717 kcal")
-        compose.onNodeWithContentDescription("Reispfanne ändern").performClick()
+        compose.onNodeWithContentDescription("Reispfanne ändern").performScrollTo().performClick()
         compose.warteAufText("Portionen")
         compose.onNode(hasSetTextAction() and hasText("1")).performTextReplacement("2")
         compose.onNodeWithText("Speichern").performClick()

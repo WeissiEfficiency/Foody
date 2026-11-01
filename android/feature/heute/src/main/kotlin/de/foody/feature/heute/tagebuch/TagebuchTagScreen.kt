@@ -14,18 +14,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,25 +40,26 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.data.db.TagebuchEintragEntity
-import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.glas.GlasFlaeche
-import de.foody.core.designsystem.komponenten.Augenbraue
+import de.foody.core.data.wochentagKurz
+import de.foody.core.designsystem.komponenten.FoodyFab
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
-import de.foody.core.designsystem.komponenten.LeererZustandZeile
-import de.foody.core.designsystem.komponenten.Naehrwertbalken
+import de.foody.core.designsystem.komponenten.LeistenTag
+import de.foody.core.designsystem.komponenten.RunderKnopf
+import de.foody.core.designsystem.komponenten.Seitenkopf
+import de.foody.core.designsystem.komponenten.Tagesleiste
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
-import de.foody.core.designsystem.token.GlasStufe
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.TAGEBUCH_INHALT
-import de.foody.feature.heute.anzeigename
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 import java.util.UUID
 
@@ -85,8 +83,8 @@ data class BlattAuftrag(val mahlzeit: Mahlzeit?, val datum: LocalDate, val id: S
 }
 
 /**
- * „Alle Einträge“ eines Tages: Vor/Zurück und Datumsauswahl ([onDatum] wechselt das Ziel), Tagesbilanz, Einträge je
- * Mahlzeit mit Ändern und Löschen („Rückgängig“ stellt den Eintrag mit derselben ID wieder her), Eintragen-Blatt.
+ * „Alle Einträge“ eines Tages wie im Entwurf: Kopf mit Vor/Zurück und Datumsauswahl, Tagesleiste ([onDatum] wechselt
+ * das Ziel), Ring mit Makros, je Mahlzeit eine Karte mit Ändern und Löschen, „+ Eintragen“ unten rechts („Rückgängig“ stellt den Eintrag mit derselben ID wieder her), Eintragen-Blatt.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,7 +116,11 @@ fun TagebuchTagRoute(
             datum, zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeitenId = it.id }, onLoeschen = loeschen,
             onEintragen = { blatt = BlattAuftrag(it, datum) },
         )
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = ueberLeiste(88.dp)))
+        FoodyFab(
+            "Eintragen", Icons.Outlined.Add, { blatt = BlattAuftrag(null, datum) },
+            Modifier.align(Alignment.BottomEnd).safeDrawingPadding().padding(end = FoodyAbstaende.s4, bottom = ueberLeiste(96.dp)),
+        )
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = ueberLeiste(160.dp)))
     }
 
     val bearbeiten = bearbeitenId?.let { id -> zustand?.abschnitte?.firstNotNullOfOrNull { a -> a.eintraege.firstOrNull { it.id == id } } }
@@ -146,7 +148,7 @@ fun TagebuchTagInhalt(
     Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         Column(
             Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().safeDrawingPadding()
-                .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = ueberLeiste(104.dp)).testTag(TAGEBUCH_INHALT),
+                .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s3, bottom = ueberLeiste(168.dp)).testTag(TAGEBUCH_INHALT),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
         ) { TagInhalt(datum, zustand, onDatum, onWahl, onAendern, onLoeschen, onEintragen) }
     }
@@ -163,38 +165,26 @@ private fun TagInhalt(
     onEintragen: (Mahlzeit?) -> Unit,
 ) {
     TagKopf(datum, onDatum, onWahl)
+    val montag = datum.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    Tagesleiste(
+        (0L..6L).map { i -> montag.plusDays(i) }.map { d ->
+            LeistenTag(wochentagKurz(d), d.dayOfMonth, markiert = false, beschreibung = TAG_LANG.format(d))
+        },
+        gewaehlt = (datum.toEpochDay() - montag.toEpochDay()).toInt(),
+        onWahl = { i -> onDatum(montag.plusDays(i.toLong())) },
+    )
     val z = zustand?.takeIf { it.datum == datum } ?: return
-    GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
-        Naehrwertbalken(z.summe.kcal, z.ziel, z.summe.eiweiss, z.summe.kohlenhydrate, z.summe.fett, Modifier.padding(FoodyAbstaende.s4))
-    }
-    z.abschnitte.forEach { a ->
-        Column(verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1)) {
-            Augenbraue(a.mahlzeit.anzeigename())
-            a.eintraege.forEach { e -> EintragZeile(e, onAendern = { onAendern(e) }, onLoeschen = { onLoeschen(e) }) }
-            if (a.eintraege.isEmpty()) {
-                LeererZustandZeile("Noch kein ${a.mahlzeit.anzeigename()}", "Eintragen", { onEintragen(a.mahlzeit) })
-            }
-        }
-    }
-    FoodyKnopf("Eintragen", { onEintragen(null) }, Modifier.fillMaxWidth(), art = KnopfArt.UMRISS)
+    TagBilanz(z.summe.kcal, z.ziel, z.summe.eiweiss, z.summe.kohlenhydrate, z.summe.fett)
+    z.abschnitte.forEach { a -> MahlzeitKarte(a, onAendern, onLoeschen) { onEintragen(a.mahlzeit) } }
 }
 
+/** Kopf wie im Entwurf: Datum als Überzeile, Titel „Tagebuch“, rechts runde Knöpfe für Vortag, Kalender und Folgetag. */
 @Composable
 private fun TagKopf(datum: LocalDate, onDatum: (LocalDate) -> Unit, onWahl: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = { onDatum(datum.minusDays(1)) }) {
-            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = "Vorheriger Tag", tint = FoodyTheme.farben.text)
-        }
-        Column(Modifier.weight(1f)) {
-            Augenbraue("Tagebuch")
-            Text(TAG_LANG.format(datum), style = MaterialTheme.typography.titleLarge, color = FoodyTheme.farben.text)
-        }
-        IconButton(onClick = onWahl) {
-            Icon(Icons.Outlined.CalendarMonth, contentDescription = "Datum wählen", tint = FoodyTheme.farben.text)
-        }
-        IconButton(onClick = { onDatum(datum.plusDays(1)) }) {
-            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = "Nächster Tag", tint = FoodyTheme.farben.text)
-        }
+    Seitenkopf("Tagebuch", ueberzeile = TAG_LANG.format(datum)) {
+        RunderKnopf(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, "Vorheriger Tag", { onDatum(datum.minusDays(1)) })
+        RunderKnopf(Icons.Outlined.CalendarMonth, "Datum wählen", onWahl)
+        RunderKnopf(Icons.AutoMirrored.Outlined.KeyboardArrowRight, "Nächster Tag", { onDatum(datum.plusDays(1)) })
     }
 }
 
