@@ -10,4 +10,6 @@ android {
 dependencies {
     // ViewModel und ViewModelStore stehen in der Schnittstelle
     api(libs.androidx.lifecycle.viewmodel.compose)
+    // Gemeinsame Optionen der Referenzbilder (Bildvergleich.kt)
+    api(libs.roborazzi)
 }

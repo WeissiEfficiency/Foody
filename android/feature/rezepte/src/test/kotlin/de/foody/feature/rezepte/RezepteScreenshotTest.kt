@@ -6,7 +6,6 @@ import androidx.compose.runtime.remember
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import de.foody.core.data.db.ArbeitsschrittEntity
 import de.foody.core.data.db.FoodyDatenbank
@@ -16,6 +15,7 @@ import de.foody.core.data.rezepte.RezeptEntwurf
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.testing.FoodyBildvergleich
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.NutrientBasis
 import de.foody.domain.ZutatZeile
@@ -99,7 +99,7 @@ class RezepteScreenshotTest {
     @Config(qualifiers = "w1280dp-h1200dp")
     fun tablet() = alle("tablet")
 
-    private val vergleich = RoborazziOptions(compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f))
+    private val vergleich = FoodyBildvergleich
 
     private fun alle(geraet: String) {
         for (dunkel in listOf(false, true)) {

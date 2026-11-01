@@ -188,7 +188,8 @@ Einzige Quelle für das Aussehen der App.
   - `token/`: `Farbwelt` (acht wählbare Paletten, Standard Mango; je Modus `FarbweltWerte` = `FoodyFarben`, `Verlauf`,
     Glastönung, Platzhalter – seit ADR 0015), `GlasStufe` + `glasWerte(stufe, dunkel, farbwelt)` (Milchglas: LEICHT/DICHT
     mit Unschärfe 40 dp und Korn, BILD fast deckend ohne Unschärfe; Tönung, Lichtkante), `FoodyTypografie` (Fraunces bis
-    `titleLarge`, sonst Figtree; Deutsch mit Silbentrennung), `FoodyFormen` (14/23/32 dp, Leiste 39 dp), `FoodyAbstaende`
+    `titleLarge`, sonst Figtree; Deutsch mit Silbentrennung; `fraunces.ttf` enthält nur noch die Achse `wght` 600–700,
+    die übrigen Achsen fest auf ihren Standardwerten), `FoodyFormen` (14/23/32 dp, Leiste 39 dp), `FoodyAbstaende`
     (4-dp-Raster `s1`–`s6`, für alle Abstände in `padding`, `spacedBy` und `Spacer`; andere Werte stehen bewusst als
     `.dp`), `FoodyBreiten` (`zweispaltig` 840 dp, `inhalt` 720 dp, `zweiBereiche` 1100 dp), `Kontrast.kt` (`kontrast`,
     `mischen`, `kontrastPaare(dunkel, farbwelt)`, `herzFarbe`).
@@ -213,6 +214,8 @@ Einzige Quelle für das Aussehen der App.
   (`TestHilfen.abgeschnitteneTexte`); Roborazzi-Screenshots aller Katalogseiten (hell/dunkel, Handy 411 dp,
   Tablet 1280 dp, Schrift 200 %) in `android/katalog/src/test/screenshots/`, Vergleich in der CI
   (`:katalog:verifyRoborazziDebug`, Toleranz 0,1 %). Neu aufnehmen: `./gradlew :katalog:recordRoborazziDebug`.
+  Alle Referenzbilder (Katalog und Features) nutzen `FoodyBildvergleich` aus `:core:testing`: halbe Auflösung, damit
+  jedes Neuaufnehmen das Repo nur wenig wachsen lässt.
 
 ## Hülle, Heute, Tagebuch (`:app`, `:feature:heute`)
 

@@ -3,8 +3,8 @@ package de.foody.katalog
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
+import de.foody.core.testing.FoodyBildvergleich
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,8 +37,7 @@ class KatalogScreenshotTest {
     @Config(qualifiers = "w1280dp-h1600dp")
     fun tablet() = alleSeiten("tablet", schrift200 = listOf(false))
 
-    /** Höchstens 0,1 % geänderte Pixel gelten als gleich (Schriftglättung); schon ein umgefärbtes Herz ist mehr. */
-    private val vergleich = RoborazziOptions(compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f))
+    private val vergleich = FoodyBildvergleich
 
     private fun alleSeiten(geraet: String, schrift200: List<Boolean>) {
         for (seite in KatalogSeite.entries) {

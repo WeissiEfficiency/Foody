@@ -11,12 +11,12 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
-import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.github.takahirom.roborazzi.captureScreenRoboImage
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.testing.FoodyBildvergleich
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -64,7 +64,7 @@ class EinstellungenScreenshotTest {
     @After
     fun tearDown() = u.schliessen()
 
-    private val vergleich = RoborazziOptions(compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f))
+    private val vergleich = FoodyBildvergleich
 
     private val keineDateien: @Composable ((android.net.Uri) -> Unit, (android.net.Uri) -> Unit) -> Dateiwahl = { _, _ ->
         remember { Dateiwahl({}, {}) }
