@@ -18,6 +18,9 @@ class ZutatZeileTest {
         "2 große Zwiebeln" to ("2 große" to "Zwiebeln"),
         "1,5 l Milch" to ("1,5 l" to "Milch"),
         "3 Eier" to ("3" to "Eier"),
+        "2 Msp. Muskat" to ("2 Msp." to "Muskat"),
+        "1 Kugel Mozzarella" to ("1 Kugel" to "Mozzarella"),
+        "1 Tube Tomatenmark" to ("1 Tube" to "Tomatenmark"),
     )
 
     private fun markdown(menge: String, name: String): ImportedIngredient =
@@ -72,6 +75,10 @@ class ZutatZeileTest {
         assertEquals("200 g Mehl, gesiebt", ZutatZeile.schreiben(BigDecimal("200"), MeasureUnit.GRAM, "Mehl", "gesiebt", false))
         assertEquals("2 große Zwiebeln", ZutatZeile.schreiben(BigDecimal(2), MeasureUnit.PIECE, "Zwiebeln", "große", false))
         assertEquals("1 Prise Salz", ZutatZeile.schreiben(null, null, "Salz", "1 Prise", false))
+        // Die Prise rechnet mit 0,5 g, steht aber weiter als Prise da
+        assertEquals("1 Prise Salz", ZutatZeile.schreiben(BigDecimal("0.5"), MeasureUnit.GRAM, "Salz", "1 Prise", false))
+        // Passt die Menge nicht mehr zur Prise (von Hand geändert), gilt die Menge
+        assertEquals("2 g Salz, 1 Prise", ZutatZeile.schreiben(BigDecimal("2"), MeasureUnit.GRAM, "Salz", "1 Prise", false))
         assertEquals("1,5 l Milch (optional)", ZutatZeile.schreiben(BigDecimal("1.50"), MeasureUnit.LITER, "Milch", null, true))
     }
 

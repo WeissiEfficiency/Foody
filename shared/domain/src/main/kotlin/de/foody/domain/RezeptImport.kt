@@ -15,8 +15,9 @@ object RezeptImport {
     data class Ergebnis(val portionen: Int, val geschaetzt: Boolean, val zeilen: List<Zeile>, val ausDatei: Boolean = false)
 
     /** [zutaten]`[i]` ist die aufgelöste Zutat zu `rezept.ingredients[i]`. */
-    fun vorbereiten(rezept: ImportedRecipe, zutaten: List<Ingredient>, vorgabePortionen: Int): Ergebnis {
-        require(zutaten.size == rezept.ingredients.size) { "Zu jeder Zeile gehört genau eine Zutat" }
+    fun vorbereiten(datei: ImportedRecipe, zutaten: List<Ingredient>, vorgabePortionen: Int): Ergebnis {
+        require(zutaten.size == datei.ingredients.size) { "Zu jeder Zeile gehört genau eine Zutat" }
+        val rezept = datei.copy(ingredients = datei.ingredients.zip(zutaten) { ing, z -> gewichtAusHinweis(ing, z) })
         val paare = rezept.ingredients.zip(zutaten)
         // Gewicht der festen Pflichtzutaten (ohne Flüssigkeiten) für die Portionen-Schätzung
         val festeGramm = paare.filter { (ing, _) -> !ing.optional && (ing.amount?.signum() ?: 0) > 0 }.sumOf { (ing, z) ->
@@ -52,6 +53,46 @@ object RezeptImport {
         // Backware, aber nicht schätzbar: dann doch die Angabe der Datei statt der Vorgabe
         val portionen = ausDatei ?: schaetzung ?: rezept.servings
         return Ergebnis(portionen ?: vorgabePortionen, schaetzung != null, zeilen, ausDatei = schaetzung == null && portionen != null)
+    }
+
+    private val gewichtImHinweis = Regex(
+        """(?:\b(à|je|pro)\s+)?(?:ca\.\s*)?(${GermanAmounts.NUMBER})(?:\s*(?:[-–]|bis)\s*(?:${GermanAmounts.NUMBER}))?\s*(kg|g|ml|l)\b""",
+        RegexOption.IGNORE_CASE,
+    )
+
+    /** Mengenwörter, deren Gewichtsangabe je Stück gilt („2 Gläser, à 200 g“ wie „1 Glas, ca. 200 ml“). */
+    private val behaelter = setOf(
+        "glas", "gläser", "becher", "tube", "tube/n", "flasche", "flasche/n", "dose", "dose/n", "packung", "beutel", "tüte",
+        "päckchen", "schale", "schälchen", "netz", "rolle", "kugel", "bund", "stange",
+    )
+
+    /**
+     * „1 Pck. Eierspätzle, 400 g“, „1 Becher Schmelzkäse, ca. 200 g“: Lässt sich eine Stück-, Packungs- oder Dosenangabe
+     * mit den Daten der Zutat nicht in Gramm umrechnen, gilt das Gewicht (oder Volumen) aus dem Hinweis – je Behälter
+     * oder bei „à“/„je“, sonst für die ganze Zeile. Bei einer Spanne die untere Grenze, bei mehreren Angaben nichts.
+     * Die ursprüngliche Angabe bleibt vorne im Hinweis.
+     */
+    internal fun gewichtAusHinweis(ing: ImportedIngredient, zutat: Ingredient): ImportedIngredient {
+        val menge = ing.amount?.takeIf { it.signum() > 0 } ?: return ing
+        val einheit = ing.unit ?: MeasureUnit.PIECE
+        val hinweis = ing.note ?: return ing
+        if (!einheit.dimension.countable) return ing
+        if (UnitConverter.convert(Quantity.of(menge, einheit), Dimension.MASS, zutat.conversion) != null) return ing
+        val treffer = gewichtImHinweis.findAll(hinweis).toList()
+        if (treffer.map { it.groupValues[2] + it.groupValues[3].lowercase() }.distinct().size != 1) return ing
+        val t = treffer.first()
+        val gewicht = GermanAmounts.parseNumber(t.groupValues[2]) ?: return ing
+        val gewichtEinheit = GermanAmounts.unitOf(t.groupValues[3]) ?: return ing
+        // „Glas, ca. 200 ml“, „kl. Dose/n, 480 g“: der erste Teil des Hinweises nennt den Behälter
+        val imBehaelter = hinweis.substringBefore(',').lowercase().split(' ').any { it in behaelter }
+        val jeStueck = t.groupValues[1].isNotEmpty() || einheit != MeasureUnit.PIECE || imBehaelter
+        val zahl = menge.stripTrailingZeros().toPlainString().replace('.', ',')
+        val vorne = when {
+            einheit != MeasureUnit.PIECE -> "$zahl ${einheit.symbol}, "
+            imBehaelter -> "$zahl "
+            else -> "$zahl Stk., "
+        }
+        return ing.copy(amount = if (jeStueck) menge * gewicht else gewicht, unit = gewichtEinheit, note = vorne + hinweis)
     }
 
     /** Notiz am importierten Rezept (Texte wie in den String-Ressourcen der App). */

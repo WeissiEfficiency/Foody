@@ -53,10 +53,31 @@ class StartdatenLaderTest {
     }
 
     @Test
-    fun vEinsMitVersionAchtTutNichts() = runTest {
-        prefs.edit().putInt("seedVersion", 8).commit()
+    fun aktuelleVersionTutNichts() = runTest {
+        prefs.edit().putInt("seedVersion", Startdaten.VERSION).commit()
         assertEquals(0, lader.ladenWennNoetig())
         assertTrue(db.zutatDao().alle().isEmpty())
+    }
+
+    @Test
+    fun vonVersionAchtKommenGebaeckUndDichtenDazu() = runTest {
+        // Stand v8 (auch Umsteiger von der v1): Startzutaten ohne die Zeilen von v9, Tomatenmark ohne Dichte, eine
+        // eigene „Brezel“ ohne Nährwerte aus einem importierten Rezept
+        val neuInNeun = setOf("seed-weissbrot", "seed-toastbrot", "seed-brezel", "seed-banane")
+        Startdaten.zutaten(1).filterNot { it.id in neuInNeun }
+            .map { if (it.id == "seed-tomatenmark") it.copy(densityGPerMl = null, pieceWeightG = null) else it }
+            .forEach { db.zutatDao().upsert(it) }
+        db.zutatDao().upsert(ZutatEntity(id = "eigen-brezel", canonicalName = "Brezel", createdAt = 1, updatedAt = 1))
+        prefs.edit().putInt("seedVersion", 8).commit()
+        lader.ladenWennNoetig()
+        assertNotNull(db.zutatDao().nachId("seed-weissbrot"))
+        assertEquals(BigDecimal("25"), db.zutatDao().nachId("seed-toastbrot")?.pieceWeightG, "Stück = Scheibe")
+        val tomatenmark = assertNotNull(db.zutatDao().nachId("seed-tomatenmark"))
+        assertEquals(BigDecimal("1.1"), tomatenmark.densityGPerMl, "EL Tomatenmark rechnet jetzt")
+        assertEquals(BigDecimal("200"), tomatenmark.pieceWeightG, "Stück = Tube")
+        // Die eigene Brezel bekommt die Werte, eine zweite Brezel entsteht nicht
+        assertNotNull(db.zutatDao().nachId("eigen-brezel")?.energyKj)
+        assertEquals(null, db.zutatDao().nachId("seed-brezel"))
     }
 
     @Test
