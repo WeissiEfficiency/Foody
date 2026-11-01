@@ -15,7 +15,7 @@ werden und welche Restrisiken bewusst bleiben. Bei Änderungen an Import, Sicher
 | Exportierte Komponenten | Nur `MainActivity` (Launcher und Deep Links, siehe unten). Keine Intent-Filter für fremde Daten, keine WebView. Einziger PendingIntent: der Kochmodus aus der Timer-Meldung (`FLAG_IMMUTABLE`, an das eigene Paket gebunden) |
 | Deep Links | `foody://rezept/{id}`, `foody://einkauf/{listeId}`, `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (`VIEW` mit `BROWSABLE`): jede Webseite oder App kann sie öffnen. Sie **navigieren nur** und ändern keine Daten, bis man selbst etwas antippt. Unbekannte IDs zeigen „nicht gefunden“, ein ungültiges Datum zeigt heute, Portionen sind auf 1–99 begrenzt; Links ohne passendes Ziel werden verworfen (`deepLinkOeffnen`). Bei laufender App navigiert ein Link im bestehenden Stapel (`singleTask`, `onNewIntent`) |
 | FileProvider | Einer: `KameraFotoProvider` in `:core:data` (`${applicationId}.kamera`), nicht exportiert, Schreibrecht nur befristet an die Kamera-App. Gibt nur `cache/kamera/` (Rezeptfotos, verkleinert übernommen) und `cache/scan/` (Nährwerttabelle, nach der Erkennung gelöscht) frei |
-| Packung scannen | Strichcode über den Google Code Scanner, Texterkennung über ML Kit – beides Play-Dienste, auf dem Gerät, ohne Kamera-Berechtigung. Online-Produktsuche (`OffProduktSuche`, `:core:scan`): HTTPS-GET an Open Food Facts mit **nur der Produktnummer** (vorher auf Ziffern gefiltert, `User-Agent: Foody/<Version>`), eigener OkHttp-Client ohne die lokale CA, Zeitlimit 8 s, Antwort gezählt gelesen und auf 256 kB begrenzt; abschaltbar unter „Einstellungen → Zutaten → Online-Produktsuche“ (ADR 0013) |
+| Packung scannen | Strichcode über den Google Code Scanner, Texterkennung über ML Kit – beides Play-Dienste, auf dem Gerät, ohne Kamera-Berechtigung. Online-Produktsuche (`OffProduktSuche`, `:core:scan`): HTTPS-GET an Open Food Facts mit **nur der Produktnummer** (vorher auf Ziffern gefiltert, `User-Agent: Foody/<Version>`), eigener OkHttp-Client ohne die lokale CA, Zeitlimit 8 s, Antwort gezählt gelesen und auf 256 kB begrenzt; abschaltbar unter „Einstellungen → Zutaten → Online-Produktsuche“ (ADR 0013). Die Play-Dienste laden die beiden ML-Kit-Module nach, sobald ein Scan-Knopf zu sehen ist (`deferredInstall`, ohne Dialog) |
 | Datenbank | Room mit gebundenen Parametern; `LIKE`-Suche maskiert `%`/`_`; rohes SQL nur in Migrationen |
 | Backup | `allowBackup="false"`, kein Cloud-Backup. Daten verlassen das Gerät nur über „Sicherung erstellen“ (Prüfungen beim Wiederherstellen unten) oder den eigenen Sync-Server |
 | Signatur | Release „Foody“ mit eigenem Schlüssel (nicht im Repository, `keystore.properties`). „Foody Vorschau“ (`.vorschau`) ist mit dem Debug-Schlüssel signiert: nur zum Testen, nicht zur Weitergabe |
@@ -75,6 +75,9 @@ Server und Protokoll (`:server`, `:api-protocol`); Fremdeingaben sind hier alle 
 
 - **Produktnummer an Open Food Facts:** Verrät, welches Produkt gescannt wurde (und die IP-Adresse). Abschaltbar;
   dann wird nur im eigenen Katalog gesucht und sonst die Nährwerttabelle fotografiert.
+- **Google Play-Dienste beim Scannen:** Code Scanner und Texterkennung laufen auf dem Gerät, die Play-Dienste melden
+  dabei aber Nutzungsdaten (welche API, Dauer, Fehler) an Google; laut Google keine Bilder oder Strichcodes. Nicht
+  abschaltbar, ohne auf den Scan zu verzichten; ohne Scan entsteht nichts davon.
 - **Datenbank unverschlüsselt:** liegt in der App-Sandbox. Sie enthält neben Rezepten und Plan das
   Ernährungstagebuch – das sind **Gesundheitsdaten**. Die Sandbox schützt sie vor anderen Apps; wer das entsperrte
   Gerät hat, sieht sie ohnehin in der App.
