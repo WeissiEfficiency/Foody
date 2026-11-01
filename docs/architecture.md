@@ -160,8 +160,8 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-18-v3-phase3-app-daten-sync-desi
   (> 10 MB oder kein JPEG nach Verkleinern) → Rezept ohne Foto mit Problem `photo_unsyncable`. Verliert ein Rezept beim
   Anwenden ein eigenes Foto (gelöscht, ersetzt, entfernt), löscht der Sync die Datei nach dem Commit, wenn kein Rezept
   sie mehr nutzt.
-- **Sicherung** (`Sicherung`): ZIP mit `backup.json` (Format 3, ohne Vorrat) und `photos/`; liest Format 3 und alle
-  v1-Formate (Vorrat übersprungen). Import ersetzt alles, ist atomar und bei aktivem Sync gesperrt; Zip-Slip und
+- **Sicherung** (`Sicherung`): ZIP mit `backup.json` (Format 3, ohne Vorrat) und `photos/`; liest nur Format 3, Sicherungen
+  der v1 (mit Vorrat, auch reines JSON) lehnt der Import mit eigener Meldung ab (C8). Import ersetzt alles, ist atomar und bei aktivem Sync gesperrt; Zip-Slip und
   Größengrenzen wie v1.
 - **Portionen-Nachtrag** (`PortionenNachtrag`): ordnet Markdown-Dateien über `sourceUrl` den Rezepten zu und wendet
   `RezeptImport.portionenNachtragen` an (nur `defaultServings` und Notiz); Ergebnis aktualisiert/übersprungen/ohne

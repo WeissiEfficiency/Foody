@@ -1,32 +1,23 @@
 package de.foody.core.data.sicherung
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
 
 /**
- * Inhalt von `backup.json` – gleiche Feldnamen wie in der v1 (`BackupDto`), damit beide Fassungen mit einer Klasse
- * gelesen werden. Zahlen stehen als Strings (verlustfrei), Datumswerte als ISO-8601, Aufzählungen über den Namen.
- *
- * Fassungen:
- * - **v1** (`"formatVersion": 1`, fehlt die Angabe, gilt 1): mit Vorrat (`pantry`); der Vorrat wird gezählt und
- *   übersprungen.
- * - **3** (`"format": 3`): ohne Vorrat; so schreibt die V3.
+ * Inhalt von `backup.json` im Format 3 (`"format": 3`). Die Feldnamen stammen aus der v1 (`BackupDto`); Sicherungen der
+ * v1 selbst (`formatVersion`, mit Vorrat) liest die App seit dem Ende des Rückwegs nicht mehr (C8, Tag `v1-final`).
+ * Zahlen stehen als Strings (verlustfrei), Datumswerte als ISO-8601, Aufzählungen über den Namen.
  *
  * Fotos liegen in der ZIP unter `photos/<n>.jpg`; ein Rezeptbild zeigt darauf als [FOTO_SCHEMA]`<n>.jpg`.
  */
 @Serializable
 internal data class SicherungDaten(
-    /** Formatnummer ab V3 ([FORMAT]). */
+    /** Formatnummer ([FORMAT]). */
     val format: Int? = null,
-    /** Formatnummer der v1 (immer 1). */
-    val formatVersion: Int? = null,
     val ingredients: List<Zutat> = emptyList(),
     val recipes: List<Rezept> = emptyList(),
     val recipeIngredients: List<RezeptZutat> = emptyList(),
     val steps: List<Schritt> = emptyList(),
     val mealSlots: List<PlanEintrag> = emptyList(),
-    /** Vorrat der v1; wird nur gezählt, nie gelesen oder geschrieben. */
-    val pantry: List<JsonElement> = emptyList(),
     val shoppingLists: List<Einkaufsliste> = emptyList(),
     val shoppingItems: List<Einkaufsartikel> = emptyList(),
     val shoppingSources: List<Quelle> = emptyList(),
@@ -75,7 +66,7 @@ internal data class SicherungDaten(
         val id: String, val listId: String, val ingredientId: String? = null, val name: String,
         val amount: String? = null, val unit: String? = null, val checked: Boolean, val manual: Boolean,
         val category: String? = null, val sortOrder: Int, val note: String? = null,
-        /** Ab V3; fehlen sie (v1), setzt der Einfüge-Trigger `updatedAt` auf jetzt. */
+        /** Fehlen sie, setzt der Einfüge-Trigger `updatedAt` auf jetzt. */
         val updatedAt: Long = 0, val checkedChangedAt: Long = 0,
     )
 
@@ -95,11 +86,8 @@ internal data class SicherungDaten(
     )
 
     companion object {
-        /** Formatnummer, die die V3 schreibt. */
+        /** Formatnummer, die die V3 schreibt und liest. */
         const val FORMAT = 3
-
-        /** Formatnummer der v1-Sicherungen. */
-        const val FORMAT_V1 = 1
 
         /** Eintrag mit den Daten in der ZIP. */
         const val DATEN_EINTRAG = "backup.json"

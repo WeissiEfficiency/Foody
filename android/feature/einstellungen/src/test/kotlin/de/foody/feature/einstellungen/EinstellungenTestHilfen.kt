@@ -19,10 +19,13 @@ import de.foody.core.sync.ErsterSync
 import de.foody.core.testing.ViewModelHalter
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.robolectric.RuntimeEnvironment
+import java.io.ByteArrayOutputStream
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 /** Ersatz für das Konto: merkt sich die Aufrufe, Ergebnisse frei vorgebbar. */
 internal class ErsatzKonto : KontoZugriff {
@@ -104,10 +107,18 @@ internal class EinstellungenTestUmgebung {
     }
 }
 
-/** `backup.json` einer v1-Sicherung mit einem Rezept und zwei Vorratseinträgen (erfunden). */
-val V1_SICHERUNG = """
+/** Sicherung im Format 3 (ZIP mit `backup.json`) mit einem Rezept und einer Zutat (erfunden). */
+fun sicherungZip(): ByteArray = ByteArrayOutputStream().also { aus ->
+    ZipOutputStream(aus).use { zip ->
+        zip.putNextEntry(ZipEntry("backup.json"))
+        zip.write(SICHERUNG_JSON.toByteArray())
+        zip.closeEntry()
+    }
+}.toByteArray()
+
+private val SICHERUNG_JSON = """
     {
-        "formatVersion": 1,
+        "format": 3,
         "ingredients": [
             {"id": "z1", "name": "Tomate", "category": "Gemüse", "density": null, "pieceWeight": "120", "basis": "PER_100_G",
              "energyKj": "75.5", "protein": "0.9", "carbs": "2.6", "fat": "0.2", "fiber": null, "sugar": null, "salt": null,
@@ -124,10 +135,6 @@ val V1_SICHERUNG = """
         ],
         "steps": [],
         "mealSlots": [],
-        "pantry": [
-            {"id": "p1", "ingredientId": "z1", "amount": "3", "unit": "PIECE", "bestBefore": null, "updatedAt": 1},
-            {"id": "p2", "ingredientId": "z1", "amount": "1", "unit": "PIECE", "bestBefore": null, "updatedAt": 1}
-        ],
         "shoppingLists": [],
         "shoppingItems": [],
         "shoppingSources": [],
