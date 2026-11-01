@@ -1,11 +1,11 @@
 package de.foody.server
 
-import de.foody.server.admin.AdminCli
-import de.foody.server.db.Database
-import de.foody.server.db.Migrations
 import de.foody.api.protocol.AuthResponse
 import de.foody.api.protocol.LoginRequest
 import de.foody.api.protocol.Protocol
+import de.foody.server.admin.AdminCli
+import de.foody.server.db.Database
+import de.foody.server.db.Migrations
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get

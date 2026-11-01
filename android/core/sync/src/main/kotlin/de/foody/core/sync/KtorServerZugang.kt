@@ -19,19 +19,19 @@ import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.header
 import io.ktor.client.request.prepareRequest
 import io.ktor.client.request.setBody
-import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.contentLength
 import io.ktor.http.contentType
 import io.ktor.http.encodeURLPathPart
 import io.ktor.utils.io.readAvailable
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerializationException
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerializationException
 
 /**
  * [ServerZugang] über Ktor. [basisAdresse] ist die geprüfte Server-Adresse ([ServerAdresse.pruefen]), ohne `/api/v3`.

@@ -9,14 +9,14 @@ import android.util.Log
 import androidx.core.content.edit
 import androidx.exifinterface.media.ExifInterface
 import de.foody.core.data.Einstellungsschluessel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.util.UUID
 import kotlin.math.roundToInt
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 /**
  * Eigene Rezeptfotos im privaten App-Speicher (`filesDir/recipe_images`, derselbe Ordner wie in der v1).

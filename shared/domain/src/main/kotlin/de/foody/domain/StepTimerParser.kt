@@ -12,6 +12,7 @@ data class StepTimer(val duration: Duration, val label: String)
  */
 object StepTimerParser {
     private const val NUM = """\d+(?:[.,]\d+)?"""
+
     // (?!\p{L}) = Wortende, damit „5 Minzblätter“ kein Timer wird
     private const val HOURS = """(?:Stunden|Stunde|Std\.?|h)(?!\p{L})"""
     private const val MINUTES = """(?:Minuten|Minute|Min\.?)(?!\p{L})"""

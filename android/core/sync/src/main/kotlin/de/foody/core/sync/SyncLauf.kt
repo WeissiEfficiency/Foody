@@ -14,11 +14,11 @@ import de.foody.core.data.sync.Ausstehend
 import de.foody.core.data.sync.Fassung
 import de.foody.core.data.sync.SpeicherVollFehler
 import de.foody.core.data.sync.SyncSpeicher
-import java.io.IOException
-import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.io.IOException
+import kotlin.coroutines.cancellation.CancellationException
 
 /** Der Server liefert weitere Seiten, aber einen Cursor, der nicht vorrückt. */
 private class CursorHaengt : Exception(ServerFehler.CURSOR_HAENGT)

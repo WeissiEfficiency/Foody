@@ -9,12 +9,12 @@ import de.foody.core.sync.SyncKonto
 import de.foody.feature.einstellungen.KontoZugriff
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import javax.inject.Inject
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import javax.inject.Inject
 import kotlin.test.assertTrue
 
 /** Der ganze Hilt-Graph der App baut – inklusive SyncKonfiguration, die nur die App liefert. */
@@ -26,8 +26,11 @@ class HiltGraphTest {
     val hilt = HiltAndroidRule(this)
 
     @Inject lateinit var konto: SyncKonto
+
     @Inject lateinit var ausloeser: SyncAusloeser
+
     @Inject lateinit var konfiguration: SyncKonfiguration
+
     @Inject lateinit var kontoZugriff: KontoZugriff
 
     @Test

@@ -16,8 +16,8 @@ import de.foody.app.navigation.Hauptgeruest
 import de.foody.app.navigation.deepLinkOeffnen
 import de.foody.core.data.DarstellungSpeicher
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.token.Farbwelt
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.designsystem.token.Farbwelt
 import de.foody.feature.kochen.timer.KochTimerDienst
 import de.foody.feature.kochen.timer.KochTimerSpeicher
 import javax.inject.Inject
@@ -29,6 +29,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject lateinit var kochTimer: KochTimerSpeicher
+
     @Inject lateinit var darstellung: DarstellungSpeicher
 
     override fun onCreate(savedInstanceState: Bundle?) {

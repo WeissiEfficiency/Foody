@@ -18,7 +18,6 @@ import de.foody.feature.heute.bestand
 import de.foody.feature.heute.haferflocken
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testScan
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -39,6 +38,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.math.BigDecimal
 import java.time.LocalDate
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull

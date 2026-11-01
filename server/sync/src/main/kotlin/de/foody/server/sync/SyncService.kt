@@ -1,8 +1,5 @@
 package de.foody.server.sync
 
-import de.foody.api.protocol.VerloreneRevisionen
-import de.foody.server.ApiException
-import de.foody.server.db.Database
 import de.foody.api.protocol.ErrorCode
 import de.foody.api.protocol.PayloadValidator
 import de.foody.api.protocol.Protocol
@@ -12,14 +9,17 @@ import de.foody.api.protocol.PushResult
 import de.foody.api.protocol.PushStatus
 import de.foody.api.protocol.RecordType
 import de.foody.api.protocol.SyncRecord
+import de.foody.api.protocol.VerloreneRevisionen
+import de.foody.server.ApiException
+import de.foody.server.db.Database
 import io.ktor.http.HttpStatusCode
-import java.sql.Connection
-import java.time.Clock
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
+import java.sql.Connection
+import java.time.Clock
 
 /** Sync-Kern: nimmt Datensätze eines Kontos an und liefert Änderungen seit einer Revision. */
 class SyncService(private val db: Database, private val store: RecordStore, private val clock: Clock) {

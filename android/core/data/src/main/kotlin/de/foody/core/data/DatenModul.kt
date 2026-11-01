@@ -8,9 +8,9 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import de.foody.core.data.db.FoodyDatenbank
+import de.foody.core.data.db.MIGRATION_9_10
 import de.foody.core.data.einkauf.EinkaufRepository
 import de.foody.core.data.einkauf.IgnorierteSchluessel
-import de.foody.core.data.db.MIGRATION_9_10
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.fotos.FotoIndex
 import de.foody.core.data.kochen.KochenRepository
@@ -20,14 +20,14 @@ import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.data.rezeptimport.PortionenNachtrag
 import de.foody.core.data.sicherung.Sicherung
 import de.foody.core.data.startdaten.StartdatenLader
+import de.foody.core.data.sync.SyncSpeicher
 import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.data.woche.WocheRepository
-import de.foody.core.data.sync.SyncSpeicher
 import de.foody.core.data.zutaten.ZutatenRepository
-import java.time.Clock
-import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.Dispatchers
+import java.time.Clock
 import javax.inject.Singleton
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Baut die Datenbank `foody.db`: nur Migration 9 → 10 (v1 → V3), Callback für neue Datenbanken, **nie** ein

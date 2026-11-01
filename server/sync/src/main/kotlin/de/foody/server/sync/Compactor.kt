@@ -19,7 +19,6 @@ class Compactor(
 ) {
     private val log = LoggerFactory.getLogger(Compactor::class.java)
 
-
     /** Führt die Kompaktierung aus und liefert die Zahl entfernter Löschmarkierungen; danach werden Fotos aufgeräumt. */
     fun run(): Int {
         val removed = compactTombstones()

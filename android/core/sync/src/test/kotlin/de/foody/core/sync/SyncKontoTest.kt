@@ -25,6 +25,18 @@ import de.foody.core.data.sync.SyncSpeicher
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import io.ktor.client.HttpClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
 import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -38,18 +50,6 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.runBlocking
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 
 /** Schlüsselablage im Speicher (unter Robolectric gibt es keinen `AndroidKeyStore`); [fehler] simuliert eine Störung. */
 internal class SpeicherSchluessel : Schluesselablage {
@@ -114,6 +114,7 @@ class SyncKontoTest {
         val speicher = SyncSpeicher(db, ablage, FotoIndex(db.syncDao(), ablage))
         val schluessel = SpeicherSchluessel()
         val token = TokenSpeicher(context, schluessel)
+
         /** (Adresse, Token) jeder Anfrage, die ein Token mitschickt. */
         val gesendet = ArrayList<Pair<String, String?>>()
         val fabrik = ZugangFabrik { adresse ->

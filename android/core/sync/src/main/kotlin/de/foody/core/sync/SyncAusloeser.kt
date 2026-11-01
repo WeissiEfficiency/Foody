@@ -11,16 +11,16 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.OutboxStand
 import de.foody.core.data.sync.SyncSpeicher
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Wann der Sync läuft: als einmaliger WorkManager-Auftrag [AUFTRAG] mit Netz-Bedingung ([SyncAuftrag]); kein periodischer

@@ -2,10 +2,10 @@ package de.foody.core.data.fotos
 
 import de.foody.core.data.db.SyncDao
 import de.foody.core.data.db.SyncFotoLokalEntity
-import java.io.File
-import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.security.MessageDigest
 
 /**
  * Prüfsumme (SHA-256, Kleinbuchstaben-Hex – so adressiert der Server die Fotos) je eigener Fotodatei.

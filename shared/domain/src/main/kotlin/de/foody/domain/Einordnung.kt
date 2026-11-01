@@ -1,6 +1,5 @@
 package de.foody.domain
 
-
 /**
  * Mahlzeit eines Rezepts oder Plan-Eintrags. Gespeichert wird immer der Enum-Name; Anzeigetexte kommen aus der App.
  * Mengen werden kommagetrennt gespeichert: `null` = nicht festgelegt, `""` = bewusst keine.

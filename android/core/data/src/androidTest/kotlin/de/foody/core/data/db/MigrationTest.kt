@@ -6,15 +6,15 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import de.foody.core.data.baueDatenbank
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
 import java.io.File
 import java.security.MessageDigest
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.junit.Rule
-import org.junit.Test
-import org.junit.runner.RunWith
 
 /**
  * Migration 9 → 10 gegen die exportierten Schemata (9.json als Ausgangsstand, 10.json als Ziel). Die v9-Datenbank

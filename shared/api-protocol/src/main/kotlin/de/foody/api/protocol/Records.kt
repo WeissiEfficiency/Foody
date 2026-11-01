@@ -8,10 +8,15 @@ import kotlinx.serialization.json.JsonObject
 @Serializable
 enum class RecordType(val wire: String) {
     @SerialName("ingredient") INGREDIENT("ingredient"),
+
     @SerialName("recipe") RECIPE("recipe"),
+
     @SerialName("meal_slot") MEAL_SLOT("meal_slot"),
+
     @SerialName("shopping_list") SHOPPING_LIST("shopping_list"),
+
     @SerialName("shopping_item") SHOPPING_ITEM("shopping_item"),
+
     /** Seit App-DB v8; der Name ist der Tabellenname, den die Sync-Trigger in die Outbox schreiben. */
     @SerialName("tagebuch_eintrag") TAGEBUCH_EINTRAG("tagebuch_eintrag"),
 }
@@ -37,7 +42,9 @@ data class PushRequest(val records: List<SyncRecord>)
 @Serializable
 enum class PushStatus {
     @SerialName("accepted") ACCEPTED,
+
     @SerialName("merged") MERGED,
+
     @SerialName("rejected") REJECTED,
 }
 

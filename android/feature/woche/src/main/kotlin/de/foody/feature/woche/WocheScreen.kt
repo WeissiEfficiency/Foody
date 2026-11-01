@@ -45,8 +45,8 @@ import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
-import java.time.LocalDate
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 /** Abstand des Füllen-Knopfs über der schwebenden Navigationsleiste; die Liste endet darüber. */
 private val UEBER_LEISTE = 96.dp

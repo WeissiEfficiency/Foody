@@ -2,12 +2,6 @@ package de.foody.core.data.db
 
 import androidx.room.Room
 import de.foody.domain.MeasureUnit
-import java.math.BigDecimal
-import java.time.LocalDate
-import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -16,6 +10,12 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.math.BigDecimal
+import java.time.LocalDate
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /** Die Sync-Trigger merken lokale Änderungen in `sync_outbox` vor – nur bei aktivem Sync und nie beim Anwenden. */
 @RunWith(RobolectricTestRunner::class)

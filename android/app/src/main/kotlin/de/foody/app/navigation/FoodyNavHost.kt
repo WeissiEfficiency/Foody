@@ -14,8 +14,8 @@ import de.foody.feature.einkauf.EinkaufRoute
 import de.foody.feature.einstellungen.EinstellungenRoute
 import de.foody.feature.einstellungen.VerbindenRoute
 import de.foody.feature.heute.HeuteRoute
-import de.foody.feature.kochen.KochenRoute
 import de.foody.feature.heute.tagebuch.TagebuchTagRoute
+import de.foody.feature.kochen.KochenRoute
 import de.foody.feature.rezepte.RezepteBereich
 import de.foody.feature.rezepte.detail.RezeptDetailRoute
 import de.foody.feature.rezepte.editor.EditorRoute

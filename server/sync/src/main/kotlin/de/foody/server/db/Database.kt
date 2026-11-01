@@ -1,15 +1,15 @@
 package de.foody.server.db
 
-import java.sql.Connection
-import java.sql.DriverManager
-import java.time.Clock
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.sql.Connection
+import java.sql.DriverManager
+import java.time.Clock
 import java.time.Duration
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
  * SQLite-Datenbank mit einer einzigen, synchronisierten Verbindung.

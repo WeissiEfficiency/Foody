@@ -3,6 +3,9 @@ package de.foody.core.sync
 import android.content.Context
 import android.util.Base64
 import androidx.test.core.app.ApplicationProvider
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.security.KeyStoreException
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -14,9 +17,6 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
 /**
  * Unter Robolectric gibt es keinen `AndroidKeyStore`: Die Tests geben dem [TokenSpeicher] eine Schlüsselablage

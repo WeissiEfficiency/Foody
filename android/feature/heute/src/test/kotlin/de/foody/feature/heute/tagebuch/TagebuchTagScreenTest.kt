@@ -28,7 +28,6 @@ import de.foody.feature.heute.pruefeNichtsAbgeschnitten
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testScan
 import de.foody.feature.heute.warteAufText
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -40,6 +39,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.math.BigDecimal
 import java.time.LocalDate
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

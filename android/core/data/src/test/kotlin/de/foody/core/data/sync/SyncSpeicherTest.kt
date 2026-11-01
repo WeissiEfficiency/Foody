@@ -30,18 +30,10 @@ import de.foody.core.data.fotos.FotoIndex
 import de.foody.core.data.startdaten.Startdaten
 import de.foody.domain.MeasureUnit
 import de.foody.domain.TagebuchArt
-import java.io.File
-import java.math.BigDecimal
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import kotlinx.serialization.json.JsonObject
 import org.junit.After
 import org.junit.Before
@@ -51,6 +43,14 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import java.io.File
+import java.math.BigDecimal
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * Sync-Speicher: Outbox in Pakete, Push-Ergebnisse, Server-Daten anwenden (Fotoregel, Trigger-Ruhe), Voll-Abgleich und

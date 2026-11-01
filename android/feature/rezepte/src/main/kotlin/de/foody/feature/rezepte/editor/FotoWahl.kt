@@ -31,7 +31,6 @@ import de.foody.core.designsystem.token.FoodyAbstaende
 import kotlinx.coroutines.launch
 import java.io.File
 
-
 /**
  * Foto des Rezepts mit „Foto wählen“ (System-Photo-Picker), „Kamera“ und „Entfernen“. Die Kamera schreibt über den
  * FileProvider in den Cache; das Bild wird verkleinert in die Fotoablage übernommen und die Kameradatei gelöscht.

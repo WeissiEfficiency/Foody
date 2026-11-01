@@ -2,7 +2,6 @@ package de.foody.core.data.einkauf
 
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.domain.MeasureUnit
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -11,6 +10,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.math.BigDecimal
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 

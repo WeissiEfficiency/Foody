@@ -4,11 +4,11 @@ import de.foody.api.protocol.MealSlotPayload
 import de.foody.api.protocol.PushStatus
 import de.foody.api.protocol.RecordType
 import de.foody.api.protocol.SyncRecord
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlinx.serialization.json.JsonPrimitive
 
 class ConflictTest {
     private fun mealSlot(id: String, recipeId: String, servings: Int, baseRev: Long?) = SyncRecord(

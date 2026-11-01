@@ -9,14 +9,12 @@ import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.Gespeichert
 import de.foody.core.data.rezepte.RezeptRepository
-import de.foody.core.testing.nachProzessende
 import de.foody.core.testing.ViewModelHalter
+import de.foody.core.testing.nachProzessende
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.testDatenbank
-import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.test.assertFails
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -33,7 +31,9 @@ import org.junit.runner.RunWith
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import java.math.BigDecimal
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -71,7 +71,6 @@ class EditorViewModelTest {
         vm.laden(null)
         vm.aendern { it.copy(name = name, zutatenText = zutaten) }
     }
-
 
     /** Schreibzugriffe scheitern (wie bei einem Datenbankfehler), Lesen geht weiter. */
     private fun nurLesen(an: Boolean) = db.openHelper.writableDatabase.query("PRAGMA query_only = ${if (an) 1 else 0}").close()

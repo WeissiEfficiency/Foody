@@ -8,7 +8,6 @@ import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.heute.bestand
 import de.foody.domain.IngredientCatalog
 import de.foody.domain.ZutatZeile
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -18,6 +17,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import java.io.File
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs

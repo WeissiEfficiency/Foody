@@ -3,10 +3,10 @@ package de.foody.server.sync
 import de.foody.api.protocol.Protocol
 import de.foody.api.protocol.RecordType
 import de.foody.api.protocol.SyncRecord
+import kotlinx.serialization.json.JsonObject
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.Types
-import kotlinx.serialization.json.JsonObject
 
 /** Zugriff auf die Tabelle `sync_record`; arbeitet immer auf der übergebenen Verbindung (also in der Transaktion des Aufrufers). */
 class RecordStore {

@@ -4,10 +4,6 @@ import androidx.room.Room
 import de.foody.domain.MeasureUnit
 import de.foody.domain.NutrientBasis
 import de.foody.domain.TagebuchArt
-import java.math.BigDecimal
-import java.time.LocalDate
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -16,6 +12,10 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.math.BigDecimal
+import java.time.LocalDate
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 /** Jede Tabelle lässt sich über ihr DAO schreiben, lesen und löschen; `upsert` ersetzt nie per DELETE. */
 @RunWith(RobolectricTestRunner::class)

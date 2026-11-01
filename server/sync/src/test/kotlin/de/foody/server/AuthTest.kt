@@ -1,11 +1,13 @@
 package de.foody.server
 
+import de.foody.api.protocol.AuthResponse
+import de.foody.api.protocol.ErrorCode
+import de.foody.api.protocol.LoginRequest
+import de.foody.api.protocol.PasswordChangeRequest
+import de.foody.api.protocol.Protocol
 import de.foody.server.auth.KontoExistiert
 import de.foody.server.auth.PasswordHasher
 import de.foody.server.auth.Tokens
-import de.foody.api.protocol.AuthResponse
-import de.foody.api.protocol.ErrorCode
-import de.foody.api.protocol.Protocol
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
@@ -20,10 +22,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
-import de.foody.api.protocol.LoginRequest
-import de.foody.api.protocol.PasswordChangeRequest
+import kotlinx.serialization.encodeToString
 import java.time.Duration
 import kotlin.test.Test
 import kotlin.test.assertEquals

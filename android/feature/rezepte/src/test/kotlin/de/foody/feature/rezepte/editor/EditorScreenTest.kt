@@ -21,7 +21,6 @@ import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.pruefeNichtsAbgeschnitten
 import de.foody.feature.rezepte.testDatenbank
 import de.foody.feature.rezepte.warteAufText
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -31,6 +30,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 
 /** Ohne Breiten-Qualifier: der Verwerfen-Dialog liegt in einem eigenen Fenster (Robolectric hängt sonst). */

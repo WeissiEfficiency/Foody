@@ -12,7 +12,6 @@ import de.foody.core.data.heute.plan
 import de.foody.core.data.heute.rezept
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Nutrient
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -24,6 +23,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import java.math.BigDecimal
 import java.time.LocalDate
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue

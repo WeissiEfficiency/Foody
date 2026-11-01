@@ -3,7 +3,6 @@ package de.foody.core.data.einkauf
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.SyncZustandEntity
 import de.foody.domain.MeasureUnit
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -12,6 +11,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull

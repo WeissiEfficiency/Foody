@@ -14,8 +14,6 @@ import de.foody.feature.heute.bestand
 import de.foody.feature.heute.planen
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testScan
-import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.test.assertFails
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -32,7 +30,9 @@ import org.robolectric.annotation.Config
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -170,7 +170,6 @@ class EintragenViewModelTest {
         assertFalse(f("x".repeat(201)), "Name länger als 200 Zeichen")
         assertTrue(f("Apfel"))
     }
-
 
     /** Schreibzugriffe scheitern (wie bei einem Datenbankfehler), Lesen geht weiter. */
     private fun nurLesen(an: Boolean) = db.openHelper.writableDatabase.query("PRAGMA query_only = ${if (an) 1 else 0}").close()

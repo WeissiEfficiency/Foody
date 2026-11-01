@@ -23,7 +23,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -35,6 +34,7 @@ import org.robolectric.annotation.Config
 import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull

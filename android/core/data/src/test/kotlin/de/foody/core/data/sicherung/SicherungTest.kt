@@ -22,6 +22,19 @@ import de.foody.core.data.sync.SyncSpeicher
 import de.foody.domain.MeasureUnit
 import de.foody.domain.NutrientBasis
 import de.foody.domain.TagebuchArt
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runTest
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -42,19 +55,6 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.runTest
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
-import org.robolectric.annotation.GraphicsMode
 
 /**
  * Sicherung als ZIP: Format 3 schreiben und lesen, Sicherungen der v1 lesen (Vorrat übersprungen), Fotos, Sperre bei
@@ -355,6 +355,7 @@ class SicherungTest {
         val jobRef = AtomicReference<Job>()
         val tiefe = AtomicInteger(0)
         val scharf = AtomicBoolean(false)
+
         @Suppress("DEPRECATION")
         val ziel = Room.inMemoryDatabaseBuilder(context, FoodyDatenbank::class.java)
             .addCallback(FoodyDatenbank.CALLBACK)

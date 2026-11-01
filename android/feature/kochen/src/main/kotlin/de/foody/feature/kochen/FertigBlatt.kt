@@ -27,7 +27,6 @@ import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import java.io.File
 
-
 /**
  * „Guten Appetit!“ nach dem letzten Schritt: eigenes Foto (nur ohne Rezeptfoto), „Rezept anpassen“ und „Schließen“.
  * Wegwischen schließt ebenfalls.

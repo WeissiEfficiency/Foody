@@ -1,7 +1,7 @@
 package de.foody.api.protocol
 
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonObject
 
 // Feldnamen wie BackupDto in der App; Zahlen sind Strings (BigDecimal ohne Rundung).
