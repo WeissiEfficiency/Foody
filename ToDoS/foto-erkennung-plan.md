@@ -28,8 +28,9 @@ Packungen laufen weiter über den bestehenden Scan (`:core:scan`, ML Kit + Open 
 - **Offline nach der Einrichtung.** Das Modell wird einmal geladen (Download oder Datei aus OpenCloud, siehe Phase 2)
   und liegt dann im App-Speicher. Ohne Modell ist der Knopf ausgeblendet.
 - **Nicht in die APK.** Das Modell (0,2–2 GB) wird nachgeladen; die APK wächst nur um die Laufzeit.
-- Zielgerät OnePlus 13R (Snapdragon 8 Gen 3, 12 GB RAM). Das Tablet bekommt die Funktion nur, wenn ein Modell
-  dort schnell genug läuft (Messung in Phase 0).
+- **Nur auf dem Handy** (OnePlus 13R, Snapdragon 8 Gen 3, 12 GB RAM). Es bleibt eine APK für beide Geräte; auf dem
+  Tablet wird einfach kein Modell installiert, dann ist der Knopf dort ausgeblendet. Keine Messung und keine
+  Anpassung fürs Tablet.
 
 ## Modellwahl: nur auf Essen trainierte Modelle
 
@@ -41,7 +42,7 @@ geprüft, deshalb entscheidet erst der eigene Testsatz.
 |---|---|---|---|---|---|---|
 | **Qwen3-VL-2B „food-analysis“** | Qwen3-VL-2B-Instruct + LoRA | Gerichte und Nährwerte | JSON: Gericht, Zutaten, Nährwerte | llama.cpp (GGUF, Bild über `mtmd`) | ~1,5 GB (4 Bit) | **Hauptkandidat:** neueste Basis, klein genug für das 13R |
 | NutriScan-3B | Qwen2.5-VL-3B-Instruct + QLoRA | MM-Food-100K | JSON: kcal, Makros, Portion | llama.cpp (GGUF) | ~2 GB (4 Bit) | Vergleich: größer, evtl. genauer bei Mengen; Lizenz der Basis prüfen |
-| SmolVLM2-500M + CaLoRAify | SmolVLM2-500M-Instruct + LoRA | CalData (330 K Bild-Text-Paare) | JSON: Zutaten, Portionen, kcal, Makros | llama.cpp (GGUF) | ~0,5 GB | Rückfall für das Tablet oder wenn die großen zu langsam sind |
+| SmolVLM2-500M + CaLoRAify | SmolVLM2-500M-Instruct + LoRA | CalData (330 K Bild-Text-Paare) | JSON: Zutaten, Portionen, kcal, Makros | llama.cpp (GGUF) | ~0,5 GB | Rückfall, wenn die großen zu langsam sind |
 | CalorieCLIP | CLIP ViT-B/32, Regression | Nutrition5k | nur eine kcal-Zahl | ONNX Runtime oder LiteRT | ~0,2 GB | **Ergänzung:** zweite Meinung für kcal bei „Frei“; erkennt selbst nichts |
 
 Alle drei Bild-Sprach-Modelle laufen über dieselbe Laufzeit (llama.cpp); die Modelldatei ist austauschbar, ohne dass
@@ -60,18 +61,24 @@ Auswahlliste in Phase 0 nicht reicht.
 
 ### Phase 0 – Messung (Wegwerf-Probe)
 
-Kein Produktcode. Ergebnis ist eine Entscheidung, keine App.
+Kein Produktcode. Ergebnis ist eine Entscheidung, keine App. Eigene Fotos mit Sollwerten gibt es nicht; gemessen wird
+deshalb mit öffentlichen Daten, die Genauigkeit im Alltag prüft Phase 5.
 
-- [ ] Testsatz: 45 eigene Fotos mit Sollwerten – je 15 Rezepte (Rezept + Portionen bekannt), Gekauftes (kcal von
-      Verpackung oder Hersteller) und Teller (Zutaten gewogen). Liegt lokal, nicht im Repo (Gesundheitsdaten).
+- [ ] Testsätze (lokal, nicht im Repo):
+      - **Mengen und kcal:** ~100 Gerichte aus dem Test-Teil von **Nutrition5k** (Google; Fotos mit gewogenen Zutaten
+        und kcal). Nur der Test-Teil, weil CalorieCLIP auf Nutrition5k trainiert ist.
+      - **Deutsche Gerichte:** 20–30 frei lizenzierte Fotos (Wikimedia Commons), z. B. Leberkässemmel, Breze,
+        Schnitzel, Käsespätzle, Currywurst – nur „richtig erkannt?“, plausible kcal-Spanne aus Nährwerttabellen.
+      - **Eigene Rezepte:** die Rezepte mit Foto aus dem Katalog (falls vorhanden) – „richtiges Rezept aus der
+        Auswahlliste?“.
+      Nicht verwenden: MM-Food-100K und CalData, damit trainieren NutriScan bzw. CaLoRAify.
 - [ ] Modelle vorbereiten: LoRA mit Basis zusammenführen, nach GGUF wandeln, CalorieCLIP nach ONNX.
 - [ ] Probe auf dem 13R: kleine Wegwerf-App mit llama.cpp; gleiche Anweisung und gleiches JSON-Schema für alle drei.
-- [ ] Messen je Modell: Rezept richtig erkannt (Top-1, mit Auswahlliste), Abweichung kcal bei Gekauftem,
-      Abweichung Gramm bei Tellern, Zeit je Foto, RAM-Spitze, Akku, gültiges JSON in wie viel % der Fälle.
-      CalorieCLIP zusätzlich: kcal-Abweichung allein und als Mittel mit dem Bild-Sprach-Modell.
-- [ ] Gleiche Messung auf dem Tablet (nur Zeit und RAM).
-- [ ] **Abbruchgrenze:** Wenn kein Modell unter ~15 s bleibt und Rezepte in ≥ 80 % richtig trifft, wird die Funktion
-      nicht gebaut (oder nur „Rezept aus Foto“).
+- [ ] Messen je Modell: Gericht/Rezept richtig erkannt, Abweichung kcal und Gramm (Nutrition5k), Zeit je Foto,
+      RAM-Spitze, Akku, gültiges JSON in wie viel % der Fälle. CalorieCLIP zusätzlich: kcal-Abweichung allein und
+      als Mittel mit dem Bild-Sprach-Modell.
+- [ ] **Abbruchgrenze:** Wenn kein Modell unter ~15 s bleibt und deutsche Gerichte bzw. eigene Rezepte in ≥ 80 %
+      richtig erkennt, wird die Funktion nicht gebaut (oder nur „Rezept aus Foto“).
 - [ ] ADR 0017: gewähltes Modell, Laufzeit, Lizenzen (Basis und Adapter), Speicherort, warum nicht Claude/Server
       (Abgrenzung zu ADR 0011).
 
@@ -114,13 +121,15 @@ Neues Modul (`foody.android.library`), Aufbau wie `:core:scan` (ADR 0013): Schni
 ### Phase 4 – Einstellungen
 
 - [ ] Bereich „Fotoerkennung“: an/aus, Modell installieren/entfernen, Größe, Hinweis „läuft nur auf diesem Gerät“.
-- [ ] Getrennt je Gerät (nicht gesynct), weil das Modell lokal liegt.
+- [ ] Getrennt je Gerät (nicht gesynct), weil das Modell lokal liegt; auf dem Tablet bleibt es einfach aus.
 
 ### Phase 5 – Doku und Abnahme
 
 - [ ] `docs/architecture.md` (Abschnitt `:core:erkennung`), `README.md` (Modultabelle), `CLAUDE.md` (Testbefehl).
 - [ ] `docs/security.md`: Foto bleibt auf dem Gerät, einmaliger Modell-Download, keine Übermittlung.
-- [ ] Abnahme auf dem Handy mit 10 neuen Fotos (nicht aus dem Testsatz): je Fall mindestens 8 brauchbare Vorschläge.
+- [ ] Abnahme im Alltag auf dem Handy: die ersten ~30 Foto-Einträge auswerten – Vorschlag gegen das, was nach deiner
+      Korrektur gespeichert wurde (nur lokal, ohne neues Feld: Vorschlag und Ergebnis im Debug-Log bzw. einer
+      lokalen Datei, abschaltbar). Ziel: Rezepte fast immer richtig, kcal bei Gekauftem meist ohne große Korrektur.
 
 ## Bewusst nicht in der ersten Version
 
@@ -136,7 +145,8 @@ Neues Modul (`foody.android.library`), Aufbau wie `:core:scan` (ADR 0013): Schni
 |---|---|---|
 | Gramm-Schätzung aus einem Foto zu ungenau (20–40 % sind üblich) | hoch | Rezept-Fall zuerst, Vorschau mit leicht änderbaren Gramm, Abbruchgrenze in Phase 0 |
 | Community-Modelle ohne Pflege, ohne unabhängige Messung | mittel | eigener Testsatz entscheidet; drei Kandidaten über dieselbe Laufzeit, Modelldatei austauschbar |
-| Modell zu langsam oder zu speicherhungrig, v. a. auf dem Tablet | mittel | Messung vorab, SmolVLM2 als kleiner Rückfall, Funktion je Gerät abschaltbar |
+| Modell zu langsam oder zu speicherhungrig | mittel | Messung vorab auf dem 13R, SmolVLM2 als kleiner Rückfall |
+| Öffentliche Testdaten passen nicht zum eigenen Essen (Nutrition5k: US-Kantine) | mittel | deutsche Gerichte als eigener Testsatz, Auswertung im Alltag (Phase 5) |
 | llama.cpp als native Abhängigkeit (Build, Updates, R8) | mittel | nur `arm64-v8a`, Version festgenagelt, Release-Kurztest |
 | Deutsche Gerichte (Leberkäse, Schäufele) unbekannt oder falsch benannt | mittel | Auswahlliste aus Rezepten und Katalog, Testsatz mit typischen Gerichten |
 | Lizenzen (Basis Qwen2.5-VL-3B, Adapter) | gering | in Phase 0 prüfen und im ADR festhalten; Nutzung nur privat |
@@ -147,4 +157,5 @@ Neues Modul (`foody.android.library`), Aufbau wie `:core:scan` (ADR 0013): Schni
 - [NutriScan-3B](https://huggingface.co/HackerAditya56/NutriScan-3B/blob/main/README.md)
 - [CaLoRAify (arXiv)](https://arxiv.org/abs/2412.09936v1)
 - [CalorieCLIP](https://huggingface.co/jc-builds/CalorieCLIP/blob/main/README.md)
+- Nutrition5k (Google Research): [github.com/google-research-datasets/Nutrition5k](https://github.com/google-research-datasets/Nutrition5k)
 - Gemini Nano / ML Kit GenAI, Geräteliste: [developers.google.com/ml-kit/genai](https://developers.google.com/ml-kit/genai)
