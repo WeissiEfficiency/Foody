@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
@@ -19,13 +21,12 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -39,18 +40,24 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.glas.GlasFlaeche
+import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
+import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
+import de.foody.core.designsystem.token.GlasStufe
 import de.foody.domain.StepTimer
 import de.foody.feature.kochen.timer.KochTimerDienst
 import kotlinx.coroutines.launch
@@ -164,10 +171,10 @@ private fun KochInhalt(
         HorizontalPager(pager, Modifier.weight(1f)) { seite ->
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                    .padding(horizontal = FoodyAbstaende.s6, vertical = FoodyAbstaende.s4),
+                    .padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s3),
             ) {
                 val schritt = z.schritt(seite)
-                if (schritt == null) BereitlegenSeite(z, a) else SchrittSeite(schritt, z.abgehakt, a)
+                if (schritt == null) BereitlegenSeite(z, a) else SchrittSeite(schritt, z.abgehakt, a, z.schritt(seite + 1)?.text)
             }
         }
         // Laufende Timer über den Knöpfen
@@ -176,25 +183,41 @@ private fun KochInhalt(
     }
 }
 
+/** Kopf wie im Entwurf: runder Schließen-Knopf, „Schritt 2 von 6“ über dem Rezeptnamen, „Bleibt an“; darunter Segmente. */
 @Composable
 private fun Kopf(z: KochZustand.Da, seite: Int, onSchliessen: () -> Unit) {
-    Row(Modifier.padding(horizontal = FoodyAbstaende.s2, vertical = FoodyAbstaende.s1), verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onSchliessen) { Icon(Icons.Outlined.Close, contentDescription = "Kochen beenden", tint = FoodyTheme.farben.text) }
-        Text(z.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = FoodyTheme.farben.text)
-    }
-    LinearProgressIndicator(
-        progress = { (seite + 1f) / z.seitenzahl.coerceAtLeast(1) },
-        modifier = Modifier.fillMaxWidth().padding(horizontal = FoodyAbstaende.s6),
-        color = FoodyTheme.farben.primaer,
-        trackColor = FoodyTheme.farben.balkenSpur,
-        drawStopIndicator = {},
-    )
     val nummer = seite - if (z.hatBereitlegen) 1 else 0
-    Text(
-        if (z.schritt(seite) == null) "Bereitlegen" else "Schritt ${nummer + 1} von ${z.schritte.size}",
-        Modifier.padding(horizontal = FoodyAbstaende.s6, vertical = FoodyAbstaende.s2),
-        style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.primaer,
-    )
+    Row(
+        Modifier.padding(start = FoodyAbstaende.s3, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
+    ) {
+        RunderKnopf(Icons.Outlined.Close, "Kochen beenden", onSchliessen)
+        Column(Modifier.weight(1f)) {
+            Augenbraue(if (z.schritt(seite) == null) "Bereitlegen" else "Schritt ${nummer + 1} von ${z.schritte.size}")
+            Text(z.name, style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text, maxLines = 2)
+        }
+        // Das Display bleibt an, solange der Kochmodus offen ist
+        GlasFlaeche(GlasStufe.LEICHT, form = CircleShape, unschaerfeErlaubt = false) {
+            Text(
+                "Bleibt an",
+                Modifier.padding(horizontal = FoodyAbstaende.s3, vertical = FoodyAbstaende.s1),
+                style = MaterialTheme.typography.labelMedium,
+                color = FoodyTheme.farben.text,
+            )
+        }
+    }
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s3),
+        horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1),
+    ) {
+        repeat(z.seitenzahl) { i ->
+            Box(
+                Modifier.weight(1f).height(5.dp).clip(CircleShape)
+                    .background(if (i <= seite) FoodyTheme.farben.primaer else FoodyTheme.farben.balkenSpur),
+            )
+        }
+    }
 }
 
 @Composable

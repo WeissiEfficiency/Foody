@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.designsystem.FoodyTheme
@@ -72,9 +73,9 @@ class KochenScreenTest {
     @Test
     fun weiterZuSchritt() {
         zeigen()
-        compose.warteAufText("Bereitlegen")
+        compose.warteAufText("BEREITLEGEN")
         compose.onNodeWithText("Weiter").performClick()
-        compose.warteAufText("Schritt 1 von 3")
+        compose.warteAufText("SCHRITT 1 VON 3")
         // Augenbraue des Designsystems: in Großbuchstaben
         compose.onNodeWithText("DU BRAUCHST").assertExists()
         compose.onNodeWithText("von 400 g").assertExists()
@@ -83,11 +84,11 @@ class KochenScreenTest {
     @Test
     fun timerStartenZeigtLeiste() {
         zeigen()
-        compose.warteAufText("Bereitlegen")
+        compose.warteAufText("BEREITLEGEN")
         compose.onNodeWithText("Weiter").performClick()
         compose.onNodeWithText("Weiter").performClick()
-        compose.warteAufText("Schritt 2 von 3")
-        compose.onNodeWithText("▶ 20 Minuten").performClick()
+        compose.warteAufText("SCHRITT 2 VON 3")
+        compose.onNodeWithText("Start").performScrollTo().performClick()
         compose.waitUntil(5_000) { u.timer.timer.value.isNotEmpty() }
         compose.warteAufText("20:00")
         compose.onNodeWithContentDescription("Timer 20 Minuten beenden").performClick()
@@ -95,9 +96,9 @@ class KochenScreenTest {
     }
 
     private fun bisFertig() {
-        compose.warteAufText("Bereitlegen")
+        compose.warteAufText("BEREITLEGEN")
         repeat(3) { compose.onNodeWithText("Weiter").performClick() }
-        compose.warteAufText("Schritt 3 von 3")
+        compose.warteAufText("SCHRITT 3 VON 3")
         compose.onNodeWithText("Fertig").performClick()
         compose.warteAufText("Guten Appetit!")
     }
@@ -133,9 +134,9 @@ class KochenScreenTest {
     @Config(qualifiers = "w1280dp-h800dp")
     fun tabletSeitenliste() {
         zeigen()
-        compose.warteAufText("Bereitlegen")
+        compose.warteAufText("BEREITLEGEN")
         compose.onNodeWithText("Schritt 2").performClick()
-        compose.warteAufText("Schritt 2 von 3")
+        compose.warteAufText("SCHRITT 2 VON 3")
         // Die offene Seite ist für TalkBack als gewählt markiert (E3)
         compose.onNodeWithText("Schritt 2").assertIsSelected()
         compose.onNodeWithText("Schritt 1").assertIsNotSelected()
@@ -152,7 +153,7 @@ class KochenScreenTest {
     @Test
     fun schliessenSymbol() {
         zeigen()
-        compose.warteAufText("Bereitlegen")
+        compose.warteAufText("BEREITLEGEN")
         compose.onNodeWithContentDescription("Kochen beenden").performClick()
         assertEquals(1, geschlossen)
     }
@@ -160,7 +161,7 @@ class KochenScreenTest {
     @Test
     fun schrift200OhneAbschneiden() {
         zeigen(schrift200 = true)
-        compose.warteAufText("Bereitlegen")
+        compose.warteAufText("BEREITLEGEN")
         compose.pruefeNichtsAbgeschnitten()
     }
 
@@ -169,10 +170,10 @@ class KochenScreenTest {
         val vm = u.vm()
         val tester = StateRestorationTester(compose)
         tester.setContent { FoodyTheme { KochenRoute("r1", null, { _, _ -> }, {}, vm = vm) } }
-        compose.warteAufText("Bereitlegen")
+        compose.warteAufText("BEREITLEGEN")
         compose.onNodeWithText("Weiter").performClick()
-        compose.warteAufText("Schritt 1 von 3")
+        compose.warteAufText("SCHRITT 1 VON 3")
         tester.emulateSavedInstanceStateRestore()
-        compose.warteAufText("Schritt 1 von 3")
+        compose.warteAufText("SCHRITT 1 VON 3")
     }
 }
