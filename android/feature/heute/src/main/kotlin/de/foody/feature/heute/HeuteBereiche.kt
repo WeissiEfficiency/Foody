@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import de.foody.core.data.heute.OffenerEinkauf
 import de.foody.core.data.heute.RezeptKurz
 import de.foody.core.designsystem.FoodyTheme
@@ -41,15 +42,20 @@ import java.util.Locale
 
 private val DATUM = DateTimeFormatter.ofPattern("EEEE, d. MMMM", Locale.GERMAN)
 
-/** Augenbraue mit Datum, Titel, Sync-Status (nur verbunden) und Profilsymbol für die Einstellungen. */
+/**
+ * Augenbraue mit Datum, Titel, Sync-Status (nur verbunden) und Profilsymbol für die Einstellungen. Ab 130 % Schrift
+ * steht der Sync-Status unter dem Titel, sonst bliebe für Datum und Titel kaum Breite („He-ute“, V2).
+ */
 @Composable
 internal fun HeuteKopf(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: () -> Unit) {
+    val syncDarunter = LocalDensity.current.fontScale > 1.2f
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         Column(Modifier.weight(1f)) {
             datum?.let { Augenbraue(DATUM.format(it)) }
             Text("Heute", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineLarge, color = FoodyTheme.farben.text)
+            if (syncDarunter) sync?.let { SyncStatus(it, Modifier.padding(top = FoodyAbstaende.s2)) }
         }
-        sync?.let { SyncStatus(it) }
+        if (!syncDarunter) sync?.let { SyncStatus(it) }
         IconButton(onClick = onEinstellungen) {
             Icon(Icons.Outlined.AccountCircle, contentDescription = "Einstellungen", tint = FoodyTheme.farben.text)
         }

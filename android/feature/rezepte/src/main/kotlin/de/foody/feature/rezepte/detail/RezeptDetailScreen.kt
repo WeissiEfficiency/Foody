@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
+import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import kotlinx.coroutines.launch
@@ -94,7 +95,7 @@ fun RezeptDetailRoute(
             )
             is DetailZustand.Da -> Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
                 Column(
-                    Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().safeDrawingPadding().padding(bottom = 104.dp),
+                    Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().safeDrawingPadding().padding(bottom = ueberLeiste(104.dp)),
                     verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
                 ) { DetailInhalt(z, aktionen) }
             }
@@ -118,6 +119,6 @@ fun RezeptDetailRoute(
                 },
             )
         }
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = 88.dp))
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = ueberLeiste(88.dp)))
     }
 }

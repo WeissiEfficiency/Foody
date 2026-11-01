@@ -50,6 +50,7 @@ import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.LeererZustandZeile
 import de.foody.core.designsystem.komponenten.Naehrwertbalken
+import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.designsystem.token.GlasStufe
@@ -117,7 +118,7 @@ fun TagebuchTagRoute(
             datum, zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeitenId = it.id }, onLoeschen = loeschen,
             onEintragen = { blatt = BlattAuftrag(it, datum) },
         )
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = 88.dp))
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = ueberLeiste(88.dp)))
     }
 
     val bearbeiten = bearbeitenId?.let { id -> zustand?.abschnitte?.firstNotNullOfOrNull { a -> a.eintraege.firstOrNull { it.id == id } } }
@@ -145,7 +146,7 @@ fun TagebuchTagInhalt(
     Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         Column(
             Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().safeDrawingPadding()
-                .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = 104.dp).testTag(TAGEBUCH_INHALT),
+                .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = ueberLeiste(104.dp)).testTag(TAGEBUCH_INHALT),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
         ) { TagInhalt(datum, zustand, onDatum, onWahl, onAendern, onLoeschen, onEintragen) }
     }

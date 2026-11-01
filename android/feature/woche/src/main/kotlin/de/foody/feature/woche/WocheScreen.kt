@@ -42,6 +42,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
@@ -75,7 +76,7 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
         val zweispaltig = maxWidth >= FoodyBreiten.zweispaltig
         Column(
             Modifier.widthIn(max = FoodyBreiten.zweiBereiche).fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = LISTE_UNTEN),
+                .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = ueberLeiste(LISTE_UNTEN)),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
             Kopf(woche, zeigtHeute, vm::blaettern, vm::heute)
@@ -96,9 +97,9 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
         FoodyKnopf(
             "Leere Tage füllen", { vm.fuellenOeffnen() },
             Modifier.align(Alignment.BottomCenter).widthIn(max = FoodyBreiten.zweiBereiche).fillMaxWidth()
-                .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, bottom = UEBER_LEISTE),
+                .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, bottom = ueberLeiste(UEBER_LEISTE)),
         )
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = UEBER_LEISTE + 64.dp))
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = ueberLeiste(UEBER_LEISTE + 64.dp)))
     }
 
     neuAm?.let { datum ->

@@ -14,11 +14,17 @@ import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -26,6 +32,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import de.foody.core.designsystem.komponenten.FoodyNavigationsRail
 import de.foody.core.designsystem.komponenten.FoodyNavigationsleiste
+import de.foody.core.designsystem.komponenten.LEISTE_REGELHOEHE
+import de.foody.core.designsystem.komponenten.LocalLeistenZuwachs
 import de.foody.core.designsystem.komponenten.NavZiel
 import de.foody.core.designsystem.token.FoodyBreiten
 
@@ -72,8 +80,12 @@ fun Hauptgeruest(
         }
     }
     val ziele = tabs.map { it.ziel }
+    val dichte = LocalDensity.current
+    var leiste by remember { mutableStateOf(LEISTE_REGELHOEHE) }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val breit = !vollbild && maxWidth >= FoodyBreiten.zweispaltig
+        val mitLeiste = !vollbild && !breit
+        val zuwachs = if (mitLeiste) (leiste - LEISTE_REGELHOEHE).coerceAtLeast(0.dp) else 0.dp
         // Ein NavHost an fester Stelle: Vollbild, Drehen oder Fenstergröße tauschen nur die Navigation daneben aus,
         // der Zustand der Bildschirme (`rememberSaveable`) bleibt.
         Row(Modifier.fillMaxSize()) {
@@ -82,12 +94,16 @@ fun Hauptgeruest(
                     FoodyNavigationsRail(ziele, aktiv, waehlen, Modifier.wrapContentHeight().testTag(Hauptgeruest.RAIL))
                 }
             }
-            FoodyNavHost(navController, bildschirme, Modifier.weight(1f))
+            CompositionLocalProvider(LocalLeistenZuwachs provides zuwachs) {
+                FoodyNavHost(navController, bildschirme, Modifier.weight(1f))
+            }
         }
-        if (!vollbild && !breit) {
+        if (mitLeiste) {
             FoodyNavigationsleiste(
                 ziele, aktiv, waehlen,
-                Modifier.align(Alignment.BottomCenter).navigationBarsPadding().testTag(Hauptgeruest.LEISTE),
+                Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
+                    .onSizeChanged { leiste = with(dichte) { it.height.toDp() } }
+                    .testTag(Hauptgeruest.LEISTE),
             )
         }
     }

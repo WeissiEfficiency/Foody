@@ -1,9 +1,11 @@
 package de.foody.feature.heute
 
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.db.FoodyDatenbank
@@ -165,5 +167,17 @@ class HeuteScreenTest {
         compose.warteAufText("Reispfanne")
         compose.waitForIdle()
         compose.pruefeNichtsAbgeschnitten()
+    }
+
+    /** Mit Sync-Status („Wartet auf Netz“) bleibt der Titel bei 200 % einzeilig: der Status rückt unter den Titel (V2, vorher „He-ute“). */
+    @Test
+    fun schrift200TitelMitSyncStatusEinzeilig() {
+        lage.value = SyncLage(aktiv = true, laeuft = false, letzterFehler = "offline")
+        runBlocking { db.bestand() }
+        zeigen(schrift200 = true)
+        compose.waitForIdle()
+        val layout = mutableListOf<TextLayoutResult>()
+        compose.onNodeWithText("Heute").fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(layout)
+        assertEquals(1, layout.single().lineCount)
     }
 }

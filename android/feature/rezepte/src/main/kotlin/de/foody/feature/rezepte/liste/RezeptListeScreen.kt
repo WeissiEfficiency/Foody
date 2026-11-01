@@ -25,6 +25,7 @@ import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.RezeptkarteRaster
 import de.foody.core.designsystem.komponenten.rezeptBild
+import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyFormen
 
@@ -64,7 +65,7 @@ fun RezeptListeRoute(
         }
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 160.dp),
-            contentPadding = PaddingValues(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = 104.dp),
+            contentPadding = PaddingValues(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = ueberLeiste(104.dp)),
             horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {

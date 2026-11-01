@@ -40,6 +40,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
+import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
@@ -105,11 +106,12 @@ fun ZutatEditorRoute(id: String, onFertig: () -> Unit, vm: ZutatEditorViewModel 
             }
             FoodyKnopf(
                 "Speichern", vm::speichern,
-                Modifier.fillMaxWidth().padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = UEBER_LEISTE),
+                Modifier.fillMaxWidth()
+                    .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = ueberLeiste(UEBER_LEISTE)),
                 aktiv = z.geladen && !z.laeuft,
             )
         }
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = UEBER_LEISTE + 64.dp))
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = ueberLeiste(UEBER_LEISTE + 64.dp)))
     }
 
     val name = z.vorher?.name.orEmpty()

@@ -7,21 +7,38 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
+
+/** Höhe der schwebenden [FoodyNavigationsleiste] samt Rand bei normaler Schrift (64 dp + 2 × 12 dp). */
+val LEISTE_REGELHOEHE = 88.dp
+
+/**
+ * Um wie viel die [FoodyNavigationsleiste] höher ist als [LEISTE_REGELHOEHE]: Bei großer Schrift wächst sie mit (V2).
+ * Das Hauptgerüst misst die Leiste; ohne Leiste (Tablet, Kochmodus, Tests) bleibt es 0.
+ */
+val LocalLeistenZuwachs = compositionLocalOf { 0.dp }
+
+/** [abstand] unter dem Inhalt plus [LocalLeistenZuwachs] – damit das Ende nicht unter einer gewachsenen Leiste liegt. */
+@Composable
+fun ueberLeiste(abstand: Dp): Dp = abstand + LocalLeistenZuwachs.current
 
 /** Ein Ziel der Hauptnavigation. */
 data class NavZiel(val text: String, val symbol: ImageVector)
@@ -62,6 +79,14 @@ private fun NavEintrag(ziel: NavZiel, aktiv: Boolean, onKlick: () -> Unit, modif
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(ziel.symbol, contentDescription = null, tint = farbe)
-        Text(ziel.text, style = MaterialTheme.typography.labelMedium, color = farbe, textAlign = TextAlign.Center)
+        // Eine Zeile: bei großer Schrift lieber etwas kleiner als „Rezep-te“ auf zwei Zeilen (V2)
+        Text(
+            ziel.text,
+            style = MaterialTheme.typography.labelMedium,
+            color = farbe,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = MaterialTheme.typography.labelMedium.fontSize),
+        )
     }
 }

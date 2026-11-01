@@ -40,6 +40,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -200,8 +201,10 @@ private fun Kopf(z: KochZustand.Da, seite: Int, onSchliessen: () -> Unit) {
 private fun Knoepfe(z: KochZustand.Da, pager: PagerState, onSeite: (Int) -> Unit, onFertig: () -> Unit) {
     val seite = pager.currentPage
     val letzte = seite >= z.seitenzahl - 1
+    // Ab 130 % Schrift gleich breit: im schmalen Drittel bräche „Zurück“ sonst mitten im Wort um (V2)
+    val vorAnteil = if (LocalDensity.current.fontScale > 1.2f) 1f else 2f
     Row(Modifier.fillMaxWidth().padding(FoodyAbstaende.s4), horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
         FoodyKnopf("Zurück", { onSeite(seite - 1) }, Modifier.weight(1f), art = KnopfArt.UMRISS, aktiv = seite > 0)
-        FoodyKnopf(if (letzte) "Fertig" else "Weiter", { if (letzte) onFertig() else onSeite(seite + 1) }, Modifier.weight(2f))
+        FoodyKnopf(if (letzte) "Fertig" else "Weiter", { if (letzte) onFertig() else onSeite(seite + 1) }, Modifier.weight(vorAnteil))
     }
 }
