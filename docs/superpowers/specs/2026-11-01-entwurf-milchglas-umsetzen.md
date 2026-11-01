@@ -101,4 +101,6 @@ Abweichungen vom Entwurf, bewusst:
 - **Rezeptdetail:** „Kochen“ sitzt in der Kopfkarte statt in einer eigenen Fußleiste. Die Navigationsleiste liegt
   ohnehin unten.
 
-Offen: Bottom Sheets (Eintragen, Abgleich, Zielwahl) sind noch Material-Blätter und nicht als Glas-Blatt umgesetzt.
+Nachtrag (#188): Alle Bottom Sheets laufen über `GlasBlatt` (Grund, Verlauf und DICHT-Tönung selbst gezeichnet, weil das
+Blatt in einem eigenen Fenster liegt und keine Unschärfe-Quelle hat; oben 32 dp rund, Lichtkante, eigener Griff mit den
+TalkBack-Aktionen des Material-Griffs).

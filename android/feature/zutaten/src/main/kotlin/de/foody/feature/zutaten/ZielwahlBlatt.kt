@@ -7,12 +7,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,14 +21,14 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.data.zutaten.ZutatKurz
 import de.foody.core.data.zutaten.filtern
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.glas.GlasBlatt
 import de.foody.core.designsystem.token.FoodyAbstaende
 
 /** Ziel fürs Zusammenführen wählen: Suche und Liste der übrigen Zutaten ([ziele] enthält die eigene nicht). */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ZielwahlBlatt(ziele: List<ZutatKurz>, onGewaehlt: (ZutatKurz) -> Unit, onSchliessen: () -> Unit) {
     var suche by rememberSaveable { mutableStateOf("") }
-    ModalBottomSheet(onDismissRequest = onSchliessen, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    GlasBlatt(onSchliessen, ganzOffen = true) {
         Column(Modifier.fillMaxWidth().padding(bottom = FoodyAbstaende.s4)) {
             Text(
                 "Zusammenführen mit …", Modifier.padding(horizontal = FoodyAbstaende.s4),

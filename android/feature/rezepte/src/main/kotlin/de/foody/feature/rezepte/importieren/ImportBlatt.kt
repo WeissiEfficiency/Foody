@@ -6,9 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -16,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.glas.GlasBlatt
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.ueberschrift
@@ -29,7 +28,6 @@ private val TYPEN = arrayOf("text/*", "application/octet-stream")
  * OpenCloud-App), Fortschritt, danach die Zusammenfassung. „Portionen nachtragen“ liest einen Ordner nur für
  * [de.foody.core.data.rezeptimport.PortionenNachtrag]. Während des Imports schließt Wischen das Blatt nicht ab.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImportBlatt(onSchliessen: () -> Unit, vm: ImportViewModel = hiltViewModel()) {
     val z by vm.zustand.collectAsStateWithLifecycle()
@@ -42,7 +40,7 @@ fun ImportBlatt(onSchliessen: () -> Unit, vm: ImportViewModel = hiltViewModel())
         vm.zuruecksetzen()
         onSchliessen()
     }
-    ModalBottomSheet(onDismissRequest = schliessen, containerColor = FoodyTheme.farben.grund) {
+    GlasBlatt(schliessen) {
         Column(
             Modifier.padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, bottom = FoodyAbstaende.s6),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),

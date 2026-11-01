@@ -199,7 +199,9 @@ Einzige Quelle für das Aussehen der App.
     `animationenErlaubt()` liest die Animator-Dauer des Systems – ist sie 0, entfallen Unschärfe und Drehungen.
   - `glas/`: `FoodyHintergrund` (Grund + zwei Radialverläufe, Quelle der Unschärfe) und `GlasFlaeche(stufe)` (Haze
     `hazeBlur` mit Tönung; ohne Hintergrund, ohne Unschärfe, bei Stufe BILD oder `unschaerfeErlaubt = false` – Kacheln –
-    nur die Tönung).
+    nur die Tönung). `GlasBlatt` ist das Bottom Sheet aller Features (seit #188): Es liegt in einem eigenen Fenster ohne
+    Unschärfe-Quelle und zeichnet Grund, Verlauf und DICHT-Tönung im Inhalt selbst; eigener Griff mit Schließen,
+    Ausklappen und Verkleinern für TalkBack.
   - `komponenten/`: `RezeptkarteGross`/`RezeptkarteRaster`, `Kachel`, `Naehrwertbalken`, `SyncStatus` (`SyncAnzeige`),
     `LeererZustandZeile`/`LeererZustandFlaeche`, `FoodyKnopf`, `FoodyChip`, `Abschnittskopf`, `Augenbraue`,
     `FoodyNavigationsleiste`/`FoodyNavigationsRail`, `FoodyTextfeld`, `FoodyFrage` (Rückfrage-Dialog, darauf
