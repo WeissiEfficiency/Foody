@@ -36,7 +36,7 @@ Packungen laufen weiter über den bestehenden Scan (`:core:scan`, ML Kit + Open 
 
 Entschieden (2026-11-01): Es kommen nur Modelle in Frage, die auf Essen und Nährwerte trainiert sind. Größen und
 Leistung sind Angaben der Modellkarten oder Schätzungen; gemessen wird in Phase 0. Keines der Modelle ist unabhängig
-geprüft, deshalb entscheidet erst der eigene Testsatz.
+geprüft, deshalb entscheidet erst die Messung in Phase 0.
 
 | Modell | Basis | Trainiert auf | Ausgabe | Laufzeit auf Android | Größe (ca.) | Rolle |
 |---|---|---|---|---|---|---|
@@ -144,7 +144,7 @@ Neues Modul (`foody.android.library`), Aufbau wie `:core:scan` (ADR 0013): Schni
 | Risiko | Gewicht | Gegenmaßnahme |
 |---|---|---|
 | Gramm-Schätzung aus einem Foto zu ungenau (20–40 % sind üblich) | hoch | Rezept-Fall zuerst, Vorschau mit leicht änderbaren Gramm, Abbruchgrenze in Phase 0 |
-| Community-Modelle ohne Pflege, ohne unabhängige Messung | mittel | eigener Testsatz entscheidet; drei Kandidaten über dieselbe Laufzeit, Modelldatei austauschbar |
+| Community-Modelle ohne Pflege, ohne unabhängige Messung | mittel | Messung in Phase 0 entscheidet; drei Kandidaten über dieselbe Laufzeit, Modelldatei austauschbar |
 | Modell zu langsam oder zu speicherhungrig | mittel | Messung vorab auf dem 13R, SmolVLM2 als kleiner Rückfall |
 | Öffentliche Testdaten passen nicht zum eigenen Essen (Nutrition5k: US-Kantine) | mittel | deutsche Gerichte als eigener Testsatz, Auswertung im Alltag (Phase 5) |
 | llama.cpp als native Abhängigkeit (Build, Updates, R8) | mittel | nur `arm64-v8a`, Version festgenagelt, Release-Kurztest |
