@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.Einstellungsschluessel
@@ -80,7 +81,7 @@ class WocheScreenTest {
         compose.warteAufText("KW 44 · 26.10.–1.11.")
         compose.onNodeWithText("Reispfanne").assertExists()
         compose.onNodeWithText("2 P.").assertExists()
-        compose.onNodeWithText("717 kcal").assertExists()
+        compose.onNodeWithText("717 kcal geplant").assertExists()
     }
 
     @Test
@@ -101,7 +102,7 @@ class WocheScreenTest {
         }
         planen(2, "ABENDESSEN")
         zeigen()
-        compose.warteAufText("mind. 717 kcal")
+        compose.warteAufText("mind. 717 kcal geplant")
         planen(2, "MITTAGESSEN")
         compose.warteAufText("Ø mind. 1.434 kcal/Tag")
     }
@@ -118,13 +119,14 @@ class WocheScreenTest {
     fun hinzufuegenMitEigenemNamen() {
         zeigen()
         compose.warteAufText("KW 44 · 26.10.–1.11.")
-        compose.onAllNodesWithText("+ Mahlzeit")[2].performClick()
+        compose.onAllNodesWithText("Mahlzeit planen")[2].performClick()
         compose.warteAufText("Mahlzeit wählen")
         compose.onNode(hasSetTextAction()).performTextInput("Brotzeit")
         compose.onNodeWithText("Weiter").performClick()
         compose.warteAufText("Reispfanne")
         compose.onNodeWithText("Reispfanne").performClick()
-        compose.warteAufText("Brotzeit")
+        // Mahlzeit als Überzeile in Versalien
+        compose.warteAufText("BROTZEIT")
         val e = runBlocking { db.planEintragDao().alle().single() }
         assertEquals(MITTWOCH, e.date)
         assertEquals("Brotzeit", e.slotType)
@@ -230,7 +232,7 @@ class WocheScreenTest {
         runBlocking { db.hauptspeisen() }
         zeigen()
         compose.warteAufText("KW 44 · 26.10.–1.11.")
-        compose.onNodeWithText("Leere Tage füllen").performClick()
+        compose.onNodeWithText("Leere Tage füllen").performScrollTo().performClick()
         compose.warteAufText("Übernehmen (5)")
         compose.onNodeWithContentDescription("MI 28.10. übernehmen").performClick()
         compose.warteAufText("Übernehmen (4)")
@@ -244,7 +246,7 @@ class WocheScreenTest {
         runBlocking { db.rezeptDao().upsert(db.rezeptDao().nachId("r1")!!.copy(mahlzeiten = "ABENDESSEN", gaenge = "HAUPTSPEISE")) }
         zeigen()
         compose.warteAufText("KW 44 · 26.10.–1.11.")
-        compose.onNodeWithText("Leere Tage füllen").performClick()
+        compose.onNodeWithText("Leere Tage füllen").performScrollTo().performClick()
         compose.warteAufText("Übernehmen (1)")
         assertEquals(4, compose.onAllNodesWithText("kein Vorschlag", substring = true).fetchSemanticsNodes().size)
     }
@@ -253,12 +255,12 @@ class WocheScreenTest {
     @Config(qualifiers = "w1280dp-h1200dp")
     fun tabletZweiSpalten() {
         zeigen()
-        compose.warteAufText("MO 26.10.")
-        compose.onNodeWithText("MO 26.10.").assertIsDisplayed()
-        compose.onNodeWithText("FR 30.10.").assertIsDisplayed()
+        compose.warteAufText("Montag, 26.10.")
+        compose.onNodeWithText("Montag, 26.10.").assertIsDisplayed()
+        compose.onNodeWithText("Freitag, 30.10.").assertIsDisplayed()
         // Zwei Spalten: Freitag steht rechts neben Montag, nicht darunter
-        val mo = compose.onNodeWithText("MO 26.10.").getUnclippedBoundsInRoot()
-        val fr = compose.onNodeWithText("FR 30.10.").getUnclippedBoundsInRoot()
+        val mo = compose.onNodeWithText("Montag, 26.10.").getUnclippedBoundsInRoot()
+        val fr = compose.onNodeWithText("Freitag, 30.10.").getUnclippedBoundsInRoot()
         assertTrue(fr.left > mo.right, "Freitag in der rechten Spalte")
     }
 

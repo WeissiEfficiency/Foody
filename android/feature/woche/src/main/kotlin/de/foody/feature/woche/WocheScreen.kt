@@ -15,8 +15,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -25,6 +23,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -32,30 +31,40 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.data.woche.PlanEintrag
 import de.foody.core.data.woche.WochenAnsicht
 import de.foody.core.data.woche.WochenTag
+import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
+import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.LeistenTag
+import de.foody.core.designsystem.komponenten.RunderKnopf
+import de.foody.core.designsystem.komponenten.Seitenkopf
+import de.foody.core.designsystem.komponenten.Tagesleiste
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.ueberLeiste
-import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
+import de.foody.domain.Mahlzeit
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
-/** Abstand des Füllen-Knopfs über der schwebenden Navigationsleiste; die Liste endet darüber. */
+/** Abstand der Meldungen über der schwebenden Navigationsleiste; die Liste endet darüber. */
 private val UEBER_LEISTE = 96.dp
-private val LISTE_UNTEN = 168.dp
+private val LISTE_UNTEN = 104.dp
 
 /**
- * Der Tab „Woche“: eine Woche Mo–So mit Pfeilen zum Blättern, Tage mit Einträgen und Nährwerten (ab 840 dp in zwei
- * Spalten), „+ Mahlzeit“ (Mahlzeit wählen → Rezept wählen), das Mahlzeit-Blatt je Eintrag und „Leere Tage füllen“.
+ * Der Tab „Woche“ wie im Entwurf: Kopf mit Kalenderwoche und runden Pfeilen, Tagesleiste (Tippen springt zum Tag),
+ * Tageskarten mit Einträgen und Plätzen für fehlende Mahlzeiten (ab 840 dp in zwei Spalten), am Ende „x von 28
+ * Mahlzeiten geplant“ und „Leere Tage füllen“. „+ Mahlzeit“ führt über die Mahlzeitwahl, ein Platz direkt zur
+ * Rezeptwahl; je Eintrag das Mahlzeit-Blatt.
  */
 @Composable
 fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: WocheViewModel = hiltViewModel()) {
@@ -72,36 +81,51 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
     val snackbar = remember { SnackbarHostState() }
     val bereich = rememberCoroutineScope()
 
+    val scroll = rememberScrollState()
+    // Lage der Tageskarten in der Liste, für den Sprung aus der Tagesleiste
+    val lagen = remember { mutableStateMapOf<Int, Int>() }
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
         val zweispaltig = maxWidth >= FoodyBreiten.zweispaltig
         Column(
-            Modifier.widthIn(max = FoodyBreiten.zweiBereiche).fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = ueberLeiste(LISTE_UNTEN)),
+            Modifier.widthIn(max = FoodyBreiten.zweiBereiche).fillMaxSize().verticalScroll(scroll)
+                .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s3, bottom = ueberLeiste(LISTE_UNTEN)),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
             Kopf(woche, zeigtHeute, vm::blaettern, vm::heute)
             val tage = woche?.tage.orEmpty()
-            val karte = @Composable { tag: WochenTag ->
-                TagKarte(tag, tag.datum == vm.heuteDatum, ziel, onEintrag = { offen = it.id }, onPlus = { neuAm = tag.datum.toString() })
+            if (tage.isNotEmpty()) {
+                val heuteIndex = tage.indexOfFirst { it.datum == vm.heuteDatum }
+                Tagesleiste(
+                    tage.map { LeistenTag(wochentagKurz(it.datum), it.datum.dayOfMonth, it.eintraege.isNotEmpty(), tagLang(it.datum)) },
+                    gewaehlt = heuteIndex,
+                    onWahl = { i -> lagen[i]?.let { y -> bereich.launch { scroll.animateScrollTo(y) } } },
+                )
+            }
+            val karte = @Composable { i: Int, tag: WochenTag ->
+                TagKarte(
+                    tag, tag.datum == vm.heuteDatum, ziel,
+                    onEintrag = { offen = it.id },
+                    onPlus = { neuAm = tag.datum.toString() },
+                    modifier = Modifier.onPlaced { lagen[i] = it.positionInParent().y.toInt() },
+                    onPlatz = { m -> auswahlFuer = "${tag.datum}|${m.name}" },
+                )
             }
             if (zweispaltig) {
                 Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) { tage.take(4).forEach { karte(it) } }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) { tage.drop(4).forEach { karte(it) } }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
+                        tage.take(4).forEachIndexed { i, t -> karte(i, t) }
+                    }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
+                        tage.drop(4).forEachIndexed { i, t -> karte(i + 4, t) }
+                    }
                 }
             } else {
-                tage.forEach { karte(it) }
+                tage.forEachIndexed { i, t -> karte(i, t) }
             }
+            if (tage.isNotEmpty()) Fuss(tage) { vm.fuellenOeffnen() }
         }
-        // Fest über der schwebenden Navigationsleiste, nicht am Ende der Liste
-        FoodyKnopf(
-            "Leere Tage füllen", { vm.fuellenOeffnen() },
-            Modifier.align(Alignment.BottomCenter).widthIn(max = FoodyBreiten.zweiBereiche).fillMaxWidth()
-                .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, bottom = ueberLeiste(UEBER_LEISTE)),
-        )
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = ueberLeiste(UEBER_LEISTE + 64.dp)))
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = ueberLeiste(UEBER_LEISTE)))
     }
-
     neuAm?.let { datum ->
         MahlzeitWahl("Mahlzeit wählen", onWahl = { m -> auswahlFuer = "$datum|$m"; neuAm = null }, onAbbrechen = { neuAm = null })
     }
@@ -157,22 +181,37 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
 
 @Composable
 private fun Kopf(woche: WochenAnsicht?, zeigtHeute: Boolean, onBlaettern: (Long) -> Unit, onHeute: () -> Unit) {
-    Text("Woche", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineLarge, color = FoodyTheme.farben.text)
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = { onBlaettern(-1) }) {
-            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = "Vorige Woche", tint = FoodyTheme.farben.text)
-        }
-        Text(woche?.let { wochenTitel(it.montag) }.orEmpty(), style = MaterialTheme.typography.titleMedium, color = FoodyTheme.farben.text)
-        IconButton(onClick = { onBlaettern(1) }) {
-            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = "Nächste Woche", tint = FoodyTheme.farben.text)
-        }
-        if (!zeigtHeute) FoodyChip("Heute", ausgewaehlt = false, onKlick = onHeute)
+    Seitenkopf("Woche", ueberzeile = woche?.let { wochenTitel(it.montag) }) {
+        RunderKnopf(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, "Vorige Woche", { onBlaettern(-1) })
+        RunderKnopf(Icons.AutoMirrored.Outlined.KeyboardArrowRight, "Nächste Woche", { onBlaettern(1) })
     }
-    woche?.durchschnitt?.let {
+    val schnitt = woche?.durchschnitt
+    if (!zeigtHeute || schnitt != null) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
+            schnitt?.let {
+                Text(
+                    "Ø ${if (it.vollstaendig) "" else "mind. "}${ganzzahlDeutsch(it.kcal)} kcal/Tag",
+                    Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = FoodyTheme.farben.nebentext,
+                )
+            }
+            if (!zeigtHeute) FoodyChip("Heute", ausgewaehlt = false, onKlick = onHeute)
+        }
+    }
+}
+
+/** Fuß wie im Entwurf: wie viele der vier Mahlzeiten je Tag geplant sind, daneben „Leere Tage füllen“. */
+@Composable
+private fun Fuss(tage: List<WochenTag>, onFuellen: () -> Unit) {
+    val geplant = tage.sumOf { t -> t.eintraege.mapNotNull { Mahlzeit.ausText(it.mahlzeit) }.toSet().size }
+    Row(Modifier.padding(top = FoodyAbstaende.s2), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            "Ø ${if (it.vollstaendig) "" else "mind. "}${ganzzahlDeutsch(it.kcal)} kcal/Tag",
+            "$geplant von ${tage.size * TAGES_MAHLZEITEN.size} Mahlzeiten geplant",
+            Modifier.weight(1f),
             style = MaterialTheme.typography.bodyMedium,
             color = FoodyTheme.farben.nebentext,
         )
+        FoodyKnopf("Leere Tage füllen", onFuellen, art = KnopfArt.UMRISS)
     }
 }

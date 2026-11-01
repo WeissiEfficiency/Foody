@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
@@ -85,11 +86,11 @@ class WocheScreenshotTest {
 
     @Test
     @Config(qualifiers = "w411dp-h891dp")
-    fun fuellenHellHandy() = blatt("fuellen_hell_handy", dunkel = false, warteAuf = "Neu mischen") { compose.onNodeWithText("Leere Tage füllen").performClick() }
+    fun fuellenHellHandy() = blatt("fuellen_hell_handy", dunkel = false, warteAuf = "Neu mischen") { compose.onNodeWithText("Leere Tage füllen").performScrollTo().performClick() }
 
     @Test
     @Config(qualifiers = "w411dp-h891dp")
-    fun fuellenDunkelHandy() = blatt("fuellen_dunkel_handy", dunkel = true, warteAuf = "Neu mischen") { compose.onNodeWithText("Leere Tage füllen").performClick() }
+    fun fuellenDunkelHandy() = blatt("fuellen_dunkel_handy", dunkel = true, warteAuf = "Neu mischen") { compose.onNodeWithText("Leere Tage füllen").performScrollTo().performClick() }
 
     private fun woche(geraet: String) {
         for (dunkel in listOf(false, true)) {
