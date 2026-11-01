@@ -7,6 +7,7 @@ import de.foody.core.data.db.SyncZustandEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.heute.bestand
 import de.foody.domain.IngredientCatalog
+import de.foody.domain.MeasureUnit
 import de.foody.domain.ZutatZeile
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -71,10 +72,11 @@ class RezeptSchreibenTest {
     }
 
     @Test
-    fun ohneMengeAlsHinweis() = runTest {
+    fun priseInGrammMitHinweis() = runTest {
         val id = ok(repo.speichern(entwurf("1 Prise Salz")))
         val z = db.rezeptZutatDao().nachRezept(id).single()
-        assertEquals(0, java.math.BigDecimal.ZERO.compareTo(z.amount))
+        assertEquals(0, java.math.BigDecimal("0.5").compareTo(z.amount))
+        assertEquals(MeasureUnit.GRAM, z.unit)
         assertEquals("1 Prise", z.preparationNote)
     }
 

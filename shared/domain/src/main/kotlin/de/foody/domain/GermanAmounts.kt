@@ -21,9 +21,28 @@ internal object GermanAmounts {
         "dose" to MeasureUnit.CAN, "dose/n" to MeasureUnit.CAN, "dosen" to MeasureUnit.CAN,
         "stück" to MeasureUnit.PIECE, "stück(e)" to MeasureUnit.PIECE, "stk." to MeasureUnit.PIECE, "stk" to MeasureUnit.PIECE,
         "pck." to MeasureUnit.PACKAGE, "päckchen" to MeasureUnit.PACKAGE, "packung" to MeasureUnit.PACKAGE, "pkt." to MeasureUnit.PACKAGE,
+        // Beutel und Tüten sind Packungen: „1 Beutel Trockenhefe“ = 7 g wie „1 Pck.“
+        "beutel" to MeasureUnit.PACKAGE, "btl." to MeasureUnit.PACKAGE, "tüte" to MeasureUnit.PACKAGE, "tüte/n" to MeasureUnit.PACKAGE,
+        "tüten" to MeasureUnit.PACKAGE, "tütchen" to MeasureUnit.PACKAGE,
     )
 
     fun unitOf(word: String): MeasureUnit? = unitWords[word.lowercase()]
+
+    /**
+     * Küchenmaße ohne Waage als Faustwert je Einheit: Prise und Messerspitze ≈ 0,5 g, Schuss ≈ 20 ml, Spritzer ≈ 2 ml,
+     * Tasse ≈ 150 ml (Kaffeetasse). Gilt für jede Zutat; genauer wird es nur mit der Waage.
+     */
+    private val schaetzmengen: Map<String, Pair<BigDecimal, MeasureUnit>> = buildMap {
+        fun maß(menge: String, einheit: MeasureUnit, vararg woerter: String) = woerter.forEach { put(it, BigDecimal(menge) to einheit) }
+        maß("0.5", MeasureUnit.GRAM, "prise", "prisen", "msp.", "msp", "messerspitze", "messerspitzen")
+        maß("20", MeasureUnit.MILLILITER, "schuss")
+        maß("2", MeasureUnit.MILLILITER, "spritzer")
+        maß("150", MeasureUnit.MILLILITER, "tasse", "tassen")
+    }
+
+    /** Menge je Einheit für ein Küchenmaß wie „Prise(n)“ oder „Tasse/n“; null für andere Wörter. */
+    fun schaetzmenge(word: String): Pair<BigDecimal, MeasureUnit>? =
+        schaetzmengen[word.lowercase().replace(Regex("""\((n|e|en)\)$|/(n|e|en)$"""), "")]
 
     fun parseNumber(s: String): BigDecimal? {
         mixedNumber.matchEntire(s)?.let { m ->

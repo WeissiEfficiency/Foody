@@ -18,7 +18,7 @@
 11. Jeder generierte Listeneintrag speichert seine Herkunft (Planposition, Rezeptzeile, Beitrag).
 12. Kalendertage sind `LocalDate`; Sommer-/Winterzeit hat keinen Einfluss auf die Tageszuordnung.
 13. Import: Eine Zutat ohne Zahl (z. B. „Salz und Pfeffer“) erhält die Menge 0 = „nach Bedarf“. Sie erscheint nicht
-    auf der Einkaufsliste und beeinflusst die Nährwert-Vollständigkeit nicht.
+    auf der Einkaufsliste und beeinflusst die Nährwert-Vollständigkeit nicht. Ausnahme: Küchenmaße wie „Prise“ (Regel 29).
 14. Import: Der Zutatenname besteht aus den führenden Substantiven; Adjektive und Zusätze („rote“, „geschälte“,
     „à ca. 400 g“) werden Hinweis. So laufen z. B. rote, grüne und gelbe Paprika zu einer Einkaufsposition zusammen.
 15. Zutatennamen werden nur über eine feste Synonymliste und einfache Pluralformen vereinheitlicht
@@ -63,6 +63,15 @@
     Eiweißquelle wie am Vortag, am selben Tag oder am Folgetag fällt weg, solange es Alternativen gibt; Würzzutaten
     („Fischsauce“, „Hühnerbrühe“) zählen dafür nicht. Nichts, was 14 Tage vor dem ersten leeren Tag oder später
     eingeplant ist; lieber eine Lücke als ein unpassendes Gericht.
+29. Import und Rezept-Editor: Küchenmaße ohne Waage werden mit Faustwerten in Gramm bzw. Milliliter gerechnet –
+    Prise und Messerspitze ≈ 0,5 g, Schuss ≈ 20 ml, Spritzer ≈ 2 ml, Tasse ≈ 150 ml; „Prise“ ohne Zahl ist eine Prise.
+    Die Angabe bleibt als Hinweis stehen, der Editor zeigt weiter „1 Prise Salz“. Beutel und Tüten sind Packungen.
+    (Bis 2026-11 war die Prise „nach Bedarf“, Regel 13.)
+30. Import: Lässt sich eine Stück-, Packungs- oder Dosenangabe mit den Daten der Zutat nicht in Gramm umrechnen,
+    gilt ein Gewicht oder Volumen im Hinweis („1 Pck. Eierspätzle, 400 g“) – je Behälter (Glas, Becher, Tube, Dose,
+    Packung …) oder bei „à“/„je“, sonst für die ganze Zeile; bei einer Spanne die untere Grenze, bei mehreren
+    verschiedenen Angaben keines. Ist die Zeile schon umrechenbar (Dosengewicht bekannt), bleibt die Einheit – die
+    Einkaufsliste zeigt dann weiter „2 Dosen“.
 
 ## Tests je Regel
 
@@ -98,3 +107,5 @@ Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/te
 | 26 | `PackungScanTest.katalogTrefferOhneOnlineAbfrage`, `ZutatEditorScanTest.uebernimmtUndMarkiert`, `TagebuchRepositoryTest.packungOhneHaekchenFrei`, `TagebuchRepositoryTest.packungAktualisiertVorhandene` |
 | 27 | `MarkdownImportTest.servingsFromHeaderLine`, `RezeptImportTest.portionenAusDerDateiStattSchaetzung`, `RezeptImportTest.eineGanzeBackwareWirdGeschaetzt`, `KcalJePortionTest`, `PortionenNachtragenTest` |
 | 28 | `LeereTageFuellenTest`, `AbwechslungTest` |
+| 29 | `UnitsAndImportFixesTest.pinchBecomesHalfAGram`, `UnitsAndImportFixesTest.kitchenMeasuresBecomeGramsOrMillilitres`, `UnitsAndImportFixesTest.bagsAndSachetsArePackages`, `ZutatZeileTest.schreibenLesbar`, `RezeptSchreibenTest.priseInGrammMitHinweis` |
+| 30 | `RezeptImportTest.gewichtAusDemHinweisFuerUnbekanntePackungen`, `RezeptImportTest.gewichtAusDemHinweisNurWennNoetig` |

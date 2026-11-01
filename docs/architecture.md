@@ -419,6 +419,15 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6e2-zutaten-design.md`
 - **Startdaten:** Der Lader überschreibt Kategorie, Dichte, Stückgewicht und Strichcode einer Startzutat nicht mehr;
   bearbeitete Nährwerte gelten über die Quelle als verändert. Bekannte Grenze: Eine gelöschte oder weg-zusammengeführte
   Startzutat kehrt beim nächsten Anstieg von `Startdaten.VERSION` zurück (unbenutzt).
+- **Startdaten v9 (2026-11-01):** Brot und Gebäck mit eigenen Einträgen (Weißbrot, Toastbrot, Brezel, Laugenbrötchen,
+  Vollkornbrot, Baguette, Croissant, Tortilla …, Stück = Scheibe bzw. ein Gebäck; „Semmel“ bleibt „Brötchen“), dazu die
+  häufigsten Zutaten der Rezepte ohne Katalogeintrag – zusammen 103 neue Zeilen mit gerundeten Näherungswerten (Energie
+  aus den Makros nach EU-Faktoren). 39 bestehende Zeilen bekommen Dichte oder Stückgewicht (EL Tomatenmark, gehackte
+  Kräuter, Scheibe Gouda, Tube, Becher). Die kcal der bestehenden Zeilen wurden gegen die Makros geprüft (alle stimmig,
+  Abweichung nur bei Alkoholika, deren Alkohol eigene Energie hat) und nicht geändert. Gemessen am Rezeptordner
+  (430 Rezepte, 4.821 Zeilen): rechenbare Zeilen 3.296 → 3.822, ohne Katalogeintrag 386 → 127, Löffel- und
+  ml-Angaben ohne Dichte 171 → 3. Mengen ohne Waage (Prise, Messerspitze, Schuss, Tasse) und Gewichte im Hinweis
+  rechnet der Import um (Regeln 29 und 30); schon importierte Rezepte behalten ihre Zeilen.
 - **Sync auf dem zweiten Gerät:** `anwenden` schreibt erst Datensätze, dann Löschungen; mit offener Rezeptänderung wird
   die Quelle wiederbelebt (`nochGebraucht`). Belegt durch zwei Tests in `SyncLaufTest`.
 - **`:feature:zutaten`:** Liste (`ZutatenListeViewModel`), Editor (`ZutatEditorViewModel`, `ZielwahlBlatt`), Meldungen
