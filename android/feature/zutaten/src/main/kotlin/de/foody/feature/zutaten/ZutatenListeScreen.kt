@@ -51,6 +51,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.kcalText
+import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
@@ -118,7 +119,7 @@ fun ZutatenListeRoute(onZutat: (String) -> Unit, onZurueck: () -> Unit, vm: Zuta
                     style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.nebentext,
                 )
             }
-            LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = UEBER_LEISTE + 72.dp)) {
+            LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = ueberLeiste(UEBER_LEISTE + 72.dp))) {
                 items(z.treffer, key = { it.id }) { zutat ->
                     ZutatZeile(zutat) { onZutat(zutat.id) }
                     HorizontalDivider(Modifier.padding(horizontal = FoodyAbstaende.s4), color = FoodyTheme.farben.nebentext.copy(alpha = 0.2f))
@@ -127,9 +128,9 @@ fun ZutatenListeRoute(onZutat: (String) -> Unit, onZurueck: () -> Unit, vm: Zuta
         }
         FloatingActionButton(
             onClick = { gibtEsSchon = null; neu = true },
-            modifier = Modifier.align(Alignment.BottomEnd).safeDrawingPadding().padding(end = FoodyAbstaende.s4, bottom = UEBER_LEISTE),
+            modifier = Modifier.align(Alignment.BottomEnd).safeDrawingPadding().padding(end = FoodyAbstaende.s4, bottom = ueberLeiste(UEBER_LEISTE)),
         ) { Icon(Icons.Outlined.Add, contentDescription = "Neue Zutat") }
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = UEBER_LEISTE + 72.dp))
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = ueberLeiste(UEBER_LEISTE + 72.dp)))
     }
 
     if (neu) {

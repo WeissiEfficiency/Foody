@@ -40,6 +40,7 @@ import de.foody.core.designsystem.komponenten.FoodyFrage
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.FoodyTextfeld
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
@@ -74,7 +75,7 @@ private fun VerbindenInhalt(ui: VerbindenUi, vm: VerbindenViewModel, onZurueck: 
     val verbindung = ui.verbindung?.takeIf { it.verbunden }
     Column(
         Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().safeDrawingPadding()
-            .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = 104.dp).testTag(Verbinden.INHALT),
+            .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = ueberLeiste(104.dp)).testTag(Verbinden.INHALT),
         verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

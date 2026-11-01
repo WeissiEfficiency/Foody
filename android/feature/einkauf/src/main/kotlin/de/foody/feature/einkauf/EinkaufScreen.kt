@@ -32,6 +32,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.LeererZustandZeile
+import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 
@@ -92,7 +93,7 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
             }
             else -> Raster(raster) { oben(); liste(); if (z.suche.isBlank()) katalog() }
         }
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = LISTE_UNTEN))
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = ueberLeiste(LISTE_UNTEN)))
     }
     EinkaufBlaetter(vm, z, snackbar, onListe)
     z.ansicht?.takeIf { loeschenFrage }?.let { a ->
@@ -101,7 +102,7 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
 }
 
 @Composable
-private fun Raster(modifier: Modifier, unten: androidx.compose.ui.unit.Dp = LISTE_UNTEN, inhalt: LazyGridScope.() -> Unit) {
+private fun Raster(modifier: Modifier, unten: androidx.compose.ui.unit.Dp = ueberLeiste(LISTE_UNTEN), inhalt: LazyGridScope.() -> Unit) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(KACHEL_MIN),
         modifier = modifier,

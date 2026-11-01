@@ -112,7 +112,7 @@ Beim Archivieren von `v3-plan.md` und `v3-abnahme.md` noch offen:
 | ID | Was | Wer |
 |---|---|---|
 | ~~V1~~ | Android-Studio-Profiler auf Handy und Tablet (Start, Scrollen, Speicher); das Baseline-Profil vom 28.10. stammt vom Emulator. Zusammen mit der Messung vor W3+W4 — **gestrichen:** kein bekanntes Leistungsproblem; nur nachholen, wenn sich etwas langsam anfühlt | 👤 |
-| V2 | TalkBack-Durchlauf und Schriftgröße 200 % (dazu N5 und die A11y-Lücken aus E3) | 👤 / 🤖 |
+| V2 | TalkBack-Durchlauf und Schriftgröße 200 % (dazu N5 und die A11y-Lücken aus E3). **🤖-Teil erledigt 01.11. (dieser PR):** alle Bereiche bei 200 % auf dem Emulator; behoben: Leiste verdeckte das Ende jeder Seite (`ueberLeiste`), Heute-Kopf („He-ute“), Farbwelt-Namen, „Zu-rück“ im Kochmodus, „Rezep-te“ in der Leiste. Accessibility-Baum aller Hauptbildschirme: jedes tippbare Element beschriftet und mindestens 48 dp. **Offen (👤):** einmal mit TalkBack auf dem Handy durch | 👤 / 🤖 |
 | ✅ V3 | Abnahme „Opt-in: ohne Verbindung keine Netzwerkzugriffe“ prüfen: frisch installiert, nicht angemeldet – kein Aufruf an Server oder Open Food Facts außer auf Knopfdruck **Geprüft 31.10. im Code:** Sync nur mit eingerichtetem Konto, Open Food Facts nur nach einem Scan, Coil ohne Netzwerkmodul. Ausnahme: Die Play-Dienste laden die ML-Kit-Module, sobald ein Scan-Knopf sichtbar ist, und ML Kit meldet beim Scannen Nutzungsdaten an Google (steht jetzt in `docs/security.md`) | 🤖 |
 | ✅ V4 | Abnahme „Betrieb“: Speicherlimit (512 MB) ist im Compose; nachzuweisen sind der nächtliche Lauf von `backup.sh` (Cron) und dass die Sicherung im OpenCloud-Ordner ankommt; dazu D3 und D5 **Geprüft 31.10. auf dem Server (nur lesend):** Cron 03:30 ruft `~/docker/backup/foody-backup.sh` (`backup.sh`, Integritätsprüfung, GPG, OpenCloud, 14 Stände); Läufe 29.–31.10. erfolgreich, die Dateien liegen in OpenCloud. Die Sicherungen enthalten bisher 0 Fotos – nachsehen, sobald Rezeptfotos synchronisiert sind | 👤 |
 | ✅ V5 | Abnahme „Signierte Release-APK im OpenCloud-Ordner“ (`:app:apkNachOpenCloud`): ablegen und abhaken, sobald 3.0.0 dort liegt **Erledigt: `foody.apk` 3.0.0 (`de.foody.app`, versionCode 300) liegt seit dem 28.10. in OpenCloud.** | 👤 |
@@ -151,7 +151,7 @@ Ressourcen schlank (381 KB), Features ohne Querverweise.
 | ✅ R1 | `:domain`: `RecipeSort`, `IngredientCatalog.assumedAtHome`, `RecipeProfile.carbsPerServing`/`reliable`, `NutritionResult.overallCompleteness`/`missingIngredientIds`/`lineGaps`/`lineEnergyPerServingKj`, `Mahlzeit.vorschlagFuer`, `DateRange.days` | Reste der v1-Oberfläche; vor dem Löschen je Regel in `docs/domain-rules.md` prüfen (dieser PR) |
 | ✅ R2 | `SyncDao.loeschenRevision`, `Einstellungsschluessel.EINKAUF_ANSICHT` | ungenutzt (dieser PR) |
 | ~~R3~~ | `FoodyAbstaende` | entfällt: mit Q1 benutzt |
-| R4 | B5, B7–B9 und Stufe 3 (C1–C8, ab 25.11.) | stehen oben |
+| ✅ R4 | B5, B7–B9 und Stufe 3 (C1–C8) | stehen oben, alle erledigt |
 
 **Doku:**
 
