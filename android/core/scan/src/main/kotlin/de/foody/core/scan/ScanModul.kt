@@ -12,7 +12,7 @@ import io.ktor.client.plugins.HttpTimeout
 import javax.inject.Singleton
 
 /**
- * Einstellungen des Scans, die die App liefert (`@Provides` in `:app3`, wie `SyncKonfiguration`). [appVersion] steht im
+ * Einstellungen des Scans, die die App liefert (`@Provides` in `:app`, wie `SyncKonfiguration`). [appVersion] steht im
  * User-Agent der Anfragen an Open Food Facts.
  */
 data class ScanKonfiguration(val appVersion: String)

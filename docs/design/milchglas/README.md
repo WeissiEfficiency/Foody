@@ -1,22 +1,11 @@
 # Design „Milchglas“ – Entwurf vom 31. Oktober 2026
 
-Gerenderte Entwürfe aus dem Design-Canvas „Foody Design“ (Handy, 411 dp breit), Standardfarbe Mango.
-Grundlage: Oberfläche Milchglas, Formen Rund, Farbe frei wählbar unter Einstellungen › Darstellung. Stand nach dem Abgleich mit dem Code Review: [abgleich.md](abgleich.md).
+Entwürfe aus dem Design-Canvas „Foody Design“ (Handy, 411 dp breit), Standardfarbe Mango. Grundlage: Oberfläche
+Milchglas, Formen Rund, Farbe frei wählbar unter Einstellungen › Darstellung. Stand nach dem Abgleich mit dem Code
+Review: [abgleich.md](abgleich.md).
 
-## Bildschirme
-
-| Bildschirm | Hell | Dunkel |
-|---|---|---|
-| Heute | ![Heute hell](heute-hell.png) | ![Heute dunkel](heute-dunkel.png) |
-| Rezepte | ![Rezepte hell](rezepte-hell.png) | ![Rezepte dunkel](rezepte-dunkel.png) |
-| Rezept (Detail) | ![Rezept (Detail) hell](rezept-hell.png) | ![Rezept (Detail) dunkel](rezept-dunkel.png) |
-| Kochen | ![Kochen hell](kochen-hell.png) | ![Kochen dunkel](kochen-dunkel.png) |
-| Woche | ![Woche hell](woche-hell.png) | ![Woche dunkel](woche-dunkel.png) |
-| Einkauf | ![Einkauf hell](einkauf-hell.png) | ![Einkauf dunkel](einkauf-dunkel.png) |
-| Tagebuch (Tag) | ![Tagebuch (Tag) hell](tagebuch-hell.png) | ![Tagebuch (Tag) dunkel](tagebuch-dunkel.png) |
-| Einstellungen | ![Einstellungen hell](einstellungen-hell.png) | ![Einstellungen dunkel](einstellungen-dunkel.png) |
-| Server verbinden | ![Server verbinden hell](server-verbinden-hell.png) | ![Server verbinden dunkel](server-verbinden-dunkel.png) |
-| Zutatenkatalog | ![Zutatenkatalog hell](zutaten-hell.png) | ![Zutatenkatalog dunkel](zutaten-dunkel.png) |
+Die gerenderten Entwürfe (zehn Bildschirme, hell und dunkel) sind seit der Umsetzung (#170) gelöscht und nur noch im
+Git-Verlauf. Wie die App heute aussieht, zeigen die Referenzbilder der Features (`src/test/screenshots`).
 
 ## Material und Formen
 
@@ -26,7 +15,7 @@ Grundlage: Oberfläche Milchglas, Formen Rund, Farbe frei wählbar unter Einstel
 
 ## Farben (Stand App)
 
-Maßgeblich ist `Farbwelt.kt` in `:core:designsystem`; der Kontrast-Test prüft jede Farbwelt hell und dunkel (WCAG 2.2 AA ohne Unschärfe, gegen Grund und volle Stellen des Verlaufs, Glas per Alpha gemischt; Text ≥ 4,5 : 1, Grafik ≥ 3 : 1). Die Bilder sind mit genau diesen Werten gerendert (Nebentext im hellen Modus dunkler als im ersten Canvas-Stand, weil er auch direkt auf dem Verlauf AA halten muss).
+Maßgeblich ist `Farbwelt.kt` in `:core:designsystem`; der Kontrast-Test prüft jede Farbwelt hell und dunkel (WCAG 2.2 AA ohne Unschärfe, gegen Grund und volle Stellen des Verlaufs, Glas per Alpha gemischt; Text ≥ 4,5 : 1, Grafik ≥ 3 : 1). Die Entwürfe waren mit genau diesen Werten gerendert (Nebentext im hellen Modus dunkler als im ersten Canvas-Stand, weil er auch direkt auf dem Verlauf AA halten muss).
 
 ### Hell
 

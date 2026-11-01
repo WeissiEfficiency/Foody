@@ -1,6 +1,6 @@
 # ADR 0008: Packung scannen über Play-Dienste und Open Food Facts
 
-Status: angenommen (2026-10-10). Spec: `docs/superpowers/archiv/specs/2026-10-10-naehrwerte-scan-design.md`.
+Status: angenommen (2026-10-10). Spec: `docs/superpowers/archiv/specs/2026-10-10-naehrwerte-scan-design.md` (seit 2026-11-01 nur im Git-Verlauf).
 
 **Kontext:** Nährwerte von Packungen abzutippen ist mühsam. Zwei Wege bieten sich an: der Strichcode (Produktnummer,
 Werte aus einer Datenbank) und das Foto der Nährwerttabelle (Texterkennung). Foody ist offline-first (ADR 0001) und

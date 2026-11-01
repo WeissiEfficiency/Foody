@@ -15,6 +15,7 @@ Legende: 👤 = machst du (Gerät, Homeserver), 🤖 = Claude, PR = eigener klei
 Formatierung und CI, kein Rebuild nötig. Die signierte `foody.apk` 3.1.0 liegt in OpenCloud. Kleine Reste:
 - 👤 D1: alte Tablet-Anmeldung prüfen (`foody-admin geraete`), falls noch da `abmelden-ungenutzt 3`
 - 👤 V4: Fotos in der Server-Sicherung nachsehen, sobald Rezeptfotos synchronisiert sind
+- 👤 F6–F9 aus der Repo-Durchsicht (Stufe 7): Branches, Tag, Worktrees, alte APKs
 
 Als Nächstes: die KI-Hilfe (`ToDoS/ki-plan.md`).
 
@@ -172,6 +173,28 @@ Ressourcen schlank (381 KB), Features ohne Querverweise.
 
 ✅ **Lokal (kein Repo), erledigt mit A2 und A7:** der Checkout in `Downloads` (A7) samt `.claude\worktrees\offene-fehler` (283 MB, lose v1-Kopie vom
 11.10.) und seinen geparkten Worktrees; im E:-Checkout Build-Reste `app/`, `domain/`, `sync-protocol/`, `android/app3/`.
+
+## Stufe 7 – Repo-Durchsicht 2026-11-01: Überbleibsel
+
+Suche über das ganze Repo (740 Dateien): jede Deklaration in `src/main` gegen alle Aufrufer, Versionskatalog gegen
+alle `*.kts`, Ressourcen gegen Code und XML, Pfade in der Doku gegen die Dateien, alte Begriffe (v1, Web, `app3`,
+Haushalt, Vorrat) außerhalb des Archivs, Branches, Tags und Build-Reste.
+
+**Sauber:** kein ungenutzter Code (übrig blieben nur Hilt-Module und Test-Hilfen in `:core:testing`), kein
+ungenutzter Katalog-Eintrag, alle 15 Ressourcen in Gebrauch, keine toten Pfade in der Doku (außer in alten ADRs, die
+Geschichte sind). „Vorrat“ und „Haushalt“ stehen nur noch bei der bewusst behaltenen Migration 9 → 10 und ihren Tests.
+
+| ID | Was | Wer |
+|---|---|---|
+| ✅ F1 | Pläne, Specs und Prüflisten der v1, v2 und Web-App gelöscht: `docs/superpowers/archiv/plans`, `…/specs` (22) und sechs Dateien in `ToDoS/archiv/` (v2-Plan und -Abnahme, Web-Plan, Optimierungsplan, Projektstruktur-Regeln, Struktur-Check), zusammen 4.800 Zeilen. Verweise in ADR 0007–0010, `architecture.md` und `CLAUDE.md` nennen den Git-Verlauf. Die V3-Archive bleiben (dieser PR) | 🤖 PR |
+| ✅ F2 | Gerenderte Design-Entwürfe `docs/design/milchglas/*.png` (20 Bilder, 5,8 MB) gelöscht; umgesetzt mit #170, den Ist-Stand zeigen die Referenzbilder. `README.md` mit den Farbwerten und `abgleich.md` bleiben (dieser PR) | 🤖 PR |
+| ✅ F3 | `architecture.md`: Tabelle der v1-Schemata 1–9 aus dem Anhang (Verweis auf den Git-Verlauf, die Trigger-Regeln bleiben); `roadmap.md`: Aufräumen erledigt, jetzt KI-Hilfe (dieser PR) | 🤖 PR |
+| ✅ F4 | Kommentare: `:app3` in `ScanModul.kt`, Verweis auf die v1 in `SyncKonto.kt`, „v1-Sicherungen lesen“ in `SicherungTest.kt` (seit C8 abgelehnt) (dieser PR) | 🤖 PR |
+| ✅ F5 | Lokaler Build-Rest `server/build/` im E:-Checkout (alter Ort des Moduls `:server`, heute `server/start`) gelöscht; dazu der verwaiste Temp-Worktree auf `claude/plan-stufe5` samt Branch | 🤖 |
+| F6 | GitHub: zehn Remote-Branches gemergter PRs (#156–#173) löschen; lokal fünf gemergte Branches (`e3-app`, `r10-portionen-nachtrag`, `server-n4-n7-e3`, `v1-rueckweg-app`, `v1-rueckweg-server`) | 👤 (für Claude gesperrt) |
+| F7 | Tag `v1-server` auf GitHub und Forgejo löschen: Er ist ein Vorfahr von `v1-final`, den die Doku nennt | 👤 (für Claude gesperrt) |
+| F8 | Zwei Worktrees abgeschlossener Sitzungen („Design-Visualisierung“, #170; „Alte Dateien aufräumen“, ohne Commit): Sitzungen archivieren, die App räumt die Worktrees mit weg | 👤 |
+| F9 | Außerhalb des Repos, im OpenCloud-Ordner: `androidApp-debug.apk` (21.10., 40 MB, Stand v2) und `foody-vorschau.apk` (31.10.) löschen, falls nicht mehr gebraucht | 👤 |
 
 ## Empfohlene Reihenfolge
 
