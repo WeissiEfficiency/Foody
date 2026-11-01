@@ -220,7 +220,7 @@ object IngredientCatalog {
         alias("Blätterteig", "Blätterteigrolle", "Butterblätterteig")
         alias("Pizzateig", "Pizzateig aus dem Kühlregal")
         alias("Flammkuchenteig")
-        alias("Haferflocken", "Hafer", "kernige Haferflocken", "zarte Haferflocken", "Vollkornhaferflocken")
+        alias("Haferflocken", "kernige Haferflocken", "zarte Haferflocken", "Vollkornhaferflocken")
         alias("Linsen", "Tellerlinsen", "rote Linsen", "Berglinsen", "Belugalinsen", "Puy-Linsen", "braune Linsen")
         alias("Couscous", "Cous Cous", "Instant-Couscous")
         alias("Bulgur", "Weizengrütze", "Bulgur Weizengrütze")
