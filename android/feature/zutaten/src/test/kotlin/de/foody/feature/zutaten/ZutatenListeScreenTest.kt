@@ -2,6 +2,7 @@ package de.foody.feature.zutaten
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isPopup
@@ -87,7 +88,7 @@ class ZutatenListeScreenTest {
         bestand()
         zeigen()
         compose.warteAufText("Reis")
-        compose.onNode(hasSetTextAction() and hasText("Suchen")).performTextInput("xyz")
+        compose.onNode(hasSetTextAction() and hasContentDescription("Zutaten suchen")).performTextInput("xyz")
         compose.warteAufText("Keine Zutat gefunden")
     }
 

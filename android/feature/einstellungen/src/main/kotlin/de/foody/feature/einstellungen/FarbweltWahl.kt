@@ -4,13 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
@@ -27,11 +27,10 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.token.Farbwelt
@@ -40,40 +39,35 @@ import de.foody.core.designsystem.token.FoodyAbstaende
 /**
  * Wahl der Farbwelt: je ein rundes Muster aus Verlauf und Hauptfarbe (im aktuellen Modus), darunter der Name. Die
  * Gruppe verhält sich wie Optionsfelder; die gewählte Farbwelt trägt einen Ring und einen Haken.
+ *
+ * Festes Raster mit gleich breiten Spalten (höchstens vier): Eine kürzere letzte Reihe steht links unter den Spalten
+ * statt verteilt mit Loch. Die Spaltenzahl richtet sich nach Breite und Schriftgröße, damit „Heidelbeere“ auch bei
+ * großer Schrift nicht umbricht (V2).
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun FarbweltWahl(gewaehlt: Farbwelt, onWahl: (Farbwelt) -> Unit) {
-    FlowRow(
-        Modifier.fillMaxWidth().selectableGroup(),
-        horizontalArrangement = VerteiltMitAbstand,
-        verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
-        maxItemsInEachRow = 4,
-    ) {
-        Farbwelt.entries.forEach { w -> FarbMuster(w, w == gewaehlt) { onWahl(w) } }
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val zelle = maxOf(80.dp, 66.dp * LocalDensity.current.fontScale)
+        val abstand = FoodyAbstaende.s2
+        val spalten = ((maxWidth + abstand) / (zelle + abstand)).toInt().coerceIn(1, 4)
+        Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
+            Farbwelt.entries.chunked(spalten).forEach { reihe ->
+                Row(horizontalArrangement = Arrangement.spacedBy(abstand)) {
+                    reihe.forEach { w -> FarbMuster(w, w == gewaehlt, Modifier.weight(1f)) { onWahl(w) } }
+                    repeat(spalten - reihe.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
     }
 }
 
-/**
- * Wie [Arrangement.SpaceBetween], aber mit mindestens [FoodyAbstaende.s2] dazwischen: Danach bricht die Reihe um, sonst
- * stießen die Namen bei großer Schrift aneinander (V2).
- */
-private object VerteiltMitAbstand : Arrangement.Horizontal {
-    override val spacing = FoodyAbstaende.s2
-
-    override fun Density.arrange(totalSize: Int, sizes: IntArray, layoutDirection: LayoutDirection, outPositions: IntArray) =
-        with(Arrangement.SpaceBetween) { arrange(totalSize, sizes, layoutDirection, outPositions) }
-}
-
 @Composable
-private fun FarbMuster(farbwelt: Farbwelt, gewaehlt: Boolean, onKlick: () -> Unit) {
+private fun FarbMuster(farbwelt: Farbwelt, gewaehlt: Boolean, modifier: Modifier, onKlick: () -> Unit) {
     val dunkel = FoodyTheme.dunkel
     val werte = farbwelt.werte(dunkel)
     val ring = if (gewaehlt) FoodyTheme.farben.text else FoodyTheme.farben.lichtkante
     Column(
-        Modifier
-            // mindestens 80 dp, bei großer Schrift so breit wie der Name: die Reihe bricht dann um, nicht das Wort (V2)
-            .widthIn(min = 80.dp)
+        modifier
             .clip(MaterialTheme.shapes.small)
             .selectable(selected = gewaehlt, role = Role.RadioButton, onClick = onKlick)
             .padding(vertical = FoodyAbstaende.s1),

@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,12 +12,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -37,11 +33,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyKnopf
+import de.foody.core.designsystem.komponenten.RunderKnopf
+import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
 import de.foody.core.designsystem.komponenten.ueberLeiste
-import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.scan.PackungScanKnopf
@@ -144,16 +140,14 @@ fun ZutatEditorRoute(id: String, onFertig: () -> Unit, vm: ZutatEditorViewModel 
 @Composable
 private fun Kopf(titel: String, onZurueck: () -> Unit, onZusammenfuehren: () -> Unit, onLoeschen: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
-    Row(Modifier.fillMaxWidth().padding(end = FoodyAbstaende.s1, top = FoodyAbstaende.s2), verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onZurueck) {
-            Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
-        }
-        Column(Modifier.weight(1f)) {
-            Augenbraue("Zutat")
-            Text(titel, Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
-        }
+    Seitenkopf(
+        titel,
+        Modifier.padding(start = FoodyAbstaende.s3, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2),
+        ueberzeile = "Zutat",
+        onZurueck = onZurueck,
+    ) {
         Box {
-            IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, contentDescription = "Mehr", tint = FoodyTheme.farben.text) }
+            RunderKnopf(Icons.Outlined.MoreVert, "Mehr", { menu = true })
             DropdownMenu(menu, onDismissRequest = { menu = false }) {
                 DropdownMenuItem(text = { Text("Zusammenführen mit …") }, onClick = { menu = false; onZusammenfuehren() })
                 DropdownMenuItem(text = { Text("Löschen") }, onClick = { menu = false; onLoeschen() })

@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -13,10 +12,6 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,9 +29,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.data.rezepte.Gespeichert
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
+import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
 import de.foody.core.designsystem.komponenten.ueberLeiste
-import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import kotlinx.coroutines.launch
@@ -72,14 +67,7 @@ fun EditorRoute(
                 .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = ueberLeiste(104.dp)),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = zurueck) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
-                }
-                Text(
-                    if (id == null) "Neues Rezept" else "Bearbeiten", Modifier.weight(1f).ueberschrift(),
-                    style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text,
-                )
+            Seitenkopf(if (id == null) "Neues Rezept" else "Bearbeiten", ueberzeile = "Rezept", onZurueck = zurueck) {
                 FoodyKnopf("Speichern", {
                     bereich.launch { (vm.speichern() as? Gespeichert.Ok)?.let { onFertig(it.id) } }
                 }, aktiv = moeglich)

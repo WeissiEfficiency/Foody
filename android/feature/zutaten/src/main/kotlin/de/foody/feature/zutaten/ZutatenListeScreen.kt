@@ -16,18 +16,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -42,17 +36,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.data.zutaten.ZutatFilter
 import de.foody.core.data.zutaten.ZutatKurz
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyChip
+import de.foody.core.designsystem.komponenten.FoodyFab
+import de.foody.core.designsystem.komponenten.RunderKnopf
+import de.foody.core.designsystem.komponenten.Seitenkopf
+import de.foody.core.designsystem.komponenten.Suchfeld
 import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.ueberLeiste
-import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.scan.PackungScanKnopf
@@ -99,10 +97,9 @@ fun ZutatenListeRoute(onZutat: (String) -> Unit, onZurueck: () -> Unit, vm: Zuta
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxSize().safeDrawingPadding()) {
             Kopf(onZurueck, onVereinheitlichen = vm::vorschauLaden)
-            OutlinedTextField(
-                suche, { suche = it; vm.suchen(it) }, Modifier.fillMaxWidth().padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s2),
-                label = { Text("Suchen") }, singleLine = true,
-                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+            Suchfeld(
+                suche, { suche = it; vm.suchen(it) }, "Zutaten suchen",
+                Modifier.fillMaxWidth().padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s2),
             )
             LazyRow(contentPadding = PaddingValues(horizontal = FoodyAbstaende.s4), horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 items(FILTER) { (f, text) -> FoodyChip(text, f in z.filter, { vm.filterUmschalten(f) }) }
@@ -126,10 +123,11 @@ fun ZutatenListeRoute(onZutat: (String) -> Unit, onZurueck: () -> Unit, vm: Zuta
                 }
             }
         }
-        FloatingActionButton(
-            onClick = { gibtEsSchon = null; neu = true },
-            modifier = Modifier.align(Alignment.BottomEnd).safeDrawingPadding().padding(end = FoodyAbstaende.s4, bottom = ueberLeiste(UEBER_LEISTE)),
-        ) { Icon(Icons.Outlined.Add, contentDescription = "Neue Zutat") }
+        FoodyFab(
+            "Zutat", Icons.Outlined.Add, { gibtEsSchon = null; neu = true },
+            Modifier.align(Alignment.BottomEnd).safeDrawingPadding().padding(end = FoodyAbstaende.s4, bottom = ueberLeiste(UEBER_LEISTE))
+                .semantics { contentDescription = "Neue Zutat" },
+        )
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = ueberLeiste(UEBER_LEISTE + 72.dp)))
     }
 
@@ -147,19 +145,18 @@ fun ZutatenListeRoute(onZutat: (String) -> Unit, onZurueck: () -> Unit, vm: Zuta
     vorschau?.let { VereinheitlichenDialog(it, onAnwenden = vm::anwenden, onAbbrechen = vm::vorschauSchliessen) }
 }
 
+/** Kopf wie im Entwurf: runder Zurück-Knopf, „Einstellungen“ über dem Titel, rechts das Menü. */
 @Composable
 private fun Kopf(onZurueck: () -> Unit, onVereinheitlichen: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
-    Row(Modifier.fillMaxWidth().padding(end = FoodyAbstaende.s1, top = FoodyAbstaende.s2), verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onZurueck) {
-            Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
-        }
-        Column(Modifier.weight(1f)) {
-            Augenbraue("Einstellungen")
-            Text("Zutatenkatalog", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
-        }
+    Seitenkopf(
+        "Zutatenkatalog",
+        Modifier.padding(start = FoodyAbstaende.s3, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2),
+        ueberzeile = "Einstellungen",
+        onZurueck = onZurueck,
+    ) {
         Box {
-            IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, contentDescription = "Mehr", tint = FoodyTheme.farben.text) }
+            RunderKnopf(Icons.Outlined.MoreVert, "Mehr", { menu = true })
             DropdownMenu(menu, onDismissRequest = { menu = false }) {
                 DropdownMenuItem(text = { Text("Namen vereinheitlichen") }, onClick = { menu = false; onVereinheitlichen() })
             }
