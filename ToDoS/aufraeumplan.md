@@ -13,9 +13,10 @@ Legende: 👤 = machst du (Gerät, Homeserver), 🤖 = Claude, PR = eigener klei
 **Stand 2026-11-01** (`main` nach #175, Version 3.1.0): **Alle Stufen erledigt** bis auf E6 (nur beobachten:
 `:core:data` hat 6.250 von 19.400 Zeilen der App). Server läuft auf #157; spätere Änderungen unter `server/` sind nur
 Formatierung und CI, kein Rebuild nötig. Die signierte `foody.apk` 3.1.0 liegt in OpenCloud. Kleine Reste:
-- 👤 D1: alte Tablet-Anmeldung prüfen (`foody-admin geraete`), falls noch da `abmelden-ungenutzt 3`
+- ✅ D1: alte Tablet-Anmeldung (27.10.) ist seit dem 31.10. widerrufen (`geraete`, 01.11.). Aktiv sind noch 4 Einträge
+  vom Handy und 2 vom Tablet (Neuanmeldungen); in einer Woche mit `abmelden-ungenutzt 5` die nicht mehr genutzten widerrufen
 - 👤 V4: Fotos in der Server-Sicherung nachsehen, sobald Rezeptfotos synchronisiert sind
-- 👤 F6–F9 aus der Repo-Durchsicht (Stufe 7): Branches, Tag, Worktrees, alte APKs
+- 👤 F8–F9 aus der Repo-Durchsicht (Stufe 7): Worktrees, alte APKs
 
 Als Nächstes: die KI-Hilfe (`ToDoS/ki-plan.md`).
 
@@ -191,8 +192,8 @@ Geschichte sind). „Vorrat“ und „Haushalt“ stehen nur noch bei der bewuss
 | ✅ F3 | `architecture.md`: Tabelle der v1-Schemata 1–9 aus dem Anhang (Verweis auf den Git-Verlauf, die Trigger-Regeln bleiben); `roadmap.md`: Aufräumen erledigt, jetzt KI-Hilfe (dieser PR) | 🤖 PR |
 | ✅ F4 | Kommentare: `:app3` in `ScanModul.kt`, Verweis auf die v1 in `SyncKonto.kt`, „v1-Sicherungen lesen“ in `SicherungTest.kt` (seit C8 abgelehnt) (dieser PR) | 🤖 PR |
 | ✅ F5 | Lokaler Build-Rest `server/build/` im E:-Checkout (alter Ort des Moduls `:server`, heute `server/start`) gelöscht; dazu der verwaiste Temp-Worktree auf `claude/plan-stufe5` samt Branch | 🤖 |
-| F6 | GitHub: zehn Remote-Branches gemergter PRs (#156–#173) löschen; lokal fünf gemergte Branches (`e3-app`, `r10-portionen-nachtrag`, `server-n4-n7-e3`, `v1-rueckweg-app`, `v1-rueckweg-server`) | 👤 (für Claude gesperrt) |
-| F7 | Tag `v1-server` auf GitHub und Forgejo löschen: Er ist ein Vorfahr von `v1-final`, den die Doku nennt | 👤 (für Claude gesperrt) |
+| ✅ F6 | GitHub: zehn Remote-Branches gemergter PRs (#156–#173) löschen; lokal fünf gemergte Branches (`e3-app`, `r10-portionen-nachtrag`, `server-n4-n7-e3`, `v1-rueckweg-app`, `v1-rueckweg-server`) **Erledigt 01.11.:** die Remote-Branches hatte GitHub beim Mergen schon gelöscht, die lokalen sind weg | 👤 |
+| ✅ F7 | Tag `v1-server` auf GitHub und Forgejo löschen: Er ist ein Vorfahr von `v1-final`, den die Doku nennt **Erledigt 01.11.** (GitHub, Forgejo, lokal) | 👤 |
 | F8 | Zwei Worktrees abgeschlossener Sitzungen („Design-Visualisierung“, #170; „Alte Dateien aufräumen“, ohne Commit): Sitzungen archivieren, die App räumt die Worktrees mit weg | 👤 |
 | F9 | Außerhalb des Repos, im OpenCloud-Ordner: `androidApp-debug.apk` (21.10., 40 MB, Stand v2) und `foody-vorschau.apk` (31.10.) löschen, falls nicht mehr gebraucht | 👤 |
 
