@@ -8,6 +8,9 @@ Server oder Netz ausgeblendet.
 **Schon da:** Server-Gerüst mit `GET /ki/status` (`FOODY_KI_KEY` fehlt → `eingerichtet: false`) und `KiKontingent`
 (Anfragen je Konto und Stunde, `FOODY_KI_PRO_STUNDE`), siehe `docs/architecture.md`.
 
+**Getrennt davon:** „Mahlzeit aus Foto eintragen“ läuft komplett auf dem Gerät, ohne Server und ohne Cloud-KI –
+eigener Plan in [`foto-erkennung-plan.md`](foto-erkennung-plan.md).
+
 ## Vorher klären
 - [ ] Modellwahl und Kosten (ADR), Datenschutzhinweis in der App
 
