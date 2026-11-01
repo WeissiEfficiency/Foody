@@ -44,3 +44,10 @@ dokumentieren.
   `DarstellungAbschnitt` und den Einstellungszustand nicht.
 - **Q8** (Fraunces auf Latein beschneiden) und **E5** (Referenzbilder kleiner aufnehmen) kommen erst nach dem Merge
   dieses Branches, damit alle Bilder nur einmal neu aufgenommen werden.
+
+## Zweiter Durchgang: Layouts nach Entwurf (1. November 2026)
+
+#170 hat nur Farbwelten, Glas und Formen übernommen. Die Layouts der Bildschirme blieben auf dem alten Stand; auf dem
+Handy fehlten deshalb das zweispaltige Rezeptraster, die Tagesleisten, der Ring im Tagebuch und die runden Köpfe. Mit
+#180–#186 folgen die Bildschirme dem Entwurf „Milchglas · Rund · Mango hell“. Ergebnis und bewusste Abweichungen stehen
+in `docs/superpowers/specs/2026-11-01-entwurf-milchglas-umsetzen.md`.

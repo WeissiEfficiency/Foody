@@ -78,3 +78,27 @@ Jeder PR nimmt die Roborazzi-Bilder seines Bereichs neu auf und vergleicht sie m
 Mit der Session „Offene Aufgaben“ (Fotoerkennung, `ToDoS/foto-erkennung-plan.md`) abgesprochen: Sie fasst
 `:core:designsystem` und `:feature:heute` bis zum Ende dieses Umbaus nicht an; ihre sichtbaren Teile (Foto-Knopf im
 Eintragen-Blatt, Einstellungen) kommen danach. Die Reihenfolge oben bleibt deshalb ohne Rücksicht auf die KI-Hilfe.
+
+## Ergebnis
+
+Umgesetzt in sieben PRs, alle mit neu aufgenommenen Referenzbildern:
+
+| PR | Bereich | Inhalt |
+|---|---|---|
+| #180 | Designsystem | Leiste mit Pille und auf die Pille begrenztem Druckeffekt, Chips gewählt in Primär, `Seitenkopf`, `RunderKnopf`, `FoodyFab`, `Suchfeld`, `Tagesleiste`, `Initiale` |
+| #181 | Rezepte | zweispaltiges Raster (`Adaptive(140 dp)`), Seitenkopf mit „+“-Menü, Glas-Suche; Detail mit runden Knöpfen im Bild, Kopfkarte und Karten für Zutaten, Zubereitung, Notizen |
+| #182 | Woche | Seitenkopf mit Pfeilen, Tagesleiste springt zum Tag, Tageskarten mit Planplätzen je fehlender Mahlzeit, Fuß „x von 28 geplant“ |
+| #183 | Einkauf | Fortschritt, Eingabe-Pille, Kacheln mit Rand und Haken, Katalog mit Initialen |
+| #184 | Kochen | Kopf mit „Schritt n von m“, Segmente, Schrittkarte mit Timer-Kasten, „Als nächstes“ |
+| #185 | Tagebuch, Heute | Tagesleiste, Ring mit Makrobalken, Mahlzeitkarten, FAB; auf Heute die geplante Mahlzeit hervorgehoben mit „Gegessen?“ |
+| #186 | Einstellungen, Zutaten, Server, Rezept-Editor | Seitenkopf überall, Farbraster ohne Loch in der letzten Reihe, Glas-Suche und FAB im Zutatenkatalog |
+
+Abweichungen vom Entwurf, bewusst:
+
+- **Heute:** Der Einkaufsabschnitt erscheint nur mit offenen Artikeln, die Großkarte nur mit Plan oder Inspiration.
+  Auf einem Gerät ohne Daten fehlen sie also, das ist kein Fehler.
+- **Tagebuch:** Die Makrobalken zeigen den Anteil an der Energie des Tages, weil es keine Makroziele gibt.
+- **Rezeptdetail:** „Kochen“ sitzt in der Kopfkarte statt in einer eigenen Fußleiste. Die Navigationsleiste liegt
+  ohnehin unten.
+
+Offen: Bottom Sheets (Eintragen, Abgleich, Zielwahl) sind noch Material-Blätter und nicht als Glas-Blatt umgesetzt.

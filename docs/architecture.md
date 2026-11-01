@@ -203,7 +203,12 @@ Einzige Quelle für das Aussehen der App.
   - `komponenten/`: `RezeptkarteGross`/`RezeptkarteRaster`, `Kachel`, `Naehrwertbalken`, `SyncStatus` (`SyncAnzeige`),
     `LeererZustandZeile`/`LeererZustandFlaeche`, `FoodyKnopf`, `FoodyChip`, `Abschnittskopf`, `Augenbraue`,
     `FoodyNavigationsleiste`/`FoodyNavigationsRail`, `FoodyTextfeld`, `FoodyFrage` (Rückfrage-Dialog, darauf
-    `VerwerfenFrage`), `kcalText`/`ganzzahlDeutsch` (überall „1.234 kcal“). Zustandslos, nur einfache Werte und Slots;
+    `VerwerfenFrage`), `kcalText`/`ganzzahlDeutsch` (überall „1.234 kcal“). Bausteine aus dem Entwurf (seit #180):
+    `Seitenkopf` (Überzeile, Titel in Fraunces, optional runder Zurück-Knopf, rechts runde Aktionen), `RunderKnopf`
+    (48-dp-Fläche, sichtbar Glas- oder Primärkreis), `FoodyFab` (Pille mit Symbol und Text), `Suchfeld` (Glas-Pille
+    mit Leeren-Knopf; Tests finden das Feld über den Platzhalter als Beschreibung), `Tagesleiste` (`LeistenTag`, Rolle
+    Tab), `Initiale`. Druckeffekte sitzen nur auf der sichtbaren Form (Pille der Leiste, Chip, Kreis), nicht auf der
+    ganzen 48-dp-Fläche. Zustandslos, nur einfache Werte und Slots;
     Berührflächen ≥ 48 dp; ab Schriftskalierung 1,5 mehr Zeilen und Knöpfe unter dem Text statt Abschneiden.
   - Gemeinsame Texte ohne Oberfläche liegen in `:core:data` (`wochentagKurz`, `datumKurz`, `zahlText`, `zahlAus`).
 - **Kontrast:** WCAG 2.2 AA (Text 4,5:1, Grafik 3:1) gilt ohne Unschärfe gegen die ungünstigste Stelle des Verlaufs;
