@@ -1,37 +1,22 @@
 package de.foody.feature.einkauf
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeAction
-import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.RunderKnopf
+import de.foody.core.designsystem.komponenten.Suchfeld
+import de.foody.core.designsystem.token.FoodyAbstaende
 
-/** „Was willst du einkaufen?“ – Tippen filtert den Katalog, „Fertig“ trägt ein. */
+/** „Was willst du einkaufen?“ als Glas-Pille, daneben ein runder „+“: Tippen filtert den Katalog, „+“ oder „Fertig“ trägt ein. */
 @Composable
 internal fun EingabeFeld(text: String, onText: (String) -> Unit, onFertig: () -> Unit, modifier: Modifier = Modifier) {
-    OutlinedTextField(
-        text, onText,
-        modifier.fillMaxWidth(),
-        placeholder = { Text("Was willst du einkaufen?") },
-        leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, tint = FoodyTheme.farben.nebentext) },
-        trailingIcon = {
-            if (text.isNotEmpty()) {
-                IconButton(onClick = { onText("") }) { Icon(Icons.Outlined.Close, contentDescription = "Eingabe leeren") }
-            }
-        },
-        singleLine = true,
-        shape = RoundedCornerShape(50),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = { onFertig() }),
-    )
+    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
+        Suchfeld(text, onText, "Was willst du einkaufen?", Modifier.weight(1f), onFertig = onFertig)
+        RunderKnopf(Icons.Outlined.Add, "Hinzufügen", onFertig, primaer = true, aktiv = text.isNotBlank())
+    }
 }

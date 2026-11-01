@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.data.einkauf.EinkaufsAnsicht
 import de.foody.core.data.einkauf.ListenKopf
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.RunderKnopf
 import kotlinx.coroutines.launch
 
 /** Menü ⋮ im Kopf: neue Liste, abgleichen (nur mit Zeitraum), frühere Listen, Liste löschen. */
@@ -30,9 +31,7 @@ import kotlinx.coroutines.launch
 internal fun EinkaufMenue(ansicht: EinkaufsAnsicht?, onBlatt: (Blatt) -> Unit, onLoeschen: () -> Unit) {
     var offen by remember { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { offen = true }) {
-            Icon(Icons.Outlined.MoreVert, contentDescription = "Weitere Aktionen", tint = FoodyTheme.farben.text)
-        }
+        RunderKnopf(Icons.Outlined.MoreVert, "Weitere Aktionen", { offen = true })
         DropdownMenu(expanded = offen, onDismissRequest = { offen = false }) {
             val punkt = @Composable { text: String, aktion: () -> Unit ->
                 DropdownMenuItem(text = { Text(text) }, onClick = { offen = false; aktion() })

@@ -54,15 +54,17 @@ private fun EinkaufKachel(
     modifier: Modifier = Modifier,
     untertitel: String? = null,
     onLangdruck: (() -> Unit)? = null,
+    // Auf der Liste selbst: Monogramm wie im Entwurf, ohne Rand; im Katalog Emoji und Rand für „auf der Liste“
+    aufListe: Boolean = false,
 ) = Kachel(
     name, menge, onKlick, modifier, untertitel = untertitel,
-    abgehakt = stand == Stand.GEKAUFT, aufDerListe = stand == Stand.OFFEN, onLangdruck = onLangdruck,
+    abgehakt = stand == Stand.GEKAUFT, aufDerListe = stand == Stand.OFFEN && !aufListe, onLangdruck = onLangdruck,
     zustandsText = when (stand) {
         Stand.OFFEN -> "auf der Liste"
         Stand.GEKAUFT -> "gekauft"
         Stand.NICHT -> "nicht auf der Liste"
     },
-    symbol = { KachelEmoji(emoji) },
+    symbol = if (aufListe) null else ({ KachelEmoji(emoji) }),
 )
 
 private fun LazyGridScope.ganzeZeile(key: String, inhalt: @Composable () -> Unit) =
@@ -84,11 +86,11 @@ private fun Klappkopf(titel: String, offen: Boolean, onKlick: () -> Unit) {
 /** Offene Artikel je Abteilung; Antippen = gekauft, Langdruck = Details. */
 internal fun LazyGridScope.offeneKacheln(abteilungen: List<Abteilung>, onGekauft: (String) -> Unit, onDetails: (String) -> Unit) {
     for (a in abteilungen) {
-        ganzeZeile("offen-kopf-${a.name}") { Augenbraue("${a.emoji} ${a.name}", Modifier.padding(top = FoodyAbstaende.s3)) }
+        ganzeZeile("offen-kopf-${a.name}") { Augenbraue(a.name, Modifier.padding(top = FoodyAbstaende.s3)) }
         items(a.artikel, key = { "offen-${it.id}" }) { x ->
             EinkaufKachel(
                 x.name, x.menge.orEmpty(), x.emoji, Stand.OFFEN, onKlick = { onGekauft(x.id) }, untertitel = x.notiz,
-                onLangdruck = { onDetails(x.id) },
+                onLangdruck = { onDetails(x.id) }, aufListe = true,
             )
         }
     }
