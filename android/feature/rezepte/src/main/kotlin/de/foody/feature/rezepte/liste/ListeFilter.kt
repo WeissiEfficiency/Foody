@@ -22,7 +22,10 @@ data class ListeFilter(
     val tags: Set<String> = emptySet(),
     val archiv: Boolean = false,
     val sortierung: Sortierung = Sortierung.NAME,
-)
+) {
+    /** Kein Chip gewählt (Chip „Alle“); Suche und Sortierung zählen nicht. */
+    val ohneFilter: Boolean get() = this == ListeFilter(suche = suche, sortierung = sortierung)
+}
 
 private val nachName = compareBy<RezeptKarte, String>(String.CASE_INSENSITIVE_ORDER) { it.name }
 
