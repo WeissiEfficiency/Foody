@@ -5,13 +5,19 @@ Import, Server jetzt bei Revision 890). Damit braucht vieles nicht mehr zu exist
 gebaut wurde. Dieser Plan sammelt alles an einer Stelle: Altlasten, Doku und offene Review-Befunde
 (Gesamt-Review vom 28.10., IDs **W…/N…** wie im Chat „Zutatenkatalog V3 Phase 6e2“).
 
-**Rückweg-Frist:** Was den Rückweg zur v1 offenhält, bleibt bis **2026-11-25** (4 Wochen Alltag ohne Probleme).
-In diesem Plan steht es unter Stufe 3. Alles in Stufe 1 und 2 kann sofort weg.
+**Rückweg-Frist:** Ursprünglich bis **2026-11-25** (4 Wochen Alltag ohne Probleme); Stufe 3 wurde auf den 31.10.
+vorgezogen und ist erledigt. Rückweg ist nur noch das Tag `v1-final`.
 
 Legende: 👤 = machst du (Gerät, Homeserver), 🤖 = Claude, PR = eigener kleiner PR gegen `main`. ✅ = erledigt.
 
-**Stand 2026-10-31** (Nachprüfung, `main` nach #139): Stufe 1 noch offen (10 Worktrees, 61 lokale `claude/*`-Branches,
-Build-Reste und zwei Checkouts). Stufe 2 erledigt (#139, #140 und der PR zu B7–B9; B5 entfällt). Stufe 4 und 5 offen.
+**Stand 2026-11-01** (`main` nach #175, Version 3.1.0): **Alle Stufen erledigt** bis auf E6 (nur beobachten:
+`:core:data` hat 6.250 von 19.400 Zeilen der App). Server läuft auf #157; spätere Änderungen unter `server/` sind nur
+Formatierung und CI, kein Rebuild nötig. Die signierte `foody.apk` 3.1.0 liegt in OpenCloud. Kleine Reste:
+- 👤 D1: alte Tablet-Anmeldung prüfen (`foody-admin geraete`), falls noch da `abmelden-ungenutzt 3`
+- 👤 V4: Fotos in der Server-Sicherung nachsehen, sobald Rezeptfotos synchronisiert sind
+
+Als Nächstes: die KI-Hilfe (`ToDoS/ki-plan.md`).
+
 Zusätzlich erledigt: **Z1** Release stürzte bei „Frei“ im Tagebuch ab – R8 entfernte die Konstruktoren der
 ML-Kit-Registrare (`firebase-components` 16.1.0 behält nur die Klasse); Keep-Regel in `proguard-rules.pro` (#139).
 
@@ -164,7 +170,7 @@ Ressourcen schlank (381 KB), Features ohne Querverweise.
 | ✅ R9 | `server/README.md`, `installation.md`: Rückweg zur v1 **Erledigt 31.10. mit C1.** | mit Stufe 3 entfernen |
 | ✅ R10 | `PortionenNachtrag` (`:core:data`) samt Hilt-Bereitstellung: in der App ohne Knopf (geplant für Phase 6, nie gebaut). Re-Importe laufen über die Dublettenerkennung **Erledigt 31.10.: Knopf „Portionen nachtragen“ im Import-Blatt (#159).** | 👤 entscheidet: Knopf in den Einstellungen bauen oder entfernen (auch `RezeptImport.portionenNachtragen` in `:domain`) |
 
-**Lokal (kein Repo):** der Checkout in `Downloads` (A7) samt `.claude\worktrees\offene-fehler` (283 MB, lose v1-Kopie vom
+✅ **Lokal (kein Repo), erledigt mit A2 und A7:** der Checkout in `Downloads` (A7) samt `.claude\worktrees\offene-fehler` (283 MB, lose v1-Kopie vom
 11.10.) und seinen geparkten Worktrees; im E:-Checkout Build-Reste `app/`, `domain/`, `sync-protocol/`, `android/app3/`.
 
 ## Empfohlene Reihenfolge
