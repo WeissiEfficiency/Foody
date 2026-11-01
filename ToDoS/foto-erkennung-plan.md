@@ -86,12 +86,19 @@ deshalb mit öffentlichen Daten, die Genauigkeit im Alltag prüft Phase 5.
 
 Reines Kotlin, testgetrieben.
 
-- [ ] Typen `FotoVorschlag` (Rezept / Frei / Teller mit Zeilen) und `Sicherheit`.
-- [ ] Toleranter Leser für die Modellantwort (JSON aus Text herauslösen, fehlende Felder, Kommazahlen, Einheiten).
-- [ ] Zuordnung zu Rezept und Zutaten: Namensabgleich mit Synonymen und Tippfehlern über den Katalog
-      (vorhandene Einordnung nutzen), heutiger Plan zuerst; ohne Treffer → Frei.
-- [ ] Plausibilitätsgrenzen (Portionen 0,25–6, Gramm 1–1.500 je Zeile, kcal 0–3.000), sonst Feld leer lassen.
-- [ ] Regeln in `docs/domain-rules.md` mit Tests.
+- [x] Typen `FotoVorschlag` (Rezept / Frei / Teller mit Zeilen) und `FotoKontext`. Ein eigener Typ `Sicherheit`
+      entfällt: was nicht sicher zugeordnet ist, wird Frei, unplausible Werte bleiben leer.
+- [x] Toleranter Leser für die Modellantwort (`ModellJson`: JSON aus Text und Codezaun herauslösen, Komma vor `}`,
+      Zahlen mit Einheit wie `15g`, Schlüssel ohne Groß-/Kleinschreibung).
+- [x] Zuordnung zu Rezept und Zutaten (`FotoErkennung`): Rezeptname gleich, heutiger Plan zuerst; Zutaten über
+      `IngredientCatalog.canonicalName` (Synonyme, Plural). Keine Tippfehler-Zuordnung – Regel 15 erlaubt keine
+      Ähnlichkeit; ohne Treffer → Frei.
+- [x] Plausibilitätsgrenzen (Portionen 0,25–6, Gramm 1–1.500 je Zeile, kcal 1–3.000, Makros 0–300 g), sonst Feld leer.
+- [x] Regel 29 in `docs/domain-rules.md` mit Tests (`FotoErkennungTest`, `ModellJsonTest`).
+
+**Ergebnis (2026-11-01):** `ModellJson` und `FotoErkennung` in `:domain`, 25 Tests. Spec
+`docs/superpowers/specs/2026-11-01-foto-erkennung-phase1-design.md`, Plan `docs/superpowers/plans/2026-11-01-foto-erkennung-phase1.md`.
+Die Anweisung ans Modell und die Reihenfolge der Liste kommen in Phase 2.
 
 ### Phase 2 – `:core:erkennung`: Modell auf dem Gerät
 

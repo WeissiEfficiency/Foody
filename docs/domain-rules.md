@@ -63,6 +63,13 @@
     Eiweißquelle wie am Vortag, am selben Tag oder am Folgetag fällt weg, solange es Alternativen gibt; Würzzutaten
     („Fischsauce“, „Hühnerbrühe“) zählen dafür nicht. Nichts, was 14 Tage vor dem ersten leeren Tag oder später
     eingeplant ist; lieber eine Lücke als ein unpassendes Gericht.
+29. Mahlzeit aus Foto (`FotoErkennung`): Das Ergebnis ist nur ein Vorschlag fürs Eintragen-Blatt, gespeichert wird erst
+    mit dem Häkchen. Zugeordnet wird nur sicher, nie über Ähnlichkeit: ein Rezept, wenn die Wahl des Modells seinem
+    Namen gleicht (ohne Groß-/Kleinschreibung und doppelte Leerzeichen; bei gleichem Namen gewinnt das Rezept aus dem
+    heutigen Plan); ein Teller, wenn es mindestens zwei Zutaten sind und jede über ihren kanonischen Namen (Regel 15)
+    eine Katalogzutat ist. Sonst ein freier Eintrag mit Name und Werten des Modells. Unplausibles bleibt leer statt
+    falsch: Portionen außerhalb 0,25–6 → 1 (sonst auf Viertel gerundet), Gramm je Zeile außerhalb 1–1500, kcal
+    außerhalb 1–3000, Makros außerhalb 0–300 g. Eine Antwort ohne lesbares JSON ergibt keinen Vorschlag.
 
 ## Tests je Regel
 
@@ -98,3 +105,4 @@ Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/te
 | 26 | `PackungScanTest.katalogTrefferOhneOnlineAbfrage`, `ZutatEditorScanTest.uebernimmtUndMarkiert`, `TagebuchRepositoryTest.packungOhneHaekchenFrei`, `TagebuchRepositoryTest.packungAktualisiertVorhandene` |
 | 27 | `MarkdownImportTest.servingsFromHeaderLine`, `RezeptImportTest.portionenAusDerDateiStattSchaetzung`, `RezeptImportTest.eineGanzeBackwareWirdGeschaetzt`, `KcalJePortionTest`, `PortionenNachtragenTest` |
 | 28 | `LeereTageFuellenTest`, `AbwechslungTest` |
+| 29 | `FotoErkennungTest` (u. a. `gleicherNameDerAusDemPlanGewinnt`, `eineUnbekannteZutatMachtFrei`, `unplausibleWerteBleibenLeer`), `ModellJsonTest` |
