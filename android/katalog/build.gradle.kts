@@ -41,6 +41,7 @@ dependencies {
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(project(":core:testing"))
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)
     testImplementation(libs.roborazzi.junit.rule)

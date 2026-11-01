@@ -12,13 +12,13 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
-import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureScreenRoboImage
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.testing.FoodyBildvergleich
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.bestand
@@ -26,7 +26,6 @@ import de.foody.feature.heute.haferflocken
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testScan
 import de.foody.feature.heute.warteAufText
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -36,6 +35,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.time.LocalDate
+import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * Referenzbilder des Blatts „Eintragen“ → „Frei“ mit übernommener Packung (Fake-Scan), hell und dunkel, ganzer Bildschirm:
@@ -53,7 +53,7 @@ class PackungScreenshotTest {
 
     private lateinit var db: FoodyDatenbank
 
-    private val vergleich = RoborazziOptions(compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f))
+    private val vergleich = FoodyBildvergleich
 
     @Before
     fun setUp() {

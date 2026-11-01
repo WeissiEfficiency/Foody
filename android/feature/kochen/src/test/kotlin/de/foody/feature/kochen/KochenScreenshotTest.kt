@@ -6,12 +6,12 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
-import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.github.takahirom.roborazzi.captureScreenRoboImage
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.testing.FoodyBildvergleich
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -52,7 +52,7 @@ class KochenScreenshotTest {
         db.close()
     }
 
-    private val vergleich = RoborazziOptions(compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f))
+    private val vergleich = FoodyBildvergleich
 
     @Test
     @Config(qualifiers = "w411dp-h1600dp")

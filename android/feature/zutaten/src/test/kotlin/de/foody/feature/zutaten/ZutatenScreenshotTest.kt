@@ -16,11 +16,11 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
-import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.github.takahirom.roborazzi.captureScreenRoboImage
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.testing.FoodyBildvergleich
 import de.foody.domain.NutrientBasis
 import org.junit.After
 import org.junit.Before
@@ -46,7 +46,7 @@ class ZutatenScreenshotTest {
 
     private lateinit var u: ZutatenTestUmgebung
 
-    private val vergleich = RoborazziOptions(compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f))
+    private val vergleich = FoodyBildvergleich
 
     @Before
     fun setUp() {
