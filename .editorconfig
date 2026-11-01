@@ -1,0 +1,39 @@
+# ktlint (E7): `./gradlew ktlintPruefen` prüft, `./gradlew ktlintKorrigieren` behebt, was sich automatisch beheben lässt.
+# Stil wie bisher: IntelliJ, Zeilen bis 160 Zeichen. Abgeschaltet sind die Regeln, die nur anders umbrechen würden.
+root = true
+
+[*.{kt,kts}]
+max_line_length = 160
+ktlint_code_style = intellij_idea
+ij_kotlin_imports_layout = *,java.**,javax.**,kotlin.**,^
+ktlint_function_naming_ignore_when_annotated_with = Composable
+ktlint_standard_argument-list-wrapping = disabled
+ktlint_standard_function-literal = disabled
+ktlint_standard_parameter-list-wrapping = disabled
+ktlint_standard_function-signature = disabled
+ktlint_standard_statement-wrapping = disabled
+ktlint_standard_binary-expression-wrapping = disabled
+ktlint_standard_wrapping = disabled
+ktlint_standard_class-signature = disabled
+ktlint_standard_property-wrapping = disabled
+ktlint_standard_blank-line-between-when-conditions = disabled
+ktlint_standard_multiline-if-else = disabled
+ktlint_standard_annotation = disabled
+ktlint_standard_trailing-comma-on-call-site = disabled
+ktlint_standard_enum-wrapping = disabled
+ktlint_standard_multiline-loop = disabled
+ktlint_standard_trailing-comma-on-declaration-site = disabled
+# Dateien heißen nach ihrem Inhalt (z. B. Angleichungen.kt mit mehreren Funktionen), nicht nach der ersten Klasse
+ktlint_standard_filename = disabled
+# Vorerst aus: `ktlintKorrigieren` behebt sie in ~150 Dateien, das kommt als eigener PR nach dem Design-Umbau (E7)
+ktlint_standard_import-ordering = disabled
+ktlint_standard_no-consecutive-blank-lines = disabled
+ktlint_standard_spacing-between-declarations-with-annotations = disabled
+ktlint_standard_spacing-between-declarations-with-comments = disabled
+
+# Startdaten und Testfälle enthalten lange Texte am Stück
+[**/startdaten/Startdaten.kt]
+max_line_length = off
+
+[**/src/{test,androidTest}/**.kt]
+max_line_length = off

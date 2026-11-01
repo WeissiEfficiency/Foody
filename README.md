@@ -74,6 +74,8 @@ Die App läuft ab **Android 16** (`minSdk` 36, `targetSdk` 37; ADR 0009).
 ./gradlew :domain:test                 # schnelle JVM-Tests des Rechenkerns
 ./gradlew :feature:rezepte:test        # Tests eines Bereichs (Robolectric, Roborazzi-Bilder)
 ./gradlew check                        # alle Unit-Tests + Lint (so prüft auch die CI)
+./gradlew ktlintPruefen                # Kotlin-Stil (ktlint, Regeln in .editorconfig; auch in der CI)
+./gradlew ktlintKorrigieren            # behebt, was ktlint selbst beheben kann
 ./gradlew :app:assembleDebug           # „Foody Debug“ (de.foody.app.debug)
 ./gradlew :app:installDebug            # auf Emulator/Gerät
 ./gradlew :app:assembleVorschau        # „Foody Vorschau“ (R8 wie ein Release, eigene App-ID) zum Testen

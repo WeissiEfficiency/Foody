@@ -140,7 +140,9 @@ internal fun LazyGridScope.suchKacheln(
 ) {
     val q = text.trim()
     val treffer = ShoppingCatalog.search(q)
-    items(treffer, key = { (i, s) -> "treffer-${s.name}-${i.name}" }) { (i, s) -> EinkaufKachel(i.name, "", i.emoji, stand(i.name, alle), { onTreffer(i.name, s.name) }) }
+    items(treffer, key = { (i, s) -> "treffer-${s.name}-${i.name}" }) { (i, s) ->
+        EinkaufKachel(i.name, "", i.emoji, stand(i.name, alle), { onTreffer(i.name, s.name) })
+    }
     if (ShoppingCatalog.find(q) == null && treffer.none { ShoppingCatalog.sameItem(it.first.name, q) }) {
         item(key = "neu") { EinkaufKachel("„$q“ hinzufügen", "", "➕", Stand.NICHT, onNeu) }
     }

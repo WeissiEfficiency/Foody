@@ -104,7 +104,7 @@ object Startdaten {
         Zeile("seed-rindfleisch", "Rindfleisch", "Fleisch & Fisch", "580", "21", "0", "6", "0", "0", "0.1"),
         Zeile("seed-schweinebraten", "Schweinebraten", "Fleisch & Fisch", "860", "18", "0", "15", "0", "0", "0.2"),
         Zeile("seed-schweinefilet", "Schweinefilet", "Fleisch & Fisch", "450", "22", "0", "2", "0", "0", "0.1"),
-        Zeile("seed-kochschinken", "Kochschinken", "Fleisch & Fisch", "490", "19", "1", "4", "0", "1", "2.3", piece = "25"),  // Stück = Scheibe
+        Zeile("seed-kochschinken", "Kochschinken", "Fleisch & Fisch", "490", "19", "1", "4", "0", "1", "2.3", piece = "25"), // Stück = Scheibe
         Zeile("seed-eiweiss", "Eiweiß", "Kühlregal", "205", "11", "0.7", "0.2", "0", "0.7", "0.4", piece = "33"),
         Zeile("seed-mascarpone", "Mascarpone", "Kühlregal", "1765", "4.6", "3.6", "44", "0", "3.6", "0.1", piece = "250"),
         Zeile("seed-schnittlauch", "Schnittlauch", "Obst & Gemüse", "160", "3.6", "1.6", "0.7", "6", "1.6", "0", piece = "25"),
@@ -127,7 +127,7 @@ object Startdaten {
         Zeile("seed-leber", "Leber", "Fleisch & Fisch", "555", "20", "4", "4", "0", "0", "0.2"),
         Zeile("seed-bratwurst", "Bratwurst", "Fleisch & Fisch", "1235", "13", "1", "27", "0", "0.5", "2", piece = "100"),
         Zeile("seed-wiener", "Wiener Würstchen", "Fleisch & Fisch", "1125", "13", "1", "24", "0", "0.5", "2.3", piece = "50"),
-        Zeile("seed-speck", "Speck", "Fleisch & Fisch", "1745", "15", "0.5", "40", "0", "0.5", "3.5", piece = "10"),  // Stück = Scheibe
+        Zeile("seed-speck", "Speck", "Fleisch & Fisch", "1745", "15", "0.5", "40", "0", "0.5", "3.5", piece = "10"), // Stück = Scheibe
         Zeile("seed-rohschinken", "Rohschinken", "Fleisch & Fisch", "960", "26", "0", "14", "0", "0", "5.5"),
         Zeile("seed-lachs", "Lachs", "Fleisch & Fisch", "820", "20", "0", "13", "0", "0", "0.1", piece = "125"),
         Zeile("seed-kabeljau", "Kabeljau", "Fleisch & Fisch", "330", "18", "0", "0.7", "0", "0", "0.2", piece = "125"),

@@ -68,16 +68,16 @@ class MarkdownImportTest {
 
     private fun ing(name: String) = r.ingredients.single { it.name == name }
 
-    private val NL = "\n\n"
+    private val absatz = "\n\n"
 
     @Test fun servingsFromHeaderLine() {
         val kopf = listOf("# Spieße", "## Rezept: Spieße", "Portionen: 3 · Vorbereitung: 30 min · Kalorien: 299 kcal", "## Zutaten", "500 g", "Schweineschnitzel")
-        assertEquals(3, MarkdownRecipeImporter.parse(kopf.joinToString(NL)).servings)
+        assertEquals(3, MarkdownRecipeImporter.parse(kopf.joinToString(absatz)).servings)
         // Ohne Kopfzeile (ältere Exporte) bleibt es bei der Schätzung; „in 6 Portionen teilen“ im Text zählt nicht
         assertNull(MarkdownRecipeImporter.parse(sample).servings)
         val ohne = listOf("# Fladen", "## Zutaten", "1 kg", "Mehl", "## Zubereitung", "Den Teig in 6 Portionen teilen.")
-        assertNull(MarkdownRecipeImporter.parse(ohne.joinToString(NL)).servings)
-        assertNull(MarkdownRecipeImporter.parse(listOf("# X", "Portionen: 0", "## Zutaten", "1 kg", "Mehl").joinToString(NL)).servings)
+        assertNull(MarkdownRecipeImporter.parse(ohne.joinToString(absatz)).servings)
+        assertNull(MarkdownRecipeImporter.parse(listOf("# X", "Portionen: 0", "## Zutaten", "1 kg", "Mehl").joinToString(absatz)).servings)
     }
 
     @Test fun titleAndSource() {

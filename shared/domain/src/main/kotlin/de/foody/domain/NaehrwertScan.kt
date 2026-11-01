@@ -3,8 +3,10 @@ package de.foody.domain
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-/** Ein erkanntes Textelement (eine ML-Kit-Zeile) mit Position in Pixeln – ohne Android-Typen. */
-/** [winkel]: Neigung der Textzeile in Grad (ML Kit `Line.angle`); 0 = waagerecht. */
+/**
+ * Ein erkanntes Textelement (eine ML-Kit-Zeile) mit Position in Pixeln – ohne Android-Typen. [winkel]: Neigung der
+ * Textzeile in Grad (ML Kit `Line.angle`); 0 = waagerecht.
+ */
 data class OcrElement(val text: String, val links: Int, val oben: Int, val unten: Int, val winkel: Float = 0f) {
     val mitte: Int get() = (oben + unten) / 2
     val hoehe: Int get() = unten - oben
@@ -45,7 +47,7 @@ object NaehrwertScan {
     /** Lesefehler „12 9“ statt „12 g“: eine allein stehende 9 hinter der Zahl gilt als Gramm; die erste zählt (je 100 g). */
     private val neunAlsGramm = Regex("""(<\s*)?(\d+(?:[.,]\d+)?)\s+9(?=\s|$)""")
     private val englischeTausender = Regex("""\d{1,3},\d{3}""")
-    private val spuren =Regex("""\b(spuren|trace|traces)\b""", RegexOption.IGNORE_CASE)
+    private val spuren = Regex("""\b(spuren|trace|traces)\b""", RegexOption.IGNORE_CASE)
 
     fun auswerten(elemente: List<OcrElement>): ScanErgebnis {
         val zeilen = zeilen(elemente)

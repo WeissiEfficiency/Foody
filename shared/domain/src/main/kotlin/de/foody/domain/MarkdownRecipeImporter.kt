@@ -144,14 +144,14 @@ object MarkdownRecipeImporter {
         return ImportedIngredient(name, amount, unit, note, group, optional)
     }
 
+    /** Namen mit kleingeschriebenem zweitem Wort, die sonst nach dem ersten Wort abgeschnitten würden. */
+    private val multiWordNames = listOf("crème fraîche", "creme fraiche", "crème fraiche", "crème double")
+
     /**
      * „Tomaten, geschälte à ca. 400 g“ → „Tomaten“ + [„geschälte à ca. 400 g“];
      * „Paprikaschote(n) rote“ → „Paprikaschote“ + [„rote“]; „Salz und Pfeffer“ bleibt zusammen.
      * Der Name besteht aus den führenden großgeschriebenen Wörtern (Substantive).
      */
-    /** Namen mit kleingeschriebenem zweitem Wort, die sonst nach dem ersten Wort abgeschnitten würden. */
-    private val multiWordNames = listOf("crème fraîche", "creme fraiche", "crème fraiche", "crème double")
-
     private fun splitName(text: String): Pair<String, List<String>> {
         val base = text.substringBefore(',')
             .replace(Regex("""\((n|e|er|en|s|se|nen)\)"""), "")

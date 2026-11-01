@@ -34,7 +34,8 @@ internal fun SeitenListe(z: KochZustand.Da, aktuell: Int, onSeite: (Int) -> Unit
                 Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
                     .background(if (seite == aktuell) FoodyTheme.farben.primaerBehaelter else Color.Transparent)
                     // Als Auswahl: TalkBack sagt, welche Seite gerade offen ist
-                    .selectable(selected = seite == aktuell, role = Role.Tab) { onSeite(seite) }.padding(horizontal = FoodyAbstaende.s3, vertical = FoodyAbstaende.s2),
+                    .selectable(selected = seite == aktuell, role = Role.Tab) { onSeite(seite) }
+                    .padding(horizontal = FoodyAbstaende.s3, vertical = FoodyAbstaende.s2),
             ) {
                 Text(titel, style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.text)
                 schritt?.let {

@@ -172,7 +172,9 @@ private fun Leer() {
         Box(Modifier.padding(FoodyAbstaende.s3)) { LeererZustandZeile("Noch kein Snack eingetragen", "Eintragen", {}) }
     }
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
-        LeererZustandFlaeche(Icons.Outlined.ShoppingBag, "Nichts einzukaufen", "Plane Rezepte für die Woche oder lege Artikel direkt an.", "Artikel hinzufügen", {})
+        LeererZustandFlaeche(
+            Icons.Outlined.ShoppingBag, "Nichts einzukaufen", "Plane Rezepte für die Woche oder lege Artikel direkt an.", "Artikel hinzufügen", {},
+        )
     }
 }
 

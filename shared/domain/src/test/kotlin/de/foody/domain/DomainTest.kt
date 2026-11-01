@@ -206,7 +206,6 @@ class ShoppingTest {
         assertEquals(DiffType.ADDED, d.getValue("sugar|MASS").type)
         assertEquals(DiffType.REMOVED, d.getValue("salt|MASS").type)
     }
-
 }
 
 class AsNeededTest {
