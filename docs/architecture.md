@@ -2,7 +2,8 @@
 
 **Module und Ordner:** Handy-App unter `android/`:
 - `:app` (App-Hülle) mit `:feature:*` und `:core:*` (`:core:data`, `:core:sync`, `:core:scan`, `:core:designsystem`,
-  nur für Tests `:core:testing`), dazu `:baselineprofile` (Generator des Baseline-Profils),
+  nur für Tests `:core:testing`), dazu `:baselineprofile` (Generator des Baseline-Profils und
+  `ReleaseStartTest`, der Kurztest der R8-Variante in der CI),
 - `:katalog`, eine kleine App zum Ansehen des Designsystems.
 
 Gemeinsamer Code liegt unter `shared/` (`:domain`, `:api-protocol`). Der Server liegt unter `server/`: `:server-sync`

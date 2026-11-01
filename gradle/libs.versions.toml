@@ -129,3 +129,4 @@ roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 foody-android-application = { id = "foody.android.application" }
 foody-android-library = { id = "foody.android.library" }
 foody-android-feature = { id = "foody.android.feature" }
+foody-android-test = { id = "foody.android.test" }
