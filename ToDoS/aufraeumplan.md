@@ -188,7 +188,7 @@ Geschichte sind). „Vorrat“ und „Haushalt“ stehen nur noch bei der bewuss
 | ID | Was | Wer |
 |---|---|---|
 | ✅ F1 | Pläne, Specs und Prüflisten der v1, v2 und Web-App gelöscht: `docs/superpowers/archiv/plans`, `…/specs` (22) und sechs Dateien in `ToDoS/archiv/` (v2-Plan und -Abnahme, Web-Plan, Optimierungsplan, Projektstruktur-Regeln, Struktur-Check), zusammen 4.800 Zeilen. Verweise in ADR 0007–0010, `architecture.md` und `CLAUDE.md` nennen den Git-Verlauf. Die V3-Archive bleiben (dieser PR) | 🤖 PR |
-| ✅ F2 | Gerenderte Design-Entwürfe `docs/design/milchglas/*.png` (20 Bilder, 5,8 MB) gelöscht; umgesetzt mit #170, den Ist-Stand zeigen die Referenzbilder. `README.md` mit den Farbwerten und `abgleich.md` bleiben (dieser PR) | 🤖 PR |
+| ✅ F2 | Gerenderte Design-Entwürfe `docs/design/milchglas/*.png` (20 Bilder, 5,8 MB) gelöscht; #170 übernahm nur Farben, Glas und Formen, die Layouts nach Entwurf folgten mit #180–#186; den Ist-Stand zeigen die Referenzbilder. `README.md` mit den Farbwerten und `abgleich.md` bleiben (dieser PR) | 🤖 PR |
 | ✅ F3 | `architecture.md`: Tabelle der v1-Schemata 1–9 aus dem Anhang (Verweis auf den Git-Verlauf, die Trigger-Regeln bleiben); `roadmap.md`: Aufräumen erledigt, jetzt KI-Hilfe (dieser PR) | 🤖 PR |
 | ✅ F4 | Kommentare: `:app3` in `ScanModul.kt`, Verweis auf die v1 in `SyncKonto.kt`, „v1-Sicherungen lesen“ in `SicherungTest.kt` (seit C8 abgelehnt) (dieser PR) | 🤖 PR |
 | ✅ F5 | Lokaler Build-Rest `server/build/` im E:-Checkout (alter Ort des Moduls `:server`, heute `server/start`) gelöscht; dazu der verwaiste Temp-Worktree auf `claude/plan-stufe5` samt Branch | 🤖 |
