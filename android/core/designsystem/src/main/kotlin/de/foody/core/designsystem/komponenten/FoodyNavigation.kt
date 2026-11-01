@@ -1,22 +1,33 @@
 package de.foody.core.designsystem.komponenten
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -67,25 +78,42 @@ fun FoodyNavigationsRail(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Unit
     }
 }
 
+/**
+ * Ein Eintrag wie im Entwurf: Der aktive trägt eine Pille in der Behälterfarbe hinter dem Symbol, der Text wird fett.
+ * Der Druckeffekt bleibt in dieser Pille, statt den ganzen Eintrag als Rechteck zu füllen.
+ */
 @Composable
 private fun NavEintrag(ziel: NavZiel, aktiv: Boolean, onKlick: () -> Unit, modifier: Modifier) {
-    val farbe = if (aktiv) FoodyTheme.farben.primaer else FoodyTheme.farben.nebentext
+    val farben = FoodyTheme.farben
+    val farbe = if (aktiv) farben.primaer else farben.nebentext
+    val druck = remember { MutableInteractionSource() }
     Column(
         modifier
             .heightIn(min = 64.dp)
-            .selectable(selected = aktiv, onClick = onKlick, role = Role.Tab)
+            .selectable(selected = aktiv, onClick = onKlick, role = Role.Tab, interactionSource = druck, indication = null)
             .padding(vertical = FoodyAbstaende.s2, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(ziel.symbol, contentDescription = null, tint = farbe)
+        Box(
+            Modifier
+                .size(width = 56.dp, height = 30.dp)
+                .clip(CircleShape)
+                .background(if (aktiv) farben.primaerBehaelter else Color.Transparent)
+                .indication(druck, ripple()),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(ziel.symbol, contentDescription = null, tint = if (aktiv) farben.aufPrimaerBehaelter else farbe, modifier = Modifier.size(22.dp))
+        }
         // Eine Zeile: bei großer Schrift lieber etwas kleiner als „Rezep-te“ auf zwei Zeilen (V2)
         Text(
             ziel.text,
             style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (aktiv) FontWeight.Bold else FontWeight.Medium,
             color = farbe,
             textAlign = TextAlign.Center,
             maxLines = 1,
+            modifier = Modifier.padding(top = 2.dp),
             autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = MaterialTheme.typography.labelMedium.fontSize),
         )
     }

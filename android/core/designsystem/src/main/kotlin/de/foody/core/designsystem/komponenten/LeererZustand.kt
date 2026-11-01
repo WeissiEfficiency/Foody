@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.token.FoodyAbstaende
 
-/** Leerer Zustand als Zeile mit gestrichelter Kante („Noch kein Snack eingetragen · Eintragen“). */
+/** Leerer Zustand als Zeile mit gestrichelter Kante und Textlink („Noch kein Snack eingetragen · Eintragen“). */
 @Composable
 fun LeererZustandZeile(text: String, aktionText: String, onAktion: () -> Unit, modifier: Modifier = Modifier) {
     val kante = FoodyTheme.farben.nebentext.copy(alpha = 0.5f)
@@ -42,12 +42,12 @@ fun LeererZustandZeile(text: String, aktionText: String, onAktion: () -> Unit, m
     if (grosseSchrift()) {
         Column(m, verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
             textTeil(Modifier)
-            FoodyKnopf(aktionText, onKlick = onAktion, art = KnopfArt.UMRISS)
+            FoodyKnopf(aktionText, onKlick = onAktion, art = KnopfArt.TEXT)
         }
     } else {
         Row(m, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             textTeil(Modifier.weight(1f))
-            FoodyKnopf(aktionText, onKlick = onAktion, art = KnopfArt.UMRISS)
+            FoodyKnopf(aktionText, onKlick = onAktion, art = KnopfArt.TEXT)
         }
     }
 }
