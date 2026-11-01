@@ -79,14 +79,15 @@ class EinstellungenViewModel @Inject constructor(
         combine(darstellungen.darstellung(), ziel.tagesziel(), konto.zustand, laufend, zutaten.anzahl()) { d, t, k, l, n ->
             EinstellungenZustand(d, t, k, l, n)
         }.combine(scan.onlineSuche) { z, online -> z.copy(onlineSuche = online) }
-            .combine(darstellungen.farbwelt()) { z, w -> z.copy(farbwelt = Farbwelt.ausName(w)) }.stateIn(
-            viewModelScope, SolangeAppOffen,
-            // Startwerte sofort aus den Prefs: kein Umspringen, bis der Kontostand da ist
-            EinstellungenZustand(
-                darstellung = darstellungen.aktuell(), farbwelt = Farbwelt.ausName(darstellungen.farbweltAktuell()),
-                tagesziel = ziel.aktuell(), onlineSuche = scan.onlineSuche.value,
-            ),
-        )
+            .combine(darstellungen.farbwelt()) { z, w -> z.copy(farbwelt = Farbwelt.ausName(w)) }
+            .stateIn(
+                viewModelScope, SolangeAppOffen,
+                // Startwerte sofort aus den Prefs: kein Umspringen, bis der Kontostand da ist
+                EinstellungenZustand(
+                    darstellung = darstellungen.aktuell(), farbwelt = Farbwelt.ausName(darstellungen.farbweltAktuell()),
+                    tagesziel = ziel.aktuell(), onlineSuche = scan.onlineSuche.value,
+                ),
+            )
 
     private val kanal = Channel<String>(Channel.BUFFERED)
     val meldungen: Flow<String> = kanal.receiveAsFlow()

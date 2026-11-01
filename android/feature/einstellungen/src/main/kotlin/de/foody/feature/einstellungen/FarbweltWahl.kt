@@ -74,8 +74,10 @@ private fun FarbMuster(farbwelt: Farbwelt, gewaehlt: Boolean, onKlick: () -> Uni
                 .drawBehind {
                     drawRect(werte.farben.grund)
                     val r = size.width * 0.75f
-                    drawRect(Brush.radialGradient(listOf(werte.verlauf.oben.copy(alpha = 1f), Color.Transparent), Offset(size.width * 0.3f, size.height * 0.25f), r))
-                    drawRect(Brush.radialGradient(listOf(werte.verlauf.unten.copy(alpha = 1f), Color.Transparent), Offset(size.width * 0.75f, size.height * 0.8f), r))
+                    fun fleck(farbe: Color, x: Float, y: Float) =
+                        drawRect(Brush.radialGradient(listOf(farbe.copy(alpha = 1f), Color.Transparent), Offset(size.width * x, size.height * y), r))
+                    fleck(werte.verlauf.oben, 0.3f, 0.25f)
+                    fleck(werte.verlauf.unten, 0.75f, 0.8f)
                 },
             contentAlignment = Alignment.Center,
         ) {
