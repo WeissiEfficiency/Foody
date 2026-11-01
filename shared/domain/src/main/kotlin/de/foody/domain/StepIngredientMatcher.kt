@@ -37,7 +37,11 @@ object StepIngredientMatcher {
             // sonst würde das Dezimalkomma in „0,25 l“ den Satz teilen
             val clause = step.substring(0, hit.range.first).split(Regex("""[,.;:!?]\s""")).last()
             val m = amountBefore.find(clause)
-            StepMention(id, m?.groupValues?.get(1)?.let(GermanAmounts::parseNumber), m?.groupValues?.get(2)?.takeIf { it.isNotEmpty() }?.let(GermanAmounts::unitOf))
+            StepMention(
+                id,
+                m?.groupValues?.get(1)?.let(GermanAmounts::parseNumber),
+                m?.groupValues?.get(2)?.takeIf { it.isNotEmpty() }?.let(GermanAmounts::unitOf),
+            )
         }
     }
 
