@@ -52,12 +52,21 @@ jobs:
         run: >
           ./gradlew ciDeviceDebugAndroidTest
           -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
+      # R8-Variante einmal starten und „Frei“ öffnen (E4): Ein grüner Release-Build fängt fehlende Keep-Regeln nicht ab
+      # (Z1 stürzte erst auf dem Handy ab). benchmarkVorschau = „Foody Vorschau“ mit R8 wie im Release, Debug-Schlüssel.
+      - name: Release-Kurztest (R8, Managed Device)
+        run: >
+          ./gradlew :baselineprofile:ciDeviceBenchmarkVorschauAndroidTest
+          -Pandroid.testInstrumentationRunnerArguments.class=de.foody.baselineprofile.ReleaseStartTest
+          -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
       - name: Testberichte hochladen
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: instrumented-test-reports
-          path: android/*/*/build/reports/androidTests/managedDevice/
+          path: |
+            android/*/*/build/reports/androidTests/managedDevice/
+            android/baselineprofile/build/reports/androidTests/managedDevice/
           if-no-files-found: ignore
       # Logcat je Test und JUnit-XML: der HTML-Bericht enthält nur den Stacktrace, zum Eingrenzen von Flakes fehlt sonst alles
       - name: Logcat der Instrumented-Tests hochladen
@@ -65,7 +74,9 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: instrumented-test-logcat
-          path: android/*/*/build/outputs/androidTest-results/managedDevice/
+          path: |
+            android/*/*/build/outputs/androidTest-results/managedDevice/
+            android/baselineprofile/build/outputs/androidTest-results/managedDevice/
           if-no-files-found: ignore
 
   # Sync-Server: Tests, Docker-Image (ohne Android-SDK) und ein Smoke-Test des laufenden Containers.

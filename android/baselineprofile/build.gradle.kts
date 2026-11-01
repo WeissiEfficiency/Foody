@@ -12,32 +12,36 @@
 // (`:app:generateReleaseBaselineProfile` meldet zwar Erfolg, mit Benchmark 1.5 und AGP 9.4 wird die Datei aber vor
 // dem Abholen mit der Test-App gelöscht.) Die Datei wird eingecheckt; normale Builds und die CI brauchen kein Gerät.
 plugins {
-    alias(libs.plugins.android.test)
+    // SDK-Stände, Java 17 und Kotlin ohne Warnungen aus build-logic (wie alle Module)
+    alias(libs.plugins.foody.android.test)
     alias(libs.plugins.baselineprofile)
 }
 
 android {
     namespace = "de.foody.baselineprofile"
-    compileSdk = 37
 
     defaultConfig {
-        minSdk = 36
-        targetSdk = 37
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     targetProjectPath = ":app"
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+    // Kurztest der R8-Variante gegen „Foody Vorschau“ (ReleaseStartTest, E4); braucht denselben Build-Typ wie :app
+    buildTypes {
+        create("vorschau")
     }
-}
 
-kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        allWarningsAsErrors.set(true)
+    testOptions {
+        // Gradle Managed Device wie in :core:data: in der CI startet Gradle den Emulator selbst
+        managedDevices {
+            localDevices {
+                create("ciDevice") {
+                    device = "Pixel 6"
+                    apiLevel = 36
+                    systemImageSource = "google"
+                }
+            }
+        }
     }
 }
 

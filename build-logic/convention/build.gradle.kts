@@ -33,5 +33,9 @@ gradlePlugin {
             id = "foody.android.feature"
             implementationClass = "AndroidFeatureConventionPlugin"
         }
+        register("androidTest") {
+            id = "foody.android.test"
+            implementationClass = "AndroidTestConventionPlugin"
+        }
     }
 }
