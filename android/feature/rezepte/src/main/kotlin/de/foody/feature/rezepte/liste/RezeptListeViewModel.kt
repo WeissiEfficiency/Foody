@@ -20,6 +20,8 @@ data class ListeZustand(
     val treffer: List<RezeptKarte> = emptyList(),
     val keineRezepte: Boolean = false,
     val tags: List<String> = emptyList(),
+    /** Rezepte ohne Archiv (Überzeile „296 Rezepte“). */
+    val anzahl: Int = 0,
 )
 
 @HiltViewModel
@@ -27,7 +29,7 @@ class RezeptListeViewModel @Inject constructor(repo: RezeptRepository) : ViewMod
     private val filter = MutableStateFlow(ListeFilter())
 
     val zustand: StateFlow<ListeZustand> = combine(repo.karten(), filter) { karten, f ->
-        ListeZustand(true, f, filtern(karten, f), karten.isEmpty(), haeufigeTags(karten))
+        ListeZustand(true, f, filtern(karten, f), karten.isEmpty(), haeufigeTags(karten), karten.count { !it.archiviert })
     }.stateIn(viewModelScope, SolangeAppOffen, ListeZustand())
 
     fun filter(aendern: (ListeFilter) -> ListeFilter) = filter.update(aendern)

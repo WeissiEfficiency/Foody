@@ -95,8 +95,9 @@ class RezeptDetailScreenTest {
         compose.onNodeWithText("400 g").assertExists()
         compose.onNodeWithText("Reis kochen.", substring = true).assertExists()
         compose.warteAufText("717 kcal je Portion")
-        // Kopf: dazu die kcal für alle gewählten Portionen
-        compose.warteAufText("30 Min. · 717 kcal je Portion · 1.434 kcal für 2 Portionen")
+        // Kopf: Zeit und kcal als Pillen, dazu die kcal für alle gewählten Portionen
+        compose.warteAufText("30 Min.")
+        compose.warteAufText("1.434 kcal für 2 Portionen")
     }
 
     @Test
@@ -107,11 +108,12 @@ class RezeptDetailScreenTest {
         compose.warteAufText("600 g")
         compose.warteAufText("3 Portionen")
         compose.warteAufText("717 kcal je Portion")
-        compose.warteAufText("30 Min. · 717 kcal je Portion · 2.151 kcal für 3 Portionen")
+        compose.warteAufText("2.151 kcal für 3 Portionen")
         compose.onNodeWithContentDescription("Weniger Portionen").performClick()
         compose.onNodeWithContentDescription("Weniger Portionen").performClick()
         // Eine Portion: gesamt = je Portion, nichts doppelt
-        compose.warteAufText("30 Min. · 717 kcal je Portion")
+        compose.warteAufText("1 Portion")
+        compose.onNodeWithText("für", substring = true).assertDoesNotExist()
     }
 
     @Test
@@ -146,7 +148,8 @@ class RezeptDetailScreenTest {
     fun archivierenMitRueckgaengig() {
         zeigen()
         compose.warteAufText("Reispfanne")
-        compose.onNodeWithContentDescription("Archivieren").performClick()
+        compose.onNodeWithContentDescription("Mehr").performClick()
+        compose.onNodeWithText("Archivieren").performClick()
         compose.warteAufText("Rezept archiviert")
         compose.waitUntil(5_000) { runBlocking { db.rezeptDao().nachId("r1")?.archivedAt != null } }
         compose.onNodeWithText("Rückgängig").performClick()
@@ -168,7 +171,8 @@ class RezeptDetailScreenTest {
         var id by mutableStateOf("r1")
         compose.setContent { FoodyTheme { RezeptDetailRoute(id, { _, _ -> }, {}, {}, {}, vm = vm) } }
         compose.warteAufText("Reispfanne")
-        compose.onNodeWithContentDescription("Archivieren").performClick()
+        compose.onNodeWithContentDescription("Mehr").performClick()
+        compose.onNodeWithText("Archivieren").performClick()
         compose.warteAufText("Rezept archiviert")
         compose.waitUntil(5_000) { runBlocking { db.rezeptDao().nachId("r1")?.archivedAt != null } }
         val r2Vorher = runBlocking { db.rezeptDao().nachId("r2") }
@@ -201,7 +205,8 @@ class RezeptDetailScreenTest {
     fun duplizierenOeffnetKopie() {
         zeigen()
         compose.warteAufText("Reispfanne")
-        compose.onNodeWithContentDescription("Duplizieren").performClick()
+        compose.onNodeWithContentDescription("Mehr").performClick()
+        compose.onNodeWithText("Duplizieren").performClick()
         compose.waitUntil(5_000) { dupliziert.isNotEmpty() }
         assertNotEquals("r1", dupliziert.single())
         assertEquals(2, runBlocking { db.rezeptDao().alle().size })
@@ -241,7 +246,7 @@ class RezeptDetailScreenTest {
     fun aufEinkaufslisteMitAnsehen() {
         zeigen()
         compose.warteAufText("Reispfanne")
-        compose.onNodeWithContentDescription("Auf die Einkaufsliste").performClick()
+        compose.onNodeWithText("Auf die Einkaufsliste").performScrollTo().performClick()
         compose.warteAufText("Hinzufügen")
         compose.onNodeWithContentDescription("Eine Portion mehr").performClick()
         compose.warteAufText("3 Portionen")
@@ -262,7 +267,7 @@ class RezeptDetailScreenTest {
         }
         zeigen()
         compose.warteAufText("Reispfanne")
-        compose.onNodeWithContentDescription("Auf die Einkaufsliste").performClick()
+        compose.onNodeWithText("Auf die Einkaufsliste").performScrollTo().performClick()
         compose.warteAufText("Hinzufügen")
         compose.onNodeWithText("Hinzufügen").performClick()
         compose.warteAufText("Nichts einzukaufen")

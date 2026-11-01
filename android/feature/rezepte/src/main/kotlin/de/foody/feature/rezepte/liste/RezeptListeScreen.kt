@@ -43,7 +43,7 @@ fun RezeptListeRoute(
 ) {
     val z by vm.zustand.collectAsStateWithLifecycle()
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-        ListeKopf(onNeu, onImport)
+        ListeKopf(z.anzahl.takeIf { z.geladen && !z.keineRezepte }, onNeu, onImport)
         if (z.geladen && z.keineRezepte) {
             Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
                 LeererZustandFlaeche(
@@ -64,7 +64,8 @@ fun RezeptListeRoute(
             return@Column
         }
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 160.dp),
+            // 140 dp: auch auf schmalen Handys (große Anzeigegröße) zwei Spalten wie im Entwurf
+            columns = GridCells.Adaptive(minSize = 140.dp),
             contentPadding = PaddingValues(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = ueberLeiste(104.dp)),
             horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
@@ -73,7 +74,7 @@ fun RezeptListeRoute(
                 val markiert = if (k.id == ausgewaehlt) Modifier.border(2.dp, FoodyTheme.farben.primaer, FoodyFormen.mittel) else Modifier
                 RezeptkarteRaster(
                     titel = k.name, onKlick = { onOeffnen(k.id) }, modifier = markiert, bild = rezeptBild(k.bild),
-                    favorit = k.favorit, zeit = k.zeitMinuten?.let { "$it Min." }, kcal = k.kcalJePortion?.let { "$it kcal" },
+                    favorit = k.favorit, zeit = k.zeitMinuten?.let { "$it min" }, kcal = k.kcalJePortion?.let { "$it kcal" },
                 )
             }
         }
