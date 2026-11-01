@@ -13,13 +13,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,6 +24,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import de.foody.core.data.datumKurz
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.glas.GlasBlatt
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
@@ -51,15 +49,12 @@ internal fun tagKurz(d: LocalDate): String = datumKurz(d).uppercase()
  * „Leere Tage füllen“: Mahlzeit wählen, je Tag ein Vorschlag (abwählbar, „↻“ zieht neu), „Neu mischen“ und
  * „Übernehmen (n)“. [namen] = Rezept-ID → Name.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun FuellenBlatt(z: FuellenZustand, namen: Map<String, String>, a: FuellenAktionen, onSchliessen: () -> Unit) {
     val anzahl = (z.vorschlag.keys - z.abgewaehlt).size
     // Ganz geöffnet und scrollbar: die Knöpfe unten sollen ohne Ziehen erreichbar sein
-    ModalBottomSheet(
-        onDismissRequest = onSchliessen, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = FoodyTheme.farben.grund,
-    ) {
+    GlasBlatt(onSchliessen, ganzOffen = true) {
         Column(
             Modifier.verticalScroll(rememberScrollState()).padding(horizontal = FoodyAbstaende.s6)
                 .padding(bottom = FoodyAbstaende.s6).navigationBarsPadding(),

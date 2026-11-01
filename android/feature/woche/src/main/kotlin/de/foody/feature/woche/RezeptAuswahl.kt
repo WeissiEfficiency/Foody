@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.glas.GlasBlatt
 import de.foody.core.designsystem.komponenten.FoodyTextfeld
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.token.FoodyAbstaende
@@ -40,12 +39,11 @@ fun auswahlSortiert(karten: List<RezeptKarte>, suche: String, mahlzeit: Mahlzeit
 }
 
 /** Blatt zum Hinzufügen: Suche und Liste mit Name und kcal je Portion. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun RezeptAuswahlBlatt(mahlzeit: String, karten: List<RezeptKarte>, onWahl: (RezeptKarte) -> Unit, onSchliessen: () -> Unit) {
     var suche by rememberSaveable { mutableStateOf("") }
     val treffer = auswahlSortiert(karten, suche, Mahlzeit.ausText(mahlzeit))
-    ModalBottomSheet(onDismissRequest = onSchliessen, containerColor = FoodyTheme.farben.grund) {
+    GlasBlatt(onSchliessen) {
         Column(
             Modifier.padding(horizontal = FoodyAbstaende.s4).padding(bottom = FoodyAbstaende.s4),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),

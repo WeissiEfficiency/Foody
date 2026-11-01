@@ -12,19 +12,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Remove
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import de.foody.core.data.woche.PlanEintrag
 import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.glas.GlasBlatt
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
@@ -48,14 +46,11 @@ internal class MahlzeitAktionen(
  * Ein Eintrag: Portionen ±, Gekocht (umschalten), Kochen, Rezept ansehen, Verschieben auf einen Tag der gezeigten
  * Woche ([montag]) oder ±7 Tage, Umbenennen, Entfernen.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun MahlzeitBlatt(e: PlanEintrag, montag: LocalDate, a: MahlzeitAktionen, onSchliessen: () -> Unit) {
     // Ganz geöffnet und scrollbar: die Knöpfe unten sollen ohne Ziehen erreichbar sein
-    ModalBottomSheet(
-        onDismissRequest = onSchliessen, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = FoodyTheme.farben.grund,
-    ) {
+    GlasBlatt(onSchliessen, ganzOffen = true) {
         Column(
             Modifier.verticalScroll(rememberScrollState()).padding(horizontal = FoodyAbstaende.s6)
                 .padding(bottom = FoodyAbstaende.s6).navigationBarsPadding(),

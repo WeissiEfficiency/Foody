@@ -8,9 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import de.foody.core.data.fotos.KameraDatei
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.glas.GlasBlatt
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.ueberschrift
@@ -31,7 +30,6 @@ import java.io.File
  * „Guten Appetit!“ nach dem letzten Schritt: eigenes Foto (nur ohne Rezeptfoto), „Rezept anpassen“ und „Schließen“.
  * Wegwischen schließt ebenfalls.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun FertigBlatt(ohneFoto: Boolean, onFoto: (Uri, File) -> Unit, onAnpassen: () -> Unit, onSchliessen: () -> Unit) {
     val kontext = LocalContext.current
@@ -41,7 +39,7 @@ internal fun FertigBlatt(ohneFoto: Boolean, onFoto: (Uri, File) -> Unit, onAnpas
         kameraDatei = null
         if (ok) onFoto(Uri.fromFile(datei), datei) else datei.delete()
     }
-    ModalBottomSheet(onDismissRequest = onSchliessen, containerColor = FoodyTheme.farben.grund) {
+    GlasBlatt(onSchliessen) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = FoodyAbstaende.s6).padding(bottom = FoodyAbstaende.s6).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
