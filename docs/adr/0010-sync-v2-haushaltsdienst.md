@@ -1,7 +1,7 @@
 # ADR 0010: Sync v2 mit Haushaltsdienst und feldweisem Zusammenführen
 
 Status: weitgehend abgelöst durch ADR 0011 (2026-10-17): kein Haushaltsdienst, kein feldweises Zusammenführen, keine Haushalte. Ursprünglich angenommen (2026-10-13). Löst die Konfliktregeln und das Protokoll aus ADR 0006 ab; Opt-in, Konten,
-Haushalte, HTTPS und inhaltsadressierte Fotos bleiben. Plan: `ToDoS/archiv/v2-plan.md`.
+Haushalte, HTTPS und inhaltsadressierte Fotos bleiben. Plan: `ToDoS/archiv/v2-plan.md` (seit 2026-11-01 nur im Git-Verlauf).
 
 **Kontext:** Der v1-Server speichert und verteilt Datensätze, ohne sie fachlich zu prüfen. Deshalb braucht die
 Web-Oberfläche eigene Schreiber (`RezeptSchreiber`, `PlanSchreiber`, `EinkaufSchreiber`, `VorratSchreiber`,
