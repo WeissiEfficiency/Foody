@@ -1,7 +1,12 @@
 # Foody – Mahlzeit aus Foto (auf dem Gerät)
 
-Stand: 2026-11-01. Arbeitsplan, noch nichts umgesetzt. Eigenes Vorhaben neben der KI-Hilfe ([`ki-plan.md`](ki-plan.md)).
+Stand: 2026-11-01. Phase 0 erledigt (Modell gewählt, [ADR 0017](../docs/adr/0017-fotoerkennung-auf-dem-geraet.md)),
+weiter mit Phase 1. Eigenes Vorhaben neben der KI-Hilfe ([`ki-plan.md`](ki-plan.md)).
 Die Phasen werden der Reihe nach abgearbeitet; die nächste beginnt, wenn die vorige abgehakt ist.
+
+**Oberfläche wartet auf das neue Design:** Phase 1 und 2 haben keine Oberfläche und laufen sofort. Phase 3 (Knopf und
+Vorschau im Eintragen-Blatt) und Phase 4 (Einstellungen) beginnen erst, wenn die Umsetzung des Milchglas-Entwurfs für
+Heute und Einstellungen in `main` ist; vorher kurz beim Nutzer nachfragen.
 
 ## Ziel
 
@@ -27,7 +32,8 @@ Packungen laufen weiter über den bestehenden Scan (`:core:scan`, ML Kit + Open 
 - **Immer Vorschau, nie still speichern.** Jeder Vorschlag ist bearbeitbar; gespeichert wird erst mit dem Häkchen.
 - **Offline nach der Einrichtung.** Das Modell wird einmal geladen (Download oder Datei aus OpenCloud, siehe Phase 2)
   und liegt dann im App-Speicher. Ohne Modell ist der Knopf ausgeblendet.
-- **Nicht in die APK.** Das Modell (0,2–2 GB) wird nachgeladen; die APK wächst nur um die Laufzeit.
+- **Nicht in die APK.** Das Modell (1,55 GB) wird nachgeladen; die APK wächst nur um die Laufzeit.
+- **Zeit je Foto:** bis 60 s ist in Ordnung, Ziel 15–30 s (Nutzer, 2026-11-01).
 - **Nur auf dem Handy** (OnePlus 13R, Snapdragon 8 Gen 3, 12 GB RAM). Es bleibt eine APK für beide Geräte; auf dem
   Tablet wird einfach kein Modell installiert, dann ist der Knopf dort ausgeblendet. Keine Messung und keine
   Anpassung fürs Tablet.
@@ -55,7 +61,24 @@ deutsche Hausmannskost fehlt meist).
 
 **Welches meiner Rezepte?** Das Modell bekommt die Rezeptnamen und den heutigen Wochenplan als Auswahlliste in die
 Anweisung („Aus dem Plan“ ist meist schon richtig). Ein Bildvergleich mit den Rezeptfotos kommt erst, wenn die
-Auswahlliste in Phase 0 nicht reicht.
+Auswahlliste im Alltag nicht reicht.
+
+### Ergebnis Phase 0 (2026-11-01)
+
+Gewählt: **Qwen3-VL-2B + „food-analysis“**, 4 Bit (1,55 GB), höchstens 512 Bild-Tokens, llama.cpp auf der CPU.
+Einzelheiten und Zahlen in [ADR 0017](../docs/adr/0017-fotoerkennung-auf-dem-geraet.md).
+
+- **Erkennen klappt, Schätzen kaum:** Aus einer Liste wählt das Modell in 73–82 % das richtige Gericht. kcal und Gramm
+  liegen bei allen Modellen im Median um etwa zwei Drittel daneben und sind fast immer runde Werte (300, 500).
+  Für „Gekauftes“ und „Teller“ sind sie nur ein Startwert; die Vorschau muss sie deutlich als geschätzt zeigen und
+  leicht änderbar machen.
+- **Training auf Essen bringt wenig:** Das unveränderte Qwen3-VL-2B ist fast gleich gut; es bleibt der Rückfall.
+- **Ausgeschieden:** NutriScan-3B (schwächer, keine Gramm, Research License), SmolVLM2 + CaLoRAify (untrainiert),
+  CalorieCLIP (bei deutschen Gerichten nicht besser, zweite Laufzeit).
+- **Handy (13R, nur CPU):** 11 s je Foto bei 256 Bild-Tokens, 25 s im Median bei voller Größe, 5–7 s Laden,
+  2,6–3,5 GB RAM. GPU (OpenCL) stürzt beim Bildteil ab, NPU ist für fremde Programme gesperrt.
+- **Abbruchgrenze** (≥ 80 %) nur knapp erreicht; gebaut wird trotzdem, entscheidend ist die Abnahme im Alltag (Phase 5).
+- Antworten anderer Modelle enthalten Zahlen mit Einheit (`"fat": 15g`); der Leser in Phase 1 muss das reparieren.
 
 ## Phasen
 
@@ -64,7 +87,7 @@ Auswahlliste in Phase 0 nicht reicht.
 Kein Produktcode. Ergebnis ist eine Entscheidung, keine App. Eigene Fotos mit Sollwerten gibt es nicht; gemessen wird
 deshalb mit öffentlichen Daten, die Genauigkeit im Alltag prüft Phase 5.
 
-- [ ] Testsätze (lokal, nicht im Repo):
+- [x] Testsätze (lokal, nicht im Repo): 100 Nutrition5k-Testbilder, 22 deutsche Gerichte; eigene Rezeptfotos gab es nicht
       - **Mengen und kcal:** ~100 Gerichte aus dem Test-Teil von **Nutrition5k** (Google; Fotos mit gewogenen Zutaten
         und kcal). Nur der Test-Teil, weil CalorieCLIP auf Nutrition5k trainiert ist.
       - **Deutsche Gerichte:** 20–30 frei lizenzierte Fotos (Wikimedia Commons), z. B. Leberkässemmel, Breze,
@@ -72,26 +95,34 @@ deshalb mit öffentlichen Daten, die Genauigkeit im Alltag prüft Phase 5.
       - **Eigene Rezepte:** die Rezepte mit Foto aus dem Katalog (falls vorhanden) – „richtiges Rezept aus der
         Auswahlliste?“.
       Nicht verwenden: MM-Food-100K und CalData, damit trainieren NutriScan bzw. CaLoRAify.
-- [ ] Modelle vorbereiten: LoRA mit Basis zusammenführen, nach GGUF wandeln, CalorieCLIP nach ONNX.
-- [ ] Probe auf dem 13R: kleine Wegwerf-App mit llama.cpp; gleiche Anweisung und gleiches JSON-Schema für alle drei.
-- [ ] Messen je Modell: Gericht/Rezept richtig erkannt, Abweichung kcal und Gramm (Nutrition5k), Zeit je Foto,
+- [x] Modelle vorbereiten: LoRA mit Basis zusammenführen, nach GGUF wandeln, CalorieCLIP nach ONNX.
+- [x] Probe auf dem 13R: statt einer Wegwerf-App die vorgebaute Android-Ausgabe von llama.cpp per adb; Genauigkeit
+      mit denselben Dateien auf dem PC gemessen.
+- [x] Messen je Modell: Gericht/Rezept richtig erkannt, Abweichung kcal und Gramm (Nutrition5k), Zeit je Foto,
       RAM-Spitze, Akku, gültiges JSON in wie viel % der Fälle. CalorieCLIP zusätzlich: kcal-Abweichung allein und
       als Mittel mit dem Bild-Sprach-Modell.
-- [ ] **Abbruchgrenze:** Wenn kein Modell unter ~15 s bleibt und deutsche Gerichte bzw. eigene Rezepte in ≥ 80 %
+- [x] **Abbruchgrenze:** Wenn kein Modell unter ~60 s bleibt (vom Nutzer von 15 s angehoben) und deutsche Gerichte bzw. eigene Rezepte in ≥ 80 %
       richtig erkennt, wird die Funktion nicht gebaut (oder nur „Rezept aus Foto“).
-- [ ] ADR 0017: gewähltes Modell, Laufzeit, Lizenzen (Basis und Adapter), Speicherort, warum nicht Claude/Server
+- [x] ADR 0017: gewähltes Modell, Laufzeit, Lizenzen (Basis und Adapter), Speicherort, warum nicht Claude/Server
       (Abgrenzung zu ADR 0011).
 
 ### Phase 1 – `:domain`: Ergebnis verstehen
 
 Reines Kotlin, testgetrieben.
 
-- [ ] Typen `FotoVorschlag` (Rezept / Frei / Teller mit Zeilen) und `Sicherheit`.
-- [ ] Toleranter Leser für die Modellantwort (JSON aus Text herauslösen, fehlende Felder, Kommazahlen, Einheiten).
-- [ ] Zuordnung zu Rezept und Zutaten: Namensabgleich mit Synonymen und Tippfehlern über den Katalog
-      (vorhandene Einordnung nutzen), heutiger Plan zuerst; ohne Treffer → Frei.
-- [ ] Plausibilitätsgrenzen (Portionen 0,25–6, Gramm 1–1.500 je Zeile, kcal 0–3.000), sonst Feld leer lassen.
-- [ ] Regeln in `docs/domain-rules.md` mit Tests.
+- [x] Typen `FotoVorschlag` (Rezept / Frei / Teller mit Zeilen) und `FotoKontext`. Ein eigener Typ `Sicherheit`
+      entfällt: was nicht sicher zugeordnet ist, wird Frei, unplausible Werte bleiben leer.
+- [x] Toleranter Leser für die Modellantwort (`ModellJson`: JSON aus Text und Codezaun herauslösen, Komma vor `}`,
+      Zahlen mit Einheit wie `15g`, Schlüssel ohne Groß-/Kleinschreibung).
+- [x] Zuordnung zu Rezept und Zutaten (`FotoErkennung`): Rezeptname gleich, heutiger Plan zuerst; Zutaten über
+      `IngredientCatalog.canonicalName` (Synonyme, Plural). Keine Tippfehler-Zuordnung – Regel 15 erlaubt keine
+      Ähnlichkeit; ohne Treffer → Frei.
+- [x] Plausibilitätsgrenzen (Portionen 0,25–6, Gramm 1–1.500 je Zeile, kcal 1–3.000, Makros 0–300 g), sonst Feld leer.
+- [x] Regel 29 in `docs/domain-rules.md` mit Tests (`FotoErkennungTest`, `ModellJsonTest`).
+
+**Ergebnis (2026-11-01):** `ModellJson` und `FotoErkennung` in `:domain`, 25 Tests. Spec
+`docs/superpowers/specs/2026-11-01-foto-erkennung-phase1-design.md`, Plan `docs/superpowers/plans/2026-11-01-foto-erkennung-phase1.md`.
+Die Anweisung ans Modell und die Reihenfolge der Liste kommen in Phase 2.
 
 ### Phase 2 – `:core:erkennung`: Modell auf dem Gerät
 
@@ -99,13 +130,14 @@ Neues Modul (`foody.android.library`), Aufbau wie `:core:scan` (ADR 0013): Schni
 
 - [ ] Schnittstelle `MahlzeitErkenner { suspend fun erkennen(bildUri, kontext): ErkennungStatus }`; Kontext =
       Rezeptnamen, Plan des Tages, häufige Zutaten (begrenzt auf ~200 Namen, damit die Anweisung kurz bleibt).
-- [ ] llama.cpp als native Bibliothek einbinden (NDK/CMake im Modul, nur `arm64-v8a`), dünne JNI-Hülle;
-      Version im Versionskatalog festnageln.
+- [ ] llama.cpp als native Bibliothek einbinden (nur `arm64-v8a`, nur CPU), dünne JNI-Hülle über `libllama`/`libmtmd`;
+      Version festnageln (gemessen: b12024). Höchstens 512 Bild-Tokens.
 - [ ] Modellverwaltung: Modelldatei per SAF importieren (z. B. aus OpenCloud) **oder** einmal herunterladen;
       Prüfsumme, Speicherort `filesDir`, Größe anzeigen, entfernen. Kein Download ohne Knopfdruck.
 - [ ] Bild vorher verkleinern; Erkennung auf eigenem Dispatcher, abbrechbar, mit Zeitlimit; Modell nach Gebrauch
       aus dem RAM werfen.
-- [ ] Fehlerfälle: kein Modell, zu wenig RAM, Zeitlimit, unlesbare Antwort.
+- [ ] Fehlerfälle: kein Modell, zu wenig RAM (~3 GB nötig), Zeitlimit (60 s), unlesbare Antwort.
+- [ ] Zeit je Foto in der App auf dem 13R messen (Ziel 15–30 s).
 - [ ] R8-Regeln für die JNI-Hülle und ein Release-Kurztest (wie `ReleaseStartTest`, E4).
 
 ### Phase 3 – `:feature:heute`: Knopf und Vorschau

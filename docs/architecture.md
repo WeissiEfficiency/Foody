@@ -34,6 +34,8 @@ einen Rückweg gibt es seit dem 2026-10-31 nicht mehr. Wo unten „wie v1“ ste
   - Zutatennamen: `IngredientCatalog` (Synonyme, „nie einkaufen“, Abteilungs-Schätzung)
   - Kochmodus: `StepIngredientMatcher` (Zutaten + Teilmengen im Schritt), `StepTimerParser` (Zeitangaben)
   - Startseite: `DailyPicks` (Rezepte des Tages)
+  - Mahlzeit aus Foto: `ModellJson` (nachsichtiger JSON-Leser), `FotoErkennung` (Antwort des Modells → Vorschlag
+    Rezept, Teller oder Frei, Regel 29; ADR 0017, Plan `ToDoS/foto-erkennung-plan.md`)
 - **Daten** (`:core:data`): Room als einzige Quelle, Repositories bilden Zeilen auf `:domain`-Modelle ab. Schreibvorgänge
   über mehrere Tabellen laufen in Transaktionen.
 
@@ -427,7 +429,7 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6e2-zutaten-design.md`
   Abweichung nur bei Alkoholika, deren Alkohol eigene Energie hat) und nicht geändert. Gemessen am Rezeptordner
   (430 Rezepte, 4.821 Zeilen): rechenbare Zeilen 3.296 → 3.822, ohne Katalogeintrag 386 → 127, Löffel- und
   ml-Angaben ohne Dichte 171 → 3. Mengen ohne Waage (Prise, Messerspitze, Schuss, Tasse) und Gewichte im Hinweis
-  rechnet der Import um (Regeln 29 und 30); schon importierte Rezepte behalten ihre Zeilen.
+  rechnet der Import um (Regeln 30 und 31); schon importierte Rezepte behalten ihre Zeilen.
 - **Sync auf dem zweiten Gerät:** `anwenden` schreibt erst Datensätze, dann Löschungen; mit offener Rezeptänderung wird
   die Quelle wiederbelebt (`nochGebraucht`). Belegt durch zwei Tests in `SyncLaufTest`.
 - **`:feature:zutaten`:** Liste (`ZutatenListeViewModel`), Editor (`ZutatEditorViewModel`, `ZielwahlBlatt`), Meldungen
