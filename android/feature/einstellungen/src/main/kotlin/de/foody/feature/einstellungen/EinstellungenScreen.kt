@@ -6,7 +6,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,10 +13,6 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -39,8 +34,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyFrage
+import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.ueberLeiste
-import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 
@@ -98,12 +93,7 @@ fun EinstellungenRoute(
                     .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = ueberLeiste(104.dp)),
                 verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onZurueck) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
-                    }
-                    Text("Einstellungen", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
-                }
+                Seitenkopf("Einstellungen", onZurueck = onZurueck)
                 KontoAbschnitt(z.konto, System.currentTimeMillis(), onServer)
                 DarstellungAbschnitt(z.darstellung, z.farbwelt, vm::darstellungSetzen, vm::farbweltSetzen)
                 TageszielAbschnitt(
