@@ -34,6 +34,8 @@ einen Rückweg gibt es seit dem 2026-10-31 nicht mehr. Wo unten „wie v1“ ste
   - Zutatennamen: `IngredientCatalog` (Synonyme, „nie einkaufen“, Abteilungs-Schätzung)
   - Kochmodus: `StepIngredientMatcher` (Zutaten + Teilmengen im Schritt), `StepTimerParser` (Zeitangaben)
   - Startseite: `DailyPicks` (Rezepte des Tages)
+  - Mahlzeit aus Foto: `ModellJson` (nachsichtiger JSON-Leser), `FotoErkennung` (Antwort des Modells → Vorschlag
+    Rezept, Teller oder Frei, Regel 29; ADR 0017, Plan `ToDoS/foto-erkennung-plan.md`)
 - **Daten** (`:core:data`): Room als einzige Quelle, Repositories bilden Zeilen auf `:domain`-Modelle ab. Schreibvorgänge
   über mehrere Tabellen laufen in Transaktionen.
 
