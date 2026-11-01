@@ -6,6 +6,8 @@ und was für die geplante KI-Hilfe und die Fotoerkennung dazukommt.
 
 Foody gibt es nicht im Play Store. Die App wird aus diesem Repository gebaut und als APK-Datei installiert.
 
+**Nur das Nötigste in fünf Schritten:** [Kurzanleitung](installation-kurz.md).
+
 **Inhalt**
 
 1. [Überblick: was wohin gehört](#1-überblick-was-wohin-gehört)

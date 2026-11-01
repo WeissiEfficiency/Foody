@@ -8,7 +8,7 @@ konsolidierte Einkaufslisten.
 **Stand (2026-10-28):** Foody ist als **V3** neu gebaut (Plan [`v3-plan.md`](ToDoS/archiv/v3-plan.md), archiviert; Umfang
 [ADR 0011](docs/adr/0011-v3-umfang-ein-nutzer.md)) und seit dem 2026-10-28 auf Handy, Tablet und dem echten Server im Einsatz (Umstieg, Phase 8). Die v1 ist aus
 `main` entfernt; ihr letzter Stand ist der Tag `v1-final`.
-**Installieren und aktualisieren** (App bauen, Handy, Tablet, Server mit Docker/Traefik, KI und Fotoerkennung): [`docs/installation.md`](docs/installation.md).
+**Installieren und aktualisieren** (App bauen, Handy, Tablet, Server mit Docker/Traefik, KI und Fotoerkennung): [`docs/installation.md`](docs/installation.md), kurz: [`docs/installation-kurz.md`](docs/installation-kurz.md).
 
 ## Funktionen (V3)
 
