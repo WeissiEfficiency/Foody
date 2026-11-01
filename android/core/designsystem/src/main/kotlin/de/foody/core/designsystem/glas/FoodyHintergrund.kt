@@ -12,8 +12,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.token.VerlaufDunkel
-import de.foody.core.designsystem.token.VerlaufHell
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -22,14 +20,14 @@ import dev.chrisbanes.haze.rememberHazeState
 internal val LocalHazeState = staticCompositionLocalOf<HazeState?> { null }
 
 /**
- * Hintergrund der V3: Grund mit zwei weichen Radialverläufen (oben links, unten rechts). Er ist die Quelle, die
+ * Hintergrund der V3: Grund mit zwei weichen Radialverläufen in Tönen der Farbwelt (oben links, unten rechts). Er ist die Quelle, die
  * [GlasFlaeche] unscharf zeichnet; Inhalte liegen darüber.
  */
 @Composable
 fun FoodyHintergrund(modifier: Modifier = Modifier, inhalt: @Composable BoxScope.() -> Unit) {
     val hazeState = rememberHazeState()
     val grund = FoodyTheme.farben.grund
-    val verlauf = if (FoodyTheme.dunkel) VerlaufDunkel else VerlaufHell
+    val verlauf = FoodyTheme.werte.verlauf
     Box(modifier.fillMaxSize()) {
         Box(
             Modifier

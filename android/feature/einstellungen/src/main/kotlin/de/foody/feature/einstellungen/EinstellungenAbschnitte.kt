@@ -33,6 +33,7 @@ import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.token.Farbwelt
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
@@ -80,7 +81,16 @@ internal fun KontoAbschnitt(konto: VerbindungsZustand?, jetzt: Long, onServer: (
 }
 
 @Composable
-internal fun DarstellungAbschnitt(gewaehlt: Darstellung, onWahl: (Darstellung) -> Unit) = Abschnitt("Darstellung") {
+internal fun DarstellungAbschnitt(
+    gewaehlt: Darstellung,
+    farbwelt: Farbwelt,
+    onWahl: (Darstellung) -> Unit,
+    onFarbwelt: (Farbwelt) -> Unit,
+) = Abschnitt("Darstellung") {
+    Text("Farbe", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text)
+    FarbweltWahl(farbwelt, onFarbwelt)
+    Klein("Gilt für Hauptfarbe, Verlauf und Glas.")
+    Text("Modus", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text, modifier = Modifier.padding(top = FoodyAbstaende.s1))
     Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         listOf(Darstellung.SYSTEM to "System", Darstellung.HELL to "Hell", Darstellung.DUNKEL to "Dunkel").forEach { (d, text) ->
             FoodyChip(text, ausgewaehlt = d == gewaehlt, onKlick = { onWahl(d) })

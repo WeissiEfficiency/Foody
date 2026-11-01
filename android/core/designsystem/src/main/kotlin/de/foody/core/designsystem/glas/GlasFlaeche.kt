@@ -36,7 +36,7 @@ internal fun glasModus(unschaerfe: Boolean, hatHaze: Boolean, stufe: GlasStufe):
     if (unschaerfe && hatHaze && stufe != GlasStufe.BILD) GlasModus.UNSCHAERFE else GlasModus.TOENUNG
 
 /**
- * Glasfläche: LEICHT/DICHT mit unscharfem, getöntem Hintergrund, BILD als fast deckende Leiste über Fotos; dazu
+ * Milchglas: LEICHT/DICHT mit unscharfem, getöntem, leicht gekörntem Hintergrund, BILD als fast deckende Leiste über Fotos; dazu
  * eine Lichtkante. [unschaerfeErlaubt] = false für Flächen in Listen (Leistung).
  * Die Tönung allein hält WCAG AA (Kontrast-Test) – ohne Unschärfe bleibt alles lesbar.
  */
@@ -48,7 +48,7 @@ fun GlasFlaeche(
     unschaerfeErlaubt: Boolean = true,
     inhalt: @Composable BoxScope.() -> Unit,
 ) {
-    val werte = glasWerte(stufe, FoodyTheme.dunkel)
+    val werte = glasWerte(stufe, FoodyTheme.dunkel, FoodyTheme.farbwelt)
     val hazeState = LocalHazeState.current
     val modus = glasModus(FoodyTheme.unschaerfe && unschaerfeErlaubt, hazeState != null, stufe)
     val flaeche = when (modus) {
@@ -56,6 +56,7 @@ fun GlasFlaeche(
             input = HazeInput.Sources(requireNotNull(hazeState)),
             style = HazeBlurStyle {
                 blurRadius(werte.unschaerfe)
+                noiseFactor(werte.korn)
                 colorEffects(listOf(HazeColorEffect.tint(werte.toenung)))
                 fallbackColorEffect(HazeColorEffect.tint(werte.toenung))
             },

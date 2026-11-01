@@ -14,20 +14,13 @@ enum class Darstellung { SYSTEM, HELL, DUNKEL }
 
 /**
  * Darstellung aus den Prefs `foody` (`themeMode`) mit den Werten der v1 (`SYSTEM`, `LIGHT`, `DARK`), damit sie das
- * Update überlebt; fehlend oder unbekannt = [Darstellung.SYSTEM].
+ * Update überlebt; fehlend oder unbekannt = [Darstellung.SYSTEM]. Dazu die gewählte Farbwelt (`farbwelt`) als Name;
+ * was der Name bedeutet, weiß das Designsystem (`Farbwelt.ausName`).
  */
 class DarstellungSpeicher @Inject constructor(@ApplicationContext kontext: Context) {
     private val prefs = kontext.getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE)
 
-    fun darstellung(): Flow<Darstellung> = callbackFlow {
-        fun senden() = trySend(lesen())
-        val hoerer = SharedPreferences.OnSharedPreferenceChangeListener { _, schluessel ->
-            if (schluessel == Einstellungsschluessel.DARSTELLUNG) senden()
-        }
-        prefs.registerOnSharedPreferenceChangeListener(hoerer)
-        senden()
-        awaitClose { prefs.unregisterOnSharedPreferenceChangeListener(hoerer) }
-    }.distinctUntilChanged()
+    fun darstellung(): Flow<Darstellung> = beobachten(Einstellungsschluessel.DARSTELLUNG, ::lesen)
 
     /** Der gespeicherte Wert sofort, etwa als Startwert vor dem ersten Wert von [darstellung]. */
     fun aktuell(): Darstellung = lesen()
@@ -40,6 +33,25 @@ class DarstellungSpeicher @Inject constructor(@ApplicationContext kontext: Conte
         }
         prefs.edit().putString(Einstellungsschluessel.DARSTELLUNG, wert).apply()
     }
+
+    /** Name der gewählten Farbwelt; `null`, solange keine gewählt ist. */
+    fun farbwelt(): Flow<String?> = beobachten(Einstellungsschluessel.FARBWELT, ::farbweltAktuell)
+
+    fun farbweltAktuell(): String? = prefs.getString(Einstellungsschluessel.FARBWELT, null)
+
+    fun farbweltSetzen(name: String) {
+        prefs.edit().putString(Einstellungsschluessel.FARBWELT, name).apply()
+    }
+
+    private fun <T> beobachten(schluessel: String, lesen: () -> T): Flow<T> = callbackFlow {
+        fun senden() = trySend(lesen())
+        val hoerer = SharedPreferences.OnSharedPreferenceChangeListener { _, geaendert ->
+            if (geaendert == schluessel) senden()
+        }
+        prefs.registerOnSharedPreferenceChangeListener(hoerer)
+        senden()
+        awaitClose { prefs.unregisterOnSharedPreferenceChangeListener(hoerer) }
+    }.distinctUntilChanged()
 
     private fun lesen(): Darstellung = when (prefs.getString(Einstellungsschluessel.DARSTELLUNG, null)) {
         "LIGHT" -> Darstellung.HELL

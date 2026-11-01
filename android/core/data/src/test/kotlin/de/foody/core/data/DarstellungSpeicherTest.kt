@@ -50,6 +50,22 @@ class DarstellungSpeicherTest {
     }
 
     @Test
+    fun farbweltOhneWertNull() = runTest {
+        val speicher = DarstellungSpeicher(kontext)
+        assertEquals(null, speicher.farbwelt().first())
+        assertEquals(null, speicher.farbweltAktuell())
+    }
+
+    @Test
+    fun farbweltGespeichertUndGemeldet() = runTest {
+        val speicher = DarstellungSpeicher(kontext)
+        speicher.farbweltSetzen("LAGUNE")
+        assertEquals("LAGUNE", prefs.getString(Einstellungsschluessel.FARBWELT, null))
+        assertEquals("LAGUNE", speicher.farbwelt().first())
+        assertEquals("LAGUNE", DarstellungSpeicher(kontext).farbweltAktuell())
+    }
+
+    @Test
     fun flussMeldetAenderung() = runTest {
         val speicher = DarstellungSpeicher(kontext)
         assertEquals(Darstellung.SYSTEM, speicher.darstellung().first())

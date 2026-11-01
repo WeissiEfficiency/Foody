@@ -17,6 +17,7 @@ import de.foody.core.data.sicherung.LoeschErgebnis
 import de.foody.core.data.sicherung.Sicherung
 import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.designsystem.SolangeAppOffen
+import de.foody.core.designsystem.token.Farbwelt
 import de.foody.core.scan.ScanEinstellung
 import java.io.File
 import java.time.Clock
@@ -49,12 +50,14 @@ data class EinstellungenZustand(
     val zutaten: Int? = null,
     /** Schalter „Online-Produktsuche“ (Open Food Facts beim Scan). */
     val onlineSuche: Boolean = true,
+    /** Gewählte Farbwelt (Einstellungen › Darstellung). */
+    val farbwelt: Farbwelt = Farbwelt.Standard,
 ) {
     val gesperrt: Boolean get() = konto?.verbunden == true
 }
 
 /**
- * Einstellungen: Darstellung und Tagesziel sofort speichern; Sicherung erstellen, wiederherstellen und alles löschen
+ * Einstellungen: Darstellung, Farbwelt und Tagesziel sofort speichern; Sicherung erstellen, wiederherstellen und alles löschen
  * im [viewModelScope] (Drehen bricht sie nicht ab), Ergebnis als Meldung. Die Dateidialoge liegen in der Route; hier
  * kommt nur die Uri an.
  */
@@ -75,16 +78,23 @@ class EinstellungenViewModel @Inject constructor(
     val zustand: StateFlow<EinstellungenZustand> =
         combine(darstellungen.darstellung(), ziel.tagesziel(), konto.zustand, laufend, zutaten.anzahl()) { d, t, k, l, n ->
             EinstellungenZustand(d, t, k, l, n)
-        }.combine(scan.onlineSuche) { z, online -> z.copy(onlineSuche = online) }.stateIn(
-            viewModelScope, SolangeAppOffen,
-            // Startwerte sofort aus den Prefs: kein Umspringen, bis der Kontostand da ist
-            EinstellungenZustand(darstellung = darstellungen.aktuell(), tagesziel = ziel.aktuell(), onlineSuche = scan.onlineSuche.value),
-        )
+        }.combine(scan.onlineSuche) { z, online -> z.copy(onlineSuche = online) }
+            .combine(darstellungen.farbwelt()) { z, w -> z.copy(farbwelt = Farbwelt.ausName(w)) }
+            .stateIn(
+                viewModelScope, SolangeAppOffen,
+                // Startwerte sofort aus den Prefs: kein Umspringen, bis der Kontostand da ist
+                EinstellungenZustand(
+                    darstellung = darstellungen.aktuell(), farbwelt = Farbwelt.ausName(darstellungen.farbweltAktuell()),
+                    tagesziel = ziel.aktuell(), onlineSuche = scan.onlineSuche.value,
+                ),
+            )
 
     private val kanal = Channel<String>(Channel.BUFFERED)
     val meldungen: Flow<String> = kanal.receiveAsFlow()
 
     fun darstellungSetzen(d: Darstellung) = darstellungen.setzen(d)
+
+    fun farbweltSetzen(w: Farbwelt) = darstellungen.farbweltSetzen(w.name)
 
     /** Wirkt sofort für alle Scan-Einstiege (Tagebuch, Zutateneditor, „Neue Zutat“). */
     fun onlineSucheSetzen(an: Boolean) = scan.setzen(an)

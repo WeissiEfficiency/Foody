@@ -11,24 +11,26 @@ import androidx.compose.ui.unit.dp
  */
 enum class GlasStufe { LEICHT, DICHT, BILD }
 
-/** Tönung (mit Alpha), Unschärfe-Radius und Lichtkante einer Glasstufe. */
+/** Tönung (mit Alpha), Unschärfe-Radius, Korn (Rauschen, 0 bis 1) und Lichtkante einer Glasstufe. */
 @Immutable
-data class GlasWerte(val toenung: Color, val unschaerfe: Dp, val kante: Color)
+data class GlasWerte(val toenung: Color, val unschaerfe: Dp, val korn: Float, val kante: Color)
 
-private val CremeGlas = Color(0xFFFFFAF3)
-private val GlutGlas = Color(0xFF2B201A)
-
-fun glasWerte(stufe: GlasStufe, dunkel: Boolean): GlasWerte {
+/**
+ * Milchglas: kräftige Unschärfe mit feinem Korn, getönt in der Glasfarbe der [Farbwelt]. Das Korn ist nur Textur; die
+ * Lesbarkeit hängt allein an der Tönung (Kontrast-Test ohne Unschärfe und Korn).
+ */
+fun glasWerte(stufe: GlasStufe, dunkel: Boolean, farbwelt: Farbwelt = Farbwelt.Standard): GlasWerte {
     val alpha = when (stufe) {
         GlasStufe.LEICHT -> if (dunkel) 0.50f else 0.55f
         GlasStufe.DICHT -> if (dunkel) 0.72f else 0.78f
         // Über Fotos (Schwarz bis Weiß möglich) fast deckend, sonst hält Text AA nicht
         GlasStufe.BILD -> 0.92f
     }
-    val farben = if (dunkel) FoodyFarben.Dunkel else FoodyFarben.Hell
+    val werte = farbwelt.werte(dunkel)
     return GlasWerte(
-        toenung = (if (dunkel) GlutGlas else CremeGlas).copy(alpha = alpha),
-        unschaerfe = 24.dp,
-        kante = farben.lichtkante,
+        toenung = werte.glas.copy(alpha = alpha),
+        unschaerfe = 40.dp,
+        korn = if (dunkel) 0.05f else 0.08f,
+        kante = werte.farben.lichtkante,
     )
 }

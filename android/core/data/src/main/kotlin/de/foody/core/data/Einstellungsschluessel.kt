@@ -17,6 +17,9 @@ object Einstellungsschluessel {
     /** Hell/Dunkel/System. */
     const val DARSTELLUNG = "themeMode"
 
+    /** Gewählte Farbwelt als Name (z. B. `MANGO`); neu in der V3, fehlt = Standard des Designsystems. */
+    const val FARBWELT = "farbwelt"
+
     /** Ob beim Scannen online nach Produkten gesucht werden darf. */
     const val ONLINE_SUCHE = "onlineProduktsuche"
 
