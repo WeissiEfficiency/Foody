@@ -46,7 +46,8 @@ fun FoodyTheme(
         MaterialTheme(
             colorScheme = farbschema(farben, farbwelt.werte(!dunkel).farben, dunkel),
             typography = FoodyTypografie,
-            shapes = Shapes(small = FoodyFormen.klein, medium = FoodyFormen.mittel, large = FoodyFormen.gross),
+            // extraSmall: Material zeichnet damit die Eingabefelder; rund wie im Entwurf statt fast eckig
+            shapes = Shapes(extraSmall = FoodyFormen.klein, small = FoodyFormen.klein, medium = FoodyFormen.mittel, large = FoodyFormen.gross),
             content = inhalt,
         )
     }
