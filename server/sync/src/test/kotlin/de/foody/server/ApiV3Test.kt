@@ -42,14 +42,10 @@ class ApiV3Test {
     }
 
     @Test
-    fun alterPfadZuAlt() = testServer {
-        // Kein gültiges Konto, kein Token: die Abweisung kommt vor Authentifizierung und Body-Parsing.
-        val response = client.login("niemand", pfad = "/api/v1/auth/login", version = 2)
-        assertEquals(HttpStatusCode.Conflict, response.status)
-        assertEquals("protocol_too_old", response.drahtCode())
-        val pull = client.get("/api/v1/sync/pull?since=0") { protocol(2); bearerAuth("falsch") }
-        assertEquals(HttpStatusCode.Conflict, pull.status)
-        assertEquals("protocol_too_old", pull.drahtCode())
+    fun alterPfadGibtEsNichtMehr() = testServer {
+        // Seit dem Schließen des Rückwegs (C4) antwortet unter /api/v1 nichts mehr.
+        assertEquals(HttpStatusCode.NotFound, client.login("niemand", pfad = "/api/v1/auth/login", version = 2).status)
+        assertEquals(HttpStatusCode.NotFound, client.get("/api/v1/sync/pull?since=0") { protocol(2); bearerAuth("falsch") }.status)
     }
 
     @Test

@@ -8,6 +8,7 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import de.foody.core.data.startdaten.StartdatenLader
+import de.foody.core.designsystem.AppOffen
 import de.foody.core.sync.SyncAusloeser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,8 +17,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Anwendung der V3: WorkManager mit Hilt-Workern, alte v1-Aufträge beim Start abmelden, Startdaten laden, Sync
- * anstoßen, sobald die App in den Vordergrund kommt.
+ * Anwendung der V3: WorkManager mit Hilt-Workern, alte v1-Aufträge beim Start abmelden, Startdaten laden. Ob die App
+ * offen ist, gibt sie an Bildschirmzustände ([AppOffen]) und Sync weiter: Beim Öffnen wird synchronisiert, nach dem
+ * Schließen läuft nichts mehr (außer einem Kochtimer).
  */
 @HiltAndroidApp
 class FoodyApp : Application(), Configuration.Provider {
@@ -38,7 +40,13 @@ class FoodyApp : Application(), Configuration.Provider {
         ProcessLifecycleOwner.get().lifecycle.addObserver(
             object : DefaultLifecycleObserver {
                 override fun onStart(owner: LifecycleOwner) {
+                    AppOffen.setzen(true)
                     ausloeser.appImVordergrund()
+                }
+
+                override fun onStop(owner: LifecycleOwner) {
+                    AppOffen.setzen(false)
+                    ausloeser.appImHintergrund()
                 }
             },
         )

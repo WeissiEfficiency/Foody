@@ -129,13 +129,22 @@ class EinstellungenViewModelTest {
     fun tageszielEingabe() = runTest {
         val vm = u.vm()
         assertTrue(vm.tageszielEingabe("2.000"))
-        assertEquals(2000, u.ziel.tagesziel().first())
         assertTrue(vm.tageszielEingabe(" 2100 "))
-        assertEquals(2100, u.ziel.tagesziel().first())
         assertFalse(vm.tageszielEingabe("499"))
         assertFalse(vm.tageszielEingabe("abc"))
-        assertEquals(2100, u.ziel.tagesziel().first())
         assertTrue(vm.tageszielEingabe(""))
+        // Prüfen speichert nichts: Zwischenstände beim Tippen („500“ auf dem Weg zu „5000“) landen nicht im Ziel (E3)
+        assertNull(u.ziel.tagesziel().first())
+    }
+
+    @Test
+    fun tageszielSpeichern() = runTest {
+        val vm = u.vm()
+        assertTrue(vm.tageszielSpeichern("2.000"))
+        assertEquals(2000, u.ziel.tagesziel().first())
+        assertFalse(vm.tageszielSpeichern("499"))
+        assertEquals(2000, u.ziel.tagesziel().first())
+        assertTrue(vm.tageszielSpeichern(""))
         assertNull(u.ziel.tagesziel().first())
     }
 

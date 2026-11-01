@@ -58,6 +58,9 @@ data class SyncProblemEntity(
     val at: Long,
 )
 
+/** Ein Eintrag aus `sync_problem` mit dem Namen des lokalen Datensatzes ([SyncDao.problemeMitNamen]). */
+data class SyncProblemMitName(val typ: String, val id: String, val code: String, val seit: Long, val name: String?)
+
 /**
  * Hash-Zwischenspeicher je lokaler Fotodatei (`sync_photo_local`): [sha256] gilt, solange [size] und [modifiedAt]
  * (Änderungszeit in ms) zur Datei passen. Kein Sync-Datensatz, die Trigger ignorieren die Tabelle.

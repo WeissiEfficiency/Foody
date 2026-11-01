@@ -34,6 +34,7 @@ import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.token.Farbwelt
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 
@@ -41,7 +42,7 @@ import de.foody.core.designsystem.token.GlasStufe
 @Composable
 internal fun Abschnitt(titel: String, inhalt: @Composable ColumnScope.() -> Unit) {
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth(), form = FoodyFormen.gross) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth().padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
             Augenbraue(titel)
             inhalt()
         }
@@ -51,7 +52,10 @@ internal fun Abschnitt(titel: String, inhalt: @Composable ColumnScope.() -> Unit
 @Composable
 private fun Klein(text: String) = Text(text, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
 
-/** Konto: Status, Tipp öffnet „Server verbinden“. */
+/** Höchstens so viele nicht übertragene Einträge zeigt „Konto“ einzeln. */
+private const val MAX_PROBLEME = 5
+
+/** Konto: Status, Tipp öffnet „Server verbinden“; darunter, was nicht vollständig übertragen wurde. */
 @Composable
 internal fun KontoAbschnitt(konto: VerbindungsZustand?, jetzt: Long, onServer: () -> Unit) = Abschnitt("Konto") {
     val verbunden = konto?.takeIf { it.verbunden }
@@ -68,6 +72,12 @@ internal fun KontoAbschnitt(konto: VerbindungsZustand?, jetzt: Long, onServer: (
         }
         Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = FoodyTheme.farben.text)
     }
+    val probleme = verbunden?.nichtUebertragen.orEmpty()
+    if (probleme.isNotEmpty()) {
+        Text(nichtUebertragenTitel(probleme.size), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
+        probleme.take(MAX_PROBLEME).forEach { Klein(problemText(it.typ, it.name, it.code)) }
+        if (probleme.size > MAX_PROBLEME) Klein("… und ${probleme.size - MAX_PROBLEME} weitere")
+    }
 }
 
 @Composable
@@ -80,8 +90,8 @@ internal fun DarstellungAbschnitt(
     Text("Farbe", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text)
     FarbweltWahl(farbwelt, onFarbwelt)
     Klein("Gilt für Hauptfarbe, Verlauf und Glas.")
-    Text("Modus", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text, modifier = Modifier.padding(top = 4.dp))
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Text("Modus", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text, modifier = Modifier.padding(top = FoodyAbstaende.s1))
+    Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         listOf(Darstellung.SYSTEM to "System", Darstellung.HELL to "Hell", Darstellung.DUNKEL to "Dunkel").forEach { (d, text) ->
             FoodyChip(text, ausgewaehlt = d == gewaehlt, onKlick = { onWahl(d) })
         }
@@ -117,7 +127,7 @@ internal fun ZutatenAbschnitt(anzahl: Int?, onlineSuche: Boolean, onZutaten: () 
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(onlineSuche, role = Role.Switch, onValueChange = onOnlineSuche),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
     ) {
         Column(Modifier.weight(1f)) {
             Text("Online-Produktsuche", style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)

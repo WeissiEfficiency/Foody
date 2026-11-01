@@ -15,6 +15,8 @@ import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.testDatenbank
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.test.assertFails
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -52,8 +54,11 @@ class EditorViewModelTest {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         db = testDatenbank()
         val ablage = FotoAblage(RuntimeEnvironment.getApplication())
-        vm = halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+        vm = halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage, EmptyCoroutineContext) { 1_000L }, db, ablage)).sichtbar()
     }
+
+    /** Wie die Oberfläche zusehen, damit die `SolangeAppOffen`-Zustände rechnen. */
+    private fun EditorViewModel.sichtbar() = also { halter.zusehen(zustand, speichernMoeglich, geaendert) }
 
     @After
     fun tearDown() {
@@ -65,6 +70,22 @@ class EditorViewModelTest {
     private suspend fun neu(name: String = "Bowl", zutaten: String = "200 g Reis") {
         vm.laden(null)
         vm.aendern { it.copy(name = name, zutatenText = zutaten) }
+    }
+
+
+    /** Schreibzugriffe scheitern (wie bei einem Datenbankfehler), Lesen geht weiter. */
+    private fun nurLesen(an: Boolean) = db.openHelper.writableDatabase.query("PRAGMA query_only = ${if (an) 1 else 0}").close()
+
+    @Test
+    fun fehlerBeimSpeichernGibtSpeichernFrei() = runTest {
+        // Scheitert das Schreiben, bleibt „Speichern“ nicht gesperrt (N2)
+        db.bestand()
+        neu()
+        nurLesen(true)
+        assertFails { vm.speichern() }
+        nurLesen(false)
+        assertTrue(vm.speichernMoeglich.first())
+        assertIs<Gespeichert.Ok>(vm.speichern())
     }
 
     @Test
@@ -119,18 +140,18 @@ class EditorViewModelTest {
         db.bestand()
         val ablage = FotoAblage(RuntimeEnvironment.getApplication())
         val h = SavedStateHandle()
-        val vor = halter.behalten(EditorViewModel(h, RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+        val vor = halter.behalten(EditorViewModel(h, RezeptRepository(db, ablage, EmptyCoroutineContext) { 1_000L }, db, ablage)).sichtbar()
         vor.laden("r1")
         vor.aendern { it.copy(name = "Reistopf neu", zutatenText = "400 g Reis\n1 Prise Salz") }
 
-        val nach = halter.behalten(EditorViewModel(h.nachProzessende(), RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+        val nach = halter.behalten(EditorViewModel(h.nachProzessende(), RezeptRepository(db, ablage, EmptyCoroutineContext) { 1_000L }, db, ablage)).sichtbar()
         nach.laden("r1")
         assertEquals("Reistopf neu", nach.zustand.first().eingaben.name)
         assertEquals("400 g Reis\n1 Prise Salz", nach.zustand.first().eingaben.zutatenText)
         assertTrue(nach.geaendert.first())
         assertEquals("400 g Reis", nach.ursprung.value.zutatenText)
 
-        val neu = halter.behalten(EditorViewModel(h.nachProzessende(), RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+        val neu = halter.behalten(EditorViewModel(h.nachProzessende(), RezeptRepository(db, ablage, EmptyCoroutineContext) { 1_000L }, db, ablage)).sichtbar()
         neu.laden(null)
         assertEquals("", neu.zustand.first().eingaben.name)
     }
@@ -151,7 +172,7 @@ class EditorViewModelTest {
         }
         repeat(2) { runde ->
             val ablage = FotoAblage(RuntimeEnvironment.getApplication())
-            val editor = halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage) { 1_000L }, db, ablage))
+            val editor = halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage, EmptyCoroutineContext) { 1_000L }, db, ablage)).sichtbar()
             editor.laden("r2")
             editor.aendern { it.copy(schritteText = "Schritt $runde") }
             assertIs<Gespeichert.Ok>(editor.speichern())

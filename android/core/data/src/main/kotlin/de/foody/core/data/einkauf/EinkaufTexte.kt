@@ -2,13 +2,13 @@ package de.foody.core.data.einkauf
 
 import de.foody.core.data.db.EinkaufsartikelEntity
 import de.foody.core.data.db.EinkaufsartikelQuelleEntity
+import de.foody.core.data.wochentagKurz
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Quantity
 import de.foody.domain.QuantityFormatter
 import de.foody.domain.ShoppingCatalog
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.time.DayOfWeek
 import java.time.LocalDate
 
 /** „300 g“, „1,5 kg“; `null` ohne Menge oder Einheit. */
@@ -26,7 +26,7 @@ internal fun mengeText(q: Quantity): String {
 /** „200 g Curry (Mo) + 100 g Reispfanne (Mi)“ in der Reihenfolge der Daten; `null` ohne Herkunft. */
 internal fun herkunftText(quellen: List<EinkaufsartikelQuelleEntity>): String? =
     quellen.sortedWith(compareBy({ it.date }, { it.id })).takeIf { it.isNotEmpty() }?.joinToString(" + ") { q ->
-        "${mengeText(Quantity.of(q.contributedAmount, q.unit))} ${q.recipeName} (${tagKurz(q.date)})"
+        "${mengeText(Quantity.of(q.contributedAmount, q.unit))} ${q.recipeName} (${wochentagKurz(q.date)})"
     }
 
 /** Name einer Liste aus dem Plan: „26.10.–1.11.“. */
@@ -47,13 +47,3 @@ internal fun abteilungVon(category: String?, name: String): String =
 /** Emoji einer Abteilung; „🛒“ für „Eigene Artikel“. */
 internal fun abteilungsEmoji(abteilung: String): String =
     ShoppingCatalog.sections.firstOrNull { it.name == abteilung }?.emoji ?: "🛒"
-
-internal fun tagKurz(datum: LocalDate): String = when (datum.dayOfWeek!!) {
-    DayOfWeek.MONDAY -> "Mo"
-    DayOfWeek.TUESDAY -> "Di"
-    DayOfWeek.WEDNESDAY -> "Mi"
-    DayOfWeek.THURSDAY -> "Do"
-    DayOfWeek.FRIDAY -> "Fr"
-    DayOfWeek.SATURDAY -> "Sa"
-    DayOfWeek.SUNDAY -> "So"
-}

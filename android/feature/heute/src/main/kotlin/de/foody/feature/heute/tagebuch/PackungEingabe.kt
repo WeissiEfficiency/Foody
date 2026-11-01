@@ -10,18 +10,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import de.foody.core.data.zutaten.zahlAus
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
+import de.foody.core.designsystem.komponenten.FoodyTextfeld
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.scan.ScanTexte
 import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
@@ -34,7 +36,7 @@ internal fun haekchenText(vorhandeneZutat: String?): String =
 /** kcal für die eingegebene Menge, so wie gespeichert (kJ nach der Energie-Regel); `null` ohne Menge > 0 oder kcal. */
 internal fun vorschauKcal(e: Eingaben): Int? {
     val p = e.packung ?: return null
-    val menge = zahl(e.pMenge)?.takeIf { it.signum() > 0 } ?: return null
+    val menge = zahlAus(e.pMenge)?.takeIf { it.signum() > 0 } ?: return null
     val kj = p.kjFuer(e.pKcal) ?: return null
     return NutritionResult.kcal(kj.multiply(menge).movePointLeft(2))
 }
@@ -53,10 +55,10 @@ internal fun PackungEingabe(e: Eingaben, vorhandeneZutat: String?, vm: Eintragen
     val farben = FoodyTheme.farben
     val einheit = packungsEinheit(e.pBasis).symbol
     Text(ScanTexte.bittePruefen(p.quelle), style = MaterialTheme.typography.labelLarge, color = farben.primaer)
-    OutlinedTextField(e.pName, vm::pName, Modifier.fillMaxWidth(), label = { Text("Name") }, singleLine = true)
+    FoodyTextfeld("Name", e.pName, onWert = vm::pName)
     Zahlfeld("Menge", e.pMenge, einheit = einheit, onWert = vm::pMenge)
     if (p.basis == null) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
             listOf(NutrientBasis.PER_100_G, NutrientBasis.PER_100_ML).forEach { b ->
                 FoodyChip(packungsEinheit(b).symbol, b == e.pBasis, { vm.pBasis(b) })
             }
@@ -76,7 +78,7 @@ internal fun PackungEingabe(e: Eingaben, vorhandeneZutat: String?, vm: Eintragen
     ) {
         Checkbox(e.alsZutat, onCheckedChange = null)
         Text(
-            haekchenText(vorhandeneZutat), Modifier.weight(1f).padding(start = 8.dp),
+            haekchenText(vorhandeneZutat), Modifier.weight(1f).padding(start = FoodyAbstaende.s2),
             style = MaterialTheme.typography.bodyLarge, color = farben.text,
         )
     }

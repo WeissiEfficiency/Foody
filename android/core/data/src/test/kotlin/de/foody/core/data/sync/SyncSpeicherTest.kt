@@ -1,6 +1,7 @@
 package de.foody.core.data.sync
 
 import android.content.Context
+import android.database.sqlite.SQLiteFullException
 import android.net.Uri
 import androidx.room.Room
 import androidx.room.withTransaction
@@ -11,6 +12,7 @@ import de.foody.api.protocol.Protocol
 import de.foody.api.protocol.RecipePayload
 import de.foody.api.protocol.RecordType
 import de.foody.api.protocol.SyncRecord
+import de.foody.api.protocol.VerloreneRevisionen
 import de.foody.api.protocol.decode
 import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.db.EinkaufsartikelEntity
@@ -31,10 +33,12 @@ import de.foody.domain.TagebuchArt
 import java.io.File
 import java.math.BigDecimal
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import kotlinx.coroutines.test.runTest
@@ -83,6 +87,8 @@ class SyncSpeicherTest {
     }
 
     // --- Hilfen ---
+
+    private val STUNDE = 3_600_000L
 
     private fun zutat(id: String, name: String = "Zutat $id") = ZutatEntity(id = id, canonicalName = name, createdAt = 1, updatedAt = 1)
 
@@ -393,6 +399,59 @@ class SyncSpeicherTest {
     }
 
     @Test
+    fun vollerSpeicherBrichtAbStattAufzugeben() = runTest {
+        // Speicher voll: Der Lauf bricht ab, der Cursor bleibt stehen, nichts wird als Problem aufgegeben (W2).
+        aktiv()
+        speicher.anwenden(listOf(zutatRecord("z1", "Salz")), neuerCursor = 3)
+        val sql = db.openHelper.writableDatabase
+        val seiten = sql.query("PRAGMA page_count").use { it.moveToFirst(); it.getLong(0) }
+        sql.query("PRAGMA max_page_count = $seiten").use { it.moveToFirst() }
+
+        assertFailsWith<SpeicherVollFehler> {
+            speicher.anwenden((1..500).map { zutatRecord("n$it", "Zutat mit langem Namen Nummer $it") }, neuerCursor = 9)
+        }
+
+        sql.query("PRAGMA max_page_count = 1073741823").use { it.moveToFirst() }
+        assertEquals(3L, speicher.zustand().cursor)
+        assertTrue(dao.probleme().isEmpty())
+    }
+
+    @Test
+    fun gescheiterteAbholungWirdNachEinemTagWiederholt() = runTest {
+        var jetzt = 1_000L
+        speicher = SyncSpeicher(db, ablage, index) { jetzt }
+        aktiv()
+        speicher.anwenden(listOf(planRecord("m1", "r1")), neuerCursor = 5) // Rezept r1 fehlt
+        assertEquals("missing_reference", dao.problem("meal_slot", "m1")?.code)
+        assertFalse(speicher.erneutHolenFaellig())
+
+        jetzt += 25 * STUNDE
+        assertTrue(speicher.erneutHolenFaellig())
+        speicher.erneutAnwenden(listOf(planRecord("m2", "r2"))) // m1 kommt wieder nicht, r2 fehlt auch
+        assertFalse(speicher.erneutHolenFaellig()) // nächster Versuch erst wieder in einem Tag
+
+        jetzt += 25 * STUNDE
+        speicher.erneutAnwenden(listOf(rezeptRecord("r1", foto = null), planRecord("m1", "r1")))
+        assertNull(dao.problem("meal_slot", "m1"))
+        assertNotNull(dao.revision("meal_slot", "m1"))
+        assertEquals(5L, speicher.zustand().cursor) // der Cursor bleibt, wie er war
+    }
+
+    @Test
+    fun problemeMitNamenDesDatensatzes() = runTest {
+        db.zutatDao().upsert(zutat("z1", name = "Mehl"))
+        db.rezeptDao().upsert(rezept("r1"))
+        dao.upsertProblem(SyncProblemEntity("ingredient", "z1", "invalid_payload", 3))
+        dao.upsertProblem(SyncProblemEntity("recipe", "r1", "photo_unsyncable", 2))
+        dao.upsertProblem(SyncProblemEntity("meal_slot", "m9", "missing_reference", 1)) // lokal nicht vorhanden
+
+        val probleme = dao.problemeMitNamen().first()
+
+        assertEquals(listOf("Mehl", "Rezept r1", null), probleme.map { it.name })
+        assertEquals(listOf("ingredient", "recipe", "meal_slot"), probleme.map { it.typ })
+    }
+
+    @Test
     fun gleichnamigeZutatWirdZusammengefuehrt() = runTest {
         aktiv()
         db.zutatDao().upsert(zutat("lokal", name = "Mehl").copy(category = "Backen"))
@@ -571,6 +630,68 @@ class SyncSpeicherTest {
         assertTrue(dao.outbox().isEmpty())
     }
 
+    // --- Verwaiste Fotos (E3) ---
+
+    /** Entfernt der Sync ein eigenes Foto (Rezept gelöscht, Foto weg), verschwindet die Datei – solange kein Rezept sie nutzt. */
+    @Test
+    fun syncLoeschtVerwaisteFotodateien() = runTest {
+        aktiv()
+        val geteilt = eigeneDatei("geteilt.jpg", jpeg(10))
+        val allein = eigeneDatei("allein.jpg", jpeg(11))
+        val ohne = eigeneDatei("ohne.jpg", jpeg(12))
+        index.hash(allein)
+        db.rezeptDao().upsert(rezept("r1", bild = geteilt))
+        db.rezeptDao().upsert(rezept("r2", bild = geteilt))
+        db.rezeptDao().upsert(rezept("r3", bild = allein))
+        db.rezeptDao().upsert(rezept("r4", bild = ohne))
+        listOf("r1", "r2", "r3", "r4").forEach { dao.loeschenOutbox("recipe", it) }
+
+        speicher.anwenden(
+            listOf(
+                rezeptRecord("r1", foto = null, rev = 2),
+                rezeptRecord("r3", foto = null, rev = 3).copy(deleted = true, payload = null),
+                rezeptRecord("r4", foto = null, rev = 4),
+            ),
+            neuerCursor = 4,
+        )
+
+        assertTrue(ablage.datei(geteilt)!!.exists(), "r2 nutzt es noch")
+        assertFalse(ablage.datei(allein)!!.exists())
+        assertFalse(ablage.datei(ohne)!!.exists())
+        assertTrue(dao.fotosLokal().none { it.uri == allein })
+    }
+
+    @Test
+    fun geladenesFotoErsetztAltesUndLoeschtEs() = runTest {
+        aktiv()
+        val alt = eigeneDatei("alt.jpg", jpeg(13))
+        db.rezeptDao().upsert(rezept("r1", bild = alt))
+        dao.loeschenOutbox("recipe", "r1")
+        val bytes = jpeg(14)
+        val hash = PhotoHash.of(bytes)
+        speicher.anwenden(listOf(rezeptRecord("r1", foto = hash, rev = 2)), neuerCursor = 2)
+        assertTrue(ablage.datei(alt)!!.exists(), "bis das neue Foto da ist, bleibt das alte")
+
+        speicher.fotoErhalten("r1", hash, bytes)
+
+        assertFalse(ablage.datei(alt)!!.exists())
+        assertTrue(ablage.datei(db.rezeptDao().nachId("r1")!!.imageUri!!)!!.exists())
+    }
+
+    @Test
+    fun vollabgleichLoeschtFotoDesVeraltetenRezepts() = runTest {
+        aktiv()
+        val link = eigeneDatei("veraltet.jpg", jpeg(15))
+        db.rezeptDao().upsert(rezept("r1", bild = link))
+        dao.loeschenOutbox("recipe", "r1")
+        dao.upsertRevision(SyncRevisionEntity("recipe", "r1", 1))
+
+        speicher.vollabgleich(emptyList(), cursor = 20)
+
+        assertNull(db.rezeptDao().nachId("r1"))
+        assertFalse(ablage.datei(link)!!.exists())
+    }
+
     // --- Fotos beim Senden ---
 
     @Test
@@ -713,6 +834,79 @@ class SyncSpeicherTest {
         assertNull(db.zutatDao().nachId("z2"))
         assertTrue(dao.outbox().isEmpty())
         assertEquals(80L, speicher.zustand().cursor)
+    }
+
+    /**
+     * N8: Unveränderte Startzutaten nach „Zusammenführen“ und alle Zutaten nach „Ersetzen“ werden nie gesendet. Der
+     * Server hat sie nie gekannt, ein Voll-Abgleich nach `410` darf sie deshalb nicht als veraltet löschen.
+     */
+    @Test
+    fun vollabgleichBehaeltNieGesendetenDatensatz() = runTest {
+        aktiv()
+        db.zutatDao().upsert(zutat("z1"))
+        dao.loeschenOutbox("ingredient", "z1")
+
+        speicher.vollabgleich(emptyList(), cursor = 90)
+
+        assertNotNull(db.zutatDao().nachId("z1"))
+        // Auch nicht nachträglich senden: Startzutaten überschrieben sonst den Katalog auf dem Server (siehe aktivieren)
+        assertTrue(dao.outbox().isEmpty())
+        assertEquals(90L, speicher.zustand().cursor)
+    }
+
+    // --- Voll-Abgleich nach dem Einspielen einer Server-Sicherung (D4) ---
+
+    /** Der Server steht wieder auf Revision 5; was das Gerät von 6 bis vor dem Sprung kennt, fehlt ihm. */
+    private val verloren = VerloreneRevisionen(nach = 5, vor = 1_000_000_005)
+
+    @Test
+    fun vollabgleichNachWiederherstellungSendetNeuereStaendeErneut() = runTest {
+        aktiv()
+        speicher.anwenden(
+            listOf(
+                zutatRecord("z1", "Mehl", rev = 9), // nach der Sicherung geändert
+                zutatRecord("z2", "Zucker", rev = 7), // nach der Sicherung angelegt
+                zutatRecord("z3", "Salz", rev = 3), // unverändert in der Sicherung
+                zutatRecord("z4", "Hefe", rev = 2), // vor der Sicherung gelöscht (Löschmarkierung kompaktiert)
+                zutatRecord("z5", "Öl", rev = 8), // nach der Sicherung wiederbelebt
+            ),
+            9,
+        )
+
+        speicher.vollabgleich(
+            listOf(
+                zutatRecord("z1", "Mehl alt", rev = 3),
+                zutatRecord("z3", "Salz", rev = 3),
+                zutatRecord("z5", "Öl", rev = 4).copy(deleted = true, payload = null),
+            ),
+            cursor = 1_000_000_005,
+            verloren = verloren,
+        )
+
+        assertEquals("Mehl", db.zutatDao().nachId("z1")?.canonicalName)
+        assertNotNull(db.zutatDao().nachId("z2"))
+        assertNotNull(db.zutatDao().nachId("z3"))
+        assertNull(db.zutatDao().nachId("z4"))
+        assertNotNull(db.zutatDao().nachId("z5"))
+        assertEquals(setOf("z1", "z2", "z5"), dao.outbox().filter { !it.deleted }.map { it.recordId }.toSet())
+        assertEquals(1_000_000_005L, speicher.zustand().cursor)
+        // Gesendet wird auf dem eigenen Stand: Der Server nimmt ihn an, weil er neuer ist als seiner
+        assertEquals(mapOf("z1" to 9L, "z2" to 7L, "z5" to 8L), paket().associate { it.record.id to it.record.baseRev })
+    }
+
+    @Test
+    fun vollabgleichNachWiederherstellungSendetLoeschungErneut() = runTest {
+        aktiv()
+        speicher.anwenden(listOf(zutatRecord("z1", "Mehl", rev = 3)), 3)
+        speicher.anwenden(listOf(zutatRecord("z1", "Mehl", rev = 8).copy(deleted = true, payload = null)), 8)
+
+        speicher.vollabgleich(listOf(zutatRecord("z1", "Mehl", rev = 3)), cursor = 1_000_000_005, verloren = verloren)
+
+        assertNull(db.zutatDao().nachId("z1"))
+        assertEquals(listOf(Triple("ingredient", "z1", true)), dao.outbox().map { Triple(it.type, it.recordId, it.deleted) })
+        val gesendet = paket().single().record
+        assertTrue(gesendet.deleted)
+        assertEquals(8L, gesendet.baseRev)
     }
 
     // --- Trennen, Fehler ---

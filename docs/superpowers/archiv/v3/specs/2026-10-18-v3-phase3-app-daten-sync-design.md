@@ -1,6 +1,6 @@
 # V3 Phase 3: App-Daten und Sync-Client
 
-Stand: 2026-10-18 · Grundlage: [ADR 0011](../../adr/0011-v3-umfang-ein-nutzer.md), [`ToDoS/v3-plan.md`](../../../ToDoS/v3-plan.md)
+Stand: 2026-10-18 · Grundlage: [ADR 0011](../../../../adr/0011-v3-umfang-ein-nutzer.md), [`ToDoS/v3-plan.md`](../../../../../ToDoS/archiv/v3-plan.md)
 (Phase 3), [Spec Phase 2](2026-10-17-v3-phase2-server-schlank-design.md) · im Chat abschnittsweise abgestimmt.
 
 ## Ziel

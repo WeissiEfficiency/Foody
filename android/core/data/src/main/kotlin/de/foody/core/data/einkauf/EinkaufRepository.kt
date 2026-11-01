@@ -7,6 +7,7 @@ import de.foody.core.data.db.EinkaufslisteEntity
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.alsIngredient
 import de.foody.core.data.alsRecipe
+import de.foody.core.data.neueId
 import de.foody.domain.EinkaufEingabe
 import de.foody.domain.IngredientCatalog
 import de.foody.domain.MeasureUnit
@@ -14,7 +15,6 @@ import de.foody.domain.Quantity
 import de.foody.domain.RezeptAufListe
 import de.foody.domain.ShoppingCatalog
 import java.math.BigDecimal
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -27,7 +27,6 @@ import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.UUID
 import kotlin.coroutines.CoroutineContext
 
 /** Höchstens so viele Kacheln unter „Zuletzt verwendet“. */
@@ -39,8 +38,6 @@ private const val NAME_MAX = 60
 /** Name einer Liste ohne Zeitraum. */
 internal const val LEERE_LISTE = "Einkauf"
 
-private fun neueId() = UUID.randomUUID().toString()
-
 /**
  * Einkaufslisten der V3: lesen als Flows, schreiben in Transaktionen (die Trigger tragen alles in die Outbox).
  * Aktuell ist die zuletzt angelegte Liste. Regeln aus `:domain`: `EinkaufsBedarf`, `ShoppingDiff`, `EinkaufsAbgleich`,
@@ -50,8 +47,8 @@ class EinkaufRepository(
     private val db: FoodyDatenbank,
     private val uhr: () -> Long,
     private val ignoriert: IgnorierteSchluessel,
-    /** Wo [zuletzt] und [abgleich] rechnen; Tests geben `EmptyCoroutineContext`, damit nichts auf einem fremden Thread nachläuft. */
-    private val rechnen: CoroutineContext = Dispatchers.Default,
+    /** Wo [zuletzt] und [abgleich] rechnen ([de.foody.core.data.Rechnen]). */
+    private val rechnen: CoroutineContext,
 ) {
     fun aktuelleListeId(): Flow<String?> = db.einkaufslisteDao().alleFlow().map { it.firstOrNull()?.id }.distinctUntilChanged()
 

@@ -154,6 +154,16 @@ class LeereTageFuellenTest {
         assertEquals(mapOf(montag to "porridge"), plan)
     }
 
+    @Test fun leerGrundNenntDieUrsache() {
+        val grund = { rezepte: List<Rezept> -> LeereTageFuellen.leerGrund(rezepte.map { it.einordnung }, Mahlzeit.ABENDESSEN) }
+        assertEquals(LeereTageFuellen.LeerGrund.KEINE_REZEPTE, grund(emptyList()))
+        val fruehstueck = rezept("porridge", einordnung = einordnung(setOf(Mahlzeit.FRUEHSTUECK), emptySet()))
+        val dip = rezept("dip", einordnung = einordnung(abend, setOf(Gang.BROTZEIT)))
+        assertEquals(LeereTageFuellen.LeerGrund.KEINE_PASSENDEN, grund(listOf(fruehstueck, dip)))
+        // Passende gibt es, sie sind nur kürzlich geplant
+        assertEquals(LeereTageFuellen.LeerGrund.KUERZLICH_GEPLANT, grund(listOf(fruehstueck, rezept("curry"))))
+    }
+
     @Test fun keineTageOderRezepteKeinVorschlag() {
         assertTrue(vorschlag(hauptgerichte(5), tage = emptyList()).isEmpty())
         assertTrue(vorschlag(emptyList()).isEmpty())

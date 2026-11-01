@@ -14,8 +14,6 @@ fun zaehlzeile(treffer: List<ZutatKurz>): String {
     return anzahl(treffer.size, "Zutat", "Zutaten") + if (ohne > 0) " · $ohne ohne Nährwerte" else ""
 }
 
-fun kcalText(kcal: Int?): String = "${kcal ?: "–"} kcal"
-
 /** Vorschau von „Namen vereinheitlichen“: Umbenennen und Zusammenführen, höchstens [max] Zeilen, dann „und n weitere“. */
 fun vorschauZeilen(a: List<Angleichung>, max: Int = 8): List<String> {
     val zeilen = a.mapNotNull {

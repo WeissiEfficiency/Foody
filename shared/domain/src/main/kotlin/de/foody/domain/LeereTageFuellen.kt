@@ -80,6 +80,19 @@ object LeereTageFuellen {
         return ergebnis
     }
 
+    /** Warum ein Vorschlag leer blieb – damit der Hinweis die richtige Ursache nennt. */
+    enum class LeerGrund { KEINE_REZEPTE, KEINE_PASSENDEN, KUERZLICH_GEPLANT }
+
+    /**
+     * Ursache für einen leeren Vorschlag bei vorhandenen leeren Tagen; [einordnungen] der nicht archivierten Rezepte.
+     * Passt mindestens eins zur [mahlzeit], war alles Passende kürzlich geplant (Regel 4).
+     */
+    fun leerGrund(einordnungen: List<Einordnung>, mahlzeit: Mahlzeit): LeerGrund = when {
+        einordnungen.isEmpty() -> LeerGrund.KEINE_REZEPTE
+        einordnungen.none { stufe(it, mahlzeit) != null } -> LeerGrund.KEINE_PASSENDEN
+        else -> LeerGrund.KUERZLICH_GEPLANT
+    }
+
     /** 1 = passt sicher, 2 = Gang unbekannt, 3 = nicht eingeordnet, null = passt nicht. */
     private fun stufe(e: Einordnung, mahlzeit: Mahlzeit): Int? {
         val hauptmahlzeit = mahlzeit in hauptmahlzeiten

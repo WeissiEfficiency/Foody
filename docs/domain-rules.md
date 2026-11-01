@@ -7,6 +7,8 @@
 5. Eine fehlende Nährwertangabe ist unbekannt, nicht null. Die UI zeigt Vollständigkeit und markiert Untergrenzen.
 6. Energie wird in kJ gespeichert; kcal ist eine abgeleitete Anzeige (÷ 4,184).
 7. Zusammengeführt wird nur bei gleicher kanonischer Zutat und kompatibler Dimension – nie über Freitextähnlichkeit.
+   Die Einheit, in der eine Zutat eingekauft wird, hängt nur von den vorkommenden Dimensionen ab, nicht von der
+   Reihenfolge im Plan: zuerst Stück, dann Packung, Dose, Gewicht, Volumen – jeweils, wenn sicher umrechenbar.
 8. *(entfallen)* Einen Vorrat gibt es seit der V3 nicht mehr (ADR 0011); die Einkaufsliste enthält den ganzen
    Bedarf. Die Nummern der übrigen Regeln bleiben.
 9. Optionale Zutaten werden standardmäßig nicht eingekauft.
@@ -74,7 +76,7 @@ Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/te
 | 4 | Typ-Regel (alle Mengen sind `BigDecimal`); `DomainTest.keepsFractionalContributions` |
 | 5 | `DomainTest.missingNutrientsAreIncompleteNotZero`, `DayNutritionTest.missingValuesMakeItALowerBound` |
 | 6 | `DayNutritionTest.kcalWirdEinmalGerundet`, `TagebuchTest.summeAusGerundetenZeilen`, `NaehrwertScanTest.nurKcalWirdUmgerechnet` |
-| 7 | `DomainTest.milkAndFlourNeverMerged`, `DomainTest.aggregatesSameIngredientAcrossRecipesWithSources` |
+| 7 | `DomainTest.milkAndFlourNeverMerged`, `DomainTest.aggregatesSameIngredientAcrossRecipesWithSources`, `DomainTest.unitDoesNotDependOnPlanOrder`, `EinkaufPlanTest.zweiDimensionenZweiArtikel` |
 | 8 | entfallen (kein Vorrat) |
 | 9 | `DomainTest.optionalIngredientsExcludedByDefault`, `RezeptAufListeRepoTest.alle` |
 | 10 | `DomainTest.diffDetectsAddedChangedRemoved`, `EinkaufAbgleichTest.gekauftWenigerKeineZeile`, `EinkaufAbgleichTest.gekauftMehrWiederOffen`, `EinkaufAbgleichTest.entfaelltGekauftKeineZeile` |

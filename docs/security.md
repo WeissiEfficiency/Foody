@@ -50,11 +50,14 @@ Server und Protokoll (`:server`, `:api-protocol`); Fremdeingaben sind hier alle 
 - **Authentifizierung:** Jede Sync- und Foto-Route verlangt `Authorization: Bearer <Gerätetoken>` (32 Zufallsbytes,
   serverseitig nur als SHA-256 gespeichert); widerrufene Geräte werden abgewiesen. Passwörter: Argon2id, Mindestlänge
   10 Zeichen; „unbekannter Benutzer“ und „falsches Passwort“ sehen gleich aus. Keine Registrierung über die API;
-  Konten legt nur `foody-admin konto-anlegen` an.
+  Konten legt nur `foody-admin konto-anlegen` an. Tokens laufen nicht von selbst ab: `foody-admin geraete` zeigt die
+  letzte Anfrage je Gerät, `abmelden-ungenutzt <tage>` widerruft lange ungenutzte.
 - **Konto-Trennung:** Die Konto-ID kommt immer aus dem Gerät, nie aus der Anfrage; Datensätze und Fotos
   (`photos/<Konto>/<sha256>.jpg`) sind nur im eigenen Konto les- und schreibbar, auch nicht per geratener ID.
 - **Drosselung:** 5 Fehlversuche je IP und Benutzername sperren den Login 15 Minuten (`429 throttled`, Zustand
-  nur im Speicher). Die IP stammt aus `X-Forwarded-For` des Reverse-Proxys (siehe `server/README.md`).
+  nur im Speicher), ebenso 20 Fehlversuche einer IP über alle Namen. Fehlversuche und neue Sperren stehen im Log
+  (Benutzername und IP, nie das Passwort). Die IP stammt aus `X-Forwarded-For` des Reverse-Proxys (siehe
+  `server/README.md`). Argon2 rechnet außerhalb des Request-Threads.
 - **Eingabeprüfung:** Request-Bodies werden gezählt gelesen und begrenzt (`413`), Payloads wie bei der Sicherung
   validiert (Zahlenformat, Textlängen, Enums, UUIDs); Fotos wie oben.
 - **Löschmarkierungen:** Gelöschte Datensätze bleiben als Löschmarkierung erhalten und werden nach 90 Tagen kompaktiert (Geräte mit älterem Cursor machen dann einen Voll-Abgleich).
@@ -72,7 +75,12 @@ Server und Protokoll (`:server`, `:api-protocol`); Fremdeingaben sind hier alle 
 
 - **Produktnummer an Open Food Facts:** Verrät, welches Produkt gescannt wurde (und die IP-Adresse). Abschaltbar;
   dann wird nur im eigenen Katalog gesucht und sonst die Nährwerttabelle fotografiert.
-- **Datenbank unverschlüsselt:** liegt in der App-Sandbox, enthält keine sensiblen Daten (Rezepte, Plan, Tagebuch).
-- **Sicherungsdatei unverschlüsselt:** Die ZIP-Datei liegt dort, wo der Nutzer sie speichert (z. B. Cloud-Ordner).
+- **Datenbank unverschlüsselt:** liegt in der App-Sandbox. Sie enthält neben Rezepten und Plan das
+  Ernährungstagebuch – das sind **Gesundheitsdaten**. Die Sandbox schützt sie vor anderen Apps; wer das entsperrte
+  Gerät hat, sieht sie ohnehin in der App.
+- **Sicherungsdatei unverschlüsselt:** Die ZIP-Datei enthält dieselben Daten samt Tagebuch und liegt dort, wo der
+  Nutzer sie speichert (z. B. Cloud-Ordner). Schutz ist hier der Zugang zu diesem Ordner; ein Passwort für die
+  Sicherung ist bewusst nicht eingebaut (ein vergessenes Passwort wäre Datenverlust). Ebenso liegen die Daten auf dem
+  Server unverschlüsselt im Volume (siehe „Sync“).
 - **Gradle-Abhängigkeiten ohne Prüfsummen-Verifikation** (`verification-metadata.xml`): Aufwand bei jedem Update
   hoch; Dependabot-Sicherheitswarnungen in den Repository-Einstellungen aktivieren.

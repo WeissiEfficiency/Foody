@@ -41,7 +41,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,14 +48,11 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
+import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.StepTimer
 import de.foody.feature.kochen.timer.KochTimerDienst
 import kotlinx.coroutines.launch
-
-private val INHALT_MAX = 720.dp
-
-/** Ab dieser Breite steht links die Liste aller Seiten. */
-private val ZWEISPALTIG_AB = 840.dp
 
 /** Was die Seiten auslösen können. */
 internal class KochAktionen(
@@ -81,7 +77,8 @@ fun KochenRoute(
     LaunchedEffect(rezeptId, portionen) { vm.starten(rezeptId, portionen) }
     val zustand by vm.zustand.collectAsStateWithLifecycle()
     val timer by vm.timer.collectAsStateWithLifecycle()
-    val jetzt by vm.jetzt.collectAsStateWithLifecycle()
+    // Die Uhr tickt sekündlich: nur Timerleiste und Ablaufmeldung lesen sie, nicht der ganze Bildschirm
+    val jetzt = vm.jetzt.collectAsStateWithLifecycle()
     val fertigOffen by vm.fertigOffen.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val view = LocalView.current
@@ -109,14 +106,14 @@ fun KochenRoute(
             }
         },
     )
-    AblaufMelden(timer, jetzt)
+    AblaufMelden(timer) { jetzt.value }
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
-        val breit = maxWidth >= ZWEISPALTIG_AB
+        val breit = maxWidth >= FoodyBreiten.zweispaltig
         Row(Modifier.fillMaxSize()) {
             val z = zustand
             if (breit && z is KochZustand.Da) SeitenListe(z, z.seite, vm::seiteWaehlen)
             Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
-                Column(Modifier.widthIn(max = INHALT_MAX).fillMaxSize()) {
+                Column(Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxSize()) {
                     when (z) {
                         KochZustand.Laden -> Unit
                         KochZustand.NichtGefunden -> Column(Modifier.weight(1f)) {
@@ -128,10 +125,10 @@ fun KochenRoute(
                         is KochZustand.Da -> KochInhalt(
                             z, aktionen, onSeite = vm::seiteWaehlen, onFertig = { bereich.launch { vm.fertig() } },
                             onSchliessen = onSchliessen, Modifier.weight(1f),
-                            timerLeiste = { TimerLeiste(timer, rezeptId, jetzt, vm::timerEntfernen) },
+                            timerLeiste = { TimerLeiste(timer, rezeptId, { jetzt.value }, vm::timerEntfernen) },
                         )
                     }
-                    if (z !is KochZustand.Da) TimerLeiste(timer, rezeptId, jetzt, vm::timerEntfernen)
+                    if (z !is KochZustand.Da) TimerLeiste(timer, rezeptId, { jetzt.value }, vm::timerEntfernen)
                 }
             }
         }
@@ -164,7 +161,10 @@ private fun KochInhalt(
     Column(modifier) {
         Kopf(z, pager.currentPage, onSchliessen)
         HorizontalPager(pager, Modifier.weight(1f)) { seite ->
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp)) {
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    .padding(horizontal = FoodyAbstaende.s6, vertical = FoodyAbstaende.s4),
+            ) {
                 val schritt = z.schritt(seite)
                 if (schritt == null) BereitlegenSeite(z, a) else SchrittSeite(schritt, z.abgehakt, a)
             }
@@ -177,13 +177,13 @@ private fun KochInhalt(
 
 @Composable
 private fun Kopf(z: KochZustand.Da, seite: Int, onSchliessen: () -> Unit) {
-    Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.padding(horizontal = FoodyAbstaende.s2, vertical = FoodyAbstaende.s1), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onSchliessen) { Icon(Icons.Outlined.Close, contentDescription = "Kochen beenden", tint = FoodyTheme.farben.text) }
         Text(z.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = FoodyTheme.farben.text)
     }
     LinearProgressIndicator(
         progress = { (seite + 1f) / z.seitenzahl.coerceAtLeast(1) },
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = FoodyAbstaende.s6),
         color = FoodyTheme.farben.primaer,
         trackColor = FoodyTheme.farben.balkenSpur,
         drawStopIndicator = {},
@@ -191,7 +191,7 @@ private fun Kopf(z: KochZustand.Da, seite: Int, onSchliessen: () -> Unit) {
     val nummer = seite - if (z.hatBereitlegen) 1 else 0
     Text(
         if (z.schritt(seite) == null) "Bereitlegen" else "Schritt ${nummer + 1} von ${z.schritte.size}",
-        Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+        Modifier.padding(horizontal = FoodyAbstaende.s6, vertical = FoodyAbstaende.s2),
         style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.primaer,
     )
 }
@@ -200,7 +200,7 @@ private fun Kopf(z: KochZustand.Da, seite: Int, onSchliessen: () -> Unit) {
 private fun Knoepfe(z: KochZustand.Da, pager: PagerState, onSeite: (Int) -> Unit, onFertig: () -> Unit) {
     val seite = pager.currentPage
     val letzte = seite >= z.seitenzahl - 1
-    Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Row(Modifier.fillMaxWidth().padding(FoodyAbstaende.s4), horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
         FoodyKnopf("Zurück", { onSeite(seite - 1) }, Modifier.weight(1f), art = KnopfArt.UMRISS, aktiv = seite > 0)
         FoodyKnopf(if (letzte) "Fertig" else "Weiter", { if (letzte) onFertig() else onSeite(seite + 1) }, Modifier.weight(2f))
     }

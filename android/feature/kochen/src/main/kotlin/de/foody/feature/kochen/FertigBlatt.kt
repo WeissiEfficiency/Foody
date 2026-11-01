@@ -19,11 +19,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import de.foody.core.data.fotos.KameraDatei
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.ueberschrift
+import de.foody.core.designsystem.token.FoodyAbstaende
 import java.io.File
 
 
@@ -43,10 +44,10 @@ internal fun FertigBlatt(ohneFoto: Boolean, onFoto: (Uri, File) -> Unit, onAnpas
     }
     ModalBottomSheet(onDismissRequest = onSchliessen, containerColor = FoodyTheme.farben.grund) {
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 24.dp).navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            Modifier.fillMaxWidth().padding(horizontal = FoodyAbstaende.s6).padding(bottom = FoodyAbstaende.s6).navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
-            Text("Guten Appetit!", style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+            Text("Guten Appetit!", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
             if (ohneFoto) {
                 FoodyKnopf("Foto aufnehmen", {
                     val datei = KameraDatei.neu(kontext, KameraDatei.REZEPTFOTOS)

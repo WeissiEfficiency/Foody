@@ -10,6 +10,7 @@ import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.heute.OffenerEinkauf
 import de.foody.core.data.heute.RezeptKurz
 import de.foody.core.data.tagebuch.TagebuchRepository
+import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.core.designsystem.komponenten.SyncAnzeige
 import de.foody.core.sync.SyncLage
 import de.foody.core.sync.SyncLageQuelle
@@ -22,7 +23,6 @@ import de.foody.feature.heute.tagebuch.MAHLZEITEN
 import de.foody.feature.heute.tagebuch.eintragMahlzeit
 import de.foody.feature.heute.tagebuch.werte
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -61,27 +61,26 @@ class HeuteViewModel @Inject constructor(
     ziel: TageszielSpeicher,
     zeit: Zeitgeber,
 ) : ViewModel() {
-    private val jetzt = zeit.jetzt().shareIn(viewModelScope, SharingStarted.WhileSubscribed(STOPP_MS), replay = 1)
+    private val jetzt = zeit.jetzt().shareIn(viewModelScope, SolangeAppOffen, replay = 1)
+
+    /** Einmal gerechnet für Plan und Vorschläge. */
+    private val rezepte = heute.rezepteKurz().shareIn(viewModelScope, SolangeAppOffen, replay = 1)
 
     /** Plan und Tagebuch des Tages; wechselt um Mitternacht auf den neuen Tag. */
     private val tag = jetzt.map { it.toLocalDate() }.distinctUntilChanged().flatMapLatest { datum ->
-        combine(heute.planHeuteUndMorgen(datum), tagebuch.amTag(datum)) { plan, eintraege -> Tag(datum, plan, eintraege) }
+        combine(heute.planHeuteUndMorgen(datum, rezepte), tagebuch.amTag(datum)) { plan, eintraege -> Tag(datum, plan, eintraege) }
     }
 
     private val umfeld = combine(sync.lage(), ziel.tagesziel(), ::Pair)
 
     val zustand: StateFlow<HeuteZustand?> =
-        combine(jetzt, tag, heute.rezeptVorschlaege(), heute.offenerEinkauf(), umfeld) { j, t, rezepte, einkauf, (lage, kcalZiel) ->
+        combine(jetzt, tag, heute.rezeptVorschlaege(rezepte), heute.offenerEinkauf(), umfeld) { j, t, rezepte, einkauf, (lage, kcalZiel) ->
             heuteZustand(j, t, rezepte, einkauf, lage, kcalZiel)
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOPP_MS), null)
+        }.stateIn(viewModelScope, SolangeAppOffen, null)
 
     /** „Gegessen?“: trägt den Plan-Eintrag mit einer Portion ein (höchstens einmal). */
     fun gegessen(planEintragId: String) {
         viewModelScope.launch { tagebuch.ausPlan(planEintragId) }
-    }
-
-    private companion object {
-        const val STOPP_MS = 5_000L
     }
 }
 

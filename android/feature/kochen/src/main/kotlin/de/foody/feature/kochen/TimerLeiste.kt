@@ -24,22 +24,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
 import androidx.core.content.ContextCompat
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.feature.kochen.timer.LaufenderTimer
 
 /** Laufende und abgelaufene Timer; Timer anderer Rezepte mit Rezeptnamen. Das Kreuz bricht ab bzw. tippt weg. */
 @Composable
-internal fun TimerLeiste(timer: List<LaufenderTimer>, rezeptId: String?, jetzt: Long, onEntfernen: (String) -> Unit) {
+internal fun TimerLeiste(timer: List<LaufenderTimer>, rezeptId: String?, uhr: () -> Long, onEntfernen: (String) -> Unit) {
     if (timer.isEmpty()) return
-    GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+    val jetzt = uhr()
+    GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth().padding(horizontal = FoodyAbstaende.s4)) {
+        Column(Modifier.padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s1)) {
             timer.sortedBy { it.endeUm }.forEach { t ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
+                    // Name und Restzeit liest TalkBack zusammen, nicht als zwei lose Texte
+                    Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
                         val titel = if (t.rezeptId == rezeptId) t.label else "${t.rezeptName}: ${t.label}"
                         Text(titel, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
                         Text(
@@ -69,7 +72,8 @@ internal fun restzeit(ms: Long): String {
  * Freigabe meldet sich der Dienst selbst).
  */
 @Composable
-internal fun AblaufMelden(timer: List<LaufenderTimer>, jetzt: Long) {
+internal fun AblaufMelden(timer: List<LaufenderTimer>, uhr: () -> Long) {
+    val jetzt = uhr()
     val context = LocalContext.current
     val gemeldet = remember { mutableStateOf(timer.filter { it.abgelaufen(jetzt) }.map { it.id }.toSet()) }
     val abgelaufen = timer.filter { it.abgelaufen(jetzt) }.map { it.id }.toSet()

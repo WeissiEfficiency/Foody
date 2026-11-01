@@ -1,6 +1,7 @@
 package de.foody.core.data.sync
 
 import android.database.SQLException
+import android.database.sqlite.SQLiteFullException
 import androidx.room.withTransaction
 import de.foody.api.protocol.IngredientPayload
 import de.foody.api.protocol.PayloadValidator
@@ -9,6 +10,7 @@ import de.foody.api.protocol.Protocol
 import de.foody.api.protocol.RecipePayload
 import de.foody.api.protocol.RecordType
 import de.foody.api.protocol.SyncRecord
+import de.foody.api.protocol.VerloreneRevisionen
 import de.foody.api.protocol.decode
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.SyncFotoGewuenschtEntity
@@ -65,6 +67,12 @@ class SyncSpeicher(
      * Revisionen, Probleme oder Fotowünsche zurückschreibt.
      */
     val laufSperre = Mutex()
+
+    /**
+     * Eigene Fotos, die ein Rezept beim Anwenden verloren hat (Rezept gelöscht, anderes oder kein Foto). Nach dem Commit
+     * prüft [verwaisteFotosEntfernen], ob noch ein Rezept sie nutzt. Nur unter der [laufSperre] (bzw. einzeln im Test).
+     */
+    private val abgeloesteFotos = mutableSetOf<String>()
 
     suspend fun zustand(): SyncZustand {
         val z = dao.zustand() ?: SyncZustandEntity()
@@ -355,6 +363,23 @@ class SyncSpeicher(
             val z = (dao.zustand() ?: SyncZustandEntity()).copy(applyingRemote = false)
             dao.upsertZustand(if (neuerCursor != null) z.copy(cursor = neuerCursor, lastSyncAt = jetzt) else z)
         }
+        verwaisteFotosEntfernen()
+    }
+
+    /**
+     * Beim Anwenden gescheiterte Datensätze (Probleme aus [ABHOL_PROBLEME]) holt der nächste Lauf nach einem Tag erneut:
+     * Der Cursor ist an ihnen schon vorbei, und der Server schickt sie sonst erst nach ihrer nächsten Änderung wieder.
+     * Probleme vom Push mit demselben Code zählen mit; sie lösen höchstens einen Versuch am Tag aus.
+     */
+    suspend fun erneutHolenFaellig(): Boolean = dao.problemeAelterAls(ABHOL_PROBLEME, uhr() - ERNEUT_HOLEN_NACH_MS) > 0
+
+    /**
+     * Wendet den vollständigen Server-Stand [records] (alles ab 0) noch einmal an, ohne den Cursor zu bewegen und ohne
+     * etwas zu löschen; bekannte Revisionen werden übersprungen. Was weiter scheitert, wartet wieder einen Tag.
+     */
+    suspend fun erneutAnwenden(records: List<SyncRecord>) {
+        anwendenIntern(records, neuerCursor = null, bekannteUeberspringen = true)
+        dao.problemeVersucht(ABHOL_PROBLEME, uhr())
     }
 
     private suspend fun einzeln(
@@ -365,19 +390,29 @@ class SyncSpeicher(
         block: suspend () -> Unit,
     ) {
         val vorher = HashMap(selbstVorgemerkt)
+        // Bei vollem Speicher rollt SQLite die Transaktion selbst zurück; Rooms eigenes Zurückrollen scheitert dann und
+        // verdeckt die SQLiteFullException. Deshalb wird sie schon in der Transaktion bemerkt.
+        var voll = false
         val code = try {
             db.withTransaction {
-                if (offeneLokaleAenderung(r, selbstVorgemerkt)) return@withTransaction
-                if (bekannteUeberspringen && !r.deleted && bekannteRevision(r)) return@withTransaction
-                dao.upsertZustand((dao.zustand() ?: SyncZustandEntity()).copy(applyingRemote = true))
                 try {
-                    block()
-                } finally {
-                    dao.applyingRemoteSetzen(false)
+                    if (offeneLokaleAenderung(r, selbstVorgemerkt)) return@withTransaction
+                    if (bekannteUeberspringen && !r.deleted && bekannteRevision(r)) return@withTransaction
+                    dao.upsertZustand((dao.zustand() ?: SyncZustandEntity()).copy(applyingRemote = true))
+                    try {
+                        block()
+                    } finally {
+                        dao.applyingRemoteSetzen(false)
+                    }
+                } catch (e: SQLiteFullException) {
+                    voll = true
+                    throw e
                 }
             }
             null
-        } catch (_: SQLException) {
+        } catch (e: SQLException) {
+            // Nicht aufgeben: Der Lauf bricht ab, der Cursor bleibt, derselbe Datensatz kommt beim nächsten Lauf wieder.
+            if (voll) throw SpeicherVollFehler(e)
             ANWENDEN_FEHLGESCHLAGEN
         } catch (_: IllegalArgumentException) {
             UNGUELTIGER_PAYLOAD // auch SerializationException, NumberFormatException
@@ -448,7 +483,10 @@ class SyncSpeicher(
             else -> vorher?.imageUri
         }
         Abbildung.anwenden(db, r) // übernimmt imageUri der vorhandenen Zeile
-        if (bild != vorher?.imageUri) dao.rezeptFotoSetzen(r.id, bild)
+        if (bild != vorher?.imageUri) {
+            dao.rezeptFotoSetzen(r.id, bild)
+            vorher?.imageUri?.let(abgeloesteFotos::add)
+        }
         val gewuenscht = p.photo?.takeIf { bekannt == null }
         if (gewuenscht != null) dao.upsertFotoGewuenscht(SyncFotoGewuenschtEntity(r.id, gewuenscht)) else dao.loeschenFotoGewuenscht(r.id)
         return p.photo == null && bild != null && nichtUebertragbar
@@ -534,6 +572,7 @@ class SyncSpeicher(
                 db.zutatDao().loeschen(id)
             }
             RecordType.RECIPE -> {
+                db.rezeptDao().nachId(id)?.imageUri?.let(abgeloesteFotos::add)
                 db.rezeptDao().loeschen(id)
                 dao.loeschenFotoGewuenscht(id)
             }
@@ -560,14 +599,21 @@ class SyncSpeicher(
      * Wurzeldatensätze löschen, die der Server nicht (mehr) kennt – ohne zu verlieren, was lokal noch nicht gesendet oder
      * abgelehnt ist. Es bleiben:
      * - Datensätze mit offener lokaler Änderung (Outbox) und vom Server abgelehnte (Problem vermerkt, die einzige Kopie);
+     * - nie vom Server bestätigte (keine Revision: unveränderte Startzutaten nach „Zusammenführen“, Zutaten nach
+     *   „Ersetzen“) – der Server hat sie nicht gelöscht, er kannte sie nie; sie bleiben ungesendet;
      * - Ziele von Verweisen der Server-Datensätze (z. B. ein Rezept, auf das ein Plan-Eintrag zeigt) und noch gebrauchte
      *   (benutzte Zutaten, Listen mit wartenden Einträgen) – diese werden zum Senden vorgemerkt, damit beide Seiten
      *   wieder übereinstimmen.
      * Gelöscht wird mit `applyingRemote = 1`, Kinder vor Eltern. Der Cursor wird erst danach auf [cursor] gesetzt; bricht
      * es vorher ab, wird der Voll-Abgleich wiederholt.
+     *
+     * Nach dem Einspielen einer Server-Sicherung nennt der Server die Revisionen, die ihm fehlen ([verloren]). Kennt das
+     * Gerät einen Datensatz mit einer solchen Revision, ist sein Stand neuer als der des Servers: Er wird erneut gesendet
+     * (auch eine Löschung), statt ihn mit dem älteren Server-Stand zu überschreiben oder zu löschen.
      */
-    suspend fun vollabgleich(serverDatensaetze: List<SyncRecord>, cursor: Long) {
-        anwendenIntern(serverDatensaetze, neuerCursor = null, bekannteUeberspringen = true)
+    suspend fun vollabgleich(serverDatensaetze: List<SyncRecord>, cursor: Long, verloren: VerloreneRevisionen? = null) {
+        val neuerAufGeraet = serverDatensaetze.filter { verloren != null && erneutSenden(it, verloren) }
+        anwendenIntern(serverDatensaetze - neuerAufGeraet.toSet(), neuerCursor = null, bekannteUeberspringen = true)
         val lebend = serverDatensaetze.filter { !it.deleted }
         val beimServer = lebend.mapTo(HashSet()) { it.type to it.id }
         // Unlesbare Datensätze hat das Anwenden schon als Problem vermerkt; hier überspringen.
@@ -580,12 +626,26 @@ class SyncSpeicher(
         }
         for (typ in LOESCH_REIHENFOLGE) {
             for (id in ids(typ)) {
-                if ((typ to id) !in beimServer) veraltetEntfernen(typ, id, verwiesen)
+                if ((typ to id) !in beimServer) veraltetEntfernen(typ, id, verwiesen, verloren)
             }
         }
         db.withTransaction {
             dao.upsertZustand((dao.zustand() ?: SyncZustandEntity()).copy(applyingRemote = false, cursor = cursor, lastSyncAt = uhr()))
         }
+        verwaisteFotosEntfernen()
+    }
+
+    /**
+     * Kennt das Gerät von [r] eine Revision, die dem Server fehlt und neuer ist als seine? Dann wird der eigene Stand
+     * vorgemerkt – lebend, wenn es den Datensatz lokal gibt, sonst als Löschung – und `true` geliefert.
+     */
+    private suspend fun erneutSenden(r: SyncRecord, verloren: VerloreneRevisionen): Boolean = db.withTransaction {
+        val bekannt = dao.revision(r.type.wire, r.id)?.rev ?: return@withTransaction false
+        if (bekannt !in verloren || bekannt <= (r.rev ?: 0L)) return@withTransaction false
+        if (dao.outboxEintrag(r.type.wire, r.id) == null) {
+            dao.upsertOutbox(SyncOutboxEntity(r.type.wire, r.id, deleted = !existiert(r.type, r.id), queuedAt = uhr()))
+        }
+        true
     }
 
     private suspend fun ids(typ: RecordType): List<String> = when (typ) {
@@ -597,14 +657,24 @@ class SyncSpeicher(
         RecordType.TAGEBUCH_EINTRAG -> dao.tagebuchIds()
     }
 
-    private suspend fun veraltetEntfernen(typ: RecordType, id: String, verwiesen: Set<Pair<RecordType, String>>) {
+    private suspend fun veraltetEntfernen(
+        typ: RecordType,
+        id: String,
+        verwiesen: Set<Pair<RecordType, String>>,
+        verloren: VerloreneRevisionen?,
+    ) {
         db.withTransaction {
             if (dao.outboxEintrag(typ.wire, id) != null) return@withTransaction
             if (dao.problem(typ.wire, id) != null) return@withTransaction
-            if ((typ to id) in verwiesen || nochGebraucht(typ, id)) {
+            // Nach dem Einspielen einer Server-Sicherung: dem Server fehlt dieser Datensatz, das Gerät hat ihn
+            val nachDerSicherung = verloren != null && dao.revision(typ.wire, id)?.rev?.let { it in verloren } == true
+            if (nachDerSicherung || (typ to id) in verwiesen || nochGebraucht(typ, id)) {
                 dao.upsertOutbox(SyncOutboxEntity(typ.wire, id, deleted = false, queuedAt = uhr()))
                 return@withTransaction
             }
+            // Nie vom Server bestätigt (unveränderte Startzutaten, Zutaten nach „Ersetzen“): Der Server hat ihn nicht
+            // gelöscht, er kannte ihn nie. Bleibt lokal und ungesendet (N8).
+            if (dao.revision(typ.wire, id) == null) return@withTransaction
             dao.upsertZustand((dao.zustand() ?: SyncZustandEntity()).copy(applyingRemote = true))
             try {
                 loeschenLokal(typ, id)
@@ -673,6 +743,7 @@ class SyncSpeicher(
     private suspend fun verknuepfen(rezeptId: String, sha256: String, link: String) {
         db.withTransaction {
             if (dao.fotoGewuenscht(rezeptId)?.sha256 != sha256) return@withTransaction
+            db.rezeptDao().nachId(rezeptId)?.imageUri?.takeIf { it != link }?.let(abgeloesteFotos::add)
             dao.upsertZustand((dao.zustand() ?: SyncZustandEntity()).copy(applyingRemote = true))
             try {
                 dao.rezeptFotoSetzen(rezeptId, link)
@@ -681,6 +752,22 @@ class SyncSpeicher(
             }
             dao.loeschenFotoGewuenscht(rezeptId)
             if (hatProblem(rezeptId, FOTO_FALSCH)) dao.loeschenProblem(RecordType.RECIPE.wire, rezeptId)
+        }
+        verwaisteFotosEntfernen()
+    }
+
+    /**
+     * Löscht die [abgeloesteFotos], die kein Rezept mehr nutzt (E3) – erst nach dem Commit, damit ein zurückgerolltes
+     * Anwenden keine noch verknüpfte Datei verliert. Nur diese, nicht alle unverknüpften Dateien: ein offener Editor kann
+     * gerade ein neues, noch nicht gespeichertes Foto halten (wie `RezeptRepository.fotoSetzen`).
+     */
+    private suspend fun verwaisteFotosEntfernen() {
+        val kandidaten = abgeloesteFotos.toList()
+        abgeloesteFotos.clear()
+        for (link in kandidaten) {
+            if (!ablage.istEigeneDatei(link) || db.rezeptDao().anzahlMitBild(link) > 0) continue
+            ablage.datei(link)?.delete()
+            dao.loeschenFotoLokal(link)
         }
     }
 
@@ -699,6 +786,12 @@ class SyncSpeicher(
 
         /** Problem-Code beim Anwenden: Schreiben scheiterte an der Datenbank (Constraint). */
         const val ANWENDEN_FEHLGESCHLAGEN = "apply_failed"
+
+        /** Problem-Codes des Anwendens, die [erneutHolenFaellig] erneut versucht. */
+        private val ABHOL_PROBLEME = listOf(FEHLENDER_VERWEIS, UNGUELTIGER_PAYLOAD, ANWENDEN_FEHLGESCHLAGEN)
+
+        /** Abstand zwischen zwei erneuten Abholungen. */
+        private const val ERNEUT_HOLEN_NACH_MS = 24 * 60 * 60 * 1000L
 
         /** `{"records":[]}` – die Hülle des Push-Bodys. */
         private const val HUELLE_BYTES = 14L

@@ -103,11 +103,11 @@ fun pruefen(vorher: ZutatEntwurf, nachher: ZutatEntwurf): Map<ZutatFeld, String>
 fun nameBereinigt(text: String): String = text.trim().replace(Regex("""\s+"""), " ")
 
 /** Zahl aus einem Feld („1,5“ oder „1.5“); leer, ungültig, mit Exponent oder außerhalb der Sync-Grenzen → `null`. */
-internal fun zahlAus(text: String): BigDecimal? {
+fun zahlAus(text: String): BigDecimal? {
     val t = text.trim().replace(',', '.')
     if (t.isEmpty() || t.contains('e', ignoreCase = true)) return null
     return ZahlGrenzen.lesen(t)
 }
 
 /** Zahl für ein Feld: ohne Nullen am Ende, mit Komma; `null` → leer. */
-internal fun zahlText(wert: BigDecimal?): String = wert?.stripTrailingZeros()?.toPlainString()?.replace('.', ',').orEmpty()
+fun zahlText(wert: BigDecimal?): String = wert?.stripTrailingZeros()?.toPlainString()?.replace('.', ',').orEmpty()

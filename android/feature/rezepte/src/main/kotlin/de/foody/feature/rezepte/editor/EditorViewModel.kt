@@ -11,6 +11,7 @@ import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.Gespeichert
 import de.foody.core.data.rezepte.RezeptEntwurf
 import de.foody.core.data.rezepte.RezeptRepository
+import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.domain.Einordnung
 import de.foody.domain.Gang
 import de.foody.domain.ImportedIngredient
@@ -19,14 +20,15 @@ import de.foody.domain.Mahlzeit
 import de.foody.domain.RezeptEinordnung
 import de.foody.domain.ZutatZeile
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -87,13 +89,13 @@ class EditorViewModel @Inject constructor(
 
     val zustand: StateFlow<EditorZustand> = combine(eingaben, katalog, kopf, vorlagen) { e, namen, (geladen, id, hinweis), v ->
         EditorZustand(geladen, id, e, zeilenStatus(e.zutatenText, namen, v), einordnung(e), hinweis)
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, EditorZustand())
+    }.stateIn(viewModelScope, SolangeAppOffen, EditorZustand())
 
     val speichernMoeglich: StateFlow<Boolean> = combine(zustand, gesperrt) { z, sperre -> !sperre && z.geladen && gueltig(z) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+        .stateIn(viewModelScope, SolangeAppOffen, false)
 
     val geaendert: StateFlow<Boolean> = combine(eingaben, original) { e, o -> e != o }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+        .stateIn(viewModelScope, SolangeAppOffen, false)
 
     /** Die Eingaben, wie sie geladen (oder zuletzt gespeichert) wurden. */
     val ursprung: StateFlow<EditorEingaben> = original.asStateFlow()
@@ -101,8 +103,18 @@ class EditorViewModel @Inject constructor(
     /**
      * Lädt [id] (oder ein leeres Rezept); derselbe Aufruf nach einem Neuaufbau lässt die Eingaben stehen. Nach einem
      * Prozessende kommen Ursprung und Zeilen aus der Datenbank, die Eingaben aus dem SavedStateHandle.
+     *
+     * [auftrag]: Auf dem Tablet dient ein ViewModel allen Editor-Aufträgen; ein neuer Auftrag beginnt frisch, auch mit
+     * derselben [id] (ein zweites „Neues Rezept“ ist leer). Er steht im SavedStateHandle, damit ein Prozessende die
+     * Eingaben des laufenden Auftrags nicht verwirft.
      */
-    suspend fun laden(id: String?) {
+    suspend fun laden(id: String?, auftrag: Int = 0) {
+        if (gespeichert.get<Int>(AUFTRAG) != auftrag) {
+            if (gespeichert.contains(AUFTRAG)) gespeichert.remove<String>(EINGABEN_FUER)
+            gespeichert[AUFTRAG] = auftrag
+            geladenFuer = KEINS
+            kopf.value = Triple(false, null, null)
+        }
         if (geladenFuer == id) return
         geladenFuer = id
         val gerettet = eingaben.value.takeIf { gespeichert.get<String>(EINGABEN_FUER) == (id ?: NEU) }
@@ -156,10 +168,22 @@ class EditorViewModel @Inject constructor(
 
     fun hinweis(text: String?) = kopf.update { it.copy(third = text) }
 
-    /** Speichert; `null` bei ungültiger Eingabe oder laufendem/abgeschlossenem Speichern (Doppeltipp). */
+    /**
+     * Speichert; `null` bei ungültiger Eingabe oder laufendem/abgeschlossenem Speichern (Doppeltipp). Das Schreiben läuft
+     * zu Ende, auch wenn der Bildschirm mittendrin gedreht wird; nur ein Fehler gibt „Speichern“ wieder frei.
+     */
     suspend fun speichern(): Gespeichert? {
         val z = zustand.value
         if (!z.geladen || !gueltig(z) || !gesperrt.compareAndSet(expect = false, update = true)) return null
+        var fertig = false
+        try {
+            return withContext(NonCancellable) { schreiben(z).also { fertig = true } }
+        } finally {
+            if (!fertig) gesperrt.value = false
+        }
+    }
+
+    private suspend fun schreiben(z: EditorZustand): Gespeichert {
         val e = z.eingaben
         val zeilen = z.zeilen.filter { it.erkannt != null }
         val ergebnis = repo.speichern(
@@ -191,6 +215,7 @@ class EditorViewModel @Inject constructor(
         private const val KEINS = "\u0000"
         private const val EINGABEN = "rezeptEingaben"
         private const val EINGABEN_FUER = "rezeptEingabenFuer"
+        private const val AUFTRAG = "rezeptAuftrag"
         private const val NEU = "neu"
     }
 }

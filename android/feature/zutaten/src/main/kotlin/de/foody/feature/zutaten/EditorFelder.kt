@@ -7,10 +7,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -19,10 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import de.foody.core.data.zutaten.ZutatEntwurf
 import de.foody.core.data.zutaten.ZutatFeld
 import de.foody.core.designsystem.FoodyTheme
@@ -30,8 +24,10 @@ import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
+import de.foody.core.designsystem.komponenten.FoodyTextfeld
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.vorausgefuelltFarben
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.core.scan.ScanTexte
@@ -42,7 +38,7 @@ import de.foody.domain.NutrientBasis
 @Composable
 private fun Bereich(titel: String?, inhalt: @Composable ColumnScope.() -> Unit) {
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth(), form = FoodyFormen.gross) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth().padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
             titel?.let { Augenbraue(it) }
             inhalt()
         }
@@ -67,21 +63,17 @@ private fun Feld(
     markiert: Boolean = false,
 ) {
     var hatteFokus by remember { mutableStateOf(false) }
-    OutlinedTextField(
-        wert, onWert,
+    FoodyTextfeld(
+        beschriftung, wert,
         Modifier.fillMaxWidth().onFocusChanged {
             if (it.isFocused) hatteFokus = true else if (hatteFokus) onFertig()
         },
-        label = { Text(beschriftung) },
-        singleLine = true,
-        isError = fehler != null,
-        supportingText = fehler?.let { { Text(it) } },
-        keyboardOptions = KeyboardOptions(
-            keyboardType = tastatur, imeAction = ImeAction.Done,
-            capitalization = if (tastatur == KeyboardType.Text) KeyboardCapitalization.Sentences else KeyboardCapitalization.None,
-        ),
-        keyboardActions = KeyboardActions(onDone = { onFertig() }),
-        colors = vorausgefuelltFarben(markiert),
+        tastatur = tastatur,
+        fehler = fehler,
+        onFertig = onFertig,
+        satzanfangGross = tastatur == KeyboardType.Text,
+        farben = vorausgefuelltFarben(markiert),
+        onWert = onWert,
     )
 }
 
@@ -114,7 +106,7 @@ internal fun EditorFelder(
     }
     Bereich("Kategorie") {
         val frei = e.kategorie?.takeIf { it !in IngredientCatalog.categories }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
             (IngredientCatalog.categories + listOfNotNull(frei)).forEach { k ->
                 FoodyChip(k, e.kategorie == k, { onAendern(e.copy(kategorie = k)) })
             }
@@ -127,7 +119,7 @@ internal fun EditorFelder(
         scanQuelle?.let {
             Text(ScanTexte.bittePruefen(it), style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.primaer)
         }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
             FoodyChip("je 100 g", e.basis != NutrientBasis.PER_100_ML, { onAendern(e.copy(basis = NutrientBasis.PER_100_G)) })
             FoodyChip("je 100 ml", e.basis == NutrientBasis.PER_100_ML, { onAendern(e.copy(basis = NutrientBasis.PER_100_ML)) })
         }

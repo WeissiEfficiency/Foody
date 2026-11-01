@@ -14,6 +14,8 @@ import de.foody.feature.heute.bestand
 import de.foody.feature.heute.planen
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testScan
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.test.assertFails
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -50,7 +52,7 @@ class EintragenViewModelTest {
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         db = testDatenbank()
-        vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan()))
+        vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan()))
         vm.oeffnen(heute, Mahlzeit.ABENDESSEN)
     }
 
@@ -167,6 +169,23 @@ class EintragenViewModelTest {
         fun f(name: String) = gueltig(Eingaben(weg = EintragenWeg.FREI, freiName = name, freiKcal = "50"))
         assertFalse(f("x".repeat(201)), "Name länger als 200 Zeichen")
         assertTrue(f("Apfel"))
+    }
+
+
+    /** Schreibzugriffe scheitern (wie bei einem Datenbankfehler), Lesen geht weiter. */
+    private fun nurLesen(an: Boolean) = db.openHelper.writableDatabase.query("PRAGMA query_only = ${if (an) 1 else 0}").close()
+
+    @Test
+    fun fehlerBeimSpeichernGibtSpeichernFrei() = runTest {
+        // Scheitert das Schreiben, bleibt „Speichern“ nicht gesperrt (N2)
+        db.bestand()
+        vm.weg(EintragenWeg.REZEPT)
+        vm.rezeptWaehlen("r1")
+        nurLesen(true)
+        assertFails { vm.speichern() }
+        nurLesen(false)
+        assertTrue(vm.speichernMoeglich.first())
+        gespeichert(vm.speichern())
     }
 
     @Test

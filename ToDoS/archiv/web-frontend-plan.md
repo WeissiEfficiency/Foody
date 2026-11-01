@@ -1,6 +1,6 @@
 # Frontend-Umsetzungsplan für Foody
 
-> **Abgelöst:** Die Web-App ist mit V3 gestrichen ([ADR 0011](../docs/adr/0011-v3-umfang-ein-nutzer.md)), `:server-web`
+> **Abgelöst:** Die Web-App ist mit V3 gestrichen ([ADR 0011](../../docs/adr/0011-v3-umfang-ein-nutzer.md)), `:server-web`
 > wurde entfernt. Nur noch als Hintergrund.
 
 ## Ziel

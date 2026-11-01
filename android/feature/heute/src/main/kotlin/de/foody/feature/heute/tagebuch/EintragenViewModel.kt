@@ -11,7 +11,10 @@ import de.foody.core.data.heute.RezeptKurz
 import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.data.zutaten.Packungswerte
 import de.foody.core.data.zutaten.nameBereinigt
+import de.foody.core.data.zutaten.zahlAus
+import de.foody.core.data.zutaten.zahlText
 import de.foody.core.data.zutaten.zutatMitNamen
+import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.core.scan.PackungScan
 import de.foody.core.scan.ScanAusgang
 import de.foody.core.scan.ScanLauf
@@ -21,21 +24,23 @@ import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
 import de.foody.feature.heute.mahlzeitNachUhrzeit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 enum class EintragenWeg { REZEPT, ZUTAT, PLAN, FREI }
@@ -110,21 +115,24 @@ class EintragenViewModel @Inject constructor(
     /** Während des Speicherns und nach Erfolg gesperrt (bis zum nächsten [oeffnen]): ein Doppeltipp legt nichts doppelt an. */
     private val gesperrt = MutableStateFlow(false)
 
+    /** Einmal gerechnet für Plan und Rezeptsuche; nur solange das Blatt offen ist. */
+    private val rezepte = heute.rezepteKurz().shareIn(viewModelScope, SolangeAppOffen, replay = 1)
+
     /** Heutige, noch nicht eingetragene Plan-Einträge des gewählten Tags. */
     private val offenerPlan = eingaben.map { it.datum }.distinctUntilChanged().flatMapLatest { tag ->
-        combine(heute.planHeuteUndMorgen(tag), tagebuch.amTag(tag)) { plan, eintraege ->
+        combine(heute.planHeuteUndMorgen(tag, rezepte), tagebuch.amTag(tag)) { plan, eintraege ->
             val uebernommen = eintraege.mapNotNull { it.planEintragId }.toSet()
             plan.filter { it.datum == tag && it.planEintragId !in uebernommen }
         }
     }
 
     /** Der ganze Katalog, auch für die Häkchen-Vorgabe beim Packungsnamen. */
-    private val katalog = db.zutatDao().alleFlow().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    private val katalog = db.zutatDao().alleFlow().stateIn(viewModelScope, SolangeAppOffen, emptyList())
 
     private val zutatenKatalog = katalog.map { z -> z.map { ZutatKurz(it.id, it.canonicalName) }.sortedBy { it.name.lowercase() } }
 
     val zustand: StateFlow<EintragenZustand> =
-        combine(eingaben, heute.rezeptVorschlaege(), zutatenKatalog, offenerPlan) { e, rezepte, zutaten, plan ->
+        combine(eingaben, heute.rezeptVorschlaege(rezepte), zutatenKatalog, offenerPlan) { e, rezepte, zutaten, plan ->
             val s = e.suche.trim()
             EintragenZustand(
                 eingaben = e,
@@ -133,10 +141,10 @@ class EintragenViewModel @Inject constructor(
                 plan = plan,
                 vorhandeneZutat = e.packung?.let { vorhandene(e.pName) },
             )
-        }.stateIn(viewModelScope, SharingStarted.Eagerly, EintragenZustand(Eingaben(), emptyList(), emptyList(), emptyList()))
+        }.stateIn(viewModelScope, SolangeAppOffen, EintragenZustand(Eingaben(), emptyList(), emptyList(), emptyList()))
 
     val speichernMoeglich: StateFlow<Boolean> =
-        combine(eingaben, gesperrt) { e, sperre -> !sperre && gueltig(e) }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+        combine(eingaben, gesperrt) { e, sperre -> !sperre && gueltig(e) }.stateIn(viewModelScope, SolangeAppOffen, false)
 
     private var letzterAuftrag: String?
         get() = gespeichert[AUFTRAG]
@@ -168,7 +176,7 @@ class EintragenViewModel @Inject constructor(
 
     /** − / + in Schritten von 0,5; nie unter 0,5. */
     fun portionenSchritt(mehr: Boolean) = eingaben.update {
-        val alt = zahl(it.portionen) ?: BigDecimal.ONE
+        val alt = zahlAus(it.portionen) ?: BigDecimal.ONE
         it.copy(portionen = zahlText((if (mehr) alt + SCHRITT else alt - SCHRITT).max(SCHRITT)))
     }
 
@@ -218,16 +226,28 @@ class EintragenViewModel @Inject constructor(
 
     private fun vorhandene(name: String): String? = zutatMitNamen(katalog.value, name)?.canonicalName
 
-    /** Speichert nach dem gewählten Weg; `null`, wenn die Eingaben ungültig sind oder Rezept/Zutat/Plan fehlen. */
+    /**
+     * Speichert nach dem gewählten Weg; `null`, wenn die Eingaben ungültig sind oder Rezept/Zutat/Plan fehlen. Das
+     * Schreiben läuft zu Ende, auch wenn das Blatt mittendrin gedreht wird; nur ein Fehler gibt „Speichern“ wieder frei.
+     */
     suspend fun speichern(): String? {
         val e = eingaben.value
         if (!gueltig(e) || !gesperrt.compareAndSet(expect = false, update = true)) return null
+        var fertig = false
+        try {
+            return withContext(NonCancellable) { schreiben(e).also { fertig = true } }
+        } finally {
+            if (!fertig) gesperrt.value = false
+        }
+    }
+
+    private suspend fun schreiben(e: Eingaben): String? {
         val id = when (e.weg) {
-            EintragenWeg.REZEPT -> tagebuch.ausRezept(e.datum, e.mahlzeit, e.rezeptId!!, zahl(e.portionen)!!)
-            EintragenWeg.ZUTAT -> tagebuch.ausZutat(e.datum, e.mahlzeit, e.zutatId!!, zahl(e.menge)!!, e.einheit)
+            EintragenWeg.REZEPT -> tagebuch.ausRezept(e.datum, e.mahlzeit, e.rezeptId!!, zahlAus(e.portionen)!!)
+            EintragenWeg.ZUTAT -> tagebuch.ausZutat(e.datum, e.mahlzeit, e.zutatId!!, zahlAus(e.menge)!!, e.einheit)
             EintragenWeg.PLAN -> tagebuch.ausPlan(e.planEintragId!!)
             EintragenWeg.FREI -> if (e.packung != null) {
-                tagebuch.ausPackung(e.datum, e.mahlzeit, e.pName, zahl(e.pMenge)!!, packungsEinheit(e.pBasis), formularWerte(e), e.alsZutat)
+                tagebuch.ausPackung(e.datum, e.mahlzeit, e.pName, zahlAus(e.pMenge)!!, packungsEinheit(e.pBasis), formularWerte(e), e.alsZutat)
             } else {
                 tagebuch.frei(
                     e.datum, e.mahlzeit, e.freiName.trim(), e.freiKcal.trim().toInt(),
@@ -243,14 +263,14 @@ class EintragenViewModel @Inject constructor(
 private fun BigDecimal?.positiv() = this != null && signum() > 0
 
 /** Leeres optionales Feld → `null`; sonst die Zahl (ungültig ist schon in [gueltig] ausgeschlossen). */
-private fun optional(text: String): BigDecimal? = zahl(text)
+private fun optional(text: String): BigDecimal? = zahlAus(text)
 
-private fun optionalGueltig(text: String) = text.isBlank() || zahl(text)?.let { it.signum() >= 0 } == true
+private fun optionalGueltig(text: String) = text.isBlank() || zahlAus(text)?.let { it.signum() >= 0 } == true
 
 /** Portionen > 0, Menge > 0, „Frei“ mit Name und kcal ≥ 0 (ganzzahlig), Makros leer oder ≥ 0; Packung: [packungGueltig]. */
 internal fun gueltig(e: Eingaben): Boolean = when (e.weg) {
-    EintragenWeg.REZEPT -> e.rezeptId != null && zahl(e.portionen).positiv()
-    EintragenWeg.ZUTAT -> e.zutatId != null && zahl(e.menge).positiv()
+    EintragenWeg.REZEPT -> e.rezeptId != null && zahlAus(e.portionen).positiv()
+    EintragenWeg.ZUTAT -> e.zutatId != null && zahlAus(e.menge).positiv()
     EintragenWeg.PLAN -> e.planEintragId != null
     EintragenWeg.FREI if e.packung != null -> packungGueltig(e)
     EintragenWeg.FREI -> e.freiName.isNotBlank() && e.freiName.trim().length <= MAX_NAME && (e.freiKcal.trim().toIntOrNull() ?: -1) >= 0 &&
@@ -260,12 +280,12 @@ internal fun gueltig(e: Eingaben): Boolean = when (e.weg) {
 private val HUNDERT = BigDecimal(100)
 private val TAUSEND = BigDecimal(1000)
 
-private fun imBereich(text: String, max: BigDecimal) = zahl(text)?.let { it.signum() >= 0 && it <= max } == true
+private fun imBereich(text: String, max: BigDecimal) = zahlAus(text)?.let { it.signum() >= 0 && it <= max } == true
 
 /** Wie der Zutateneditor (6e2): Name 1–200 Zeichen, Menge > 0, kcal Pflicht 0–1.000, Makros leer oder 0–100. */
 private fun packungGueltig(e: Eingaben): Boolean {
     val name = nameBereinigt(e.pName)
-    return name.isNotEmpty() && name.length <= MAX_NAME && zahl(e.pMenge).positiv() && imBereich(e.pKcal, TAUSEND) &&
+    return name.isNotEmpty() && name.length <= MAX_NAME && zahlAus(e.pMenge).positiv() && imBereich(e.pKcal, TAUSEND) &&
         listOf(e.pEiweiss, e.pKh, e.pFett).all { it.isBlank() || imBereich(it, HUNDERT) }
 }
 
@@ -281,9 +301,9 @@ internal fun formularWerte(e: Eingaben): Packungswerte {
     val werte = p.werte.toMutableMap()
     val felder = listOf(
         Nutrient.ENERGY_KJ to p.kjFuer(e.pKcal),
-        Nutrient.PROTEIN_G to zahl(e.pEiweiss),
-        Nutrient.CARBS_G to zahl(e.pKh),
-        Nutrient.FAT_G to zahl(e.pFett),
+        Nutrient.PROTEIN_G to zahlAus(e.pEiweiss),
+        Nutrient.CARBS_G to zahlAus(e.pKh),
+        Nutrient.FAT_G to zahlAus(e.pFett),
     )
     for ((n, wert) in felder) if (wert == null) werte.remove(n) else werte[n] = wert
     return p.copy(basis = e.pBasis, werte = werte)

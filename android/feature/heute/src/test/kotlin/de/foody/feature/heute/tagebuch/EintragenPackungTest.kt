@@ -6,6 +6,7 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
+import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.core.scan.ScanAusgang
 import de.foody.core.testing.ViewModelHalter
 import de.foody.core.testing.nachProzessende
@@ -17,10 +18,15 @@ import de.foody.feature.heute.bestand
 import de.foody.feature.heute.haferflocken
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testScan
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -54,13 +60,14 @@ class EintragenPackungTest {
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         db = testDatenbank()
-        vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan()))
+        vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan())).sichtbar()
         vm.oeffnen(heute, Mahlzeit.FRUEHSTUECK)
         vm.weg(EintragenWeg.FREI)
     }
 
     @After
     fun tearDown() {
+        zuseher.cancel()
         halter.schliessen()
         db.close()
         Dispatchers.resetMain()
@@ -72,17 +79,25 @@ class EintragenPackungTest {
 
     private val e get() = vm.zustand.value.eingaben
 
+    /** Wie das offene Blatt: Im Test ist die App zu, der Zustand rechnet nur mit Zuseher ([SolangeAppOffen]). */
+    private val zuseher = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    private fun EintragenViewModel.sichtbar() = also { vm ->
+        zuseher.launch { vm.zustand.collect {} }
+        zuseher.launch { vm.speichernMoeglich.collect {} }
+    }
+
     @Test
     fun ueberstehtProzessende() {
         // Foto aus dem Tagebuch: Während die Kamera offen ist, beendet Android die App (R-W7/D1)
         val h = SavedStateHandle()
-        val vor = halter.behalten(EintragenViewModel(h, HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan()))
+        val vor = halter.behalten(EintragenViewModel(h, HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan())).sichtbar()
         vor.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
         vor.weg(EintragenWeg.FREI)
         vor.packungUebernehmen(haferflocken())
         vor.pMenge("60")
 
-        val nach = halter.behalten(EintragenViewModel(h.nachProzessende(), HeuteRepository(db), TagebuchRepository(db) { 1L }, db, testScan()))
+        val nach = halter.behalten(EintragenViewModel(h.nachProzessende(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan())).sichtbar()
         // Das Blatt baut sich mit demselben Auftrag wieder auf: Die Eingaben bleiben
         nach.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
         val wieder = nach.zustand.value.eingaben

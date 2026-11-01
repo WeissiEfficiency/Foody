@@ -25,6 +25,8 @@ import de.foody.core.data.woche.WocheRepository
 import de.foody.core.data.sync.SyncSpeicher
 import de.foody.core.data.zutaten.ZutatenRepository
 import java.time.Clock
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.Dispatchers
 import javax.inject.Singleton
 
 /**
@@ -42,6 +44,11 @@ fun baueDatenbank(context: Context, name: String = FoodyDatenbank.NAME): FoodyDa
 @Module
 @InstallIn(SingletonComponent::class)
 object DatenModul {
+    /** Siehe [Rechnen]. */
+    @Provides
+    @Rechnen
+    fun rechnen(): CoroutineContext = Dispatchers.Default
+
     @Provides
     @Singleton
     fun datenbank(@ApplicationContext context: Context): FoodyDatenbank = baueDatenbank(context)
@@ -83,7 +90,8 @@ object DatenModul {
 
     @Provides
     @Singleton
-    fun rezeptRepository(db: FoodyDatenbank, ablage: FotoAblage): RezeptRepository = RezeptRepository(db, ablage, System::currentTimeMillis)
+    fun rezeptRepository(db: FoodyDatenbank, ablage: FotoAblage, @Rechnen rechnen: CoroutineContext): RezeptRepository =
+        RezeptRepository(db, ablage, rechnen, System::currentTimeMillis)
 
     @Provides
     @Singleton
@@ -91,8 +99,8 @@ object DatenModul {
 
     @Provides
     @Singleton
-    fun wocheRepository(db: FoodyDatenbank, rezepte: RezeptRepository): WocheRepository =
-        WocheRepository(db, rezepte, System::currentTimeMillis)
+    fun wocheRepository(db: FoodyDatenbank, rezepte: RezeptRepository, @Rechnen rechnen: CoroutineContext): WocheRepository =
+        WocheRepository(db, rezepte, System::currentTimeMillis, rechnen)
 
     @Provides
     @Singleton
@@ -101,8 +109,8 @@ object DatenModul {
 
     @Provides
     @Singleton
-    fun einkaufRepository(db: FoodyDatenbank, ignoriert: IgnorierteSchluessel): EinkaufRepository =
-        EinkaufRepository(db, System::currentTimeMillis, ignoriert)
+    fun einkaufRepository(db: FoodyDatenbank, ignoriert: IgnorierteSchluessel, @Rechnen rechnen: CoroutineContext): EinkaufRepository =
+        EinkaufRepository(db, System::currentTimeMillis, ignoriert, rechnen)
 
     @Provides
     @Singleton

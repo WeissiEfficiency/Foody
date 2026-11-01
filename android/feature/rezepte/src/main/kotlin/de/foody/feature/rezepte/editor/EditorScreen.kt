@@ -35,9 +35,10 @@ import de.foody.core.data.rezepte.Gespeichert
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
+import de.foody.core.designsystem.komponenten.ueberschrift
+import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyBreiten
 import kotlinx.coroutines.launch
-
-private val INHALT_MAX = 720.dp
 
 /**
  * Rezept-Editor ([id] `null` = neu): Kopf mit Zurück und Speichern, darunter alle Felder auf einer scrollenden Seite.
@@ -50,9 +51,11 @@ fun EditorRoute(
     onFertig: (String) -> Unit,
     onZurueck: () -> Unit,
     gekochtMit: Int? = null,
+    /** Tablet: Nummer des Editor-Auftrags (siehe [EditorViewModel.laden]). */
+    auftrag: Int = 0,
     vm: EditorViewModel = hiltViewModel(),
 ) {
-    LaunchedEffect(id) { vm.laden(id) }
+    LaunchedEffect(id, auftrag) { vm.laden(id, auftrag) }
     val z by vm.zustand.collectAsStateWithLifecycle()
     val ursprung by vm.ursprung.collectAsStateWithLifecycle()
     val moeglich by vm.speichernMoeglich.collectAsStateWithLifecycle()
@@ -64,16 +67,16 @@ fun EditorRoute(
 
     Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         Column(
-            Modifier.widthIn(max = INHALT_MAX).fillMaxWidth().safeDrawingPadding().imePadding()
-                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().safeDrawingPadding().imePadding()
+                .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = 104.dp),
+            verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = zurueck) {
                     Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
                 }
                 Text(
-                    if (id == null) "Neues Rezept" else "Bearbeiten", Modifier.weight(1f),
+                    if (id == null) "Neues Rezept" else "Bearbeiten", Modifier.weight(1f).ueberschrift(),
                     style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text,
                 )
                 FoodyKnopf("Speichern", {

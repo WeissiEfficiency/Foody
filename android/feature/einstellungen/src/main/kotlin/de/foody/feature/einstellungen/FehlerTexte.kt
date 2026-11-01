@@ -23,7 +23,38 @@ fun syncFehlerText(kennung: String): String = when (kennung) {
     "anmeldung_abgelaufen" -> "Anmeldung abgelaufen – bitte neu anmelden."
     "server_zu_alt" -> SERVER_ZU_ALT
     "app_zu_alt" -> APP_ZU_ALT
+    "speicher_voll" -> "Gerätespeicher voll – bitte Platz schaffen."
     else -> "Synchronisieren fehlgeschlagen."
+}
+
+private val ARTEN = mapOf(
+    "ingredient" to "Zutat",
+    "recipe" to "Rezept",
+    "meal_slot" to "Plan-Eintrag",
+    "shopping_list" to "Einkaufsliste",
+    "shopping_item" to "Einkaufsartikel",
+    "tagebuch_eintrag" to "Tagebuch-Eintrag",
+)
+
+/** Überschrift über den nicht übertragenen Einträgen unter „Konto“. */
+fun nichtUebertragenTitel(anzahl: Int): String =
+    if (anzahl == 1) "1 Eintrag nicht vollständig übertragen" else "$anzahl Einträge nicht vollständig übertragen"
+
+/** Eine Zeile je Eintrag aus `sync_problem`: Art, Name (falls auf diesem Gerät) und Grund aus dem Problem-Code. */
+fun problemText(typ: String, name: String?, code: String): String {
+    val art = ARTEN[typ] ?: "Eintrag"
+    val wer = if (name != null) "$art „$name“" else "$art (nicht auf diesem Gerät)"
+    return "$wer: ${problemGrund(code)}"
+}
+
+private fun problemGrund(code: String): String = when (code) {
+    "photo_unsyncable" -> "ohne Foto übertragen (zu groß oder kein JPEG)"
+    "photo_mismatch" -> "Foto vom Server beschädigt"
+    "too_large" -> "zu groß für den Server"
+    "missing_reference" -> "verweist auf etwas, das fehlt"
+    "invalid_payload" -> "ungültige Daten"
+    "apply_failed" -> "konnte nicht gespeichert werden"
+    else -> "vom Server abgelehnt"
 }
 
 private const val MINUTE_MS = 60_000L

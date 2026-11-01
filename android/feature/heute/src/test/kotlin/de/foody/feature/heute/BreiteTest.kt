@@ -7,6 +7,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.heute.tagebuch.TagebuchTagInhalt
 import org.junit.Rule
 import org.junit.Test
@@ -25,7 +26,7 @@ class BreiteTest {
 
     private fun pruefeSchmalUndMittig(tag: String) {
         val b = compose.onNodeWithTag(tag).getUnclippedBoundsInRoot()
-        assertTrue(b.width <= INHALT_MAX_BREITE, "zu breit: ${b.width}")
+        assertTrue(b.width <= FoodyBreiten.inhalt, "zu breit: ${b.width}")
         val links = b.left
         val rechts = 1280.dp - b.right
         assertTrue((links - rechts).value in -1f..1f, "nicht mittig: links $links, rechts $rechts")

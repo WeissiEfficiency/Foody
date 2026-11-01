@@ -91,6 +91,7 @@ internal class EinstellungenTestUmgebung {
 
     fun vm(kontoZugriff: KontoZugriff = konto) =
         viewModels.behalten(EinstellungenViewModel(kontext, darstellung, ziel, sicherung, zutaten, kontoZugriff, scan, TEST_UHR))
+            .also { viewModels.zusehen(it.zustand) }
 
     /** Für `@After`: erst die ViewModels beenden, dann die Datenbank schließen ([ViewModelHalter]). */
     fun schliessen() {

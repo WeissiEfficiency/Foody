@@ -94,13 +94,12 @@ class NutritionTest {
         )
         val r = NutritionCalculator.calculate(recipe, mapOf("rice" to rice, "x" to unknown))
         assertFalse(r.isComplete(Nutrient.ENERGY_KJ))
-        assertEquals(0.5, r.overallCompleteness, 1e-9)
-        assertTrue("x" in r.missingIngredientIds)
+        assertEquals(0.5, r.completeness.getValue(Nutrient.ENERGY_KJ), 1e-9)
 
         val onlyUnknown = Recipe("r2", "U", 1, listOf(RecipeIngredient("l", "x", bd("1"), MeasureUnit.GRAM)))
         val u = NutritionCalculator.calculate(onlyUnknown, mapOf("x" to unknown))
         assertNull(u.totals[Nutrient.ENERGY_KJ])
-        assertEquals(0.0, u.overallCompleteness)
+        assertEquals(0.0, u.completeness.getValue(Nutrient.ENERGY_KJ))
     }
 }
 
@@ -145,6 +144,27 @@ class ShoppingTest {
         assertEquals(2, out.size)
     }
 
+    @Test fun unitDoesNotDependOnPlanOrder() {
+        // Zwiebel als Gramm und als Stück: Welche Zeile zuerst im Plan steht, darf die Einheit nicht ändern – sonst
+        // wechselt der Schlüssel, und schon Gekauftes erscheint nach einer Planänderung wieder als neu (W1).
+        val onion = Ingredient("onion", "Zwiebel", ConversionInfo(pieceWeightG = bd("100")))
+        val catalog = ingredients + ("onion" to onion)
+        val inGrams = recipe("soup", 1, Triple("onion", "200", MeasureUnit.GRAM))
+        val inPieces = recipe("salad", 1, Triple("onion", "1", MeasureUnit.PIECE))
+        val recipes = mapOf("soup" to inGrams, "salad" to inPieces)
+        fun plan(first: String, second: String) = useCase(
+            DateRange.ofDays(today, 2),
+            listOf(MealSlot("s1", today, "Abend", first, 1), MealSlot("s2", today.plusDays(1), "Abend", second, 1)),
+            recipes, catalog,
+        ).single()
+        val gramsFirst = plan("soup", "salad")
+        val piecesFirst = plan("salad", "soup")
+        assertEquals("onion|COUNT", gramsFirst.key)
+        assertEquals(piecesFirst.key, gramsFirst.key)
+        assertEquals("3 Stk.", QuantityFormatter.format(gramsFirst.toBuy))
+        assertEquals(listOf("s1", "s2"), gramsFirst.sources.map { it.mealSlotId })
+    }
+
     @Test fun slotsOutsideRangeIgnored() {
         val r = recipe("x", 1, Triple("rice", "500", MeasureUnit.GRAM))
         val out = useCase(
@@ -168,7 +188,7 @@ class ShoppingTest {
         val lateEvening = ZonedDateTime.of(2026, 3, 29, 23, 30, 0, 0, zone).toLocalDate()
         val range = DateRange(LocalDate.of(2026, 3, 29), LocalDate.of(2026, 3, 29))
         assertTrue(lateEvening in range)
-        assertEquals(3, DateRange.ofDays(LocalDate.of(2026, 3, 28), 3).days.size)
+        assertEquals(LocalDate.of(2026, 3, 30), DateRange.ofDays(LocalDate.of(2026, 3, 28), 3).endInclusive)
     }
 
     @Test fun diffDetectsAddedChangedRemoved() {

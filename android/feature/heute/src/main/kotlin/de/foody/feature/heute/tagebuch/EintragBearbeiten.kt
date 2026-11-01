@@ -28,12 +28,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import de.foody.core.data.db.TagebuchEintragEntity
+import de.foody.core.data.zutaten.zahlAus
+import de.foody.core.data.zutaten.zahlText
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.vorausgefuelltFarben
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.domain.Mahlzeit
 import de.foody.domain.Naehrwerte
 import de.foody.domain.Tagebuch
@@ -66,18 +68,18 @@ internal fun EintragBearbeiten(
     var tag by rememberSaveable { mutableStateOf(e.datum) }
 
     val frei = e.art == TagebuchArt.FREI
-    fun makroOk(t: String) = t.isBlank() || zahl(t)?.let { it.signum() >= 0 } == true
+    fun makroOk(t: String) = t.isBlank() || zahlAus(t)?.let { it.signum() >= 0 } == true
     val gueltig = if (frei) {
         (kcal.trim().toIntOrNull() ?: -1) >= 0 && makroOk(eiweiss) && makroOk(kh) && makroOk(fett)
     } else {
-        zahl(menge)?.let { it.signum() > 0 } == true
+        zahlAus(menge)?.let { it.signum() > 0 } == true
     }
 
     AlertDialog(
         onDismissRequest = onAbbrechen,
         title = { Text(e.name) },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
                 when (e.art) {
                     TagebuchArt.REZEPT -> Zahlfeld("Portionen", menge) { menge = it }
                     TagebuchArt.ZUTAT -> Zahlfeld("Menge (${e.einheit?.symbol.orEmpty()})", menge) { menge = it }
@@ -88,7 +90,10 @@ internal fun EintragBearbeiten(
                         Zahlfeld("Fett (g)", fett) { fett = it }
                     }
                 }
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
+                    verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
+                ) {
                     MAHLZEITEN.forEach { m -> FoodyChip(m.anzeigename(), m == mahlzeit, { mahlzeit = m }) }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -104,8 +109,8 @@ internal fun EintragBearbeiten(
         },
         confirmButton = {
             FoodyKnopf("Speichern", {
-                val werte = if (frei) Tagebuch.freiWerte(kcal.trim().toInt(), zahl(eiweiss), zahl(kh), zahl(fett)) else null
-                onSpeichern(if (frei) null else zahl(menge), mahlzeit, tag, werte)
+                val werte = if (frei) Tagebuch.freiWerte(kcal.trim().toInt(), zahlAus(eiweiss), zahlAus(kh), zahlAus(fett)) else null
+                onSpeichern(if (frei) null else zahlAus(menge), mahlzeit, tag, werte)
             }, aktiv = gueltig)
         },
         dismissButton = { FoodyKnopf("Abbrechen", onAbbrechen, art = KnopfArt.TEXT) },

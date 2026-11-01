@@ -2,6 +2,7 @@ package de.foody.core.data.einkauf
 
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.domain.MeasureUnit
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -28,7 +29,7 @@ class EinkaufPlanTest {
     fun setUp() {
         db = testDatenbank()
         ign = ignoriert()
-        repo = EinkaufRepository(db, { JETZT }, ign)
+        repo = EinkaufRepository(db, { JETZT }, ign, EmptyCoroutineContext)
     }
 
     @After
@@ -66,7 +67,8 @@ class EinkaufPlanTest {
         db.planen("s2", MITTWOCH, "p")
         val v = repo.planVorschau(MONTAG, sonntag)
         assertEquals(setOf("z-knobi|MASS", "z-knobi|COUNT"), v.filter { it.name == "Knoblauch" }.map { it.schluessel }.toSet())
-        assertEquals("380 g", v.single { it.name == "Zwiebeln" }.menge)
+        // 300 g + 1 Stk. bei 80 g/Stück: gekauft wird in Stück (Regel 10), egal welche Planzeile zuerst kommt
+        assertEquals("5 Stk.", v.single { it.name == "Zwiebeln" }.menge)
     }
 
     @Test

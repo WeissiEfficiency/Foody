@@ -25,6 +25,7 @@ import de.foody.core.data.db.PlanEintragEntity
 import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.db.RezeptZutatEntity
 import de.foody.core.data.db.SyncTrigger
+import de.foody.core.data.db.SyncRevisionEntity
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
@@ -219,6 +220,63 @@ class SyncLaufTest {
         assertEquals(SyncErgebnis.Inaktiv, lauf.ausfuehren())
         assertEquals(0, gefragt, "ohne aktiven Sync wird kein Server-Zugang gebaut")
         assertNull(db.syncDao().zustand()!!.lastError)
+    }
+
+    @Test
+    fun gescheiterteAbholungHoltDerLaufErneut() = syncServerTest { server ->
+        val (name, konto) = server.kontoAnlegen()
+        val a = geraet(name, konto)
+        a.rezeptMitZutat("r1")
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig)
+
+        // B bekommt das Rezept einmal unlesbar: Problem vermerkt, der Cursor ist trotzdem vorbei.
+        val b = geraet(name, konto)
+        b.zugang.beiPull = { since, limit ->
+            val echt = a.zugang.pull(since, limit)
+            echt.copy(records = echt.records.map { if (it.type == RecordType.RECIPE) it.copy(payload = JsonObject(emptyMap())) else it })
+        }
+        assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
+        assertEquals("invalid_payload", b.dao.problem("recipe", "r1")?.code)
+        assertNull(b.db.rezeptDao().nachId("r1"))
+
+        // Einen Tag später: Der Lauf holt alles ab 0 erneut und übernimmt das Rezept; der Cursor bleibt.
+        b.dao.upsertProblem(b.dao.problem("recipe", "r1")!!.copy(at = 0))
+        val cursor = b.dao.zustand()!!.cursor
+        b.zugang.beiPull = { since, limit -> a.zugang.pull(since, limit) }
+        b.zugang.pulls.clear()
+        assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
+        assertEquals(listOf(cursor, 0L), b.zugang.pulls.map { it.first })
+        assertEquals("Rezept r1", b.db.rezeptDao().nachId("r1")?.name)
+        assertNull(b.dao.problem("recipe", "r1"))
+        assertEquals(cursor, b.dao.zustand()!!.cursor)
+
+        // Ohne wartende Probleme kein zweites Holen.
+        b.zugang.pulls.clear()
+        assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
+        assertEquals(listOf(cursor), b.zugang.pulls.map { it.first })
+    }
+
+    @Test
+    fun vollerSpeicherBrichtAbOhneDatenAufzugeben() = syncServerTest { server ->
+        val (name, konto) = server.kontoAnlegen()
+        val a = geraet(name, konto)
+        (1..300).forEach { a.db.zutatDao().upsert(zutat("z$it", "Zutat mit langem Namen Nummer $it")) }
+        a.speicher.aktivieren(TEST_BASIS, konto, allesHochladen = true)
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig)
+
+        val b = geraet(name, konto)
+        val sql = b.db.openHelper.writableDatabase
+        val seiten = sql.query("PRAGMA page_count").use { it.moveToFirst(); it.getLong(0) }
+        sql.query("PRAGMA max_page_count = $seiten").use { it.moveToFirst() }
+        assertEquals(SyncErgebnis.Fehlgeschlagen(ServerFehler.SPEICHER_VOLL, voruebergehend = true), b.ausfuehren())
+        assertEquals(emptyList(), b.dao.probleme())
+        assertEquals(0L, b.dao.zustand()!!.cursor)
+
+        // Wieder Platz: Der nächste Lauf holt alles.
+        sql.query("PRAGMA max_page_count = 1073741823").use { it.moveToFirst() }
+        assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
+        assertNotNull(b.db.zutatDao().nachId("z300"))
+        assertEquals(emptyList(), b.dao.probleme())
     }
 
     @Test
@@ -447,9 +505,13 @@ class SyncLaufTest {
         server.uhr.vorstellen(Duration.ofDays(91))
         assertEquals(1, Compactor(server.deps.db, server.uhr).run())
 
-        // B: eine lokale Zutat, die der Server nicht kennt und die nicht vorgemerkt ist (veraltet), und eine neue.
+        // B: eine früher vom Server bestätigte Zutat, die er nicht mehr kennt (veraltet), eine nie gesendete
+        // (unveränderte Startzutat nach „Zusammenführen“) und eine neue.
         b.db.zutatDao().upsert(zutat("veraltet"))
         b.dao.loeschenOutbox("ingredient", "veraltet")
+        b.dao.upsertRevision(SyncRevisionEntity("ingredient", "veraltet", 1))
+        b.db.zutatDao().upsert(zutat("nie-gesendet"))
+        b.dao.loeschenOutbox("ingredient", "nie-gesendet")
         b.db.zutatDao().upsert(zutat("neu"))
         b.zugang.pulls.clear()
         assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
@@ -457,6 +519,7 @@ class SyncLaufTest {
         assertNotNull(b.db.zutatDao().nachId("x"))
         assertNotNull(b.db.zutatDao().nachId("neu"), "vor dem Abgleich gesendet, also beim Server")
         assertNull(b.db.zutatDao().nachId("veraltet"))
+        assertNotNull(b.db.zutatDao().nachId("nie-gesendet"), "der Server kannte sie nie, hat sie also nicht gelöscht (N8)")
         assertNull(b.db.zutatDao().nachId("y"))
         assertEquals(emptyList(), b.dao.outbox(), "das Löschen im Abgleich merkt nichts vor")
         assertFalse(b.dao.zustand()!!.applyingRemote)
@@ -470,6 +533,7 @@ class SyncLaufTest {
         val b = geraet(name, konto)
         b.db.zutatDao().upsert(zutat("veraltet"))
         b.dao.loeschenOutbox("ingredient", "veraltet")
+        b.dao.upsertRevision(SyncRevisionEntity("ingredient", "veraltet", 1))
         b.dao.upsertZustand(b.dao.zustand()!!.copy(cursor = 5))
         val kaputt = SyncRecord(
             id = "kaputt", type = RecordType.RECIPE, updatedAt = 10, rev = 3,
@@ -483,6 +547,38 @@ class SyncLaufTest {
         assertEquals(11L, b.speicher.zustand().cursor)
         assertNull(b.db.zutatDao().nachId("veraltet"))
         assertEquals(listOf("kaputt" to SyncSpeicher.UNGUELTIGER_PAYLOAD), b.dao.probleme().map { it.recordId to it.code })
+    }
+
+    /** D4: Nach dem Einspielen einer älteren Server-Sicherung bringt das Gerät zurück, was dem Server fehlt. */
+    @Test
+    fun nachWiederherstellungSendetDasGeraetFehlendesErneut() = syncServerTest { server ->
+        val (name, konto) = server.kontoAnlegen()
+        val a = geraet(name, konto)
+        a.db.zutatDao().upsert(zutat("alt"))
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig) // Revision 1: Stand der Sicherung
+        a.db.zutatDao().upsert(zutat("neu"))
+        a.db.zutatDao().upsert(zutat("alt", name = "Alt, geändert"))
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig) // Revisionen 2 und 3: fehlen nach dem Einspielen
+
+        // Sicherung mit Stand 1 einspielen, dann `foody-admin wiederhergestellt`
+        server.deps.db.tx { c ->
+            c.createStatement().use { s ->
+                s.executeUpdate("DELETE FROM sync_record WHERE id = 'neu'")
+                s.executeUpdate("UPDATE sync_record SET rev = 1, payload = json_set(payload, '$.name', 'Zutat alt') WHERE id = 'alt'")
+                s.executeUpdate("UPDATE user SET last_rev = 1")
+            }
+        }
+        server.deps.sync.wiederhergestellt()
+
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig) // 410, Voll-Abgleich: beides wird vorgemerkt
+        assertEquals("Alt, geändert", a.db.zutatDao().nachId("alt")?.canonicalName)
+        assertNotNull(a.db.zutatDao().nachId("neu"))
+        assertTrue(a.ausfuehren() is SyncErgebnis.Fertig) // und gesendet
+
+        val b = geraet(name, konto)
+        assertTrue(b.ausfuehren() is SyncErgebnis.Fertig)
+        assertEquals("Alt, geändert", b.db.zutatDao().nachId("alt")?.canonicalName)
+        assertNotNull(b.db.zutatDao().nachId("neu"))
     }
 
     @Test

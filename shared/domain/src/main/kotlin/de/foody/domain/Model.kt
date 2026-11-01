@@ -55,9 +55,6 @@ data class DateRange(val start: LocalDate, val endInclusive: LocalDate) {
 
     operator fun contains(date: LocalDate) = !date.isBefore(start) && !date.isAfter(endInclusive)
 
-    val days: List<LocalDate>
-        get() = generateSequence(start) { it.plusDays(1) }.takeWhile { !it.isAfter(endInclusive) }.toList()
-
     companion object {
         fun ofDays(start: LocalDate, count: Int): DateRange {
             require(count >= 1)

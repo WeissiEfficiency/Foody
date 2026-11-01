@@ -16,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -24,10 +23,12 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,11 +38,10 @@ import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.komponenten.FoodyKnopf
-import de.foody.core.designsystem.komponenten.KnopfArt
-
-/** Lesebreite der Seite. */
-private val INHALT_MAX = 720.dp
+import de.foody.core.designsystem.komponenten.FoodyFrage
+import de.foody.core.designsystem.komponenten.ueberschrift
+import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyBreiten
 
 /** Dateidialoge der Seite: Sicherung anlegen und Datei zum Wiederherstellen wählen (in Tests ersetzbar). */
 class Dateiwahl(val erstellen: () -> Unit, val oeffnen: () -> Unit)
@@ -86,23 +86,32 @@ fun EinstellungenRoute(
     var zielUngueltig by rememberSaveable { mutableStateOf(false) }
     var zielFehler by rememberSaveable { mutableStateOf(false) }
     val dateien = dateiwahl({ vm.sicherungErstellen(it) }, { ersetzen = it.toString() })
+    // Ohne „Fertig“ verlassen: die letzte gültige Eingabe trotzdem speichern
+    val letzteEingabe by rememberUpdatedState(zielText)
+    DisposableEffect(vm) { onDispose { letzteEingabe?.let(vm::tageszielSpeichern) } }
 
     Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
             Column(
-                Modifier.widthIn(max = INHALT_MAX).fillMaxWidth().safeDrawingPadding()
-                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().safeDrawingPadding()
+                    .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = 104.dp),
+                verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onZurueck) {
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
                     }
-                    Text("Einstellungen", style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+                    Text("Einstellungen", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
                 }
                 KontoAbschnitt(z.konto, System.currentTimeMillis(), onServer)
                 DarstellungAbschnitt(z.darstellung, z.farbwelt, vm::darstellungSetzen, vm::farbweltSetzen)
-                TageszielAbschnitt(zielText ?: z.tagesziel?.toString().orEmpty(), zielFehler, onFertig = { zielFehler = zielUngueltig }) { neu ->
+                TageszielAbschnitt(
+                    zielText ?: z.tagesziel?.toString().orEmpty(), zielFehler,
+                    onFertig = {
+                        zielFehler = zielUngueltig
+                        zielText?.let(vm::tageszielSpeichern)
+                    },
+                ) { neu ->
                     zielText = neu
                     zielUngueltig = !vm.tageszielEingabe(neu)
                     if (!zielUngueltig) zielFehler = false
@@ -117,28 +126,17 @@ fun EinstellungenRoute(
     }
 
     ersetzen?.let { uri ->
-        Rueckfrage(
+        FoodyFrage(
             "Alle Daten ersetzen?", "Alle Daten auf diesem Gerät werden durch den Inhalt der Datei ersetzt.", "Ersetzen",
             onJa = { ersetzen = null; vm.wiederherstellen(uri.toUri()) }, onNein = { ersetzen = null },
         )
     }
     if (loeschen) {
-        Rueckfrage(
+        FoodyFrage(
             "Alle Daten löschen?",
             "Alle Rezepte, Pläne, Einkaufslisten, Tagebuch und Fotos auf diesem Gerät löschen? Der Startkatalog wird neu eingespielt.",
             "Löschen",
             onJa = { loeschen = false; vm.allesLoeschen() }, onNein = { loeschen = false },
         )
     }
-}
-
-@Composable
-private fun Rueckfrage(titel: String, text: String, ja: String, onJa: () -> Unit, onNein: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onNein,
-        title = { Text(titel) },
-        text = { Text(text) },
-        confirmButton = { FoodyKnopf(ja, onJa, art = KnopfArt.TEXT) },
-        dismissButton = { FoodyKnopf("Abbrechen", onNein, art = KnopfArt.TEXT) },
-    )
 }

@@ -3,6 +3,7 @@ package de.foody.feature.rezepte.detail
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -25,6 +26,7 @@ import de.foody.feature.rezepte.einkauf
 import de.foody.feature.rezepte.pruefeNichtsAbgeschnitten
 import de.foody.feature.rezepte.testDatenbank
 import de.foody.feature.rezepte.warteAufText
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -72,7 +74,7 @@ class RezeptDetailScreenTest {
     }
 
     private fun zeigen(id: String = "r1", schrift200: Boolean = false) {
-        val vm = halter.behalten(RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L }, db.einkauf()))
+        val vm = halter.behalten(RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1_000L }, db.einkauf()))
         compose.setContent {
             FoodyTheme {
                 val inhalt = @androidx.compose.runtime.Composable {
@@ -93,6 +95,8 @@ class RezeptDetailScreenTest {
         compose.onNodeWithText("400 g").assertExists()
         compose.onNodeWithText("Reis kochen.", substring = true).assertExists()
         compose.warteAufText("717 kcal je Portion")
+        // Kopf: dazu die kcal für alle gewählten Portionen
+        compose.warteAufText("30 Min. · 717 kcal je Portion · 1.434 kcal für 2 Portionen")
     }
 
     @Test
@@ -103,6 +107,11 @@ class RezeptDetailScreenTest {
         compose.warteAufText("600 g")
         compose.warteAufText("3 Portionen")
         compose.warteAufText("717 kcal je Portion")
+        compose.warteAufText("30 Min. · 717 kcal je Portion · 2.151 kcal für 3 Portionen")
+        compose.onNodeWithContentDescription("Weniger Portionen").performClick()
+        compose.onNodeWithContentDescription("Weniger Portionen").performClick()
+        // Eine Portion: gesamt = je Portion, nichts doppelt
+        compose.warteAufText("30 Min. · 717 kcal je Portion")
     }
 
     @Test
@@ -155,7 +164,7 @@ class RezeptDetailScreenTest {
                 ),
             )
         }
-        val vm = halter.behalten(RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication())) { 1_000L }, db.einkauf()))
+        val vm = halter.behalten(RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1_000L }, db.einkauf()))
         var id by mutableStateOf("r1")
         compose.setContent { FoodyTheme { RezeptDetailRoute(id, { _, _ -> }, {}, {}, {}, vm = vm) } }
         compose.warteAufText("Reispfanne")
@@ -213,6 +222,19 @@ class RezeptDetailScreenTest {
         zeigen(schrift200 = true)
         compose.warteAufText("Reispfanne")
         compose.pruefeNichtsAbgeschnitten()
+    }
+
+    @Test
+    fun schrift200LangerNameImKopf() {
+        // Kopf wächst mit dem Namen statt 260 dp fest: nichts abgeschnitten, der Name liegt nicht unter „Zurück“ (N5)
+        val name = "Gebratener Reis mit Gemüse, Ei und Frühlingszwiebeln nach Art des Hauses"
+        runBlocking { db.rezeptDao().upsert(db.rezeptDao().nachId("r1")!!.copy(name = name)) }
+        zeigen(schrift200 = true)
+        compose.warteAufText(name)
+        compose.pruefeNichtsAbgeschnitten()
+        val zurueck = compose.onNodeWithContentDescription("Zurück").getUnclippedBoundsInRoot()
+        val titel = compose.onNodeWithText(name).getUnclippedBoundsInRoot()
+        assertTrue(titel.top >= zurueck.bottom, "Name ab ${titel.top}, Zurück bis ${zurueck.bottom}")
     }
 
     @Test

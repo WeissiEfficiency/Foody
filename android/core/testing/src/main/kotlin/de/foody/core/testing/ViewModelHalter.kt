@@ -3,6 +3,12 @@ package de.foody.core.testing
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 
 /**
  * Hält die ViewModels eines Tests wie ein Bildschirm. [schliessen] gehört in `@After` vor `db.close()`: Es beendet die
@@ -12,6 +18,7 @@ import androidx.lifecycle.ViewModelStore
 class ViewModelHalter {
     private val store = ViewModelStore()
     private var anzahl = 0
+    private var zuseher: CoroutineScope? = null
 
     /** Nimmt [vm] auf und gibt es zurück: `val vm = halter.behalten(MeinViewModel(…))`. */
     fun <T : ViewModel> behalten(vm: T): T {
@@ -22,6 +29,20 @@ class ViewModelHalter {
         return ViewModelProvider(store, fabrik)["vm${anzahl++}", vm.javaClass]
     }
 
-    /** Beendet alle aufgenommenen ViewModels (wie beim Verlassen des Bildschirms). */
-    fun schliessen() = store.clear()
+    /**
+     * Sammelt [flows] auf `Dispatchers.Main.immediate`, wie es die sichtbare Oberfläche tut. Im Test gilt die App als
+     * geschlossen (`AppOffen`); Zustände mit `SolangeAppOffen` rechnen dann nur, solange jemand zusieht. Ein Test, der
+     * `.value` liest, muss deshalb erst zusehen.
+     */
+    fun zusehen(vararg flows: Flow<*>) {
+        val scope = zuseher ?: CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).also { zuseher = it }
+        flows.forEach { flow -> scope.launch { flow.collect {} } }
+    }
+
+    /** Beendet das Zusehen und alle aufgenommenen ViewModels (wie beim Verlassen des Bildschirms). */
+    fun schliessen() {
+        zuseher?.cancel()
+        zuseher = null
+        store.clear()
+    }
 }

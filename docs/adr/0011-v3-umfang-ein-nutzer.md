@@ -1,7 +1,7 @@
 # ADR 0011: V3 – Funktionsumfang nach Review, ein Nutzer, schlanker Sync, KI über den Server
 
-Status: angenommen (2026-10-17). Löst ADR 0009 teilweise und ADR 0010 weitgehend ab. Plan: `ToDoS/v3-plan.md`,
-Abnahme: `ToDoS/v3-abnahme.md`.
+Status: angenommen (2026-10-17). Löst ADR 0009 teilweise und ADR 0010 weitgehend ab. Plan: `ToDoS/archiv/v3-plan.md`,
+Abnahme: `ToDoS/archiv/v3-abnahme.md`.
 
 **Kontext:** Der v2-Plan (ADR 0009/0010) wollte App, Web-App und Sync mit gleichem Funktionsumfang neu bauen. Ein
 Review aller Funktionen (Fragenkatalog „Foody V3 Review“, 2026-10-17) hat ergeben:
@@ -14,7 +14,7 @@ Review aller Funktionen (Fragenkatalog „Foody V3 Review“, 2026-10-17) hat er
 - Gewünscht ist **KI-Hilfe**: Rezepte erfassen und anpassen, Wochenplan vorschlagen, Nährwerte schätzen.
 
 **Entscheidung:**
-- **V3 statt v2:** Der Neubau aus ADR 0009 baut nur die im Review bestätigten Funktionen (`ToDoS/v3-abnahme.md`).
+- **V3 statt v2:** Der Neubau aus ADR 0009 baut nur die im Review bestätigten Funktionen (`ToDoS/archiv/v3-abnahme.md`).
   Qualität vor Tempo. Die v1 wird bis zum Umstieg nicht mehr verändert.
 - **Gestrichen:** Vorrat mit MHD, „Aus dem Vorrat“, Abbuchen bei „Gekocht“, Vorratsabzug beim Einkauf, Liste als Text
   teilen, Web-App (`:server-web`), Haushalte/Einladungen/Geräteliste, Sterne-Bewertung, die Planer-Modi 1/2/3/7 Tage,

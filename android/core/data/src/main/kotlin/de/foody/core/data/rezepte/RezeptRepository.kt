@@ -9,6 +9,7 @@ import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.db.RezeptZutatEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
+import de.foody.core.data.neueId
 import de.foody.domain.Einordnung
 import de.foody.domain.Gang
 import de.foody.domain.ImportedIngredient
@@ -22,16 +23,19 @@ import de.foody.domain.RezeptEinordnung
 import de.foody.domain.alsText
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import java.math.BigDecimal
-import java.util.UUID
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Rezepte lesen und schreiben. kcal und Nährwerte immer über `:domain` mit denselben Abbildungen wie „Heute“
- * (`DomainAbbildung`), damit Karte, Detail und „Heute“ dieselbe Zahl zeigen.
+ * (`DomainAbbildung`), damit Karte, Detail und „Heute“ dieselbe Zahl zeigen. Gerechnet wird in [rechnen], nie auf dem
+ * Haupt-Thread.
  */
 class RezeptRepository(
     private val db: FoodyDatenbank,
     private val ablage: FotoAblage,
+    private val rechnen: CoroutineContext,
     private val uhr: () -> Long,
 ) {
     /** Alle Rezepte (auch archivierte); neu berechnet bei jeder Änderung an Rezepten, Zeilen, Zutaten oder Plan. */
@@ -45,7 +49,7 @@ class RezeptRepository(
         val jeRezept = zeilen.groupBy { it.recipeId }
         val gekochtJe = gekocht.associate { it.recipeId to it.anzahl }
         rezepte.map { it.karte(jeRezept[it.id].orEmpty(), katalog, gekochtJe[it.id] ?: 0) }
-    }
+    }.flowOn(rechnen)
 
     /** Ein Rezept vollständig; `null`, wenn es die ID nicht (mehr) gibt. */
     fun voll(id: String): Flow<RezeptVoll?> = combine(
@@ -66,7 +70,7 @@ class RezeptRepository(
             naehrwerte = NutritionCalculator.calculate(rezept.alsRecipe(zeilen), katalog),
             einordnung = rezept.einordnung(),
         )
-    }
+    }.flowOn(rechnen)
 
     /**
      * Legt an oder ändert in einer Transaktion; Zeilen und Schritte werden ersetzt. Unbekannte Zutaten kommen in den
@@ -179,8 +183,6 @@ class RezeptRepository(
         return neu.id
     }
 }
-
-private fun neueId() = UUID.randomUUID().toString()
 
 
 internal fun RezeptEntity.einordnung(): Einordnung =

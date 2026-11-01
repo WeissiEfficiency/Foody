@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 
@@ -28,8 +29,8 @@ data class NavZiel(val text: String, val symbol: ImageVector)
 /** Schwebende Glas-Leiste unten (Handy), 12 dp vom Rand. */
 @Composable
 fun FoodyNavigationsleiste(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Unit, modifier: Modifier = Modifier) {
-    GlasFlaeche(GlasStufe.LEICHT, modifier.padding(12.dp), form = FoodyFormen.leiste) {
-        Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+    GlasFlaeche(GlasStufe.LEICHT, modifier.padding(FoodyAbstaende.s3), form = FoodyFormen.leiste) {
+        Row(Modifier.padding(horizontal = FoodyAbstaende.s1), verticalAlignment = Alignment.CenterVertically) {
             ziele.forEachIndexed { i, ziel ->
                 NavEintrag(ziel, i == aktiv, { onWahl(i) }, Modifier.weight(1f))
             }
@@ -40,8 +41,8 @@ fun FoodyNavigationsleiste(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Un
 /** Senkrechte Glas-Leiste links (Tablet). */
 @Composable
 fun FoodyNavigationsRail(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Unit, modifier: Modifier = Modifier) {
-    GlasFlaeche(GlasStufe.LEICHT, modifier.padding(12.dp), form = FoodyFormen.leiste) {
-        Column(Modifier.padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    GlasFlaeche(GlasStufe.LEICHT, modifier.padding(FoodyAbstaende.s3), form = FoodyFormen.leiste) {
+        Column(Modifier.padding(vertical = FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1)) {
             ziele.forEachIndexed { i, ziel ->
                 NavEintrag(ziel, i == aktiv, { onWahl(i) }, Modifier.width(88.dp))
             }
@@ -56,7 +57,7 @@ private fun NavEintrag(ziel: NavZiel, aktiv: Boolean, onKlick: () -> Unit, modif
         modifier
             .heightIn(min = 64.dp)
             .selectable(selected = aktiv, onClick = onKlick, role = Role.Tab)
-            .padding(vertical = 8.dp, horizontal = 2.dp),
+            .padding(vertical = FoodyAbstaende.s2, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

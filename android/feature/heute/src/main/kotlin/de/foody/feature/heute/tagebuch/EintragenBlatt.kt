@@ -40,6 +40,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
+import de.foody.core.designsystem.komponenten.FoodyTextfeld
+import de.foody.core.designsystem.komponenten.ueberschrift
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.scan.PackungScanKnopf
 import de.foody.feature.heute.anzeigename
 import de.foody.feature.heute.slotName
@@ -66,14 +69,14 @@ fun EintragenBlatt(auftrag: BlattAuftrag, onFertig: () -> Unit, vm: EintragenVie
     val e = z.eingaben
     ModalBottomSheet(onDismissRequest = onFertig, containerColor = FoodyTheme.farben.grund) {
         Column(
-            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = FoodyAbstaende.s4).padding(bottom = FoodyAbstaende.s6),
+            verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
-            Text("Eintragen", style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Eintragen", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 MAHLZEITEN.forEach { m -> FoodyChip(m.anzeigename(), m == e.mahlzeit, { vm.mahlzeit(m) }) }
             }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 WEGE.forEach { (w, text) -> FoodyChip(text, w == e.weg, { vm.weg(w) }) }
             }
             when (e.weg) {
@@ -94,7 +97,7 @@ fun EintragenBlatt(auftrag: BlattAuftrag, onFertig: () -> Unit, vm: EintragenVie
 
 @Composable
 private fun Suche(text: String, beschriftung: String, onText: (String) -> Unit) {
-    OutlinedTextField(text, onText, Modifier.fillMaxWidth(), label = { Text(beschriftung) }, singleLine = true)
+    FoodyTextfeld(beschriftung, text, onWert = onText)
 }
 
 /** Auswählbare Trefferzeile mit Haken, mindestens 48 dp hoch. */
@@ -132,7 +135,7 @@ private fun ZutatWahl(z: EintragenZustand, vm: EintragenViewModel) {
     val mengeFokus = remember { FocusRequester() }
     LaunchedEffect(vm) { vm.mengeFokus.collect { mengeFokus.requestFocus() } }
     Zahlfeld("Menge", z.eingaben.menge, focusRequester = mengeFokus, onWert = vm::menge)
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         EINTRAGEN_EINHEITEN.forEach { u -> FoodyChip(u.symbol, u == z.eingaben.einheit, { vm.einheit(u) }) }
     }
 }
@@ -156,7 +159,7 @@ private fun FreiEingabe(z: EintragenZustand, vm: EintragenViewModel) {
         return
     }
     PackungScanKnopf(vm.scanLauf)
-    OutlinedTextField(e.freiName, vm::freiName, Modifier.fillMaxWidth(), label = { Text("Name") }, singleLine = true)
+    FoodyTextfeld("Name", e.freiName, onWert = vm::freiName)
     Zahlfeld("kcal", e.freiKcal, ganzzahlig = true, onWert = vm::freiKcal)
     Zahlfeld("Eiweiß (g, optional)", e.freiEiweiss, onWert = vm::freiEiweiss)
     Zahlfeld("Kohlenhydrate (g, optional)", e.freiKh, onWert = vm::freiKh)

@@ -16,6 +16,7 @@ import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.sicherung.LoeschErgebnis
 import de.foody.core.data.sicherung.Sicherung
 import de.foody.core.data.zutaten.ZutatenRepository
+import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.core.designsystem.token.Farbwelt
 import de.foody.core.scan.ScanEinstellung
 import java.io.File
@@ -28,7 +29,6 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -80,7 +80,7 @@ class EinstellungenViewModel @Inject constructor(
             EinstellungenZustand(d, t, k, l, n)
         }.combine(scan.onlineSuche) { z, online -> z.copy(onlineSuche = online) }
             .combine(darstellungen.farbwelt()) { z, w -> z.copy(farbwelt = Farbwelt.ausName(w)) }.stateIn(
-            viewModelScope, SharingStarted.Eagerly,
+            viewModelScope, SolangeAppOffen,
             // Startwerte sofort aus den Prefs: kein Umspringen, bis der Kontostand da ist
             EinstellungenZustand(
                 darstellung = darstellungen.aktuell(), farbwelt = Farbwelt.ausName(darstellungen.farbweltAktuell()),
@@ -98,17 +98,24 @@ class EinstellungenViewModel @Inject constructor(
     /** Wirkt sofort für alle Scan-Einstiege (Tagebuch, Zutateneditor, „Neue Zutat“). */
     fun onlineSucheSetzen(an: Boolean) = scan.setzen(an)
 
-    /** Leer = kein Ziel; Tausenderpunkte und Leerzeichen erlaubt. `false` = ungültig, nichts gespeichert. */
-    fun tageszielEingabe(text: String): Boolean {
-        val ziffern = text.replace(".", "").replace(" ", "").trim()
-        if (ziffern.isEmpty()) {
-            ziel.setzen(null)
-            return true
-        }
-        val kcal = ziffern.toIntOrNull()?.takeIf { it in TAGESZIEL_MIN..TAGESZIEL_MAX } ?: return false
-        ziel.setzen(kcal)
+    /** Prüft die Eingabe beim Tippen, ohne zu speichern. Leer = kein Ziel; Tausenderpunkte und Leerzeichen erlaubt. */
+    fun tageszielEingabe(text: String): Boolean = tageszielLesen(text) != null
+
+    /** Speichert bei „Fertig“ oder beim Verlassen der Seite; `false` = ungültig, nichts gespeichert. */
+    fun tageszielSpeichern(text: String): Boolean {
+        val gelesen = tageszielLesen(text) ?: return false
+        ziel.setzen(gelesen.kcal)
         return true
     }
+
+    /** `null` = ungültig; sonst das Ziel (`kcal` null = kein Ziel). */
+    private fun tageszielLesen(text: String): Ziel? {
+        val ziffern = text.replace(".", "").replace(" ", "").trim()
+        if (ziffern.isEmpty()) return Ziel(null)
+        return ziffern.toIntOrNull()?.takeIf { it in TAGESZIEL_MIN..TAGESZIEL_MAX }?.let(::Ziel)
+    }
+
+    private data class Ziel(val kcal: Int?)
 
     fun dateiname(): String = "foody-sicherung-${LocalDate.now(clock)}.zip"
 

@@ -5,10 +5,12 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.rezepte.ImportErgebnis
 import de.foody.core.data.rezepte.RezeptImporter
+import de.foody.core.data.rezeptimport.NachtragErgebnis
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.feature.rezepte.importieren.ImportBlatt
 import de.foody.feature.rezepte.importieren.ImportViewModel
 import de.foody.feature.rezepte.importieren.ImportZustand
+import de.foody.feature.rezepte.importieren.nachtragText
 import de.foody.feature.rezepte.importieren.zusammenfassung
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Rule
@@ -29,6 +31,14 @@ private class ErsatzImporter(private val ergebnis: ImportErgebnis) : RezeptImpor
     }
 
     override suspend fun ordner(baum: Uri, onFortschritt: (Int, Int) -> Unit): ImportErgebnis = dateien(emptyList(), onFortschritt)
+
+    var nachtragOrdner: Uri? = null
+
+    override suspend fun portionenNachtragen(baum: Uri): NachtragErgebnis {
+        nachtragOrdner = baum
+        weiter.await()
+        return NachtragErgebnis(aktualisiert = 2, uebersprungen = 1, ohneRezept = 3)
+    }
 }
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -57,5 +67,30 @@ class ImportBlattTest {
         importer.weiter.complete(Unit)
         compose.warteAufText(zusammenfassung(ergebnis))
         assertEquals(ImportZustand.Fertig(ergebnis), vm.zustand.value)
+    }
+
+    @Test
+    fun nachtragTexte() {
+        assertEquals(
+            "2 Rezepte aktualisiert · 1 schon richtig · 3 Dateien ohne passendes Rezept",
+            nachtragText(NachtragErgebnis(2, 1, 3)),
+        )
+        assertEquals("1 Rezept aktualisiert", nachtragText(NachtragErgebnis(1, 0, 0)))
+        assertEquals("Nichts nachzutragen", nachtragText(NachtragErgebnis(0, 0, 0)))
+    }
+
+    /** R10: Portionen aus einem Ordner nachtragen, mit Zusammenfassung. */
+    @Test
+    fun portionenNachtragen() {
+        val importer = ErsatzImporter(ergebnis)
+        val vm = ImportViewModel(importer)
+        compose.setContent { FoodyTheme { ImportBlatt(onSchliessen = {}, vm = vm) } }
+        compose.warteAufText("Portionen nachtragen")
+        val ordner = Uri.parse("file:///rezepte")
+        compose.runOnIdle { vm.portionen(ordner) }
+        compose.warteAufText("Dateien werden gelesen …")
+        importer.weiter.complete(Unit)
+        compose.warteAufText(nachtragText(NachtragErgebnis(2, 1, 3)))
+        assertEquals(ordner, importer.nachtragOrdner)
     }
 }

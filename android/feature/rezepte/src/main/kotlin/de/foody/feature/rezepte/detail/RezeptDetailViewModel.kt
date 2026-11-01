@@ -6,9 +6,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import de.foody.core.data.einkauf.EinkaufRepository
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.data.rezepte.RezeptVoll
+import de.foody.core.designsystem.SolangeAppOffen
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
@@ -41,7 +41,7 @@ class RezeptDetailViewModel @Inject constructor(
 
     val zustand: StateFlow<DetailZustand> = id.filterNotNull().flatMapLatest(repo::voll).combine(portionen) { v, p ->
         if (v == null) DetailZustand.NichtGefunden else DetailZustand.Da(v, p ?: v.rezept.defaultServings)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOPP_MS), DetailZustand.Laden)
+    }.stateIn(viewModelScope, SolangeAppOffen, DetailZustand.Laden)
 
     fun zeigen(rezeptId: String) {
         if (id.value == rezeptId) return
@@ -66,8 +66,4 @@ class RezeptDetailViewModel @Inject constructor(
 
     /** Zutaten für [portionen] auf die aktuelle Einkaufsliste; gibt die Zahl der Artikel zurück (0 = nichts zu kaufen). */
     suspend fun aufEinkaufsliste(portionen: Int): Int = id.value?.let { einkauf.rezeptAufListe(it, portionen) } ?: 0
-
-    private companion object {
-        const val STOPP_MS = 5_000L
-    }
 }

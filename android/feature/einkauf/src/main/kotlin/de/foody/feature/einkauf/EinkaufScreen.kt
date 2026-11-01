@@ -32,10 +32,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.LeererZustandZeile
-
-/** Inhalt höchstens so breit; ab [ZWEI_BEREICHE_AB] Liste links, Katalog rechts. */
-private val INHALT_MAX = 1100.dp
-private val ZWEI_BEREICHE_AB = 840.dp
+import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyBreiten
 
 /** Platz unter der Liste für die schwebende Navigationsleiste. */
 private val LISTE_UNTEN = 104.dp
@@ -78,16 +76,16 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
     }
 
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
-        val breit = maxWidth >= ZWEI_BEREICHE_AB
-        val raster = Modifier.widthIn(max = INHALT_MAX).fillMaxSize()
+        val breit = maxWidth >= FoodyBreiten.zweispaltig
+        val raster = Modifier.widthIn(max = FoodyBreiten.zweiBereiche).fillMaxSize()
         when {
             z.listeFehlt -> LeererZustandFlaeche(
                 Icons.Outlined.RemoveShoppingCart, "Diese Liste gibt es nicht mehr", "Sie wurde gelöscht.",
-                aktionText = "Zur aktuellen Liste", onAktion = onAktuelle, modifier = Modifier.padding(16.dp),
+                aktionText = "Zur aktuellen Liste", onAktion = onAktuelle, modifier = Modifier.padding(FoodyAbstaende.s4),
             )
             breit -> Column(raster) {
                 Raster(Modifier.fillMaxWidth(), unten = 0.dp) { oben() }
-                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4)) {
                     Raster(Modifier.weight(1f)) { liste() }
                     Raster(Modifier.weight(1f)) { katalog() }
                 }
@@ -107,9 +105,9 @@ private fun Raster(modifier: Modifier, unten: androidx.compose.ui.unit.Dp = LIST
     LazyVerticalGrid(
         columns = GridCells.Adaptive(KACHEL_MIN),
         modifier = modifier,
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = unten),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = unten),
+        horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
+        verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
         content = inhalt,
     )
 }

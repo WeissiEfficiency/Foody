@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.token.Farbwelt
+import de.foody.core.designsystem.token.FoodyAbstaende
 
 /**
  * Wahl der Farbwelt: je ein rundes Muster aus Verlauf und Hauptfarbe (im aktuellen Modus), darunter der Name. Die
@@ -44,7 +45,7 @@ internal fun FarbweltWahl(gewaehlt: Farbwelt, onWahl: (Farbwelt) -> Unit) {
     FlowRow(
         Modifier.fillMaxWidth().selectableGroup(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         maxItemsInEachRow = 4,
     ) {
         Farbwelt.entries.forEach { w -> FarbMuster(w, w == gewaehlt) { onWahl(w) } }
@@ -61,14 +62,14 @@ private fun FarbMuster(farbwelt: Farbwelt, gewaehlt: Boolean, onKlick: () -> Uni
             .width(80.dp)
             .clip(MaterialTheme.shapes.small)
             .selectable(selected = gewaehlt, role = Role.RadioButton, onClick = onKlick)
-            .padding(vertical = 4.dp),
+            .padding(vertical = FoodyAbstaende.s1),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
             Modifier
                 .size(52.dp)
                 .border(if (gewaehlt) 2.dp else 1.dp, ring, CircleShape)
-                .padding(if (gewaehlt) 4.dp else 1.dp)
+                .padding(if (gewaehlt) FoodyAbstaende.s1 else 1.dp)
                 .clip(CircleShape)
                 .drawBehind {
                     drawRect(werte.farben.grund)

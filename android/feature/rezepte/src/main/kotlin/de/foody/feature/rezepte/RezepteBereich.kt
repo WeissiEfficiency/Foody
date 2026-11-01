@@ -24,6 +24,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
+import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.rezepte.detail.RezeptDetailRoute
 import de.foody.feature.rezepte.detail.RezeptDetailViewModel
 import de.foody.feature.rezepte.editor.EditorRoute
@@ -33,8 +35,6 @@ import de.foody.feature.rezepte.importieren.ImportViewModel
 import de.foody.feature.rezepte.liste.RezeptListeRoute
 import de.foody.feature.rezepte.liste.RezeptListeViewModel
 
-/** Ab dieser Breite stehen Liste und Rezept nebeneinander. */
-private val ZWEISPALTIG_AB = 840.dp
 private val LISTENBREITE = 360.dp
 
 private enum class Rechts { DETAIL, NEU, BEARBEITEN }
@@ -53,24 +53,25 @@ fun RezepteBereich(
     listeVm: RezeptListeViewModel = hiltViewModel(),
     detailVm: RezeptDetailViewModel = hiltViewModel(),
     importVm: ImportViewModel? = null,
-    /** Nur für Tests: Editor je Auftrag ohne Hilt. */
-    editorVm: ((Int) -> EditorViewModel)? = null,
+    /** Nur für Tests: der Editor ohne Hilt. */
+    editorVm: EditorViewModel? = null,
 ) {
     var importOffen by rememberSaveable { mutableStateOf(false) }
     var ausgewaehlt by rememberSaveable { mutableStateOf<String?>(null) }
     var rechts by rememberSaveable { mutableStateOf(Rechts.DETAIL) }
-    // Je Editor-Auftrag ein eigenes ViewModel: ein zweites „Neues Rezept“ beginnt leer
+    // Ein Editor-ViewModel für alle Aufträge (fester Schlüssel, sonst bliebe je Auftrag eines liegen); ein neuer Auftrag
+    // beginnt darin frisch, ein zweites „Neues Rezept“ also leer
     var auftrag by rememberSaveable { mutableIntStateOf(0) }
     // Wechsel links, der wartet, bis „Änderungen verwerfen?“ beantwortet ist
     var wartenderWechsel by remember { mutableStateOf<(() -> Unit)?>(null) }
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        if (maxWidth < ZWEISPALTIG_AB) {
+        if (maxWidth < FoodyBreiten.zweispaltig) {
             RezeptListeRoute(onOeffnen, onNeu, onImport = { importOffen = true }, vm = listeVm)
         } else {
             val editor = if (rechts == Rechts.DETAIL) {
                 null
             } else {
-                editorVm?.let { remember(auftrag) { it(auftrag) } } ?: hiltViewModel<EditorViewModel>(key = "editor-$auftrag")
+                editorVm ?: hiltViewModel<EditorViewModel>(key = "editor")
             }
             val ungespeichert = editor?.geaendert?.collectAsStateWithLifecycle()?.value == true
             val wechseln = { aktion: () -> Unit -> if (ungespeichert) wartenderWechsel = aktion else aktion() }
@@ -89,13 +90,14 @@ fun RezepteBereich(
                             id = id.takeIf { rechts == Rechts.BEARBEITEN },
                             onFertig = { neu -> ausgewaehlt = neu; rechts = Rechts.DETAIL },
                             onZurueck = { rechts = Rechts.DETAIL },
+                            auftrag = auftrag,
                             vm = editor,
                         )
                         id != null -> RezeptDetailRoute(
                             id, onKochen, onBearbeiten = { auftrag++; rechts = Rechts.BEARBEITEN },
                             onDupliziert = { ausgewaehlt = it }, onZurueck = { ausgewaehlt = null }, onEinkauf = onEinkauf, vm = detailVm,
                         )
-                        else -> Box(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), contentAlignment = Alignment.Center) {
+                        else -> Box(Modifier.fillMaxSize().safeDrawingPadding().padding(FoodyAbstaende.s6), contentAlignment = Alignment.Center) {
                             LeererZustandFlaeche(
                                 Icons.AutoMirrored.Outlined.MenuBook, "Wähle ein Rezept", "Links ein Rezept antippen, um es hier zu sehen.",
                                 aktionText = null, onAktion = null,

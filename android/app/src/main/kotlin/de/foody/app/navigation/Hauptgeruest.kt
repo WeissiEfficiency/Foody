@@ -19,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
@@ -28,6 +27,7 @@ import androidx.navigation.compose.rememberNavController
 import de.foody.core.designsystem.komponenten.FoodyNavigationsRail
 import de.foody.core.designsystem.komponenten.FoodyNavigationsleiste
 import de.foody.core.designsystem.komponenten.NavZiel
+import de.foody.core.designsystem.token.FoodyBreiten
 
 /** Ein Tab mit seiner Route. */
 private class Tab(val route: Any, val ziel: NavZiel)
@@ -73,7 +73,7 @@ fun Hauptgeruest(
     }
     val ziele = tabs.map { it.ziel }
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val breit = !vollbild && maxWidth >= BREIT
+        val breit = !vollbild && maxWidth >= FoodyBreiten.zweispaltig
         // Ein NavHost an fester Stelle: Vollbild, Drehen oder Fenstergröße tauschen nur die Navigation daneben aus,
         // der Zustand der Bildschirme (`rememberSaveable`) bleibt.
         Row(Modifier.fillMaxSize()) {
@@ -97,6 +97,3 @@ object Hauptgeruest {
     const val LEISTE = "navigationsleiste"
     const val RAIL = "navigationsrail"
 }
-
-/** Ab dieser Breite steht die Navigation links (Material „expanded“). */
-private val BREIT = 840.dp

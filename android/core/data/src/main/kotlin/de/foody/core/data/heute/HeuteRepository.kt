@@ -1,5 +1,6 @@
 package de.foody.core.data.heute
 
+import de.foody.core.data.Rechnen
 import de.foody.core.data.alsIngredient
 import de.foody.core.data.alsRecipe
 import de.foody.core.data.db.FoodyDatenbank
@@ -11,9 +12,11 @@ import de.foody.domain.QuantityFormatter
 import de.foody.domain.RecipeProfiles
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import javax.inject.Inject
+import kotlin.coroutines.CoroutineContext
 
 /** Ein geplantes Gericht für „Heute“ (nur mit vorhandenem, nicht archiviertem Rezept). */
 data class GeplanteMahlzeit(
@@ -37,11 +40,17 @@ data class ArtikelKurz(val name: String, val menge: String?)
 /** Offene Artikel der zuletzt geänderten Einkaufsliste. */
 data class OffenerEinkauf(val listeId: String, val anzahl: Int, val artikel: List<ArtikelKurz>)
 
-/** Lesezugriffe für den Bereich „Heute“. */
-class HeuteRepository @Inject constructor(private val db: FoodyDatenbank) {
+/**
+ * Lesezugriffe für den Bereich „Heute“. [rechnen]: wo die kcal aller Rezepte entstehen – nie auf dem Haupt-Thread.
+ */
+class HeuteRepository @Inject constructor(private val db: FoodyDatenbank, @Rechnen private val rechnen: CoroutineContext) {
 
-    /** Aktive Rezepte mit kcal je Portion, neu berechnet, sobald sich Rezepte, Zeilen oder Zutaten ändern. */
-    private val rezepte: Flow<Map<String, RezeptKurz>> = combine(
+    /**
+     * Aktive Rezepte mit kcal je Portion, neu berechnet, sobald sich Rezepte, Zeilen oder Zutaten ändern. Jeder Sammler
+     * rechnet für sich; wer [planHeuteUndMorgen] und [rezeptVorschlaege] zugleich braucht, teilt diesen Flow und gibt ihn
+     * beiden mit.
+     */
+    fun rezepteKurz(): Flow<Map<String, RezeptKurz>> = combine(
         db.rezeptDao().aktive(),
         db.rezeptZutatDao().alleFlow(),
         db.zutatDao().alleFlow(),
@@ -49,9 +58,9 @@ class HeuteRepository @Inject constructor(private val db: FoodyDatenbank) {
         val katalog = zutaten.associate { it.id to it.alsIngredient() }
         val jeRezept = zeilen.groupBy { it.recipeId }
         rezepte.associate { it.id to it.kurz(jeRezept[it.id].orEmpty(), katalog) }
-    }
+    }.flowOn(rechnen)
 
-    fun planHeuteUndMorgen(heute: LocalDate): Flow<List<GeplanteMahlzeit>> =
+    fun planHeuteUndMorgen(heute: LocalDate, rezepte: Flow<Map<String, RezeptKurz>> = rezepteKurz()): Flow<List<GeplanteMahlzeit>> =
         combine(db.planEintragDao().zwischen(heute, heute.plusDays(1)), rezepte) { plan, rezepte ->
             plan.mapNotNull { p ->
                 val r = rezepte[p.recipeId] ?: return@mapNotNull null
@@ -63,7 +72,8 @@ class HeuteRepository @Inject constructor(private val db: FoodyDatenbank) {
             }
         }
 
-    fun rezeptVorschlaege(): Flow<List<RezeptKurz>> = rezepte.map { it.values.toList() }
+    fun rezeptVorschlaege(rezepte: Flow<Map<String, RezeptKurz>> = rezepteKurz()): Flow<List<RezeptKurz>> =
+        rezepte.map { it.values.toList() }
 
     /** `null`, wenn die jüngste Liste nichts Offenes hat (oder es keine gibt). */
     fun offenerEinkauf(): Flow<OffenerEinkauf?> = db.einkaufsartikelDao().offeneDerJuengstenListe().map { artikel ->

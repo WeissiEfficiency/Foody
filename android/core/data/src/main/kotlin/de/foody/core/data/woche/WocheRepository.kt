@@ -5,6 +5,7 @@ import de.foody.core.data.alsIngredient
 import de.foody.core.data.alsRecipe
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.PlanEintragEntity
+import de.foody.core.data.neueId
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.data.rezepte.einordnung
@@ -15,14 +16,12 @@ import de.foody.domain.Mahlzeit
 import de.foody.domain.PlanDurchschnitt
 import de.foody.domain.PlanTag
 import de.foody.domain.RecipeProfiles
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
-import java.util.UUID
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -33,8 +32,8 @@ class WocheRepository(
     private val db: FoodyDatenbank,
     private val rezepte: RezeptRepository,
     private val uhr: () -> Long,
-    /** Wo [woche] rechnet; Tests geben `EmptyCoroutineContext`, damit nichts auf einem fremden Thread nachläuft. */
-    private val rechnen: CoroutineContext = Dispatchers.Default,
+    /** Wo [woche] rechnet ([de.foody.core.data.Rechnen]). */
+    private val rechnen: CoroutineContext,
 ) {
     /** Die sieben Tage ab [montag]; neu bei jeder Änderung an Plan, Rezepten, Zeilen oder Zutaten. */
     fun woche(montag: LocalDate): Flow<WochenAnsicht> = combine(
@@ -83,7 +82,7 @@ class WocheRepository(
             val r = db.rezeptDao().nachId(rezeptId) ?: return@withTransaction null
             val jetzt = uhr()
             val e = PlanEintragEntity(
-                UUID.randomUUID().toString(), datum, text, rezeptId, (portionen ?: r.defaultServings).coerceIn(MIN_PORTIONEN, MAX_PORTIONEN),
+                neueId(), datum, text, rezeptId, (portionen ?: r.defaultServings).coerceIn(MIN_PORTIONEN, MAX_PORTIONEN),
                 createdAt = jetzt, updatedAt = jetzt,
             )
             db.planEintragDao().upsert(e)
@@ -124,6 +123,10 @@ class WocheRepository(
         return (0L..6L).map { montag.plusDays(it) }.filter { it >= heute && it !in belegt }
     }
 
+    /** Warum [vorschlagen] für [mahlzeit] nichts fand ([LeereTageFuellen.leerGrund]). */
+    suspend fun leerGrund(mahlzeit: Mahlzeit): LeereTageFuellen.LeerGrund =
+        LeereTageFuellen.leerGrund(db.rezeptDao().alle().filter { it.archivedAt == null }.map { it.einordnung() }, mahlzeit)
+
     /**
      * Vorschlag „Tag → Rezept-ID“ über [LeereTageFuellen]; gleicher [seed] → gleiches Ergebnis; [ausgeschlossen] nie.
      * [vorgemerkt] = noch nicht angelegte Vorschläge anderer Tage; sie zählen wie Geplantes in die Abwechslung.
@@ -162,7 +165,7 @@ class WocheRepository(
         vorschlag.entries.count { (datum, rezeptId) ->
             val r = db.rezeptDao().nachId(rezeptId) ?: return@count false
             db.planEintragDao().upsert(
-                PlanEintragEntity(UUID.randomUUID().toString(), datum, mahlzeit.name, r.id, r.defaultServings.coerceIn(MIN_PORTIONEN, MAX_PORTIONEN), createdAt = jetzt, updatedAt = jetzt),
+                PlanEintragEntity(neueId(), datum, mahlzeit.name, r.id, r.defaultServings.coerceIn(MIN_PORTIONEN, MAX_PORTIONEN), createdAt = jetzt, updatedAt = jetzt),
             )
             true
         }

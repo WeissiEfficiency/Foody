@@ -1,13 +1,12 @@
 package de.foody.feature.rezepte.detail
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -29,7 +28,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
@@ -38,6 +42,8 @@ import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.RezeptPlatzhalter
 import de.foody.core.designsystem.komponenten.rezeptBild
+import de.foody.core.designsystem.komponenten.ueberschrift
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.domain.Einordnung
 import de.foody.domain.Gang
@@ -49,11 +55,12 @@ import de.foody.domain.RecipeScaler
 @Composable
 internal fun DetailInhalt(z: DetailZustand.Da, a: DetailAktionen) {
     val r = z.voll.rezept
-    Kopfbild(r.name, listOfNotNull(zeit(r.prepMinutes, r.cookMinutes), kcalJePortion(z.voll)).joinToString(" · "), r.imageUri, a.onZurueck)
-    Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    val angaben = listOfNotNull(zeit(r.prepMinutes, r.cookMinutes), kcalJePortion(z.voll), kcalFuerPortionen(z.voll, z.portionen))
+    Kopfbild(r.name, angaben.joinToString(" · "), r.imageUri, a.onZurueck)
+    Column(Modifier.padding(horizontal = FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4)) {
         if (r.archivedAt != null) {
             GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                     Text("Dieses Rezept ist archiviert.", style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
                     FoodyKnopf("Wiederherstellen", { a.onArchivieren(false) }, Modifier.fillMaxWidth(), art = KnopfArt.UMRISS)
                 }
@@ -93,18 +100,21 @@ internal fun DetailInhalt(z: DetailZustand.Da, a: DetailAktionen) {
 
 @Composable
 private fun Kopfbild(name: String, meta: String, bild: String?, onZurueck: () -> Unit) {
-    Box(Modifier.fillMaxWidth().height(260.dp)) {
-        rezeptBild(bild)?.invoke() ?: RezeptPlatzhalter(Modifier.fillMaxSize())
-        // Glaskreis hinter dem Pfeil, damit er auch auf dunklen Fotos lesbar bleibt
-        GlasFlaeche(GlasStufe.BILD, Modifier.padding(8.dp), form = CircleShape) {
-            IconButton(onClick = onZurueck) {
-                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
+    // Mindestens 260 dp; bei großer Schrift wächst der Kopf, statt den Namen abzuschneiden oder über den Pfeil zu legen
+    Box(Modifier.fillMaxWidth()) {
+        Box(Modifier.matchParentSize()) { rezeptBild(bild)?.invoke() ?: RezeptPlatzhalter(Modifier.fillMaxSize()) }
+        Column(Modifier.fillMaxWidth().heightIn(min = 260.dp), verticalArrangement = Arrangement.SpaceBetween) {
+            // Glaskreis hinter dem Pfeil, damit er auch auf dunklen Fotos lesbar bleibt
+            GlasFlaeche(GlasStufe.BILD, Modifier.padding(FoodyAbstaende.s2), form = CircleShape) {
+                IconButton(onClick = onZurueck) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = FoodyTheme.farben.text)
+                }
             }
-        }
-        GlasFlaeche(GlasStufe.BILD, Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(12.dp)) {
-            Column(Modifier.padding(16.dp)) {
-                Text(name, style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
-                if (meta.isNotEmpty()) Text(meta, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
+            GlasFlaeche(GlasStufe.BILD, Modifier.fillMaxWidth().padding(FoodyAbstaende.s3)) {
+                Column(Modifier.padding(FoodyAbstaende.s4)) {
+                    Text(name, Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+                    if (meta.isNotEmpty()) Text(meta, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
+                }
             }
         }
     }
@@ -152,9 +162,16 @@ private fun Einordnungszeile(e: Einordnung) {
 @Composable
 private fun Quelle(url: String) {
     val uri = LocalUriHandler.current
+    // Als Link-Annotation: TalkBack meldet einen Link; ohne Browser stürzt das Öffnen nicht ab
+    val link = LinkAnnotation.Url(
+        url, TextLinkStyles(SpanStyle(color = FoodyTheme.farben.primaer, textDecoration = TextDecoration.Underline)),
+    ) { runCatching { uri.openUri(url) } }
     Text(
-        "Quelle: $url", Modifier.clickable { runCatching { uri.openUri(url) } },
-        style = MaterialTheme.typography.bodyMedium.copy(textDecoration = TextDecoration.Underline), color = FoodyTheme.farben.primaer,
+        buildAnnotatedString {
+            append("Quelle: ")
+            withLink(link) { append(url) }
+        },
+        style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext,
     )
 }
 

@@ -1,6 +1,5 @@
 package de.foody.domain
 
-import java.time.LocalTime
 
 /**
  * Mahlzeit eines Rezepts oder Plan-Eintrags. Gespeichert wird immer der Enum-Name; Anzeigetexte kommen aus der App.
@@ -29,13 +28,6 @@ enum class Mahlzeit(private val bezeichnung: String) {
             SNACK -> 2
             ABENDESSEN -> 3
             null -> 4
-        }
-
-        /** Vorauswahl beim Einplanen: vor 10 Uhr Frühstück, vor 14 Uhr Mittag, sonst Abend. */
-        fun vorschlagFuer(zeit: LocalTime): Mahlzeit = when {
-            zeit.hour < 10 -> FRUEHSTUECK
-            zeit.hour < 14 -> MITTAGESSEN
-            else -> ABENDESSEN
         }
     }
 }

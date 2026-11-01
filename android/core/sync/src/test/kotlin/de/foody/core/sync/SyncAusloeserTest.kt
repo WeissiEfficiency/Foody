@@ -3,13 +3,8 @@ package de.foody.core.sync
 import android.content.Context
 import androidx.room.Room
 import androidx.work.Configuration
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.ExistingWorkPolicy
 import androidx.work.ListenableWorker
 import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerFactory
@@ -95,7 +90,7 @@ class SyncAusloeserTest {
         val db = neueDb()
         val ablage = FotoAblage(context)
         val speicher = SyncSpeicher(db, ablage, FotoIndex(db.syncDao(), ablage))
-        val ausloeser = SyncAusloeser(context, speicher, db, bereich)
+        val ausloeser = SyncAusloeser(context, speicher, db, bereich).also { it.appOffen = true }
         val lauf = SyncLauf(speicher, zugang)
 
         init {
@@ -296,26 +291,45 @@ class SyncAusloeserTest {
     }
 
     @Test
-    fun alterPeriodischerAuftragWirdAbgemeldet() = runBlocking {
+    fun schliessenSendetWartendeAenderungSofortUndEinmalig() = runBlocking {
         val g = Geraet { null }
-        // Mit Netz-Bedingung wie in der v1: im Testmodus bleibt er so eingeplant, statt sofort zu laufen.
-        val alt = PeriodicWorkRequestBuilder<SyncAuftrag>(1, TimeUnit.HOURS)
-            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .build()
-        workManager.enqueueUniquePeriodicWork(SyncAusloeser.ALTER_AUFTRAG, ExistingPeriodicWorkPolicy.KEEP, alt).result.get()
-        assertEquals(WorkInfo.State.ENQUEUED, workManager.getWorkInfoById(alt.id).get()!!.state)
-        val einmal = OneTimeWorkRequestBuilder<SyncAuftrag>()
-            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .build()
-        workManager.enqueueUniqueWork(SyncAusloeser.ALTER_EINMALAUFTRAG, ExistingWorkPolicy.REPLACE, einmal).result.get()
-        assertEquals(WorkInfo.State.ENQUEUED, workManager.getWorkInfoById(einmal.id).get()!!.state)
-
+        g.speicher.aktivieren("http://localhost:1", "konto", allesHochladen = false)
         g.ausloeser.beimStart()
+        g.zutat("a")
+        warteBis { wartend().size == 1 }
 
-        assertEquals("foody-sync-periodic", SyncAusloeser.ALTER_AUFTRAG)
-        assertEquals("foody-sync-now", SyncAusloeser.ALTER_EINMALAUFTRAG)
-        assertEquals(WorkInfo.State.CANCELLED, workManager.getWorkInfoById(einmal.id).get()!!.state)
-        assertEquals("foody-sync-v3", SyncAusloeser.AUFTRAG)
-        assertEquals(WorkInfo.State.CANCELLED, workManager.getWorkInfoById(alt.id).get()!!.state)
+        // Die App geht in den Hintergrund: nicht 5 s und auf Netz warten, sondern gleich und ohne Bedingung
+        g.ausloeser.appImHintergrund().join()
+        val auftrag = auftraege().single { it.state != WorkInfo.State.CANCELLED }
+        assertEquals(0, auftrag.initialDelayMillis)
+        assertEquals(NetworkType.NOT_REQUIRED, auftrag.constraints.requiredNetworkType)
     }
+
+    @Test
+    fun geschlosseneAppPlantNichts() = runBlocking {
+        val g = Geraet { null }
+        g.speicher.aktivieren("http://localhost:1", "konto", allesHochladen = false)
+        g.ausloeser.appImHintergrund().join()
+        assertTrue(auftraege().none { it.state == WorkInfo.State.ENQUEUED }, "ohne Änderungen: nichts wartet")
+
+        // Eine beim Start offene Änderung zählte bei offener App als Zuwachs (outboxBeobachten)
+        g.zutat("a")
+        g.ausloeser.beimStart()
+        warteBis { g.ausloeser.outboxStaendeGesehen.get() >= 1 }
+        g.ausloeser.jetzt().join()
+        assertTrue(wartend().isEmpty(), "App zu: Änderungen und Auslöser planen nichts")
+
+        g.ausloeser.nachLauf(SyncErgebnis.Fertig(gesendet = 1, geholt = 0))
+        assertTrue(wartend().isEmpty(), "kein Nachlauf im Hintergrund")
+    }
+
+    @Test
+    fun geschlosseneAppWiederholtNicht() = runBlocking {
+        val offline = Geraet { KtorServerZugang("http://localhost:1", standardHttpClient()) { "token" } }
+        offline.speicher.aktivieren("http://localhost:1", "konto", allesHochladen = false)
+        offline.ausloeser.appOffen = false
+        val auftrag = TestListenableWorkerBuilder<SyncAuftrag>(context).setWorkerFactory(fabrik).build()
+        assertEquals(ListenableWorker.Result.success(), auftrag.doWork(), "offline und App zu: erst beim Öffnen wieder")
+    }
+
 }

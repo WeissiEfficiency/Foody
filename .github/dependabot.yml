@@ -21,3 +21,8 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+  # Basis-Images des Servers sind auf Digests festgenagelt (E1); Dependabot schlägt neue Stände vor
+  - package-ecosystem: docker
+    directory: /server
+    schedule:
+      interval: weekly

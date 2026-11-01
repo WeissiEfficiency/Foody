@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.data.rezepte.RezeptRepository
+import de.foody.core.designsystem.SolangeAppOffen
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -28,13 +28,9 @@ class RezeptListeViewModel @Inject constructor(repo: RezeptRepository) : ViewMod
 
     val zustand: StateFlow<ListeZustand> = combine(repo.karten(), filter) { karten, f ->
         ListeZustand(true, f, filtern(karten, f), karten.isEmpty(), haeufigeTags(karten))
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOPP_MS), ListeZustand())
+    }.stateIn(viewModelScope, SolangeAppOffen, ListeZustand())
 
     fun filter(aendern: (ListeFilter) -> ListeFilter) = filter.update(aendern)
 
     fun zuruecksetzen() = filter.update { ListeFilter(sortierung = it.sortierung) }
-
-    private companion object {
-        const val STOPP_MS = 5_000L
-    }
 }

@@ -3,18 +3,11 @@ package de.foody.server
 import de.foody.server.admin.AdminCli
 import de.foody.server.db.Database
 import de.foody.server.db.MigrationAbgebrochen
-import de.foody.server.photos.FotoUmzug
 import de.foody.server.sync.Compactor
 import io.ktor.server.application.Application
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import org.slf4j.LoggerFactory
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.nio.file.Path
-import java.time.Duration
 import kotlin.system.exitProcess
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +20,6 @@ fun main(args: Array<String>) {
     when (args.firstOrNull()) {
         null -> startServer(config)
         "admin" -> exitProcess(AdminCli.ausfuehren(config, args.drop(1)))
-        "healthcheck" -> exitProcess(if (healthcheck(config.port)) 0 else 1)
         else -> {
             System.err.println("Unbekannter Befehl: ${args.first()}")
             exitProcess(2)
@@ -45,9 +37,6 @@ private fun startServer(config: ServerConfig) {
     }
     val deps = ServerDeps.create(config, db)
     if (!bootstrapAdmin(config, deps)) exitProcess(1)
-    // Vor dem Start des HTTP-Servers, damit die Fotos im Konto-Ordner liegen, bevor Geräte sie anfragen.
-    val umgezogen = FotoUmzug(deps.db, Path.of(config.photoDir)).ausfuehren()
-    if (umgezogen > 0) LoggerFactory.getLogger("de.foody.server.photos").info("Fotoumzug: {} Haushaltsordner erledigt", umgezogen)
     embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
         foodyModule(deps)
         launchCompaction(deps)
@@ -92,13 +81,4 @@ private fun bootstrapAdmin(config: ServerConfig, deps: ServerDeps): Boolean {
         }
     }
     return true
-}
-
-/** Fragt `/health` des lokal laufenden Servers ab (für den Docker-Healthcheck). */
-private fun healthcheck(port: Int): Boolean = try {
-    val request = HttpRequest.newBuilder(URI("http://127.0.0.1:$port/health"))
-        .timeout(Duration.ofSeconds(3)).GET().build()
-    HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.discarding()).statusCode() == 200
-} catch (e: Exception) {
-    false
 }

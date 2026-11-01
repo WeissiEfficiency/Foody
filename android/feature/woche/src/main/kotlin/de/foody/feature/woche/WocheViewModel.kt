@@ -9,11 +9,12 @@ import de.foody.core.data.db.PlanEintragEntity
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.data.woche.WochenAnsicht
 import de.foody.core.data.woche.WocheRepository
+import de.foody.core.designsystem.SolangeAppOffen
+import de.foody.domain.LeereTageFuellen
 import de.foody.domain.Mahlzeit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -39,7 +40,6 @@ data class FuellenZustand(
 )
 
 private const val MONTAG = "montag"
-private const val STOPP_MS = 5_000L
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -52,16 +52,16 @@ class WocheViewModel @Inject constructor(
     private val montag = saved.getStateFlow(MONTAG, montagVon(LocalDate.now(clock)).toEpochDay())
 
     val woche: StateFlow<WochenAnsicht?> = montag.flatMapLatest { repo.woche(LocalDate.ofEpochDay(it)) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+        .stateIn(viewModelScope, SolangeAppOffen, null)
 
-    val tagesziel: StateFlow<Int?> = ziel.tagesziel().stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val tagesziel: StateFlow<Int?> = ziel.tagesziel().stateIn(viewModelScope, SolangeAppOffen, null)
 
     val zeigtHeute: StateFlow<Boolean> = montag.map { it == montagVon(LocalDate.now(clock)).toEpochDay() }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+        .stateIn(viewModelScope, SolangeAppOffen, true)
 
     /** Rezepte für „+ Mahlzeit“ (ohne archivierte). */
     val rezeptAuswahl: StateFlow<List<RezeptKarte>> = repo.rezeptAuswahl()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOPP_MS), emptyList())
+        .stateIn(viewModelScope, SolangeAppOffen, emptyList())
 
     private val fuellenStand = MutableStateFlow<FuellenZustand?>(null)
     val fuellen: StateFlow<FuellenZustand?> = fuellenStand.asStateFlow()
@@ -118,7 +118,12 @@ class WocheViewModel @Inject constructor(
         val vorschlag = repo.vorschlagen(tage, mahlzeit, seed)
         val hinweis = when {
             tage.isEmpty() -> "Alle Tage ab heute haben schon ein ${mahlzeitAnzeige(mahlzeit)}"
-            vorschlag.isEmpty() -> "Keine passenden Rezepte – alles schon in den letzten 14 Tagen geplant"
+            vorschlag.isEmpty() -> when (repo.leerGrund(mahlzeit)) {
+                LeereTageFuellen.LeerGrund.KEINE_REZEPTE -> "Noch keine Rezepte – erst welche anlegen oder importieren"
+                LeereTageFuellen.LeerGrund.KEINE_PASSENDEN ->
+                    "Kein Rezept passt zum ${mahlzeitAnzeige(mahlzeit)} – Einordnung im Rezept prüfen"
+                LeereTageFuellen.LeerGrund.KUERZLICH_GEPLANT -> "Keine passenden Rezepte – alles schon in den letzten 14 Tagen geplant"
+            }
             else -> null
         }
         fuellenStand.value = FuellenZustand(mahlzeit, tage, vorschlag, emptySet(), hinweis)

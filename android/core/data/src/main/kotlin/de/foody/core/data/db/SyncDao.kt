@@ -54,9 +54,6 @@ interface SyncDao {
 
     @Upsert suspend fun upsertRevision(e: SyncRevisionEntity)
 
-    @Query("DELETE FROM sync_record_rev WHERE type = :type AND recordId = :recordId")
-    suspend fun loeschenRevision(type: String, recordId: String)
-
     @Query("DELETE FROM sync_record_rev") suspend fun revisionenLeeren()
 
     // sync_state (genau eine Zeile, id = 1)
@@ -82,6 +79,35 @@ interface SyncDao {
     suspend fun loeschenProblem(type: String, recordId: String)
 
     @Query("DELETE FROM sync_problem") suspend fun problemeLeeren()
+
+    /**
+     * Probleme mit dem Namen des lokalen Datensatzes für die Anzeige, neueste zuerst; ein Plan-Eintrag heißt wie sein
+     * Rezept. `name` ist `null`, wenn es den Datensatz lokal nicht gibt (etwa eine gescheiterte Abholung).
+     */
+    @Query(
+        """
+        SELECT p.type AS typ, p.recordId AS id, p.code AS code, p.at AS seit,
+            COALESCE(z.canonicalName, r.name, pr.name, l.name, a.name, t.name) AS name
+        FROM sync_problem p
+        LEFT JOIN ingredient z ON p.type = 'ingredient' AND z.id = p.recordId
+        LEFT JOIN recipe r ON p.type = 'recipe' AND r.id = p.recordId
+        LEFT JOIN meal_slot m ON p.type = 'meal_slot' AND m.id = p.recordId
+        LEFT JOIN recipe pr ON pr.id = m.recipeId
+        LEFT JOIN shopping_list l ON p.type = 'shopping_list' AND l.id = p.recordId
+        LEFT JOIN shopping_item a ON p.type = 'shopping_item' AND a.id = p.recordId
+        LEFT JOIN tagebuch_eintrag t ON p.type = 'tagebuch_eintrag' AND t.id = p.recordId
+        ORDER BY p.at DESC, p.type, p.recordId
+        """,
+    )
+    fun problemeMitNamen(): Flow<List<SyncProblemMitName>>
+
+    /** Zahl der Probleme mit einem der [codes], die vor [vor] (Epoch-ms) zuletzt vermerkt oder versucht wurden. */
+    @Query("SELECT COUNT(*) FROM sync_problem WHERE code IN (:codes) AND at < :vor")
+    suspend fun problemeAelterAls(codes: List<String>, vor: Long): Int
+
+    /** Setzt bei allen Problemen mit einem der [codes] den Zeitpunkt auf [jetzt] (erneut versucht). */
+    @Query("UPDATE sync_problem SET at = :jetzt WHERE code IN (:codes)")
+    suspend fun problemeVersucht(codes: List<String>, jetzt: Long)
 
     // sync_photo_local
     @Query("SELECT * FROM sync_photo_local ORDER BY uri") suspend fun fotosLokal(): List<SyncFotoLokalEntity>

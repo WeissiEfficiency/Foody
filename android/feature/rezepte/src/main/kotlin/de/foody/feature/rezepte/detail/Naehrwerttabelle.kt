@@ -16,6 +16,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.Abschnittskopf
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.domain.Nutrient
 import de.foody.domain.NutritionResult
@@ -31,6 +32,11 @@ private val NAEHRSTOFFE = listOf(
 internal fun kcalJePortion(v: RezeptVoll): String? =
     v.naehrwerte.perServing(Nutrient.ENERGY_KJ)?.let { "${ganzzahlDeutsch(NutritionResult.kcal(it))} kcal je Portion" }
 
+/** „1.434 kcal für 2 Portionen“ (das Rezept skaliert); `null` ohne Energiewerte und bei einer Portion (wie je Portion). */
+internal fun kcalFuerPortionen(v: RezeptVoll, portionen: Int): String? =
+    v.naehrwerte.perServing(Nutrient.ENERGY_KJ)?.takeIf { portionen > 1 }
+        ?.let { "${kcal(it.multiply(BigDecimal(portionen)))} für $portionen Portionen" }
+
 /** Gramm mit höchstens einer Nachkommastelle, deutsch. */
 private fun gramm(wert: BigDecimal): String =
     wert.setScale(1, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString().replace('.', ',') + " g"
@@ -45,7 +51,7 @@ internal fun Naehrwerttabelle(v: RezeptVoll, portionen: Int) {
     val faktor = BigDecimal(portionen)
     Abschnittskopf("Nährwerte")
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             kcalJePortion(v)?.let { Text(it, style = MaterialTheme.typography.titleMedium, color = FoodyTheme.farben.text) }
             Zeile("", "je Portion", if (portionen == 1) "1 Portion" else "$portionen Portionen", kopf = true)
             n.perServing(Nutrient.ENERGY_KJ)?.let { kj ->
@@ -74,7 +80,7 @@ private fun kilojoule(kj: BigDecimal) = "${ganzzahlDeutsch(kj.setScale(0, Roundi
 private fun Zeile(name: String, jePortion: String, gesamt: String, kopf: Boolean = false) {
     val stil = if (kopf) MaterialTheme.typography.labelMedium else MaterialTheme.typography.bodyMedium
     val farbe = if (kopf) FoodyTheme.farben.nebentext else FoodyTheme.farben.text
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         Text(name, Modifier.weight(1.2f), style = stil, color = farbe)
         Text(jePortion, Modifier.weight(1f), style = stil, color = farbe, textAlign = TextAlign.End)
         Text(gesamt, Modifier.weight(1f), style = stil, color = farbe, textAlign = TextAlign.End)

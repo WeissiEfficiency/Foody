@@ -4,13 +4,14 @@ import android.content.Context
 import androidx.room.withTransaction
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.foody.core.data.Einstellungsschluessel
+import de.foody.core.data.Einstellungsschluessel.SEED_VERSION
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.zutaten.ergaenztUm
 import javax.inject.Inject
 
 /**
  * Legt fehlende Startzutaten an, aktualisiert unveränderte Starteinträge und ergänzt gleichnamige eigene Zutaten ohne
- * Nährwerte – je [Startdaten.VERSION] einmal, wie die v1 (`seedVersion` in den Prefs `foody`, alt `seeded` = 1).
+ * Nährwerte – je [Startdaten.VERSION] einmal, wie die v1 (`seedVersion` in den Prefs `foody`).
  * Die v1 glich vorher noch alte Schreibweisen ab; das braucht die V3 nicht: Umsteiger haben Version 8 schon.
  */
 class StartdatenLader @Inject constructor(
@@ -20,7 +21,7 @@ class StartdatenLader @Inject constructor(
     /** Anzahl angelegter oder geänderter Zutaten; 0, wenn die Version schon geladen ist. */
     suspend fun ladenWennNoetig(): Int {
         val prefs = kontext.getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE)
-        val geladen = prefs.getInt(SEED_VERSION, if (prefs.getBoolean(SEEDED_ALT, false)) 1 else 0)
+        val geladen = prefs.getInt(SEED_VERSION, 0)
         if (geladen >= Startdaten.VERSION) return 0
         val dao = db.zutatDao()
         var geaendert = 0
@@ -59,18 +60,13 @@ class StartdatenLader @Inject constructor(
      */
     fun versionZuruecksetzen(): Int {
         val prefs = kontext.getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE)
-        val vorher = prefs.getInt(SEED_VERSION, if (prefs.getBoolean(SEEDED_ALT, false)) 1 else 0)
-        prefs.edit().putInt(SEED_VERSION, 0).remove(SEEDED_ALT).commit()
+        val vorher = prefs.getInt(SEED_VERSION, 0)
+        prefs.edit().putInt(SEED_VERSION, 0).commit()
         return vorher
     }
 
     /** Setzt die Version zurück auf [vorher] (Löschen war gesperrt, es wurde nichts geleert). */
     fun versionWiederherstellen(vorher: Int) {
         kontext.getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE).edit().putInt(SEED_VERSION, vorher).commit()
-    }
-
-    private companion object {
-        const val SEED_VERSION = "seedVersion"
-        const val SEEDED_ALT = "seeded"
     }
 }

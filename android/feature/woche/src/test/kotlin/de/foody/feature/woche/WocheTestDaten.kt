@@ -48,11 +48,12 @@ suspend fun FoodyDatenbank.hauptspeisen() = listOf(
 /** Repository und ViewModel wie in der App, mit fester bzw. verstellbarer Uhr; außerhalb der Komposition anlegen. */
 class WocheTestUmgebung(val db: FoodyDatenbank, val uhr: TestUhr = TestUhr(Instant.EPOCH).apply { auf(MITTWOCH) }) {
     private val app = RuntimeEnvironment.getApplication()
-    val repo = WocheRepository(db, RezeptRepository(db, FotoAblage(app)) { 1_000L }, { uhr.millis() }, EmptyCoroutineContext)
+    val repo = WocheRepository(db, RezeptRepository(db, FotoAblage(app), EmptyCoroutineContext) { 1_000L }, { uhr.millis() }, EmptyCoroutineContext)
     val ziel = TageszielSpeicher(app)
 
     /** Hält die ViewModels; `viewModels.schliessen()` gehört in `@After` vor `db.close()` ([ViewModelHalter]). */
     val viewModels = ViewModelHalter()
 
     fun vm(saved: SavedStateHandle = SavedStateHandle()) = viewModels.behalten(WocheViewModel(saved, repo, ziel, uhr))
+        .also { viewModels.zusehen(it.woche, it.tagesziel, it.zeigtHeute, it.rezeptAuswahl) }
 }

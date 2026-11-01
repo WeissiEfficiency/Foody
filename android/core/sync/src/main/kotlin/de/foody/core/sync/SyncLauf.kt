@@ -1,5 +1,7 @@
 package de.foody.core.sync
 
+import android.database.SQLException
+import android.database.sqlite.SQLiteFullException
 import android.util.Log
 import de.foody.api.protocol.ErrorCode
 import de.foody.api.protocol.PhotoHash
@@ -7,8 +9,10 @@ import de.foody.api.protocol.Protocol
 import de.foody.api.protocol.PushResult
 import de.foody.api.protocol.PushStatus
 import de.foody.api.protocol.SyncRecord
+import de.foody.api.protocol.VerloreneRevisionen
 import de.foody.core.data.sync.Ausstehend
 import de.foody.core.data.sync.Fassung
+import de.foody.core.data.sync.SpeicherVollFehler
 import de.foody.core.data.sync.SyncSpeicher
 import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
@@ -24,8 +28,11 @@ private class CursorHaengt : Exception(ServerFehler.CURSOR_HAENGT)
  * 1. Outbox in Paketen senden (höchstens [Protocol.MAX_PUSH_RECORDS] bzw. [Protocol.MAX_PUSH_BYTES]); fehlende Fotos
  *    vorher hochladen.
  * 2. Ergebnisse verbuchen (angenommen, zusammengeführt, abgelehnt; fehlende Verweisziele werden nachgereicht).
- * 3. Alle Seiten ab dem Cursor holen und einmal anwenden; `410` → Voll-Abgleich.
+ * 3. Alle Seiten ab dem Cursor holen und einmal anwenden; `410` → Voll-Abgleich. Ist eine erneute Abholung fällig
+ *    ([SyncSpeicher.erneutHolenFaellig]), danach alles ab 0 holen und nur das noch Fehlende anwenden.
  * 4. Gewünschte Fotos laden und verknüpfen.
+ *
+ * Ist der Gerätespeicher voll, bricht der Lauf mit `speicher_voll` ab, ohne einen Datensatz aufzugeben.
  *
  * Alles läuft unter [SyncSpeicher.laufSperre] (ein Lauf zur Zeit; Trennen wartet). [zugang] wird erst bei aktivem Sync
  * gebaut (suspend: Adresse und Token kommen aus Datenbank und Token-Speicher, siehe [zugangFuerLauf]); `null` heißt:
@@ -51,6 +58,7 @@ class SyncLauf(
             } ?: return@withLock fehlgeschlagen(ServerFehler.ANMELDUNG_ABGELAUFEN, voruebergehend = false)
             val gesendet = pushen(server)
             val geholt = holen(server)
+            erneutHolen(server)
             fotosLaden(server)
             speicher.fehler(null)
             SyncErgebnis.Fertig(gesendet, geholt)
@@ -60,6 +68,10 @@ class SyncLauf(
             fehlgeschlagen(e.kennung, voruebergehend(e))
         } catch (_: CursorHaengt) {
             fehlgeschlagen(ServerFehler.CURSOR_HAENGT, voruebergehend = true)
+        } catch (_: SpeicherVollFehler) {
+            speicherVoll()
+        } catch (_: SQLiteFullException) {
+            speicherVoll()
         } catch (e: Exception) {
             // Lokaler Fehler (Datenbank, Dateien) oder Unerwartetes: in sync_state nur die feste Kennung. Ins Log Klasse
             // und Stelle, nie die Meldung (sie könnte Daten enthalten). Ein späterer Versuch kann gelingen (Datei
@@ -67,6 +79,16 @@ class SyncLauf(
             Log.w(TAG, "Sync-Lauf abgebrochen: ${e.javaClass.name} bei ${eigeneStelle(e)}")
             fehlgeschlagen(ServerFehler.SERVER_FEHLER, voruebergehend = true)
         }
+    }
+
+    /** Auch das Vermerken kann am vollen Speicher scheitern; das Ergebnis kommt trotzdem an. */
+    private suspend fun speicherVoll(): SyncErgebnis {
+        try {
+            speicher.fehler(ServerFehler.SPEICHER_VOLL)
+        } catch (_: SQLException) {
+            // nichts zu tun: der Auslöser versucht es ohnehin erneut
+        }
+        return SyncErgebnis.Fehlgeschlagen(ServerFehler.SPEICHER_VOLL, voruebergehend = true)
     }
 
     /** Erste Stelle im eigenen Code, an der [e] entstand (sonst die oberste). */
@@ -204,17 +226,23 @@ class SyncLauf(
             speicher.anwenden(datensaetze, naechster)
             datensaetze.size
         } catch (_: ServerFehler.CursorAbgelaufen) {
-            val (datensaetze, naechster) = seitenHolen(server, 0)
-            speicher.vollabgleich(datensaetze, naechster)
+            val (datensaetze, naechster, verloren) = seitenHolen(server, 0)
+            speicher.vollabgleich(datensaetze, naechster, verloren)
             datensaetze.size
         }
+    }
+
+    /** Holt alles ab 0 erneut, wenn beim Anwenden gescheiterte Datensätze seit einem Tag warten; der Cursor bleibt. */
+    private suspend fun erneutHolen(server: ServerZugang) {
+        if (!speicher.erneutHolenFaellig()) return
+        speicher.erneutAnwenden(seitenHolen(server, 0).datensaetze)
     }
 
     /**
      * Alle Seiten ab [von]. Ist eine Seite zu groß (`413` oder Antwort über der Lesegrenze), wird das Limit halbiert und
      * dieselbe Seite erneut geholt, bis [MIN_PULL_LIMIT]; sonst bliebe der Cursor dauerhaft stehen.
      */
-    private suspend fun seitenHolen(server: ServerZugang, von: Long): Pair<List<SyncRecord>, Long> {
+    private suspend fun seitenHolen(server: ServerZugang, von: Long): Abholung {
         val alle = ArrayList<SyncRecord>()
         var since = von
         var limit = Protocol.MAX_PULL_LIMIT
@@ -230,9 +258,12 @@ class SyncLauf(
             // Ein Cursor, der trotz weiterer Seiten nicht vorrückt, würde endlos laufen.
             if (seite.hasMore && seite.nextCursor <= since) throw CursorHaengt()
             since = seite.nextCursor
-            if (!seite.hasMore) return alle to since
+            if (!seite.hasMore) return Abholung(alle, since, seite.verloren)
         }
     }
+
+    /** Alle abgeholten Datensätze, der Cursor danach und der Bereich, der dem Server fehlt (nach einer Wiederherstellung). */
+    private data class Abholung(val datensaetze: List<SyncRecord>, val cursor: Long, val verloren: VerloreneRevisionen?)
 
     // ---- Fotos runter --------------------------------------------------------------------------------------
 

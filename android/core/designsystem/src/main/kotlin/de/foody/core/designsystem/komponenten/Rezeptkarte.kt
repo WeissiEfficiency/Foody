@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
+import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.core.designsystem.token.herzFarbe
@@ -95,15 +96,15 @@ fun RezeptkarteGross(
                 }
             }
             if (gross || aktion == null) {
-                Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(Modifier.padding(horizontal = FoodyAbstaende.s4, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     text(Modifier.fillMaxWidth())
                     if (aktion != null) FoodyKnopf(aktion.text, onKlick = aktion.onKlick)
                 }
             } else {
                 Row(
-                    Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                    Modifier.padding(horizontal = FoodyAbstaende.s4, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
                 ) {
                     text(Modifier.weight(1f))
                     FoodyKnopf(aktion.text, onKlick = aktion.onKlick)
@@ -135,16 +136,17 @@ fun RezeptkarteRaster(
             bild?.invoke() ?: RezeptPlatzhalter(Modifier.fillMaxSize())
             if (favorit) {
                 Box(
-                    Modifier.align(Alignment.TopEnd).padding(8.dp).size(28.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.9f)),
+                    Modifier.align(Alignment.TopEnd).padding(FoodyAbstaende.s2).size(28.dp).clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.9f)),
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Filled.Favorite, contentDescription = null, tint = herzFarbe(FoodyTheme.farbwelt), modifier = Modifier.size(18.dp)) }
             }
             if (zeit != null || kcal != null) {
                 // Umbrechende Zeile: bei großer Schrift rutscht kcal unter die Zeit statt sie zu überdecken
                 FlowRow(
-                    Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(8.dp),
+                    Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(FoodyAbstaende.s2),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1),
                 ) {
                     if (zeit != null) Abzeichen(zeit, Modifier)
                     if (kcal != null) Abzeichen(kcal, Modifier)
@@ -157,7 +159,7 @@ fun RezeptkarteRaster(
             color = FoodyTheme.farben.text,
             maxLines = if (grosseSchrift()) 4 else 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(start = 2.dp, end = 2.dp, top = 8.dp, bottom = 4.dp),
+            modifier = Modifier.padding(start = 2.dp, end = 2.dp, top = FoodyAbstaende.s2, bottom = FoodyAbstaende.s1),
         )
     }
 }
@@ -169,7 +171,7 @@ private fun Abzeichen(text: String, modifier: Modifier) {
         text,
         style = MaterialTheme.typography.labelMedium,
         color = Color.White,
-        modifier = modifier.clip(CircleShape).background(Color.Black.copy(alpha = 0.6f)).padding(horizontal = 10.dp, vertical = 4.dp),
+        modifier = modifier.clip(CircleShape).background(Color.Black.copy(alpha = 0.6f)).padding(horizontal = 10.dp, vertical = FoodyAbstaende.s1),
     )
 }
 
@@ -187,7 +189,7 @@ fun RezeptPlatzhalter(modifier: Modifier = Modifier, symbolOben: Boolean = false
             contentDescription = null,
             tint = Color.White.copy(alpha = 0.7f),
             modifier = Modifier
-                .padding(top = if (symbolOben) 20.dp else 0.dp)
+                .padding(top = if (symbolOben) FoodyAbstaende.s5 else 0.dp)
                 .size(if (symbolOben) 40.dp else 56.dp)
                 .testTag(PLATZHALTER_SYMBOL_TAG),
         )

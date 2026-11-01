@@ -13,14 +13,12 @@ enum class Diet { VEGETARIAN, VEGAN, HIGH_PROTEIN, LOW_CARB, LIGHT }
 data class RecipeProfile(
     val kcalPerServing: Int?,
     val proteinPerServing: Int?,
-    val carbsPerServing: Int?,
     /** Anteil der Zutaten mit bekannter Energie (0..1). */
     val completeness: Double,
     val diets: Set<Diet>,
 ) {
-    val reliable: Boolean get() = completeness >= RELIABLE
-
     companion object {
+        /** Ab diesem Anteil bekannter Energiewerte gelten die Nährwert-Filter. */
         const val RELIABLE = 0.8
         const val HIGH_PROTEIN_G = 25
         const val LOW_CARB_G = 20
@@ -49,7 +47,7 @@ object RecipeProfiles {
                 if (kcal != null && kcal <= RecipeProfile.LIGHT_KCAL) add(Diet.LIGHT)
             }
         }
-        return RecipeProfile(kcal, protein, carbs, completeness, diets)
+        return RecipeProfile(kcal, protein, completeness, diets)
     }
 }
 
@@ -91,6 +89,3 @@ object DietRules {
             animalWords.filter { it.length > 3 }.any { word -> words.any { it.contains(word) } }
     }
 }
-
-/** Sortierung der Rezeptliste. */
-enum class RecipeSort { NAME, NEWEST, KCAL_ASC, PROTEIN_DESC, BEST_RATED, MOST_COOKED }
