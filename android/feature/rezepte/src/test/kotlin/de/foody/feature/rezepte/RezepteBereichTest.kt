@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -118,7 +119,7 @@ class RezepteBereichTest {
         compose.warteAufText("Wähle ein Rezept")
         compose.onNodeWithText("Reispfanne").performClick()
         compose.warteAufText("400 g")
-        compose.onNodeWithContentDescription("Auf die Einkaufsliste").performClick()
+        compose.onNodeWithText("Auf die Einkaufsliste").performScrollTo().performClick()
         compose.warteAufText("Hinzufügen")
         compose.onNodeWithText("Hinzufügen").performClick()
         compose.warteAufText("Ansehen")
@@ -133,7 +134,7 @@ class RezepteBereichTest {
         compose.warteAufText("Wähle ein Rezept")
         compose.onNodeWithText("Reispfanne").performClick()
         compose.warteAufText("400 g")
-        compose.onNodeWithText("Rezepte suchen").assertExists()
+        compose.onNodeWithText("Rezepte, Zutaten …").assertExists()
         assertTrue(geoeffnet.isEmpty(), "Tablet öffnet rechts, ohne Navigation")
     }
 

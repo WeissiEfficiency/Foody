@@ -1,5 +1,7 @@
 package de.foody.feature.rezepte.liste
 
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -88,7 +90,7 @@ class RezeptListeScreenTest {
         runBlocking { db.bestand() }
         zeigen()
         compose.warteAufText("Reispfanne")
-        compose.onNodeWithText("Rezepte suchen").performTextInput("xyz")
+        compose.onNodeWithContentDescription("Rezepte, Zutaten …").performTextInput("xyz")
         compose.warteAufText("Nichts gefunden")
         compose.onNodeWithText("Filter zurücksetzen").performClick()
         compose.warteAufText("Reispfanne")
@@ -99,11 +101,23 @@ class RezeptListeScreenTest {
         runBlocking { db.bestand() }
         zeigen()
         compose.warteAufText("Reispfanne")
-        compose.onNodeWithContentDescription("Mehr").performClick()
+        compose.onNodeWithContentDescription("Rezept hinzufügen").performClick()
         compose.onNodeWithText("Neues Rezept").performClick()
-        compose.onNodeWithContentDescription("Mehr").performClick()
+        compose.onNodeWithContentDescription("Rezept hinzufügen").performClick()
         compose.onNodeWithText("Markdown importieren").performClick()
         assertEquals(1 to 1, neu to importiert)
+    }
+
+    @Test
+    fun alleIstGewaehltBisEinFilterGreift() {
+        runBlocking { db.bestand() }
+        zeigen()
+        compose.warteAufText("Reispfanne")
+        compose.onNodeWithText("Alle").assertIsSelected()
+        compose.onNodeWithText("Favoriten").performClick()
+        compose.onNodeWithText("Alle").assertIsNotSelected()
+        compose.onNodeWithText("Alle").performClick()
+        compose.onNodeWithText("Favoriten").assertIsNotSelected()
     }
 
     @Test

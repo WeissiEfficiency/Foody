@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -114,7 +114,7 @@ fun RezeptkarteGross(
     }
 }
 
-/** Rasterkarte (Rezeptliste): quadratisches Bild mit Abzeichen, Titel darunter. */
+/** Rasterkarte (Rezeptliste) wie im Entwurf: quadratisches Bild mit Herz und Dauer-Abzeichen, darunter Titel und kcal. */
 @Composable
 fun RezeptkarteRaster(
     titel: String,
@@ -141,17 +141,7 @@ fun RezeptkarteRaster(
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Filled.Favorite, contentDescription = null, tint = herzFarbe(FoodyTheme.farbwelt), modifier = Modifier.size(18.dp)) }
             }
-            if (zeit != null || kcal != null) {
-                // Umbrechende Zeile: bei großer Schrift rutscht kcal unter die Zeit statt sie zu überdecken
-                FlowRow(
-                    Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(FoodyAbstaende.s2),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1),
-                ) {
-                    if (zeit != null) Abzeichen(zeit, Modifier)
-                    if (kcal != null) Abzeichen(kcal, Modifier)
-                }
-            }
+            if (zeit != null) Abzeichen(zeit, Modifier.align(Alignment.BottomStart).padding(FoodyAbstaende.s2))
         }
         Text(
             titel,
@@ -159,20 +149,30 @@ fun RezeptkarteRaster(
             color = FoodyTheme.farben.text,
             maxLines = if (grosseSchrift()) 4 else 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(start = 2.dp, end = 2.dp, top = FoodyAbstaende.s2, bottom = FoodyAbstaende.s1),
+            modifier = Modifier.padding(start = 2.dp, end = 2.dp, top = FoodyAbstaende.s2),
         )
+        if (kcal != null) {
+            Text(
+                kcal,
+                style = MaterialTheme.typography.bodySmall,
+                color = FoodyTheme.farben.nebentext,
+                modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = FoodyAbstaende.s1),
+            )
+        }
     }
 }
 
-/** Kleines Abzeichen auf dem Bild; dunkler Grund (α 0,6), damit weiße Schrift auf jedem Foto 4,5:1 hält. */
+/** Dauer-Abzeichen auf dem Bild mit Uhr; dunkler Grund (α 0,6), damit weiße Schrift auf jedem Foto 4,5:1 hält. */
 @Composable
 private fun Abzeichen(text: String, modifier: Modifier) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelMedium,
-        color = Color.White,
-        modifier = modifier.clip(CircleShape).background(Color.Black.copy(alpha = 0.6f)).padding(horizontal = 10.dp, vertical = FoodyAbstaende.s1),
-    )
+    Row(
+        modifier.clip(CircleShape).background(Color.Black.copy(alpha = 0.6f)).padding(horizontal = FoodyAbstaende.s2, vertical = FoodyAbstaende.s1),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1),
+    ) {
+        Icon(Icons.Outlined.Schedule, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+        Text(text, style = MaterialTheme.typography.labelMedium, color = Color.White)
+    }
 }
 
 /** Rezept ohne Foto: Verlauf in der Farbwelt mit Besteck-Symbol – mittig oder ([symbolOben]) im oberen Teil. */
