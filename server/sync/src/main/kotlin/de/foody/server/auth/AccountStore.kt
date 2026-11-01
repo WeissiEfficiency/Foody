@@ -1,8 +1,8 @@
 package de.foody.server.auth
 
+import de.foody.api.protocol.ErrorCode
 import de.foody.server.ApiException
 import de.foody.server.db.Database
-import de.foody.api.protocol.ErrorCode
 import io.ktor.http.HttpStatusCode
 import java.sql.Connection
 import java.sql.PreparedStatement

@@ -1,12 +1,12 @@
 package de.foody.feature.zutaten
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.lifecycle.SavedStateHandle
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.zutaten.ZutatEntwurf
 import de.foody.core.data.zutaten.ZutatFeld
-import de.foody.core.testing.nachProzessende
 import de.foody.core.scan.ScanAusgang
 import de.foody.core.scan.ScanTexte
+import de.foody.core.testing.nachProzessende
 import de.foody.domain.NutrientBasis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

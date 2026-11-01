@@ -3,9 +3,9 @@ package de.foody.core.designsystem.komponenten
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.LightMode
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsProperties

@@ -184,7 +184,6 @@ class RezeptRepository(
     }
 }
 
-
 internal fun RezeptEntity.einordnung(): Einordnung =
     RezeptEinordnung.einordnen(name, tagsAus(tags), Mahlzeit.mengeAus(mahlzeiten), Gang.mengeAus(gaenge))
 

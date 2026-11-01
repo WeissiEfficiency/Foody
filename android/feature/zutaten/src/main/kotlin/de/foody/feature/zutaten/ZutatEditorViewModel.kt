@@ -16,7 +16,6 @@ import de.foody.core.scan.OnlineSucheErlaubt
 import de.foody.core.scan.PackungScan
 import de.foody.core.scan.ScanAusgang
 import de.foody.core.scan.ScanLauf
-import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +25,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Zustand des Editors. [vorher] ist der Stand beim Öffnen (gespeichert werden nur Abweichungen davon); [fehler] zeigt

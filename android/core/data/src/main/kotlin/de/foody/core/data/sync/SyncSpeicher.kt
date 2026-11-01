@@ -24,14 +24,14 @@ import de.foody.core.data.fotos.FotoIndex
 import de.foody.core.data.startdaten.Startdaten
 import de.foody.core.data.startdaten.wieStart
 import de.foody.core.data.zutaten.zusammenfuehrenSchritte
-import java.io.File
-import java.io.IOException
-import java.time.DateTimeException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
+import java.io.File
+import java.io.IOException
+import java.time.DateTimeException
 
 /** Sync-Zustand für Sync-Lauf und Oberfläche (aus `sync_state`). [letzterFehler] ist eine feste Kennung. */
 data class SyncZustand(
@@ -208,6 +208,7 @@ class SyncSpeicher(
 
         val paket = ArrayList<Ausstehend>()
         var bytes = HUELLE_BYTES
+
         /** Nimmt [a] auf, wenn es noch passt; sonst ist das Paket voll. */
         fun aufnehmen(a: Ausstehend): Boolean {
             if (paket.size >= maxDatensaetze) return false

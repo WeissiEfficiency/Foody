@@ -1,6 +1,5 @@
 package de.foody.server
 
-import de.foody.server.sync.Compactor
 import de.foody.api.protocol.ErrorCode
 import de.foody.api.protocol.PhotoHash
 import de.foody.api.protocol.PhotosMissingRequest
@@ -9,6 +8,7 @@ import de.foody.api.protocol.Protocol
 import de.foody.api.protocol.RecipePayload
 import de.foody.api.protocol.RecordType
 import de.foody.api.protocol.SyncRecord
+import de.foody.server.sync.Compactor
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get

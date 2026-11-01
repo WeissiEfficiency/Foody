@@ -22,6 +22,7 @@ fun interface TabellenScanner {
 
 sealed interface ScanStatus {
     data class Erkannt(val ergebnis: ScanErgebnis) : ScanStatus
+
     /** Das Erkennungsmodul wird gerade über die Play-Dienste geladen; der Download ist angestoßen. */
     data object WirdGeladen : ScanStatus
     data object Fehler : ScanStatus
@@ -63,10 +64,13 @@ fun interface OnlineSucheErlaubt {
 sealed interface ScanAusgang {
     /** Werte zum Vorausfüllen (Open Food Facts oder Foto). */
     data class Gefunden(val packung: Packungswerte) : ScanAusgang
+
     /** Die Zutat [id] („[name]“) trägt diesen [strichcode] schon. */
     data class ImKatalog(val id: String, val name: String, val strichcode: String) : ScanAusgang
+
     /** Strichcode gelesen, aber keine Werte – Foto anbieten; [strichcode] beim Speichern trotzdem merken. */
     data class NichtGefunden(val strichcode: String, val grund: Grund) : ScanAusgang
+
     /** Foto ohne erkennbare Nährwerttabelle. */
     data class KeineTabelle(val strichcode: String?) : ScanAusgang
     data object WirdGeladen : ScanAusgang

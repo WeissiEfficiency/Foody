@@ -10,9 +10,9 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
 import androidx.room.Room
 import de.foody.core.data.db.FoodyDatenbank
@@ -43,6 +43,7 @@ import kotlin.test.assertTrue
 /** Echte Datenbank und echtes Repository; ViewModels außerhalb der Komposition anlegen. */
 internal class ZutatenTestUmgebung {
     val kontext: Context = RuntimeEnvironment.getApplication()
+
     // Abfragen und Transaktionen im aufrufenden Thread wie in den anderen Features: Sonst läuft nach dem Zusammenführen
     // noch eine Abfrage auf Rooms eigenem Thread, wenn [schliessen] die Datenbank zumacht.
     val db: FoodyDatenbank = Room.inMemoryDatabaseBuilder(kontext, FoodyDatenbank::class.java)
@@ -148,7 +149,9 @@ const val TEST_CODE = "4000000000000"
  */
 internal class TestScan {
     @Volatile var packung: Packungswerte? = null
+
     @Volatile var imKatalog: ZutatTreffer? = null
+
     @Volatile var online: Boolean = true
     val anfragen = AtomicInteger()
 

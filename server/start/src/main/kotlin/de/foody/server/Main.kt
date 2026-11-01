@@ -7,13 +7,13 @@ import de.foody.server.sync.Compactor
 import io.ktor.server.application.Application
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
-import org.slf4j.LoggerFactory
-import kotlin.system.exitProcess
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import org.slf4j.LoggerFactory
+import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
     val config = ServerConfig.fromEnv()

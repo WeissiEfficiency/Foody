@@ -44,6 +44,7 @@ object NaehrwertScan {
 
     /** Zahl mit Einheit, z. B. „1.234 kJ“, „3,5 g“, „<0,5 g“, „12mg“. */
     private val zahlMitEinheit = Regex("""(<\s*)?(\d+(?:[.  ]\d{3})*(?:[.,]\d+)?)\s*(kj|kcal|mg|g)\b""", RegexOption.IGNORE_CASE)
+
     /** Lesefehler „12 9“ statt „12 g“: eine allein stehende 9 hinter der Zahl gilt als Gramm; die erste zählt (je 100 g). */
     private val neunAlsGramm = Regex("""(<\s*)?(\d+(?:[.,]\d+)?)\s+9(?=\s|$)""")
     private val englischeTausender = Regex("""\d{1,3},\d{3}""")

@@ -2,7 +2,6 @@ package de.foody.core.data.heute
 
 import androidx.room.Room
 import de.foody.core.data.db.FoodyDatenbank
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -13,6 +12,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import java.time.LocalDate
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull

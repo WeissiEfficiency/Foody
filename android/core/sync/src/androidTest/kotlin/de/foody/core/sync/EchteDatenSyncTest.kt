@@ -13,16 +13,16 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.fotos.FotoIndex
 import de.foody.core.data.sync.SyncSpeicher
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Test
+import org.junit.runner.RunWith
 import java.io.File
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
-import kotlinx.coroutines.runBlocking
-import org.junit.After
-import org.junit.Test
-import org.junit.runner.RunWith
 
 /**
  * Sync-Lauf mit einer echten, nach Version 10 migrierten v1-Datenbank gegen den Test-Server. Läuft nur mit

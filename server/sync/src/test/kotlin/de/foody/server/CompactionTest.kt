@@ -1,9 +1,9 @@
 package de.foody.server
 
-import de.foody.server.sync.Compactor
 import de.foody.api.protocol.ErrorCode
 import de.foody.api.protocol.RecordType
 import de.foody.api.protocol.SyncRecord
+import de.foody.server.sync.Compactor
 import io.ktor.http.HttpStatusCode
 import java.time.Duration
 import kotlin.test.Test

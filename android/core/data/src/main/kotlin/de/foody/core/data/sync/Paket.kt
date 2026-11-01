@@ -5,8 +5,8 @@ import de.foody.api.protocol.RecipePayload
 import de.foody.api.protocol.RecordType
 import de.foody.api.protocol.SyncRecord
 import de.foody.api.protocol.decode
-import java.io.File
 import kotlinx.serialization.json.JsonObject
+import java.io.File
 
 /**
  * Eine Fassung eines Outbox-Eintrags: Typ, ID und `queuedAt` zum Zeitpunkt des Paketbaus. Ein erneutes Vormerken

@@ -22,8 +22,11 @@ data class ScanKonfiguration(val appVersion: String)
 @InstallIn(SingletonComponent::class)
 abstract class ScanModul {
     @Binds abstract fun strichcodeLeser(impl: GmsStrichcodeLeser): StrichcodeLeser
+
     @Binds abstract fun tabellenScanner(impl: MlKitTabellenScanner): TabellenScanner
+
     @Binds abstract fun playDienste(impl: GooglePlayDienste): PlayDienste
+
     @Binds abstract fun onlineSuche(impl: ScanEinstellung): OnlineSucheErlaubt
 
     companion object {

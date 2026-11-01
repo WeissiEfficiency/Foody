@@ -96,4 +96,3 @@ fun EditorRoute(
     }
     if (fragen) VerwerfenFrage(onVerwerfen = { fragen = false; onZurueck() }, onWeiter = { fragen = false })
 }
-

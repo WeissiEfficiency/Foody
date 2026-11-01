@@ -15,8 +15,6 @@ import de.foody.core.data.fotos.FotoIndex
 import de.foody.core.data.sync.SyncSpeicher
 import de.foody.domain.MeasureUnit
 import de.foody.domain.RezeptImport
-import java.math.BigDecimal
-import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -25,6 +23,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.math.BigDecimal
+import kotlin.test.assertEquals
 
 /**
  * Portionen-Nachtrag: Markdown-Dateien werden über die Quelle ihren Rezepten zugeordnet; nur `defaultServings` und

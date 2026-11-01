@@ -22,10 +22,10 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import kotlin.test.assertEquals
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
+import kotlin.test.assertEquals
 
 // Gemeinsame Bausteine für die Sync-Tests (Datensatz-Builder und Push-/Pull-Aufrufe).
 
@@ -99,4 +99,3 @@ internal suspend fun HttpClient.pull(token: String, since: Long, limit: Int? = n
 
 internal suspend fun HttpResponse.errorCode(): ErrorCode =
     Protocol.json.decodeFromString(ErrorDto.serializer(), bodyAsText()).code
-

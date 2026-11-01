@@ -34,14 +34,14 @@ import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.FoodyNavigationsRail
 import de.foody.core.designsystem.komponenten.FoodyNavigationsleiste
-import de.foody.core.designsystem.komponenten.KartenAktion
 import de.foody.core.designsystem.komponenten.Kachel
 import de.foody.core.designsystem.komponenten.KachelEmoji
+import de.foody.core.designsystem.komponenten.KartenAktion
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.LeererZustandZeile
-import de.foody.core.designsystem.komponenten.NavZiel
 import de.foody.core.designsystem.komponenten.Naehrwertbalken
+import de.foody.core.designsystem.komponenten.NavZiel
 import de.foody.core.designsystem.komponenten.RezeptkarteGross
 import de.foody.core.designsystem.komponenten.RezeptkarteRaster
 import de.foody.core.designsystem.komponenten.SyncAnzeige

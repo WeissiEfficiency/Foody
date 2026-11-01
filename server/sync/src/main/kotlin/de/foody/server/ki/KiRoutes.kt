@@ -1,7 +1,7 @@
 package de.foody.server.ki
 
-import de.foody.server.ServerDeps
 import de.foody.api.protocol.KiStatus
+import de.foody.server.ServerDeps
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get

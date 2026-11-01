@@ -5,13 +5,13 @@ import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import de.foody.core.data.baueDatenbank
+import org.junit.After
+import org.junit.Test
+import org.junit.runner.RunWith
 import java.io.File
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import org.junit.After
-import org.junit.Test
-import org.junit.runner.RunWith
 
 /**
  * Migration 9 → 10 mit einer echten v1-Datenbank (Kopie vom Handy). Läuft nur mit Instrumentation-Argumenten, sonst

@@ -7,6 +7,7 @@ import de.foody.server.auth.KontoExistiert
 import de.foody.server.db.Database
 import de.foody.server.db.Migrations
 import de.foody.server.sync.Compactor
+import org.sqlite.SQLiteConfig
 import java.io.File
 import java.io.PrintStream
 import java.security.SecureRandom
@@ -14,7 +15,6 @@ import java.sql.DriverManager
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
-import org.sqlite.SQLiteConfig
 
 /**
  * Administrationsbefehle (`foody admin …`). Erfolgsausgaben gehen an [out], Fehlerzeilen und Hilfe bei falschem Aufruf an [err]; Exit-Codes: 0 Erfolg,

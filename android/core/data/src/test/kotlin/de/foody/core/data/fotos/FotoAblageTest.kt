@@ -13,6 +13,16 @@ import androidx.exifinterface.media.ExifInterface
 import androidx.room.Room
 import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.db.FoodyDatenbank
+import kotlinx.coroutines.test.runTest
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.Shadows
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import java.io.File
 import java.io.FilterInputStream
 import java.io.InputStream
@@ -25,16 +35,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.test.runTest
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.Shadows
-import org.robolectric.annotation.Config
-import org.robolectric.annotation.GraphicsMode
 
 /**
  * Fotoablage und Foto-Index: Kamerafotos werden verkleinert und nach EXIF gedreht, kleine bleiben byte-gleich,

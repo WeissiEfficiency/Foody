@@ -13,7 +13,6 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.sync.SyncLage
 import de.foody.core.sync.SyncLageQuelle
 import de.foody.core.testing.ViewModelHalter
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -27,6 +26,7 @@ import org.robolectric.annotation.GraphicsMode
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

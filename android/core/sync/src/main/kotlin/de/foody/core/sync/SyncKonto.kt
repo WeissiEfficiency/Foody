@@ -9,15 +9,15 @@ import de.foody.core.data.db.fachdatenLeeren
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.sync.SyncSpeicher
 import de.foody.core.data.sync.SyncZustand
-import javax.inject.Inject
-import javax.inject.Singleton
-import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlin.coroutines.cancellation.CancellationException
 
 /** Ergebnis einer Aktion für die Oberfläche; [Fehler.kennung] ist eine feste Kennung, nie Token, Passwort oder Body. */
 sealed interface Ergebnis<out T> {

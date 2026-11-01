@@ -91,10 +91,10 @@ Reihenfolge wie im Gesamt-Review empfohlen; jede Korrektur mit einem Test, der v
 | ✅ E1 | CI: doppelt laufende Tests zusammenlegen; Basis-Image und Gradle-Download pinnen **Erledigt (#160):** Unit-Tests nur in Debug, Bildvergleich im selben Lauf (CI ~3,5 min); `ubuntu-24.04`, Prüfsumme für den Wrapper, Basis-Images auf Digests mit Dependabot | Schnellere, reproduzierbare CI |
 | ✅ E2 | Gradle-Deprecations (`--warning-mode all`) und die Manifest-Warnung zu `WorkManagerInitializer` (`AndroidManifest.xml:39`) beheben **Erledigt (#160), ohne Codeänderung:** `Configuration.setVisible` kommt aus AGP und verschwindet mit dessen nächstem Update; die Manifest-Warnung erscheint nur beim Unit-Test-Manifest, im App-Manifest wird der Initializer wie gewollt entfernt | Vor dem nächsten Gradle-Hauptversionswechsel |
 | ✅ E4 | **CI: Release einmal starten**, nicht nur bauen: Kurztest der R8-Variante auf dem Emulator (Start, „Frei“ im Tagebuch öffnen) **Erledigt (#165):** `ReleaseStartTest` startet „Foody Vorschau“ (`benchmarkVorschau`, R8 wie im Release) auf dem Managed Device und öffnet „Frei“ | Z1 fiel erst auf dem Handy auf – der Release-Build war grün |
-| E5 | Referenzbilder (111 PNG, 36 MB) in Git LFS oder kleiner aufnehmen | Jedes Neuaufnehmen vergrößert das Repo dauerhaft; im OpenCloud-Checkout wird alles mitsynchronisiert |
+| ✅ E5 | Referenzbilder (111 PNG, 36 MB) in Git LFS oder kleiner aufnehmen **Erledigt (#171):** halbe Auflösung über `FoodyBildvergleich` (`:core:testing`), 47 → 16 MB; LFS nicht nötig | Jedes Neuaufnehmen vergrößert das Repo dauerhaft; im OpenCloud-Checkout wird alles mitsynchronisiert |
 | E6 | `:core:data` (6.000 Zeilen, ein Drittel der App) beobachten; bei weiterem Wachstum die Sicherung als `:core:sicherung` abtrennen | Jede Änderung dort baut alle Features neu – heute noch kein Handlungsbedarf |
 | ✅ E3 | Rest der Liste „Weitere aus dem Review“ (erstes V3-Review): Kochmodus rekomponiert sekündlich, Tagesziel speichert Zwischenstände, verwaiste Fotos nach Sync, 4 A11y-Lücken (SeitenListe, Timer-Chip, Quellen-Link, Überschriften), falscher Leer-Grund bei „Leere Tage füllen“, Argon2 auf Request-Threads, Docker ohne Gradle-Cache, toter `RecordStore.lebende()` (nur noch im Test), ktlint/detekt **Erledigt bis auf ktlint/detekt (#157, #162, #163, #164);** der Linter ist jetzt E7 | Beim nächsten Anfassen der Bereiche |
-| E7 | Linter für Stilfehler in der CI. **Teil 1 erledigt (#168):** ktlint 1.8.0, `./gradlew ktlintPruefen` in der CI, Regeln in `.editorconfig` (Stil wie bisher, Zeilen bis 160). Teil 2: Import-Reihenfolge und Leerzeilen per `ktlintKorrigieren` (~150 Dateien), dann die vier dafür abgeschalteten Regeln wieder an | Rest aus E3; Teil 2 nach dem Design-Umbau, damit der Format-Lauf nicht mit dessen Branch kollidiert |
+| ✅ E7 | Linter für Stilfehler in der CI. **Teil 1 erledigt (#168):** ktlint 1.8.0, `./gradlew ktlintPruefen` in der CI, Regeln in `.editorconfig` (Stil wie bisher, Zeilen bis 160). **Teil 2 erledigt (#172):** Import-Reihenfolge und Leerzeilen per `ktlintKorrigieren` (~150 Dateien), dann die vier dafür abgeschalteten Regeln wieder an | Rest aus E3; Teil 2 nach dem Design-Umbau, damit der Format-Lauf nicht mit dessen Branch kollidiert |
 
 ### Nachprüfung 2026-10-31 (neu, klein)
 
@@ -136,7 +136,7 @@ prüfen.
 | ✅ Q5 | **Dispatcher fest verdrahtet:** `Dispatchers.IO/Default` direkt in 14 Dateien, nur `EinkaufRepository` und `WocheRepository` nehmen einen `rechnen`-Kontext an | Hilt-Qualifier `@Rechnen`/`@EinAusgabe` und überall injizieren; macht W3 einfach und Tests schneller. **Erledigt:** Qualifier `@Rechnen` (`:core:data`, `DatenModul.rechnen`) für Rezept-, Heute-, Woche- und Einkauf-Repository und den Sync-Bereich, ohne Standardwert; Tests geben `EmptyCoroutineContext`. `@EinAusgabe` bewusst nicht: Dateizugriffe (`withContext(Dispatchers.IO)`) rechnen nichts und laufen in Tests genauso | mittel |
 | ✅ Q6 | **UI-Texte im Code:** keine `strings.xml`-Texte, rund 70 `Text("…")` plus Texte als Parameter **Erledigt (#167):** ADR 0016 | Für eine deutschsprachige Ein-Nutzer-App vertretbar; als ADR festhalten statt umbauen | niedrig |
 | ✅ Q7 | `:baselineprofile` setzt `compileSdk/minSdk/targetSdk` und Java 17 selbst statt über `build-logic` **Erledigt (#165):** Convention-Plugin `foody.android.test` setzt SDKs und Java wie bei den anderen Modulen | Werte aus dem Convention-Plugin nehmen | niedrig |
-| Q8 | Schrift `fraunces.ttf` 312 KB (Variable Font, alle Schriftsysteme) | Auf Latein beschneiden (~60 KB) | niedrig |
+| ✅ Q8 | Schrift `fraunces.ttf` 312 KB (Variable Font, alle Schriftsysteme) **Erledigt (#171):** nur `wght` 600–700, übrige Achsen fest auf Standard; 360 → 118 KB, alle Zeichen bleiben | Auf Latein beschneiden (~60 KB) | niedrig |
 
 Gut: Build-Cache, Configuration-Cache und parallele Builds an, alle Versionen im Katalog, keine festen Farben
 außerhalb des Designsystems, keine `.sp` außerhalb, nur zwei feste URLs (Open Food Facts, lokaler Healthcheck),
@@ -175,7 +175,7 @@ Ressourcen schlank (381 KB), Features ohne Querverweise.
    ✅ Q1, Q2 und Q4 als ein Designsystem-PR (Bilder blieben gleich).
 3. ✅ **Server, ein Rebuild für alles:** D1–D5 zusammen (mit N1). Server läuft seit 2026-10-31 auf #154 (Migration 3, Sicherung `vor-migration-3-2026-10-31-1959.db`).
 4. ✅ **Vorgezogen auf 31.10./01.11.:** Stufe 3 C1–C8 (#156, #158, #166), Stufe 5 bis auf E6 (beobachten). Nach dem
-   Design-Umbau folgen E5 (Referenzbilder kleiner), Q8 (Schrift beschneiden) und E7 Teil 2 (Format-Lauf).
+   Design-Umbau (#170) folgten E5 und Q8 (#171) und E7 Teil 2 (Format-Lauf).
 5. Danach ist die Bahn frei für die KI-Hilfe (`ToDoS/ki-plan.md`).
 
 **Geschätzter Gewinn (geschätzt, nicht gemessen):** ~45 Doku-Dateien aus dem Suchpfad neuer Sessions, ~300 Zeilen

@@ -1,12 +1,12 @@
 package de.foody.server.auth
 
-import de.foody.server.ApiException
-import de.foody.server.ServerDeps
-import de.foody.server.receiveJson
 import de.foody.api.protocol.AuthResponse
 import de.foody.api.protocol.ErrorCode
 import de.foody.api.protocol.LoginRequest
 import de.foody.api.protocol.PasswordChangeRequest
+import de.foody.server.ApiException
+import de.foody.server.ServerDeps
+import de.foody.server.receiveJson
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.principal
 import io.ktor.server.plugins.origin

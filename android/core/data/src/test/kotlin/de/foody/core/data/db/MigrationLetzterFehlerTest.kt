@@ -3,8 +3,6 @@ package de.foody.core.data.db
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import de.foody.core.data.baueDatenbank
-import java.io.File
-import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -17,6 +15,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.io.File
+import kotlin.test.assertEquals
 
 /**
  * Migration 9 → 10 unter Robolectric: `lastError` der v1 wird auf die festen Kennungen der V3 abgebildet, alles andere

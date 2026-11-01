@@ -1,7 +1,7 @@
 package de.foody.server.auth
 
-import de.foody.server.ApiException
 import de.foody.api.protocol.ErrorCode
+import de.foody.server.ApiException
 import io.ktor.http.HttpStatusCode
 import org.slf4j.LoggerFactory
 import java.time.Clock

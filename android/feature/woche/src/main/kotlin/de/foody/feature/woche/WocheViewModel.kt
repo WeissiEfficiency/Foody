@@ -7,8 +7,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.db.PlanEintragEntity
 import de.foody.core.data.rezepte.RezeptKarte
-import de.foody.core.data.woche.WochenAnsicht
 import de.foody.core.data.woche.WocheRepository
+import de.foody.core.data.woche.WochenAnsicht
 import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.domain.LeereTageFuellen
 import de.foody.domain.Mahlzeit

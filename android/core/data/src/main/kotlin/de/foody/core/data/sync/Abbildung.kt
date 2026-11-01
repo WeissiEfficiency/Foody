@@ -25,10 +25,10 @@ import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.domain.NutrientBasis
 import de.foody.domain.TagebuchArt
-import java.math.BigDecimal
-import java.time.LocalDate
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.JsonObject
+import java.math.BigDecimal
+import java.time.LocalDate
 
 /**
  * Abbildung zwischen den lokalen Zeilen von `foody.db` und den Sync-Datensätzen des Protokolls 3 – in beide Richtungen.

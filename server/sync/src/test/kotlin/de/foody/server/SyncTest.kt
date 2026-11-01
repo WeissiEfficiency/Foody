@@ -3,8 +3,8 @@ package de.foody.server
 import de.foody.api.protocol.ErrorCode
 import de.foody.api.protocol.Protocol
 import de.foody.api.protocol.PullResponse
-import de.foody.api.protocol.RecipePayload
 import de.foody.api.protocol.PushStatus
+import de.foody.api.protocol.RecipePayload
 import de.foody.api.protocol.RecordType
 import de.foody.api.protocol.SyncRecord
 import de.foody.api.protocol.TagebuchPayload
@@ -16,14 +16,14 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class SyncTest {
     @Test

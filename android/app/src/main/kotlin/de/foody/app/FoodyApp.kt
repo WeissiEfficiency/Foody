@@ -24,7 +24,9 @@ import javax.inject.Inject
 @HiltAndroidApp
 class FoodyApp : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
+
     @Inject lateinit var ausloeser: SyncAusloeser
+
     @Inject lateinit var startdaten: StartdatenLader
 
     /** Lebt so lange wie der Prozess; Fehler eines Auftrags beenden die anderen nicht. */

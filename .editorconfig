@@ -25,11 +25,6 @@ ktlint_standard_multiline-loop = disabled
 ktlint_standard_trailing-comma-on-declaration-site = disabled
 # Dateien heißen nach ihrem Inhalt (z. B. Angleichungen.kt mit mehreren Funktionen), nicht nach der ersten Klasse
 ktlint_standard_filename = disabled
-# Vorerst aus: `ktlintKorrigieren` behebt sie in ~150 Dateien, das kommt als eigener PR nach dem Design-Umbau (E7)
-ktlint_standard_import-ordering = disabled
-ktlint_standard_no-consecutive-blank-lines = disabled
-ktlint_standard_spacing-between-declarations-with-annotations = disabled
-ktlint_standard_spacing-between-declarations-with-comments = disabled
 
 # Startdaten und Testfälle enthalten lange Texte am Stück
 [**/startdaten/Startdaten.kt]

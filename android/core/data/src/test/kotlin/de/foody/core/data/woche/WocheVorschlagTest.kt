@@ -7,7 +7,6 @@ import de.foody.core.data.heute.plan
 import de.foody.core.data.heute.rezept
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.domain.Mahlzeit
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -17,6 +16,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import java.time.LocalDate
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
