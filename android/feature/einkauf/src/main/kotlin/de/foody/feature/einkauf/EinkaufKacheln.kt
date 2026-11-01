@@ -54,7 +54,7 @@ private fun EinkaufKachel(
     modifier: Modifier = Modifier,
     untertitel: String? = null,
     onLangdruck: (() -> Unit)? = null,
-    // Auf der Liste selbst: Monogramm wie im Entwurf, ohne Rand; im Katalog Emoji und Rand für „auf der Liste“
+    // Auf der Liste selbst ohne Rand; im Katalog mit Rand für „auf der Liste“. Das Symbol ist überall dasselbe (Nutzerwunsch statt Monogramm)
     aufListe: Boolean = false,
 ) = Kachel(
     name, menge, onKlick, modifier, untertitel = untertitel,
@@ -64,7 +64,7 @@ private fun EinkaufKachel(
         Stand.GEKAUFT -> "gekauft"
         Stand.NICHT -> "nicht auf der Liste"
     },
-    symbol = if (aufListe) null else ({ KachelEmoji(emoji) }),
+    symbol = { KachelEmoji(emoji) },
 )
 
 private fun LazyGridScope.ganzeZeile(key: String, inhalt: @Composable () -> Unit) =
