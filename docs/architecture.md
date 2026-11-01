@@ -10,7 +10,7 @@ Gemeinsamer Code liegt unter `shared/` (`:domain`, `:api-protocol`). Der Server 
 (API, Konten, Datenbank, Sync, Fotos, KI-Gerüst) und `:server` (nur `main`). Abhängigkeiten laufen nur in eine
 Richtung: `:app` → `:feature:*` → `:core:*` → `:domain`/`:api-protocol` (Features kennen sich nicht),
 `:server` → `:server-sync` → `:api-protocol`. Gradle-Namen sind unabhängig von den Ordnern (`projectDir` in
-`settings.gradle.kts`). Spec: `docs/superpowers/archiv/specs/2026-10-11-projektstruktur-design.md`.
+`settings.gradle.kts`). Spec: `docs/superpowers/archiv/specs/2026-10-11-projektstruktur-design.md` (seit 2026-11-01 nur im Git-Verlauf).
 
 Die heutige App ist die **V3** (Plan archiviert in `ToDoS/archiv/v3-plan.md`, Offenes in `ToDoS/aufraeumplan.md`). Ihre Vorgängerin, die v1 samt Protokoll 2
 (`:sync-protocol`), ist seit dem Umstieg am 2026-10-28 aus `main` entfernt; ihr letzter Stand samt Server ist der Tag `v1-final`;
@@ -168,7 +168,7 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-18-v3-phase3-app-daten-sync-desi
   `RezeptImport.portionenNachtragen` an (nur `defaultServings` und Notiz); Ergebnis aktualisiert/übersprungen/ohne
   Rezept. Aufruf über „Portionen nachtragen“ im Import-Blatt der Rezepte (Ordner wählen, `RezeptImporter.portionenNachtragen`).
 - **Tests:** Robolectric-Unit-Tests für DAOs, Trigger, Abbildung, Sync-Speicher, Fotos, Sicherung; der Sync-Client
-  läuft im Test gegen den echten `:server-sync` (`TestSyncServer`). Auf dem Emulator (`ciDevice`): Migrationstest 9 → 10
+  läuft im Test gegen den echten `:server-sync` (`TestServer` in `TestSyncServer.kt`). Auf dem Emulator (`ciDevice`): Migrationstest 9 → 10
   und zwei Echtdaten-Tests, die nur mit Instrumentation-Argumenten prüfen (sonst bestanden ohne Prüfung):
   `EchteDatenMigrationTest` (`:core:data`, Argumente `echteDb`, `echteDbZahlen`) und `EchteDatenSyncTest`
   (`:core:sync`, Argumente `echteDb`, `testServer`, `testBenutzer`, `testPasswort`, optional `echteFotos`). Der Sync-Test
@@ -469,22 +469,10 @@ Plugins von AGP und Kotlin stehen im Root-Projekt (`apply false`); `build-logic`
 (`compileOnly`). Ein `:feature:x` liegt unter `android/feature/x`; das Elternprojekt `:feature` zeigt auf
 `android/feature`.
 
-## Anhang: Datenbank-Schemata 1–9 (v1), Trigger-Regeln
+## Anhang: Trigger-Regeln
 
-Die Schemata 1–9 stammen aus der v1; eingecheckt ist davon nur noch 9 (`android/core/data/schemas`, für den
-Migrationstest), 1–8 liegen im Git-Verlauf. Die V3 migriert 9 → 10 („Daten und Sync“).
-
-| Version | Änderung |
-|---|---|
-| 1 | Ausgangsschema |
-| 2 | `recipe.favorite`, `recipe.sourceUrl` (+ Index); Quell-URL importierter Rezepte aus den Notizen übernommen |
-| 3 | `shopping_item.note`, `recipe.rating` |
-| 4 | Sync-Tabellen (`sync_outbox`, `sync_record_rev`, `sync_state`, `sync_problem`), `shopping_item.updatedAt`/`checkedChangedAt`, Outbox-Trigger |
-| 5 | Sync-Trigger neu angelegt: erneutes Vormerken setzt `sync_outbox.queuedAt` streng steigend (`MAX(jetzt, alt + 1)`); Tabellen unverändert |
-| 6 | Foto-Sync: `sync_photo_local` (Hash-Cache je Fotodatei), `sync_photo_wanted` (Fotos, die ein Server-Rezept braucht und die noch fehlen) |
-| 7 | Einordnung: `recipe.mahlzeiten`/`recipe.gaenge` (Enum-Namen kommagetrennt, `null` = vermuten); `meal_slot.slotType` auf Enum-Namen (`FRUEHSTUECK` …) umgestellt, unbekannter Freitext bleibt |
-| 8 | Tagebuch: `tagebuch_eintrag` (Nährwerte festgehalten, lose Referenzen auf Rezept/Zutat/Plan-Eintrag); Sync-Trigger neu angelegt. `SyncTriggers.create` legt nur Trigger für vorhandene Tabellen an |
-| 9 | `ingredient.barcode` (Strichcode, Index, nicht eindeutig); optional in Sync-Payload und Sicherung |
+Die Schemata 1–8 der v1 und ihre Änderungsliste liegen im Git-Verlauf; eingecheckt ist nur noch 9
+(`android/core/data/schemas`, für den Migrationstest 9 → 10, siehe „Daten und Sync“).
 
 Room setzt `recursive_triggers = 1`; jeder Trigger-Rumpf muss seine eigene WHEN-Bedingung falsch machen
 (`MAX(jetzt, alt + 1)`). `OnConflictStrategy.REPLACE` auf Wurzeltabellen würde die Lösch-Trigger auslösen und eine

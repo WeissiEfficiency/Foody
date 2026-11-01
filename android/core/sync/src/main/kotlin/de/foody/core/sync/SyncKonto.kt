@@ -36,7 +36,7 @@ enum class ErsterSync {
 }
 
 /**
- * Verbinden und Trennen des Syncs (wie `SyncAccountRepository` der v1, ohne Haushalte):
+ * Verbinden und Trennen des Syncs:
  * 1. [anmelden] prüft die Adresse und meldet das Gerät an. Adresse, Konto-ID und Token bleiben bis [aktivieren] **nur im
  *    Speicher**: Ein abgebrochener Dialog oder eine Anmeldung an einem anderen Server/Konto berührt weder das gespeicherte
  *    Token noch einen laufenden Sync (sonst ginge das neue Token mit der alten Adresse hinaus).

@@ -1,6 +1,6 @@
 # ADR 0007: Tagebuch mit festgehaltenen Nährwerten
 
-Status: angenommen (2026-10-10). Spec: `docs/superpowers/archiv/specs/2026-10-10-essenstracking-design.md`.
+Status: angenommen (2026-10-10). Spec: `docs/superpowers/archiv/specs/2026-10-10-essenstracking-design.md` (seit 2026-11-01 nur im Git-Verlauf).
 
 **Kontext:** Das Tagebuch soll zeigen, was gegessen wurde – aus dem Plan übernommen, aus Rezepten, Katalog-Zutaten
 oder frei. Rezepte und Zutaten ändern sich später (Korrekturen, neue Nährwerte) oder werden gelöscht.

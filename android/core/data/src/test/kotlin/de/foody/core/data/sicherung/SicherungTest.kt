@@ -57,7 +57,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * Sicherung als ZIP: Format 3 schreiben und lesen, Sicherungen der v1 lesen (Vorrat übersprungen), Fotos, Sperre bei
+ * Sicherung als ZIP: Format 3 schreiben und lesen, Sicherungen der v1 ablehnen, Fotos, Sperre bei
  * aktivem Sync und Schutz vor manipulierten oder beschädigten Dateien (nichts halb importiert).
  */
 @RunWith(RobolectricTestRunner::class)
