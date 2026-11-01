@@ -6,6 +6,9 @@ Selbst gehosteter Sync-Server (Ktor + SQLite) für die Foody-App, gedacht für d
 Docker-Image entsteht). Der Server nutzt außerdem `shared/api-protocol` (gemeinsam mit der App) – Änderungen dort
 brauchen einen Neubau des Servers.
 
+Schritt für Schritt von null an (Docker, Traefik, Zertifikat, Konten, Verbinden der Geräte):
+[`docs/installation.md`](../docs/installation.md), Abschnitt 6.
+
 ## Voraussetzungen
 
 - Docker mit Compose und ein laufender Traefik in einem externen Docker-Netzwerk (Name in `TRAEFIK_NETWORK`).
