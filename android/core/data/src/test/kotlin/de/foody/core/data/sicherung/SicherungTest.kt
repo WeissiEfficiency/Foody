@@ -145,10 +145,10 @@ class SicherungTest {
         db.arbeitsschrittDao().upsert(ArbeitsschrittEntity("s1", "r1", 1, "Rühren"))
     }
 
-    /** `backup.json` einer v1-Sicherung (formatVersion 1) mit Vorrat, altem Freitext und Fotoverweis. */
-    private val vEinsJson = """
+    /** `backup.json` im Format 3 mit Freitext-Mahlzeit (aus v1-Zeiten migrierte Planeinträge) und Fotoverweis. */
+    private val formatDreiJson = """
         {
-            "formatVersion": 1,
+            "format": 3,
             "ingredients": [
                 {"id": "z1", "name": "Tomate", "category": "Gemüse", "density": null, "pieceWeight": "120", "basis": "PER_100_G",
                  "energyKj": "75.5", "protein": "0.9", "carbs": "2.6", "fat": "0.2", "fiber": null, "sugar": null, "salt": null,
@@ -168,10 +168,6 @@ class SicherungTest {
             "mealSlots": [
                 {"id": "m1", "date": "2026-10-10", "slotType": "Frühstück", "recipeId": "r1", "servings": 2,
                  "cookedAt": null, "createdAt": 1, "updatedAt": 2}
-            ],
-            "pantry": [
-                {"id": "p1", "ingredientId": "z1", "amount": "3", "unit": "PIECE", "bestBefore": "2026-11-01", "updatedAt": 1},
-                {"id": "p2", "ingredientId": "z1", "amount": "1", "unit": "PIECE", "bestBefore": null, "updatedAt": 1}
             ],
             "shoppingLists": [{"id": "l1", "name": "Woche", "start": "2026-10-10", "end": "2026-10-16", "version": 1, "createdAt": 1, "updatedAt": 2}],
             "shoppingItems": [
@@ -239,7 +235,7 @@ class SicherungTest {
 
         val ziel = neueDatenbank()
         val ergebnis = lesen(bytes, sicherungFuer(ziel))
-        assertEquals(ImportErgebnis.Fertig(rezepte = 1, zutaten = 2, fotos = 0, vorratUebersprungen = 0), ergebnis)
+        assertEquals(ImportErgebnis.Fertig(rezepte = 1, zutaten = 2, fotos = 0), ergebnis)
 
         assertEquals(db.zutatDao().alle(), ziel.zutatDao().alle())
         assertEquals(db.rezeptDao().alle(), ziel.rezeptDao().alle())
@@ -272,13 +268,13 @@ class SicherungTest {
     }
 
     @Test
-    fun vEinsWirdGelesenVorratUebersprungen() = runTest {
+    fun formatDreiWirdGelesen() = runTest {
         val foto = kleinesJpeg()
-        val bytes = zip("photos/1.jpg" to foto, "backup.json" to vEinsJson.toByteArray())
+        val bytes = zip("photos/1.jpg" to foto, "backup.json" to formatDreiJson.toByteArray())
 
         val ergebnis = lesen(bytes)
 
-        assertEquals(ImportErgebnis.Fertig(rezepte = 1, zutaten = 1, fotos = 1, vorratUebersprungen = 2), ergebnis)
+        assertEquals(ImportErgebnis.Fertig(rezepte = 1, zutaten = 1, fotos = 1), ergebnis)
         val r = assertNotNull(db.rezeptDao().nachId("r1"))
         assertEquals("Tomatensuppe", r.name)
         assertEquals(true, r.favorite)
@@ -293,11 +289,26 @@ class SicherungTest {
         assertEquals(1, db.einkaufsartikelQuelleDao().alle().size)
         assertEquals(BigDecimal("113.25"), db.tagebuchDao().nachId("t1")?.energieKj)
         assertTrue(db.syncDao().outbox().isEmpty())
+    }
 
-        // Ältere reine JSON-Sicherung (vor den Fotos) bleibt lesbar; Fotoverweis ohne Datei entfällt
-        val nurJson = lesen(vEinsJson.toByteArray())
-        assertEquals(ImportErgebnis.Fertig(rezepte = 1, zutaten = 1, fotos = 0, vorratUebersprungen = 2), nurJson)
-        assertNull(db.rezeptDao().nachId("r1")?.imageUri)
+    /** C8: Sicherungen der v1 (mit Vorrat, auch als reines JSON) liest die App nicht mehr; nichts wird geändert. */
+    @Test
+    fun vEinsWirdAbgelehnt() = runTest {
+        kleinerBestand()
+        val vorher = zeilen()
+        val vEins = formatDreiJson.replace("\"format\": 3", "\"formatVersion\": 1")
+            .replace("\"shoppingLists\"", "\"pantry\": [{\"id\": \"p1\", \"ingredientId\": \"z1\"}],\n    \"shoppingLists\"")
+
+        for (datei in listOf(zip("photos/1.jpg" to kleinesJpeg(), "backup.json" to vEins.toByteArray()), vEins.toByteArray())) {
+            val fehler = assertIs<ImportErgebnis.Fehler>(lesen(datei))
+            assertTrue("v1" in fehler.grund, fehler.grund)
+        }
+        // Ganz ohne Formatangabe (die ältesten v1-Dateien)
+        val ohneAngabe = zip("backup.json" to formatDreiJson.replace("\"format\": 3,", "").toByteArray())
+        assertTrue("v1" in assertIs<ImportErgebnis.Fehler>(lesen(ohneAngabe)).grund)
+
+        assertEquals(vorher, zeilen())
+        assertTrue(fotodateien().isEmpty(), "${fotodateien()}")
     }
 
     @Test
@@ -315,7 +326,7 @@ class SicherungTest {
         assertEquals(1, dateien.keys.count { it.startsWith("photos/") }, "Gemeinsames Foto nur einmal: ${dateien.keys}")
 
         val ergebnis = lesen(bytes)
-        assertEquals(ImportErgebnis.Fertig(rezepte = 4, zutaten = 0, fotos = 1, vorratUebersprungen = 0), ergebnis)
+        assertEquals(ImportErgebnis.Fertig(rezepte = 4, zutaten = 0, fotos = 1), ergebnis)
         val neu = assertNotNull(db.rezeptDao().nachId("r1")?.imageUri)
         assertNotEquals(link, neu, "Wiederhergestellt als neue eigene Datei")
         assertEquals(neu, db.rezeptDao().nachId("r2")?.imageUri)
@@ -328,8 +339,8 @@ class SicherungTest {
     @Test
     fun fremderDateipfadWirdVerworfen() = runTest {
         val privat = File(context.filesDir.parentFile, "databases/foody.db").toURI().toString()
-        val text = vEinsJson.replace("foody-backup-photo:1.jpg", privat)
-        assertIs<ImportErgebnis.Fertig>(lesen(text.toByteArray()))
+        val text = formatDreiJson.replace("foody-backup-photo:1.jpg", privat)
+        assertIs<ImportErgebnis.Fertig>(lesen(zip("backup.json" to text.toByteArray())))
         assertNull(db.rezeptDao().nachId("r1")?.imageUri, "Pfad in den privaten Speicher wird nicht übernommen")
     }
 
@@ -361,7 +372,7 @@ class SicherungTest {
             .also { offen += it }
         val s = sicherungFuer(ziel)
         val foto = kleinesJpeg()
-        val bytes = zip("photos/1.jpg" to foto, "backup.json" to vEinsJson.toByteArray())
+        val bytes = zip("photos/1.jpg" to foto, "backup.json" to formatDreiJson.toByteArray())
 
         scharf.set(true)
         // Erst merken, dann starten: der Callback sieht den Job sicher.
@@ -381,7 +392,7 @@ class SicherungTest {
     @Test
     fun importBeiAktivemSyncGesperrt() = runTest {
         kleinerBestand()
-        val bytes = zip("photos/1.jpg" to byteArrayOf(1, 2, 3), "backup.json" to vEinsJson.toByteArray())
+        val bytes = zip("photos/1.jpg" to byteArrayOf(1, 2, 3), "backup.json" to formatDreiJson.toByteArray())
         sync.aktivieren("https://foody.example", "konto", allesHochladen = false)
         val vorher = zeilen()
         val dateienVorher = fotodateien()
@@ -400,7 +411,7 @@ class SicherungTest {
         val bytes = zip(
             "photos/1.jpg" to byteArrayOf(1),
             "../evil" to "boom".toByteArray(),
-            "backup.json" to vEinsJson.toByteArray(),
+            "backup.json" to formatDreiJson.toByteArray(),
         )
 
         assertTrue("Dateipfade" in assertIs<ImportErgebnis.Fehler>(lesen(bytes)).grund)
@@ -411,7 +422,7 @@ class SicherungTest {
         assertTrue(boese.isEmpty(), "Keine Datei außerhalb des Fotoordners: $boese")
 
         for (name in listOf("photos/../../evil.jpg", "/data/evil.jpg", "photos\\..\\evil.jpg")) {
-            val fehler = assertIs<ImportErgebnis.Fehler>(lesen(zip(name to byteArrayOf(1), "backup.json" to vEinsJson.toByteArray())), name)
+            val fehler = assertIs<ImportErgebnis.Fehler>(lesen(zip(name to byteArrayOf(1), "backup.json" to formatDreiJson.toByteArray())), name)
             assertTrue("Dateipfade" in fehler.grund, "$name: ${fehler.grund}")
         }
         assertEquals(vorher, zeilen())
@@ -423,11 +434,11 @@ class SicherungTest {
         val vorher = zeilen()
 
         // Grenzen wie in der v1: ein Foto höchstens 32 MB, backup.json höchstens 64 MB
-        val grossesFoto = zip("photos/1.jpg" to ByteArray((32 shl 20) + 1), "backup.json" to vEinsJson.toByteArray())
+        val grossesFoto = zip("photos/1.jpg" to ByteArray((32 shl 20) + 1), "backup.json" to formatDreiJson.toByteArray())
         val fehler = assertIs<ImportErgebnis.Fehler>(lesen(grossesFoto))
         assertTrue("groß" in fehler.grund, fehler.grund)
 
-        val grossesJson = zip("backup.json" to (vEinsJson + " ".repeat((64 shl 20) + 1 - vEinsJson.length + 1)).toByteArray())
+        val grossesJson = zip("backup.json" to (formatDreiJson + " ".repeat((64 shl 20) + 1 - formatDreiJson.length + 1)).toByteArray())
         assertIs<ImportErgebnis.Fehler>(lesen(grossesJson))
 
         assertEquals(vorher, zeilen())
@@ -443,8 +454,8 @@ class SicherungTest {
         val fehler = assertIs<ImportErgebnis.Fehler>(neuer)
         assertTrue("Format" in fehler.grund && "99" in fehler.grund, fehler.grund)
 
-        val alterSchluessel = lesen(zip("backup.json" to vEinsJson.replace("\"formatVersion\": 1", "\"formatVersion\": 2").toByteArray()))
-        assertIs<ImportErgebnis.Fehler>(alterSchluessel)
+        val keineZahl = lesen(zip("backup.json" to formatDreiJson.replace("\"format\": 3", "\"format\": \"drei\"").toByteArray()))
+        assertTrue("Format" in assertIs<ImportErgebnis.Fehler>(keineZahl).grund)
         assertIs<ImportErgebnis.Fehler>(lesen(zip("photos/1.jpg" to byteArrayOf(1))), "Ohne backup.json")
         assertIs<ImportErgebnis.Fehler>(lesen("kein json".toByteArray()))
 
@@ -459,7 +470,7 @@ class SicherungTest {
 
         // Beschädigte Zip: nach backup.json und einem vollständigen Foto bricht das zweite Foto mitten im Inhalt ab
         val ganz = zip(
-            "backup.json" to vEinsJson.toByteArray(),
+            "backup.json" to formatDreiJson.toByteArray(),
             "photos/1.jpg" to Random(1).nextBytes(20_000),
             "photos/2.jpg" to Random(2).nextBytes(100_000),
         )
@@ -469,8 +480,8 @@ class SicherungTest {
         assertTrue(fotodateien().isEmpty(), "Vorgemerkte Fotos wieder entfernt: ${fotodateien()}")
 
         // Fehler erst beim Schreiben in die Datenbank (Verweis auf eine fehlende Zutat): alles zurückgerollt
-        val verweisFehlt = vEinsJson.replace("\"ingredientId\": \"z1\", \"amount\": \"500\"", "\"ingredientId\": \"fehlt\", \"amount\": \"500\"")
-        assertNotEquals(vEinsJson, verweisFehlt)
+        val verweisFehlt = formatDreiJson.replace("\"ingredientId\": \"z1\", \"amount\": \"500\"", "\"ingredientId\": \"fehlt\", \"amount\": \"500\"")
+        assertNotEquals(formatDreiJson, verweisFehlt)
         val verweis = assertIs<ImportErgebnis.Fehler>(lesen(zip("photos/1.jpg" to byteArrayOf(1), "backup.json" to verweisFehlt.toByteArray())))
         assertTrue("Verweise" in verweis.grund, verweis.grund)
         assertEquals(vorher, zeilen())
@@ -478,8 +489,8 @@ class SicherungTest {
         assertTrue(fotodateien().isEmpty())
 
         // Ungültige Werte (Einheit, Zahl außerhalb der Grenzen)
-        assertIs<ImportErgebnis.Fehler>(lesen(zip("backup.json" to vEinsJson.replace("\"unit\": \"GRAM\"", "\"unit\": \"EIMER\"").toByteArray())))
-        assertIs<ImportErgebnis.Fehler>(lesen(zip("backup.json" to vEinsJson.replace("\"75.5\"", "\"1E999999999\"").toByteArray())))
+        assertIs<ImportErgebnis.Fehler>(lesen(zip("backup.json" to formatDreiJson.replace("\"unit\": \"GRAM\"", "\"unit\": \"EIMER\"").toByteArray())))
+        assertIs<ImportErgebnis.Fehler>(lesen(zip("backup.json" to formatDreiJson.replace("\"75.5\"", "\"1E999999999\"").toByteArray())))
         assertEquals(vorher, zeilen())
     }
 }

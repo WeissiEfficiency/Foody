@@ -20,7 +20,6 @@ import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.sicherung.SicherungDaten.Companion.DATEN_EINTRAG
 import de.foody.core.data.sicherung.SicherungDaten.Companion.FORMAT
-import de.foody.core.data.sicherung.SicherungDaten.Companion.FORMAT_V1
 import de.foody.core.data.sicherung.SicherungDaten.Companion.FOTO_NAME
 import de.foody.core.data.sicherung.SicherungDaten.Companion.FOTO_ORDNER
 import de.foody.core.data.sicherung.SicherungDaten.Companion.FOTO_SCHEMA
@@ -53,8 +52,8 @@ import kotlinx.serialization.json.intOrNull
 
 /** Ergebnis von [Sicherung.lesen]. */
 sealed interface ImportErgebnis {
-    /** Alle Daten wurden ersetzt; [vorratUebersprungen] zählt Vorratseinträge einer v1-Sicherung, die entfallen. */
-    data class Fertig(val rezepte: Int, val zutaten: Int, val fotos: Int, val vorratUebersprungen: Int) : ImportErgebnis
+    /** Alle Daten wurden ersetzt. */
+    data class Fertig(val rezepte: Int, val zutaten: Int, val fotos: Int) : ImportErgebnis
 
     /** Import gesperrt, solange der Sync verbunden ist (er würde die Daten auf dem Server ersetzen). Nichts geändert. */
     data object SyncAktiv : ImportErgebnis
@@ -73,8 +72,8 @@ sealed interface LoeschErgebnis {
 
 /**
  * Sicherung aller Daten als ZIP – wie in der v1 mit `backup.json` und den Rezeptfotos unter `photos/<n>.jpg`
- * (Aufbau in [SicherungDaten]). Geschrieben wird Format 3 (ohne Vorrat); gelesen werden Format 3 und Sicherungen der
- * v1 (auch die älteren reinen JSON-Dateien ohne ZIP), deren Vorrat übersprungen wird.
+ * (Aufbau in [SicherungDaten]). Geschrieben und gelesen wird nur Format 3; Sicherungen der v1 (mit Vorrat, auch die
+ * älteren reinen JSON-Dateien) lehnt der Import mit [V1_SICHERUNG] ab (C8).
  *
  * Der Import **ersetzt** alle Daten (wie v1) und ist nur bei getrenntem Sync erlaubt. Er ist atomar: Fotos werden
  * zuerst als neue eigene Dateien abgelegt (byte-gleich, damit ihr Hash stabil bleibt), dann folgt die Datenbank in
@@ -252,7 +251,6 @@ class Sicherung(
             rezepte = daten.recipes.size,
             zutaten = daten.ingredients.size,
             fotos = importiert.size,
-            vorratUebersprungen = daten.pantry.size,
         )
     }
 
@@ -266,7 +264,9 @@ class Sicherung(
         ein.mark(2)
         val zip = ein.read() == 'P'.code && ein.read() == 'K'.code
         ein.reset()
-        return if (zip) zipLesen(ein, abgelegt) else ein.begrenztLesen(MAX_JSON_BYTES).decodeToString()
+        // Reine JSON-Dateien schrieb nur die frühe v1
+        if (!zip) throw SicherungsFehler(V1_SICHERUNG)
+        return zipLesen(ein, abgelegt)
     }
 
     /**
@@ -305,13 +305,9 @@ class Sicherung(
             val wert = baum[schluessel] ?: return null
             return (wert as? JsonPrimitive)?.intOrNull ?: throw SicherungsFehler("Unbekanntes Format")
         }
-        val format = nummer("format")
-        if (format != null) {
-            if (format != FORMAT) throw SicherungsFehler("Unbekanntes Format $format")
-        } else {
-            val alt = nummer("formatVersion") ?: FORMAT_V1
-            if (alt != FORMAT_V1) throw SicherungsFehler("Unbekanntes Format $alt")
-        }
+        // Ohne "format" (mit oder ohne "formatVersion") stammt die Datei aus der v1
+        val format = nummer("format") ?: throw SicherungsFehler(V1_SICHERUNG)
+        if (format != FORMAT) throw SicherungsFehler("Unbekanntes Format $format")
         return json.decodeFromJsonElement(SicherungDaten.serializer(), baum)
     }
 
@@ -402,7 +398,7 @@ class Sicherung(
         else -> null
     }
 
-    /** Alter Freitext („Frühstück“) wird dem Enum-Namen zugeordnet (wie v1); unbekannte Texte bleiben. */
+    /** Freitext („Frühstück“, aus der v1 migrierte Planeinträge) wird dem Enum-Namen zugeordnet; Unbekanntes bleibt. */
     private fun mahlzeit(text: String): String = Mahlzeit.ausText(text)?.name ?: text
 
     // ---- Alles löschen ---------------------------------------------------------------------------------------
@@ -468,6 +464,7 @@ class Sicherung(
         const val BESCHAEDIGT = "Die Sicherung ist beschädigt oder unvollständig"
         const val ZU_GROSS = "Sicherung zu groß"
         const val UNSICHERER_PFAD = "Die Sicherung enthält unzulässige Dateipfade"
+        const val V1_SICHERUNG = "Sicherung der v1 – die App liest nur noch Sicherungen, die sie selbst erstellt hat"
 
         fun BigDecimal?.text(): String? = this?.toPlainString()
 
