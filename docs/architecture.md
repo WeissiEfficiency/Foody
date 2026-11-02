@@ -34,8 +34,8 @@ einen Rückweg gibt es seit dem 2026-10-31 nicht mehr. Wo unten „wie v1“ ste
   - Zutatennamen: `IngredientCatalog` (Synonyme, „nie einkaufen“, Abteilungs-Schätzung)
   - Kochmodus: `StepIngredientMatcher` (Zutaten + Teilmengen im Schritt), `StepTimerParser` (Zeitangaben)
   - Startseite: `DailyPicks` (Rezepte des Tages)
-  - Mahlzeit aus Foto: `ModellJson` (nachsichtiger JSON-Leser), `FotoErkennung` (Antwort des Modells → Vorschlag
-    Rezept, Teller oder Frei, Regel 29; ADR 0017, Plan `ToDoS/foto-erkennung-plan.md`)
+  - Mahlzeit aus Foto: `ModellJson` (nachsichtiger JSON-Leser), `FotoErkennung` (Antwort des Modells → freier
+    Eintrag mit Name, kcal, Makros, Regel 29), `FotoAnweisung`; ADR 0017, Plan `ToDoS/foto-erkennung-plan.md`
 - **Daten** (`:core:data`): Room als einzige Quelle, Repositories bilden Zeilen auf `:domain`-Modelle ab. Schreibvorgänge
   über mehrere Tabellen laufen in Transaktionen.
 
@@ -486,13 +486,12 @@ Keine Schema- und keine Protokolländerung (nur die Abfrage `ZutatDao.mitStrichc
 ADR 0017, Plan `ToDoS/foto-erkennung-plan.md`, Spec `docs/superpowers/specs/2026-11-01-foto-erkennung-phase2-design.md`.
 Alles auf dem Gerät; kein Server, kein Schema. Noch ohne Oberfläche und nicht in `:app` eingebunden (Phase 3).
 
-- **`:domain`:** `FotoAnweisung` (Trainingsanweisung des Adapters, Auswahlliste mit dem heutigen Plan vorne, höchstens
-  200 Namen), `ModellJson` und `FotoErkennung` (Regel 29).
+- **`:domain`:** `FotoAnweisung` (Trainingsanweisung des Adapters), `ModellJson` und `FotoErkennung` (Regel 29):
+  aus der Antwort wird ein freier Eintrag (Name, kcal, Makros); kein Abgleich mit Rezepten oder Zutaten.
 - **Ablauf `ModellErkenner`:** Modell da, ≥ 2 GB frei, Foto verkleinert (`AndroidBildVorbereitung`, höchstens
-  1024 px, `cache/erkennung/`, danach gelöscht). Auf einem eigenen Thread (`@Erkennen`) und höchstens 60 s: laden, die
-  Auswahl (nur mit Rezepten) und immer die Trainingsanweisung; `Erkannt` trägt das Rezept und die Beschreibung als
-  Alternative, weil das Modell fast nie „keins davon“ wählt. Abbrechen und Zeitlimit rufen
-  `ModellSitzung.abbrechen()`; das Modell wird danach freigegeben. Eine Erkennung zur Zeit.
+  1024 px, `cache/erkennung/`, danach gelöscht). Auf einem eigenen Thread (`@Erkennen`) und höchstens 60 s: laden,
+  eine Frage (Trainingsanweisung). Abbrechen und Zeitlimit rufen `ModellSitzung.abbrechen()`; das Modell wird danach
+  freigegeben. Eine Erkennung zur Zeit.
 - **Laufzeit `LlamaModell`:** JNI-Hülle `src/main/cpp/foody_erkennung.cpp` über llama.cpp b12024 (statisch, nur CPU,
   6 Threads, höchstens 512 Bild-Tokens, gierig). Das Bild wird einmal gerechnet; jede Frage setzt hinter ihm neu an.
   Die gebaute `libfoody_erkennung.so` (`arm64-v8a`) liegt in `nativ/`; die CI braucht kein NDK. Neu bauen mit

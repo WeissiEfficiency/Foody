@@ -2,7 +2,6 @@ package de.foody.core.erkennung
 
 import de.foody.domain.FotoAnweisung
 import de.foody.domain.FotoErkennung
-import de.foody.domain.FotoKontext
 import de.foody.domain.FotoVorschlag
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
@@ -15,7 +14,7 @@ import kotlin.coroutines.CoroutineContext
 
 /**
  * Ablauf einer Erkennung (Spec Phase 2): Modell und Speicher prüfen, Bild vorbereiten, dann auf [ablauf] (ein eigener
- * Thread) die Auswahl aus den eigenen Rezepten und immer auch die Trainingsanweisung (Beschreibung des Gerichts). Alles zusammen
+ * Thread) das Modell mit der Trainingsanweisung fragen, was auf dem Foto ist und wie viele kcal es hat. Alles zusammen
  * höchstens [ZEITLIMIT_MS]; Abbrechen und Zeitlimit stoppen auch die native Seite. Eine Erkennung zur Zeit.
  */
 class ModellErkenner @Inject constructor(
@@ -27,17 +26,17 @@ class ModellErkenner @Inject constructor(
 ) : MahlzeitErkenner {
     private val einzeln = Mutex()
 
-    override suspend fun erkennen(bildUri: String, kontext: FotoKontext): ErkennungStatus = einzeln.withLock {
+    override suspend fun erkennen(bildUri: String): ErkennungStatus = einzeln.withLock {
         val pfade = dateien.pfade() ?: return ErkennungStatus.KeinModell
         if (speicher.bytes() < MIN_FREIER_SPEICHER) return ErkennungStatus.ZuWenigSpeicher
         val bild = bilder.vorbereiten(bildUri) ?: return ErkennungStatus.Fehler
         try {
             modell.sitzung().use { sitzung ->
                 val start = System.nanoTime()
-                val status = withTimeoutOrNull(ZEITLIMIT_MS) { abbrechbar(sitzung) { befragen(sitzung, pfade, bild.path, kontext) } }
+                val status = withTimeoutOrNull(ZEITLIMIT_MS) { abbrechbar(sitzung) { befragen(sitzung, pfade, bild.path) } }
                 when (status) {
                     null -> ErkennungStatus.Zeitlimit
-                    is Ergebnis.Vorschlag -> ErkennungStatus.Erkannt(status.vorschlag, status.alternative, (System.nanoTime() - start) / 1_000_000)
+                    is Ergebnis.Vorschlag -> ErkennungStatus.Erkannt(status.vorschlag, (System.nanoTime() - start) / 1_000_000)
                     Ergebnis.Unlesbar -> ErkennungStatus.Unlesbar
                     Ergebnis.Fehler -> ErkennungStatus.Fehler
                 }
@@ -48,7 +47,7 @@ class ModellErkenner @Inject constructor(
     }
 
     private sealed interface Ergebnis {
-        data class Vorschlag(val vorschlag: FotoVorschlag, val alternative: FotoVorschlag?) : Ergebnis
+        data class Vorschlag(val vorschlag: FotoVorschlag) : Ergebnis
 
         data object Unlesbar : Ergebnis
 
@@ -56,18 +55,10 @@ class ModellErkenner @Inject constructor(
     }
 
     /** Blockiert; läuft auf [ablauf]. */
-    private fun befragen(sitzung: ModellSitzung, pfade: ModellPfade, bild: String, kontext: FotoKontext): Ergebnis {
+    private fun befragen(sitzung: ModellSitzung, pfade: ModellPfade, bild: String): Ergebnis {
         if (!sitzung.laden(pfade, bild)) return Ergebnis.Fehler
-        val rezept = FotoAnweisung.auswahl(kontext)?.let { auswahl ->
-            val antwort = sitzung.fragen(auswahl) ?: return Ergebnis.Fehler
-            FotoErkennung.vorschlag(antwort, kontext) as? FotoVorschlag.Rezept
-        }
-        val gericht = FotoErkennung.vorschlag(sitzung.fragen(FotoAnweisung.GERICHT) ?: return Ergebnis.Fehler, kontext)
-        return when {
-            rezept != null -> Ergebnis.Vorschlag(rezept, gericht)
-            gericht != null -> Ergebnis.Vorschlag(gericht, null)
-            else -> Ergebnis.Unlesbar
-        }
+        val antwort = sitzung.fragen(FotoAnweisung.GERICHT) ?: return Ergebnis.Fehler
+        return FotoErkennung.vorschlag(antwort)?.let(Ergebnis::Vorschlag) ?: Ergebnis.Unlesbar
     }
 
     /**

@@ -10,13 +10,13 @@ Heute und Einstellungen in `main` ist; vorher kurz beim Nutzer nachfragen.
 
 ## Ziel
 
-Nach dem Essen ein Foto machen, und Foody schlägt den Tagebucheintrag vor. Ein Häkchen speichert ihn. Drei Fälle:
+Nach dem Essen ein Foto machen: Foody erkennt, was es ist und wie viele kcal es hat, und schlägt einen freien
+Tagebucheintrag für den Tag vor (Name, kcal, Eiweiß, KH, Fett). Ein Häkchen speichert ihn. Die Werte sind geschätzt und
+in der Vorschau als „bitte prüfen“ markiert wie beim Scan.
 
-| Fall | Beispiel | Vorschlag | Nährwerte aus |
-|---|---|---|---|
-| Eigenes Rezept gekocht | Linsencurry | Weg „Rezept“: Rezept + Portionen (z. B. 1,5) | dem Rezept (genau); geschätzt ist nur die Portion |
-| Etwas Gekauftes | Leberkässemmel, Breze | Weg „Frei“: Name, kcal, Eiweiß, KH, Fett | dem Modell (geschätzt, „bitte prüfen“ wie beim Scan) |
-| Teller aus Zutaten | Reis, Hähnchen, Brokkoli | mehrere Einträge über „Zutat“ mit Gramm | dem Katalog; geschätzt sind nur die Gramm |
+Kein Abgleich mit eigenen Rezepten oder Zutaten (Nutzer, 2026-11-02): Es soll nur das Bild erkannt und eingetragen
+werden. Die anfangs geplanten Wege „Rezept“ und „Teller“ sind gestrichen; das Modell hat in der Messung auf dem 13R
+ohnehin fast nie „keins davon“ gewählt.
 
 Packungen laufen weiter über den bestehenden Scan (`:core:scan`, ML Kit + Open Food Facts).
 
@@ -58,10 +58,6 @@ sich der App-Code ändert. Die LoRA-Adapter werden in Phase 0 mit ihrem Basismod
 **Nicht gewählt:** Gemma 4 und Gemini Nano (allgemeine Modelle, nicht auf Essen trainiert; Gemini Nano läuft laut
 Google-Geräteliste ohnehin nicht auf dem 13R) sowie einfache Klassifikatoren wie Food-101 (feste Liste, keine Mengen,
 deutsche Hausmannskost fehlt meist).
-
-**Welches meiner Rezepte?** Das Modell bekommt die Rezeptnamen und den heutigen Wochenplan als Auswahlliste in die
-Anweisung („Aus dem Plan“ ist meist schon richtig). Ein Bildvergleich mit den Rezeptfotos kommt erst, wenn die
-Auswahlliste im Alltag nicht reicht.
 
 ### Ergebnis Phase 0 (2026-11-01)
 
@@ -120,7 +116,8 @@ Reines Kotlin, testgetrieben.
 - [x] Plausibilitätsgrenzen (Portionen 0,25–6, Gramm 1–1.500 je Zeile, kcal 1–3.000, Makros 0–300 g), sonst Feld leer.
 - [x] Regel 29 in `docs/domain-rules.md` mit Tests (`FotoErkennungTest`, `ModellJsonTest`).
 
-**Ergebnis (2026-11-01):** `ModellJson` und `FotoErkennung` in `:domain`, 25 Tests. Spec
+**Ergebnis (2026-11-01):** `ModellJson` und `FotoErkennung` in `:domain`, 25 Tests. Seit Phase 2 ohne Rezept und
+Teller: `FotoErkennung.vorschlag(antwort)` liefert nur noch den freien Eintrag. Spec
 `docs/superpowers/specs/2026-11-01-foto-erkennung-phase1-design.md`, Plan `docs/superpowers/plans/2026-11-01-foto-erkennung-phase1.md`.
 Die Anweisung ans Modell und die Reihenfolge der Liste kommen in Phase 2.
 
@@ -128,27 +125,32 @@ Die Anweisung ans Modell und die Reihenfolge der Liste kommen in Phase 2.
 
 Neues Modul (`foody.android.library`), Aufbau wie `:core:scan` (ADR 0013): Schnittstellen, echte Umsetzung, Fakes für Tests.
 
-- [ ] Schnittstelle `MahlzeitErkenner { suspend fun erkennen(bildUri, kontext): ErkennungStatus }`; Kontext =
-      Rezeptnamen, Plan des Tages, häufige Zutaten (begrenzt auf ~200 Namen, damit die Anweisung kurz bleibt).
-- [ ] llama.cpp als native Bibliothek einbinden (nur `arm64-v8a`, nur CPU), dünne JNI-Hülle über `libllama`/`libmtmd`;
-      Version festnageln (gemessen: b12024). Höchstens 512 Bild-Tokens.
-- [ ] Modellverwaltung: Modelldatei per SAF importieren (z. B. aus OpenCloud) **oder** einmal herunterladen;
-      Prüfsumme, Speicherort `filesDir`, Größe anzeigen, entfernen. Kein Download ohne Knopfdruck.
-- [ ] Bild vorher verkleinern; Erkennung auf eigenem Dispatcher, abbrechbar, mit Zeitlimit; Modell nach Gebrauch
-      aus dem RAM werfen.
-- [ ] Fehlerfälle: kein Modell, zu wenig RAM (~3 GB nötig), Zeitlimit (60 s), unlesbare Antwort.
-- [ ] Zeit je Foto in der App auf dem 13R messen (Ziel 15–30 s).
-- [ ] R8-Regeln für die JNI-Hülle und ein Release-Kurztest (wie `ReleaseStartTest`, E4).
+- [x] Schnittstelle `MahlzeitErkenner { suspend fun erkennen(bildUri): ErkennungStatus }` – ohne Kontext, weil es
+      keinen Rezeptabgleich gibt.
+- [x] llama.cpp b12024 selbst gebaut (statisch, nur CPU, nur `arm64-v8a`, 5,5 MB statt > 140 MB der vorgebauten
+      Ausgabe), dünne JNI-Hülle; fertig gebaut in `android/core/erkennung/nativ/`, die CI braucht kein NDK.
+      Höchstens 512 Bild-Tokens.
+- [x] Modellverwaltung (`ModellDateien`): zwei GGUF-Dateien importieren (Bildteil am Kopf erkannt), SHA-256 gegen
+      die Dateien aus Phase 0, Speicherort `filesDir/modell`, Größe, entfernen. Kein Download: Das zusammengeführte
+      Modell gibt es nur als eigene Datei, Import per SAF (z. B. aus OpenCloud) reicht; die Oberfläche kommt in Phase 4.
+- [x] Bild verkleinern (höchstens 1024 px); Erkennung auf eigenem Thread, abbrechbar, Zeitlimit; Modell danach frei.
+- [x] Fehlerfälle: kein Modell, zu wenig RAM (unter 2 GB frei), Zeitlimit (60 s), unlesbare Antwort.
+- [ ] Zeit je Foto in der App auf dem 13R messen (Ziel 15–30 s) – mit nur einer Frage noch offen.
+- [x] R8-Regel für die JNI-Hülle (`consumer-rules.pro`). Der Release-Kurztest kommt mit Phase 3, wenn `:app` das
+      Modul einbindet.
+
+**Messung (2026-11-01, 13R, in der App, mit Laden):** mit zwei Fragen (Rezeptauswahl und Beschreibung) 20–26 s je
+deutschem Gericht, 14 s je Nutrition5k-Bild. Die Rezeptauswahl wählte bei Gerichten außerhalb der Liste trotzdem
+immer ein Rezept → gestrichen. Mit 3 GB Speicherschwelle scheiterte jede Erkennung nach der ersten (2,5–2,8 GB frei);
+die 1,1 GB Gewichte liegen per mmap im Dateicache, die Schwelle ist jetzt 2 GB.
 
 ### Phase 3 – `:feature:heute`: Knopf und Vorschau
 
 - [ ] Knopf „Foto“ im Eintragen-Blatt neben dem Scan; Kamera über `TakePicture` wie `ScanFotos` (ohne Kamera-Berechtigung).
-- [ ] Während der Erkennung Fortschritt mit Abbrechen; danach öffnet sich der passende Weg vorausgefüllt,
+- [ ] Während der Erkennung Fortschritt mit Abbrechen; danach öffnet sich „Frei“ vorausgefüllt (Name, kcal, Makros),
       Schätzfelder markiert („bitte prüfen“, wie `PackungEingabe`).
-- [ ] Teller: neue Vorschau mit mehreren Zeilen (Zutat, Gramm, entfernen, hinzufügen); Speichern legt alle Einträge
-      in einer Transaktion an (`TagebuchRepository`, neue Methode für mehrere Zutaten).
 - [ ] Foto-Uri und Vorschlag im `SavedStateHandle` (Prozessende während der Erkennung), Test mit `nachProzessende()`.
-- [ ] Robolectric-Tests mit Fake-Erkenner, Referenzbilder für die neuen Zustände.
+- [ ] Robolectric-Tests mit Fake-Erkenner, Referenzbilder für die neuen Zustände; Release-Kurztest (R8, E4).
 
 ### Phase 4 – Einstellungen
 
@@ -161,7 +163,7 @@ Neues Modul (`foody.android.library`), Aufbau wie `:core:scan` (ADR 0013): Schni
 - [ ] `docs/security.md`: Foto bleibt auf dem Gerät, einmaliger Modell-Download, keine Übermittlung.
 - [ ] Abnahme im Alltag auf dem Handy: die ersten ~30 Foto-Einträge auswerten – Vorschlag gegen das, was nach deiner
       Korrektur gespeichert wurde (nur lokal, ohne neues Feld: Vorschlag und Ergebnis im Debug-Log bzw. einer
-      lokalen Datei, abschaltbar). Ziel: Rezepte fast immer richtig, kcal bei Gekauftem meist ohne große Korrektur.
+      lokalen Datei, abschaltbar). Ziel: Gericht meist richtig benannt, kcal meist ohne große Korrektur.
 
 ## Bewusst nicht in der ersten Version
 
@@ -175,12 +177,12 @@ Neues Modul (`foody.android.library`), Aufbau wie `:core:scan` (ADR 0013): Schni
 
 | Risiko | Gewicht | Gegenmaßnahme |
 |---|---|---|
-| Gramm-Schätzung aus einem Foto zu ungenau (20–40 % sind üblich) | hoch | Rezept-Fall zuerst, Vorschau mit leicht änderbaren Gramm, Abbruchgrenze in Phase 0 |
+| kcal-Schätzung aus einem Foto ungenau (Messung: Median etwa zwei Drittel daneben) | hoch | Vorschau mit leicht änderbaren Werten, als geschätzt markiert; Abnahme im Alltag (Phase 5) |
 | Community-Modelle ohne Pflege, ohne unabhängige Messung | mittel | Messung in Phase 0 entscheidet; drei Kandidaten über dieselbe Laufzeit, Modelldatei austauschbar |
 | Modell zu langsam oder zu speicherhungrig | mittel | Messung vorab auf dem 13R, SmolVLM2 als kleiner Rückfall |
 | Öffentliche Testdaten passen nicht zum eigenen Essen (Nutrition5k: US-Kantine) | mittel | deutsche Gerichte als eigener Testsatz, Auswertung im Alltag (Phase 5) |
 | llama.cpp als native Abhängigkeit (Build, Updates, R8) | mittel | nur `arm64-v8a`, Version festgenagelt, Release-Kurztest |
-| Deutsche Gerichte (Leberkäse, Schäufele) unbekannt oder falsch benannt | mittel | Auswahlliste aus Rezepten und Katalog, Testsatz mit typischen Gerichten |
+| Deutsche Gerichte (Leberkäse, Schäufele) unbekannt oder englisch benannt | mittel | Name in der Vorschau änderbar, Testsatz mit typischen Gerichten |
 | Lizenzen (Basis Qwen2.5-VL-3B, Adapter) | gering | in Phase 0 prüfen und im ADR festhalten; Nutzung nur privat |
 
 ## Quellen (Recherche 2026-11-01)

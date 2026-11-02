@@ -1,20 +1,15 @@
 package de.foody.core.erkennung
 
-import de.foody.domain.FotoKontext
 import de.foody.domain.FotoVorschlag
 
 /** Erkennt eine Mahlzeit auf einem Foto (Uri als Text, damit die Schnittstelle ohne Android-Typen testbar bleibt). */
 fun interface MahlzeitErkenner {
-    suspend fun erkennen(bildUri: String, kontext: FotoKontext): ErkennungStatus
+    suspend fun erkennen(bildUri: String): ErkennungStatus
 }
 
 sealed interface ErkennungStatus {
-    /**
-     * Vorschlag fürs Eintragen-Blatt. Ist [vorschlag] ein Rezept, steht in [alternative] die Beschreibung des Gerichts
-     * (Teller oder Frei): Das Modell wählt fast immer ein Rezept, auch wenn keines passt (Messung Phase 2), deshalb muss
-     * die Vorschau mit einem Tipp umschalten können. [dauerMs] vom Laden bis zur letzten Antwort.
-     */
-    data class Erkannt(val vorschlag: FotoVorschlag, val alternative: FotoVorschlag?, val dauerMs: Long) : ErkennungStatus
+    /** Freier Eintrag fürs Eintragen-Blatt (Name, kcal, Makros); [dauerMs] vom Laden bis zur Antwort. */
+    data class Erkannt(val vorschlag: FotoVorschlag, val dauerMs: Long) : ErkennungStatus
 
     /** Kein Modell installiert (z. B. auf dem Tablet): der Knopf bleibt ausgeblendet. */
     data object KeinModell : ErkennungStatus
@@ -25,7 +20,7 @@ sealed interface ErkennungStatus {
     /** Länger als [ModellErkenner.ZEITLIMIT_MS]. */
     data object Zeitlimit : ErkennungStatus
 
-    /** Das Modell hat geantwortet, aber ohne verwertbares JSON. */
+    /** Das Modell hat geantwortet, aber ohne Name und kcal. */
     data object Unlesbar : ErkennungStatus
 
     /** Bild nicht lesbar, Laufzeit fehlt oder Modell lädt nicht. */

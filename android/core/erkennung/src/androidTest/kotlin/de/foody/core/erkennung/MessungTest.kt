@@ -4,7 +4,6 @@ import android.net.Uri
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import de.foody.domain.FotoKontext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assume.assumeTrue
@@ -29,16 +28,6 @@ class MessungTest {
         val bilder = File(ordner, "bilder").apply { mkdirs() }.listFiles().orEmpty().filter { it.isFile }.sortedBy { it.name }
         File(ordner, "modell").mkdirs()
         assumeTrue("Fotos nach ${ordner.path}/bilder kopieren", bilder.isNotEmpty())
-        // Gerichte aus dem deutschen Testsatz der Phase 0 als „eigene Rezepte“
-        val kontext = FotoKontext(
-            rezepte = listOf(
-                "Leberkässemmel", "Breze", "Currywurst mit Pommes", "Schweinebraten mit Knödel", "Weißwurst mit Breze",
-                "Bratwurst mit Sauerkraut", "Döner Kebab", "Spaghetti Bolognese", "Kartoffelsalat", "Apfelstrudel",
-                "Rinderroulade", "Käsespätzle",
-            ).mapIndexed { i, name -> FotoKontext.Eintrag("r$i", name) },
-            planRezepte = emptySet(),
-            zutaten = emptyList(),
-        )
         val erkenner = ModellErkenner(
             dateien = ModellDateien(File(ordner, "modell")),
             modell = LlamaModell(),
@@ -50,7 +39,7 @@ class MessungTest {
         val zeilen = mutableListOf("bild\tfrei_mb\tms\tergebnis")
         for (bild in bilder) {
             val freiVorher = frei.bytes() / 1_000_000
-            val status = runBlocking { erkenner.erkennen(Uri.fromFile(bild).toString(), kontext) }
+            val status = runBlocking { erkenner.erkennen(Uri.fromFile(bild).toString()) }
             val ms = (status as? ErkennungStatus.Erkannt)?.dauerMs ?: -1L
             zeilen += "${bild.name}\t$freiVorher\t$ms\t$status"
             Log.i("FoodyMessung", zeilen.last())

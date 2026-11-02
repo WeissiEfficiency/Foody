@@ -3,8 +3,8 @@
 Spec: `docs/superpowers/specs/2026-11-01-foto-erkennung-phase2-design.md`. Prüfen mit
 `./gradlew :domain:test :core:erkennung:testDebugUnitTest :core:erkennung:lintDebug ktlintPruefen`.
 
-1. **`FotoAnweisung`** (`:domain`, TDD): Trainingsanweisung, Auswahlliste (Plan vorne, Namen einmal, höchstens 200,
-   Maskierung, „none“).
+1. **`FotoAnweisung`** (`:domain`): Trainingsanweisung. Die zuerst gebaute Rezept-Auswahlliste ist nach der Messung
+   wieder gestrichen, ebenso Rezept und Teller in `FotoErkennung` (nur noch Name, kcal, Makros).
 2. **Modul** `:core:erkennung` (`foody.android.library`, Hilt): Schnittstellen `MahlzeitErkenner`, `BildSprachModell`,
    `ModellSitzung`, `BildVorbereitung`, `FreierSpeicher`; Eintrag in `settings.gradle.kts`, README, CLAUDE.md.
 3. **JNI-Hülle** `src/main/cpp/` (CMake, llama.cpp b12024 per `FetchContent` mit SHA-256, statisch, nur CPU);
