@@ -14,7 +14,8 @@ object ZutatZeile {
     private val mengenwoerter = setOf(
         "prise", "bund", "dose", "glas", "zehe", "packung", "pck.", "päckchen", "becher", "stück", "stk.", "scheibe",
         "tasse", "handvoll", "msp.", "zweig", "würfel", "blatt", "blätter", "flasche", "tüte", "beutel", "stange", "kopf",
-        "knolle",
+        "knolle", "kugel", "rolle", "tube", "stiel", "stängel", "schuss", "spritzer", "messerspitze", "schale", "schälchen",
+        "tafel", "platte", "riegel", "paar",
     )
 
     private fun istMengenwort(wort: String): Boolean {
@@ -47,7 +48,10 @@ object ZutatZeile {
     fun schreiben(menge: BigDecimal?, einheit: MeasureUnit?, name: String, hinweis: String?, optional: Boolean): String {
         val teile = hinweis?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty().toMutableList()
         val vorne = mutableListOf<String>()
-        if (menge != null) {
+        if (menge != null && einheit != null && teile.isNotEmpty() && istSchaetzangabe(teile.first(), menge, einheit)) {
+            // „1 Prise Salz“ bleibt so stehen, gerechnet wird mit den 0,5 g dahinter
+            vorne += teile.removeAt(0)
+        } else if (menge != null) {
             vorne += menge.stripTrailingZeros().toPlainString().replace('.', ',')
             if (einheit != null && einheit != MeasureUnit.PIECE) {
                 vorne += einheit.symbol
@@ -65,6 +69,13 @@ object ZutatZeile {
             if (teile.isNotEmpty()) append(", ").append(teile.joinToString(", "))
             if (optional) append(" (optional)")
         }
+    }
+
+    /** Ist [text] ein Küchenmaß („1 Prise“, „2 Msp.“), das genau [menge] [einheit] ergibt? */
+    private fun istSchaetzangabe(text: String, menge: BigDecimal, einheit: MeasureUnit): Boolean {
+        if (GermanAmounts.schaetzmenge(text.trim().substringAfterLast(' ')) == null) return false
+        val gelesen = MarkdownRecipeImporter.buildIngredient(text, "X", group = null)
+        return gelesen.unit == einheit && gelesen.amount?.compareTo(menge) == 0
     }
 
     /** Mengen- und Namensteil einer Zeile. */

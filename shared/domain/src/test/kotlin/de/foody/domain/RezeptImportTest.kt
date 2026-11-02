@@ -64,6 +64,38 @@ class RezeptImportTest {
         assertEquals(1, RezeptImport.vorbereiten(r, listOf(rind), vorgabePortionen = 4).portionen)
     }
 
+    private val spaetzle = Ingredient("spaetzle", "Eierspätzle")
+    private val tomaten = Ingredient("tomate", "Dosentomaten", conversion = ConversionInfo(canWeightG = bd("400")))
+
+    private fun zeile(ing: ImportedIngredient, z: Ingredient) =
+        RezeptImport.vorbereiten(ImportedRecipe("R", null, listOf(ing), emptyList(), servings = 2), listOf(z), 4).zeilen.single()
+
+    @Test fun gewichtAusDemHinweisFuerUnbekanntePackungen() {
+        // „1 Pck. Eierspätzle (400 g)“: ohne Packungsgewicht der Zutat gilt die Angabe der Zeile
+        val pck = zeile(ImportedIngredient("Eierspätzle", bd("2"), MeasureUnit.PACKAGE, "à 400 g", null), spaetzle)
+        assertEquals(0, bd("800").compareTo(pck.menge))
+        assertEquals(MeasureUnit.GRAM, pck.einheit)
+        assertEquals("2 Pck., à 400 g", pck.hinweis)
+        // Behälter im Hinweis: je Stück; Spanne: untere Grenze
+        val becher = zeile(ImportedIngredient("Eierspätzle", bd("2"), MeasureUnit.PIECE, "Becher, ca. 200 - 250 g", null), spaetzle)
+        assertEquals(0, bd("400").compareTo(becher.menge))
+        assertEquals("2 Becher, ca. 200 - 250 g", becher.hinweis)
+        // Ohne Behälter: das Gewicht gilt für die ganze Zeile
+        val stueck = zeile(ImportedIngredient("Eierspätzle", bd("4"), MeasureUnit.PIECE, "ca. 600 g", null), spaetzle)
+        assertEquals(0, bd("600").compareTo(stueck.menge))
+        // Volumen bleibt Volumen
+        assertEquals(MeasureUnit.MILLILITER, zeile(ImportedIngredient("Eierspätzle", bd("1"), MeasureUnit.PIECE, "Glas, ca. 200 ml", null), spaetzle).einheit)
+    }
+
+    @Test fun gewichtAusDemHinweisNurWennNoetig() {
+        // Mit bekanntem Dosengewicht bleibt es bei „1 Dose“ (Einkaufsliste: Dosen statt Gramm)
+        val dose = zeile(ImportedIngredient("Dosentomaten", bd("1"), MeasureUnit.CAN, "geschälte à ca. 400 g", null), tomaten)
+        assertEquals(MeasureUnit.CAN, dose.einheit)
+        // Mehrere verschiedene Angaben sind nicht eindeutig
+        val zwei = zeile(ImportedIngredient("Eierspätzle", bd("1"), MeasureUnit.PACKAGE, "400 g oder 500 g", null), spaetzle)
+        assertEquals(MeasureUnit.PACKAGE, zwei.einheit)
+    }
+
     @Test fun hinweisTexte() {
         assertEquals("Quelle: https://x.example/r", RezeptImport.hinweis("https://x.example/r", 3, geschaetzt = false, ausDatei = true))
         assertEquals("", RezeptImport.hinweis(null, 3, geschaetzt = false, ausDatei = true))

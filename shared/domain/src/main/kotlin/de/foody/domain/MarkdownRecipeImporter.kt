@@ -117,9 +117,12 @@ object MarkdownRecipeImporter {
                 }
                 val firstToken = rest.substringBefore(' ').substringBefore(',').lowercase()
                 val mapped = GermanAmounts.unitOf(firstToken)
-                if (firstToken.startsWith("prise")) {
-                    // Eine Prise ist keine kaufbare oder sinnvoll rechenbare Menge → „nach Bedarf“ mit Hinweis
-                    amount = null
+                val schaetzung = GermanAmounts.schaetzmenge(firstToken)
+                if (schaetzung != null) {
+                    // „1 Prise“, „2 Msp.“, „1 Schuss“: in Gramm bzw. Milliliter; die Angabe bleibt als Hinweis (mit Spanne)
+                    amount = amount?.multiply(schaetzung.first)
+                    unit = schaetzung.second
+                    notes.clear()
                     notes += amountText.trim()
                 } else if (mapped != null) {
                     unit = mapped
@@ -131,6 +134,11 @@ object MarkdownRecipeImporter {
                     if (rest.isNotEmpty()) notes += rest
                 }
             } else {
+                // „Prise“ ohne Zahl = eine Prise
+                GermanAmounts.schaetzmenge(amountText.trim())?.let { (je, einheit) ->
+                    amount = je
+                    unit = einheit
+                }
                 notes += amountText
             }
         }
@@ -145,7 +153,7 @@ object MarkdownRecipeImporter {
     }
 
     /** Namen mit kleingeschriebenem zweitem Wort, die sonst nach dem ersten Wort abgeschnitten würden. */
-    private val multiWordNames = listOf("crème fraîche", "creme fraiche", "crème fraiche", "crème double")
+    private val multiWordNames = listOf("crème fraîche", "creme fraiche", "crème fraiche", "crème double", "fleur de sel")
 
     /**
      * „Tomaten, geschälte à ca. 400 g“ → „Tomaten“ + [„geschälte à ca. 400 g“];

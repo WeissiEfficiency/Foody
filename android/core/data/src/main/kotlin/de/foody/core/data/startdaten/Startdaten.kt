@@ -5,15 +5,16 @@ import de.foody.domain.NutrientBasis
 import java.math.BigDecimal
 
 /**
- * Kuratierter Startdatensatz generischer Lebensmittel – 1:1 aus der v1 (`SeedData`, Version 8), damit IDs und Werte
- * auf beiden Seiten gleich sind. Ältere Zeilen sind gerundete Näherungswerte je 100 g/100 ml (Quelle [QUELLE]); Zeilen
- * ab Version 8 stammen aus amtlichen Datenbanken und nennen ihre Quelle selbst.
+ * Kuratierter Startdatensatz generischer Lebensmittel – bis Version 8 1:1 aus der v1 (`SeedData`), damit IDs und Werte
+ * auf beiden Seiten gleich sind. Die meisten Zeilen sind gerundete Näherungswerte je 100 g/100 ml (Quelle [QUELLE]); die
+ * Zeilen von Version 8 stammen aus amtlichen Datenbanken und nennen ihre Quelle selbst. Version 9 ergänzt Brot und
+ * Gebäck, weitere Zutaten der Rezepte sowie Dichten und Stückgewichte bestehender Zeilen.
  */
 object Startdaten {
     const val QUELLE = "Näherungswert (Startdaten)"
 
     /** Bei Erweiterung erhöhen: neue Zeilen kommen dann auch in bestehende Installationen. */
-    const val VERSION = 8
+    const val VERSION = 9
 
     private data class Zeile(
         val id: String, val name: String, val category: String,
@@ -24,32 +25,32 @@ object Startdaten {
     )
 
     private val zeilen = listOf(
-        Zeile("seed-reis", "Reis (roh)", "Trockenwaren", "1500", "7", "78", "0.6", "1.3", "0.1", "0"),
+        Zeile("seed-reis", "Reis (roh)", "Trockenwaren", "1500", "7", "78", "0.6", "1.3", "0.1", "0", density = "0.8"),
         Zeile("seed-nudeln", "Nudeln (roh)", "Trockenwaren", "1500", "12", "72", "1.5", "3", "3", "0"),
         // v7: Dichten für Löffelmaße (1 EL Mehl ≈ 8 g, 1 TL Zucker ≈ 4 g, 1 TL Salz ≈ 6 g)
         Zeile("seed-mehl", "Weizenmehl", "Trockenwaren", "1450", "10", "72", "1", "4", "0.7", "0", density = "0.55"),
         Zeile("seed-zucker", "Zucker", "Trockenwaren", "1700", "0", "100", "0", "0", "100", "0", density = "0.85"),
         Zeile("seed-milch", "Milch 3,5 %", "Kühlregal", "270", "3.4", "4.8", "3.5", "0", "4.8", "0.1", NutrientBasis.PER_100_ML, density = "1.03"),
-        Zeile("seed-butter", "Butter", "Kühlregal", "3050", "0.7", "0.6", "83", "0", "0.6", "0"),
+        Zeile("seed-butter", "Butter", "Kühlregal", "3050", "0.7", "0.6", "83", "0", "0.6", "0", density = "0.9"),
         Zeile("seed-ei", "Ei", "Kühlregal", "580", "13", "0.7", "10", "0", "0.7", "0.3", piece = "60"),
-        Zeile("seed-zwiebel", "Zwiebel", "Obst & Gemüse", "170", "1.2", "8", "0.1", "1.8", "4", "0", piece = "80"),
-        Zeile("seed-knoblauch", "Knoblauch", "Obst & Gemüse", "600", "6", "28", "0.1", "2", "1", "0", piece = "4"),
-        Zeile("seed-tomate", "Tomate", "Obst & Gemüse", "80", "0.9", "3", "0.2", "1.2", "2.6", "0", piece = "100"),
-        Zeile("seed-dosentomate", "Dosentomaten", "Konserven", "90", "1.2", "3.5", "0.2", "1", "3", "0.1"),
-        Zeile("seed-tomatenmark", "Tomatenmark", "Konserven", "350", "4.5", "14", "0.5", "4", "12", "0.2"),
+        Zeile("seed-zwiebel", "Zwiebel", "Obst & Gemüse", "170", "1.2", "8", "0.1", "1.8", "4", "0", density = "0.6", piece = "80"),
+        Zeile("seed-knoblauch", "Knoblauch", "Obst & Gemüse", "600", "6", "28", "0.1", "2", "1", "0", density = "0.6", piece = "4"),
+        Zeile("seed-tomate", "Tomate", "Obst & Gemüse", "80", "0.9", "3", "0.2", "1.2", "2.6", "0", density = "1.0", piece = "100"),
+        Zeile("seed-dosentomate", "Dosentomaten", "Konserven", "90", "1.2", "3.5", "0.2", "1", "3", "0.1", density = "1.03"),
+        Zeile("seed-tomatenmark", "Tomatenmark", "Konserven", "350", "4.5", "14", "0.5", "4", "12", "0.2", density = "1.1", piece = "200"),
         Zeile("seed-kartoffel", "Kartoffel", "Obst & Gemüse", "320", "2", "16", "0.1", "2", "0.8", "0", piece = "150"),
         Zeile("seed-karotte", "Karotte", "Obst & Gemüse", "150", "0.9", "7", "0.2", "3", "4.7", "0.1", piece = "80"),
         Zeile("seed-paprika", "Paprika", "Obst & Gemüse", "120", "1", "5", "0.3", "2", "4", "0", piece = "150"),
-        Zeile("seed-haehnchen", "Hähnchenbrust", "Fleisch & Fisch", "450", "23", "0", "1.5", "0", "0", "0.2"),
+        Zeile("seed-haehnchen", "Hähnchenbrust", "Fleisch & Fisch", "450", "23", "0", "1.5", "0", "0", "0.2", piece = "150"),
         Zeile("seed-hackfleisch", "Rinderhack", "Fleisch & Fisch", "1000", "20", "0", "17", "0", "0", "0.2"),
         // v3: 3.700 kJ gelten je 100 g (nicht je 100 ml) – Basis korrigiert, die Dichte rechnet ml um
         Zeile("seed-olivenoel", "Olivenöl", "Öle & Gewürze", "3700", "0", "0", "100", "0", "0", "0", density = "0.91"),
         Zeile("seed-salz", "Salz", "Öle & Gewürze", "0", "0", "0", "0", "0", "0", "100", density = "1.2"),
         // v4: Werte ergänzt (schwarzer Pfeffer); 1 TL gemahlen ≈ 2,3 g
-        Zeile("seed-pfeffer", "Pfeffer", "Öle & Gewürze", "1150", "10", "39", "3.3", "25", "0.6", "0", density = "0.46"),
+        Zeile("seed-pfeffer", "Pfeffer", "Öle & Gewürze", "1150", "10", "39", "3.3", "25", "0.6", "0", density = "0.46", piece = "0.05"),
         Zeile("seed-kokosmilch", "Kokosmilch", "Konserven", "800", "2", "3", "19", "0", "2", "0", NutrientBasis.PER_100_ML, density = "1.0"),
         Zeile("seed-currypaste", "Currypaste", "Öle & Gewürze", "540", "3", "10", "8", "3", "5", "6", density = "1.1"),
-        Zeile("seed-kaese", "Gouda", "Kühlregal", "1500", "25", "0", "29", "0", "0", "2"),
+        Zeile("seed-kaese", "Gouda", "Kühlregal", "1500", "25", "0", "29", "0", "0", "2", density = "0.4", piece = "25"),
         // Version 2: häufige Zutaten aus importierten Rezepten (Zielnamen von IngredientCatalog)
         Zeile("seed-pflanzenoel", "Pflanzenöl", "Öle & Gewürze", "3700", "0", "0", "100", "0", "0", "0", density = "0.92"),
         Zeile("seed-wasser", "Wasser", "Getränke", "0", "0", "0", "0", "0", "0", "0", NutrientBasis.PER_100_ML, density = "1.0"),
@@ -62,9 +63,9 @@ object Startdaten {
         Zeile("seed-hack-gemischt", "Hackfleisch, gemischt", "Fleisch & Fisch", "1090", "18", "0", "21", "0", "0", "0.2"),
         Zeile("seed-eigelb", "Eigelb", "Kühlregal", "1450", "16", "0.3", "32", "0", "0.3", "0.1", piece = "18"),
         // v4: Stück = Bund (≈ 30 g)
-        Zeile("seed-petersilie", "Petersilie", "Obst & Gemüse", "210", "4", "6", "0.4", "4", "1", "0.1", piece = "30"),
+        Zeile("seed-petersilie", "Petersilie", "Obst & Gemüse", "210", "4", "6", "0.4", "4", "1", "0.1", density = "0.25", piece = "30"),
         Zeile("seed-senf", "Senf", "Öle & Gewürze", "370", "6", "5", "4.5", "2", "3", "2.7", density = "1.1"),
-        Zeile("seed-vanillezucker", "Vanillezucker", "Trockenwaren", "1680", "0", "99", "0", "0", "99", "0", piece = "8"),
+        Zeile("seed-vanillezucker", "Vanillezucker", "Trockenwaren", "1680", "0", "99", "0", "0", "99", "0", density = "0.85", piece = "8"),
         Zeile("seed-paprikapulver", "Paprikapulver", "Öle & Gewürze", "1200", "14", "19", "13", "35", "10", "0.1", density = "0.45"),
         // Version 4: häufigste Zutaten der importierten Rezepte ohne Nährwerte. Stückgewicht = übliche Einheit
         // im Rezept (Kräuter: Zweig, Milchprodukte: Becher, Hefe: Würfel, Lauch: Stange, Mozzarella: Kugel).
@@ -75,12 +76,12 @@ object Startdaten {
         Zeile("seed-hefe", "Hefe", "Kühlregal", "365", "12", "4", "1", "7", "0", "0.1", piece = "42"),
         Zeile("seed-trockenhefe", "Trockenhefe", "Backzutaten", "1415", "40", "14", "7.6", "27", "0", "0.1", density = "0.6"),
         Zeile("seed-sojasauce", "Sojasauce", "Öle & Gewürze", "240", "8", "6", "0", "0", "1", "14", NutrientBasis.PER_100_ML, density = "1.15"),
-        Zeile("seed-margarine", "Margarine", "Kühlregal", "2970", "0.2", "0.4", "80", "0", "0.4", "0.5"),
+        Zeile("seed-margarine", "Margarine", "Kühlregal", "2970", "0.2", "0.4", "80", "0", "0.4", "0.5", density = "0.9"),
         Zeile("seed-champignons", "Champignons", "Obst & Gemüse", "90", "3.1", "0.6", "0.3", "2", "0.3", "0", piece = "20"),
         Zeile("seed-chili", "Chilischote", "Obst & Gemüse", "175", "1.9", "7", "0.4", "1.5", "5", "0", piece = "12"),
         Zeile("seed-schalotte", "Schalotte", "Obst & Gemüse", "310", "2.5", "14", "0.1", "3.2", "8", "0", piece = "25"),
-        Zeile("seed-thymian", "Thymian", "Obst & Gemüse", "440", "5.6", "10", "1.7", "14", "1.7", "0", piece = "1"),
-        Zeile("seed-rosmarin", "Rosmarin", "Obst & Gemüse", "500", "3.3", "6.4", "5.9", "14", "0", "0.1", piece = "1.5"),
+        Zeile("seed-thymian", "Thymian", "Obst & Gemüse", "440", "5.6", "10", "1.7", "14", "1.7", "0", density = "0.2", piece = "1"),
+        Zeile("seed-rosmarin", "Rosmarin", "Obst & Gemüse", "500", "3.3", "6.4", "5.9", "14", "0", "0.1", density = "0.2", piece = "1.5"),
         Zeile("seed-lauch", "Lauch", "Obst & Gemüse", "122", "2.2", "3.3", "0.3", "2.3", "3", "0", piece = "200"),
         Zeile("seed-sesamoel", "Sesamöl", "Öle & Gewürze", "3700", "0", "0", "100", "0", "0", "0", density = "0.92"),
         Zeile("seed-sellerie", "Knollensellerie", "Obst & Gemüse", "110", "1.5", "2.3", "0.3", "4.2", "2", "0.2", piece = "600"),
@@ -91,24 +92,24 @@ object Startdaten {
         Zeile("seed-cremefraiche", "Crème fraîche", "Kühlregal", "1195", "2.4", "2.6", "30", "0", "2.6", "0.1", density = "1.0", piece = "200"),
         Zeile("seed-honig", "Honig", "Backzutaten", "1365", "0.4", "80", "0", "0", "80", "0", density = "1.4"),
         Zeile("seed-staerke", "Speisestärke", "Backzutaten", "1480", "0.4", "86", "0.1", "1", "0", "0", density = "0.65"),
-        Zeile("seed-ingwer", "Ingwer", "Obst & Gemüse", "345", "1.8", "15.8", "0.8", "2", "1.7", "0", piece = "30"),
+        Zeile("seed-ingwer", "Ingwer", "Obst & Gemüse", "345", "1.8", "15.8", "0.8", "2", "1.7", "0", density = "0.55", piece = "30"),
         Zeile("seed-fruehlingszwiebel", "Frühlingszwiebel", "Obst & Gemüse", "139", "1.8", "4.7", "0.2", "2.6", "2.3", "0", piece = "15"),
         Zeile("seed-chilipulver", "Chilipulver", "Öle & Gewürze", "1270", "13", "15", "14", "35", "7", "2.5", density = "0.5"),
         Zeile("seed-quark", "Quark", "Kühlregal", "285", "12", "4", "0.3", "0", "4", "0.1", density = "1.05", piece = "250"),
-        Zeile("seed-parmesan", "Parmesan", "Kühlregal", "1620", "32", "0", "29", "0", "0", "1.6"),
+        Zeile("seed-parmesan", "Parmesan", "Kühlregal", "1620", "32", "0", "29", "0", "0", "1.6", density = "0.4"),
         Zeile("seed-puddingpulver", "Vanillepuddingpulver", "Backzutaten", "1450", "0.3", "85", "0.1", "0", "0", "0.4"),
         Zeile("seed-joghurt", "Joghurt", "Kühlregal", "270", "3.8", "4.4", "3.5", "0", "4.4", "0.1", density = "1.03", piece = "150"),
         Zeile("seed-currypulver", "Currypulver", "Öle & Gewürze", "1445", "14", "25", "14", "33", "3", "0.1", density = "0.5"),
         Zeile("seed-mozzarella", "Mozzarella", "Kühlregal", "1060", "18", "1", "20", "0", "1", "0.5", piece = "125"),
         Zeile("seed-butterschmalz", "Butterschmalz", "Öle & Gewürze", "3680", "0.3", "0", "99.5", "0", "0", "0", density = "0.91"),
-        Zeile("seed-rindfleisch", "Rindfleisch", "Fleisch & Fisch", "580", "21", "0", "6", "0", "0", "0.1"),
+        Zeile("seed-rindfleisch", "Rindfleisch", "Fleisch & Fisch", "580", "21", "0", "6", "0", "0", "0.1", piece = "200"),
         Zeile("seed-schweinebraten", "Schweinebraten", "Fleisch & Fisch", "860", "18", "0", "15", "0", "0", "0.2"),
-        Zeile("seed-schweinefilet", "Schweinefilet", "Fleisch & Fisch", "450", "22", "0", "2", "0", "0", "0.1"),
+        Zeile("seed-schweinefilet", "Schweinefilet", "Fleisch & Fisch", "450", "22", "0", "2", "0", "0", "0.1", piece = "500"),
         Zeile("seed-kochschinken", "Kochschinken", "Fleisch & Fisch", "490", "19", "1", "4", "0", "1", "2.3", piece = "25"), // Stück = Scheibe
         Zeile("seed-eiweiss", "Eiweiß", "Kühlregal", "205", "11", "0.7", "0.2", "0", "0.7", "0.4", piece = "33"),
         Zeile("seed-mascarpone", "Mascarpone", "Kühlregal", "1765", "4.6", "3.6", "44", "0", "3.6", "0.1", piece = "250"),
-        Zeile("seed-schnittlauch", "Schnittlauch", "Obst & Gemüse", "160", "3.6", "1.6", "0.7", "6", "1.6", "0", piece = "25"),
-        Zeile("seed-pinienkerne", "Pinienkerne", "Trockenwaren", "2850", "14", "4", "68", "4", "3.6", "0"),
+        Zeile("seed-schnittlauch", "Schnittlauch", "Obst & Gemüse", "160", "3.6", "1.6", "0.7", "6", "1.6", "0", density = "0.25", piece = "25"),
+        Zeile("seed-pinienkerne", "Pinienkerne", "Trockenwaren", "2850", "14", "4", "68", "4", "3.6", "0", density = "0.55"),
         Zeile("seed-balsamico", "Balsamico", "Öle & Gewürze", "290", "0.5", "17", "0", "0", "15", "0", NutrientBasis.PER_100_ML, density = "1.06"),
         Zeile("seed-semmelbroesel", "Semmelbrösel", "Trockenwaren", "1535", "12", "72", "2", "4", "4", "1.2", density = "0.45"),
         Zeile("seed-broetchen", "Brötchen", "Brot & Backwaren", "1150", "9", "53", "2", "3", "2", "1.2", piece = "60"),
@@ -117,10 +118,10 @@ object Startdaten {
         // Version 5: weitere Zutaten der Beispielrezepte. Energie aus Makros berechnet (EU-Faktoren, Alkohol 29 kJ/g)
         Zeile("seed-schweineschnitzel", "Schweineschnitzel", "Fleisch & Fisch", "465", "22", "0", "2.5", "0", "0", "0.15", piece = "150"),
         Zeile("seed-putenbrust", "Putenbrust", "Fleisch & Fisch", "445", "24", "0", "1", "0", "0", "0.15", piece = "150"),
-        Zeile("seed-kalbfleisch", "Kalbfleisch", "Fleisch & Fisch", "450", "21", "0", "2.5", "0", "0", "0.2"),
+        Zeile("seed-kalbfleisch", "Kalbfleisch", "Fleisch & Fisch", "450", "21", "0", "2.5", "0", "0", "0.2", piece = "150"),
         Zeile("seed-schweinebauch", "Schweinebauch", "Fleisch & Fisch", "1105", "17", "0", "22", "0", "0", "0.15"),
         Zeile("seed-schweinshaxe", "Schweinshaxe", "Fleisch & Fisch", "950", "19", "0", "17", "0", "0", "0.2", piece = "1200"),
-        Zeile("seed-lammkeule", "Lammkeule", "Fleisch & Fisch", "785", "20", "0", "12", "0", "0", "0.2"),
+        Zeile("seed-lammkeule", "Lammkeule", "Fleisch & Fisch", "785", "20", "0", "12", "0", "0", "0.2", piece = "2000"),
         Zeile("seed-suppenhuhn", "Suppenhuhn", "Fleisch & Fisch", "805", "19", "0", "13", "0", "0", "0.2", piece = "1500"),
         Zeile("seed-entenkeule", "Entenkeule", "Fleisch & Fisch", "955", "17", "0", "18", "0", "0", "0.2", piece = "300"),
         Zeile("seed-wildfleisch", "Wildfleisch", "Fleisch & Fisch", "470", "21", "0", "3", "0", "0", "0.15"),
@@ -131,12 +132,12 @@ object Startdaten {
         Zeile("seed-rohschinken", "Rohschinken", "Fleisch & Fisch", "960", "26", "0", "14", "0", "0", "5.5"),
         Zeile("seed-lachs", "Lachs", "Fleisch & Fisch", "820", "20", "0", "13", "0", "0", "0.1", piece = "125"),
         Zeile("seed-kabeljau", "Kabeljau", "Fleisch & Fisch", "330", "18", "0", "0.7", "0", "0", "0.2", piece = "125"),
-        Zeile("seed-emmentaler", "Emmentaler", "Kühlregal", "1585", "28", "0", "30", "0", "0", "0.4"),
+        Zeile("seed-emmentaler", "Emmentaler", "Kühlregal", "1585", "28", "0", "30", "0", "0", "0.4", density = "0.4"),
         Zeile("seed-camembert", "Camembert", "Kühlregal", "1230", "20", "0", "24", "0", "0", "1.8", piece = "125"),
         Zeile("seed-gorgonzola", "Gorgonzola", "Kühlregal", "1470", "19", "0", "31", "0", "0", "2.5"),
         Zeile("seed-feta", "Feta", "Kühlregal", "1110", "17", "0.5", "22", "0", "0.5", "2.5", piece = "200"),
         Zeile("seed-frischkaese", "Frischkäse", "Kühlregal", "1040", "6", "3", "24", "0", "3", "0.8", density = "1.0", piece = "200"),
-        Zeile("seed-schmelzkaese", "Schmelzkäse", "Kühlregal", "1010", "11", "5", "20", "0", "5", "2.5"),
+        Zeile("seed-schmelzkaese", "Schmelzkäse", "Kühlregal", "1010", "11", "5", "20", "0", "5", "2.5", piece = "200"),
         Zeile("seed-sauresahne", "Saure Sahne", "Kühlregal", "490", "3", "4", "10", "0", "4", "0.1", density = "1.0", piece = "200"),
         Zeile("seed-buttermilch", "Buttermilch", "Kühlregal", "145", "3.5", "4", "0.5", "0", "4", "0.1", NutrientBasis.PER_100_ML, density = "1.03"),
         Zeile("seed-zucchini", "Zucchini", "Obst & Gemüse", "85", "1.6", "2", "0.4", "1.1", "1.7", "0", piece = "200"),
@@ -151,7 +152,7 @@ object Startdaten {
         Zeile("seed-mango", "Mango", "Obst & Gemüse", "260", "0.6", "13", "0.4", "1.7", "13", "0", piece = "400"),
         Zeile("seed-weintrauben", "Weintrauben", "Obst & Gemüse", "305", "0.7", "16", "0.2", "1.5", "16", "0"),
         Zeile("seed-spinat", "Spinat", "Obst & Gemüse", "90", "2.9", "0.6", "0.4", "2.2", "0.4", "0.2"),
-        Zeile("seed-rucola", "Rucola", "Obst & Gemüse", "115", "2.6", "2", "0.7", "1.6", "2", "0.1"),
+        Zeile("seed-rucola", "Rucola", "Obst & Gemüse", "115", "2.6", "2", "0.7", "1.6", "2", "0.1", piece = "100"),
         Zeile("seed-erbsen", "Erbsen", "Obst & Gemüse", "330", "6", "10", "0.5", "5", "4", "0"),
         Zeile("seed-kidneybohnen", "Kidneybohnen", "Konserven", "425", "8", "13", "0.5", "6", "1", "0.5"),
         Zeile("seed-mais", "Mais", "Konserven", "370", "3", "15", "1.2", "2.5", "4", "0.5"),
@@ -163,16 +164,16 @@ object Startdaten {
         Zeile("seed-staudensellerie", "Staudensellerie", "Obst & Gemüse", "65", "0.7", "2", "0.2", "1.6", "1.8", "0.2", piece = "40"),
         Zeile("seed-suppengruen", "Suppengrün", "Obst & Gemüse", "120", "1.3", "4", "0.2", "2.5", "3.5", "0", piece = "400"),
         Zeile("seed-petersilienwurzel", "Petersilienwurzel", "Obst & Gemüse", "190", "2.3", "6", "0.5", "4", "3", "0", piece = "100"),
-        Zeile("seed-basilikum", "Basilikum", "Obst & Gemüse", "105", "3.2", "1", "0.6", "1.6", "0.3", "0", piece = "20"),
-        Zeile("seed-dill", "Dill", "Obst & Gemüse", "220", "3.5", "6", "1.1", "2", "0", "0.1", piece = "20"),
-        Zeile("seed-zitronengras", "Zitronengras", "Obst & Gemüse", "475", "1.8", "25", "0.5", "0", "0", "0", piece = "15"),
+        Zeile("seed-basilikum", "Basilikum", "Obst & Gemüse", "105", "3.2", "1", "0.6", "1.6", "0.3", "0", density = "0.2", piece = "20"),
+        Zeile("seed-dill", "Dill", "Obst & Gemüse", "220", "3.5", "6", "1.1", "2", "0", "0.1", density = "0.2", piece = "20"),
+        Zeile("seed-zitronengras", "Zitronengras", "Obst & Gemüse", "475", "1.8", "25", "0.5", "0", "0", "0", density = "0.5", piece = "15"),
         Zeile("seed-kakao", "Kakaopulver", "Backzutaten", "1545", "20", "11", "21", "30", "1", "0.1", density = "0.5"),
-        Zeile("seed-zartbitter", "Schokolade", "Backzutaten", "2330", "8", "33", "42", "10", "29", "0"),
-        Zeile("seed-vollmilchschoko", "Vollmilchschokolade", "Backzutaten", "2270", "7", "56", "32", "2", "55", "0.2"),
+        Zeile("seed-zartbitter", "Schokolade", "Backzutaten", "2330", "8", "33", "42", "10", "29", "0", density = "0.5", piece = "100"),
+        Zeile("seed-vollmilchschoko", "Vollmilchschokolade", "Backzutaten", "2270", "7", "56", "32", "2", "55", "0.2", piece = "100"),
         Zeile("seed-loeffelbiskuits", "Löffelbiskuits", "Backzutaten", "1570", "8", "75", "4", "1.5", "40", "0.2", piece = "6"),
         Zeile("seed-haselnuesse", "Haselnüsse", "Trockenwaren", "2680", "15", "6", "61", "8", "4", "0", density = "0.5"),
         Zeile("seed-mandeln", "Mandeln", "Trockenwaren", "2460", "21", "5", "52", "12", "4", "0", density = "0.45"),
-        Zeile("seed-erdnuesse", "Erdnüsse", "Trockenwaren", "2440", "25", "8", "49", "8", "4", "0"),
+        Zeile("seed-erdnuesse", "Erdnüsse", "Trockenwaren", "2440", "25", "8", "49", "8", "4", "0", density = "0.6"),
         Zeile("seed-erdnussbutter", "Erdnussbutter", "Trockenwaren", "2545", "25", "13", "50", "6", "6", "1", density = "1.0"),
         Zeile("seed-sesam", "Sesam", "Trockenwaren", "2420", "18", "10", "50", "12", "0.3", "0", density = "0.6"),
         Zeile("seed-griess", "Grieß", "Trockenwaren", "1430", "11", "69", "1", "4", "0.5", "0", density = "0.7"),
@@ -185,9 +186,9 @@ object Startdaten {
         Zeile("seed-ahornsirup", "Ahornsirup", "Backzutaten", "1140", "0", "67", "0", "0", "60", "0", density = "1.32"),
         Zeile("seed-konfituere", "Konfitüre", "Backzutaten", "1035", "0.4", "60", "0", "1", "58", "0", density = "1.3"),
         Zeile("seed-preiselbeeren", "Preiselbeeren", "Konserven", "710", "0.3", "40", "0.3", "2", "38", "0", density = "1.2"),
-        Zeile("seed-kapern", "Kapern", "Konserven", "125", "2.4", "1.7", "0.9", "3", "0.4", "7"),
-        Zeile("seed-oliven", "Oliven", "Konserven", "615", "1", "1", "15", "3", "0", "3"),
-        Zeile("seed-pesto", "Pesto", "Konserven", "1870", "5", "6", "45", "2", "3", "2.5", density = "1.0"),
+        Zeile("seed-kapern", "Kapern", "Konserven", "125", "2.4", "1.7", "0.9", "3", "0.4", "7", density = "0.6", piece = "60"),
+        Zeile("seed-oliven", "Oliven", "Konserven", "615", "1", "1", "15", "3", "0", "3", piece = "4"),
+        Zeile("seed-pesto", "Pesto", "Konserven", "1870", "5", "6", "45", "2", "3", "2.5", density = "1.0", piece = "190"),
         Zeile("seed-sambal", "Sambal Oelek", "Öle & Gewürze", "180", "2", "5", "1", "3", "4", "8", density = "1.1"),
         Zeile("seed-misopaste", "Misopaste", "Öle & Gewürze", "840", "12", "22", "6", "5", "6", "12", density = "1.1"),
         Zeile("seed-essig", "Essig", "Öle & Gewürze", "10", "0", "0.6", "0", "0", "0.4", "0", NutrientBasis.PER_100_ML, density = "1.01"),
@@ -225,13 +226,13 @@ object Startdaten {
         Zeile("seed-kraeutersalz", "Kräutersalz", "Öle & Gewürze", "157", "3", "3.3", "0.5", "3.6", "3.3", "81.1", density = "1.1", src = "BLS 4.0 (MRI): Gewürzsalz/Kräutersalz"),
         Zeile("seed-wasabi", "Wasabipaste", "Öle & Gewürze", "394", "5.4", "10.2", "2.23", "4.1", "7.2", "4.8", density = "1.1", src = "BLS 4.0 (MRI): Wasabi-Paste"),
         Zeile("seed-barbecuesauce", "Barbecuesauce", "Öle & Gewürze", "466", "1.15", "9.24", "7.27", "1.4", "9.11", "0.61", density = "1.1", src = "BLS 4.0 (MRI): Barbecuesauce/Grillsauce"),
-        Zeile("seed-backmalz", "Backmalz", "Backzutaten", "1515", "4.4", "73.8", "0", null, "50.6", "0.03", src = "BLS 4.0 (MRI): Gerstenmalzextrakt"),
+        Zeile("seed-backmalz", "Backmalz", "Backzutaten", "1515", "4.4", "73.8", "0", null, "50.6", "0.03", density = "0.7", src = "BLS 4.0 (MRI): Gerstenmalzextrakt"),
         Zeile("seed-mohn", "Mohn", "Backzutaten", "2181", "23.8", "2.99", "42.2", "20.5", "2.99", "0.05", density = "0.55", src = "BLS 4.0 (MRI): Mohn"),
         Zeile("seed-gelatine", "Gelatine", "Backzutaten", "1450", "85.1", "0", "0.1", "0", "0", "0.41", piece = "1.7", src = "BLS 4.0 (MRI): Speisegelatine"),
         Zeile("seed-schokostreusel", "Schokostreusel", "Backzutaten", "1992", "4.06", "68", "19.7", "4.73", "66.2", "0.14", src = "BLS 4.0 (MRI): Schokoladenstreusel"),
         Zeile("seed-schokopudding", "Schokoladenpuddingpulver", "Backzutaten", "1437", "5.98", "68.8", "2.9", "7.34", "1.05", "0.95", src = "BLS 4.0 (MRI): Puddingpulver Schokolade, ungezuckert"),
         Zeile("seed-kuchenglasur", "Kuchenglasur", "Backzutaten", "1782", "4.14", "35.4", "28.9", "5.26", "33.5", "0.02", src = "BLS 4.0 (MRI): Schokoladenfettglasur"),
-        Zeile("seed-keks", "Keks", "Brot & Backwaren", "2043", "6.48", "64", "22.2", "2.98", "37.8", "0.19", src = "BLS 4.0 (MRI): Cookies mit Schokoladenstückchen"),
+        Zeile("seed-keks", "Keks", "Brot & Backwaren", "2043", "6.48", "64", "22.2", "2.98", "37.8", "0.19", piece = "12", src = "BLS 4.0 (MRI): Cookies mit Schokoladenstückchen"),
         Zeile("seed-croutons", "Croûtons", "Brot & Backwaren", "2049", "7.44", "40.8", "32.4", "3.21", "3.43", "1.15", src = "BLS 4.0 (MRI): Weißbrotwürfel geröstet (Croutons)"),
         Zeile("seed-kartoffelpufferteig", "Kartoffelpufferteig", "Kühlregal", "631", "4", "28.5", "1.65", "2.2", "1.28", "0.95", src = "BLS 4.0 (MRI): Kartoffelpuffer tiefgefroren"),
         Zeile("seed-eierspaetzle", "Eierspätzle", "Kühlregal", "929", "9.3", "35.5", "3.93", "2.62", "0.25", "0.8", src = "BLS 4.0 (MRI): Eier-Frischteigwaren Spätzle, roh"),
@@ -252,7 +253,7 @@ object Startdaten {
         Zeile("seed-baerlauch", "Bärlauch", "Obst & Gemüse", "110", "1.9", "2.93", "0.19", "2.18", "2.89", "0.03", piece = "50", src = "BLS 4.0 (MRI): Bärlauch roh"),
         Zeile("seed-okra", "Okraschote", "Obst & Gemüse", "134", "2.1", "3.05", "0.2", "4.9", "3.05", "0.01", piece = "10", src = "BLS 4.0 (MRI): Okra roh"),
         Zeile("seed-blattsalat", "Blattsalat", "Obst & Gemüse", "76", "1.5", "1.7", "0.22", "1.4", "1.7", "0.08", piece = "300", src = "BLS 4.0 (MRI): Kopfsalat roh"),
-        Zeile("seed-kraeuter", "Kräuter", "Obst & Gemüse", "139", "4.09", "1.31", "0.36", "4.25", "0.85", "0.31", piece = "30", src = "BLS 4.0 (MRI): Petersilienblatt roh"),
+        Zeile("seed-kraeuter", "Kräuter", "Obst & Gemüse", "139", "4.09", "1.31", "0.36", "4.25", "0.85", "0.31", density = "0.25", piece = "30", src = "BLS 4.0 (MRI): Petersilienblatt roh"),
         Zeile("seed-johannisbeersaft", "Johannisbeersaft", "Getränke", "235", "1.24", "10", "0.18", "0.4", "10", "0", density = "1.05", src = "BLS 4.0 (MRI): Johannisbeersaft schwarz"),
         Zeile("seed-wermut", "Wermut", "Getränke", "436", "0.1", "3", "0", "0", "3", "0.03", density = "1.0", src = "BLS 4.0 (MRI): Wermutwein trocken"),
         Zeile("seed-mehlbutter", "Mehlbutter", "Kühlregal", "2274", "5.82", "36.2", "41.6", "2.65", "0.44", "0.02", src = "berechnet aus BLS 4.0 (MRI): Butter + Weizenmehl Type 405 (1:1)"),
@@ -267,8 +268,114 @@ object Startdaten {
         Zeile("seed-teriyakisauce", "Teriyakisauce", "Öle & Gewürze", "366", "5.93", "15.5", "0.02", "0.1", "14.1", "9.57", density = "1.15", src = "USDA FoodData Central 171167: Teriyakisauce"),
         Zeile("seed-zitronenschale", "Zitronenschale", "Obst & Gemüse", "213", "1.5", "5.4", "0.3", "10.6", "4.17", "0.01", density = "0.4", piece = "6", src = "USDA FoodData Central 167749: Zitronenschale, roh"),
         Zeile("seed-orangenschale", "Orangenschale", "Obst & Gemüse", "362", "1.5", "14.4", "0.2", "10.6", null, "0.01", density = "0.4", piece = "10", src = "USDA FoodData Central 169103: Orangenschale, roh"),
-        Zeile("seed-koriandergruen", "Koriandergrün", "Obst & Gemüse", "92.6", "2.13", "0.87", "0.52", "2.8", "0.87", "0.12", piece = "30", src = "USDA FoodData Central 169997: Korianderblätter, roh"),
+        Zeile("seed-koriandergruen", "Koriandergrün", "Obst & Gemüse", "92.6", "2.13", "0.87", "0.52", "2.8", "0.87", "0.12", density = "0.2", piece = "30", src = "USDA FoodData Central 169997: Korianderblätter, roh"),
         Zeile("seed-strudelteig", "Strudelteig", "Kühlregal", "1220", "7.1", "50.7", "6", "1.9", "0.18", "1.21", src = "USDA FoodData Central 172791: Filoteig"),
+        // v9: Brot und Gebäck, häufige Zutaten der Rezepte ohne Katalogeintrag. Gerundete Näherungswerte (BLS/USDA),
+        // Energie aus Makros berechnet (EU-Faktoren, Alkohol 29 kJ/g); Dichten und Stückgewichte für Löffel, Scheiben,
+        // Becher. Dazu Dichten und Stückgewichte bestehender Zeilen, damit EL/TL und Stückangaben rechnen.
+        Zeile("seed-weissbrot", "Weißbrot", "Brot & Backwaren", "1048", "8", "49", "1.5", "3", "2.5", "1.3", piece = "30"), // Stück = Scheibe
+        Zeile("seed-toastbrot", "Toastbrot", "Brot & Backwaren", "1108", "8", "48", "3.5", "3.3", "4.5", "1.2", piece = "25"), // Stück = Scheibe
+        Zeile("seed-vollkorntoast", "Vollkorntoast", "Brot & Backwaren", "1050", "9", "41", "4", "6.5", "3.5", "1.1", piece = "28"), // Stück = Scheibe
+        Zeile("seed-vollkornbrot", "Vollkornbrot", "Brot & Backwaren", "884", "7", "38", "1.5", "8", "3", "1.1", piece = "50"), // Stück = Scheibe
+        Zeile("seed-brezel", "Brezel", "Brot & Backwaren", "1204", "9", "54", "3", "2.8", "1.5", "2.4", piece = "80"),
+        Zeile("seed-laugenbroetchen", "Laugenbrötchen", "Brot & Backwaren", "1204", "9", "54", "3", "2.8", "1.5", "2.4", piece = "70"),
+        Zeile("seed-vollkornbroetchen", "Vollkornbrötchen", "Brot & Backwaren", "1064", "10", "43", "3", "6.5", "2.5", "1.2", piece = "65"),
+        Zeile("seed-baguette", "Baguette", "Brot & Backwaren", "1107", "9", "52", "1.3", "2.7", "2", "1.4", piece = "250"), // Stück = ganze Stange
+        Zeile("seed-ciabatta", "Ciabatta", "Brot & Backwaren", "1136", "9", "49", "3.5", "2.5", "1.5", "1.4", piece = "300"),
+        Zeile("seed-croissant", "Croissant", "Brot & Backwaren", "1714", "8", "44", "22", "2", "7", "1", piece = "60"),
+        Zeile("seed-knaeckebrot", "Knäckebrot", "Brot & Backwaren", "1416", "10", "63", "1.5", "15", "2", "1.1", piece = "10"), // Stück = Scheibe
+        Zeile("seed-fladenbrot", "Fladenbrot", "Brot & Backwaren", "1106", "8.5", "51", "2", "2.5", "2", "1.3", piece = "400"),
+        Zeile("seed-pitabrot", "Pitabrot", "Brot & Backwaren", "1106", "8.5", "51", "2", "2.5", "2", "1.3", piece = "70"),
+        Zeile("seed-naanbrot", "Naanbrot", "Brot & Backwaren", "1244", "9", "48", "7", "2", "3.5", "1.3", piece = "90"),
+        Zeile("seed-tortilla", "Tortilla", "Brot & Backwaren", "1262", "8.5", "48", "7.5", "3", "3", "1.3", piece = "60"), // Weizentortilla/Wrap
+        Zeile("seed-burgerbroetchen", "Burgerbrötchen", "Brot & Backwaren", "1174", "9", "48", "5", "2.5", "6", "1.1", piece = "60"),
+        Zeile("seed-zwieback", "Zwieback", "Brot & Backwaren", "1618", "10", "73", "4.5", "5", "11", "0.6", piece = "10"),
+        Zeile("seed-bagel", "Bagel", "Brot & Backwaren", "1096", "10", "50", "1.5", "2.5", "5", "1.1", piece = "90"),
+        Zeile("seed-blaetterteig", "Blätterteig", "Kühlregal", "1626", "5.5", "35", "25", "1.5", "1", "1.1", piece = "275"), // Stück = Rolle
+        Zeile("seed-pizzateig", "Pizzateig", "Kühlregal", "1095", "6.5", "45", "5.5", "2", "2", "1.5", piece = "400"), // Stück = Rolle
+        Zeile("seed-flammkuchenteig", "Flammkuchenteig", "Kühlregal", "1174", "7", "47", "6.5", "2", "2", "1.3", piece = "260"), // Stück = Rolle
+        Zeile("seed-haferflocken", "Haferflocken", "Trockenwaren", "1566", "13.5", "58.7", "7", "10", "0.7", "0", density = "0.4"),
+        Zeile("seed-linsen", "Linsen", "Trockenwaren", "1288", "23.5", "41", "1.5", "17", "1.5", "0", density = "0.85"), // getrocknet
+        Zeile("seed-couscous", "Couscous", "Trockenwaren", "1456", "12.8", "67", "1.6", "5", "0.5", "0", density = "0.7"),
+        Zeile("seed-bulgur", "Bulgur", "Trockenwaren", "1428", "12.3", "63", "1.3", "12.5", "0.4", "0", density = "0.75"),
+        Zeile("seed-quinoa", "Quinoa", "Trockenwaren", "1485", "14", "57", "6", "7", "0", "0", density = "0.75"),
+        Zeile("seed-risottoreis", "Risottoreis", "Trockenwaren", "1478", "7", "78", "0.6", "1.3", "0.1", "0", density = "0.8"),
+        Zeile("seed-rosinen", "Rosinen", "Trockenwaren", "1228", "2.5", "66", "0.6", "5.2", "66", "0", density = "0.65"),
+        Zeile("seed-walnuesse", "Walnüsse", "Trockenwaren", "2836", "15.2", "7", "65", "6.7", "2.6", "0", density = "0.45"),
+        Zeile("seed-cashew", "Cashewkerne", "Trockenwaren", "2419", "18", "27", "44", "3.3", "6", "0", density = "0.6"),
+        Zeile("seed-sonnenblumenkerne", "Sonnenblumenkerne", "Trockenwaren", "2443", "21", "12", "49", "8.6", "2.6", "0", density = "0.55"),
+        Zeile("seed-kuerbiskerne", "Kürbiskerne", "Trockenwaren", "2456", "30", "5", "49", "6", "1.4", "0", density = "0.55"),
+        Zeile("seed-proteinpulver", "Proteinpulver", "Trockenwaren", "1667", "78", "7", "6", "0", "5", "0.5", density = "0.4"), // Molkenprotein
+        Zeile("seed-kokosraspel", "Kokosraspel", "Backzutaten", "2733", "6.9", "6.4", "64.5", "15", "6", "0", density = "0.35"),
+        Zeile("seed-marzipan", "Marzipan", "Backzutaten", "1913", "8", "48", "25", "4.5", "47", "0"), // Rohmasse
+        Zeile("seed-sahnesteif", "Sahnesteif", "Backzutaten", "1615", "0", "95", "0", "0", "30", "0"),
+        Zeile("seed-zimtzucker", "Zimtzucker", "Backzutaten", "1664", "0.1", "97", "0", "1.6", "96", "0", density = "0.85"),
+        Zeile("seed-saucenbinder", "Saucenbinder", "Öle & Gewürze", "2025", "1", "70", "22", "0.5", "1", "3", density = "0.6"),
+        Zeile("seed-ketchup", "Ketchup", "Öle & Gewürze", "421", "1.2", "23.2", "0.1", "0.3", "22.8", "1.8", density = "1.15"),
+        Zeile("seed-mayonnaise", "Mayonnaise", "Öle & Gewürze", "2964", "1.1", "1.3", "79", "0", "1", "1.3", density = "0.95"), // 80 % Fett
+        Zeile("seed-sweetchili", "Sweet-Chili-Sauce", "Öle & Gewürze", "874", "0.5", "50", "0.2", "1", "45", "2.5", density = "1.25"),
+        Zeile("seed-worcester", "Worcestershiresauce", "Öle & Gewürze", "332", "0", "19.5", "0", "0", "10", "2.5", density = "1.1"),
+        Zeile("seed-hoisin", "Hoisinsauce", "Öle & Gewürze", "901", "3.3", "41", "3.4", "2.8", "27", "4.4", density = "1.2"),
+        Zeile("seed-ingwerpulver", "Ingwerpulver", "Öle & Gewürze", "1399", "9", "57.5", "4.2", "14.1", "3.4", "0.1", density = "0.45"),
+        Zeile("seed-kraeutermischung", "Kräutermischung", "Öle & Gewürze", "1090", "9", "26", "4.3", "42", "4", "0.1", density = "0.25"), // getrocknet
+        Zeile("seed-garammasala", "Garam Masala", "Öle & Gewürze", "1445", "14", "25", "14", "33", "3", "0.1", density = "0.5"),
+        Zeile("seed-estragon", "Estragon", "Öle & Gewürze", "1458", "22.8", "43.8", "7.2", "7.4", "0", "0.2", density = "0.25"), // getrocknet
+        Zeile("seed-salbei", "Salbei", "Obst & Gemüse", "206", "2.5", "4", "1.5", "5", "0", "0", piece = "1"), // Stück = Blatt
+        Zeile("seed-minze", "Minze", "Obst & Gemüse", "164", "3.3", "1.6", "0.7", "6.8", "0", "0", piece = "2"), // Stück = Stiel
+        Zeile("seed-banane", "Banane", "Obst & Gemüse", "384", "1.2", "20", "0.2", "2", "17", "0", piece = "120"),
+        Zeile("seed-birne", "Birne", "Obst & Gemüse", "254", "0.4", "12.4", "0.3", "3.1", "10", "0", piece = "170"),
+        Zeile("seed-pflaume", "Pflaume", "Obst & Gemüse", "200", "0.6", "10", "0.2", "1.6", "10", "0", piece = "35"),
+        Zeile("seed-pfirsich", "Pfirsich", "Obst & Gemüse", "185", "0.8", "9", "0.1", "1.9", "9", "0", piece = "150"),
+        Zeile("seed-mandarine", "Mandarine", "Obst & Gemüse", "207", "0.7", "10", "0.3", "1.8", "10", "0", piece = "70"),
+        Zeile("seed-kiwi", "Kiwi", "Obst & Gemüse", "209", "1", "9", "0.6", "2.1", "9", "0", piece = "75"),
+        Zeile("seed-ananas", "Ananas", "Obst & Gemüse", "227", "0.5", "12", "0.1", "1.4", "12", "0", piece = "600"),
+        Zeile("seed-erdbeeren", "Erdbeeren", "Obst & Gemüse", "135", "0.8", "5.5", "0.4", "1.6", "5.5", "0", piece = "15"),
+        Zeile("seed-himbeeren", "Himbeeren", "Obst & Gemüse", "168", "1.3", "4.8", "0.3", "6.7", "4.8", "0"),
+        Zeile("seed-heidelbeeren", "Heidelbeeren", "Obst & Gemüse", "197", "0.6", "7.4", "0.6", "4.9", "7.4", "0"),
+        Zeile("seed-kirschen", "Kirschen", "Obst & Gemüse", "263", "0.9", "13.3", "0.3", "1.3", "13", "0", piece = "6"),
+        Zeile("seed-granatapfel", "Granatapfelkerne", "Obst & Gemüse", "388", "1.7", "16.6", "1.2", "4", "13.7", "0"),
+        Zeile("seed-avocado", "Avocado", "Obst & Gemüse", "673", "2", "1.8", "15", "6.7", "0.7", "0", piece = "150"),
+        Zeile("seed-limette", "Limette", "Obst & Gemüse", "88", "0.6", "3", "0.3", "2", "1.7", "0", piece = "60"),
+        Zeile("seed-aubergine", "Aubergine", "Obst & Gemüse", "93", "1.2", "2.5", "0.2", "2.8", "2.5", "0", piece = "300"),
+        Zeile("seed-spargel", "Spargel", "Obst & Gemüse", "81", "1.9", "2", "0.1", "1.4", "1.9", "0", piece = "20"), // Stück = Stange
+        Zeile("seed-weisskohl", "Weißkohl", "Obst & Gemüse", "127", "1.4", "4.2", "0.2", "3", "4", "0", piece = "1000"),
+        Zeile("seed-rotkohl", "Rotkohl", "Obst & Gemüse", "112", "1.5", "3.5", "0.2", "2.5", "3.5", "0", piece = "1000"),
+        Zeile("seed-gruenebohnen", "Grüne Bohnen", "Obst & Gemüse", "142", "2", "5", "0.2", "2", "2.4", "0"),
+        Zeile("seed-radieschen", "Radieschen", "Obst & Gemüse", "69", "1", "2.1", "0.1", "1.6", "2", "0", piece = "10"),
+        Zeile("seed-pastinake", "Pastinake", "Obst & Gemüse", "280", "1.3", "12", "0.4", "4.9", "4.8", "0", piece = "150"),
+        Zeile("seed-pakchoi", "Pak Choi", "Obst & Gemüse", "61", "1.5", "1.2", "0.2", "1", "1.2", "0", piece = "150"),
+        Zeile("seed-eisbergsalat", "Eisbergsalat", "Obst & Gemüse", "59", "0.9", "1.8", "0.1", "1.2", "1.8", "0", piece = "500"),
+        Zeile("seed-cherrytomate", "Cherrytomate", "Obst & Gemüse", "83", "0.9", "3", "0.2", "1.2", "2.6", "0", piece = "15"),
+        Zeile("seed-sauerkraut", "Sauerkraut", "Konserven", "70", "1.5", "0.8", "0.3", "2.5", "0.8", "1"),
+        Zeile("seed-kichererbsen", "Kichererbsen", "Konserven", "490", "7", "14", "2.5", "5", "1", "0.5", piece = "240"), // abgetropft; Stück = Glas
+        Zeile("seed-weissebohnen", "Weiße Bohnen", "Konserven", "390", "6.5", "12.5", "0.5", "6", "0.5", "0.5"), // abgetropft
+        Zeile("seed-schattenmorellen", "Schattenmorellen", "Konserven", "313", "0.7", "17", "0.1", "1", "16", "0", piece = "350"), // Stück = Glas, abgetropft
+        Zeile("seed-apfelmus", "Apfelmus", "Konserven", "308", "0.2", "17", "0.1", "1.5", "16", "0", density = "1.05"),
+        Zeile("seed-ajvar", "Ajvar", "Konserven", "312", "1.5", "7", "4", "2.5", "6", "1.5", density = "1.05"),
+        Zeile("seed-thunfisch", "Thunfisch", "Konserven", "479", "26", "0", "1", "0", "0", "0.9"), // im eigenen Saft, abgetropft
+        Zeile("seed-skyr", "Skyr", "Kühlregal", "262", "11", "4", "0.2", "0", "4", "0.1", density = "1.05", piece = "150"),
+        Zeile("seed-huettenkaese", "Hüttenkäse", "Kühlregal", "416", "12.5", "2.6", "4.3", "0", "2.6", "0.7", piece = "200"),
+        Zeile("seed-ricotta", "Ricotta", "Kühlregal", "620", "9", "3.5", "11", "0", "3.5", "0.3", piece = "250"),
+        Zeile("seed-sahnequark", "Sahnequark", "Kühlregal", "626", "9", "3", "11.4", "0", "3", "0.1", density = "1.05", piece = "250"),
+        Zeile("seed-cheddar", "Cheddar", "Kühlregal", "1668", "25", "1.3", "33", "0", "0.5", "1.8", density = "0.4"),
+        Zeile("seed-ziegenkaese", "Ziegenkäse", "Kühlregal", "1228", "19", "1", "24", "0", "1", "1.5", piece = "100"),
+        Zeile("seed-vanilleeis", "Vanilleeis", "Kühlregal", "874", "3.5", "24", "11", "0", "21", "0.15", density = "0.55", piece = "50"), // Stück = Kugel
+        Zeile("seed-haferdrink", "Haferdrink", "Kühlregal", "193", "1", "6.7", "1.5", "0.8", "4", "0.1", NutrientBasis.PER_100_ML, density = "1.03"),
+        Zeile("seed-sojadrink", "Sojadrink", "Kühlregal", "170", "3.3", "2.5", "1.8", "0.6", "2.5", "0.1", NutrientBasis.PER_100_ML, density = "1.03"),
+        Zeile("seed-salami", "Salami", "Fleisch & Fisch", "1578", "20", "1", "33", "0", "0.5", "4.5", piece = "6"), // Stück = Scheibe
+        Zeile("seed-chorizo", "Chorizo", "Fleisch & Fisch", "1848", "24", "2", "38", "0", "1", "3.3"),
+        Zeile("seed-kasseler", "Kasseler", "Fleisch & Fisch", "624", "21", "0.5", "7", "0", "0.5", "2.3", piece = "150"),
+        Zeile("seed-leberkaese", "Leberkäse", "Fleisch & Fisch", "1154", "12.5", "1", "25", "0", "0.5", "2", piece = "100"), // Stück = Scheibe
+        Zeile("seed-haehnchenkeule", "Hähnchenkeule", "Fleisch & Fisch", "713", "18", "0", "11", "0", "0", "0.2", piece = "200"),
+        Zeile("seed-entenbrust", "Entenbrust", "Fleisch & Fisch", "804", "19", "0", "13", "0", "0", "0.2", piece = "300"),
+        Zeile("seed-garnelen", "Garnelen", "Fleisch & Fisch", "353", "19", "0", "0.8", "0", "0", "0.5", piece = "15"),
+        Zeile("seed-rum", "Rum", "Getränke", "916", "0", "0", "0", "0", "0", "0", NutrientBasis.PER_100_ML, density = "0.95"), // 40 % vol
+        Zeile("seed-weinbrand", "Weinbrand", "Getränke", "841", "0", "1", "0", "0", "1", "0", NutrientBasis.PER_100_ML, density = "0.95"), // 36 % vol
+        Zeile("seed-wodka", "Wodka", "Getränke", "916", "0", "0", "0", "0", "0", "0", NutrientBasis.PER_100_ML, density = "0.95"), // 40 % vol
+        Zeile("seed-mineralwasser", "Mineralwasser", "Getränke", "0", "0", "0", "0", "0", "0", "0", NutrientBasis.PER_100_ML, density = "1.0"),
+        Zeile("seed-roestzwiebeln", "Röstzwiebeln", "Trockenwaren", "2433", "6", "39", "44", "5", "10", "1.2", density = "0.3"),
+        Zeile("seed-spekulatius", "Spekulatius", "Brot & Backwaren", "1960", "6", "67", "19", "2", "32", "0.6", piece = "8"),
+        Zeile("seed-butterkeks", "Butterkeks", "Brot & Backwaren", "1833", "7.5", "73", "12", "2.5", "23", "0.8", piece = "6"),
     )
 
     fun zutaten(jetzt: Long): List<ZutatEntity> = zeilen.map { z ->

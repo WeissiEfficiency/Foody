@@ -67,9 +67,29 @@ class UnitsAndImportFixesTest {
         assertEquals("kalt", cf.note?.substringAfterLast(", "))
     }
 
-    @Test fun pinchBecomesAsNeeded() {
+    @Test fun pinchBecomesHalfAGram() {
         val salt = import("1 Prise(n)", "Salz").single()
-        assertNull(salt.amount, "Prise = nach Bedarf, nicht 1 Stück")
+        assertEquals(0, bd("0.5").compareTo(salt.amount), "Prise ≈ 0,5 g, nicht 1 Stück und nicht „nach Bedarf“")
+        assertEquals(MeasureUnit.GRAM, salt.unit)
         assertEquals("1 Prise(n)", salt.note)
+        // Ohne Zahl ist es eine Prise; bei einer Spanne die untere Grenze, die Angabe bleibt ganz als Hinweis
+        assertEquals(0, bd("0.5").compareTo(import("Prise", "Zucker").single().amount))
+        val spanne = import("1-2 Prisen", "Muskat").single()
+        assertEquals(0, bd("0.5").compareTo(spanne.amount))
+        assertEquals("1-2 Prisen", spanne.note)
+    }
+
+    @Test fun kitchenMeasuresBecomeGramsOrMillilitres() {
+        fun menge(m: String) = import(m, "Zutat").single().let { it.amount!!.stripTrailingZeros().toPlainString() + " " + it.unit!!.symbol }
+        assertEquals("1 g", menge("2 Msp."))
+        assertEquals("20 ml", menge("1 Schuss"))
+        assertEquals("4 ml", menge("2 Spritzer"))
+        assertEquals("300 ml", menge("2 Tasse/n"))
+    }
+
+    @Test fun bagsAndSachetsArePackages() {
+        val hefe = import("1 Beutel", "Trockenhefe").single()
+        assertEquals(MeasureUnit.PACKAGE, hefe.unit)
+        assertEquals(MeasureUnit.PACKAGE, import("1 Tüte/n", "Trockenhefe").single().unit)
     }
 }
