@@ -24,7 +24,7 @@ val ktlint: Configuration by configurations.creating {
 }
 dependencies { ktlint(libs.ktlint.cli) }
 
-val ktlintDateien = listOf("--relative", "**/src/**/*.kt", "**.kts", "!**/build/**")
+val ktlintDateien = listOf("--relative", "**/src/**/*.kt", "**.kts", "!**/build/**", "!**/.cxx/**")
 
 fun JavaExec.ktlintStarten(vararg zusatz: String) {
     classpath = ktlint

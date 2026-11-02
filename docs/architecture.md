@@ -481,6 +481,28 @@ Keine Schema- und keine Protokolländerung (nur die Abfrage `ZutatDao.mitStrichc
   Knopf-Zustand, ViewModels und Bildschirme mit einem Fake-Scan ohne Play-Dienste; Roborazzi-Bilder „Frei“ mit Packung
   (hell/dunkel), Editor mit markierten Werten und „Neue Zutat“ nach einem Scan, Vergleich in der CI.
 
+## Fotoerkennung (`:core:erkennung`)
+
+ADR 0017, Plan `ToDoS/foto-erkennung-plan.md`, Spec `docs/superpowers/specs/2026-11-01-foto-erkennung-phase2-design.md`.
+Alles auf dem Gerät; kein Server, kein Schema. Noch ohne Oberfläche und nicht in `:app` eingebunden (Phase 3).
+
+- **`:domain`:** `FotoAnweisung` (Trainingsanweisung des Adapters, Auswahlliste mit dem heutigen Plan vorne, höchstens
+  200 Namen), `ModellJson` und `FotoErkennung` (Regel 29).
+- **Ablauf `ModellErkenner`:** Modell da, ≥ 2 GB frei, Foto verkleinert (`AndroidBildVorbereitung`, höchstens
+  1024 px, `cache/erkennung/`, danach gelöscht). Auf einem eigenen Thread (`@Erkennen`) und höchstens 60 s: laden, die
+  Auswahl (nur mit Rezepten) und immer die Trainingsanweisung; `Erkannt` trägt das Rezept und die Beschreibung als
+  Alternative, weil das Modell fast nie „keins davon“ wählt. Abbrechen und Zeitlimit rufen
+  `ModellSitzung.abbrechen()`; das Modell wird danach freigegeben. Eine Erkennung zur Zeit.
+- **Laufzeit `LlamaModell`:** JNI-Hülle `src/main/cpp/foody_erkennung.cpp` über llama.cpp b12024 (statisch, nur CPU,
+  6 Threads, höchstens 512 Bild-Tokens, gierig). Das Bild wird einmal gerechnet; jede Frage setzt hinter ihm neu an.
+  Die gebaute `libfoody_erkennung.so` (`arm64-v8a`) liegt in `nativ/`; die CI braucht kein NDK. Neu bauen mit
+  `./gradlew :core:erkennung:nativUebernehmen -Pfoody.nativ`. Ohne Bibliothek (Emulator x86_64) gibt es keine Erkennung.
+- **Modelldateien `ModellDateien`:** `filesDir/modell/{sprache,bild}.gguf`, Import zweier Dateien (Bildteil am
+  GGUF-Kopf `general.architecture = clip` erkannt), SHA-256 gegen die Dateien aus Phase 0, `.teil`-Dateien bis zur
+  Prüfung; nicht gesynct.
+- **Tests:** `ModellErkennerTest` (Fake-Modell), `ModellDateienTest`; Messung auf dem Handy mit `MessungTest`
+  (androidTest, nur mit `-e messung an`).
+
 ## Build
 
 AGP 9 mit eingebautem Kotlin (kein `org.jetbrains.kotlin.android`-Plugin) und neuer DSL, ohne

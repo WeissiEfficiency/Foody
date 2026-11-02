@@ -1,2 +1,5 @@
 # Shell-Skripte laufen auf dem Linux-Server: immer mit LF auschecken
 *.sh text eol=lf
+
+# Fertig gebaute native Bibliothek der Fotoerkennung (nativ/)
+*.so binary

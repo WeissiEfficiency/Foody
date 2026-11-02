@@ -44,6 +44,7 @@ if (System.getenv("FOODY_SERVER_ONLY") == null) {
     modul(":core:sync", "android/core/sync")
     modul(":core:designsystem", "android/core/designsystem")
     modul(":core:scan", "android/core/scan")
+    modul(":core:erkennung", "android/core/erkennung")
     modul(":core:testing", "android/core/testing") // nur für Tests
     project(":core").projectDir = file("android/core")
 

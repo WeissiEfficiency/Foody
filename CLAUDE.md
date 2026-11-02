@@ -30,6 +30,7 @@ JDK 21+ (JBR von Android Studio), Android SDK 37. Befehle in PowerShell mit `.\g
 ./gradlew ktlintPruefen                       # Kotlin-Stil (Regeln in .editorconfig), wie die CI
 ./gradlew ktlintKorrigieren                   # behebt, was ktlint selbst kann
 ./gradlew :core:data:connectedCheck           # Room/Migration auf dem Emulator
+./gradlew :core:erkennung:nativUebernehmen "-Pfoody.nativ"   # llama.cpp-Hülle neu bauen (NDK), Ergebnis in nativ/ einchecken
 ./gradlew :api-protocol:test :server-sync:test   # Server
 ```
 
