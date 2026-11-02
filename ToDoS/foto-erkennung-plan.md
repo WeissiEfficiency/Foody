@@ -1,7 +1,7 @@
 # Foody – Mahlzeit aus Foto (auf dem Gerät)
 
 Stand: 2026-11-02. Phase 0–4 erledigt (Modell: [ADR 0017](../docs/adr/0017-fotoerkennung-auf-dem-geraet.md)),
-offen sind die Messung mit einer Frage und die Abnahme (Phase 5). Eigenes Vorhaben neben der KI-Hilfe ([`ki-plan.md`](ki-plan.md)).
+offen sind der erste Test auf dem Handy, danach die Messung mit einer Frage, und die Abnahme (Phase 5). Eigenes Vorhaben neben der KI-Hilfe ([`ki-plan.md`](ki-plan.md)).
 Die Phasen werden der Reihe nach abgearbeitet; die nächste beginnt, wenn die vorige abgehakt ist.
 
 **Oberfläche nach dem neuen Design:** Phase 3 und 4 kamen nach dem Milchglas-Umbau (in `main` seit #180–#188); der
@@ -134,7 +134,8 @@ Neues Modul (`foody.android.library`), Aufbau wie `:core:scan` (ADR 0013): Schni
       Modell gibt es nur als eigene Datei, Import per SAF (z. B. aus OpenCloud) reicht; die Oberfläche kommt in Phase 4.
 - [x] Bild verkleinern (höchstens 1024 px); Erkennung auf eigenem Thread, abbrechbar, Zeitlimit; Modell danach frei.
 - [x] Fehlerfälle: kein Modell, zu wenig RAM (unter 2 GB frei), Zeitlimit (60 s), unlesbare Antwort.
-- [ ] Zeit je Foto in der App auf dem 13R messen (Ziel 15–30 s) – mit nur einer Frage noch offen.
+- [ ] Zeit je Foto mit nur einer Frage: verschoben in Phase 5, nach dem ersten Test auf dem Handy (Nutzer,
+      2026-11-02). Langsamer als die gemessenen 20–26 s mit zwei Fragen kann es nicht werden.
 - [x] R8-Regel für die JNI-Hülle (`consumer-rules.pro`). Der Release-Kurztest kommt mit Phase 3, wenn `:app` das
       Modul einbindet.
 
@@ -176,6 +177,11 @@ keine Erkennung; der Knopf erscheint dort nur mit importiertem Modell und meldet
 
 - [x] `docs/architecture.md` (Abschnitt `:core:erkennung`), `README.md` (Modultabelle), `CLAUDE.md` (Testbefehl).
 - [x] `docs/security.md`: Foto bleibt auf dem Gerät, Modell einmal per SAF, GGUF-Prüfung, Restrisiken.
+- [ ] Erster Test auf dem Handy (13R): Modell in den Einstellungen installieren, einige Fotos über „Foto erkennen“
+      eintragen; Ablauf, Meldungen und Markierung im Alltag prüfen.
+- [ ] Danach Zeit je Foto messen (eine Frage, mit Laden; Ziel 15–30 s): `MessungTest` auf dem 13R
+      (`-e messung an`, Bilder wie in Phase 2), Ergebnis hier eintragen; die Test-APK
+      `de.foody.core.erkennung.test` danach vom Handy entfernen.
 - [ ] Abnahme im Alltag auf dem Handy: die ersten ~30 Foto-Einträge auswerten – Vorschlag gegen das, was nach deiner
       Korrektur gespeichert wurde (nur lokal, ohne neues Feld: Vorschlag und Ergebnis im Debug-Log bzw. einer
       lokalen Datei, abschaltbar). Ziel: Gericht meist richtig benannt, kcal meist ohne große Korrektur.
