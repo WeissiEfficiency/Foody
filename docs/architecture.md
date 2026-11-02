@@ -429,7 +429,11 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6e2-zutaten-design.md`
   Abweichung nur bei Alkoholika, deren Alkohol eigene Energie hat) und nicht geändert. Gemessen am Rezeptordner
   (430 Rezepte, 4.821 Zeilen): rechenbare Zeilen 3.296 → 3.822, ohne Katalogeintrag 386 → 127, Löffel- und
   ml-Angaben ohne Dichte 171 → 3. Mengen ohne Waage (Prise, Messerspitze, Schuss, Tasse) und Gewichte im Hinweis
-  rechnet der Import um (Regeln 30 und 31); schon importierte Rezepte behalten ihre Zeilen.
+  rechnet der Import um (Regeln 30 und 31). Schon gespeicherte Zeilen mit Küchenmaßen stellt `KuechenmasseNachtragen`
+  (`:core:data`, Logik in `KuechenmassNachtrag` in `:domain`) bei jedem App-Start nach den Startdaten um; umgestellte
+  Zeilen passen nicht mehr, es ist also idempotent und erwischt auch alte Zeilen aus einer Sicherung. Geschrieben werden
+  nur die Rezeptzeilen, die Trigger merken die Rezepte für den Sync vor; beide Geräte rechnen gleich, Last-Writer-Wins
+  ändert am Ergebnis nichts. Gewichte im Hinweis (Regel 31) werden nicht nachgetragen.
 - **Sync auf dem zweiten Gerät:** `anwenden` schreibt erst Datensätze, dann Löschungen; mit offener Rezeptänderung wird
   die Quelle wiederbelebt (`nochGebraucht`). Belegt durch zwei Tests in `SyncLaufTest`.
 - **`:feature:zutaten`:** Liste (`ZutatenListeViewModel`), Editor (`ZutatEditorViewModel`, `ZielwahlBlatt`), Meldungen

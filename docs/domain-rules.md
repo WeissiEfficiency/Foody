@@ -73,7 +73,8 @@
 30. Import und Rezept-Editor: Küchenmaße ohne Waage werden mit Faustwerten in Gramm bzw. Milliliter gerechnet –
     Prise und Messerspitze ≈ 0,5 g, Schuss ≈ 20 ml, Spritzer ≈ 2 ml, Tasse ≈ 150 ml; „Prise“ ohne Zahl ist eine Prise.
     Die Angabe bleibt als Hinweis stehen, der Editor zeigt weiter „1 Prise Salz“. Beutel und Tüten sind Packungen.
-    (Bis 2026-11 war die Prise „nach Bedarf“, Regel 13.)
+    (Bis 2026-11 war die Prise „nach Bedarf“, Regel 13.) Solche alten Zeilen – Prise nach Bedarf, „2 Stück“ mit
+    „Msp.“ im Hinweis, Beutel als Stück – stellt die App beim Start einmalig genauso um.
 31. Import: Lässt sich eine Stück-, Packungs- oder Dosenangabe mit den Daten der Zutat nicht in Gramm umrechnen,
     gilt ein Gewicht oder Volumen im Hinweis („1 Pck. Eierspätzle, 400 g“) – je Behälter (Glas, Becher, Tube, Dose,
     Packung …) oder bei „à“/„je“, sonst für die ganze Zeile; bei einer Spanne die untere Grenze, bei mehreren
@@ -115,5 +116,5 @@ Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/te
 | 27 | `MarkdownImportTest.servingsFromHeaderLine`, `RezeptImportTest.portionenAusDerDateiStattSchaetzung`, `RezeptImportTest.eineGanzeBackwareWirdGeschaetzt`, `KcalJePortionTest`, `PortionenNachtragenTest` |
 | 28 | `LeereTageFuellenTest`, `AbwechslungTest` |
 | 29 | `FotoErkennungTest` (u. a. `gleicherNameDerAusDemPlanGewinnt`, `eineUnbekannteZutatMachtFrei`, `unplausibleWerteBleibenLeer`), `ModellJsonTest` |
-| 30 | `UnitsAndImportFixesTest.pinchBecomesHalfAGram`, `UnitsAndImportFixesTest.kitchenMeasuresBecomeGramsOrMillilitres`, `UnitsAndImportFixesTest.bagsAndSachetsArePackages`, `ZutatZeileTest.schreibenLesbar`, `RezeptSchreibenTest.priseInGrammMitHinweis` |
+| 30 | `UnitsAndImportFixesTest.pinchBecomesHalfAGram`, `UnitsAndImportFixesTest.kitchenMeasuresBecomeGramsOrMillilitres`, `UnitsAndImportFixesTest.bagsAndSachetsArePackages`, `ZutatZeileTest.schreibenLesbar`, `RezeptSchreibenTest.priseInGrammMitHinweis`, `KuechenmassNachtragTest`, `KuechenmasseNachtragenTest` |
 | 31 | `RezeptImportTest.gewichtAusDemHinweisFuerUnbekanntePackungen`, `RezeptImportTest.gewichtAusDemHinweisNurWennNoetig` |
