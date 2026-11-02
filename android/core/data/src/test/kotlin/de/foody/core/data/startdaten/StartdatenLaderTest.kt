@@ -81,6 +81,18 @@ class StartdatenLaderTest {
     }
 
     @Test
+    fun vonVersionNeunKommenDieLueckenDerRezepteDazu() = runTest {
+        // Stand v9: ohne die Zeilen von v10
+        val neuInZehn = setOf("seed-schwarzkuemmel", "seed-nori", "seed-lammhack", "seed-backaroma")
+        Startdaten.zutaten(1).filterNot { it.id in neuInZehn }.forEach { db.zutatDao().upsert(it) }
+        prefs.edit().putInt("seedVersion", 9).commit()
+        lader.ladenWennNoetig()
+        neuInZehn.forEach { assertNotNull(db.zutatDao().nachId(it), it) }
+        assertEquals(BigDecimal("3"), db.zutatDao().nachId("seed-nori")?.pieceWeightG, "Stück = Blatt")
+        assertEquals(Startdaten.VERSION, prefs.getInt("seedVersion", 0))
+    }
+
+    @Test
     fun eigeneGleichnamigeZutatWirdNurErgaenzt() = runTest {
         db.zutatDao().upsert(ZutatEntity(id = "eigen-butter", canonicalName = "Butter", createdAt = 1, updatedAt = 1))
         lader.ladenWennNoetig()

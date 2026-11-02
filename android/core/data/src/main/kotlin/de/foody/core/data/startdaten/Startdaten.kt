@@ -8,13 +8,14 @@ import java.math.BigDecimal
  * Kuratierter Startdatensatz generischer Lebensmittel – bis Version 8 1:1 aus der v1 (`SeedData`), damit IDs und Werte
  * auf beiden Seiten gleich sind. Die meisten Zeilen sind gerundete Näherungswerte je 100 g/100 ml (Quelle [QUELLE]); die
  * Zeilen von Version 8 stammen aus amtlichen Datenbanken und nennen ihre Quelle selbst. Version 9 ergänzt Brot und
- * Gebäck, weitere Zutaten der Rezepte sowie Dichten und Stückgewichte bestehender Zeilen.
+ * Gebäck, weitere Zutaten der Rezepte sowie Dichten und Stückgewichte bestehender Zeilen; Version 10 die Zutaten der
+ * Rezepte, die danach noch fehlten.
  */
 object Startdaten {
     const val QUELLE = "Näherungswert (Startdaten)"
 
     /** Bei Erweiterung erhöhen: neue Zeilen kommen dann auch in bestehende Installationen. */
-    const val VERSION = 9
+    const val VERSION = 10
 
     private data class Zeile(
         val id: String, val name: String, val category: String,
@@ -376,6 +377,53 @@ object Startdaten {
         Zeile("seed-roestzwiebeln", "Röstzwiebeln", "Trockenwaren", "2433", "6", "39", "44", "5", "10", "1.2", density = "0.3"),
         Zeile("seed-spekulatius", "Spekulatius", "Brot & Backwaren", "1960", "6", "67", "19", "2", "32", "0.6", piece = "8"),
         Zeile("seed-butterkeks", "Butterkeks", "Brot & Backwaren", "1833", "7.5", "73", "12", "2.5", "23", "0.8", piece = "6"),
+        // v10: Zutaten der Rezepte, die nach v9 noch fehlten (Gewürzmischungen, Aromen, Säfte, Lamm, Nori, Udon …).
+        // Gerundete Näherungswerte (BLS/USDA), Energie aus Makros (EU-Faktoren, Alkohol 29 kJ/g).
+        Zeile("seed-schwarzkuemmel", "Schwarzkümmel", "Öle & Gewürze", "1769", "18", "33", "22", "11", "2", "0.1", density = "0.55"),
+        Zeile("seed-fuenfgewuerz", "Fünf-Gewürz-Pulver", "Öle & Gewürze", "1468", "10", "45", "9", "25", "3", "0.1", density = "0.45"),
+        Zeile("seed-wildgewuerz", "Wildgewürz", "Öle & Gewürze", "1346", "10", "40", "8", "25", "5", "5", density = "0.45"), // Mischung mit Wacholder, Piment
+        Zeile("seed-grillgewuerz", "Grillgewürz", "Öle & Gewürze", "1147", "10", "35", "6", "20", "8", "25", density = "0.5"), // Mischung mit Salz
+        Zeile("seed-brotgewuerz", "Brotgewürz", "Öle & Gewürze", "1449", "15", "30", "12", "30", "2", "0.1", density = "0.4"), // Kümmel, Fenchel, Koriander, Anis
+        Zeile("seed-liebstoeckel", "Liebstöckel", "Öle & Gewürze", "180", "3.7", "3", "0.7", "5", "1", "0.1", density = "0.2"), // frisch
+        Zeile("seed-tabasco", "Tabasco", "Öle & Gewürze", "70", "1.3", "0.8", "0.8", "0.6", "0.1", "1.6", NutrientBasis.PER_100_ML, density = "1"),
+        Zeile("seed-zitronengraspaste", "Zitronengraspaste", "Öle & Gewürze", "617", "2", "15", "8", "4", "8", "3", density = "1"),
+        Zeile("seed-remoulade", "Remoulade", "Öle & Gewürze", "1973", "1", "6", "50", "0.5", "5", "1.6", density = "0.95"),
+        Zeile("seed-salsa", "Salsa", "Öle & Gewürze", "151", "1.5", "6", "0.3", "1.5", "4", "1.5", density = "1.05"), // Tomatensalsa aus dem Glas
+        Zeile("seed-bratensauce", "Bratensauce", "Öle & Gewürze", "143", "1", "4", "1.5", "0.3", "0.5", "1.2", NutrientBasis.PER_100_ML, density = "1"), // zubereitet
+        Zeile("seed-lebensmittelfarbe", "Lebensmittelfarbe", "Backzutaten", "0", "0", "0", "0", "0", "0", "0", density = "1"), // Mengen ohne Belang
+        Zeile("seed-backaroma", "Backaroma", "Backzutaten", "955", "0", "5", "0", "0", "0", "0", NutrientBasis.PER_100_ML, density = "0.95", piece = "2"), // Vanille-, Zitronen-, Bittermandelaroma; Stück = Fläschchen 2 ml
+        Zeile("seed-vanilleextrakt", "Vanilleextrakt", "Backzutaten", "1017", "0.1", "12.6", "0.1", "0", "12.6", "0", NutrientBasis.PER_100_ML, density = "0.95"),
+        Zeile("seed-erythrit", "Erythrit", "Backzutaten", "0", "0", "0", "0", "0", "0", "0", density = "0.8"), // Polyol ohne verwertbare Energie
+        Zeile("seed-suessstoff", "Süßstoff", "Backzutaten", "0", "0", "0", "0", "0", "0", "0", density = "1"), // flüssig oder Tabletten, Mengen ohne Belang
+        Zeile("seed-vanillesaucenpulver", "Vanillesaucenpulver", "Backzutaten", "1462", "0.3", "85", "0.1", "1", "0", "0.3", density = "0.6"),
+        Zeile("seed-karamellsauce", "Karamellsauce", "Backzutaten", "1384", "2", "62", "8", "0", "55", "0.5", density = "1.3"),
+        Zeile("seed-weingummi", "Weingummi", "Backzutaten", "1422", "6", "77", "0.2", "0.5", "47", "0.1", piece = "3"),
+        Zeile("seed-schokokuesse", "Schokoküsse", "Brot & Backwaren", "1607", "3", "63", "13", "0.5", "58", "0.1", piece = "20"),
+        Zeile("seed-lebkuchen", "Lebkuchen", "Brot & Backwaren", "1678", "5.5", "70", "10", "3", "40", "0.3", piece = "25"),
+        Zeile("seed-reiswein", "Reiswein", "Getränke", "412", "0.5", "5", "0", "0", "2", "0.5", NutrientBasis.PER_100_ML, density = "0.98"), // Shaoxing
+        Zeile("seed-marsala", "Marsala", "Getränke", "612", "0.1", "12", "0", "0", "12", "0", NutrientBasis.PER_100_ML, density = "1"),
+        Zeile("seed-kirschwasser", "Kirschwasser", "Getränke", "916", "0", "0", "0", "0", "0", "0", NutrientBasis.PER_100_ML, density = "0.95"),
+        Zeile("seed-ananassaft", "Ananassaft", "Getränke", "216", "0.4", "12", "0.1", "0.2", "12", "0", NutrientBasis.PER_100_ML, density = "1.05"),
+        Zeile("seed-maracujasaft", "Maracujasaft", "Getränke", "236", "0.6", "13", "0.1", "0.2", "13", "0", NutrientBasis.PER_100_ML, density = "1.05"),
+        Zeile("seed-sojasahne", "Sojasahne", "Kühlregal", "644", "3", "2", "15", "0.5", "1", "0.2", NutrientBasis.PER_100_ML, density = "1"), // Soja Cuisine
+        Zeile("seed-cremedouble", "Crème double", "Kühlregal", "1671", "2", "2.7", "43", "0", "2.7", "0.1", density = "0.95"),
+        Zeile("seed-vanillejoghurt", "Vanillejoghurt", "Kühlregal", "392", "3.5", "13", "3", "0", "12", "0.1", density = "1.05", piece = "150"), // Stück = Becher
+        Zeile("seed-raeuchertofu", "Räuchertofu", "Kühlregal", "646", "16", "1.5", "9", "2", "0.5", "1.5", piece = "200"), // Stück = Packung
+        Zeile("seed-veggiehack", "Veggie-Hack", "Kühlregal", "739", "18", "4", "9", "4", "1", "1.4"),
+        Zeile("seed-schupfnudeln", "Schupfnudeln", "Kühlregal", "776", "4", "37", "1.5", "3", "1", "1"),
+        Zeile("seed-hefeteig", "Hefeteig", "Kühlregal", "1156", "7", "47", "6", "2", "5", "1.1", piece = "400"), // Stück = Rolle
+        Zeile("seed-surimi", "Surimi", "Kühlregal", "434", "7", "15", "1.5", "0.5", "6", "1.7", piece = "17"), // Stück = Stick
+        Zeile("seed-haehnchenaufschnitt", "Hähnchenbrustaufschnitt", "Kühlregal", "438", "21", "1.5", "1.5", "0", "1", "2", piece = "10"), // Stück = Scheibe
+        Zeile("seed-lammhack", "Lammhackfleisch", "Fleisch & Fisch", "1140", "17", "0", "23", "0", "0", "0.2"),
+        Zeile("seed-lammkotelett", "Lammkotelett", "Fleisch & Fisch", "1046", "18", "0", "20", "0", "0", "0.2", piece = "80"),
+        Zeile("seed-kaninchen", "Kaninchen", "Fleisch & Fisch", "560", "21", "0", "5.5", "0", "0", "0.1", piece = "1500"), // Stück = ganzes Kaninchen
+        Zeile("seed-sardellen", "Sardellenfilet", "Fleisch & Fisch", "795", "25", "0", "10", "0", "0", "10", piece = "4"), // in Öl, gesalzen
+        Zeile("seed-sojaschnetzel", "Sojaschnetzel", "Trockenwaren", "1304", "50", "15", "1.5", "18", "8", "0", density = "0.3"), // getrocknet
+        Zeile("seed-haferkleie", "Haferkleie", "Trockenwaren", "1518", "17", "50", "7", "15", "1.5", "0", density = "0.35"),
+        Zeile("seed-hefeflocken", "Hefeflocken", "Trockenwaren", "1474", "47", "20", "4.5", "21", "1", "0.1", density = "0.15"),
+        Zeile("seed-nori", "Nori", "Trockenwaren", "1126", "41", "5", "1.5", "36", "0.5", "1.3", piece = "3"), // Stück = Blatt
+        Zeile("seed-udon", "Udon-Nudeln", "Trockenwaren", "424", "2.6", "21", "0.4", "1", "0.3", "0.6", piece = "200"), // vorgegart; Stück = Portion
+        Zeile("seed-beerenmischung", "Beerenmischung", "Obst & Gemüse", "183", "1", "7", "0.4", "4", "6", "0", density = "0.6"), // auch TK
     )
 
     fun zutaten(jetzt: Long): List<ZutatEntity> = zeilen.map { z ->
