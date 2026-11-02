@@ -41,7 +41,9 @@ import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.FoodyTextfeld
 import de.foody.core.designsystem.komponenten.ueberschrift
+import de.foody.core.designsystem.komponenten.vorausgefuelltFarben
 import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.erkennung.ErkennungTexte
 import de.foody.core.scan.PackungScanKnopf
 import de.foody.feature.heute.anzeigename
 import de.foody.feature.heute.slotName
@@ -149,7 +151,11 @@ private fun PlanWahl(z: EintragenZustand, vm: EintragenViewModel) {
     }
 }
 
-/** „Frei“: oben der Scan-Knopf; nach einem Scan die Packung ([PackungEingabe]) statt der freien Felder. */
+/**
+ * „Frei“: oben der Scan-Knopf und (mit Modell) „Foto erkennen“; nach einem Scan die Packung ([PackungEingabe]) statt der
+ * freien Felder. Werte aus dem Foto sind markiert, solange sie dem Vorschlag gleichen.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FreiEingabe(z: EintragenZustand, vm: EintragenViewModel) {
     val e = z.eingaben
@@ -157,10 +163,17 @@ private fun FreiEingabe(z: EintragenZustand, vm: EintragenViewModel) {
         PackungEingabe(e, z.vorhandeneZutat, vm)
         return
     }
-    PackungScanKnopf(vm.scanLauf)
-    FoodyTextfeld("Name", e.freiName, onWert = vm::freiName)
-    Zahlfeld("kcal", e.freiKcal, ganzzahlig = true, onWert = vm::freiKcal)
-    Zahlfeld("Eiweiß (g, optional)", e.freiEiweiss, onWert = vm::freiEiweiss)
-    Zahlfeld("Kohlenhydrate (g, optional)", e.freiKh, onWert = vm::freiKh)
-    Zahlfeld("Fett (g, optional)", e.freiFett, onWert = vm::freiFett)
+    val fotoKnopf by vm.fotoKnopf.collectAsStateWithLifecycle()
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
+        PackungScanKnopf(vm.scanLauf)
+        if (fotoKnopf) FotoErkennungKnopf(vm.fotoLauf)
+    }
+    if (fotoKnopf) FotoErkennungStand(vm.fotoLauf)
+    val f = e.foto
+    if (fotoHinweis(e)) Text(ErkennungTexte.BITTE_PRUEFEN, style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.primaer)
+    FoodyTextfeld("Name", e.freiName, farben = vorausgefuelltFarben(wieImFoto(e.freiName, f?.name)), onWert = vm::freiName)
+    Zahlfeld("kcal", e.freiKcal, ganzzahlig = true, markiert = wieImFoto(e.freiKcal, f?.kcal), onWert = vm::freiKcal)
+    Zahlfeld("Eiweiß (g, optional)", e.freiEiweiss, markiert = wieImFoto(e.freiEiweiss, f?.eiweiss), onWert = vm::freiEiweiss)
+    Zahlfeld("Kohlenhydrate (g, optional)", e.freiKh, markiert = wieImFoto(e.freiKh, f?.kh), onWert = vm::freiKh)
+    Zahlfeld("Fett (g, optional)", e.freiFett, markiert = wieImFoto(e.freiFett, f?.fett), onWert = vm::freiFett)
 }

@@ -18,6 +18,9 @@ import de.foody.core.data.sicherung.Sicherung
 import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.core.designsystem.token.Farbwelt
+import de.foody.core.erkennung.ErkennungEinstellung
+import de.foody.core.erkennung.ModellDateien
+import de.foody.core.erkennung.ModellVerwaltung
 import de.foody.core.scan.ScanEinstellung
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +41,7 @@ import java.time.LocalDate
 import javax.inject.Inject
 
 /** Was gerade läuft; solange eine Aktion läuft, werden weitere ignoriert. */
-enum class Aktion { ERSTELLEN, WIEDERHERSTELLEN, LOESCHEN }
+enum class Aktion { ERSTELLEN, WIEDERHERSTELLEN, LOESCHEN, MODELL_INSTALLIEREN, MODELL_ENTFERNEN }
 
 /** Zustand der Einstellungsseite; [gesperrt]: Wiederherstellen und Löschen nicht erlaubt (Sync verbunden). */
 data class EinstellungenZustand(
@@ -52,13 +55,18 @@ data class EinstellungenZustand(
     val onlineSuche: Boolean = true,
     /** Gewählte Farbwelt (Einstellungen › Darstellung). */
     val farbwelt: Farbwelt = Farbwelt.Standard,
+    /** Schalter „Foto erkennen“ (nur dieses Gerät). */
+    val fotoErkennung: Boolean = true,
+    /** Größe des installierten Modells für die Fotoerkennung; `null`: keins. */
+    val modellBytes: Long? = null,
 ) {
     val gesperrt: Boolean get() = konto?.verbunden == true
 }
 
 /**
  * Einstellungen: Darstellung, Farbwelt und Tagesziel sofort speichern; Sicherung erstellen, wiederherstellen und alles löschen
- * im [viewModelScope] (Drehen bricht sie nicht ab), Ergebnis als Meldung. Die Dateidialoge liegen in der Route; hier
+ * sowie das Modell der Fotoerkennung installieren und entfernen im [viewModelScope] (Drehen bricht sie nicht ab),
+ * Ergebnis als Meldung. Die Dateidialoge liegen in der Route; hier
  * kommt nur die Uri an.
  */
 @HiltViewModel
@@ -70,6 +78,8 @@ class EinstellungenViewModel @Inject constructor(
     zutaten: ZutatenRepository,
     konto: KontoZugriff,
     private val scan: ScanEinstellung,
+    private val modell: ModellVerwaltung,
+    private val erkennung: ErkennungEinstellung,
     private val clock: Clock,
 ) : ViewModel() {
     private val laufend = MutableStateFlow<Aktion?>(null)
@@ -80,12 +90,15 @@ class EinstellungenViewModel @Inject constructor(
             EinstellungenZustand(d, t, k, l, n)
         }.combine(scan.onlineSuche) { z, online -> z.copy(onlineSuche = online) }
             .combine(darstellungen.farbwelt()) { z, w -> z.copy(farbwelt = Farbwelt.ausName(w)) }
+            .combine(erkennung.an) { z, an -> z.copy(fotoErkennung = an) }
+            .combine(modell.stand) { z, s -> z.copy(modellBytes = s.bytes()) }
             .stateIn(
                 viewModelScope, SolangeAppOffen,
                 // Startwerte sofort aus den Prefs: kein Umspringen, bis der Kontostand da ist
                 EinstellungenZustand(
                     darstellung = darstellungen.aktuell(), farbwelt = Farbwelt.ausName(darstellungen.farbweltAktuell()),
                     tagesziel = ziel.aktuell(), onlineSuche = scan.onlineSuche.value,
+                    fotoErkennung = erkennung.an.value, modellBytes = modell.stand.value.bytes(),
                 ),
             )
 
@@ -98,6 +111,19 @@ class EinstellungenViewModel @Inject constructor(
 
     /** Wirkt sofort für alle Scan-Einstiege (Tagebuch, Zutateneditor, „Neue Zutat“). */
     fun onlineSucheSetzen(an: Boolean) = scan.setzen(an)
+
+    /** Wirkt sofort für den Foto-Knopf im Tagebuch; gilt nur für dieses Gerät. */
+    fun fotoErkennungSetzen(an: Boolean) = erkennung.setzen(an)
+
+    /** Kopiert die beiden gewählten Modelldateien (bei 1,5 GB dauert das eine Weile); Ergebnis als Meldung. */
+    fun modellInstallieren(uris: List<Uri>) = starten(Aktion.MODELL_INSTALLIEREN) {
+        modellMeldung(modell.importieren(uris.map(Uri::toString)))
+    }
+
+    fun modellEntfernen() = starten(Aktion.MODELL_ENTFERNEN) {
+        modell.entfernen()
+        "Modell entfernt"
+    }
 
     /** Prüft die Eingabe beim Tippen, ohne zu speichern. Leer = kein Ziel; Tausenderpunkte und Leerzeichen erlaubt. */
     fun tageszielEingabe(text: String): Boolean = tageszielLesen(text) != null
@@ -185,5 +211,9 @@ class EinstellungenViewModel @Inject constructor(
         Aktion.ERSTELLEN -> "Sicherung fehlgeschlagen: ${e.message ?: "unbekannter Fehler"}"
         Aktion.WIEDERHERSTELLEN -> "Die Datei lässt sich nicht öffnen"
         Aktion.LOESCHEN -> "Löschen fehlgeschlagen: ${e.message ?: "unbekannter Fehler"}"
+        Aktion.MODELL_INSTALLIEREN -> MODELL_FEHLER
+        Aktion.MODELL_ENTFERNEN -> "Entfernen fehlgeschlagen: ${e.message ?: "unbekannter Fehler"}"
     }
 }
+
+private fun ModellDateien.Stand.bytes(): Long? = (this as? ModellDateien.Stand.Bereit)?.bytes

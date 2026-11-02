@@ -13,6 +13,9 @@ import de.foody.core.data.sicherung.Sicherung
 import de.foody.core.data.startdaten.StartdatenLader
 import de.foody.core.data.sync.SyncSpeicher
 import de.foody.core.data.zutaten.ZutatenRepository
+import de.foody.core.erkennung.ErkennungEinstellung
+import de.foody.core.erkennung.ModellDateien
+import de.foody.core.erkennung.ModellVerwaltung
 import de.foody.core.scan.ScanEinstellung
 import de.foody.core.sync.Ergebnis
 import de.foody.core.sync.ErsterSync
@@ -20,6 +23,9 @@ import de.foody.core.testing.ViewModelHalter
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.robolectric.RuntimeEnvironment
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -90,10 +96,17 @@ internal class EinstellungenTestUmgebung {
     /** Nach dem Leeren der Prefs angelegt: Online-Suche steht auf dem Standard (an). */
     val scan = ScanEinstellung(kontext)
 
+    /** Fotoerkennung ohne Modell, Schalter auf dem Standard (an). */
+    val modell = ModellVerwaltung(ModellDateien(File(kontext.filesDir, "modell").apply { deleteRecursively() }), kontext)
+    val erkennung = ErkennungEinstellung(
+        kontext.also { it.getSharedPreferences("fotoerkennung", Context.MODE_PRIVATE).edit().clear().commit() },
+        modell,
+    )
+
     private val viewModels = ViewModelHalter()
 
     fun vm(kontoZugriff: KontoZugriff = konto) =
-        viewModels.behalten(EinstellungenViewModel(kontext, darstellung, ziel, sicherung, zutaten, kontoZugriff, scan, TEST_UHR))
+        viewModels.behalten(EinstellungenViewModel(kontext, darstellung, ziel, sicherung, zutaten, kontoZugriff, scan, modell, erkennung, TEST_UHR))
             .also { viewModels.zusehen(it.zustand) }
 
     /** Für `@After`: erst die ViewModels beenden, dann die Datenbank schließen ([ViewModelHalter]). */
@@ -141,3 +154,22 @@ private val SICHERUNG_JSON = """
         "tagebuch": []
     }
 """.trimIndent()
+
+/** Kleinste GGUF-Datei (v3) mit `general.architecture` = [architektur]: `clip` ist der Bildteil, sonst der Sprachteil. */
+fun ggufDatei(datei: File, architektur: String): File = datei.apply {
+    val aus = ByteArrayOutputStream()
+    fun bytes(n: Int, f: ByteBuffer.() -> Unit) = aus.write(ByteBuffer.allocate(n).order(ByteOrder.LITTLE_ENDIAN).apply(f).array())
+    fun text(s: String) = s.encodeToByteArray().let {
+        bytes(8) { putLong(it.size.toLong()) }
+        aus.write(it)
+    }
+    aus.write("GGUF".encodeToByteArray())
+    bytes(4) { putInt(3) }
+    bytes(8) { putLong(0) }
+    bytes(8) { putLong(1) }
+    text("general.architecture")
+    bytes(4) { putInt(8) }
+    text(architektur)
+    aus.write(ByteArray(64))
+    writeBytes(aus.toByteArray())
+}

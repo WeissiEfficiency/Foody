@@ -19,6 +19,11 @@ import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.db.RezeptZutatEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.zutaten.Packungswerte
+import de.foody.core.erkennung.ErkennungEinstellung
+import de.foody.core.erkennung.ErkennungStatus
+import de.foody.core.erkennung.MahlzeitErkenner
+import de.foody.core.erkennung.ModellDateien
+import de.foody.core.erkennung.ModellVerwaltung
 import de.foody.core.scan.PackungScan
 import de.foody.core.scan.ProduktSuche
 import de.foody.core.scan.ScanStatus
@@ -28,6 +33,7 @@ import de.foody.domain.MeasureUnit
 import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
 import org.robolectric.RuntimeEnvironment
+import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.test.assertTrue
@@ -119,3 +125,17 @@ fun testScan(packung: Packungswerte? = null, imKatalog: ZutatTreffer? = null) = 
     play = { true },
     online = { true },
 )
+
+/** Erkenner für Tests ohne Fotoerkennung (der Knopf fehlt dort ohnehin). */
+val keinErkenner = MahlzeitErkenner { ErkennungStatus.KeinModell }
+
+/**
+ * Schalter „Foto erkennen“ mit eigenem Modellordner. [modell]: Die beiden Dateien liegen da; ihr Inhalt ist egal, der
+ * Knopf fragt nur, ob sie da sind. Ohne Modell fehlt der Knopf (wie auf dem Tablet).
+ */
+fun testErkennung(modell: Boolean = false): ErkennungEinstellung {
+    val kontext = RuntimeEnvironment.getApplication()
+    val ordner = File(kontext.filesDir, "modell").apply { deleteRecursively(); mkdirs() }
+    if (modell) listOf(ModellDateien.SPRACHE, ModellDateien.BILD).forEach { File(ordner, it).writeText("gguf") }
+    return ErkennungEinstellung(kontext, ModellVerwaltung(ModellDateien(ordner), kontext))
+}

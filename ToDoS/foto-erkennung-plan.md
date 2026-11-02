@@ -1,12 +1,11 @@
 # Foody – Mahlzeit aus Foto (auf dem Gerät)
 
-Stand: 2026-11-01. Phase 0 erledigt (Modell gewählt, [ADR 0017](../docs/adr/0017-fotoerkennung-auf-dem-geraet.md)),
-weiter mit Phase 1. Eigenes Vorhaben neben der KI-Hilfe ([`ki-plan.md`](ki-plan.md)).
+Stand: 2026-11-02. Phase 0–4 erledigt (Modell: [ADR 0017](../docs/adr/0017-fotoerkennung-auf-dem-geraet.md)),
+offen sind die Messung mit einer Frage und die Abnahme (Phase 5). Eigenes Vorhaben neben der KI-Hilfe ([`ki-plan.md`](ki-plan.md)).
 Die Phasen werden der Reihe nach abgearbeitet; die nächste beginnt, wenn die vorige abgehakt ist.
 
-**Oberfläche wartet auf das neue Design:** Phase 1 und 2 haben keine Oberfläche und laufen sofort. Phase 3 (Knopf und
-Vorschau im Eintragen-Blatt) und Phase 4 (Einstellungen) beginnen erst, wenn die Umsetzung des Milchglas-Entwurfs für
-Heute und Einstellungen in `main` ist; vorher kurz beim Nutzer nachfragen.
+**Oberfläche nach dem neuen Design:** Phase 3 und 4 kamen nach dem Milchglas-Umbau (in `main` seit #180–#188); der
+Nutzer hat sie am 2026-11-02 freigegeben („Design angehen“).
 
 ## Ziel
 
@@ -149,23 +148,33 @@ die 1,1 GB Gewichte liegen per mmap im Dateicache, die Schwelle ist jetzt 2 GB.
 - [x] Ablauf ohne Oberfläche vorgebaut (`ErkennungLauf`, wie `ScanLauf`): Erkennung im `viewModelScope`, Abbrechen,
       Meldungen (`ErkennungTexte`), Bild und Kamerafoto im `SavedStateHandle`; endet der Prozess mitten in der
       Erkennung, startet sie beim nächsten Mal neu (`ErkennungLaufTest`).
-- [ ] Knopf „Foto“ im Eintragen-Blatt neben dem Scan; Kamera über `TakePicture` wie `ScanFotos` (ohne Kamera-Berechtigung).
-- [ ] Während der Erkennung Fortschritt mit Abbrechen; danach öffnet sich „Frei“ vorausgefüllt (Name, kcal, Makros),
-      Schätzfelder markiert („bitte prüfen“, wie `PackungEingabe`).
-- [ ] Vorschlag in die „Frei“-Felder des ViewModels (die liegen schon im `SavedStateHandle`).
-- [ ] Robolectric-Tests mit Fake-Erkenner, Referenzbilder für die neuen Zustände; Release-Kurztest (R8, E4).
+- [x] Knopf „Foto erkennen“ in „Frei“ neben „Packung scannen“ (`FotoErkennungKnopf`), Menü Kamera (`TakePicture`,
+      ohne Kamera-Berechtigung, Cache-Ordner `mahlzeit/`) oder Galerie; nur mit Schalter und Modell sichtbar.
+- [x] Während der Erkennung Fortschritt mit „Abbrechen“; danach sind die freien Felder vorausgefüllt (Name, kcal,
+      Makros) und markiert, darüber „Geschätzt aus dem Foto – bitte prüfen“. Ohne Vorschlag eine Meldung.
+- [x] Vorschlag in die „Frei“-Felder des ViewModels (`Eingaben.foto` im `SavedStateHandle`, Markierung übersteht
+      ein Prozessende); ein neues Blatt bricht eine laufende Erkennung ab.
+- [x] Robolectric-Tests mit Fake-Erkenner (`EintragenFotoTest`, `EintragenBlattFotoTest`), Referenzbilder
+      `foto_{hell,dunkel}_handy`.
+- [x] Release-Kurztest (R8, E4): „Foody Vorschau“ baut mit R8, `libfoody_erkennung.so` liegt in der APK (10,5 MB
+      statt ~5 MB), `LlamaNativ` behält seinen Namen; Start und „Frei“ prüft `ReleaseStartTest` in der CI.
+
+**Ergebnis Phase 3/4 (2026-11-02):** Foto-Knopf und Einstellungen gebaut (Spec und Plan
+`docs/superpowers/{specs,plans}/2026-11-02-foto-erkennung-phase3-4*`). Auf dem Emulator (x86_64, ohne Bibliothek) gibt es
+keine Erkennung; der Knopf erscheint dort nur mit importiertem Modell und meldet dann „hat nicht geklappt“.
 
 ### Phase 4 – Einstellungen
 
 - [x] Logik vorgebaut: `ModellVerwaltung` (Import zweier Dateien per Uri, Stand, entfernen) und
       `ErkennungEinstellung` (an/aus in eigenen Prefs `fotoerkennung`, nicht gesynct; `sichtbar` = an und Modell da,
       auf dem Tablet ohne Modell also nie).
-- [ ] Bereich „Fotoerkennung“: Schalter, „Modell installieren“ (SAF, zwei Dateien), Größe, entfernen, Hinweis
-      „läuft nur auf diesem Gerät“.
+- [x] Abschnitt „Fotoerkennung“ zwischen „Zutaten“ und „Sicherung“: Schalter „Foto erkennen“ („Läuft nur auf diesem
+      Gerät“), Stand mit Größe, „Modell installieren“/„Modell ersetzen“ (`OpenMultipleDocuments`, zwei Dateien),
+      „Modell entfernen“ mit Rückfrage; Ergebnis als Meldung. Tests in `EinstellungenScreenTest`.
 
 ### Phase 5 – Doku und Abnahme
 
-- [ ] `docs/architecture.md` (Abschnitt `:core:erkennung`), `README.md` (Modultabelle), `CLAUDE.md` (Testbefehl).
+- [x] `docs/architecture.md` (Abschnitt `:core:erkennung`), `README.md` (Modultabelle), `CLAUDE.md` (Testbefehl).
 - [x] `docs/security.md`: Foto bleibt auf dem Gerät, Modell einmal per SAF, GGUF-Prüfung, Restrisiken.
 - [ ] Abnahme im Alltag auf dem Handy: die ersten ~30 Foto-Einträge auswerten – Vorschlag gegen das, was nach deiner
       Korrektur gespeichert wurde (nur lokal, ohne neues Feld: Vorschlag und Ergebnis im Debug-Log bzw. einer

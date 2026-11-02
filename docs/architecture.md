@@ -483,8 +483,8 @@ Keine Schema- und keine Protokolländerung (nur die Abfrage `ZutatDao.mitStrichc
 
 ## Fotoerkennung (`:core:erkennung`)
 
-ADR 0017, Plan `ToDoS/foto-erkennung-plan.md`, Spec `docs/superpowers/specs/2026-11-01-foto-erkennung-phase2-design.md`.
-Alles auf dem Gerät; kein Server, kein Schema. Noch ohne Oberfläche und nicht in `:app` eingebunden (Phase 3).
+ADR 0017, Plan `ToDoS/foto-erkennung-plan.md`, Specs `docs/superpowers/specs/2026-11-01-foto-erkennung-phase2-design.md`
+und `2026-11-02-foto-erkennung-phase3-4-design.md`. Alles auf dem Gerät; kein Server, kein Schema.
 
 - **`:domain`:** `FotoAnweisung` (Trainingsanweisung des Adapters), `ModellJson` und `FotoErkennung` (Regel 29):
   aus der Antwort wird ein freier Eintrag (Name, kcal, Makros); kein Abgleich mit Rezepten oder Zutaten.
@@ -503,9 +503,15 @@ Alles auf dem Gerät; kein Server, kein Schema. Noch ohne Oberfläche und nicht 
   `viewModelScope`, Abbrechen, Meldungen aus `ErkennungTexte`, Bild und Kamerafoto im `SavedStateHandle`, Neustart nach
   einem Prozessende), `ModellVerwaltung` (Import per Uri, Stand, entfernen) und `ErkennungEinstellung` (an/aus je
   Gerät, `sichtbar` nur mit Modell).
-- **Tests:** `ModellErkennerTest` (Fake-Modell), `ModellDateienTest`, `ErkennungLaufTest`, `ModellVerwaltungTest`;
-  Messung auf dem Handy mit `MessungTest`
-  (androidTest, nur mit `-e messung an`).
+- **Oberfläche:** In „Eintragen“ › „Frei“ steht „Foto erkennen“ neben „Packung scannen“ (`FotoErkennungKnopf`, nur
+  wenn `ErkennungEinstellung.sichtbar`). `EintragenViewModel` hält den `ErkennungLauf`; ein Vorschlag ersetzt die
+  freien Felder und liegt als `Eingaben.foto` im `SavedStateHandle`, damit die Felder markiert bleiben
+  (`vorausgefuelltFarben`, „Geschätzt aus dem Foto – bitte prüfen“), bis der Nutzer sie ändert. Kamerafotos liegen in
+  `cache/mahlzeit/` (FileProvider aus `:core:data`). Einstellungen › „Fotoerkennung“: Schalter, Stand, Modell
+  installieren/ersetzen (`OpenMultipleDocuments`) und entfernen (`Aktion.MODELL_*`).
+- **Tests:** `ModellErkennerTest` (Fake-Modell), `ModellDateienTest`, `ErkennungLaufTest`, `ModellVerwaltungTest`,
+  `EintragenFotoTest`, `EintragenBlattFotoTest`, `FotoScreenshotTest`, `EinstellungenScreenTest`; Messung auf dem
+  Handy mit `MessungTest` (androidTest, nur mit `-e messung an`).
 
 ## Build
 

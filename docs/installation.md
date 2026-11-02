@@ -18,7 +18,7 @@ Foody gibt es nicht im Play Store. Die App wird aus diesem Repository gebaut und
 6. [Den Sync-Server aufsetzen](#6-den-sync-server-aufsetzen)
 7. [Handy und Tablet mit dem Server verbinden](#7-handy-und-tablet-mit-dem-server-verbinden)
 8. [KI-Hilfe über den Server (in Vorbereitung)](#8-ki-hilfe-über-den-server-in-vorbereitung)
-9. [Fotoerkennung auf dem Handy: wohin das Modell kommt (geplant)](#9-fotoerkennung-auf-dem-handy-wohin-das-modell-kommt-geplant)
+9. [Fotoerkennung auf dem Handy: Modell installieren](#9-fotoerkennung-auf-dem-handy-modell-installieren)
 10. [Sichern](#10-sichern)
 11. [Aktualisieren](#11-aktualisieren)
 12. [Wenn etwas nicht klappt](#12-wenn-etwas-nicht-klappt)
@@ -35,7 +35,7 @@ Foody gibt es nicht im Play Store. Die App wird aus diesem Repository gebaut und
  │ Release-Schlüssel (.jks) │  APK ──────────────────────────────▶│ (dieselbe    │
  └──────────────────────────┘          │ + Modell für │           │  APK, ohne   │
                                        │ Fotoerkenn.  │           │  Modell)     │
-                                       │ (geplant)    │           └──────┬───────┘
+                                       │              │           └──────┬───────┘
                                        └──────┬───────┘                  │
                                               │ HTTPS (optional)         │
                                               ▼                          ▼
@@ -52,7 +52,7 @@ Foody gibt es nicht im Play Store. Die App wird aus diesem Repository gebaut und
 | **App „Foody“** | ja | Handy und Tablet (dieselbe APK) | Rezepte, Nährwerte, Wochenplan, Einkauf, Tagebuch – komplett offline |
 | **Sync-Server** | nein | eigener Rechner mit Docker (Homeserver, NAS, VPS) | gleicht Handy und Tablet ab, hält die Fotos der Rezepte |
 | **KI-Hilfe** | nein, in Vorbereitung | auf dem Server (Schlüssel eines Sprachmodell-Dienstes) | Rezept aus Foto/Text erfassen, anpassen, Plan vorschlagen, Nährwerte schätzen |
-| **Fotoerkennung** | nein, geplant | nur auf dem Handy (Modelldatei im App-Speicher) | Tagebucheintrag aus einem Foto des Essens, ohne Server und ohne Cloud |
+| **Fotoerkennung** | nein | nur auf dem Handy (Modelldateien im App-Speicher) | Tagebucheintrag aus einem Foto des Essens, ohne Server und ohne Cloud |
 
 Ohne Server funktioniert Foody vollständig; dann hat jedes Gerät seine eigenen Daten, und Daten wandern nur über eine
 Sicherungsdatei von einem Gerät aufs andere.
@@ -65,8 +65,8 @@ Sicherungsdatei von einem Gerät aufs andere.
 
 - **Android 16 oder neuer** auf Handy und Tablet (die App verlangt `minSdk` 36, ADR 0009). Ältere Geräte lassen die
   Installation nicht zu („App nicht kompatibel“).
-- Für die geplante Fotoerkennung zusätzlich ein Handy mit 64-Bit-ARM (`arm64-v8a`) und viel Arbeitsspeicher
-  (Richtwert 8–12 GB) und 0,5–2 GB freiem Speicher für das Modell.
+- Für die Fotoerkennung zusätzlich ein Handy mit 64-Bit-ARM (`arm64-v8a`), viel Arbeitsspeicher (Richtwert 12 GB,
+  bei der Erkennung müssen 2 GB frei sein) und gut 3 GB freiem Speicher (1,55 GB Modell, beim Import kurz doppelt).
 - Für „Packung scannen“ die Google-Play-Dienste (sie laden Strichcode- und Texterkennung nach).
 
 ### PC zum Bauen (Windows, Linux oder macOS)
@@ -227,8 +227,8 @@ Das Tablet bekommt **dieselbe APK** wie das Handy (mit demselben Schlüssel sign
 in Abschnitt 4. Unterschiede:
 
 - Foody zeigt auf breiten Bildschirmen Listen und Details zweispaltig; dafür ist nichts einzustellen.
-- Die geplante **Fotoerkennung** wird auf dem Tablet nicht eingerichtet (kein Modell installieren); der Knopf bleibt
-  dort einfach ausgeblendet.
+- Die **Fotoerkennung** wird auf dem Tablet nicht eingerichtet (kein Modell installieren); der Knopf bleibt dort
+  einfach ausgeblendet.
 - Beim **Verbinden mit dem Server** auf dem zweiten Gerät die richtige Wahl treffen (Abschnitt 7.2), sonst entstehen
   Rezepte doppelt.
 - Ohne Server: Daten vom Handy aufs Tablet mit **Sicherung erstellen** (Handy) und **Wiederherstellen** (Tablet)
@@ -509,37 +509,37 @@ sich nichts.
 
 ---
 
-## 9. Fotoerkennung auf dem Handy: wohin das Modell kommt (geplant)
+## 9. Fotoerkennung auf dem Handy: Modell installieren
 
-> **Stand:** geplant, noch nicht gebaut ([`ToDoS/foto-erkennung-plan.md`](../ToDoS/foto-erkennung-plan.md)). Welches
-> Modell es wird, entscheidet erst eine Messung (Phase 0, ADR 0017). Die Angaben hier zeigen den geplanten Ablauf.
-
-Die Fotoerkennung („Mahlzeit aus Foto eintragen“) ist **unabhängig von der KI-Hilfe**: Sie läuft komplett auf dem
-Handy, ohne Server und ohne Cloud. Das Foto verlässt das Gerät nie.
+Die Fotoerkennung („Mahlzeit aus Foto eintragen“, [ADR 0017](adr/0017-fotoerkennung-auf-dem-geraet.md)) ist
+**unabhängig von der KI-Hilfe**: Sie läuft komplett auf dem Handy, ohne Server und ohne Cloud. Das Foto verlässt das
+Gerät nie. Ergebnis ist ein Vorschlag für einen freien Tagebucheintrag (Name, kcal, Makros), der vor dem Speichern
+geprüft wird.
 
 **Was installiert wird:**
 
 | Teil | Wo | Wie |
 |---|---|---|
 | Laufzeit (llama.cpp) | in der APK | kommt mit dem App-Update, nichts zu tun |
-| **Modelldatei(en)**, GGUF, 4 Bit, ca. 0,5–2 GB | **App-interner Speicher** des Handys | **in der App importieren**, nicht von Hand in einen Ordner kopieren |
+| **Modelldateien**, GGUF: Sprachteil `Q4_K_M` (1,1 GB) und Bildteil `mmproj` `Q8_0` (0,45 GB) | **App-interner Speicher** des Handys | **in der App importieren**, nicht von Hand in einen Ordner kopieren |
 | Server | – | nichts; kein neuer Endpunkt, kein Rebuild |
 
-Das Modell steckt bewusst **nicht in der APK** (sie würde sonst um bis zu 2 GB wachsen) und wird einmalig
-eingerichtet. Bild-Sprach-Modelle für llama.cpp bestehen in der Regel aus **zwei Dateien**: dem Sprachmodell
-(`…-Q4_K_M.gguf`) und dem Bild-Teil (`mmproj-….gguf`); beide gehören zusammen.
+Das Modell (Qwen3-VL-2B mit dem Adapter „food-analysis“, zusammengeführt) steckt bewusst **nicht in der APK** und
+wird einmal eingerichtet. Beide Dateien gehören zusammen; welche der Bildteil ist, erkennt Foody selbst.
 
-**Geplanter Ablauf:**
+**Ablauf:**
 
-1. Die gewählten GGUF-Dateien am PC besorgen (Bezugsquelle und Prüfsumme nennt ADR 0017, voraussichtlich Hugging Face)
-   und in einen Ordner legen, den das Handy erreicht – z. B. den Cloud-Ordner, in dem auch die APK liegt.
-2. Auf dem Handy: **Einstellungen → Fotoerkennung → Modell installieren**, die Datei(en) über die Dateiauswahl
-   wählen (z. B. aus der Cloud-App). Foody prüft die Prüfsumme und kopiert das Modell in seinen eigenen Speicher
-   (`filesDir`, für andere Apps und den Dateimanager unsichtbar). Alternativ ein einmaliger Download per Knopfdruck.
-3. Danach erscheint im Tagebuch beim Eintragen der Knopf **„Foto“**. Ohne Modell bleibt er ausgeblendet.
-4. Entfernen unter demselben Menüpunkt; Deinstallieren der App entfernt das Modell ebenfalls.
+1. Die beiden GGUF-Dateien (aus Phase 0, ADR 0017) in einen Ordner legen, den das Handy erreicht, z. B. den
+   Cloud-Ordner, in dem auch die APK liegt.
+2. Auf dem Handy: **Einstellungen → Fotoerkennung → Modell installieren** und in der Dateiauswahl **beide** Dateien
+   wählen (lange tippen für Mehrfachauswahl, z. B. in der Cloud-App). Foody kopiert sie in seinen eigenen Speicher
+   (`filesDir`, für andere Apps und den Dateimanager unsichtbar) und vergleicht die Prüfsummen. Meldet Foody
+   „unbekannte Dateien“, sind es andere als die gemessenen; die Erkennung läuft dann ohne Gewähr.
+3. Danach steht im Tagebuch unter **Eintragen → Frei** der Knopf **„Foto erkennen“** neben „Packung scannen“
+   (Kamera oder Galerie, bis zu einer Minute je Foto). Ohne Modell oder mit ausgeschaltetem Schalter fehlt er.
+4. **Modell entfernen** (oder ersetzen) unter demselben Abschnitt; Deinstallieren der App entfernt das Modell ebenfalls.
 
-Die Einstellung gilt **je Gerät** und wird nicht gesynct. Auf dem Tablet einfach kein Modell installieren.
+Schalter und Modell gelten **je Gerät** und werden nicht gesynct. Auf dem Tablet einfach kein Modell installieren.
 
 ---
 

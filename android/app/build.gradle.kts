@@ -128,6 +128,7 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:sync"))
     implementation(project(":core:scan"))
+    implementation(project(":core:erkennung"))
     implementation(project(":feature:heute"))
     implementation(project(":feature:rezepte"))
     implementation(project(":feature:kochen"))
