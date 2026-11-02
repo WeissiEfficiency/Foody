@@ -499,7 +499,12 @@ Alles auf dem Gerät; kein Server, kein Schema. Noch ohne Oberfläche und nicht 
 - **Modelldateien `ModellDateien`:** `filesDir/modell/{sprache,bild}.gguf`, Import zweier Dateien (Bildteil am
   GGUF-Kopf `general.architecture = clip` erkannt), SHA-256 gegen die Dateien aus Phase 0, `.teil`-Dateien bis zur
   Prüfung; nicht gesynct.
-- **Tests:** `ModellErkennerTest` (Fake-Modell), `ModellDateienTest`; Messung auf dem Handy mit `MessungTest`
+- **Vorbau für die Oberfläche:** `ErkennungLauf` (Ablauf hinter dem Knopf wie `ScanLauf`: Erkennung im
+  `viewModelScope`, Abbrechen, Meldungen aus `ErkennungTexte`, Bild und Kamerafoto im `SavedStateHandle`, Neustart nach
+  einem Prozessende), `ModellVerwaltung` (Import per Uri, Stand, entfernen) und `ErkennungEinstellung` (an/aus je
+  Gerät, `sichtbar` nur mit Modell).
+- **Tests:** `ModellErkennerTest` (Fake-Modell), `ModellDateienTest`, `ErkennungLaufTest`, `ModellVerwaltungTest`;
+  Messung auf dem Handy mit `MessungTest`
   (androidTest, nur mit `-e messung an`).
 
 ## Build

@@ -146,21 +146,27 @@ die 1,1 GB Gewichte liegen per mmap im Dateicache, die Schwelle ist jetzt 2 GB.
 
 ### Phase 3 – `:feature:heute`: Knopf und Vorschau
 
+- [x] Ablauf ohne Oberfläche vorgebaut (`ErkennungLauf`, wie `ScanLauf`): Erkennung im `viewModelScope`, Abbrechen,
+      Meldungen (`ErkennungTexte`), Bild und Kamerafoto im `SavedStateHandle`; endet der Prozess mitten in der
+      Erkennung, startet sie beim nächsten Mal neu (`ErkennungLaufTest`).
 - [ ] Knopf „Foto“ im Eintragen-Blatt neben dem Scan; Kamera über `TakePicture` wie `ScanFotos` (ohne Kamera-Berechtigung).
 - [ ] Während der Erkennung Fortschritt mit Abbrechen; danach öffnet sich „Frei“ vorausgefüllt (Name, kcal, Makros),
       Schätzfelder markiert („bitte prüfen“, wie `PackungEingabe`).
-- [ ] Foto-Uri und Vorschlag im `SavedStateHandle` (Prozessende während der Erkennung), Test mit `nachProzessende()`.
+- [ ] Vorschlag in die „Frei“-Felder des ViewModels (die liegen schon im `SavedStateHandle`).
 - [ ] Robolectric-Tests mit Fake-Erkenner, Referenzbilder für die neuen Zustände; Release-Kurztest (R8, E4).
 
 ### Phase 4 – Einstellungen
 
-- [ ] Bereich „Fotoerkennung“: an/aus, Modell installieren/entfernen, Größe, Hinweis „läuft nur auf diesem Gerät“.
-- [ ] Getrennt je Gerät (nicht gesynct), weil das Modell lokal liegt; auf dem Tablet bleibt es einfach aus.
+- [x] Logik vorgebaut: `ModellVerwaltung` (Import zweier Dateien per Uri, Stand, entfernen) und
+      `ErkennungEinstellung` (an/aus in eigenen Prefs `fotoerkennung`, nicht gesynct; `sichtbar` = an und Modell da,
+      auf dem Tablet ohne Modell also nie).
+- [ ] Bereich „Fotoerkennung“: Schalter, „Modell installieren“ (SAF, zwei Dateien), Größe, entfernen, Hinweis
+      „läuft nur auf diesem Gerät“.
 
 ### Phase 5 – Doku und Abnahme
 
 - [ ] `docs/architecture.md` (Abschnitt `:core:erkennung`), `README.md` (Modultabelle), `CLAUDE.md` (Testbefehl).
-- [ ] `docs/security.md`: Foto bleibt auf dem Gerät, einmaliger Modell-Download, keine Übermittlung.
+- [x] `docs/security.md`: Foto bleibt auf dem Gerät, Modell einmal per SAF, GGUF-Prüfung, Restrisiken.
 - [ ] Abnahme im Alltag auf dem Handy: die ersten ~30 Foto-Einträge auswerten – Vorschlag gegen das, was nach deiner
       Korrektur gespeichert wurde (nur lokal, ohne neues Feld: Vorschlag und Ergebnis im Debug-Log bzw. einer
       lokalen Datei, abschaltbar). Ziel: Gericht meist richtig benannt, kcal meist ohne große Korrektur.

@@ -55,10 +55,17 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.coroutines.android)
+    // ErkennungLauf: Bild und Kamerafoto im SavedStateHandle des ViewModels
+    api(libs.androidx.lifecycle.viewmodel.savedstate)
 
     testImplementation(libs.junit4)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.coroutines.test)
+    // ErkennungLauf (Prozessende über ein Parcel) und Einstellung (SharedPreferences) unter Robolectric
+    testImplementation(project(":core:testing"))
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.ext.junit)
 
     // Messung auf dem Handy (MessungTest, nur mit Instrumentation-Argumenten)
     androidTestImplementation(libs.androidx.test.ext.junit)

@@ -43,6 +43,18 @@ geschehen außerhalb der Datenbanktransaktion; kaputte Dateien zählen als „fe
 - Schreiben über temporäre Datei im selben Ordner und atomares Umbenennen; unreferenzierte Fotos entfernt die
   Kompaktierung nach 30 Tagen.
 
+**Fotoerkennung (`:core:erkennung`, ADR 0017):**
+- Das Foto verlässt das Gerät nie: Erkennung mit llama.cpp auf der CPU, kein Netz, kein Server. Die verkleinerte
+  Kopie liegt nur während der Erkennung in `cache/erkennung/`, das Kamerafoto wird danach gelöscht.
+- Modelldateien kommen einmal per SAF (z. B. aus OpenCloud), kein Download. Geprüft wird der GGUF-Kopf (Magie,
+  Version, Längen begrenzt: Texte ≤ 1 MB, Listen ≤ 10⁸ Einträge, höchstens 10 000 Einträge gelesen) und die SHA-256
+  gegen die Dateien aus Phase 0; fremde GGUF-Dateien gehen auch, werden aber nicht als „bekannt“ markiert. Kopiert
+  wird erst in `.teil`-Dateien, ein Fehler lässt nichts liegen.
+- Die Modelldatei selbst wird von llama.cpp (C++) gelesen; eine böswillig gebaute GGUF-Datei könnte dort einen
+  Speicherfehler auslösen. Deshalb nur eigene Dateien importieren (Restrisiko unten).
+- Die Antwort des Modells ist ein Vorschlag (Regel 29): Name und Zahlen mit Grenzen, gespeichert erst nach dem
+  Häkchen; nichts davon wird ausgeführt.
+
 ## Sync
 
 Server und Protokoll (`:server`, `:api-protocol`); Fremdeingaben sind hier alle Anfragen eines Clients.
@@ -85,5 +97,11 @@ Server und Protokoll (`:server`, `:api-protocol`); Fremdeingaben sind hier alle 
   Nutzer sie speichert (z. B. Cloud-Ordner). Schutz ist hier der Zugang zu diesem Ordner; ein Passwort für die
   Sicherung ist bewusst nicht eingebaut (ein vergessenes Passwort wäre Datenverlust). Ebenso liegen die Daten auf dem
   Server unverschlüsselt im Volume (siehe „Sync“).
+- **Fremde Modelldatei für die Fotoerkennung:** llama.cpp prüft GGUF-Dateien nicht gegen böswillige Inhalte. Die
+  App nimmt jede GGUF-Datei an (für den Tausch gegen das unveränderte Qwen3-VL-2B), markiert aber nur die bekannten
+  Prüfsummen. Wer eine fremde Datei importiert, vertraut deren Herkunft.
+- **Native Bibliothek im Repository:** `libfoody_erkennung.so` liegt fertig gebaut in `android/core/erkennung/nativ/`.
+  Sie entsteht nur aus `src/main/cpp` und llama.cpp b12024 (Zip mit festgenagelter SHA-256) und wird nach jeder
+  Änderung neu gebaut und eingecheckt; die CI prüft das nicht nach.
 - **Gradle-Abhängigkeiten ohne Prüfsummen-Verifikation** (`verification-metadata.xml`): Aufwand bei jedem Update
   hoch; Dependabot-Sicherheitswarnungen in den Repository-Einstellungen aktivieren.
