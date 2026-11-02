@@ -45,12 +45,16 @@ import de.foody.core.designsystem.komponenten.vorausgefuelltFarben
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.erkennung.ErkennungTexte
 import de.foody.core.scan.PackungScanKnopf
+import de.foody.domain.FotoPortion
 import de.foody.feature.heute.anzeigename
 import de.foody.feature.heute.slotName
 import kotlinx.coroutines.launch
 
 /** Test-Tag des Speichern-Knopfs (die Überschrift heißt auch „Eintragen“). */
 const val EINTRAGEN_SPEICHERN = "eintragen-speichern"
+
+/** Portionen zum Vorschlag aus dem Foto (Phase 6). */
+private val PORTIONEN = listOf(FotoPortion.KLEIN to "klein", FotoPortion.NORMAL to "normal", FotoPortion.GROSS to "groß")
 
 private val WEGE = listOf(
     EintragenWeg.REZEPT to "Rezept",
@@ -169,8 +173,18 @@ private fun FreiEingabe(z: EintragenZustand, vm: EintragenViewModel) {
         if (fotoKnopf) FotoErkennungKnopf(vm.fotoLauf)
     }
     if (fotoKnopf) FotoErkennungStand(vm.fotoLauf)
-    val f = e.foto
-    if (fotoHinweis(e)) Text(ErkennungTexte.BITTE_PRUEFEN, style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.primaer)
+    e.foto?.let { stand ->
+        if (fotoHinweis(e)) {
+            Text(
+                if (stand.ausGedaechtnis) ErkennungTexte.WIE_LETZTES_MAL else ErkennungTexte.BITTE_PRUEFEN,
+                style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.primaer,
+            )
+        }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
+            PORTIONEN.forEach { (p, text) -> FoodyChip(text, p == stand.portion, { vm.fotoPortion(p) }) }
+        }
+    }
+    val f = e.foto?.angezeigt
     FoodyTextfeld("Name", e.freiName, farben = vorausgefuelltFarben(wieImFoto(e.freiName, f?.name)), onWert = vm::freiName)
     Zahlfeld("kcal", e.freiKcal, ganzzahlig = true, markiert = wieImFoto(e.freiKcal, f?.kcal), onWert = vm::freiKcal)
     Zahlfeld("Eiweiß (g, optional)", e.freiEiweiss, markiert = wieImFoto(e.freiEiweiss, f?.eiweiss), onWert = vm::freiEiweiss)

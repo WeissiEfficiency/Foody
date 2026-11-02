@@ -19,6 +19,7 @@ import de.foody.feature.heute.haferflocken
 import de.foody.feature.heute.keinErkenner
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testErkennung
+import de.foody.feature.heute.testGedaechtnis
 import de.foody.feature.heute.testScan
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -62,7 +63,7 @@ class EintragenPackungTest {
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         db = testDatenbank()
-        vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), keinErkenner, testErkennung())).sichtbar()
+        vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis())).sichtbar()
         vm.oeffnen(heute, Mahlzeit.FRUEHSTUECK)
         vm.weg(EintragenWeg.FREI)
     }
@@ -93,13 +94,13 @@ class EintragenPackungTest {
     fun ueberstehtProzessende() {
         // Foto aus dem Tagebuch: Während die Kamera offen ist, beendet Android die App (R-W7/D1)
         val h = SavedStateHandle()
-        val vor = halter.behalten(EintragenViewModel(h, HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), keinErkenner, testErkennung())).sichtbar()
+        val vor = halter.behalten(EintragenViewModel(h, HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis())).sichtbar()
         vor.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
         vor.weg(EintragenWeg.FREI)
         vor.packungUebernehmen(haferflocken())
         vor.pMenge("60")
 
-        val nach = halter.behalten(EintragenViewModel(h.nachProzessende(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), keinErkenner, testErkennung())).sichtbar()
+        val nach = halter.behalten(EintragenViewModel(h.nachProzessende(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis())).sichtbar()
         // Das Blatt baut sich mit demselben Auftrag wieder auf: Die Eingaben bleiben
         nach.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
         val wieder = nach.zustand.value.eingaben

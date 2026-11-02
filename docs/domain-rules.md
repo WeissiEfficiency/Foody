@@ -66,7 +66,10 @@
 29. Mahlzeit aus Foto (`FotoErkennung`): Das Foto ergibt nur einen Vorschlag für einen freien Eintrag – Name, kcal,
     Eiweiß, Kohlenhydrate, Fett –, gespeichert wird erst mit dem Häkchen. Kein Abgleich mit Rezepten oder Zutaten.
     Unplausibles bleibt leer statt falsch: kcal außerhalb 1–3000, Makros außerhalb 0–300 g. Ohne lesbares JSON oder
-    ohne Name und kcal gibt es keinen Vorschlag.
+    ohne Name und kcal gibt es keinen Vorschlag. Portion „klein“/„normal“/„groß“ rechnet kcal und Makros × 0,7 / 1 /
+    1,4 um (kcal ganzzahlig, Makros auf 0,1 g, kaufmännisch gerundet); nur Felder, die noch dem angezeigten Wert
+    gleichen. Was nach einem Foto gespeichert wurde, kommt beim nächsten Foto mit demselben Modellnamen (getrimmt,
+    ohne Groß/klein, Leerraum zusammengefasst) unverändert statt der Schätzung.
 30. Import und Rezept-Editor: Küchenmaße ohne Waage werden mit Faustwerten in Gramm bzw. Milliliter gerechnet –
     Prise und Messerspitze ≈ 0,5 g, Schuss ≈ 20 ml, Spritzer ≈ 2 ml, Tasse ≈ 150 ml; „Prise“ ohne Zahl ist eine Prise.
     Die Angabe bleibt als Hinweis stehen, der Editor zeigt weiter „1 Prise Salz“. Beutel und Tüten sind Packungen.
@@ -112,6 +115,6 @@ Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/te
 | 26 | `PackungScanTest.katalogTrefferOhneOnlineAbfrage`, `ZutatEditorScanTest.uebernimmtUndMarkiert`, `TagebuchRepositoryTest.packungOhneHaekchenFrei`, `TagebuchRepositoryTest.packungAktualisiertVorhandene` |
 | 27 | `MarkdownImportTest.servingsFromHeaderLine`, `RezeptImportTest.portionenAusDerDateiStattSchaetzung`, `RezeptImportTest.eineGanzeBackwareWirdGeschaetzt`, `KcalJePortionTest`, `PortionenNachtragenTest` |
 | 28 | `LeereTageFuellenTest`, `AbwechslungTest` |
-| 29 | `FotoErkennungTest` (u. a. `unplausibleWerteBleibenLeer`, `ohneNameUndKcalKeinVorschlag`), `ModellJsonTest`, `ModellErkennerTest` |
+| 29 | `FotoErkennungTest` (u. a. `unplausibleWerteBleibenLeer`, `ohneNameUndKcalKeinVorschlag`, `portionRechnetKcalGanzzahligUndMakrosAufEinZehntel`, `schluesselIgnoriertGrossKleinUndLeerraum`), `ModellJsonTest`, `ModellErkennerTest`, `FotoGedaechtnisTest`, `EintragenFotoTest.portionRechnetNurUnveraenderteFelderUm`, `EintragenFotoTest.gespeicherteKorrekturKommtBeimNaechstenMal` |
 | 30 | `UnitsAndImportFixesTest.pinchBecomesHalfAGram`, `UnitsAndImportFixesTest.kitchenMeasuresBecomeGramsOrMillilitres`, `UnitsAndImportFixesTest.bagsAndSachetsArePackages`, `ZutatZeileTest.schreibenLesbar`, `RezeptSchreibenTest.priseInGrammMitHinweis`, `KuechenmassNachtragTest`, `KuechenmasseNachtragenTest` |
 | 31 | `RezeptImportTest.gewichtAusDemHinweisFuerUnbekanntePackungen`, `RezeptImportTest.gewichtAusDemHinweisNurWennNoetig` |

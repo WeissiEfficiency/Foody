@@ -18,17 +18,21 @@ import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.erkennung.ErkennungStatus
 import de.foody.core.erkennung.ErkennungTexte
+import de.foody.core.erkennung.FotoGedaechtnis
 import de.foody.core.erkennung.MahlzeitErkenner
 import de.foody.core.testing.ViewModelHalter
+import de.foody.domain.FotoPortion
 import de.foody.domain.FotoVorschlag
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.MitSchrift200
 import de.foody.feature.heute.pruefeNichtsAbgeschnitten
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testErkennung
+import de.foody.feature.heute.testGedaechtnis
 import de.foody.feature.heute.testScan
 import de.foody.feature.heute.warteAufText
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -71,9 +75,9 @@ class EintragenBlattFotoTest {
         db.close()
     }
 
-    private fun zeigen(modell: Boolean = true, schrift200: Boolean = false): EintragenViewModel {
+    private fun zeigen(modell: Boolean = true, schrift200: Boolean = false, gedaechtnis: FotoGedaechtnis = testGedaechtnis()): EintragenViewModel {
         val vm = halter.behalten(
-            EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), erkenner, testErkennung(modell)),
+            EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), erkenner, testErkennung(modell), gedaechtnis),
         )
         val auftrag = BlattAuftrag(Mahlzeit.MITTAGESSEN, LocalDate.of(2026, 10, 24))
         compose.setContent {
@@ -144,5 +148,30 @@ class EintragenBlattFotoTest {
         compose.runOnIdle { vm.fotoLauf.erkennen("content://foto") }
         compose.warteAufText(ErkennungTexte.LAEUFT)
         compose.pruefeNichtsAbgeschnitten()
+    }
+
+    @Test
+    fun portionsChipsRechnenUm() {
+        val vm = zeigen()
+        compose.runOnIdle { vm.fotoLauf.erkennen("content://foto") }
+        antwort.complete(ErkennungStatus.Erkannt(FotoVorschlag("Leberkässemmel", 480, BigDecimal("18.5"), null, null), 20_000))
+        compose.warteAufText(ErkennungTexte.BITTE_PRUEFEN)
+        compose.onNode(hasText("groß") and hasClickAction()).performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNode(hasSetTextAction() and hasText("672")).assertExists()
+        compose.onNode(hasSetTextAction() and hasText("25,9")).assertExists()
+    }
+
+    @Test
+    fun wieBeimLetztenMal() {
+        val gedaechtnis = testGedaechtnis()
+        val gespeichert = FotoVorschlag("Leberkässemmel mit Senf", 520, null, null, null)
+        runBlocking { gedaechtnis.merken(FotoVorschlag("Leberkässemmel", 480, null, null, null), false, FotoPortion.NORMAL, gespeichert) }
+        val vm = zeigen(gedaechtnis = gedaechtnis)
+        compose.runOnIdle { vm.fotoLauf.erkennen("content://foto") }
+        antwort.complete(ErkennungStatus.Erkannt(FotoVorschlag("Leberkässemmel", 480, null, null, null), 20_000))
+        compose.warteAufText(ErkennungTexte.WIE_LETZTES_MAL)
+        compose.onNode(hasSetTextAction() and hasText("Leberkässemmel mit Senf")).assertExists()
+        compose.onNode(hasSetTextAction() and hasText("520")).assertExists()
     }
 }

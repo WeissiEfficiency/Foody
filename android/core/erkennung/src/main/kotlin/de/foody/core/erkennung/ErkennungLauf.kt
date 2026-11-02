@@ -30,7 +30,7 @@ class ErkennungLauf(
     private val erkenner: MahlzeitErkenner,
     private val scope: CoroutineScope,
     private val gespeichert: SavedStateHandle,
-    private val onVorschlag: (FotoVorschlag) -> Unit,
+    private val onVorschlag: suspend (FotoVorschlag) -> Unit,
 ) {
     private val _zustand = MutableStateFlow(ErkennungZustand(meldung = gespeichert[MELDUNG], fotoPfad = gespeichert[FOTO]))
     val zustand: StateFlow<ErkennungZustand> = _zustand.asStateFlow()
@@ -103,6 +103,7 @@ object ErkennungTexte {
     const val LAEUFT = "Erkennt das Foto … (bis zu einer Minute)"
     const val ABBRECHEN = "Abbrechen"
     const val BITTE_PRUEFEN = "Geschätzt aus dem Foto – bitte prüfen"
+    const val WIE_LETZTES_MAL = "Wie beim letzten Mal – bitte prüfen"
 
     const val KEIN_MODELL = "Kein Modell für die Fotoerkennung installiert (Einstellungen)."
     const val ZU_WENIG_SPEICHER = "Zu wenig freier Arbeitsspeicher. Andere Apps schließen und noch einmal versuchen."

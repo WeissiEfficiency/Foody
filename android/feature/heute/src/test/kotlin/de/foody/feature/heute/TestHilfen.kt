@@ -21,6 +21,7 @@ import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.zutaten.Packungswerte
 import de.foody.core.erkennung.ErkennungEinstellung
 import de.foody.core.erkennung.ErkennungStatus
+import de.foody.core.erkennung.FotoGedaechtnis
 import de.foody.core.erkennung.MahlzeitErkenner
 import de.foody.core.erkennung.ModellDateien
 import de.foody.core.erkennung.ModellVerwaltung
@@ -36,6 +37,7 @@ import org.robolectric.RuntimeEnvironment
 import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDate
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertTrue
 
 /** Room im Speicher; Abfragen laufen sofort im aufrufenden Thread, damit Flows im Test ohne Warten liefern. */
@@ -139,3 +141,7 @@ fun testErkennung(modell: Boolean = false): ErkennungEinstellung {
     if (modell) listOf(ModellDateien.SPRACHE, ModellDateien.BILD).forEach { File(ordner, it).writeText("gguf") }
     return ErkennungEinstellung(kontext, ModellVerwaltung(ModellDateien(ordner), kontext))
 }
+
+/** Leeres Gedächtnis eigener Korrekturen; liest und schreibt im aufrufenden Thread (Tests prüfen sofort). */
+fun testGedaechtnis(): FotoGedaechtnis =
+    FotoGedaechtnis(File(RuntimeEnvironment.getApplication().filesDir, "fotoerkennung").apply { deleteRecursively() }, EmptyCoroutineContext)
