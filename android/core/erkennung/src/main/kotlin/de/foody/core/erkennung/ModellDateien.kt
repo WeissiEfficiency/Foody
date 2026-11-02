@@ -11,8 +11,8 @@ import java.security.MessageDigest
  * (z. B. per SAF aus OpenCloud) und bleiben nur auf diesem Gerät; nichts davon wird gesynct.
  */
 class ModellDateien(private val ordner: File) {
-    private val sprache = File(ordner, "sprache.gguf")
-    private val bild = File(ordner, "bild.gguf")
+    private val sprache = File(ordner, SPRACHE)
+    private val bild = File(ordner, BILD)
 
     sealed interface Stand {
         data object Fehlt : Stand
@@ -77,6 +77,10 @@ class ModellDateien(private val ordner: File) {
     }
 
     companion object {
+        /** Dateinamen im Modellordner; nur ihr Vorhandensein entscheidet über [Stand.Bereit]. */
+        const val SPRACHE = "sprache.gguf"
+        const val BILD = "bild.gguf"
+
         private const val CLIP = "clip"
 
         /** Qwen3-VL-2B + „food-analysis“, Sprachteil Q4_K_M und Bildteil Q8_0 aus Phase 0 (ADR 0017). */

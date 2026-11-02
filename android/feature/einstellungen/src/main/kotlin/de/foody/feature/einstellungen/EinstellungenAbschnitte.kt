@@ -137,6 +137,50 @@ internal fun ZutatenAbschnitt(anzahl: Int?, onlineSuche: Boolean, onZutaten: () 
     }
 }
 
+/**
+ * Fotoerkennung: Schalter „Foto erkennen“ (nur dieses Gerät), Stand des Modells, installieren bzw. ersetzen und
+ * entfernen. Ohne Modell erscheint der Foto-Knopf im Tagebuch nicht.
+ */
+@Composable
+internal fun FotoErkennungAbschnitt(
+    z: EinstellungenZustand,
+    onSchalter: (Boolean) -> Unit,
+    onInstallieren: () -> Unit,
+    onEntfernen: () -> Unit,
+) = Abschnitt("Fotoerkennung") {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(z.fotoErkennung, role = Role.Switch, onValueChange = onSchalter),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text("Foto erkennen", style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
+            Klein("Läuft nur auf diesem Gerät; das Foto verlässt es nicht.")
+        }
+        Switch(z.fotoErkennung, onCheckedChange = null)
+    }
+    val bytes = z.modellBytes
+    Text(
+        if (bytes != null) "Modell installiert · ${groesseText(bytes)}" else "Kein Modell installiert",
+        style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text,
+    )
+    if (bytes == null) Klein("Die beiden Modelldateien (Sprachteil und mmproj) einmal wählen, z. B. aus OpenCloud.")
+    FoodyKnopf(
+        when {
+            z.laeuft == Aktion.MODELL_INSTALLIEREN -> "Läuft …"
+            bytes != null -> "Modell ersetzen"
+            else -> "Modell installieren"
+        },
+        onInstallieren, Modifier.fillMaxWidth(), art = if (bytes != null) KnopfArt.UMRISS else KnopfArt.PRIMAER, aktiv = z.laeuft == null,
+    )
+    if (bytes != null) {
+        FoodyKnopf(
+            if (z.laeuft == Aktion.MODELL_ENTFERNEN) "Läuft …" else "Modell entfernen", onEntfernen, Modifier.fillMaxWidth(),
+            art = KnopfArt.UMRISS, aktiv = z.laeuft == null,
+        )
+    }
+}
+
 @Composable
 internal fun SicherungAbschnitt(z: EinstellungenZustand, onErstellen: () -> Unit, onWiederherstellen: () -> Unit) = Abschnitt("Sicherung") {
     Klein("Rezepte, Zutaten, Plan, Einkauf, Tagebuch und Fotos als ZIP-Datei.")

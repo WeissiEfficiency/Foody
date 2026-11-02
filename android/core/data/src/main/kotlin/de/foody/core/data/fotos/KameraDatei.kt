@@ -9,7 +9,7 @@ import java.util.UUID
 /**
  * Einziger FileProvider der App (Authority `<applicationId>.kamera`, Pfade `res/xml/kamera_pfade`): Die System-Kamera
  * (`TakePicture`) schreibt in eine Datei im Cache, die Foody danach übernimmt und löscht. Gilt für Rezeptfotos (Editor,
- * „Fertig“ im Kochmodus) und Packungsfotos (`:core:scan`). Eigene Unterklasse, damit kein anderes Modul mit einem
+ * „Fertig“ im Kochmodus), Packungsfotos (`:core:scan`) und Fotos für die Fotoerkennung (Eintragen › „Frei“). Eigene Unterklasse, damit kein anderes Modul mit einem
  * zweiten Eintrag für `androidx.core.content.FileProvider` kollidiert.
  */
 class KameraFotoProvider : FileProvider()
@@ -21,6 +21,9 @@ object KameraDatei {
 
     /** Fotos der Nährwerttabelle; nach der Erkennung gelöscht. */
     const val SCAN = "scan"
+
+    /** Fotos einer Mahlzeit für die Fotoerkennung; nach der Erkennung gelöscht. */
+    const val MAHLZEIT = "mahlzeit"
 
     /** Unterordner [name] im Cache (angelegt). */
     fun ordner(context: Context, name: String): File = File(context.cacheDir, name).apply { mkdirs() }

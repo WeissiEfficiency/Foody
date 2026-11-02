@@ -15,9 +15,13 @@ import de.foody.core.data.zutaten.zahlAus
 import de.foody.core.data.zutaten.zahlText
 import de.foody.core.data.zutaten.zutatMitNamen
 import de.foody.core.designsystem.SolangeAppOffen
+import de.foody.core.erkennung.ErkennungEinstellung
+import de.foody.core.erkennung.ErkennungLauf
+import de.foody.core.erkennung.MahlzeitErkenner
 import de.foody.core.scan.PackungScan
 import de.foody.core.scan.ScanAusgang
 import de.foody.core.scan.ScanLauf
+import de.foody.domain.FotoVorschlag
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Nutrient
@@ -76,7 +80,22 @@ data class Eingaben(
     val alsZutat: Boolean = false,
     /** Hat der Nutzer das Häkchen selbst gesetzt, bestimmt der Name die Vorgabe nicht mehr. */
     val alsZutatVomNutzer: Boolean = false,
+    /** Vorschlag der Fotoerkennung, wie in die freien Felder übernommen; markiert sie, solange sie ihm gleichen. */
+    val foto: FotoWerte? = null,
 ) : java.io.Serializable
+
+/** Vorschlag der Fotoerkennung als Feldtexte (`""`: kein Wert geliefert). */
+data class FotoWerte(val name: String, val kcal: String, val eiweiss: String, val kh: String, val fett: String) : java.io.Serializable
+
+/** Markiert, solange das Feld dem Vorschlag aus dem Foto gleicht (und der Vorschlag den Wert hatte). */
+internal fun wieImFoto(feld: String, foto: String?) = !foto.isNullOrEmpty() && feld.trim() == foto
+
+/** „Geschätzt aus dem Foto – bitte prüfen“, solange noch ein Feld dem Vorschlag gleicht. */
+internal fun fotoHinweis(e: Eingaben): Boolean {
+    val f = e.foto ?: return false
+    return listOf(e.freiName to f.name, e.freiKcal to f.kcal, e.freiEiweiss to f.eiweiss, e.freiKh to f.kh, e.freiFett to f.fett)
+        .any { (feld, wert) -> wieImFoto(feld, wert) }
+}
 
 /** Eingaben plus Trefferlisten: Suche als Teilstring ohne Groß/klein, höchstens [MAX_TREFFER]. */
 data class EintragenZustand(
@@ -106,11 +125,19 @@ class EintragenViewModel @Inject constructor(
     private val tagebuch: TagebuchRepository,
     db: FoodyDatenbank,
     scan: PackungScan,
+    erkenner: MahlzeitErkenner,
+    erkennung: ErkennungEinstellung,
 ) : ViewModel() {
     private val eingaben = gespeichert.getMutableStateFlow(EINGABEN, Eingaben())
 
     /** Der Scan-Knopf in „Frei“; Erkennung läuft im viewModelScope weiter, auch wenn gedreht wird. */
     val scanLauf = ScanLauf(scan, viewModelScope, gespeichert, ::packungUebernehmen, ::imKatalog)
+
+    /** Der Foto-Knopf in „Frei“; die Erkennung läuft im viewModelScope und übersteht Drehen und Prozessende. */
+    val fotoLauf = ErkennungLauf(erkenner, viewModelScope, gespeichert, ::fotoUebernehmen)
+
+    /** Foto-Knopf zeigen: Schalter an und Modell auf diesem Gerät (auf dem Tablet ohne Modell nie). */
+    val fotoKnopf: StateFlow<Boolean> = erkennung.sichtbar.stateIn(viewModelScope, SolangeAppOffen, false)
 
     /** Während des Speicherns und nach Erfolg gesperrt (bis zum nächsten [oeffnen]): ein Doppeltipp legt nichts doppelt an. */
     private val gesperrt = MutableStateFlow(false)
@@ -159,11 +186,12 @@ class EintragenViewModel @Inject constructor(
 
     /**
      * Neues Blatt: alles zurück; Mahlzeit aus der angetippten Zeile, sonst nach Uhrzeit. Derselbe [auftrag] erneut
-     * (Neuaufbau nach Drehen) lässt die Eingaben stehen.
+     * (Neuaufbau nach Drehen) lässt die Eingaben stehen; ein neuer bricht eine laufende Fotoerkennung ab.
      */
     fun oeffnen(datum: LocalDate, mahlzeit: Mahlzeit?, uhrzeit: LocalTime = LocalTime.now(), auftrag: String? = null) {
         if (auftrag != null && auftrag == letzterAuftrag) return
         letzterAuftrag = auftrag
+        fotoLauf.abbrechen()
         eingaben.value = Eingaben(datum = datum, mahlzeit = mahlzeit ?: mahlzeitNachUhrzeit(uhrzeit))
         gesperrt.value = false
     }
@@ -200,6 +228,15 @@ class EintragenViewModel @Inject constructor(
                 pFett = p.feldText(Nutrient.FAT_G), alsZutat = vorhandene(name) == null, alsZutatVomNutzer = false,
             )
         }
+    }
+
+    /** Vorschlag aus dem Foto: ersetzt die freien Felder (Name bereinigt, höchstens 200 Zeichen); gespeichert erst mit „Eintragen“. */
+    fun fotoUebernehmen(v: FotoVorschlag) {
+        val w = FotoWerte(
+            nameBereinigt(v.name).take(MAX_NAME), v.kcal?.toString().orEmpty(),
+            zahlText(v.eiweiss), zahlText(v.kohlenhydrate), zahlText(v.fett),
+        )
+        eingaben.update { it.copy(freiName = w.name, freiKcal = w.kcal, freiEiweiss = w.eiweiss, freiKh = w.kh, freiFett = w.fett, foto = w) }
     }
 
     /** „Zurück zu Frei“. */

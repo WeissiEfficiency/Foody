@@ -23,7 +23,9 @@ import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.bestand
 import de.foody.feature.heute.haferflocken
+import de.foody.feature.heute.keinErkenner
 import de.foody.feature.heute.testDatenbank
+import de.foody.feature.heute.testErkennung
 import de.foody.feature.heute.testScan
 import de.foody.feature.heute.warteAufText
 import kotlinx.coroutines.runBlocking
@@ -70,7 +72,7 @@ class PackungScreenshotTest {
     }
 
     private fun packung(dunkel: Boolean) {
-        val vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(packung = haferflocken())))
+        val vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(packung = haferflocken()), keinErkenner, testErkennung()))
         val auftrag = BlattAuftrag(Mahlzeit.FRUEHSTUECK, LocalDate.of(2026, 10, 24))
         compose.setContent {
             FoodyTheme(dunkel = dunkel, unschaerfe = false) { FoodyHintergrund { EintragenBlatt(auftrag, {}, vm) } }

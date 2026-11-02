@@ -55,10 +55,19 @@ fun rememberDateiwahl(dateiname: String, onErstellt: (Uri) -> Unit, onGewaehlt: 
     }
 }
 
+/** Dateidialog für die beiden Modelldateien der Fotoerkennung (SAF, mehrere Dateien); Abbrechen tut nichts. */
+@Composable
+fun rememberModellwahl(onGewaehlt: (List<Uri>) -> Unit): () -> Unit {
+    val oeffnen = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { if (it.isNotEmpty()) onGewaehlt(it) }
+    // GGUF hat keinen eigenen MIME-Typ; Cloud-Anbieter melden die Dateien unterschiedlich
+    return remember(oeffnen) { { oeffnen.launch(arrayOf("*/*")) } }
+}
+
 /**
- * Einstellungen: Konto (→ „Server verbinden“), Darstellung mit Farbwelt, Tagesziel, Zutatenkatalog und Online-Produktsuche, Sicherung,
+ * Einstellungen: Konto (→ „Server verbinden“), Darstellung mit Farbwelt, Tagesziel, Zutatenkatalog und Online-Produktsuche,
+ * Fotoerkennung, Sicherung,
  * alle Daten löschen, Hinweise.
- * Wiederherstellen und Löschen fragen nach; bei verbundenem Sync sind beide gesperrt.
+ * Wiederherstellen, Löschen und „Modell entfernen“ fragen nach; bei verbundenem Sync sind die ersten beiden gesperrt.
  */
 @Composable
 fun EinstellungenRoute(
@@ -69,6 +78,7 @@ fun EinstellungenRoute(
     dateiwahl: @Composable (onErstellt: (Uri) -> Unit, onGewaehlt: (Uri) -> Unit) -> Dateiwahl = { erstellt, gewaehlt ->
         rememberDateiwahl(vm.dateiname(), erstellt, gewaehlt)
     },
+    modellwahl: @Composable (onGewaehlt: (List<Uri>) -> Unit) -> () -> Unit = { rememberModellwahl(it) },
 ) {
     val z by vm.zustand.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
@@ -76,12 +86,14 @@ fun EinstellungenRoute(
     // Datei, die nach der Rückfrage wiederhergestellt wird; als Text, damit sie Drehen übersteht
     var ersetzen by rememberSaveable { mutableStateOf<String?>(null) }
     var loeschen by rememberSaveable { mutableStateOf(false) }
+    var modellEntfernen by rememberSaveable { mutableStateOf(false) }
     // Eigene Eingabe; bis zur ersten Eingabe zeigt das Feld das gespeicherte Ziel (schon im ersten Bild)
     var zielText by rememberSaveable { mutableStateOf<String?>(null) }
     // Ungültig ist sofort bekannt; gezeigt wird der Fehler erst nach „Fertig“ oder beim Verlassen des Feldes
     var zielUngueltig by rememberSaveable { mutableStateOf(false) }
     var zielFehler by rememberSaveable { mutableStateOf(false) }
     val dateien = dateiwahl({ vm.sicherungErstellen(it) }, { ersetzen = it.toString() })
+    val modellDialog = modellwahl { vm.modellInstallieren(it) }
     // Ohne „Fertig“ verlassen: die letzte gültige Eingabe trotzdem speichern
     val letzteEingabe by rememberUpdatedState(zielText)
     DisposableEffect(vm) { onDispose { letzteEingabe?.let(vm::tageszielSpeichern) } }
@@ -108,6 +120,7 @@ fun EinstellungenRoute(
                     if (!zielUngueltig) zielFehler = false
                 }
                 ZutatenAbschnitt(z.zutaten, z.onlineSuche, onZutaten, vm::onlineSucheSetzen)
+                FotoErkennungAbschnitt(z, vm::fotoErkennungSetzen, onInstallieren = modellDialog, onEntfernen = { modellEntfernen = true })
                 SicherungAbschnitt(z, onErstellen = dateien.erstellen, onWiederherstellen = dateien.oeffnen)
                 DatenAbschnitt(z, onLoeschen = { loeschen = true })
                 HinweiseAbschnitt()
@@ -120,6 +133,12 @@ fun EinstellungenRoute(
         FoodyFrage(
             "Alle Daten ersetzen?", "Alle Daten auf diesem Gerät werden durch den Inhalt der Datei ersetzt.", "Ersetzen",
             onJa = { ersetzen = null; vm.wiederherstellen(uri.toUri()) }, onNein = { ersetzen = null },
+        )
+    }
+    if (modellEntfernen) {
+        FoodyFrage(
+            "Modell entfernen?", "Ohne Modell gibt es auf diesem Gerät keine Fotoerkennung, bis es wieder installiert ist.", "Entfernen",
+            onJa = { modellEntfernen = false; vm.modellEntfernen() }, onNein = { modellEntfernen = false },
         )
     }
     if (loeschen) {

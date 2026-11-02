@@ -65,9 +65,11 @@ In Foody: **Einstellungen → Konto → Server verbinden**, Adresse `https://DEI
 - **App:** `git pull`, `.\gradlew :app:assembleRelease`, neue APK auf dem Gerät öffnen, **Aktualisieren**.
 - **Server:** `git pull && docker compose up -d --build` im Ordner `server/`.
 
-## KI und Fotoerkennung (noch nicht fertig)
+## KI und Fotoerkennung
 
-- **KI-Hilfe:** später nur einen Schlüssel in `server/.env` eintragen (`FOODY_KI_KEY=…`) und `docker compose up -d`.
-  Auf Handy und Tablet ist nichts einzurichten.
-- **Fotoerkennung:** nur auf dem Handy. Die Modelldatei kommt nicht in die APK, sondern wird später in der App unter
-  *Einstellungen → Fotoerkennung* importiert. Auf dem Tablet nichts installieren.
+- **KI-Hilfe (noch nicht fertig):** später nur einen Schlüssel in `server/.env` eintragen (`FOODY_KI_KEY=…`) und
+  `docker compose up -d`. Auf Handy und Tablet ist nichts einzurichten.
+- **Fotoerkennung:** nur auf dem Handy. Die beiden Modelldateien kommen nicht in die APK, sondern werden in der App
+  unter *Einstellungen → Fotoerkennung → Modell installieren* importiert (beide zusammen wählen). Danach gibt es
+  *Eintragen → Frei → Foto erkennen*. Auf dem Tablet nichts installieren. Einzelheiten: Abschnitt 9 der
+  [ausführlichen Anleitung](installation.md#9-fotoerkennung-auf-dem-handy-modell-installieren).

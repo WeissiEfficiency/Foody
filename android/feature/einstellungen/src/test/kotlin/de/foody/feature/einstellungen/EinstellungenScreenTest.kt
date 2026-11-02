@@ -73,11 +73,18 @@ class EinstellungenScreenTest {
         remember { Dateiwahl(erstellen = { erstellt(Uri.fromFile(zip)) }, oeffnen = { gewaehlt(Uri.fromFile(sicherung)) }) }
     }
 
+    /** Dateien, die der Modell-Dialog „wählt“. */
+    private var modellDateien = emptyList<File>()
+
+    private val modellwahl: @Composable ((List<Uri>) -> Unit) -> () -> Unit = { gewaehlt ->
+        remember { { gewaehlt(modellDateien.map(Uri::fromFile)) } }
+    }
+
     private fun zeigen(schrift200: Boolean = false): EinstellungenViewModel {
         val vm = u.vm()
         compose.setContent {
             FoodyTheme {
-                val inhalt = @Composable { EinstellungenRoute(onServer = { server++ }, onZutaten = { zutatenGeoeffnet++ }, onZurueck = {}, vm = vm, dateiwahl = dateien) }
+                val inhalt = @Composable { EinstellungenRoute(onServer = { server++ }, onZutaten = { zutatenGeoeffnet++ }, onZurueck = {}, vm = vm, dateiwahl = dateien, modellwahl = modellwahl) }
                 if (schrift200) MitSchrift200(inhalt) else inhalt()
             }
         }
@@ -119,7 +126,7 @@ class EinstellungenScreenTest {
     fun abschnitteSichtbar() {
         zeigen()
         compose.warteAufText("KONTO")
-        for (a in listOf("DARSTELLUNG", "TAGESZIEL", "SICHERUNG", "DATEN", "HINWEISE")) compose.onNodeWithText(a).performScrollTo()
+        for (a in listOf("DARSTELLUNG", "TAGESZIEL", "FOTOERKENNUNG", "SICHERUNG", "DATEN", "HINWEISE")) compose.onNodeWithText(a).performScrollTo()
     }
 
     @Test
@@ -258,6 +265,51 @@ class EinstellungenScreenTest {
         // Unter beiden gesperrten Knöpfen
         assertEquals(2, compose.onAllNodesWithText(ERST_TRENNEN).fetchSemanticsNodes().size)
         knopf("Sicherung erstellen").assertIsEnabled()
+    }
+
+    @Test
+    fun fotoErkennungSchalter() {
+        zeigen()
+        compose.warteAufText("Foto erkennen")
+        compose.onNodeWithText("Läuft nur auf diesem Gerät; das Foto verlässt es nicht.", useUnmergedTree = true).assertExists()
+        val schalter = compose.onNodeWithText("Foto erkennen").performScrollTo()
+        schalter.assertIsOn()
+        schalter.performClick()
+        compose.waitUntil(5_000) { !u.erkennung.an.value }
+        schalter.assertIsOff()
+    }
+
+    @Test
+    fun modellInstallierenUndEntfernen() {
+        modellDateien = listOf(
+            ggufDatei(File(u.kontext.cacheDir, "qwen.gguf"), "qwen3vl"),
+            ggufDatei(File(u.kontext.cacheDir, "mmproj.gguf"), "clip"),
+        )
+        zeigen()
+        compose.warteAufText("Kein Modell installiert")
+        assertEquals(0, compose.onAllNodesWithText("Modell entfernen").fetchSemanticsNodes().size)
+        knopf("Modell installieren").performClick()
+        compose.warteAufText("Modell installiert (unbekannte Dateien, ohne Gewähr)")
+        compose.warteAufText("Modell installiert · 0 MB")
+        knopf("Modell ersetzen").assertExists()
+
+        knopf("Modell entfernen").performClick()
+        compose.warteAufText("Modell entfernen?")
+        compose.onNodeWithText("Entfernen").performClick()
+        compose.warteAufText("Modell entfernt")
+        compose.warteAufText("Kein Modell installiert")
+    }
+
+    @Test
+    fun modellMitFalschenDateien() {
+        modellDateien = listOf(
+            ggufDatei(File(u.kontext.cacheDir, "a.gguf"), "qwen3vl"),
+            ggufDatei(File(u.kontext.cacheDir, "b.gguf"), "qwen3vl"),
+        )
+        zeigen()
+        knopf("Modell installieren").performClick()
+        compose.warteAufText("Bitte beide Dateien wählen: Sprachteil und Bildteil (mmproj).")
+        compose.onNodeWithText("Kein Modell installiert").assertExists()
     }
 
     @Test

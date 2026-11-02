@@ -95,8 +95,15 @@ class ErkennungLauf(
     }
 }
 
-/** Meldungen des Foto-Knopfs. */
+/** Beschriftungen und Meldungen des Foto-Knopfs. */
 object ErkennungTexte {
+    const val KNOPF = "Foto erkennen"
+    const val KAMERA = "Foto aufnehmen"
+    const val GALERIE = "Aus der Galerie"
+    const val LAEUFT = "Erkennt das Foto … (bis zu einer Minute)"
+    const val ABBRECHEN = "Abbrechen"
+    const val BITTE_PRUEFEN = "Geschätzt aus dem Foto – bitte prüfen"
+
     const val KEIN_MODELL = "Kein Modell für die Fotoerkennung installiert (Einstellungen)."
     const val ZU_WENIG_SPEICHER = "Zu wenig freier Arbeitsspeicher. Andere Apps schließen und noch einmal versuchen."
     const val ZEITLIMIT = "Die Erkennung hat zu lange gedauert. Noch einmal versuchen."
