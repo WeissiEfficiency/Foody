@@ -186,6 +186,19 @@ keine Erkennung; der Knopf erscheint dort nur mit importiertem Modell und meldet
       Korrektur gespeichert wurde (nur lokal, ohne neues Feld: Vorschlag und Ergebnis im Debug-Log bzw. einer
       lokalen Datei, abschaltbar). Ziel: Gericht meist richtig benannt, kcal meist ohne große Korrektur.
 
+### Phase 6 – Genauer: Portion und eigene Korrekturen
+
+Nutzer, 2026-11-02: Ideen 1–3 ja, schneller nur falls über 60 s, eigenes Nachtrainieren später. Spec und Plan:
+`docs/superpowers/{specs,plans}/2026-11-02-foto-erkennung-phase6*`.
+
+- [x] Eigene Korrekturen merken (`FotoGedaechtnis`): Nach dem Speichern merkt Foody die Werte unter dem Namen des
+      Modells; beim nächsten gleichen Namen kommen sie statt der Schätzung („Wie beim letzten Mal – bitte prüfen“).
+      Dazu das Protokoll für die Abnahme (`protokoll.jsonl`: Vorschlag, Herkunft, Portion, Gespeichertes).
+- [x] Portions-Chips „klein · normal · groß“ (× 0,7 / 1 / 1,4); Getipptes bleibt.
+- [x] ~~kcal über den Zutatenkatalog~~ verworfen: An den 100 Nutrition5k-Bildern wäre selbst mit perfekter
+      kcal-Dichte der Median-Fehler 67 % (Modell: 65 %), besser nur bei 49 von 100. Der Fehler steckt in der Menge.
+- [ ] Später: Adapter mit ~100 eigenen Fotos und den Werten aus `protokoll.jsonl` nachtrainieren.
+
 ## Bewusst nicht in der ersten Version
 
 - Kein neues Feld „aus Foto“ / „geschätzt“ im Tagebucheintrag: das wäre eine Schemaänderung samt Sync-Protokoll und

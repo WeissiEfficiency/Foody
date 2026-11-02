@@ -32,6 +32,7 @@ import de.foody.feature.heute.bestand
 import de.foody.feature.heute.keinErkenner
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testErkennung
+import de.foody.feature.heute.testGedaechtnis
 import de.foody.feature.heute.testScan
 import de.foody.feature.heute.warteAufText
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -91,7 +92,7 @@ class EintragenBlattTest {
             ),
         )
     }
-    private val eintragen by lazy { halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), tagebuch, db, testScan(), keinErkenner, testErkennung())) }
+    private val eintragen by lazy { halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), tagebuch, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis())) }
 
     private val heuteInhalt = @androidx.compose.runtime.Composable {
         FoodyTheme { HeuteRoute({ _, _ -> }, {}, {}, {}, {}, vm = vm, eintragenVm = eintragen) }

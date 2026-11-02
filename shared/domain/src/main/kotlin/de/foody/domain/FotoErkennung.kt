@@ -6,13 +6,38 @@ import java.math.RoundingMode
 /**
  * Vorschlag für einen freien Tagebucheintrag aus einem Foto: was es ist und wie viele kcal. Nur ein Vorschlag –
  * vorausgefüllt, gespeichert erst mit dem Häkchen. Werte sind `null`, wenn das Modell nichts Plausibles geliefert hat.
+ * Serializable, weil er im `SavedStateHandle` des Blatts liegt.
  */
-data class FotoVorschlag(val name: String, val kcal: Int?, val eiweiss: BigDecimal?, val kohlenhydrate: BigDecimal?, val fett: BigDecimal?)
+data class FotoVorschlag(val name: String, val kcal: Int?, val eiweiss: BigDecimal?, val kohlenhydrate: BigDecimal?, val fett: BigDecimal?) :
+    java.io.Serializable {
+    /**
+     * Umgerechnet für eine andere Portion: kcal ganzzahlig, Makros auf 0,1 g, jeweils kaufmännisch gerundet (Regel 29).
+     * Faktor 1 lässt den Vorschlag, wie er ist.
+     */
+    fun mal(faktor: BigDecimal): FotoVorschlag = if (faktor.compareTo(BigDecimal.ONE) == 0) this else copy(
+        kcal = kcal?.let { BigDecimal(it).multiply(faktor).setScale(0, RoundingMode.HALF_UP).toInt() },
+        eiweiss = eiweiss?.malGerundet(faktor),
+        kohlenhydrate = kohlenhydrate?.malGerundet(faktor),
+        fett = fett?.malGerundet(faktor),
+    )
+
+    private fun BigDecimal.malGerundet(faktor: BigDecimal) = multiply(faktor).setScale(1, RoundingMode.HALF_UP)
+}
+
+/** Portion zum Vorschlag aus dem Foto: Die Menge schätzt das Modell am schlechtesten (Regel 29). */
+enum class FotoPortion(val faktor: BigDecimal) {
+    KLEIN(BigDecimal("0.7")),
+    NORMAL(BigDecimal.ONE),
+    GROSS(BigDecimal("1.4")),
+}
 
 /** Macht aus der Antwort des Bild-Sprach-Modells einen [FotoVorschlag] (Regel 29). */
 object FotoErkennung {
     private val KCAL = BigDecimal.ONE..BigDecimal(3000)
     private val MAKRO = BigDecimal.ZERO..BigDecimal(300)
+
+    /** Schlüssel für das Gedächtnis eigener Korrekturen: getrimmt, klein, Leerraum zu einem Leerzeichen. */
+    fun schluessel(name: String): String = name.trim().lowercase().replace(Regex("""\s+"""), " ")
 
     /** `null`, wenn die Antwort kein lesbares JSON-Objekt enthält oder weder Name noch kcal. */
     fun vorschlag(antwort: String): FotoVorschlag? {

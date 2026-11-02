@@ -52,6 +52,9 @@ geschehen außerhalb der Datenbanktransaktion; kaputte Dateien zählen als „fe
   wird erst in `.teil`-Dateien, ein Fehler lässt nichts liegen.
 - Die Modelldatei selbst wird von llama.cpp (C++) gelesen; eine böswillig gebaute GGUF-Datei könnte dort einen
   Speicherfehler auslösen. Deshalb nur eigene Dateien importieren (Restrisiko unten).
+- Gedächtnis und Protokoll der eigenen Korrekturen (`filesDir/fotoerkennung/`) enthalten nur Namen und Nährwerte,
+  keine Fotos; sie bleiben auf dem Gerät (nicht gesynct, nicht in der Sicherung) und sind auf 300 Einträge bzw. 500
+  Zeilen begrenzt.
 - Die Antwort des Modells ist ein Vorschlag (Regel 29): Name und Zahlen mit Grenzen, gespeichert erst nach dem
   Häkchen; nichts davon wird ausgeführt.
 

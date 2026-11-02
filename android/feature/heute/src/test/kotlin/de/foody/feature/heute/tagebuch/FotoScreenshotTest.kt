@@ -26,6 +26,7 @@ import de.foody.domain.FotoVorschlag
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testErkennung
+import de.foody.feature.heute.testGedaechtnis
 import de.foody.feature.heute.testScan
 import de.foody.feature.heute.warteAufText
 import org.junit.After
@@ -76,7 +77,7 @@ class FotoScreenshotTest {
 
     private fun vorschlag(dunkel: Boolean) {
         val vm = halter.behalten(
-            EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), erkenner, testErkennung(modell = true)),
+            EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), erkenner, testErkennung(modell = true), testGedaechtnis()),
         )
         val auftrag = BlattAuftrag(Mahlzeit.MITTAGESSEN, LocalDate.of(2026, 10, 24))
         compose.setContent {

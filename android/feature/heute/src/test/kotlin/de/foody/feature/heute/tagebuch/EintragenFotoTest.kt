@@ -6,14 +6,17 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.erkennung.ErkennungStatus
+import de.foody.core.erkennung.FotoGedaechtnis
 import de.foody.core.erkennung.MahlzeitErkenner
 import de.foody.core.testing.ViewModelHalter
 import de.foody.core.testing.nachProzessende
+import de.foody.domain.FotoPortion
 import de.foody.domain.FotoVorschlag
 import de.foody.domain.Mahlzeit
 import de.foody.domain.TagebuchArt
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testErkennung
+import de.foody.feature.heute.testGedaechtnis
 import de.foody.feature.heute.testScan
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -70,9 +73,14 @@ class EintragenFotoTest {
         Dispatchers.resetMain()
     }
 
-    private fun vm(h: SavedStateHandle = SavedStateHandle(), erkenner: MahlzeitErkenner = erkannt, modell: Boolean = true) =
+    private fun vm(
+        h: SavedStateHandle = SavedStateHandle(),
+        erkenner: MahlzeitErkenner = erkannt,
+        modell: Boolean = true,
+        gedaechtnis: FotoGedaechtnis = testGedaechtnis(),
+    ) =
         halter.behalten(
-            EintragenViewModel(h, HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), erkenner, testErkennung(modell)),
+            EintragenViewModel(h, HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), erkenner, testErkennung(modell), gedaechtnis),
         ).also { vm ->
             zuseher.launch { vm.zustand.collect {} }
             zuseher.launch { vm.speichernMoeglich.collect {} }
@@ -117,7 +125,7 @@ class EintragenFotoTest {
         vm.oeffnen(heute, Mahlzeit.SNACK)
         vm.weg(EintragenWeg.FREI)
         vm.fotoLauf.erkennen("content://foto")
-        val foto = assertNotNull(vm.e.foto)
+        val foto = assertNotNull(vm.e.foto).angezeigt
         assertTrue(wieImFoto(vm.e.freiKcal, foto.kcal))
         assertFalse(wieImFoto(vm.e.freiFett, foto.fett), "leerer Wert wird nicht markiert")
 
@@ -172,5 +180,65 @@ class EintragenFotoTest {
         vm.oeffnen(heute, Mahlzeit.ABENDESSEN, auftrag = "blatt-2")
         assertFalse(vm.fotoLauf.zustand.value.laeuft)
         assertNull(vm.e.foto)
+    }
+
+    @Test
+    fun portionRechnetNurUnveraenderteFelderUm() {
+        val vm = vm()
+        vm.oeffnen(heute, Mahlzeit.SNACK)
+        vm.weg(EintragenWeg.FREI)
+        vm.fotoLauf.erkennen("content://foto")
+        vm.freiKh("50")
+
+        vm.fotoPortion(FotoPortion.GROSS)
+        assertEquals("672", vm.e.freiKcal, "480 × 1,4")
+        assertEquals("25,9", vm.e.freiEiweiss, "18,5 × 1,4")
+        assertEquals("50", vm.e.freiKh, "selbst getippt bleibt")
+        assertEquals("Leberkässemmel", vm.e.freiName, "Name ändert die Portion nicht")
+        assertTrue(wieImFoto(vm.e.freiKcal, assertNotNull(vm.e.foto).angezeigt.kcal), "neuer Wert bleibt markiert")
+
+        vm.fotoPortion(FotoPortion.KLEIN)
+        assertEquals("336", vm.e.freiKcal)
+        vm.fotoPortion(FotoPortion.NORMAL)
+        assertEquals("480", vm.e.freiKcal)
+        assertEquals(FotoPortion.NORMAL, vm.e.foto?.portion)
+    }
+
+    @Test
+    fun gespeicherteKorrekturKommtBeimNaechstenMal() = runTest {
+        val gedaechtnis = testGedaechtnis()
+        val erstes = vm(gedaechtnis = gedaechtnis)
+        erstes.oeffnen(heute, Mahlzeit.MITTAGESSEN)
+        erstes.weg(EintragenWeg.FREI)
+        erstes.fotoLauf.erkennen("content://foto")
+        assertEquals(false, erstes.e.foto?.ausGedaechtnis)
+        erstes.freiName("Leberkässemmel mit Senf")
+        erstes.fotoPortion(FotoPortion.GROSS)
+        erstes.freiFett("30")
+        assertNotNull(erstes.speichern())
+
+        val zweites = vm(gedaechtnis = gedaechtnis)
+        zweites.oeffnen(heute.plusDays(1), Mahlzeit.MITTAGESSEN)
+        zweites.weg(EintragenWeg.FREI)
+        zweites.fotoLauf.erkennen("content://foto")
+        val stand = assertNotNull(zweites.e.foto)
+        assertTrue(stand.ausGedaechtnis)
+        assertEquals("Leberkässemmel mit Senf", zweites.e.freiName)
+        assertEquals("672", zweites.e.freiKcal, "die gespeicherte große Portion")
+        assertEquals("30", zweites.e.freiFett)
+        assertEquals("Leberkässemmel", stand.modell.name, "Schlüssel bleibt der Name des Modells")
+        assertEquals(FotoPortion.NORMAL, stand.portion)
+    }
+
+    @Test
+    fun ohneFotoWirdNichtsGemerkt() = runTest {
+        val gedaechtnis = testGedaechtnis()
+        val vm = vm(gedaechtnis = gedaechtnis)
+        vm.oeffnen(heute, Mahlzeit.SNACK)
+        vm.weg(EintragenWeg.FREI)
+        vm.freiName("Leberkässemmel")
+        vm.freiKcal("999")
+        assertNotNull(vm.speichern())
+        assertNull(gedaechtnis.nachschlagen("Leberkässemmel"))
     }
 }

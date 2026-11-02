@@ -17,10 +17,12 @@ import de.foody.core.data.zutaten.zutatMitNamen
 import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.core.erkennung.ErkennungEinstellung
 import de.foody.core.erkennung.ErkennungLauf
+import de.foody.core.erkennung.FotoGedaechtnis
 import de.foody.core.erkennung.MahlzeitErkenner
 import de.foody.core.scan.PackungScan
 import de.foody.core.scan.ScanAusgang
 import de.foody.core.scan.ScanLauf
+import de.foody.domain.FotoPortion
 import de.foody.domain.FotoVorschlag
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
@@ -80,19 +82,38 @@ data class Eingaben(
     val alsZutat: Boolean = false,
     /** Hat der Nutzer das Häkchen selbst gesetzt, bestimmt der Name die Vorgabe nicht mehr. */
     val alsZutatVomNutzer: Boolean = false,
-    /** Vorschlag der Fotoerkennung, wie in die freien Felder übernommen; markiert sie, solange sie ihm gleichen. */
-    val foto: FotoWerte? = null,
+    /** Vorschlag der Fotoerkennung; markiert die freien Felder, solange sie dem angezeigten Wert gleichen. */
+    val foto: FotoStand? = null,
 ) : java.io.Serializable
 
+/**
+ * Vorschlag der Fotoerkennung im Blatt (Phase 6): [modell] wie erkannt (Schlüssel fürs Gedächtnis), [basis] die
+ * Ausgangswerte – die eigenen vom letzten Mal, wenn [ausGedaechtnis] –, [portion] die gewählte Portion.
+ */
+data class FotoStand(
+    val modell: FotoVorschlag,
+    val basis: FotoVorschlag,
+    val ausGedaechtnis: Boolean,
+    val portion: FotoPortion = FotoPortion.NORMAL,
+) : java.io.Serializable {
+    /** Was in den Feldern steht bzw. stand: [basis] für die [portion]. */
+    val angezeigt: FotoWerte get() = basis.mal(portion.faktor).werte()
+}
+
 /** Vorschlag der Fotoerkennung als Feldtexte (`""`: kein Wert geliefert). */
-data class FotoWerte(val name: String, val kcal: String, val eiweiss: String, val kh: String, val fett: String) : java.io.Serializable
+data class FotoWerte(val name: String, val kcal: String, val eiweiss: String, val kh: String, val fett: String)
+
+/** Feldtexte: Name bereinigt und höchstens 200 Zeichen, Zahlen wie getippt (mit Komma). */
+internal fun FotoVorschlag.werte() = FotoWerte(
+    nameBereinigt(name).take(MAX_NAME), kcal?.toString().orEmpty(), zahlText(eiweiss), zahlText(kohlenhydrate), zahlText(fett),
+)
 
 /** Markiert, solange das Feld dem Vorschlag aus dem Foto gleicht (und der Vorschlag den Wert hatte). */
 internal fun wieImFoto(feld: String, foto: String?) = !foto.isNullOrEmpty() && feld.trim() == foto
 
 /** „Geschätzt aus dem Foto – bitte prüfen“, solange noch ein Feld dem Vorschlag gleicht. */
 internal fun fotoHinweis(e: Eingaben): Boolean {
-    val f = e.foto ?: return false
+    val f = e.foto?.angezeigt ?: return false
     return listOf(e.freiName to f.name, e.freiKcal to f.kcal, e.freiEiweiss to f.eiweiss, e.freiKh to f.kh, e.freiFett to f.fett)
         .any { (feld, wert) -> wieImFoto(feld, wert) }
 }
@@ -127,6 +148,8 @@ class EintragenViewModel @Inject constructor(
     scan: PackungScan,
     erkenner: MahlzeitErkenner,
     erkennung: ErkennungEinstellung,
+    /** Eigene Korrekturen nach einem Foto (Phase 6): nachschlagen beim Vorschlag, merken beim Speichern. */
+    private val gedaechtnis: FotoGedaechtnis,
 ) : ViewModel() {
     private val eingaben = gespeichert.getMutableStateFlow(EINGABEN, Eingaben())
 
@@ -230,13 +253,28 @@ class EintragenViewModel @Inject constructor(
         }
     }
 
-    /** Vorschlag aus dem Foto: ersetzt die freien Felder (Name bereinigt, höchstens 200 Zeichen); gespeichert erst mit „Eintragen“. */
-    fun fotoUebernehmen(v: FotoVorschlag) {
-        val w = FotoWerte(
-            nameBereinigt(v.name).take(MAX_NAME), v.kcal?.toString().orEmpty(),
-            zahlText(v.eiweiss), zahlText(v.kohlenhydrate), zahlText(v.fett),
+    /**
+     * Vorschlag aus dem Foto: ersetzt die freien Felder; kennt das Gedächtnis den Namen, mit den eigenen Werten vom
+     * letzten Mal statt der Schätzung. Gespeichert erst mit „Eintragen“.
+     */
+    suspend fun fotoUebernehmen(v: FotoVorschlag) {
+        val gemerkt = gedaechtnis.nachschlagen(v.name)
+        val stand = FotoStand(v, gemerkt ?: v, ausGedaechtnis = gemerkt != null)
+        val w = stand.angezeigt
+        eingaben.update { it.copy(freiName = w.name, freiKcal = w.kcal, freiEiweiss = w.eiweiss, freiKh = w.kh, freiFett = w.fett, foto = stand) }
+    }
+
+    /** Portion zum Vorschlag: rechnet kcal und Makros um, die noch dem bisher angezeigten Wert gleichen; Getipptes bleibt. */
+    fun fotoPortion(p: FotoPortion) = eingaben.update {
+        val stand = it.foto ?: return@update it
+        val alt = stand.angezeigt
+        val neuerStand = stand.copy(portion = p)
+        val neu = neuerStand.angezeigt
+        fun feld(wert: String, vorher: String, nachher: String) = if (wieImFoto(wert, vorher)) nachher else wert
+        it.copy(
+            freiKcal = feld(it.freiKcal, alt.kcal, neu.kcal), freiEiweiss = feld(it.freiEiweiss, alt.eiweiss, neu.eiweiss),
+            freiKh = feld(it.freiKh, alt.kh, neu.kh), freiFett = feld(it.freiFett, alt.fett, neu.fett), foto = neuerStand,
         )
-        eingaben.update { it.copy(freiName = w.name, freiKcal = w.kcal, freiEiweiss = w.eiweiss, freiKh = w.kh, freiFett = w.fett, foto = w) }
     }
 
     /** „Zurück zu Frei“. */
@@ -286,10 +324,10 @@ class EintragenViewModel @Inject constructor(
             EintragenWeg.FREI -> if (e.packung != null) {
                 tagebuch.ausPackung(e.datum, e.mahlzeit, e.pName, zahlAus(e.pMenge)!!, packungsEinheit(e.pBasis), formularWerte(e), e.alsZutat)
             } else {
-                tagebuch.frei(
-                    e.datum, e.mahlzeit, e.freiName.trim(), e.freiKcal.trim().toInt(),
-                    optional(e.freiEiweiss), optional(e.freiKh), optional(e.freiFett),
-                )
+                val kcal = e.freiKcal.trim().toInt()
+                val gespeichert = FotoVorschlag(e.freiName.trim(), kcal, optional(e.freiEiweiss), optional(e.freiKh), optional(e.freiFett))
+                tagebuch.frei(e.datum, e.mahlzeit, gespeichert.name, kcal, gespeichert.eiweiss, gespeichert.kohlenhydrate, gespeichert.fett)
+                    .also { e.foto?.let { f -> gedaechtnis.merken(f.modell, f.ausGedaechtnis, f.portion, gespeichert) } }
             }
         }
         if (id == null) gesperrt.value = false

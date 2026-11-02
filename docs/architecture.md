@@ -509,9 +509,15 @@ und `2026-11-02-foto-erkennung-phase3-4-design.md`. Alles auf dem Gerät; kein S
   (`vorausgefuelltFarben`, „Geschätzt aus dem Foto – bitte prüfen“), bis der Nutzer sie ändert. Kamerafotos liegen in
   `cache/mahlzeit/` (FileProvider aus `:core:data`). Einstellungen › „Fotoerkennung“: Schalter, Stand, Modell
   installieren/ersetzen (`OpenMultipleDocuments`) und entfernen (`Aktion.MODELL_*`).
+- **Genauer (Phase 6):** `FotoGedaechtnis` merkt beim Speichern eines Eintrags aus dem Foto die gespeicherten Werte
+  unter dem Namen des Modells (`filesDir/fotoerkennung/gedaechtnis.json`, höchstens 300) und hängt eine Zeile an
+  `protokoll.jsonl` (Vorschlag gegen Gespeichertes, für die Abnahme). `EintragenViewModel.fotoUebernehmen` schlägt dort
+  zuerst nach („Wie beim letzten Mal – bitte prüfen“). `Eingaben.foto` ist ein `FotoStand` (Modell, Basis, Herkunft,
+  Portion); die Chips „klein · normal · groß“ rechnen mit `FotoVorschlag.mal` (`:domain`) um. Über den Zutatenkatalog
+  wird nicht gerechnet: Selbst mit perfekter kcal-Dichte wäre der Fehler nicht kleiner, er steckt in der Menge.
 - **Tests:** `ModellErkennerTest` (Fake-Modell), `ModellDateienTest`, `ErkennungLaufTest`, `ModellVerwaltungTest`,
-  `EintragenFotoTest`, `EintragenBlattFotoTest`, `FotoScreenshotTest`, `EinstellungenScreenTest`; Messung auf dem
-  Handy mit `MessungTest` (androidTest, nur mit `-e messung an`).
+  `FotoGedaechtnisTest`, `EintragenFotoTest`, `EintragenBlattFotoTest`, `FotoScreenshotTest`, `EinstellungenScreenTest`;
+  Messung auf dem Handy mit `MessungTest` (androidTest, nur mit `-e messung an`).
 
 ## Build
 

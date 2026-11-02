@@ -56,4 +56,25 @@ class FotoErkennungTest {
     @Test fun ohneJsonKeinVorschlag() {
         assertNull(FotoErkennung.vorschlag("Ich sehe einen Teller mit Nudeln."))
     }
+
+    @Test fun portionRechnetKcalGanzzahligUndMakrosAufEinZehntel() {
+        val v = FotoVorschlag("Leberkässemmel", 485, BigDecimal("18.5"), BigDecimal("40"), null)
+        val klein = v.mal(FotoPortion.KLEIN.faktor)
+        assertEquals(340, klein.kcal, "485 × 0,7 = 339,5 → kaufmännisch 340")
+        assertEquals(listOf("13", "28", null), listOf(klein.eiweiss, klein.kohlenhydrate, klein.fett).map { it.klar() }, "18,5 × 0,7 = 12,95 → 13,0")
+        val gross = v.mal(FotoPortion.GROSS.faktor)
+        assertEquals(679, gross.kcal)
+        assertEquals(listOf("25.9", "56"), listOf(gross.eiweiss, gross.kohlenhydrate).map { it.klar() })
+        assertEquals(v, v.mal(FotoPortion.NORMAL.faktor), "normal ändert nichts")
+        assertEquals("Leberkässemmel", gross.name)
+    }
+
+    @Test fun portionOhneKcalBleibtOhne() {
+        assertNull(FotoVorschlag("Salat", null, null, null, null).mal(FotoPortion.GROSS.faktor).kcal)
+    }
+
+    @Test fun schluesselIgnoriertGrossKleinUndLeerraum() {
+        assertEquals("pizza margherita", FotoErkennung.schluessel("  Pizza   Margherita "))
+        assertEquals(FotoErkennung.schluessel("Leberkässemmel"), FotoErkennung.schluessel("LEBERKÄSSEMMEL"))
+    }
 }
