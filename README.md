@@ -49,6 +49,7 @@ Die Web-Oberfläche ist mit V3 entfallen (ADR 0011).
 | `android/core/data/` | `:core:data` | Room (`foody.db` v10), Repositories, Sync-Speicher, Fotos, Sicherung |
 | `android/core/sync/` | `:core:sync` | Sync-Client: Server-Zugang, Sync-Lauf, Verbinden/Trennen, Token |
 | `android/core/scan/` | `:core:scan` | Packung scannen für Tagebuch und Zutatenkatalog (ADR 0013) |
+| `android/core/erkennung/` | `:core:erkennung` | Mahlzeit aus Foto: Qwen3-VL über llama.cpp auf dem Gerät, Modelldateien, Ablauf (ADR 0017) |
 | `android/core/designsystem/` | `:core:designsystem` | Tokens, Farbwelten, Milchglas, Komponenten, Theme (ADR 0012, 0015) |
 | `android/core/testing/` | `:core:testing` | nur für Tests: `ViewModelHalter` beendet ViewModels vor `db.close()` (ADR 0014), `nachProzessende()` stellt ein Prozessende nach; jedes Feature bekommt es als `testImplementation` |
 | `android/katalog/` | `:katalog` | kleine App zum Ansehen des Designsystems |

@@ -38,7 +38,7 @@ Foto, Ziel 15–30 s.
 - Laufzeit: **llama.cpp** (`libllama`, `libmtmd`) auf der **CPU**, ohne GPU und NPU.
 - Das Modell rechnet Nährwerte nur dort, wo es keine Quelle gibt. Rezept und Katalog liefern die Werte, das Modell
   wählt nur aus und schätzt die Menge. kcal und Gramm des Modells sind in der Vorschau als geschätzt markiert.
-- Für „welches Rezept?“ bekommt das Modell eine Auswahlliste mit „keins davon“. Der heutige Wochenplan steht vorne.
+- ~~Für „welches Rezept?“ bekommt das Modell eine Auswahlliste mit „keins davon“.~~ Gestrichen (Nachtrag unten).
 - Die Abbruchgrenze aus dem Plan (≥ 80 % richtig) wird mit 73–82 % nur knapp erreicht. Gebaut wird trotzdem, weil der
   Vorschlag immer eine Vorschau ist und der Wochenplan als Vorschlag dazukommt. Die eigentliche Prüfung ist die
   Abnahme im Alltag (Phase 5).
@@ -60,7 +60,14 @@ mit Nutzungsbeschränkungen gegen Missbrauch). Für die private App passt beides
 
 **Folgen:**
 - Neues Modul `:core:erkennung` mit llama.cpp als nativer Bibliothek (nur `arm64-v8a`) und einer dünnen JNI-Hülle.
-  Die vorgebaute Android-Ausgabe von llama.cpp liefert `libllama.so`, `libmtmd.so` und `libggml*.so`.
-- Die App braucht beim Erkennen etwa 3 GB Arbeitsspeicher und gibt das Modell danach wieder frei.
+  Statt der vorgebauten Android-Ausgabe (über 140 MB, mit Symbolen) wird llama.cpp selbst gebaut: statisch, nur CPU,
+  eine Bibliothek mit 5,5 MB, fertig eingecheckt (Phase 2).
+- Die App braucht beim Erkennen etwa 3 GB Arbeitsspeicher, davon 1,1 GB Gewichte im Dateicache (mmap), und gibt
+  das Modell danach wieder frei.
 - `docs/security.md` bekommt einen Abschnitt: Fotos bleiben auf dem Gerät; einmaliger Import der Modelldatei.
 - Fällt der Adapter weg (Lizenz, Pflege), ist das unveränderte Qwen3-VL-2B fast gleich gut und eine reine Dateitausch-Frage.
+
+**Nachtrag (2026-11-02, Phase 2):** Der Nutzer braucht keinen Abgleich mit eigenen Rezepten oder Zutaten: Das
+Foto soll nur erkannt und mit seinen kcal als freier Eintrag am Tag vorgeschlagen werden. Die Auswahlliste und die
+Wege „Rezept“ und „Teller“ sind gestrichen. Die Messung in der App auf dem 13R bestätigte das: Mit Auswahlliste
+wählte das Modell auch für fünf Gerichte außerhalb der Liste jedes Mal ein Rezept.
