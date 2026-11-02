@@ -432,6 +432,12 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6e2-zutaten-design.md`
   rechnet der Import um (Regeln 30 und 31); schon importierte Rezepte behalten ihre Zeilen.
 - **Sync auf dem zweiten Gerät:** `anwenden` schreibt erst Datensätze, dann Löschungen; mit offener Rezeptänderung wird
   die Quelle wiederbelebt (`nochGebraucht`). Belegt durch zwei Tests in `SyncLaufTest`.
+- **Startdaten v10 (2026-11-02):** die Zutaten der Rezepte, die nach v9 noch fehlten – 45 neue Zeilen (Gewürzmischungen
+  wie Fünf-Gewürz-Pulver und Grillgewürz, Schwarzkümmel, Backaroma, Vanilleextrakt, Erythrit, Säfte und Alkoholika zum
+  Kochen, Sojasahne, Crème double, Räuchertofu, Lammhack, Nori, Udon …) und Aliasse für Schreibweisen der Rezepte, die
+  auf vorhandene Einträge zeigen („Öl (Raps-)“, „Kebab-Brot“, „Kürbisfleisch“). Gemessen am Rezeptordner (432 Rezepte):
+  ohne Katalogeintrag 118 → 37 Zeilen, rechenbare Zeilen 3.831 → 3.890. Der Rest sind keine Zutaten („Backpapier“,
+  „Butter und Mehl“) oder mehrdeutig („Bohnen“).
 - **`:feature:zutaten`:** Liste (`ZutatenListeViewModel`), Editor (`ZutatEditorViewModel`, `ZielwahlBlatt`), Meldungen
   vom Editor an die Liste über `ZutatenMeldungen`. „Änderungen verwerfen?“ liegt jetzt als `VerwerfenFrage` im
   Designsystem. Knöpfe und Snackbars halten `UEBER_LEISTE` (88 dp) Abstand zur schwebenden Navigationsleiste.

@@ -51,6 +51,20 @@ class IngredientCatalogTest {
         assertEquals("Tomate", IngredientCatalog.canonicalName("Strauchtomaten"))
     }
 
+    @Test fun recipeIngredientsMissingAfterV9HaveEntries() {
+        // v10: Lücken aus der Korpus-Analyse der Rezepte, auch mit verlorener Klammer („Öl (Raps-)“ → „Öl Raps-“)
+        assertEquals("Schwarzkümmel", IngredientCatalog.canonicalName("Schwarzkümmel"))
+        assertEquals("Fünf-Gewürz-Pulver", IngredientCatalog.canonicalName("Five Spice"))
+        assertEquals("Backaroma", IngredientCatalog.canonicalName("Bittermandelaroma"))
+        assertEquals("Nori", IngredientCatalog.canonicalName("Noriblätter Algenblätter"))
+        assertEquals("Lammhackfleisch", IngredientCatalog.canonicalName("Lammhack"))
+        assertEquals("Crème double", IngredientCatalog.canonicalName("Creme double"))
+        assertEquals("Pflanzenöl", IngredientCatalog.canonicalName("Öl Raps-"))
+        assertEquals("Fladenbrot", IngredientCatalog.canonicalName("Kebab-Brot"))
+        assertEquals("Hokkaidokürbis", IngredientCatalog.canonicalName("Kürbisfleisch Butternuss-"))
+        assertEquals("Weißwein", IngredientCatalog.canonicalName("Wein"))
+    }
+
     @Test fun waterIsNeverBought() {
         assertTrue(IngredientCatalog.neverBuy("Wasser"))
         assertTrue(IngredientCatalog.neverBuy("Leitungswasser"))
