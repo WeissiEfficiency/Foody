@@ -80,6 +80,9 @@
     Packung …) oder bei „à“/„je“, sonst für die ganze Zeile; bei einer Spanne die untere Grenze, bei mehreren
     verschiedenen Angaben keines. Ist die Zeile schon umrechenbar (Dosengewicht bekannt), bleibt die Einheit – die
     Einkaufsliste zeigt dann weiter „2 Dosen“.
+32. BLS nachschlagen (ADR 0018): Ein Treffer aus dem Bundeslebensmittelschlüssel wird nur auf Tipp des Nutzers zur
+    Katalog-Zutat (Werte je 100 g, Quelle „BLS 4.0 (MRI): <Name>“); heißt schon eine Zutat so, wird sie gewählt und
+    nicht verändert. Die Suche ergänzt regionale Namen über eine feste Liste und rät nie über Ähnlichkeit (vgl. Regel 15).
 
 ## Tests je Regel
 
@@ -118,3 +121,4 @@ Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/te
 | 29 | `FotoErkennungTest` (u. a. `unplausibleWerteBleibenLeer`, `ohneNameUndKcalKeinVorschlag`, `portionRechnetKcalGanzzahligUndMakrosAufEinZehntel`, `schluesselIgnoriertGrossKleinUndLeerraum`), `ModellJsonTest`, `ModellErkennerTest`, `FotoGedaechtnisTest`, `EintragenFotoTest.portionRechnetNurUnveraenderteFelderUm`, `EintragenFotoTest.gespeicherteKorrekturKommtBeimNaechstenMal` |
 | 30 | `UnitsAndImportFixesTest.pinchBecomesHalfAGram`, `UnitsAndImportFixesTest.kitchenMeasuresBecomeGramsOrMillilitres`, `UnitsAndImportFixesTest.bagsAndSachetsArePackages`, `ZutatZeileTest.schreibenLesbar`, `RezeptSchreibenTest.priseInGrammMitHinweis`, `KuechenmassNachtragTest`, `KuechenmasseNachtragenTest` |
 | 31 | `RezeptImportTest.gewichtAusDemHinweisFuerUnbekanntePackungen`, `RezeptImportTest.gewichtAusDemHinweisNurWennNoetig` |
+| 32 | `BlsSucheTest`, `BlsNachschlagTest.suchtImEchtenAuszug`, `EintragenViewModelTest.blsTrefferWirdZutatUndStueckZaehlt`, `EintragenViewModelTest.blsTrefferMitVorhandenemNamenNimmtDieZutat` |

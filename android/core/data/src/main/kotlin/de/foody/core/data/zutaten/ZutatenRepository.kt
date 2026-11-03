@@ -2,12 +2,15 @@ package de.foody.core.data.zutaten
 
 import android.database.sqlite.SQLiteConstraintException
 import androidx.room.withTransaction
+import de.foody.core.data.bls.alsPackung
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.neueId
+import de.foody.domain.BlsTreffer
 import de.foody.domain.IngredientCatalog
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.math.BigDecimal
 import java.text.Collator
 import java.util.Locale
 
@@ -37,10 +40,16 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
         IngredientCatalog.synonymsOf(name).filterNot { it.equals(name, ignoreCase = true) }
 
     /**
-     * Neue eigene Zutat; die Kategorie rät der Katalog. Mit [packung] in derselben Transaktion deren Basis (sonst je
-     * 100 g), Werte und Quelle sowie der Strichcode, wenn ihn keine andere Zutat trägt.
+     * Übernimmt einen BLS-Treffer in den Katalog: Name, Werte je 100 g, Quelle und Stückgewicht. Heißt schon eine Zutat
+     * so, bleibt sie unverändert (`NameVergeben` mit ihrer ID).
      */
-    suspend fun anlegen(name: String, packung: Packungswerte? = null): ZutatErgebnis = namensschutz(name) {
+    suspend fun ausBls(treffer: BlsTreffer): ZutatErgebnis = anlegen(treffer.vorschlagName, treffer.alsPackung(), treffer.stueckG)
+
+    /**
+     * Neue eigene Zutat; die Kategorie rät der Katalog. Mit [packung] in derselben Transaktion deren Basis (sonst je
+     * 100 g), Werte und Quelle sowie der Strichcode, wenn ihn keine andere Zutat trägt; [stueckG]: Gewicht eines Stücks.
+     */
+    suspend fun anlegen(name: String, packung: Packungswerte? = null, stueckG: BigDecimal? = null): ZutatErgebnis = namensschutz(name) {
         val n = nameBereinigt(name)
         val fehler = nameFehler(n)
         if (fehler != null) return@namensschutz ZutatErgebnis.Ungueltig(mapOf(ZutatFeld.NAME to fehler))
@@ -49,7 +58,8 @@ class ZutatenRepository(private val db: FoodyDatenbank, private val uhr: () -> L
             val jetzt = uhr()
             val id = neueId()
             val neu = ZutatEntity(
-                id = id, canonicalName = n, category = IngredientCatalog.guessCategory(n), createdAt = jetzt, updatedAt = jetzt,
+                id = id, canonicalName = n, category = IngredientCatalog.guessCategory(n), pieceWeightG = stueckG,
+                createdAt = jetzt, updatedAt = jetzt,
             )
             dao.upsert(
                 if (packung == null) {

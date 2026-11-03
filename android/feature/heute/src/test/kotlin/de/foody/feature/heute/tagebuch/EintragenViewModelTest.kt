@@ -6,6 +6,7 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
+import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
@@ -13,6 +14,7 @@ import de.foody.domain.TagebuchArt
 import de.foody.feature.heute.bestand
 import de.foody.feature.heute.keinErkenner
 import de.foody.feature.heute.planen
+import de.foody.feature.heute.testBls
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testErkennung
 import de.foody.feature.heute.testGedaechtnis
@@ -55,7 +57,7 @@ class EintragenViewModelTest {
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         db = testDatenbank()
-        vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis()))
+        vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis(), testBls(), ZutatenRepository(db) { 1L }))
         vm.oeffnen(heute, Mahlzeit.ABENDESSEN)
     }
 
@@ -172,6 +174,62 @@ class EintragenViewModelTest {
         fun f(name: String) = gueltig(Eingaben(weg = EintragenWeg.FREI, freiName = name, freiKcal = "50"))
         assertFalse(f("x".repeat(201)), "Name länger als 200 Zeichen")
         assertTrue(f("Apfel"))
+    }
+
+    private fun mitBls(vararg zeilen: String) = halter.behalten(
+        EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis(), testBls(*zeilen), ZutatenRepository(db) { 1L }),
+    ).also { it.oeffnen(heute, Mahlzeit.ABENDESSEN) }
+
+    @Test
+    fun blsTrefferWirdZutatUndStueckZaehlt() = runTest {
+        val vm = mitBls("B723000	Laugengebäck mit Hagelsalz	1191	9.132	50	1.4	4.113	3.746	2.81")
+        vm.weg(EintragenWeg.ZUTAT)
+        vm.suche("Brezn")
+        val treffer = vm.zustand.first().bls.single()
+        assertEquals("Breze", treffer.vorschlagName)
+        vm.blsWaehlen(treffer).join()
+        val z = vm.zustand.first()
+        val zutat = assertNotNull(db.zutatDao().nachId(assertNotNull(z.eingaben.zutatId)))
+        assertEquals("Breze", zutat.canonicalName)
+        assertEquals("BLS 4.0 (MRI): Laugengebäck mit Hagelsalz", zutat.nutrientSource)
+        assertEquals(0, BigDecimal("80").compareTo(zutat.pieceWeightG))
+        assertEquals(MeasureUnit.PIECE, z.eingaben.einheit)
+        // Jetzt im Katalog: Er zeigt sie, der BLS-Abschnitt nicht mehr
+        assertEquals(listOf("Breze"), z.zutaten.map { it.name })
+        assertTrue(z.bls.isEmpty())
+        vm.menge("1")
+        val e = gespeichert(vm.speichern())
+        // 1 Stück = 80 g, 1191 kJ je 100 g
+        assertEquals(0, BigDecimal("952.8").compareTo(e.energieKj))
+    }
+
+    @Test
+    fun blsTrefferMitVorhandenemNamenNimmtDieZutat() = runTest {
+        db.zutatDao().upsert(ZutatEntity(id = "z-breze", canonicalName = "Breze", createdAt = 1, updatedAt = 1))
+        val vm = mitBls("B723000	Laugengebäck mit Hagelsalz	1191						")
+        vm.weg(EintragenWeg.ZUTAT)
+        vm.suche("Laugengebäck")
+        // Der Katalog hat „Breze“ schon: kein BLS-Treffer, der doppelt anlegte
+        assertTrue(vm.zustand.first().bls.isEmpty())
+        vm.blsWaehlen(de.foody.domain.BlsSuche.treffer(de.foody.domain.BlsLebensmittel("B723000", "Laugengebäck mit Hagelsalz", emptyMap()))).join()
+        assertEquals("z-breze", vm.zustand.first().eingaben.zutatId)
+        assertEquals(1, db.zutatDao().alle().size)
+    }
+
+    @Test
+    fun blsNurImWegZutat() = runTest {
+        val vm = mitBls("B723000	Laugengebäck mit Hagelsalz	1191						")
+        vm.weg(EintragenWeg.REZEPT)
+        vm.suche("Breze")
+        assertTrue(vm.zustand.first().bls.isEmpty())
+    }
+
+    @Test
+    fun katalogsucheKenntSynonyme() = runTest {
+        db.zutatDao().upsert(ZutatEntity(id = "z-b", canonicalName = "Brötchen", createdAt = 1, updatedAt = 1))
+        vm.weg(EintragenWeg.ZUTAT)
+        vm.suche("Semmel")
+        assertEquals(listOf("Brötchen"), vm.zustand.first().zutaten.map { it.name })
     }
 
     /** Schreibzugriffe scheitern (wie bei einem Datenbankfehler), Lesen geht weiter. */

@@ -16,6 +16,7 @@ import com.github.takahirom.roborazzi.captureScreenRoboImage
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
+import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
 import de.foody.core.testing.FoodyBildvergleich
@@ -24,6 +25,7 @@ import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.bestand
 import de.foody.feature.heute.haferflocken
 import de.foody.feature.heute.keinErkenner
+import de.foody.feature.heute.testBls
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testErkennung
 import de.foody.feature.heute.testGedaechtnis
@@ -73,7 +75,7 @@ class PackungScreenshotTest {
     }
 
     private fun packung(dunkel: Boolean) {
-        val vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(packung = haferflocken()), keinErkenner, testErkennung(), testGedaechtnis()))
+        val vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(packung = haferflocken()), keinErkenner, testErkennung(), testGedaechtnis(), testBls(), ZutatenRepository(db) { 1L }))
         val auftrag = BlattAuftrag(Mahlzeit.FRUEHSTUECK, LocalDate.of(2026, 10, 24))
         compose.setContent {
             FoodyTheme(dunkel = dunkel, unschaerfe = false) { FoodyHintergrund { EintragenBlatt(auftrag, {}, vm) } }

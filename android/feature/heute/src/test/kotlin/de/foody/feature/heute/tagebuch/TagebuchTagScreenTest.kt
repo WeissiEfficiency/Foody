@@ -20,6 +20,7 @@ import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
+import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
@@ -27,6 +28,7 @@ import de.foody.feature.heute.MitSchrift200
 import de.foody.feature.heute.bestand
 import de.foody.feature.heute.keinErkenner
 import de.foody.feature.heute.pruefeNichtsAbgeschnitten
+import de.foody.feature.heute.testBls
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testErkennung
 import de.foody.feature.heute.testGedaechtnis
@@ -75,7 +77,7 @@ class TagebuchTagScreenTest {
     private fun zeigen(schrift200: Boolean = false) {
         val kontext = RuntimeEnvironment.getApplication()
         val vm = halter.behalten(TagebuchTagViewModel(tagebuch, TageszielSpeicher(kontext)))
-        val eintragen = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), tagebuch, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis()))
+        val eintragen = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), tagebuch, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis(), testBls(), ZutatenRepository(db) { 1L }))
         compose.setContent {
             FoodyTheme {
                 var datum by remember { mutableStateOf(heute) }

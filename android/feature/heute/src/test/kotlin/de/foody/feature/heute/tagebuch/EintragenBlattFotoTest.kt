@@ -15,6 +15,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
+import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.erkennung.ErkennungStatus
 import de.foody.core.erkennung.ErkennungTexte
@@ -26,6 +27,7 @@ import de.foody.domain.FotoVorschlag
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.MitSchrift200
 import de.foody.feature.heute.pruefeNichtsAbgeschnitten
+import de.foody.feature.heute.testBls
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testErkennung
 import de.foody.feature.heute.testGedaechtnis
@@ -77,7 +79,7 @@ class EintragenBlattFotoTest {
 
     private fun zeigen(modell: Boolean = true, schrift200: Boolean = false, gedaechtnis: FotoGedaechtnis = testGedaechtnis()): EintragenViewModel {
         val vm = halter.behalten(
-            EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), erkenner, testErkennung(modell), gedaechtnis),
+            EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), erkenner, testErkennung(modell), gedaechtnis, testBls(), ZutatenRepository(db) { 1L }),
         )
         val auftrag = BlattAuftrag(Mahlzeit.MITTAGESSEN, LocalDate.of(2026, 10, 24))
         compose.setContent {

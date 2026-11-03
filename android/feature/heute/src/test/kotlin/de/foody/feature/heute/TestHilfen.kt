@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.room.Room
+import de.foody.core.data.bls.BlsNachschlag
 import de.foody.core.data.db.EinkaufsartikelEntity
 import de.foody.core.data.db.EinkaufslisteEntity
 import de.foody.core.data.db.FoodyDatenbank
@@ -145,3 +146,6 @@ fun testErkennung(modell: Boolean = false): ErkennungEinstellung {
 /** Leeres Gedächtnis eigener Korrekturen; liest und schreibt im aufrufenden Thread (Tests prüfen sofort). */
 fun testGedaechtnis(): FotoGedaechtnis =
     FotoGedaechtnis(File(RuntimeEnvironment.getApplication().filesDir, "fotoerkennung").apply { deleteRecursively() }, EmptyCoroutineContext)
+
+/** BLS-Auszug aus [zeilen] (Format von `bls_4_0.tsv`: Code, Name, kJ, Eiweiß, KH, Zucker, Fett, Ballaststoffe, Salz). */
+fun testBls(vararg zeilen: String) = BlsNachschlag({ zeilen.asSequence() }, EmptyCoroutineContext)

@@ -20,6 +20,7 @@ import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
+import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.sync.SyncLage
 import de.foody.core.sync.SyncLageQuelle
@@ -30,6 +31,7 @@ import de.foody.feature.heute.HeuteViewModel
 import de.foody.feature.heute.Zeitgeber
 import de.foody.feature.heute.bestand
 import de.foody.feature.heute.keinErkenner
+import de.foody.feature.heute.testBls
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testErkennung
 import de.foody.feature.heute.testGedaechtnis
@@ -92,7 +94,7 @@ class EintragenBlattTest {
             ),
         )
     }
-    private val eintragen by lazy { halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), tagebuch, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis())) }
+    private val eintragen by lazy { halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), tagebuch, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis(), testBls(), ZutatenRepository(db) { 1L })) }
 
     private val heuteInhalt = @androidx.compose.runtime.Composable {
         FoodyTheme { HeuteRoute({ _, _ -> }, {}, {}, {}, {}, vm = vm, eintragenVm = eintragen) }
