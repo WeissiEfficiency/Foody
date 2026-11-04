@@ -16,9 +16,9 @@ Formatierung und CI, kein Rebuild nötig. Die signierte `foody.apk` 3.1.0 liegt 
 - ✅ D1: alte Tablet-Anmeldung (27.10.) ist seit dem 31.10. widerrufen (`geraete`, 01.11.). Aktiv sind noch 4 Einträge
   vom Handy und 2 vom Tablet (Neuanmeldungen); in einer Woche mit `abmelden-ungenutzt 5` die nicht mehr genutzten widerrufen
 - 👤 V4: Fotos in der Server-Sicherung nachsehen, sobald Rezeptfotos synchronisiert sind
-- 👤 F8–F9 aus der Repo-Durchsicht (Stufe 7): Worktrees, alte APKs
 
-Als Nächstes: die KI-Hilfe (`ToDoS/ki-plan.md`).
+Als Nächstes: Test und Abnahme der Fotoerkennung (`ToDoS/foto-erkennung-plan.md`, Phase 5). Die KI-Hilfe über den
+Server ist gestrichen (ADR 0019).
 
 Zusätzlich erledigt: **Z1** Release stürzte bei „Frei“ im Tagebuch ab – R8 entfernte die Konstruktoren der
 ML-Kit-Registrare (`firebase-components` 16.1.0 behält nur die Klasse); Keep-Regel in `proguard-rules.pro` (#139).
@@ -194,8 +194,8 @@ Geschichte sind). „Vorrat“ und „Haushalt“ stehen nur noch bei der bewuss
 | ✅ F5 | Lokaler Build-Rest `server/build/` im E:-Checkout (alter Ort des Moduls `:server`, heute `server/start`) gelöscht; dazu der verwaiste Temp-Worktree auf `claude/plan-stufe5` samt Branch | 🤖 |
 | ✅ F6 | GitHub: zehn Remote-Branches gemergter PRs (#156–#173) löschen; lokal fünf gemergte Branches (`e3-app`, `r10-portionen-nachtrag`, `server-n4-n7-e3`, `v1-rueckweg-app`, `v1-rueckweg-server`) **Erledigt 01.11.:** die Remote-Branches hatte GitHub beim Mergen schon gelöscht, die lokalen sind weg | 👤 |
 | ✅ F7 | Tag `v1-server` auf GitHub und Forgejo löschen: Er ist ein Vorfahr von `v1-final`, den die Doku nennt **Erledigt 01.11.** (GitHub, Forgejo, lokal) | 👤 |
-| F8 | Zwei Worktrees abgeschlossener Sitzungen („Design-Visualisierung“, #170; „Alte Dateien aufräumen“, ohne Commit): Sitzungen archivieren, die App räumt die Worktrees mit weg | 👤 |
-| F9 | Außerhalb des Repos, im OpenCloud-Ordner: `androidApp-debug.apk` (21.10., 40 MB, Stand v2) und `foody-vorschau.apk` (31.10.) löschen, falls nicht mehr gebraucht | 👤 |
+| ✅ F8 | Zwei Worktrees abgeschlossener Sitzungen („Design-Visualisierung“, #170; „Alte Dateien aufräumen“, ohne Commit): Sitzungen archivieren, die App räumt die Worktrees mit weg **Geschlossen 04.11.:** alle fünf Worktrees unter `.claude/worktrees/` geprüft, ihr Inhalt ist in `main` (#170, #177, #192/#193, #201); sie gehen beim Archivieren der Sitzungen mit weg | 👤 |
+| ✅ F9 | Außerhalb des Repos, im OpenCloud-Ordner: `androidApp-debug.apk` (21.10., 40 MB, Stand v2) und `foody-vorschau.apk` (31.10.) löschen, falls nicht mehr gebraucht **Erledigt 04.11.:** beide gelöscht, nur `foody.apk` 3.4.1 bleibt | 👤 |
 
 ## Empfohlene Reihenfolge
 
@@ -206,7 +206,7 @@ Geschichte sind). „Vorrat“ und „Haushalt“ stehen nur noch bei der bewuss
 3. ✅ **Server, ein Rebuild für alles:** D1–D5 zusammen (mit N1). Server läuft seit 2026-10-31 auf #154 (Migration 3, Sicherung `vor-migration-3-2026-10-31-1959.db`).
 4. ✅ **Vorgezogen auf 31.10./01.11.:** Stufe 3 C1–C8 (#156, #158, #166), Stufe 5 bis auf E6 (beobachten). Nach dem
    Design-Umbau (#170) folgten E5 und Q8 (#171) und E7 Teil 2 (Format-Lauf).
-5. Danach ist die Bahn frei für die KI-Hilfe (`ToDoS/ki-plan.md`).
+5. Danach: Fotoerkennung (ADR 0017) und BLS (ADR 0018) in 3.4.1; die KI-Hilfe über den Server ist gestrichen (ADR 0019).
 
 **Geschätzter Gewinn (geschätzt, nicht gemessen):** ~45 Doku-Dateien aus dem Suchpfad neuer Sessions, ~300 Zeilen
 Server- und ~60 Zeilen App-Code weniger, 3 Katalog-Einträge und 8 Schemadateien weniger, 16 Branches und 4

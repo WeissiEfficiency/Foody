@@ -360,8 +360,6 @@ Die `.env` (wird nie eingecheckt):
 | `FOODY_ADMIN_USER` | `anna` | **nur beim ersten Start:** legt das erste Konto an (3–32 Zeichen, `A-Z a-z 0-9 . _ -`) |
 | `FOODY_ADMIN_PASSWORD` | (lang, zufällig) | **nur beim ersten Start:** 10–200 Zeichen |
 | `FOODY_MEM_LIMIT` | `512m` | Speichergrenze des Containers; die JVM nimmt 75 % davon |
-| `FOODY_KI_KEY` | leer | Schlüssel für die KI-Hilfe, leer = aus (Abschnitt 8) |
-| `FOODY_KI_PRO_STUNDE` | `30` | KI-Anfragen je Konto und Stunde |
 
 Ein gutes Passwort erzeugen: `openssl rand -base64 24`.
 
@@ -477,35 +475,11 @@ Empfohlene Reihenfolge:
 
 ---
 
-## 8. KI-Hilfe über den Server (in Vorbereitung)
+## 8. KI-Hilfe über den Server (gestrichen)
 
-> **Stand:** Das Gerüst ist da, die Funktionen noch nicht. Was gebaut wird, steht in
-> [`ToDoS/ki-plan.md`](../ToDoS/ki-plan.md). Der Abschnitt beschreibt, was man heute schon einrichten kann und wo
-> später was hingehört.
-
-**Grundsätze (ADR 0011):** Die KI läuft **nur über den eigenen Server** – die App spricht nie selbst mit einem
-KI-Dienst, und der Schlüssel liegt **nie auf Handy oder Tablet**. Sie arbeitet nur auf Knopfdruck, jedes Ergebnis ist
-eine bearbeitbare Vorschau, und ohne Server oder Netz sind die Knöpfe ausgeblendet.
-
-**Was man braucht:** einen API-Schlüssel des Sprachmodell-Dienstes, den das KI-Projekt festlegt (Modellwahl und Kosten
-werden dort noch per ADR entschieden). Auf dem Server selbst ist nichts zu installieren; das Modell läuft beim Dienst.
-
-**Einrichten** in `server/.env`:
-
-```sh
-FOODY_KI_KEY=dein-api-schluessel      # leer = KI aus
-FOODY_KI_PRO_STUNDE=30                # Obergrenze je Konto und Stunde (Kostenbremse)
-```
-
-```sh
-docker compose up -d                  # übernimmt die geänderte .env
-docker compose exec foody-server sh -c 'test -n "$FOODY_KI_KEY" && echo "KI-Schlüssel gesetzt" || echo "KI aus"'
-```
-
-Der Server meldet den Geräten unter `GET /api/v3/ki/status`, ob ein Schlüssel eingerichtet ist
-(`{"eingerichtet": true}`); den Schlüssel selbst gibt er nie aus und schreibt ihn nicht ins Log. Sobald die
-KI-Funktionen fertig sind, braucht es nur ein Server-Update und eine neue APK (Abschnitt 11) – an der `.env` ändert
-sich nichts.
+Gestrichen am 2026-11-04 (ADR 0019): Die Fotoerkennung auf dem Handy (Abschnitt 9) ersetzt sie. Auf dem Server ist
+dafür nichts mehr einzurichten; `FOODY_KI_KEY` und `FOODY_KI_PRO_STUNDE` in einer alten `server/.env` werden ignoriert
+und können weg.
 
 ---
 

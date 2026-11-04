@@ -7,8 +7,8 @@ Offline-first Android-App für Rezepte, Nährwerte, Wochenplan und Einkaufsliste
 
 - **V3** (ADR 0011): fertig, Umstieg am 2026-10-28. Plan und Abnahme sind archiviert (`ToDoS/archiv/v3-plan.md`,
   `v3-abnahme.md`); was offen ist, steht in `ToDoS/aufraeumplan.md`.
-  Die KI-Hilfe ist ein eigenes Projekt danach (`ToDoS/ki-plan.md`); die Fotoerkennung auf dem Gerät hat einen eigenen
-  Plan (`ToDoS/foto-erkennung-plan.md`).
+  Die Fotoerkennung auf dem Gerät hat einen eigenen Plan (`ToDoS/foto-erkennung-plan.md`). Die KI-Hilfe über den
+  Server ist gestrichen (ADR 0019, Plan archiviert); KI läuft nur auf dem Handy.
 - App-Code in `:app` (Hülle), `:core:*` und `:feature:*` (unter `android/`). Die v1 ist aus `main` entfernt; der
   echte Server läuft seit dem Umstieg von `main` (letzter v1-Stand: Tag `v1-final`).
 - Abhängigkeiten nur nach unten: `:app` → `:feature:*` → `:core:*` → `:domain`/`:api-protocol`.
@@ -55,7 +55,7 @@ JDK 21+ (JBR von Android Studio), Android SDK 37. Befehle in PowerShell mit `.\g
 ## Doku mitpflegen
 
 - Jede Phase: Spec in `docs/superpowers/specs/`, Plan in `docs/superpowers/plans/`, danach „Ergebnis“ im Projektplan
-  (für die KI-Hilfe `ToDoS/ki-plan.md`) und ein Abschnitt in `docs/architecture.md`. Specs und Pläne der V3-Phasen liegen
+  (für die Fotoerkennung `ToDoS/foto-erkennung-plan.md`) und ein Abschnitt in `docs/architecture.md`. Specs und Pläne der V3-Phasen liegen
   in `docs/superpowers/archiv/v3/`.
 - Strukturentscheidungen (neues Modul, Umzug, gestrichene Funktion) als ADR in `docs/adr/`.
 - Fachliche Regeln mit zugehörigen Tests: `docs/domain-rules.md`. Sicherheit: `docs/security.md`.

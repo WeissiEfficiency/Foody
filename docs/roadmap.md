@@ -1,8 +1,8 @@
 # Roadmap
 
-Stand: 1. November 2026. Foody ist offline-first (ADR 0001); ein eigener Sync-Server ist der Normalfall, aber
-optional (ADR 0006, 0011). Die App nutzt das Internet nur für den Sync, die Produktsuche beim Scan (abschaltbar) und
-künftig die KI-Hilfe über den eigenen Server.
+Stand: 4. November 2026. Foody ist offline-first (ADR 0001); ein eigener Sync-Server ist der Normalfall, aber
+optional (ADR 0006, 0011). Die App nutzt das Internet nur für den Sync, die Produktsuche beim Scan (abschaltbar); KI läuft nur auf dem
+Handy (Fotoerkennung, ADR 0017).
 
 ## Erledigt: V3
 
@@ -15,10 +15,13 @@ Gestrichen gegenüber der v1: Vorrat, Web-App, Haushalte/Einladungen, Teilen als
 Altlasten der v1, Review-Befunde und Optimierungen, bis 01.11. abgearbeitet (Version 3.1.0):
 [`ToDoS/aufraeumplan.md`](../ToDoS/aufraeumplan.md).
 
-## Jetzt: KI-Hilfe
+## Erledigt: Fotoerkennung und BLS (Version 3.4.1)
 
-Eigenes Projekt (über den eigenen Server): Rezept erfassen und anpassen, Wochenplan
-vorschlagen, Nährwerte schätzen – Plan: [`ToDoS/ki-plan.md`](../ToDoS/ki-plan.md).
+Mahlzeit aus Foto auf dem Handy (ADR 0017, Plan [`ToDoS/foto-erkennung-plan.md`](../ToDoS/foto-erkennung-plan.md)) und
+Nachschlagen im Bundeslebensmittelschlüssel (ADR 0018). Offen: Test und Abnahme der Fotoerkennung im Alltag (Phase 5).
+
+Die KI-Hilfe über den eigenen Server ist gestrichen (ADR 0019); ihr Plan liegt archiviert in
+[`ToDoS/archiv/ki-plan.md`](../ToDoS/archiv/ki-plan.md).
 
 ## Später
 

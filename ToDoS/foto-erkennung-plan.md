@@ -1,7 +1,7 @@
 # Foody – Mahlzeit aus Foto (auf dem Gerät)
 
 Stand: 2026-11-02. Phase 0–4 erledigt (Modell: [ADR 0017](../docs/adr/0017-fotoerkennung-auf-dem-geraet.md)),
-offen sind der erste Test auf dem Handy, danach die Messung mit einer Frage, und die Abnahme (Phase 5). Eigenes Vorhaben neben der KI-Hilfe ([`ki-plan.md`](ki-plan.md)).
+offen sind der erste Test auf dem Handy, danach die Messung mit einer Frage, und die Abnahme (Phase 5). Ersetzt die KI-Hilfe über den Server (ADR 0019, [`archiv/ki-plan.md`](archiv/ki-plan.md)).
 Die Phasen werden der Reihe nach abgearbeitet; die nächste beginnt, wenn die vorige abgehakt ist.
 
 **Oberfläche nach dem neuen Design:** Phase 3 und 4 kamen nach dem Milchglas-Umbau (in `main` seit #180–#188); der
