@@ -1,5 +1,6 @@
 package de.foody.feature.heute.tagebuch
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -45,7 +46,10 @@ import de.foody.core.designsystem.komponenten.vorausgefuelltFarben
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.erkennung.ErkennungTexte
 import de.foody.core.scan.PackungScanKnopf
+import de.foody.domain.BlsTreffer
 import de.foody.domain.FotoPortion
+import de.foody.domain.Nutrient
+import de.foody.domain.NutritionResult
 import de.foody.feature.heute.anzeigename
 import de.foody.feature.heute.slotName
 import kotlinx.coroutines.launch
@@ -136,12 +140,36 @@ private fun RezeptWahl(z: EintragenZustand, vm: EintragenViewModel) {
 private fun ZutatWahl(z: EintragenZustand, vm: EintragenViewModel) {
     Suche(z.eingaben.suche, "Zutat suchen", vm::suche)
     z.zutaten.forEach { t -> Treffer(t.name, t.id == z.eingaben.zutatId) { vm.zutatWaehlen(t.id) } }
+    if (z.bls.isNotEmpty()) {
+        Text("Aus dem Bundeslebensmittelschlüssel", style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.nebentext)
+        z.bls.forEach { t -> BlsZeile(t) { vm.blsWaehlen(t) } }
+    }
     // Nach „im Katalog“ (Scan in „Frei“) geht der Fokus auf die Menge
     val mengeFokus = remember { FocusRequester() }
     LaunchedEffect(vm) { vm.mengeFokus.collect { mengeFokus.requestFocus() } }
     Zahlfeld("Menge", z.eingaben.menge, focusRequester = mengeFokus, onWert = vm::menge)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         EINTRAGEN_EINHEITEN.forEach { u -> FoodyChip(u.symbol, u == z.eingaben.einheit, { vm.einheit(u) }) }
+    }
+}
+
+/** BLS-Treffer: Name und kcal je 100 g; antippen übernimmt ihn in den Katalog und wählt ihn. */
+@Composable
+private fun BlsZeile(t: BlsTreffer, onWahl: () -> Unit) {
+    val kcal = t.lebensmittel.werte[Nutrient.ENERGY_KJ]?.let(NutritionResult::kcal)
+    Column(
+        Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onWahl).padding(vertical = FoodyAbstaende.s1),
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(t.vorschlagName, style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
+        val details = listOfNotNull(
+            t.lebensmittel.name.takeIf { it != t.vorschlagName },
+            kcal?.let { "$it kcal je 100 g" },
+            t.stueckG?.let { "Stück ≈ ${it.toPlainString()} g" },
+        )
+        if (details.isNotEmpty()) {
+            Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = FoodyTheme.farben.nebentext)
+        }
     }
 }
 

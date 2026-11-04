@@ -17,7 +17,8 @@ Alle Phasen und der Umstieg sind fertig; Offenes (Messungen, TalkBack, Review-Be
 ([`ToDoS/ki-plan.md`](ToDoS/ki-plan.md)). Abnahmeliste: [`v3-abnahme.md`](ToDoS/archiv/v3-abnahme.md) (archiviert).
 
 - **Heute:** Plan für heute und morgen mit kcal je Portion, Rezeptvorschläge, offene Einkaufsartikel; **Tagebuch** mit
-  beim Eintragen festgehaltenen Nährwerten (ADR 0007) und Tagesziel.
+  beim Eintragen festgehaltenen Nährwerten (ADR 0007) und Tagesziel; unter „Zutat“ auch **Nachschlagen im
+  Bundeslebensmittelschlüssel** (offline, mit bairischen Namen wie Breze, Semmel, Leberkas; ADR 0018).
 - **Rezepte:** Liste mit Suche und Filtern, Favoriten und „Oft gekocht“, Detail mit Portionen skalieren, Editor,
   **Import aus Markdown** (einzelne Dateien oder ganzer Ordner, bereits importierte Quellen werden übersprungen);
   auf Tablets zweispaltig.
@@ -46,7 +47,7 @@ Die Web-Oberfläche ist mit V3 entfallen (ADR 0011).
 |---|---|---|
 | `android/app/` | `:app` | **App-Hülle**: Hilt, Navigation mit vier Tabs, Deep Links; bindet alle `:core:*` und `:feature:*` ein |
 | `android/feature/<bereich>/` | `:feature:heute`, `:rezepte`, `:kochen`, `:woche`, `:einkauf`, `:einstellungen`, `:zutaten` | ein Modul je Bereich (Bildschirme, ViewModels); Features kennen sich nicht |
-| `android/core/data/` | `:core:data` | Room (`foody.db` v10), Repositories, Sync-Speicher, Fotos, Sicherung |
+| `android/core/data/` | `:core:data` | Room (`foody.db` v10), Repositories, Sync-Speicher, Fotos, Sicherung, BLS-Auszug zum Nachschlagen |
 | `android/core/sync/` | `:core:sync` | Sync-Client: Server-Zugang, Sync-Lauf, Verbinden/Trennen, Token |
 | `android/core/scan/` | `:core:scan` | Packung scannen für Tagebuch und Zutatenkatalog (ADR 0013) |
 | `android/core/erkennung/` | `:core:erkennung` | Mahlzeit aus Foto: Qwen3-VL über llama.cpp auf dem Gerät, Modelldateien, Ablauf (ADR 0017) |
@@ -59,6 +60,7 @@ Die Web-Oberfläche ist mit V3 entfallen (ADR 0011).
 | `shared/api-protocol/` | `:api-protocol` | Protokoll 3 des Servers (`/api/v3`): DTOs, Validierung, Version |
 | `server/sync/` | `:server-sync` | Optionaler Sync-Server (Ktor + SQLite): API, Konten, Datenbank, Sync, Fotos, Admin-CLI |
 | `server/start/` | `:server` | Startpunkt (`main`), startet den Sync-Server; Docker-Image |
+| `werkzeuge/` | – | `bls_auszug.py`: erzeugt den BLS-Auszug der App aus der amtlichen Excel-Datei (ADR 0018) |
 
 Abhängigkeiten laufen nur nach unten: `:app` → `:feature:*` → `:core:*` → `:domain`, `:api-protocol`.
 

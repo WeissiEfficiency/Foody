@@ -4,12 +4,15 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.foody.core.data.bls.BlsNachschlag
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.heute.GeplanteMahlzeit
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.heute.RezeptKurz
 import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.data.zutaten.Packungswerte
+import de.foody.core.data.zutaten.ZutatErgebnis
+import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.data.zutaten.nameBereinigt
 import de.foody.core.data.zutaten.zahlAus
 import de.foody.core.data.zutaten.zahlText
@@ -22,14 +25,17 @@ import de.foody.core.erkennung.MahlzeitErkenner
 import de.foody.core.scan.PackungScan
 import de.foody.core.scan.ScanAusgang
 import de.foody.core.scan.ScanLauf
+import de.foody.domain.BlsTreffer
 import de.foody.domain.FotoPortion
 import de.foody.domain.FotoVorschlag
+import de.foody.domain.IngredientCatalog
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
 import de.foody.feature.heute.mahlzeitNachUhrzeit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -39,10 +45,12 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -126,6 +134,8 @@ data class EintragenZustand(
     val plan: List<GeplanteMahlzeit>,
     /** Name der Katalog-Zutat zum Packungsnamen ([zutatMitNamen]); `null`: Das Häkchen legt eine neue an. */
     val vorhandeneZutat: String? = null,
+    /** Treffer im BLS zur Zutatensuche, ohne die, die schon so im Katalog stehen. */
+    val bls: List<BlsTreffer> = emptyList(),
 ) {
     val mahlzeit: Mahlzeit get() = eingaben.mahlzeit
 }
@@ -150,6 +160,8 @@ class EintragenViewModel @Inject constructor(
     erkennung: ErkennungEinstellung,
     /** Eigene Korrekturen nach einem Foto (Phase 6): nachschlagen beim Vorschlag, merken beim Speichern. */
     private val gedaechtnis: FotoGedaechtnis,
+    bls: BlsNachschlag,
+    private val zutatenRepo: ZutatenRepository,
 ) : ViewModel() {
     private val eingaben = gespeichert.getMutableStateFlow(EINGABEN, Eingaben())
 
@@ -181,15 +193,22 @@ class EintragenViewModel @Inject constructor(
 
     private val zutatenKatalog = katalog.map { z -> z.map { ZutatKurz(it.id, it.canonicalName) }.sortedBy { it.name.lowercase() } }
 
+    /** BLS-Treffer, nur im Weg „Zutat“; die Suche läuft im Speicher und bricht bei neuer Eingabe ab. */
+    private val blsTreffer = eingaben.map { if (it.weg == EintragenWeg.ZUTAT) it.suche.trim() else "" }.distinctUntilChanged()
+        .mapLatest { s -> bls.suchen(s) }
+
     val zustand: StateFlow<EintragenZustand> =
-        combine(eingaben, heute.rezeptVorschlaege(rezepte), zutatenKatalog, offenerPlan) { e, rezepte, zutaten, plan ->
+        combine(eingaben, heute.rezeptVorschlaege(rezepte), zutatenKatalog, offenerPlan, blsTreffer) { e, rezepte, zutaten, plan, bls ->
             val s = e.suche.trim()
+            val gefunden = zutaten.filter { passt(it.name, s) }.take(MAX_TREFFER)
+            val namen = zutaten.map { it.name.lowercase() }.toSet()
             EintragenZustand(
                 eingaben = e,
                 rezepte = rezepte.filter { it.titel.contains(s, ignoreCase = true) }.take(MAX_TREFFER),
-                zutaten = zutaten.filter { it.name.contains(s, ignoreCase = true) }.take(MAX_TREFFER),
+                zutaten = gefunden,
                 plan = plan,
                 vorhandeneZutat = e.packung?.let { vorhandene(e.pName) },
+                bls = bls.filterNot { it.vorschlagName.lowercase() in namen },
             )
         }.stateIn(viewModelScope, SolangeAppOffen, EintragenZustand(Eingaben(), emptyList(), emptyList(), emptyList()))
 
@@ -232,6 +251,23 @@ class EintragenViewModel @Inject constructor(
     }
 
     fun zutatWaehlen(id: String) = eingaben.update { it.copy(zutatId = id) }
+
+    /**
+     * BLS-Treffer gewählt: in den Katalog übernehmen (heißt schon eine Zutat so, diese nehmen), auswählen, mit
+     * Stückgewicht die Einheit „Stück“, und den Fokus auf die Menge. Läuft im viewModelScope (übersteht Drehen).
+     */
+    fun blsWaehlen(t: BlsTreffer): Job = viewModelScope.launch {
+        val id = when (val r = zutatenRepo.ausBls(t)) {
+            is ZutatErgebnis.Gespeichert -> r.id
+            is ZutatErgebnis.NameVergeben -> r.id
+            else -> return@launch
+        }
+        eingaben.update {
+            it.copy(zutatId = id, suche = t.vorschlagName, einheit = if (t.stueckG != null) MeasureUnit.PIECE else MeasureUnit.GRAM)
+        }
+        fokus.trySend(Unit)
+    }
+
     fun menge(text: String) = eingaben.update { it.copy(menge = text) }
     fun einheit(u: MeasureUnit) = eingaben.update { it.copy(einheit = u) }
     fun planWaehlen(id: String) = eingaben.update { it.copy(planEintragId = id) }
@@ -300,6 +336,10 @@ class EintragenViewModel @Inject constructor(
     fun alsZutat(an: Boolean) = eingaben.update { it.copy(alsZutat = an, alsZutatVomNutzer = true) }
 
     private fun vorhandene(name: String): String? = zutatMitNamen(katalog.value, name)?.canonicalName
+
+    /** Teilstring ohne Groß/klein oder der Katalogname zur Eingabe („Semmel“ findet „Brötchen“). */
+    private fun passt(name: String, suche: String): Boolean =
+        name.contains(suche, ignoreCase = true) || (suche.isNotEmpty() && name.equals(IngredientCatalog.canonicalName(suche), ignoreCase = true))
 
     /**
      * Speichert nach dem gewählten Weg; `null`, wenn die Eingaben ungültig sind oder Rezept/Zutat/Plan fehlen. Das

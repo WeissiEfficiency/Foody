@@ -256,7 +256,8 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   wechseln um Mitternacht; `naechsteMahlzeit` mit Zeitfenstern Frühstück 10:00, Mittagessen 14:30, Snack 17:00, sonst
   23:59; Inspiration per `DailyPicks` nur ohne Plan für heute; Tagebuch des Tages mit Vorschlägen „Gegessen?“; offener
   Einkauf; `syncAnzeige` für den Kopf; leere Datenbank → „Server verbinden“). Tagebuch in `tagebuch/`: Eintragen-Blatt
-  (Rezept, Zutat, Aus dem Plan, Frei; Mahlzeit aus der Zeile oder nach Uhrzeit; Suche Teilstring, höchstens 30 Treffer;
+  (Rezept, Zutat, Aus dem Plan, Frei; Mahlzeit aus der Zeile oder nach Uhrzeit; Suche Teilstring oder Katalogname, höchstens 30 Treffer;
+  unter „Zutat“ zusätzlich Treffer aus dem BLS, siehe „BLS nachschlagen“;
   `speichernMoeglich` nur bei gültigen Eingaben), Ändern-Dialog, „Alle Einträge“ (`TagebuchTagRoute`, Blättern,
   Datumsauswahl, Löschen mit „Rückgängig“). Fotos per Coil (`file:`-Links), sonst Platzhalter. Inhalte höchstens
   720 dp breit, mittig.
@@ -270,6 +271,24 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   `android/feature/heute/src/test/screenshots/`, Vergleich in der CI (`:feature:heute:verifyRoborazziDebug`).
   Testumgebung: Robolectric dekodiert unter Windows keine Bilder (Foto-Test mit `coil-test`), und ein Textfeld in einem
   Dialog läuft mit Breiten-Qualifier endlos (der Ändern-Test nutzt nur die Höhe).
+
+## BLS nachschlagen (`:core:data`, `:domain`)
+
+Spec `docs/superpowers/specs/2026-11-03-bls-nachschlagen-design.md`, ADR 0018.
+
+- **Daten:** `android/core/data/src/main/assets/bls/bls_4_0.tsv`, ein Auszug des Bundeslebensmittelschlüssels 4.0
+  (Max Rubner-Institut, CC BY 4.0): Code, Name und sieben Werte je 100 g, fehlend = unbekannt. Erzeugt mit
+  `python werkzeuge/bls_auszug.py <BLS_4_0_Daten_2025_DE.xlsx> android/core/data/src/main/assets/bls/bls_4_0.tsv`
+  (nur Standardbibliothek). Nicht in Room, nicht im Sync, nicht in der Sicherung.
+- **`BlsNachschlag`** (`:core:data`, Singleton): lädt den Auszug beim ersten `suchen` und behält ihn im Speicher;
+  `alsPackung()` macht aus einem Treffer `Packungswerte` mit der Quelle „BLS 4.0 (MRI): <Name>“.
+  `ZutatenRepository.ausBls` legt damit eine Katalog-Zutat an (mit Stückgewicht) oder liefert die gleichnamige.
+- **`BlsSuche`** (`:domain`): Teilwörter ohne Groß/klein, regionale Namen mit bevorzugtem Eintrag, Anzeigename und
+  Stückgewicht (Breze, Semmel, Leberkäse, Fleischpflanzerl, Weißwurst, Obazda, Weißbier …), Zusammengesetztes aus
+  zwei bekannten Namen. Ergänzen: neue Zeile in `regionalnamen`, Test in `BlsSucheTest`.
+- **Tagebuch:** `EintragenViewModel.zustand.bls` (nur im Weg „Zutat“, ohne Namen, die schon im Katalog stehen);
+  `blsWaehlen` übernimmt, wählt, stellt mit Stückgewicht auf „Stück“ und gibt der Menge den Fokus.
+- Quellenangabe: Einstellungen → „Zutaten“.
 
 ## Rezepte (`:feature:rezepte`)
 

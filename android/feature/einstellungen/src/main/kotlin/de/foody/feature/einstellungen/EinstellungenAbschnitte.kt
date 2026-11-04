@@ -135,6 +135,8 @@ internal fun ZutatenAbschnitt(anzahl: Int?, onlineSuche: Boolean, onZutaten: () 
         }
         Switch(onlineSuche, onCheckedChange = null)
     }
+    // CC BY 4.0 verlangt die Nennung des Herausgebers (ADR 0018)
+    Klein("Nährwerte zum Nachschlagen: Max Rubner-Institut (2025), Bundeslebensmittelschlüssel (BLS) 4.0, Lizenz CC BY 4.0")
 }
 
 /**

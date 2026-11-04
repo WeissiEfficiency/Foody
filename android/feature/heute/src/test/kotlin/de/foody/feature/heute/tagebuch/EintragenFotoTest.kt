@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
+import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.erkennung.ErkennungStatus
 import de.foody.core.erkennung.FotoGedaechtnis
 import de.foody.core.erkennung.MahlzeitErkenner
@@ -14,6 +15,7 @@ import de.foody.domain.FotoPortion
 import de.foody.domain.FotoVorschlag
 import de.foody.domain.Mahlzeit
 import de.foody.domain.TagebuchArt
+import de.foody.feature.heute.testBls
 import de.foody.feature.heute.testDatenbank
 import de.foody.feature.heute.testErkennung
 import de.foody.feature.heute.testGedaechtnis
@@ -80,7 +82,7 @@ class EintragenFotoTest {
         gedaechtnis: FotoGedaechtnis = testGedaechtnis(),
     ) =
         halter.behalten(
-            EintragenViewModel(h, HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), erkenner, testErkennung(modell), gedaechtnis),
+            EintragenViewModel(h, HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), erkenner, testErkennung(modell), gedaechtnis, testBls(), ZutatenRepository(db) { 1L }),
         ).also { vm ->
             zuseher.launch { vm.zustand.collect {} }
             zuseher.launch { vm.speichernMoeglich.collect {} }
