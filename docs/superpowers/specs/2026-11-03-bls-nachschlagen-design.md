@@ -24,7 +24,7 @@ Antippen legt die Zutat im Katalog an und wählt sie; mit bekanntem Stückgewich
 
 ## Nicht enthalten
 - Zusammengesetztes mit einem Tipp eintragen (Semmel + Leberkäse als ein Eintrag) – dafür ein kleines Rezept oder
-  später die KI-Hilfe („Per Text eintragen“, `ToDoS/ki-plan.md`).
+  später eine Texteingabe für die Fotoerkennung auf dem Handy („Per Text eintragen“).
 - BLS-Suche im Zutateneditor und im Rezept-Editor.
 - Getränke je 100 ml: Der BLS gibt alles je 100 g an.
 

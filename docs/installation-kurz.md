@@ -67,8 +67,7 @@ In Foody: **Einstellungen → Konto → Server verbinden**, Adresse `https://DEI
 
 ## KI und Fotoerkennung
 
-- **KI-Hilfe (noch nicht fertig):** später nur einen Schlüssel in `server/.env` eintragen (`FOODY_KI_KEY=…`) und
-  `docker compose up -d`. Auf Handy und Tablet ist nichts einzurichten.
+- **KI-Hilfe über den Server:** gestrichen (ADR 0019); auf dem Server ist nichts einzurichten.
 - **Fotoerkennung:** nur auf dem Handy. Die beiden Modelldateien kommen nicht in die APK, sondern werden in der App
   unter *Einstellungen → Fotoerkennung → Modell installieren* importiert (beide zusammen wählen). Danach gibt es
   *Eintragen → Frei → Foto erkennen*. Auf dem Tablet nichts installieren. Einzelheiten: Abschnitt 9 der

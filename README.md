@@ -13,8 +13,8 @@ konsolidierte Einkaufslisten.
 ## Funktionen (V3)
 
 Alle Phasen und der Umstieg sind fertig; Offenes (Messungen, TalkBack, Review-Befunde) sammelt
-[`ToDoS/aufraeumplan.md`](ToDoS/aufraeumplan.md). Danach kommt die KI-Hilfe als eigenes Projekt
-([`ToDoS/ki-plan.md`](ToDoS/ki-plan.md)). Abnahmeliste: [`v3-abnahme.md`](ToDoS/archiv/v3-abnahme.md) (archiviert).
+[`ToDoS/aufraeumplan.md`](ToDoS/aufraeumplan.md). KI läuft nur auf dem Handy (Fotoerkennung, ADR 0017); die KI-Hilfe
+über den Server ist gestrichen (ADR 0019). Abnahmeliste: [`v3-abnahme.md`](ToDoS/archiv/v3-abnahme.md) (archiviert).
 
 - **Heute:** Plan für heute und morgen mit kcal je Portion, Rezeptvorschläge, offene Einkaufsartikel; **Tagebuch** mit
   beim Eintragen festgehaltenen Nährwerten (ADR 0007) und Tagesziel; unter „Zutat“ auch **Nachschlagen im
@@ -108,7 +108,6 @@ Kein Konto bei Dritten, keine Werbung, keine Analyse. Alle Daten liegen lokal in
 Cloud-Backup. Internet nutzt die App nur für
 - den **optionalen Sync** mit dem eigenen Server (nur HTTPS, Cleartext per Network Security Config verboten),
 - die **Online-Produktsuche** beim Scannen (nur die Produktnummer an Open Food Facts, abschaltbar),
-- künftig die **KI-Hilfe** (eigenes Projekt nach dem Umstieg), nur über den eigenen Server und nur auf Knopfdruck (ADR 0011).
 
 Berechtigungen nur für Kochtimer im Hintergrund (Benachrichtigungen, ablehnbar; Vordergrunddienst; Wakelock bis zum
 Timer-Ende). Details: [`docs/security.md`](docs/security.md).

@@ -50,8 +50,8 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-17-v3-phase2-server-schlank-desi
   `DevicePrincipal` ist `(deviceId, kontoId)`. Konten legt nur `foody-admin konto-anlegen` an (bzw. beim ersten Start
   `FOODY_ADMIN_USER`); keine Registrierung, keine Admin-Rechte in der API, keine Haushalte, Einladungen oder Geräteliste.
 - **Routen:** `POST /auth/login` (`{token, kontoId}`), `POST /auth/abmelden` (widerruft das eigene Token),
-  `POST /auth/password`, `POST /sync/push`, `GET /sync/pull`, `POST /photos/missing`, `PUT`/`GET /photos/{sha256}`,
-  `GET /ki/status`. Push/Pull, Konfliktregeln, Validator, Anmelde-Drosselung, Body-Grenzen und Kompaktierung wie
+  `POST /auth/password`, `POST /sync/push`, `GET /sync/pull`, `POST /photos/missing`, `PUT`/`GET /photos/{sha256}`.
+  Push/Pull, Konfliktregeln, Validator, Anmelde-Drosselung, Body-Grenzen und Kompaktierung wie
   bisher; den Typ `pantry_item` kennt Protokoll 3 nicht mehr.
 - **Migrationen:** `Migrations.apply` beim Start, jede in einer Transaktion, Stand in `PRAGMA user_version`. Steht eine
   Migration aus, schreibt `Database` vorher `vor-migration-<ziel>-<JJJJ-MM-TT-HHMM>.db` per `VACUUM INTO` neben die
@@ -72,8 +72,7 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-17-v3-phase2-server-schlank-desi
   `integrity_check`, eine kaputte wird gelöscht), `pruefen <datei>`, `wiederhergestellt` (migriert als einziger Befehl selbst,
   damit er vor dem ersten Sync wirkt), `compact`.
 - **Fotos:** `<FOODY_PHOTO_DIR>/<Konto-ID>/<sha256>.jpg`.
-- **KI-Gerüst:** `FOODY_KI_KEY` (fehlt → `GET /ki/status` meldet `eingerichtet: false`) und `KiKontingent` (Anfragen je
-  Konto und Stunde, `FOODY_KI_PRO_STUNDE`, Standard 30). Noch kein Modellaufruf und keine Modellwahl (KI-Projekt nach dem Umstieg, `ToDoS/ki-plan.md`).
+- **KI-Gerüst:** entfernt (ADR 0019); `GET /ki/status` gibt es nicht mehr, KI läuft nur noch auf dem Handy (Fotoerkennung).
 - Die Web-Oberfläche (`:server-web`) ist entfallen (ADR 0011); ihre Specs vom 2026-10-11 beschreiben den alten Stand.
 
 ## Daten und Sync (`:core:data`, `:core:sync`)
