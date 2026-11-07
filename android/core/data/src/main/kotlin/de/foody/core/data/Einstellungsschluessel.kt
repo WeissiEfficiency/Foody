@@ -20,6 +20,9 @@ object Einstellungsschluessel {
     /** Gewählte Farbwelt als Name (z. B. `MANGO`); neu in der V3, fehlt = Standard des Designsystems. */
     const val FARBWELT = "farbwelt"
 
+    /** Geplante Mahlzeiten mit „Nein“ auf „Gegessen?“ (String-Set `Datum|Plan-ID`); neu in der V3. */
+    const val NICHT_GEGESSEN = "nichtGegessen"
+
     /** Ob beim Scannen online nach Produkten gesucht werden darf. */
     const val ONLINE_SUCHE = "onlineProduktsuche"
 

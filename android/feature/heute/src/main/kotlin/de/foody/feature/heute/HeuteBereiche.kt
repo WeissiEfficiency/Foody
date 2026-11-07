@@ -12,6 +12,10 @@ import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,6 +26,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.Abschnittskopf
 import de.foody.core.designsystem.komponenten.Augenbraue
+import de.foody.core.designsystem.komponenten.FoodyFrage
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.Kachel
 import de.foody.core.designsystem.komponenten.KartenAktion
@@ -110,6 +115,8 @@ internal fun TagebuchBereich(t: TagebuchHeute, aktionen: HeuteAktionen) {
 @Composable
 private fun MahlzeitZeilen(a: MahlzeitAbschnitt, aktionen: HeuteAktionen) {
     val name = a.mahlzeit.anzeigename()
+    // Plan-Eintrag, zu dem gerade „Gegessen?“ gefragt wird; übersteht Drehen
+    var frage by rememberSaveable { mutableStateOf<String?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1)) {
         if (a.eintraege.isNotEmpty() || a.vorschlaege.isEmpty()) Augenbraue(name)
         a.eintraege.forEach { e ->
@@ -130,8 +137,20 @@ private fun MahlzeitZeilen(a: MahlzeitAbschnitt, aktionen: HeuteAktionen) {
                     Augenbraue("$name · geplant", farbe = FoodyTheme.farben.aufPrimaerBehaelter)
                     Text(v.titel, style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.aufPrimaerBehaelter)
                 }
-                FoodyKnopf("Gegessen?", { aktionen.onGegessen(v.planEintragId) })
+                FoodyKnopf("Gegessen?", { frage = v.planEintragId })
             }
+        }
+        // Rückfrage zu „Gegessen?“: Ja trägt ein, Nein blendet den Vorschlag für heute aus, Danebentippen ändert nichts
+        a.vorschlaege.firstOrNull { it.planEintragId == frage }?.let { v ->
+            FoodyFrage(
+                titel = "Gegessen?",
+                text = "„${v.titel}“ als $name eintragen? Bei „Nein“ verschwindet der Vorschlag für heute.",
+                ja = "Ja",
+                onJa = { frage = null; aktionen.onGegessen(v.planEintragId) },
+                onNein = { frage = null; aktionen.onNichtGegessen(v) },
+                nein = "Nein",
+                onAbbrechen = { frage = null },
+            )
         }
         if (a.eintraege.isEmpty() && a.vorschlaege.isEmpty()) {
             LeererZustandZeile("Noch kein $name", "Eintragen", { aktionen.onEintragen(a.mahlzeit) })

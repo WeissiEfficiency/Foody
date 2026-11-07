@@ -41,4 +41,4 @@ fun beispielZustand(bild: String? = null) = HeuteZustand(
     datenbankLeer = false,
 )
 
-val KEINE_AKTIONEN = HeuteAktionen({ _, _ -> }, {}, {}, {}, {}, {}, {})
+val KEINE_AKTIONEN = HeuteAktionen({ _, _ -> }, {}, {}, {}, {}, {}, {}, {})

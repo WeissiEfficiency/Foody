@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.foody.core.data.heute.GeplanteMahlzeit
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.token.FoodyAbstaende
@@ -42,6 +43,7 @@ data class HeuteAktionen(
     val onEinstellungen: () -> Unit,
     val onEintragen: (Mahlzeit?) -> Unit,
     val onGegessen: (planEintragId: String) -> Unit,
+    val onNichtGegessen: (GeplanteMahlzeit) -> Unit,
 )
 
 @Composable
@@ -58,7 +60,7 @@ fun HeuteRoute(
     var blatt by rememberSaveable(stateSaver = BlattAuftrag.Saver) { mutableStateOf(null) }
     val aktionen = HeuteAktionen(
         onKochen, onRezept, onEinkauf, onAlleEintraege, onEinstellungen,
-        { blatt = BlattAuftrag(it, zustand?.datum ?: LocalDate.now()) }, vm::gegessen,
+        { blatt = BlattAuftrag(it, zustand?.datum ?: LocalDate.now()) }, vm::gegessen, vm::nichtGegessen,
     )
     HeuteScreen(zustand, aktionen)
     blatt?.let { b -> EintragenBlatt(b, onFertig = { blatt = null }, vm = eintragenVm ?: hiltViewModel()) }

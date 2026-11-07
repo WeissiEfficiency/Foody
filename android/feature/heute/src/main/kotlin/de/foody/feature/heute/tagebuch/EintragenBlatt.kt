@@ -125,6 +125,11 @@ private fun Treffer(text: String, gewaehlt: Boolean, onWahl: () -> Unit) {
 private fun RezeptWahl(z: EintragenZustand, vm: EintragenViewModel) {
     Suche(z.eingaben.suche, "Rezept suchen", vm::suche)
     z.rezepte.forEach { r -> Treffer(r.titel, r.id == z.eingaben.rezeptId) { vm.rezeptWaehlen(r.id) } }
+    // Gescannte Produkte zur Suche: Antippen wechselt zu „Zutat“ mit dem Produkt
+    if (z.produkte.isNotEmpty()) {
+        Text("Gescannte Produkte", style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.nebentext)
+        z.produkte.forEach { p -> Treffer(p.name, gewaehlt = false) { vm.produktWaehlen(p) } }
+    }
     Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = { vm.portionenSchritt(mehr = false) }) { Icon(Icons.Outlined.Remove, contentDescription = "Weniger Portionen") }
         OutlinedTextField(
