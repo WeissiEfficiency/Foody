@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import de.foody.core.data.NichtGegessenSpeicher
 import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.heute.HeuteRepository
@@ -91,6 +92,7 @@ class EintragenBlattTest {
                 HeuteRepository(db, EmptyCoroutineContext), tagebuch, SyncLageQuelle { flowOf(SyncLage(false, false, null)) },
                 TageszielSpeicher(RuntimeEnvironment.getApplication()),
                 Zeitgeber { MutableStateFlow(LocalDateTime.of(heute, LocalTime.of(8, 0))) },
+                NichtGegessenSpeicher(RuntimeEnvironment.getApplication()),
             ),
         )
     }

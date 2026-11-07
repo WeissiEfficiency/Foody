@@ -253,10 +253,14 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
 - **`:core:sync`**: `SyncLageQuelle` (`sync_state` als Flow + WorkManager-Status des Auftrags `foody-sync-v3` = „läuft“).
 - **`:feature:heute`**: „Heute“ (`HeuteViewModel` über einen minütlichen `Zeitgeber` – Datum und nächste Mahlzeit
   wechseln um Mitternacht; `naechsteMahlzeit` mit Zeitfenstern Frühstück 10:00, Mittagessen 14:30, Snack 17:00, sonst
-  23:59; Inspiration per `DailyPicks` nur ohne Plan für heute; Tagebuch des Tages mit Vorschlägen „Gegessen?“; offener
+  23:59; Inspiration per `DailyPicks` nur ohne Plan für heute; Tagebuch des Tages mit Vorschlägen „Gegessen?“ – eine
+  Rückfrage: „Ja“ trägt ein, „Nein“ blendet den Vorschlag für den Tag aus (`NichtGegessenSpeicher` in `:core:data`, Prefs
+  `nichtGegessen`, nur auf diesem Gerät; unter „Aus dem Plan“ bleibt er wählbar), Danebentippen ändert nichts; offener
   Einkauf; `syncAnzeige` für den Kopf; leere Datenbank → „Server verbinden“). Tagebuch in `tagebuch/`: Eintragen-Blatt
   (Rezept, Zutat, Aus dem Plan, Frei; Mahlzeit aus der Zeile oder nach Uhrzeit; Suche Teilstring oder Katalogname, höchstens 30 Treffer;
-  unter „Zutat“ zusätzlich Treffer aus dem BLS, siehe „BLS nachschlagen“;
+  unter „Zutat“ zusätzlich Treffer aus dem BLS, siehe „BLS nachschlagen“; unter „Rezept“ mit Suchtext zusätzlich bis zu fünf
+  gescannte Produkte (Zutaten mit Strichcode, `zustand.produkte`) – antippen wechselt zu „Zutat“ mit dem Produkt, Einheit
+  nach seiner Basis, Fokus auf die Menge;
   `speichernMoeglich` nur bei gültigen Eingaben), Ändern-Dialog, „Alle Einträge“ (`TagebuchTagRoute`, Blättern,
   Datumsauswahl, Löschen mit „Rückgängig“). Fotos per Coil (`file:`-Links), sonst Platzhalter. Inhalte höchstens
   720 dp breit, mittig.

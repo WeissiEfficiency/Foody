@@ -3,6 +3,7 @@ package de.foody.feature.heute
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.foody.core.data.NichtGegessenSpeicher
 import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.data.heute.GeplanteMahlzeit
@@ -60,15 +61,19 @@ class HeuteViewModel @Inject constructor(
     sync: SyncLageQuelle,
     ziel: TageszielSpeicher,
     zeit: Zeitgeber,
+    /** „Nein“ auf „Gegessen?“: Diese Vorschläge blendet „Heute“ für den Tag aus. */
+    private val nichtGegessenSpeicher: NichtGegessenSpeicher,
 ) : ViewModel() {
     private val jetzt = zeit.jetzt().shareIn(viewModelScope, SolangeAppOffen, replay = 1)
 
     /** Einmal gerechnet für Plan und Vorschläge. */
     private val rezepte = heute.rezepteKurz().shareIn(viewModelScope, SolangeAppOffen, replay = 1)
 
-    /** Plan und Tagebuch des Tages; wechselt um Mitternacht auf den neuen Tag. */
+    /** Plan und Tagebuch des Tages samt „nicht gegessen“; wechselt um Mitternacht auf den neuen Tag. */
     private val tag = jetzt.map { it.toLocalDate() }.distinctUntilChanged().flatMapLatest { datum ->
-        combine(heute.planHeuteUndMorgen(datum, rezepte), tagebuch.amTag(datum)) { plan, eintraege -> Tag(datum, plan, eintraege) }
+        combine(heute.planHeuteUndMorgen(datum, rezepte), tagebuch.amTag(datum), nichtGegessenSpeicher.amTag(datum)) { plan, eintraege, nein ->
+            Tag(datum, plan, eintraege, nein)
+        }
     }
 
     private val umfeld = combine(sync.lage(), ziel.tagesziel(), ::Pair)
@@ -78,13 +83,18 @@ class HeuteViewModel @Inject constructor(
             heuteZustand(j, t, rezepte, einkauf, lage, kcalZiel)
         }.stateIn(viewModelScope, SolangeAppOffen, null)
 
-    /** „Gegessen?“: trägt den Plan-Eintrag mit einer Portion ein (höchstens einmal). */
+    /** „Gegessen?“ – „Ja“: trägt den Plan-Eintrag mit einer Portion ein (höchstens einmal). */
     fun gegessen(planEintragId: String) {
         viewModelScope.launch { tagebuch.ausPlan(planEintragId) }
     }
+
+    /** „Gegessen?“ – „Nein“: Der Vorschlag verschwindet für den Tag; unter „Aus dem Plan“ bleibt er wählbar. */
+    fun nichtGegessen(v: GeplanteMahlzeit) = nichtGegessenSpeicher.merken(v.datum, v.planEintragId)
 }
 
-private data class Tag(val datum: LocalDate, val plan: List<GeplanteMahlzeit>, val eintraege: List<TagebuchEintragEntity>)
+private data class Tag(
+    val datum: LocalDate, val plan: List<GeplanteMahlzeit>, val eintraege: List<TagebuchEintragEntity>, val nichtGegessen: Set<String>,
+)
 
 private fun heuteZustand(
     jetzt: LocalDateTime, tag: Tag, rezepte: List<RezeptKurz>, einkauf: OffenerEinkauf?, lage: SyncLage, ziel: Int?,
@@ -95,16 +105,19 @@ private fun heuteZustand(
         datum = tag.datum,
         naechste = naechsteMahlzeit(tag.plan, jetzt),
         inspiration = inspiration,
-        tagebuch = tagebuchHeute(tag.eintraege, planHeute, ziel),
+        tagebuch = tagebuchHeute(tag.eintraege, planHeute, tag.nichtGegessen, ziel),
         einkauf = einkauf,
         sync = syncAnzeige(lage.aktiv, lage.laeuft, lage.letzterFehler),
         datenbankLeer = rezepte.isEmpty(),
     )
 }
 
-private fun tagebuchHeute(eintraege: List<TagebuchEintragEntity>, planHeute: List<GeplanteMahlzeit>, ziel: Int?): TagebuchHeute {
-    val uebernommen = eintraege.mapNotNull { it.planEintragId }.toSet()
-    val offen = Tagebuch.offeneVorschlaege(planHeute, { it.planEintragId }, uebernommen)
+private fun tagebuchHeute(
+    eintraege: List<TagebuchEintragEntity>, planHeute: List<GeplanteMahlzeit>, nichtGegessen: Set<String>, ziel: Int?,
+): TagebuchHeute {
+    // Eingetragen oder mit „Nein“ beantwortet: kein Vorschlag mehr
+    val erledigt = eintraege.mapNotNull { it.planEintragId }.toSet() + nichtGegessen
+    val offen = Tagebuch.offeneVorschlaege(planHeute, { it.planEintragId }, erledigt)
     val summe = Tagebuch.bilanz(eintraege.map { EintragWerte(it.eintragMahlzeit(), it.werte()) }).tag
     return TagebuchHeute(
         summe = summe,

@@ -5,8 +5,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 
 /**
- * Rückfrage vor einer Aktion: [text], optional mit [titel]; [ja] löst [onJa] aus, [nein] (oder Danebentippen)
- * [onNein].
+ * Rückfrage vor einer Aktion: [text], optional mit [titel]; [ja] löst [onJa] aus, [nein] [onNein]. Danebentippen oder
+ * „Zurück“ löst [onAbbrechen] aus, ohne Angabe wie [nein].
  */
 @Composable
 fun FoodyFrage(
@@ -16,9 +16,10 @@ fun FoodyFrage(
     onJa: () -> Unit,
     onNein: () -> Unit,
     nein: String = "Abbrechen",
+    onAbbrechen: () -> Unit = onNein,
 ) {
     AlertDialog(
-        onDismissRequest = onNein,
+        onDismissRequest = onAbbrechen,
         title = titel?.let { { Text(it) } },
         text = { Text(text) },
         confirmButton = { FoodyKnopf(ja, onJa, art = KnopfArt.TEXT) },

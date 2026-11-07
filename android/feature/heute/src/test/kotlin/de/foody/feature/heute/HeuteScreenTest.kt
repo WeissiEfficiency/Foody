@@ -1,12 +1,16 @@
 package de.foody.feature.heute
 
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import de.foody.core.data.NichtGegessenSpeicher
 import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.heute.HeuteRepository
@@ -64,6 +68,7 @@ class HeuteScreenTest {
             HeuteViewModel(
                 HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, SyncLageQuelle { lage },
                 TageszielSpeicher(RuntimeEnvironment.getApplication()), Zeitgeber { zeit },
+                NichtGegessenSpeicher(RuntimeEnvironment.getApplication()),
             ),
         )
         compose.setContent {
@@ -134,15 +139,45 @@ class HeuteScreenTest {
         assertEquals(1, einstellungen)
     }
 
-    @Test
-    fun vorschlagGegessenTraegtEin() {
-        runBlocking { db.bestand(); db.planen("p1", heute, "MITTAGESSEN") }
-        zeigen()
+    /** „Gegessen?“ fragt nach; der Knopf allein trägt noch nichts ein. */
+    private fun gegessenFragen() {
         compose.warteAufText("Gegessen?")
         compose.onNodeWithText("Gegessen?").performScrollTo().performClick()
+        compose.warteAufText("„Reispfanne“ als Mittagessen eintragen? Bei „Nein“ verschwindet der Vorschlag für heute.")
+        assertEquals(0, runBlocking { db.tagebuchDao().alle().size })
+    }
+
+    @Test
+    fun vorschlagGegessenJaTraegtEin() {
+        runBlocking { db.bestand(); db.planen("p1", heute, "MITTAGESSEN") }
+        zeigen()
+        gegessenFragen()
+        compose.onNodeWithText("Ja").performClick()
         compose.waitUntil(5_000) { runBlocking { db.tagebuchDao().alle().size == 1 } }
         compose.warteAufText("Noch kein Frühstück")
-        compose.onNodeWithText("Gegessen?").assertDoesNotExist()
+        compose.onAllNodesWithText("Gegessen?").assertCountEquals(0)
+    }
+
+    @Test
+    fun vorschlagGegessenNeinBlendetAus() {
+        runBlocking { db.bestand(); db.planen("p1", heute, "MITTAGESSEN") }
+        zeigen()
+        gegessenFragen()
+        compose.onNodeWithText("Nein").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Gegessen?").fetchSemanticsNodes().isEmpty() }
+        // Nichts eingetragen, die Mahlzeit steht wieder leer da
+        compose.warteAufText("Noch kein Mittagessen")
+        assertEquals(0, runBlocking { db.tagebuchDao().alle().size })
+    }
+
+    @Test
+    fun vorschlagGegessenDanebenAendertNichts() {
+        runBlocking { db.bestand(); db.planen("p1", heute, "MITTAGESSEN") }
+        zeigen()
+        gegessenFragen()
+        Espresso.pressBack()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Gegessen?").fetchSemanticsNodes().size == 1 }
+        assertEquals(0, runBlocking { db.tagebuchDao().alle().size })
     }
 
     @Test

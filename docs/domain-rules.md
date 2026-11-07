@@ -44,14 +44,17 @@
     als festen Schlüssel.
 24. Tagebuch: Ein Eintrag gilt pro Person (eine Portion = was eine Person isst). Nährwerte werden beim Eintragen
     festgehalten und ändern sich nicht, wenn Rezept oder Zutat später geändert oder gelöscht werden (ADR 0007).
-    Ein Plan-Eintrag lässt sich höchstens einmal als „gegessen“ übernehmen. Fehlen Energiewerte, zeigen Zeile, Mahlzeit
-    und Tag „≥“.
+    Ein Plan-Eintrag lässt sich höchstens einmal als „gegessen“ übernehmen; „Gegessen?“ fragt vorher nach, „Nein“
+    blendet den Vorschlag auf „Heute“ für diesen Tag aus, ohne etwas einzutragen (`HeuteScreenTest`). Fehlen
+    Energiewerte, zeigen Zeile, Mahlzeit und Tag „≥“.
 25. Planer „Ø kcal pro Tag“: zählt nur Tage mit Abendessen und mindestens einer weiteren Mahlzeit; „≥“, wenn einem
     gezählten Tag Nährwerte fehlen.
 26. Packung scannen: Gescannte Werte (Strichcode/Open Food Facts oder Foto) sind nur ein Vorschlag – vorausgefüllt und
     markiert, übernommen erst beim Speichern. Unplausibles wird verworfen (Energie über 4000 kJ, Gramm über 100,
     Zucker über Kohlenhydraten). Ein Strichcode, den eine Zutat schon hat, führt zu dieser Zutat (ohne Online-Abfrage).
-    Eine vorhandene Zutat wird im Tagebuch nur mit gesetztem Häkchen „Werte aktualisieren“ überschrieben.
+    Eine vorhandene Zutat wird im Tagebuch nur mit gesetztem Häkchen „Werte aktualisieren“ überschrieben. Mit Häkchen
+    gespeicherte Packungen findet die Suche beim Eintragen auch unter „Rezept“ als „Gescannte Produkte“
+    (`EintragenPackungTest`).
 27. Import: Nennt die Datei ihre Portionen („Portionen: 4 · …“ in der Kopfzeile), gilt diese Zahl; geschätzt wird nur
     ohne Angabe und bei Backwaren mit „Portionen: 1“ (ganzer Kuchen, ganzes Blech – gegessen wird ein Stück). Alle
     Anzeigen (Rezept, Liste, Planer, Tagebuch) zeigen dieselben kcal je Portion.

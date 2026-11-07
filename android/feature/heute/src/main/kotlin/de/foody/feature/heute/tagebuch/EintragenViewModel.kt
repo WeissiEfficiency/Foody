@@ -61,6 +61,9 @@ enum class EintragenWeg { REZEPT, ZUTAT, PLAN, FREI }
 
 data class ZutatKurz(val id: String, val name: String)
 
+/** Gescanntes Produkt (Zutat mit Strichcode) als Vorschlag in der Rezeptsuche; [einheit] nach seiner Nährwert-Basis. */
+data class ProduktKurz(val id: String, val name: String, val einheit: MeasureUnit)
+
 /** Eingaben des Blatts; Zahlen als Text, wie getippt. Serializable: Sie liegen im SavedStateHandle (Prozessende). */
 data class Eingaben(
     val datum: LocalDate = LocalDate.EPOCH,
@@ -136,11 +139,14 @@ data class EintragenZustand(
     val vorhandeneZutat: String? = null,
     /** Treffer im BLS zur Zutatensuche, ohne die, die schon so im Katalog stehen. */
     val bls: List<BlsTreffer> = emptyList(),
+    /** Gescannte Produkte zur Rezeptsuche (nur mit Suchtext), höchstens [MAX_PRODUKTE]; unter „Zutat“ stehen sie ohnehin. */
+    val produkte: List<ProduktKurz> = emptyList(),
 ) {
     val mahlzeit: Mahlzeit get() = eingaben.mahlzeit
 }
 
 const val MAX_TREFFER = 30
+const val MAX_PRODUKTE = 5
 
 /** Einheiten zur Auswahl beim Eintragen einer Zutat. */
 val EINTRAGEN_EINHEITEN = listOf(MeasureUnit.GRAM, MeasureUnit.MILLILITER, MeasureUnit.PIECE, MeasureUnit.TABLESPOON, MeasureUnit.TEASPOON)
@@ -191,17 +197,26 @@ class EintragenViewModel @Inject constructor(
     /** Der ganze Katalog, auch für die Häkchen-Vorgabe beim Packungsnamen. */
     private val katalog = db.zutatDao().alleFlow().stateIn(viewModelScope, SolangeAppOffen, emptyList())
 
-    private val zutatenKatalog = katalog.map { z -> z.map { ZutatKurz(it.id, it.canonicalName) }.sortedBy { it.name.lowercase() } }
+    /** Katalog für die Suche: alle Zutaten und die gescannten (mit Strichcode) als Produkte. */
+    private val katalogSicht = katalog.map { z ->
+        val sortiert = z.sortedBy { it.canonicalName.lowercase() }
+        KatalogSicht(
+            zutaten = sortiert.map { ZutatKurz(it.id, it.canonicalName) },
+            produkte = sortiert.filter { it.barcode != null }
+                .map { ProduktKurz(it.id, it.canonicalName, packungsEinheit(it.nutrientBasis ?: NutrientBasis.PER_100_G)) },
+        )
+    }
 
     /** BLS-Treffer, nur im Weg „Zutat“; die Suche läuft im Speicher und bricht bei neuer Eingabe ab. */
     private val blsTreffer = eingaben.map { if (it.weg == EintragenWeg.ZUTAT) it.suche.trim() else "" }.distinctUntilChanged()
         .mapLatest { s -> bls.suchen(s) }
 
     val zustand: StateFlow<EintragenZustand> =
-        combine(eingaben, heute.rezeptVorschlaege(rezepte), zutatenKatalog, offenerPlan, blsTreffer) { e, rezepte, zutaten, plan, bls ->
+        combine(eingaben, heute.rezeptVorschlaege(rezepte), katalogSicht, offenerPlan, blsTreffer) { e, rezepte, k, plan, bls ->
             val s = e.suche.trim()
-            val gefunden = zutaten.filter { passt(it.name, s) }.take(MAX_TREFFER)
-            val namen = zutaten.map { it.name.lowercase() }.toSet()
+            val gefunden = k.zutaten.filter { passt(it.name, s) }.take(MAX_TREFFER)
+            val namen = k.zutaten.map { it.name.lowercase() }.toSet()
+            val produkte = if (e.weg == EintragenWeg.REZEPT && s.isNotEmpty()) k.produkte.filter { passt(it.name, s) }.take(MAX_PRODUKTE) else emptyList()
             EintragenZustand(
                 eingaben = e,
                 rezepte = rezepte.filter { it.titel.contains(s, ignoreCase = true) }.take(MAX_TREFFER),
@@ -209,6 +224,7 @@ class EintragenViewModel @Inject constructor(
                 plan = plan,
                 vorhandeneZutat = e.packung?.let { vorhandene(e.pName) },
                 bls = bls.filterNot { it.vorschlagName.lowercase() in namen },
+                produkte = produkte,
             )
         }.stateIn(viewModelScope, SolangeAppOffen, EintragenZustand(Eingaben(), emptyList(), emptyList(), emptyList()))
 
@@ -322,6 +338,12 @@ class EintragenViewModel @Inject constructor(
         fokus.trySend(Unit)
     }
 
+    /** Gescanntes Produkt aus der Rezeptsuche: wie [imKatalog], dazu die Einheit nach seiner Basis (g oder ml). */
+    fun produktWaehlen(p: ProduktKurz) {
+        eingaben.update { it.copy(weg = EintragenWeg.ZUTAT, zutatId = p.id, suche = p.name, einheit = p.einheit) }
+        fokus.trySend(Unit)
+    }
+
     /** Neuer Name: Die Häkchen-Vorgabe folgt ihm, bis der Nutzer selbst gewählt hat. */
     fun pName(text: String) = eingaben.update {
         it.copy(pName = text, alsZutat = if (it.alsZutatVomNutzer) it.alsZutat else vorhandene(text) == null)
@@ -374,6 +396,8 @@ class EintragenViewModel @Inject constructor(
         return id
     }
 }
+
+private data class KatalogSicht(val zutaten: List<ZutatKurz>, val produkte: List<ProduktKurz>)
 
 private fun BigDecimal?.positiv() = this != null && signum() > 0
 
