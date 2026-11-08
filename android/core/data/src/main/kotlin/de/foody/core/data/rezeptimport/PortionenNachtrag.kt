@@ -1,8 +1,13 @@
 package de.foody.core.data.rezeptimport
 
 import androidx.room.withTransaction
+import de.foody.core.data.alsIngredient
+import de.foody.core.data.alsRecipe
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.domain.MarkdownRecipeImporter
+import de.foody.domain.Nutrient
+import de.foody.domain.NutritionCalculator
+import de.foody.domain.NutritionResult
 import de.foody.domain.RezeptImport
 
 /**
@@ -13,7 +18,9 @@ data class NachtragErgebnis(val aktualisiert: Int, val uebersprungen: Int, val o
 
 /**
  * Trägt bei Rezepten, die vor Regel 27 importiert wurden, die Portionenzahl der Markdown-Datei nach
- * ([RezeptImport.portionenNachtragen]): nur `defaultServings` und Notiz, die Mengen nie. Aufgerufen über
+ * ([RezeptImport.portionenNachtragen]), und bei Rezepten, die unverändert „1 Portion“ aus der Datei haben, die Portionen
+ * nach der heutigen Regel ([RezeptImport.einePortionNachtragen]: Stückzahl im Text, Backware, über 1.500 kcal). Nur
+ * `defaultServings` und Notiz, die Mengen nie. Gerechnet wird mit den Zeilen des Rezepts und dem Katalog. Aufgerufen über
  * „Portionen nachtragen“ im Import-Blatt der Rezepte (`RezeptImportDienst.portionenNachtragen`).
  *
  * - **Zuordnung:** `recipe.sourceUrl` = die vom [MarkdownRecipeImporter] gelesene Quelle, genau verglichen. Der Import
@@ -32,6 +39,7 @@ class PortionenNachtrag(
     /** [dateien]: Name und Inhalt der Markdown-Dateien; der Name dient nur der Anzeige beim Aufrufer. */
     suspend fun anwenden(dateien: List<Pair<String, String>>): NachtragErgebnis = db.withTransaction {
         val dao = db.rezeptDao()
+        val katalog = db.zutatDao().alle().associate { it.id to it.alsIngredient() }
         val jetzt = uhr()
         val behandelteQuellen = HashSet<String>()
         var aktualisiert = 0
@@ -47,7 +55,11 @@ class PortionenNachtrag(
             }
             if (!behandelteQuellen.add(quelle)) continue
             for (rezept in rezepte) {
-                val nachtrag = RezeptImport.portionenNachtragen(rezept.notes, rezept.defaultServings, datei)
+                val alsRezept = rezept.alsRecipe(db.rezeptZutatDao().nachRezept(rezept.id))
+                val kcal = NutritionCalculator.calculate(alsRezept.copy(defaultServings = 1), katalog)
+                    .totals[Nutrient.ENERGY_KJ]?.let(NutritionResult::kjToKcal)?.toDouble()
+                val nachtrag = RezeptImport.portionenNachtragen(rezept.notes, rezept.defaultServings, datei, kcal)
+                    ?: RezeptImport.einePortionNachtragen(rezept.notes, rezept.defaultServings, datei, alsRezept, katalog)
                 if (nachtrag == null) {
                     uebersprungen++
                 } else {

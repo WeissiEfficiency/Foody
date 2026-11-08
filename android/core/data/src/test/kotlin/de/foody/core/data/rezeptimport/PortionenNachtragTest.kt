@@ -51,7 +51,7 @@ class PortionenNachtragTest {
 
     private val quelle = "https://www.chefkoch.de/rezepte/1/spitzel.html"
 
-    private fun datei(portionen: Int?, url: String? = quelle, name: String = "Spitzel") = "spitzel.md" to buildString {
+    private fun datei(portionen: Int?, url: String? = quelle, name: String = "Spitzel", schritt: String = "Alles verrühren.") = "spitzel.md" to buildString {
         appendLine("# $name")
         if (url != null) appendLine("_Quelle: ${url}_")
         if (portionen != null) appendLine("Portionen: $portionen · Vorbereitung: 20 Min.")
@@ -59,7 +59,7 @@ class PortionenNachtragTest {
         appendLine("500 g")
         appendLine("Mehl")
         appendLine("## Zubereitung")
-        appendLine("Alles verrühren.")
+        appendLine(schritt)
     }
 
     /** Notiz eines vor Regel 27 importierten Rezepts: Portionen aus den Mengen geschätzt. */
@@ -103,6 +103,29 @@ class PortionenNachtragTest {
         assertEquals(2, r.version)
         // Mengen bleiben, wie sie sind
         assertEquals(zeilenVorher, db.rezeptZutatDao().nachRezept("r1"))
+    }
+
+    @Test
+    fun einePortionAusDerDateiBekommtDieStueckzahlAusDemText() = runTest {
+        // Vor der Stückzahl-Regel importiert: „Portionen: 1“ für 24 Laugenstangen, Notiz nur mit der Quelle
+        rezeptAnlegen("r1", 1, "Quelle: $quelle")
+        val zeilenVorher = db.rezeptZutatDao().nachRezept("r1")
+
+        val ergebnis = nachtrag().anwenden(listOf(datei(portionen = 1, name = "Laugenstangen", schritt = "Zu einer Rolle formen, 24 Stücke abstechen.")))
+
+        assertEquals(NachtragErgebnis(aktualisiert = 1, uebersprungen = 0, ohneRezept = 0), ergebnis)
+        val r = db.rezeptDao().nachId("r1")!!
+        assertEquals(24, r.defaultServings)
+        assertEquals("Quelle: $quelle\nPortionenzahl aus dem Rezepttext: ergibt 24 Stück, bitte prüfen.", r.notes)
+        assertEquals(zeilenVorher, db.rezeptZutatDao().nachRezept("r1"))
+    }
+
+    @Test
+    fun einePortionOhneAnhaltBleibt() = runTest {
+        // 500 g Mehl ohne Nährwerte, kein Gebäck, keine Stückzahl: Die eine Portion der Datei bleibt
+        rezeptAnlegen("r1", 1, "Quelle: $quelle")
+        assertEquals(NachtragErgebnis(aktualisiert = 0, uebersprungen = 1, ohneRezept = 0), nachtrag().anwenden(listOf(datei(portionen = 1))))
+        assertEquals(1, db.rezeptDao().nachId("r1")!!.defaultServings)
     }
 
     @Test

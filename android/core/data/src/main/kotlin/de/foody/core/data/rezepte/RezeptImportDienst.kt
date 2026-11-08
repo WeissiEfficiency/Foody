@@ -96,7 +96,7 @@ class RezeptImportDienst @Inject constructor(
         val entwurf = RezeptEntwurf(
             id = null, name = r.name, portionen = e.portionen, vorbereitung = null, kochzeit = null, tags = tag,
             zeilen = zeilen, schritte = r.steps,
-            notizen = RezeptImport.hinweis(r.sourceUrl, e.portionen, e.geschaetzt, e.ausDatei).ifBlank { null },
+            notizen = RezeptImport.hinweis(r.sourceUrl, e.portionen, e.geschaetzt, e.ausDatei, e.ausText).ifBlank { null },
             quelle = r.sourceUrl, mahlzeiten = null, gaenge = null, bild = null,
         )
         return (rezepte.speichern(entwurf) as? Gespeichert.Ok)?.id

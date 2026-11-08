@@ -55,8 +55,12 @@
     Eine vorhandene Zutat wird im Tagebuch nur mit gesetztem Häkchen „Werte aktualisieren“ überschrieben. Mit Häkchen
     gespeicherte Packungen findet die Suche beim Eintragen auch unter „Rezept“ als „Gescannte Produkte“
     (`EintragenPackungTest`).
-27. Import: Nennt die Datei ihre Portionen („Portionen: 4 · …“ in der Kopfzeile), gilt diese Zahl; geschätzt wird nur
-    ohne Angabe und bei Backwaren mit „Portionen: 1“ (ganzer Kuchen, ganzes Blech – gegessen wird ein Stück). Alle
+27. Import: Nennt die Datei ihre Portionen („Portionen: 4 · …“ in der Kopfzeile), gilt diese Zahl. Ohne Angabe oder mit
+    „Portionen: 1“ zählt zuerst eine Stückzahl im Text („Ergibt 12 - 14 Stück“, „24 Stücke abstechen“, bei Backwaren
+    auch „in 12 Stücke schneiden“; 2 bis 48). Sonst wird geschätzt: ohne Angabe, bei Backwaren mit „Portionen: 1“ (ganzer
+    Kuchen, ganzes Blech – gegessen wird ein Stück) und bei „Portionen: 1“ über 1.500 kcal (das ganze Gericht;
+    `RezeptImportTest`). „Portionen nachtragen“ wendet das auf Rezepte an, die noch unverändert „1 Portion“ aus der
+    Datei haben (`PortionenNachtragenTest`). Alle
     Anzeigen (Rezept, Liste, Planer, Tagebuch) zeigen dieselben kcal je Portion.
     Früher geschätzte Rezepte bekommen die Portionen der Datei nachgetragen, aber nur, solange ihre Notiz noch
     „aus den Mengen auf N geschätzt“ für genau die aktuellen Portionen nennt; die Mengen bleiben, wie sie sind.

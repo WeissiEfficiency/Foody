@@ -16,6 +16,8 @@ object ServingsEstimator {
     private val bakedEndings = listOf(
         "kuchen", "torte", "tarte", "kipferl", "plätzchen", "kekse", "gebäck", "zopf", "brot", "brötchen", "semmeln",
         "teig", "muffins", "schnecken", "stollen", "waffeln", "baguette", "brezen", "brezel", "brezeln",
+        // Prüfung der Chefkoch-Sammlung (2026-11-08): Nussecken, Laugenstangen, Cupcakes, Mini-Quiches …
+        "ecken", "stangen", "cupcakes", "quiches", "quiche", "strudel", "buchteln", "küchlein", "pogaca",
     )
     private val dessertWords = listOf("tiramisu", "dessert", "mousse", "pudding", "creme", "panna", "trifle")
 
