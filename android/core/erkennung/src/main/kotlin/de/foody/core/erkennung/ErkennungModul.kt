@@ -21,7 +21,7 @@ import javax.inject.Qualifier
 import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 
-/** Eigener Thread für die Erkennung: die nativen Aufrufe blockieren bis zu einer Minute. */
+/** Eigener Thread für die Erkennung: die nativen Aufrufe blockieren bis zum Zeitlimit (90 s). */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class Erkennen

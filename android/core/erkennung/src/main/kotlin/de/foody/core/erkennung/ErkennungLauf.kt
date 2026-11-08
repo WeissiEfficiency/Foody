@@ -100,7 +100,7 @@ object ErkennungTexte {
     const val KNOPF = "Foto erkennen"
     const val KAMERA = "Foto aufnehmen"
     const val GALERIE = "Aus der Galerie"
-    const val LAEUFT = "Erkennt das Foto … (bis zu einer Minute)"
+    const val LAEUFT = "Erkennt das Foto … (meist unter einer Minute)"
     const val ABBRECHEN = "Abbrechen"
     const val BITTE_PRUEFEN = "Geschätzt aus dem Foto – bitte prüfen"
     const val WIE_LETZTES_MAL = "Wie beim letzten Mal – bitte prüfen"
