@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -55,9 +56,17 @@ fun HeuteRoute(
     onEinstellungen: () -> Unit,
     vm: HeuteViewModel = hiltViewModel(),
     eintragenVm: EintragenViewModel? = null,
+    /** Vom Widget „Scannen“ (eindeutig je Tipp): öffnet das Blatt mit dem Strichcode-Scan; danach [onScanAngenommen]. */
+    scanAnfrage: String? = null,
+    onScanAngenommen: () -> Unit = {},
 ) {
     val zustand by vm.zustand.collectAsStateWithLifecycle()
     var blatt by rememberSaveable(stateSaver = BlattAuftrag.Saver) { mutableStateOf(null) }
+    LaunchedEffect(scanAnfrage) {
+        if (scanAnfrage == null) return@LaunchedEffect
+        blatt = BlattAuftrag(null, LocalDate.now(), id = scanAnfrage, scannen = true)
+        onScanAngenommen()
+    }
     val aktionen = HeuteAktionen(
         onKochen, onRezept, onEinkauf, onAlleEintraege, onEinstellungen,
         { blatt = BlattAuftrag(it, zustand?.datum ?: LocalDate.now()) }, vm::gegessen, vm::nichtGegessen,

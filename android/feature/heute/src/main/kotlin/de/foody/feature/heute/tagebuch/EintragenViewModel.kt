@@ -247,12 +247,15 @@ class EintragenViewModel @Inject constructor(
      * Neues Blatt: alles zurück; Mahlzeit aus der angetippten Zeile, sonst nach Uhrzeit. Derselbe [auftrag] erneut
      * (Neuaufbau nach Drehen) lässt die Eingaben stehen; ein neuer bricht eine laufende Fotoerkennung ab.
      */
-    fun oeffnen(datum: LocalDate, mahlzeit: Mahlzeit?, uhrzeit: LocalTime = LocalTime.now(), auftrag: String? = null) {
+    fun oeffnen(datum: LocalDate, mahlzeit: Mahlzeit?, uhrzeit: LocalTime = LocalTime.now(), auftrag: String? = null, scannen: Boolean = false) {
         if (auftrag != null && auftrag == letzterAuftrag) return
         letzterAuftrag = auftrag
         fotoLauf.abbrechen()
-        eingaben.value = Eingaben(datum = datum, mahlzeit = mahlzeit ?: mahlzeitNachUhrzeit(uhrzeit))
+        val m = mahlzeit ?: mahlzeitNachUhrzeit(uhrzeit)
+        eingaben.value = if (scannen) Eingaben(datum = datum, mahlzeit = m, weg = EintragenWeg.FREI) else Eingaben(datum = datum, mahlzeit = m)
         gesperrt.value = false
+        // Widget „Scannen“: nur einmal je Auftrag (der Abgleich oben), also nicht erneut nach Drehen oder Prozessende
+        if (scannen && scanLauf.verfuegbar) scanLauf.strichcode()
     }
 
     fun weg(w: EintragenWeg) = eingaben.update { it.copy(weg = w, suche = "") }

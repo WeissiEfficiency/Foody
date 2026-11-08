@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 
@@ -34,10 +35,15 @@ object Platzhalter {
     const val TEXT = "Platzhalter für Tests"
 }
 
+/** Dieselben Bildschirme mit einem anderen „Heute“. */
+fun Bildschirme.mitHeute(heute: @Composable (NavHostController, String?, () -> Unit) -> Unit) = Bildschirme(
+    heute, tagebuch, einstellungen, serverVerbinden, zutaten, zutat, rezepte, rezeptDetail, editor, kochen, woche, einkauf,
+)
+
 /** Alle Bereiche als [Platzhalter] – für Navigationstests ohne ViewModels. */
 val Bildschirme.Companion.platzhalter: Bildschirme
     get() = Bildschirme(
-        heute = { Platzhalter("Heute") },
+        heute = { _, scan, _ -> Platzhalter("Heute", scan?.let { "Scan angefragt" }) },
         tagebuch = { datum, _ -> Platzhalter("Tagebuch", "Tagebuch $datum") },
         einstellungen = { Platzhalter("Einstellungen") },
         serverVerbinden = { Platzhalter("Server verbinden") },

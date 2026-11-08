@@ -21,7 +21,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Deep Links foody://rezept|einkauf|kochen|tagebuch/… (Navigation Compose ordnet sie zu) -->
+            <!-- Deep Links foody://rezept|einkauf|kochen|tagebuch/… (Navigation Compose ordnet sie zu) und foody://scannen (Widget) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -29,6 +29,19 @@
                 <data android:scheme="foody" />
             </intent-filter>
         </activity>
+
+        <!-- Homescreen-Widget „Scannen“: öffnet foody://scannen (ScanWidget) -->
+        <receiver
+            android:name=".widget.ScanWidget"
+            android:exported="false"
+            android:label="@string/widget_scan_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/scan_widget_info" />
+        </receiver>
 
         <!-- WorkManager wird mit der HiltWorkerFactory selbst konfiguriert (FoodyApp) -->
         <provider
