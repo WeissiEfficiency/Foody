@@ -86,6 +86,12 @@
 32. BLS nachschlagen (ADR 0018): Ein Treffer aus dem Bundeslebensmittelschlüssel wird nur auf Tipp des Nutzers zur
     Katalog-Zutat (Werte je 100 g, Quelle „BLS 4.0 (MRI): <Name>“); heißt schon eine Zutat so, wird sie gewählt und
     nicht verändert. Die Suche ergänzt regionale Namen über eine feste Liste und rät nie über Ähnlichkeit (vgl. Regel 15).
+33. Dichte aus dem BLS (zu Regel 3): Der BLS kennt keine Dichte. Flüssiges (Gruppen N und P ganz, sonst nach dem
+    Lebensmittel vorne im Namen: Saft, Milch, Sahne, Drink, Öl, Essig, Brühe, Suppe, Sirup …; Pulver und Brühwürfel
+    nur angerührt) bekommt eine aus den Bestandteilen: Wasser 1 ml/g, Fett 1,087, gelöste Trockenmasse 0,62, Alkohol
+    1,18 (nur Gruppe P, aus der Energie, die Eiweiß, Kohlenhydrate, Fett und Ballaststoffe nicht erklären, 29 kJ/g).
+    Festes bleibt ohne Dichte. Übernommene BLS-Zutaten ohne Dichte bekommen sie beim Start nachgetragen; eine gesetzte
+    Dichte bleibt.
 
 ## Tests je Regel
 
@@ -125,3 +131,4 @@ Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/te
 | 30 | `UnitsAndImportFixesTest.pinchBecomesHalfAGram`, `UnitsAndImportFixesTest.kitchenMeasuresBecomeGramsOrMillilitres`, `UnitsAndImportFixesTest.bagsAndSachetsArePackages`, `ZutatZeileTest.schreibenLesbar`, `RezeptSchreibenTest.priseInGrammMitHinweis`, `KuechenmassNachtragTest`, `KuechenmasseNachtragenTest` |
 | 31 | `RezeptImportTest.gewichtAusDemHinweisFuerUnbekanntePackungen`, `RezeptImportTest.gewichtAusDemHinweisNurWennNoetig` |
 | 32 | `BlsSucheTest`, `BlsNachschlagTest.suchtImEchtenAuszug`, `EintragenViewModelTest.blsTrefferWirdZutatUndStueckZaehlt`, `EintragenViewModelTest.blsTrefferMitVorhandenemNamenNimmtDieZutat` |
+| 33 | `BlsDichteTest`, `BlsDichteNachtragenTest`, `EintragenViewModelTest.blsGetraenkRechnetInMilliliter` |
