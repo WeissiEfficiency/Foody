@@ -41,14 +41,29 @@ class BlsNachschlag(
 
     private suspend fun alle(): List<BlsLebensmittel> = sperre.withLock { geladen ?: blsAuszugLesen(oeffnen()).also { geladen = it } }
 
+    /**
+     * Lebensmittel mit genau diesen BLS-Namen. Liest den Auszug, ohne ihn zu behalten, wenn noch nicht gesucht wurde:
+     * Das Nachtragen beim Start soll nicht für jeden Prozess 7.000 Zeilen im Speicher lassen.
+     */
+    suspend fun nachNamen(namen: Set<String>): Map<String, BlsLebensmittel> = if (namen.isEmpty()) {
+        emptyMap()
+    } else {
+        withContext(rechnen) {
+            (sperre.withLock { geladen } ?: blsAuszugLesen(oeffnen())).filter { it.name in namen }.associateBy { it.name }
+        }
+    }
+
     companion object {
         const val ASSET = "bls/bls_4_0.tsv"
         const val MAX = 15
     }
 }
 
+/** Anfang der Herkunft übernommener BLS-Zutaten; danach folgt der Name im BLS. */
+const val BLS_QUELLE = "BLS 4.0 (MRI): "
+
 /** Herkunft wie bei den Startdaten: „BLS 4.0 (MRI): <Name im BLS>“. */
-fun BlsLebensmittel.quelle(): String = "BLS 4.0 (MRI): $name"
+fun BlsLebensmittel.quelle(): String = "$BLS_QUELLE$name"
 
 /** Werte des Treffers als Packung (je 100 g), damit der Katalog sie wie einen Scan übernimmt. */
 fun BlsTreffer.alsPackung(): Packungswerte =

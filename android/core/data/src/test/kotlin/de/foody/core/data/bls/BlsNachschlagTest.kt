@@ -1,5 +1,6 @@
 package de.foody.core.data.bls
 
+import de.foody.domain.BlsDichte
 import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
 import kotlinx.coroutines.test.runTest
@@ -24,6 +25,17 @@ class BlsNachschlagTest {
         assertEquals("Laugengebäck mit Hagelsalz", breze.name)
         assertEquals(0, BigDecimal("1191").compareTo(breze.werte[Nutrient.ENERGY_KJ]))
         assertEquals(0, BigDecimal("2.81").compareTo(breze.werte[Nutrient.SALT_G]))
+    }
+
+    @Test
+    fun fluessigesImEchtenAuszugHatEineDichte() {
+        val alle = blsAuszugLesen(asset.readLines(Charsets.UTF_8).asSequence())
+        val mitDichte = alle.filter { BlsDichte.gProMl(it) != null }
+        // Stand BLS 4.0: 591 von 7.140 (Getränke, Säfte, Milch, Öle, Brühen, Suppen …), von Rum 80 % vol (0,90) bis Glukosesirup (1,43)
+        assertEquals(591, mitDichte.size)
+        assertTrue(mitDichte.all { BlsDichte.gProMl(it)!! in BigDecimal("0.90")..BigDecimal("1.45") })
+        assertEquals(BigDecimal("1.03"), BlsDichte.gProMl(alle.single { it.code == "M111300" }))
+        assertNull(BlsDichte.gProMl(alle.single { it.code == "B723000" }))
     }
 
     @Test

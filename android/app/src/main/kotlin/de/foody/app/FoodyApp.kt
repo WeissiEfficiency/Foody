@@ -7,6 +7,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
+import de.foody.core.data.bls.BlsDichteNachtragen
 import de.foody.core.data.rezepte.KuechenmasseNachtragen
 import de.foody.core.data.startdaten.StartdatenLader
 import de.foody.core.designsystem.AppOffen
@@ -33,6 +34,8 @@ class FoodyApp : Application(), Configuration.Provider {
 
     @Inject lateinit var kuechenmasse: KuechenmasseNachtragen
 
+    @Inject lateinit var blsDichte: BlsDichteNachtragen
+
     /** Lebt so lange wie der Prozess; Fehler eines Auftrags beenden die anderen nicht. */
     private val bereich = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -45,6 +48,7 @@ class FoodyApp : Application(), Configuration.Provider {
         bereich.launch {
             startdaten.ladenWennNoetig()
             kuechenmasse.nachtragen()
+            blsDichte.nachtragen()
         }
         ProcessLifecycleOwner.get().lifecycle.addObserver(
             object : DefaultLifecycleObserver {

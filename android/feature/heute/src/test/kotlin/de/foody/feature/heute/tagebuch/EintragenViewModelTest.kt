@@ -204,6 +204,23 @@ class EintragenViewModelTest {
     }
 
     @Test
+    fun blsGetraenkRechnetInMilliliter() = runTest {
+        val vm = mitBls("P162000	Export hell	174	0.485	2.238	0.172		0	0.004")
+        vm.weg(EintragenWeg.ZUTAT)
+        vm.suche("Export")
+        vm.blsWaehlen(vm.zustand.first().bls.single()).join()
+        val z = vm.zustand.first()
+        val zutat = assertNotNull(db.zutatDao().nachId(assertNotNull(z.eingaben.zutatId)))
+        // Dichte aus den Bestandteilen (BlsDichte), Einheit gleich ml
+        assertEquals(0, BigDecimal("1.00").compareTo(zutat.densityGPerMl))
+        assertEquals(MeasureUnit.MILLILITER, z.eingaben.einheit)
+        vm.menge("500")
+        val e = gespeichert(vm.speichern())
+        // 500 ml = 500 g, 174 kJ je 100 g
+        assertEquals(0, BigDecimal("870").compareTo(e.energieKj))
+    }
+
+    @Test
     fun blsTrefferMitVorhandenemNamenNimmtDieZutat() = runTest {
         db.zutatDao().upsert(ZutatEntity(id = "z-breze", canonicalName = "Breze", createdAt = 1, updatedAt = 1))
         val vm = mitBls("B723000	Laugengebäck mit Hagelsalz	1191						")

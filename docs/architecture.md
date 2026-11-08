@@ -285,12 +285,17 @@ Spec `docs/superpowers/specs/2026-11-03-bls-nachschlagen-design.md`, ADR 0018.
   (nur Standardbibliothek). Nicht in Room, nicht im Sync, nicht in der Sicherung.
 - **`BlsNachschlag`** (`:core:data`, Singleton): lädt den Auszug beim ersten `suchen` und behält ihn im Speicher;
   `alsPackung()` macht aus einem Treffer `Packungswerte` mit der Quelle „BLS 4.0 (MRI): <Name>“.
-  `ZutatenRepository.ausBls` legt damit eine Katalog-Zutat an (mit Stückgewicht) oder liefert die gleichnamige.
+  `ZutatenRepository.ausBls` legt damit eine Katalog-Zutat an (mit Stückgewicht, bei Flüssigem mit Dichte) oder
+  liefert die gleichnamige.
+- **`BlsDichte`** (`:domain`, Regel 33): Dichte flüssiger Einträge aus den Bestandteilen, damit ml, EL und TL rechnen
+  (591 von 7.140 Einträgen). `BlsDichteNachtragen` (`:core:data`, bei jedem Start aus `FoodyApp`) setzt sie bei schon
+  übernommenen Zutaten mit BLS-Herkunft und ohne Dichte; den Auszug liest es nur, wenn es solche gibt.
 - **`BlsSuche`** (`:domain`): Teilwörter ohne Groß/klein, regionale Namen mit bevorzugtem Eintrag, Anzeigename und
   Stückgewicht (Breze, Semmel, Leberkäse, Fleischpflanzerl, Weißwurst, Obazda, Weißbier …), Zusammengesetztes aus
   zwei bekannten Namen. Ergänzen: neue Zeile in `regionalnamen`, Test in `BlsSucheTest`.
 - **Tagebuch:** `EintragenViewModel.zustand.bls` (nur im Weg „Zutat“, ohne Namen, die schon im Katalog stehen);
-  `blsWaehlen` übernimmt, wählt, stellt mit Stückgewicht auf „Stück“ und gibt der Menge den Fokus.
+  `blsWaehlen` übernimmt, wählt, stellt mit Stückgewicht auf „Stück“, bei Flüssigem auf „ml“, und gibt der Menge den
+  Fokus.
 - Quellenangabe: Einstellungen → „Zutaten“.
 
 ## Rezepte (`:feature:rezepte`)

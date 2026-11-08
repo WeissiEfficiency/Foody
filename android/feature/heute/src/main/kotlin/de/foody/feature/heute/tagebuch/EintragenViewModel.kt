@@ -25,6 +25,7 @@ import de.foody.core.erkennung.MahlzeitErkenner
 import de.foody.core.scan.PackungScan
 import de.foody.core.scan.ScanAusgang
 import de.foody.core.scan.ScanLauf
+import de.foody.domain.BlsDichte
 import de.foody.domain.BlsTreffer
 import de.foody.domain.FotoPortion
 import de.foody.domain.FotoVorschlag
@@ -270,7 +271,8 @@ class EintragenViewModel @Inject constructor(
 
     /**
      * BLS-Treffer gewählt: in den Katalog übernehmen (heißt schon eine Zutat so, diese nehmen), auswählen, mit
-     * Stückgewicht die Einheit „Stück“, und den Fokus auf die Menge. Läuft im viewModelScope (übersteht Drehen).
+     * Stückgewicht die Einheit „Stück“, bei Flüssigem „ml“, und den Fokus auf die Menge. Läuft im viewModelScope
+     * (übersteht Drehen).
      */
     fun blsWaehlen(t: BlsTreffer): Job = viewModelScope.launch {
         val id = when (val r = zutatenRepo.ausBls(t)) {
@@ -279,7 +281,12 @@ class EintragenViewModel @Inject constructor(
             else -> return@launch
         }
         eingaben.update {
-            it.copy(zutatId = id, suche = t.vorschlagName, einheit = if (t.stueckG != null) MeasureUnit.PIECE else MeasureUnit.GRAM)
+            val einheit = when {
+                t.stueckG != null -> MeasureUnit.PIECE
+                BlsDichte.gProMl(t.lebensmittel) != null -> MeasureUnit.MILLILITER
+                else -> MeasureUnit.GRAM
+            }
+            it.copy(zutatId = id, suche = t.vorschlagName, einheit = einheit)
         }
         fokus.trySend(Unit)
     }
