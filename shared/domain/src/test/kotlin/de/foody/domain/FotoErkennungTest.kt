@@ -4,6 +4,7 @@ import java.math.BigDecimal
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /** Vorschlag für einen freien Tagebucheintrag aus der Antwort des Bild-Sprach-Modells (Regel 29). */
 class FotoErkennungTest {
@@ -18,6 +19,27 @@ class FotoErkennungTest {
         assertEquals("Leberkässemmel", v.name)
         assertEquals(480, v.kcal)
         assertEquals(listOf("18", "40", "27"), listOf(v.eiweiss, v.kohlenhydrate, v.fett).map { it.klar() })
+    }
+
+    /** Antwortform von Qwen3-VL-4B auf [FotoAnweisung.GERICHT]: Zutaten mit Gramm, Werte oben (ADR 0017, Nachtrag). */
+    @Test fun antwortDesVierBModellsMitZutatenliste() {
+        val v = FotoErkennung.vorschlag(
+            """{
+              "dish_name": "Würstchen mit Sauerkraut",
+              "ingredients": [{"name": "Bratwurst", "grams": 150}, {"name": "Sauerkraut", "grams": 200}],
+              "calories_kcal": 550, "protein_g": 25, "carbs_g": 30, "fat_g": 35
+            }""",
+        )!!
+        assertEquals("Würstchen mit Sauerkraut", v.name)
+        assertEquals(550, v.kcal)
+        assertEquals(listOf("25", "30", "35"), listOf(v.eiweiss, v.kohlenhydrate, v.fett).map { it.klar() })
+    }
+
+    /** Die Anweisung verlangt genau die Felder, die [FotoErkennung] liest, und den Namen auf Deutsch. */
+    @Test fun anweisungVerlangtDeutschenNamenUndDieGelesenenFelder() {
+        listOf("\"dish_name\"", "\"calories_kcal\"", "\"protein_g\"", "\"carbs_g\"", "\"fat_g\"", "in German").forEach {
+            assertTrue(it in FotoAnweisung.GERICHT, it)
+        }
     }
 
     @Test fun andereSchluesselUndZahlenMitEinheit() {

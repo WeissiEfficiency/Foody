@@ -101,7 +101,7 @@ Server und Protokoll (`:server`, `:api-protocol`); Fremdeingaben sind hier alle 
   Sicherung ist bewusst nicht eingebaut (ein vergessenes Passwort wäre Datenverlust). Ebenso liegen die Daten auf dem
   Server unverschlüsselt im Volume (siehe „Sync“).
 - **Fremde Modelldatei für die Fotoerkennung:** llama.cpp prüft GGUF-Dateien nicht gegen böswillige Inhalte. Die
-  App nimmt jede GGUF-Datei an (für den Tausch gegen das unveränderte Qwen3-VL-2B), markiert aber nur die bekannten
+  App nimmt jede GGUF-Datei an (für den Tausch gegen ein anderes Qwen3-VL), markiert aber nur die bekannten
   Prüfsummen. Wer eine fremde Datei importiert, vertraut deren Herkunft.
 - **Native Bibliothek im Repository:** `libfoody_erkennung.so` liegt fertig gebaut in `android/core/erkennung/nativ/`.
   Sie entsteht nur aus `src/main/cpp` und llama.cpp b12024 (Zip mit festgenagelter SHA-256) und wird nach jeder

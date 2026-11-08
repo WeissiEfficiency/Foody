@@ -1,4 +1,4 @@
-# ADR 0017: Fotoerkennung auf dem Gerät mit Qwen3-VL-2B „food-analysis“
+# ADR 0017: Fotoerkennung auf dem Gerät mit Qwen3-VL (seit 2026-11-08: 4B, vorher 2B „food-analysis“)
 
 Status: angenommen (2026-11-01). Ergebnis von Phase 0 in `ToDoS/foto-erkennung-plan.md`. Ergänzt ADR 0011.
 
@@ -71,3 +71,28 @@ mit Nutzungsbeschränkungen gegen Missbrauch). Für die private App passt beides
 Foto soll nur erkannt und mit seinen kcal als freier Eintrag am Tag vorgeschlagen werden. Die Auswahlliste und die
 Wege „Rezept“ und „Teller“ sind gestrichen. Die Messung in der App auf dem 13R bestätigte das: Mit Auswahlliste
 wählte das Modell auch für fünf Gerichte außerhalb der Liste jedes Mal ein Rezept.
+
+**Nachtrag (2026-11-08): Umstieg auf Qwen3-VL-4B.** Nach dem ersten Alltagstest war die Erkennung „richtig schlecht“:
+falsches Gericht, englische Namen, kcal weit daneben. Neu gemessen mit denselben Testbildern, 512 Bild-Tokens, PC:
+
+| Modell und Anweisung | deutsche Gerichte frei erkannt | kcal-Fehler Nutrition5k (Median) | kcal plausibel (deutsch) | Auswahl aus Liste |
+|---|---|---|---|---|
+| 2B „food-analysis“, Trainingsanweisung (bisher) | 45 %, englisch | 65 % | 59–64 % | 73–77 % |
+| 2B, Trainingsanweisung + „Name auf Deutsch“ | 27 % | keine kcal mehr | – | 77 % |
+| **4B, freie Anweisung mit Zutaten, Name auf Deutsch** (gewählt) | **41 %, deutsch** | **43 %** | **91 %** | 91 % |
+| 4B, dieselbe ohne „auf Deutsch“ | 45 %, englisch | 37 % | 86 % | 91 % |
+| 4B, ohne Zutatenliste | 41 % | 43 % | 73 % | 91 % |
+| 4B, höchstens 5 Zutaten | 36 % | 43 % | 77 % | 91 % |
+| 4B, Trainingsanweisung des 2B-Adapters | 5 % (meist nur Nährwerte) | 40 % | 33 % | 96 % |
+
+- Gewählt: **Qwen3-VL-4B-Instruct** in Qwens eigenen GGUF-Dateien (`Q4_K_M` 2,5 GB, Bildteil `Q8_0` 0,45 GB,
+  zusammen 2,95 GB, Apache 2.0), ohne Adapter. Anweisung `FotoAnweisung.GERICHT`: JSON mit `dish_name` auf Deutsch,
+  Zutaten in Gramm und Nährwerten. Die Zutatenliste nutzt Foody nicht, mit ihr schätzt das Modell die kcal aber
+  besser. Die Antwort liest `FotoErkennung` unverändert.
+- **Handy (13R, CPU, 6 Threads):** 34 s je Foto im Median (21–44 s, ein Ausreißer 82 s), Laden über `llama-server`
+  27 s, Arbeitsspeicher 3,7 GB. Das Zeitlimit steigt deshalb von 60 auf **90 s** (Laden und Antwort zusammen),
+  höchstens 600 statt 400 Antwort-Tokens (mit Zutatenliste bis etwa 450). Die Grenze von 2 GB freiem Speicher bleibt:
+  Die Gewichte liegen per mmap im Dateicache.
+- Spezialitäten bleiben schwach (Leberkäse → „Schinkenbrötchen“, Currywurst → „Würstchen mit Pommes“). Dafür gibt es
+  das Gedächtnis eigener Korrekturen (Phase 6). Ein Modell mit 8B wäre auf dem Handy zu langsam und zu groß.
+- Die Messung liegt in `E:\foody-messung\ergebnisse\qwen3-4b-*` und `handy-4b-frei-de-512.json`.

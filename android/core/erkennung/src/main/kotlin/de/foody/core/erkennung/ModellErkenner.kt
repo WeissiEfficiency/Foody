@@ -76,11 +76,16 @@ class ModellErkenner @Inject constructor(
     }
 
     companion object {
-        const val ZEITLIMIT_MS = 60_000L
+        /**
+         * Laden und Antwort zusammen. Qwen3-VL-4B braucht auf dem 13R im Median 34 s je Foto plus Laden, einzelne Fotos
+         * über 60 s (Messung 2026-11-08); lieber warten als abbrechen, „Abbrechen“ gibt es jederzeit.
+         */
+        const val ZEITLIMIT_MS = 90_000L
 
         /**
-         * Gemessen 2,6–3,5 GB beim Erkennen (ADR 0017), davon 1,1 GB Gewichte per mmap: Dateicache, den Android jederzeit
-         * freigeben kann. Zusätzlich gebraucht werden etwa 1,5 GB (Bildteil, Kontext, Rechenpuffer).
+         * Gemessen 2,6–3,5 GB beim Erkennen mit dem 2B-Modell, 3,7 GB mit dem 4B-Modell (ADR 0017), davon 1,1 bzw. 2,5 GB
+         * Gewichte per mmap: Dateicache, den Android jederzeit freigeben kann. Zusätzlich gebraucht werden etwa 1,2–1,5 GB
+         * (Bildteil, Kontext, Rechenpuffer).
          */
         const val MIN_FREIER_SPEICHER = 2_000_000_000L
     }

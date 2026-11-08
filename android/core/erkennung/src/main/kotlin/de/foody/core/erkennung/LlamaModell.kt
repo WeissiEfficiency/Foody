@@ -54,6 +54,8 @@ class LlamaModell @Inject constructor() : BildSprachModell {
     companion object {
         const val THREADS = 6
         const val MAX_BILD_TOKENS = 512
-        const val MAX_ANTWORT_TOKENS = 400
+
+        /** Mit Zutatenliste bis etwa 450 Tokens (Messung 2026-11-08); abgeschnittenes JSON wäre unlesbar. */
+        const val MAX_ANTWORT_TOKENS = 600
     }
 }
