@@ -198,6 +198,9 @@ Nutzer, 2026-11-02: Ideen 1–3 ja, schneller nur falls über 60 s, eigenes Nach
 - [x] ~~kcal über den Zutatenkatalog~~ verworfen: An den 100 Nutrition5k-Bildern wäre selbst mit perfekter
       kcal-Dichte der Median-Fehler 67 % (Modell: 65 %), besser nur bei 49 von 100. Der Fehler steckt in der Menge.
 - [ ] Später: Adapter mit ~100 eigenen Fotos und den Werten aus `protokoll.jsonl` nachtrainieren.
+- [x] Erster Alltagstest (2026-11-08): mit dem 2B-Modell schlecht (falsches Gericht, englische Namen, kcal daneben).
+      Umstieg auf **Qwen3-VL-4B** mit deutscher Anweisung (ADR 0017, Nachtrag): kcal-Fehler 43 % statt 65 %, deutsche
+      Namen, 34 s je Foto auf dem 13R; Zeitlimit 90 s. Modell neu importieren (Dateien in OpenCloud).
 
 ## Bewusst nicht in der ersten Version
 

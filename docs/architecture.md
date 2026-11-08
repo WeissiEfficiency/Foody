@@ -522,11 +522,11 @@ Keine Schema- und keine Protokolländerung (nur die Abfrage `ZutatDao.mitStrichc
 ADR 0017, Plan `ToDoS/foto-erkennung-plan.md`, Specs `docs/superpowers/specs/2026-11-01-foto-erkennung-phase2-design.md`
 und `2026-11-02-foto-erkennung-phase3-4-design.md`. Alles auf dem Gerät; kein Server, kein Schema.
 
-- **`:domain`:** `FotoAnweisung` (Trainingsanweisung des Adapters), `ModellJson` und `FotoErkennung` (Regel 29):
+- **`:domain`:** `FotoAnweisung` (JSON mit Gericht auf Deutsch, Zutaten in Gramm und Nährwerten; ADR 0017, Nachtrag 2026-11-08), `ModellJson` und `FotoErkennung` (Regel 29):
   aus der Antwort wird ein freier Eintrag (Name, kcal, Makros); kein Abgleich mit Rezepten oder Zutaten.
 - **Ablauf `ModellErkenner`:** Modell da, ≥ 2 GB frei, Foto verkleinert (`AndroidBildVorbereitung`, höchstens
-  1024 px, `cache/erkennung/`, danach gelöscht). Auf einem eigenen Thread (`@Erkennen`) und höchstens 60 s: laden,
-  eine Frage (Trainingsanweisung). Abbrechen und Zeitlimit rufen `ModellSitzung.abbrechen()`; das Modell wird danach
+  1024 px, `cache/erkennung/`, danach gelöscht). Auf einem eigenen Thread (`@Erkennen`) und höchstens 90 s: laden,
+  eine Frage (`FotoAnweisung.GERICHT`). Abbrechen und Zeitlimit rufen `ModellSitzung.abbrechen()`; das Modell wird danach
   freigegeben. Eine Erkennung zur Zeit.
 - **Laufzeit `LlamaModell`:** JNI-Hülle `src/main/cpp/foody_erkennung.cpp` über llama.cpp b12024 (statisch, nur CPU,
   6 Threads, höchstens 512 Bild-Tokens, gierig). Das Bild wird einmal gerechnet; jede Frage setzt hinter ihm neu an.

@@ -83,8 +83,11 @@ class ModellDateien(private val ordner: File) {
 
         private const val CLIP = "clip"
 
-        /** Qwen3-VL-2B + „food-analysis“, Sprachteil Q4_K_M und Bildteil Q8_0 aus Phase 0 (ADR 0017). */
-        const val BEKANNT_SPRACHE = "c5cac93ab69a95ba9018d259f8667ce83caf17575b247c8549fc1a8ef24869b2"
-        const val BEKANNT_BILD = "27be2d65580d71554e8b130266a1efef6d4dc2b752fbe0dddd43ac61078e093d"
+        /**
+         * Qwen3-VL-4B-Instruct von Qwen (`Qwen3VL-4B-Instruct-Q4_K_M.gguf`, `mmproj-Qwen3VL-4B-Instruct-Q8_0.gguf`),
+         * gemessen am 2026-11-08 (ADR 0017, Nachtrag). Das frühere 2B-Modell gilt seitdem als unbekannt.
+         */
+        const val BEKANNT_SPRACHE = "66358cb18bb6b3b1b6675aa412c7a88ef01d228f481184d13668e5201c730a0a"
+        const val BEKANNT_BILD = "30ba2c7dd3127a4561b6cba9d13d0f711c91bdb38742e2f56d73c8cb596bd06d"
     }
 }

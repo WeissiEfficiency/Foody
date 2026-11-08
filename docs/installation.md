@@ -66,7 +66,7 @@ Sicherungsdatei von einem Gerät aufs andere.
 - **Android 16 oder neuer** auf Handy und Tablet (die App verlangt `minSdk` 36, ADR 0009). Ältere Geräte lassen die
   Installation nicht zu („App nicht kompatibel“).
 - Für die Fotoerkennung zusätzlich ein Handy mit 64-Bit-ARM (`arm64-v8a`), viel Arbeitsspeicher (Richtwert 12 GB,
-  bei der Erkennung müssen 2 GB frei sein) und gut 3 GB freiem Speicher (1,55 GB Modell, beim Import kurz doppelt).
+  bei der Erkennung müssen 2 GB frei sein) und gut 6 GB freiem Speicher (2,95 GB Modell, beim Import kurz doppelt).
 - Für „Packung scannen“ die Google-Play-Dienste (sie laden Strichcode- und Texterkennung nach).
 
 ### PC zum Bauen (Windows, Linux oder macOS)
@@ -495,22 +495,23 @@ geprüft wird.
 | Teil | Wo | Wie |
 |---|---|---|
 | Laufzeit (llama.cpp) | in der APK | kommt mit dem App-Update, nichts zu tun |
-| **Modelldateien**, GGUF: Sprachteil `Q4_K_M` (1,1 GB) und Bildteil `mmproj` `Q8_0` (0,45 GB) | **App-interner Speicher** des Handys | **in der App importieren**, nicht von Hand in einen Ordner kopieren |
+| **Modelldateien**, GGUF: Sprachteil `Qwen3VL-4B-Instruct-Q4_K_M.gguf` (2,5 GB) und Bildteil `mmproj-Qwen3VL-4B-Instruct-Q8_0.gguf` (0,45 GB) | **App-interner Speicher** des Handys | **in der App importieren**, nicht von Hand in einen Ordner kopieren |
 | Server | – | nichts; kein neuer Endpunkt, kein Rebuild |
 
-Das Modell (Qwen3-VL-2B mit dem Adapter „food-analysis“, zusammengeführt) steckt bewusst **nicht in der APK** und
+Das Modell (Qwen3-VL-4B-Instruct von Qwen, seit 2026-11-08; vorher Qwen3-VL-2B mit dem Adapter „food-analysis“)
+steckt bewusst **nicht in der APK** und
 wird einmal eingerichtet. Beide Dateien gehören zusammen; welche der Bildteil ist, erkennt Foody selbst.
 
 **Ablauf:**
 
-1. Die beiden GGUF-Dateien (aus Phase 0, ADR 0017) in einen Ordner legen, den das Handy erreicht, z. B. den
-   Cloud-Ordner, in dem auch die APK liegt.
+1. Die beiden GGUF-Dateien (von Hugging Face `Qwen/Qwen3-VL-4B-Instruct-GGUF`, ADR 0017) in einen Ordner legen,
+   den das Handy erreicht, z. B. den Cloud-Ordner, in dem auch die APK liegt.
 2. Auf dem Handy: **Einstellungen → Fotoerkennung → Modell installieren** und in der Dateiauswahl **beide** Dateien
    wählen (lange tippen für Mehrfachauswahl, z. B. in der Cloud-App). Foody kopiert sie in seinen eigenen Speicher
    (`filesDir`, für andere Apps und den Dateimanager unsichtbar) und vergleicht die Prüfsummen. Meldet Foody
    „unbekannte Dateien“, sind es andere als die gemessenen; die Erkennung läuft dann ohne Gewähr.
 3. Danach steht im Tagebuch unter **Eintragen → Frei** der Knopf **„Foto erkennen“** neben „Packung scannen“
-   (Kamera oder Galerie, bis zu einer Minute je Foto). Ohne Modell oder mit ausgeschaltetem Schalter fehlt er.
+   (Kamera oder Galerie, meist 40–60 s je Foto, höchstens 90 s). Ohne Modell oder mit ausgeschaltetem Schalter fehlt er.
 4. **Modell entfernen** (oder ersetzen) unter demselben Abschnitt; Deinstallieren der App entfernt das Modell ebenfalls.
 
 Schalter und Modell gelten **je Gerät** und werden nicht gesynct. Auf dem Tablet einfach kein Modell installieren.
