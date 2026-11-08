@@ -1,5 +1,8 @@
 package de.foody.feature.heute.tagebuch
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
@@ -54,6 +57,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 /**
  * Das Eintragen-Blatt aus „Heute“ und der Ändern-Dialog in „Alle Einträge“. Ohne Breiten-Qualifier: Unter Robolectric
@@ -107,6 +111,36 @@ class EintragenBlattTest {
         compose.warteAufText("Noch kein Snack")
         compose.onAllNodesWithText("Eintragen")[2].performScrollTo().performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithText("Aus dem Plan").fetchSemanticsNodes().isNotEmpty() }
+    }
+
+    /**
+     * Widget „Scannen“: „Heute“ nimmt die Anfrage an und öffnet das Blatt in „Frei“ mit laufendem Strichcode-Scan.
+     * Nach einem Neuaufbau startet der Scan nicht noch einmal.
+     */
+    @Test
+    fun scanAnfrageVomWidget() {
+        var gelesen = 0
+        val eintragen = halter.behalten(
+            EintragenViewModel(
+                SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), tagebuch, db, testScan(beimLesen = { gelesen++ }), keinErkenner,
+                testErkennung(), testGedaechtnis(), testBls(), ZutatenRepository(db) { 1L },
+            ),
+        )
+        var anfrage by mutableStateOf<String?>("widget-1")
+        val wiederherstellen = StateRestorationTester(compose)
+        wiederherstellen.setContent {
+            FoodyTheme {
+                HeuteRoute({ _, _ -> }, {}, {}, {}, {}, vm = vm, eintragenVm = eintragen, scanAnfrage = anfrage, onScanAngenommen = { anfrage = null })
+            }
+        }
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Frei") and isSelected()).fetchSemanticsNodes().isNotEmpty() }
+        compose.runOnIdle {
+            assertNull(anfrage)
+            assertEquals(1, gelesen)
+        }
+        wiederherstellen.emulateSavedInstanceStateRestore()
+        compose.onNode(hasText("Frei") and isSelected()).assertExists()
+        compose.runOnIdle { assertEquals(1, gelesen) }
     }
 
     @Test

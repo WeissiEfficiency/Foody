@@ -246,6 +246,13 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   `foody://tagebuch/{datum}` (ungültiges Datum → heute). Bei laufender App navigiert `deepLinkOeffnen` mit
   `launchSingleTop` ins Gerüst – **nicht** `handleDeepLink`: das baut bei `FLAG_ACTIVITY_NEW_TASK` (Tipp auf die
   Timer-Meldung) den Task neu auf und verwirft ungespeicherte Eingaben (R-W5).
+  **Widget „Scannen“** (`widget/ScanWidget`, `AppWidgetProvider`, 2×1, Farben aus dem Hintergrundbild): Der Tipp öffnet
+  `foody://scannen` (`SCAN_LINK`, kein Ziel im Graphen). `deepLinkOeffnen` bzw. beim Kaltstart `MainActivity` (nur ohne
+  `savedInstanceState`) rufen `scanAnfragen()`: zurück zu „Heute“ wie der Tab, dann eine neue ID (je Tipp) im
+  `SavedStateHandle` von „Heute“ (`SCAN_ANFRAGE`). `HeuteRoute(scanAnfrage, onScanAngenommen)` öffnet damit das
+  Eintragen-Blatt (`BlattAuftrag(scannen = true)`, ID = Anfrage) und löscht die Anfrage; `EintragenViewModel.oeffnen(…,
+  scannen = true)` setzt „Frei“ und startet den Strichcode-Scan einmal je Auftrag – Drehen oder Prozessende starten ihn
+  nicht erneut. Ohne Play-Dienste bleibt es beim Blatt in „Frei“.
   `Bildschirme` bündelt die Hilt-Bildschirme; Navigationstests setzen `Bildschirme.platzhalter` ein und laufen ohne Hilt.
 - **`:core:data`**: `HeuteRepository` (Plan heute/morgen nur mit vorhandenem, nicht archiviertem Rezept; kcal je
   Portion über `RecipeProfiles`; Rezeptvorschläge; offene Artikel der zuletzt geänderten Liste), `TagebuchRepository`

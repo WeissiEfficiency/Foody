@@ -28,7 +28,8 @@ Alle Phasen und der Umstieg sind fertig; Offenes (Messungen, TalkBack, Review-Be
 - **Einkauf:** eine Ansicht; Vorschau mit Abwählen vorhandener Artikel, gruppiert nach Abteilung, Rezepte auch direkt
   auf die Liste. Wasser wird nie eingekauft.
 - **Einstellungen:** Server und Anmeldung, Sicherung als ZIP, Darstellung, Tagesziel, **Zutatenkatalog** (Synonyme,
-  Zusammenführen) und **Packung scannen** (Strichcode, Open Food Facts abschaltbar, Foto der Nährwerttabelle; ADR 0013).
+  Zusammenführen) und **Packung scannen** (Strichcode, Open Food Facts abschaltbar, Foto der Nährwerttabelle; ADR 0013),
+  auch direkt vom Homescreen-Widget **„Scannen“**.
 
 Gestrichen gegenüber der v1 (ADR 0011): Vorrat mit MHD, „Aus dem Vorrat“, Abbuchen bei „Gekocht“, Liste als Text
 teilen, Planer-Modi 1/2/3/7 Tage, Web-App.

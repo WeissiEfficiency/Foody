@@ -2,7 +2,9 @@ package de.foody.app.navigation
 
 import android.content.Intent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -23,10 +25,12 @@ import de.foody.feature.woche.WocheRoute
 import de.foody.feature.zutaten.ZutatEditorRoute
 import de.foody.feature.zutaten.ZutatenListeRoute
 import java.time.LocalDate
+import java.util.UUID
 
 /** Die Bildschirme mit ViewModel (Hilt); Navigationstests setzen eigene Platzhalter ein (`Platzhalter.kt` in den Tests). */
 class Bildschirme(
-    val heute: @Composable (NavHostController) -> Unit,
+    /** „Heute“; dazu die offene Scan-Anfrage vom Widget (`null` = keine) und der Rückruf, wenn sie angenommen ist. */
+    val heute: @Composable (NavHostController, String?, () -> Unit) -> Unit,
     val tagebuch: @Composable (LocalDate, NavHostController) -> Unit,
     val einstellungen: @Composable (NavHostController) -> Unit,
     val serverVerbinden: @Composable (NavHostController) -> Unit,
@@ -45,13 +49,15 @@ class Bildschirme(
 ) {
     companion object {
         val echt = Bildschirme(
-            heute = { nav ->
+            heute = { nav, scanAnfrage, onScanAngenommen ->
                 HeuteRoute(
                     onKochen = { id, portionen -> nav.navigate(Kochen(id, portionen)) },
                     onRezept = { nav.navigate(RezeptDetail(it)) },
                     onEinkauf = { nav.navigate(EinkaufListe(it)) },
                     onAlleEintraege = { nav.navigate(TagebuchTag(LocalDate.now().toString())) },
                     onEinstellungen = { nav.navigate(Einstellungen) },
+                    scanAnfrage = scanAnfrage,
+                    onScanAngenommen = onScanAngenommen,
                 )
             },
             tagebuch = { datum, nav ->
@@ -121,14 +127,26 @@ class Bildschirme(
 /** Schema der Deep Links (die v1 hatte keine). */
 const val SCHEMA = "foody://"
 
+/** Tipp aufs Widget „Scannen“: „Heute“ mit dem Eintragen-Blatt und gleich dem Strichcode-Scan. */
+const val SCAN_LINK = "${SCHEMA}scannen"
+
+/** Offene Scan-Anfrage im SavedStateHandle von „Heute“: übersteht Drehen und Prozessende, bis „Heute“ sie annimmt. */
+internal const val SCAN_ANFRAGE = "scanAnfrage"
+
+fun Intent.istScan(): Boolean = data?.toString() == SCAN_LINK
+
 /**
  * Alle Ziele der V3. Deep Links: `foody://rezept/{id}`, `foody://einkauf/{listeId}`,
- * `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute).
+ * `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute); dazu
+ * [SCAN_LINK] vom Widget, den [deepLinkOeffnen] selbst behandelt.
  */
 @Composable
 fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Modifier = Modifier) {
     NavHost(nav, startDestination = Heute, modifier = modifier) {
-        composable<Heute> { bildschirme.heute(nav) }
+        composable<Heute> { eintrag ->
+            val scan by eintrag.savedStateHandle.getStateFlow<String?>(SCAN_ANFRAGE, null).collectAsStateWithLifecycle()
+            bildschirme.heute(nav, scan) { eintrag.savedStateHandle[SCAN_ANFRAGE] = null }
+        }
         composable<Rezepte> { bildschirme.rezepte(nav) }
         composable<Woche> { bildschirme.woche(nav) }
         composable<Einkauf> { bildschirme.einkauf(null, nav) }
@@ -160,13 +178,26 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
 /**
  * Deep Link bei laufender App (`onNewIntent`): ins laufende Gerüst navigieren. [NavHostController.handleDeepLink] baut
  * bei `FLAG_ACTIVITY_NEW_TASK` (Tipp auf die Timer-Meldung) den Task neu auf und verwirft ungespeicherte Eingaben.
- * Derselbe Link zweimal legt das Ziel nicht doppelt an.
+ * Derselbe Link zweimal legt das Ziel nicht doppelt an. [SCAN_LINK] führt zu [scanAnfragen].
  */
 fun NavHostController.deepLinkOeffnen(intent: Intent): Boolean {
+    if (intent.istScan()) {
+        scanAnfragen()
+        return true
+    }
     val uri = intent.data ?: return false
     if (!graph.hasDeepLink(uri)) return false
     navigate(uri, navOptions { launchSingleTop = true })
     return true
+}
+
+/**
+ * Widget „Scannen“: zurück zu „Heute“ wie ein Tipp auf den Tab und dort eine neue Scan-Anfrage hinterlegen (je Tipp
+ * eine eigene ID, also auch beim zweiten Tipp ein neuer Scan).
+ */
+fun NavHostController.scanAnfragen() {
+    popBackStack<Heute>(inclusive = false)
+    getBackStackEntry<Heute>().savedStateHandle[SCAN_ANFRAGE] = UUID.randomUUID().toString()
 }
 
 /** „Rezept anpassen“ nach dem Kochen: der Editor ersetzt den Kochmodus, „Zurück“ führt dorthin, woher man kam. */

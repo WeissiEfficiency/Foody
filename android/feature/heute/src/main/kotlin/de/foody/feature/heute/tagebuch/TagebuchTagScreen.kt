@@ -70,13 +70,21 @@ private val TAG_LANG = DateTimeFormatter.ofPattern("EEEE, d. MMMM yyyy", Locale.
  * Mitternacht leert das Blatt nicht), [id] je Öffnen neu – nur ein neuer Auftrag setzt die Eingaben zurück, ein
  * Neuaufbau (Drehen, Dunkelmodus) nicht. Mit [Saver] überlebt er den Neuaufbau.
  */
-data class BlattAuftrag(val mahlzeit: Mahlzeit?, val datum: LocalDate, val id: String = UUID.randomUUID().toString()) {
+data class BlattAuftrag(
+    val mahlzeit: Mahlzeit?,
+    val datum: LocalDate,
+    val id: String = UUID.randomUUID().toString(),
+    /** Vom Widget „Scannen“: gleich in „Frei“ mit dem Strichcode-Scan beginnen. */
+    val scannen: Boolean = false,
+) {
     companion object {
         val Saver: Saver<BlattAuftrag?, Any> = Saver(
-            save = { a -> a?.let { arrayListOf(it.mahlzeit?.name.orEmpty(), it.datum.toString(), it.id) } },
+            save = { a -> a?.let { arrayListOf(it.mahlzeit?.name.orEmpty(), it.datum.toString(), it.id, if (it.scannen) "scannen" else "") } },
             restore = { w ->
                 @Suppress("UNCHECKED_CAST")
-                (w as List<String>).let { (m, d, id) -> BlattAuftrag(m.takeIf { it.isNotEmpty() }?.let(Mahlzeit::valueOf), LocalDate.parse(d), id) }
+                (w as List<String>).let { (m, d, id, s) ->
+                    BlattAuftrag(m.takeIf { it.isNotEmpty() }?.let(Mahlzeit::valueOf), LocalDate.parse(d), id, scannen = s.isNotEmpty())
+                }
             },
         )
     }

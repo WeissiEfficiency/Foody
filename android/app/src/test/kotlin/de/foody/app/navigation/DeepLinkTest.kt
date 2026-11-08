@@ -2,8 +2,10 @@ package de.foody.app.navigation
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -16,6 +18,7 @@ import org.robolectric.annotation.GraphicsMode
 import java.time.LocalDate
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -63,6 +66,51 @@ class DeepLinkTest {
             FoodyTheme { Hauptgeruest(nav, Bildschirme.platzhalter) }
         }
         compose.runOnIdle { assertFalse(nav.deepLinkOeffnen(Intent(Intent.ACTION_VIEW, Uri.parse("foody://gibt-es-nicht/1")))) }
+    }
+
+    /**
+     * Widget „Scannen“ bei laufender App: zurück zu „Heute“ (wie der Tab), dort eine Scan-Anfrage, die „Heute“ einmal
+     * annimmt. Ein zweiter Tipp bringt eine neue Anfrage mit eigener ID.
+     */
+    @Test
+    fun scanLinkFuehrtZuHeuteMitAnfrage() {
+        val angenommen = mutableListOf<String>()
+        val bildschirme = Bildschirme.platzhalter.mitHeute { _, scan, annehmen ->
+            LaunchedEffect(scan) {
+                if (scan != null) {
+                    angenommen += scan
+                    annehmen()
+                }
+            }
+            Platzhalter("Heute")
+        }
+        compose.setContent {
+            nav = rememberNavController()
+            FoodyTheme { Hauptgeruest(nav, bildschirme) }
+        }
+        compose.runOnIdle { nav.navigate(RezeptDetail("r1")) }
+        val link = Intent(Intent.ACTION_VIEW, Uri.parse(SCAN_LINK))
+        compose.runOnIdle { assertTrue(nav.deepLinkOeffnen(link)) }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertTrue(nav.currentBackStackEntry!!.destination.hasRoute<Heute>())
+            assertEquals(1, nav.currentBackStack.value.count { it.destination.hasRoute<Heute>() })
+            assertEquals(1, angenommen.size)
+            assertNull(nav.getBackStackEntry<Heute>().savedStateHandle.get<String>(SCAN_ANFRAGE), "angenommen und weg")
+        }
+        compose.runOnIdle { assertTrue(nav.deepLinkOeffnen(link)) }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertEquals(2, angenommen.size)
+            assertEquals(2, angenommen.toSet().size, "jeder Tipp eine eigene Anfrage")
+        }
+    }
+
+    @Test
+    fun scanLinkErkannt() {
+        assertTrue(Intent(Intent.ACTION_VIEW, Uri.parse("foody://scannen")).istScan())
+        assertFalse(Intent(Intent.ACTION_VIEW, Uri.parse("foody://rezept/r1")).istScan())
+        assertFalse(Intent(Intent.ACTION_MAIN).istScan())
     }
 
     @Test

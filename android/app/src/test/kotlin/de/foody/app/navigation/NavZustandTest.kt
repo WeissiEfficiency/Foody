@@ -37,16 +37,9 @@ class NavZustandTest {
     private var breite by mutableStateOf(411.dp)
 
     /** „Heute“ mit einem Zähler in `rememberSaveable`, sonst die Platzhalter. */
-    private val bildschirme = Bildschirme.platzhalter.let { p ->
-        Bildschirme(
-            heute = {
-                var n by rememberSaveable { mutableStateOf(0) }
-                Button(onClick = { n++ }) { Text("Gezählt: $n") }
-            },
-            tagebuch = p.tagebuch, einstellungen = p.einstellungen, serverVerbinden = p.serverVerbinden,
-            zutaten = p.zutaten, zutat = p.zutat, rezepte = p.rezepte, rezeptDetail = p.rezeptDetail,
-            editor = p.editor, kochen = p.kochen, woche = p.woche, einkauf = p.einkauf,
-        )
+    private val bildschirme = Bildschirme.platzhalter.mitHeute { _, _, _ ->
+        var n by rememberSaveable { mutableStateOf(0) }
+        Button(onClick = { n++ }) { Text("Gezählt: $n") }
     }
 
     private fun starten() {
