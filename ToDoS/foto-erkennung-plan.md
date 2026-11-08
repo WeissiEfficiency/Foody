@@ -1,6 +1,6 @@
 # Foody – Mahlzeit aus Foto (auf dem Gerät)
 
-Stand: 2026-11-02. Phase 0–4 erledigt (Modell: [ADR 0017](../docs/adr/0017-fotoerkennung-auf-dem-geraet.md)),
+Stand: 2026-11-08 (4B-Modell, erster Handytest gut). Phase 0–4 erledigt (Modell: [ADR 0017](../docs/adr/0017-fotoerkennung-auf-dem-geraet.md)),
 offen sind der erste Test auf dem Handy, danach die Messung mit einer Frage, und die Abnahme (Phase 5). Ersetzt die KI-Hilfe über den Server (ADR 0019, [`archiv/ki-plan.md`](archiv/ki-plan.md)).
 Die Phasen werden der Reihe nach abgearbeitet; die nächste beginnt, wenn die vorige abgehakt ist.
 
@@ -177,9 +177,11 @@ keine Erkennung; der Knopf erscheint dort nur mit importiertem Modell und meldet
 
 - [x] `docs/architecture.md` (Abschnitt `:core:erkennung`), `README.md` (Modultabelle), `CLAUDE.md` (Testbefehl).
 - [x] `docs/security.md`: Foto bleibt auf dem Gerät, Modell einmal per SAF, GGUF-Prüfung, Restrisiken.
-- [ ] Erster Test auf dem Handy (13R): Modell in den Einstellungen installieren, einige Fotos über „Foto erkennen“
-      eintragen; Ablauf, Meldungen und Markierung im Alltag prüfen.
-- [ ] Danach Zeit je Foto messen (eine Frage, mit Laden; Ziel 15–30 s): `MessungTest` auf dem 13R
+- [x] Erster Test auf dem Handy (13R): Modell in den Einstellungen installieren, einige Fotos über „Foto erkennen“
+      eintragen; Ablauf, Meldungen und Markierung im Alltag prüfen. Mit dem 2B-Modell schlecht, mit dem 4B-Modell
+      (3.7.0) „lief gut“, eine Erkennung etwa 30 s; 90 s Zeitlimit für den Nutzer in Ordnung (2026-11-08).
+- [x] ~~Danach Zeit je Foto messen~~ für das 4B-Modell per `llama-server` auf dem 13R gemessen: 34 s im Median
+      (ADR 0017, Nachtrag). Ursprünglich geplant: (eine Frage, mit Laden; Ziel 15–30 s): `MessungTest` auf dem 13R
       (`-e messung an`, Bilder wie in Phase 2), Ergebnis hier eintragen; die Test-APK
       `de.foody.core.erkennung.test` danach vom Handy entfernen.
 - [ ] Abnahme im Alltag auf dem Handy: die ersten ~30 Foto-Einträge auswerten – Vorschlag gegen das, was nach deiner
