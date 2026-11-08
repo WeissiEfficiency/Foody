@@ -9,6 +9,12 @@ class ServingsEstimatorTest {
     @Test fun recognizesKindFromName() {
         assertEquals(Kind.BAKED, ServingsEstimator.kindOf("Saftiger Zitronenkuchen"))
         assertEquals(Kind.BAKED, ServingsEstimator.kindOf("Einfaches Weizenbrot"))
+        // Gebäck, das die Liste früher nicht kannte (Prüfung der Chefkoch-Sammlung, 2026-11-08)
+        for (name in listOf(
+            "Nussecken Rezept - selber machen", "Laugenstangen, selbst gemacht", "Schwarzwälder Kirsch Cupcakes",
+            "Mini-Party-Quiches", "Alt-Wiener Apfelstrudel", "Buchteln nach österreichischem Rezept", "Apfel-Zimt-Küchlein",
+            "Türkische Pogaca mit Käsefüllung",
+        )) assertEquals(Kind.BAKED, ServingsEstimator.kindOf(name), name)
         // „Brotsoße“ ist kein Gebäck – entscheidend ist das Wortende
         assertEquals(Kind.MAIN, ServingsEstimator.kindOf("Fränkischer Schweinebraten mit dunkler Brotsoße"))
         assertEquals(Kind.DESSERT, ServingsEstimator.kindOf("Tiramisu klassisch"))

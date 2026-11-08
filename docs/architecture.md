@@ -166,7 +166,9 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-18-v3-phase3-app-daten-sync-desi
   der v1 (mit Vorrat, auch reines JSON) lehnt der Import mit eigener Meldung ab (C8). Import ersetzt alles, ist atomar und bei aktivem Sync gesperrt; Zip-Slip und
   Größengrenzen wie v1.
 - **Portionen-Nachtrag** (`PortionenNachtrag`): ordnet Markdown-Dateien über `sourceUrl` den Rezepten zu und wendet
-  `RezeptImport.portionenNachtragen` an (nur `defaultServings` und Notiz); Ergebnis aktualisiert/übersprungen/ohne
+  `RezeptImport.portionenNachtragen` an, bei unverändert „1 Portion“ aus der Datei `RezeptImport.einePortionNachtragen`
+  (Stückzahl im Text, Backware, über 1.500 kcal; gerechnet mit den Zeilen des Rezepts und dem Katalog) – nur
+  `defaultServings` und Notiz, die Mengen nie; Ergebnis aktualisiert/übersprungen/ohne
   Rezept. Aufruf über „Portionen nachtragen“ im Import-Blatt der Rezepte (Ordner wählen, `RezeptImporter.portionenNachtragen`).
 - **Tests:** Robolectric-Unit-Tests für DAOs, Trigger, Abbildung, Sync-Speicher, Fotos, Sicherung; der Sync-Client
   läuft im Test gegen den echten `:server-sync` (`TestServer` in `TestSyncServer.kt`). Auf dem Emulator (`ciDevice`): Migrationstest 9 → 10

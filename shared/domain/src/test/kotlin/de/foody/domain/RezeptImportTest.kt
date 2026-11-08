@@ -4,6 +4,7 @@ import java.math.BigDecimal
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Import-Rechnung, die App und Server gemeinsam nutzen (vorher in `RecipeImportRepository` der App). */
@@ -104,5 +105,52 @@ class RezeptImportTest {
             RezeptImport.hinweis("https://x.example/r", 3, geschaetzt = true),
         )
         assertEquals("Portionenzahl war in der Datei nicht angegeben – auf 4 gesetzt, bitte prüfen.", RezeptImport.hinweis(null, 4, geschaetzt = false))
+    }
+
+    private fun mehlRezept(name: String, gramm: String, portionen: Int?, schritte: List<String> = emptyList()) =
+        ImportedRecipe(name, null, listOf(ImportedIngredient("Weizenmehl", bd(gramm), MeasureUnit.GRAM, null, null)), schritte, servings = portionen)
+
+    @Test fun stueckzahlAusDemText() {
+        assertEquals(24, RezeptImport.stueckAusText(listOf("Den Teig zu einer Rolle formen, 24 Stücke abstechen."), backware = false))
+        assertEquals(12, RezeptImport.stueckAusText(listOf("Ergibt 12 - 14 Stück."), backware = false))
+        assertEquals(20, RezeptImport.stueckAusText(listOf("Zubereitung: Ergibt ca. 20 Stück"), backware = false))
+        // „In 12 Stücke schneiden“ nur bei Backwaren: sonst wird oft Gemüse oder Fleisch zerteilt
+        assertEquals(12, RezeptImport.stueckAusText(listOf("Den Kuchen in 12 Stücke schneiden."), backware = true))
+        assertNull(RezeptImport.stueckAusText(listOf("Das Fleisch in 4 Stücke schneiden."), backware = false))
+        assertNull(RezeptImport.stueckAusText(listOf("Ein Stück Ingwer schälen.", "Den Braten 2 Stunden garen."), backware = true))
+        assertNull(RezeptImport.stueckAusText(listOf("Ergibt 200 Stück"), backware = true))
+    }
+
+    @Test fun einePortionMitStueckzahlImText() {
+        // Laugenstangen: „Portionen: 1“, im Text „24 Stücke abstechen“
+        val e = RezeptImport.vorbereiten(mehlRezept("Laugenstangen", "1000", 1, listOf("24 Stücke abstechen.")), listOf(mehl), 4)
+        assertEquals(24, e.portionen)
+        assertTrue(e.ausText)
+        assertFalse(e.geschaetzt)
+        assertFalse(e.ausDatei)
+        assertEquals(
+            "Quelle: https://x.example/r\nPortionenzahl aus dem Rezepttext: ergibt 24 Stück, bitte prüfen.",
+            RezeptImport.hinweis("https://x.example/r", 24, geschaetzt = false, ausText = true),
+        )
+    }
+
+    @Test fun mehrerePortionenAusDerDateiGeltenVorDemText() {
+        val e = RezeptImport.vorbereiten(mehlRezept("Laugenstangen", "1000", 4, listOf("24 Stücke abstechen.")), listOf(mehl), 4)
+        assertEquals(4, e.portionen)
+        assertTrue(e.ausDatei)
+    }
+
+    @Test fun eineSehrReichhaltigePortionWirdGeschaetzt() {
+        // „Portionen: 1“ mit 1 kg Mehl (3.466 kcal) ist das ganze Gericht, nicht eine Portion
+        val e = RezeptImport.vorbereiten(mehlRezept("Schaschlik-Topf", "1000", 1), listOf(mehl), 4)
+        assertEquals(ServingsEstimator.estimate("Schaschlik-Topf", 1000.0, 3465.6, null), e.portionen)
+        assertTrue(e.geschaetzt)
+    }
+
+    @Test fun einePortionBisZurGrenzeGilt() {
+        // 400 g Mehl ≈ 1.386 kcal: bleibt eine Portion, wie die Datei sagt
+        val e = RezeptImport.vorbereiten(mehlRezept("Smashed Kebab Burger", "400", 1), listOf(mehl), 4)
+        assertEquals(1, e.portionen)
+        assertTrue(e.ausDatei)
     }
 }
