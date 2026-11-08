@@ -77,6 +77,7 @@ private fun FarbenUndSchrift() {
         "Grund" to f.grund, "Text" to f.text, "Nebentext" to f.nebentext, "Primär" to f.primaer,
         "Auf Primär" to f.aufPrimaer, "Primär-Behälter" to f.primaerBehaelter, "Auf Behälter" to f.aufPrimaerBehaelter,
         "Oliv" to f.oliv, "Safran" to f.safran, "Balkenspur" to f.balkenSpur,
+        "Eiweiß" to f.makro.eiweiss, "Kohlenhydrate" to f.makro.kohlenhydrate, "Fett" to f.makro.fett,
     )
     FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         rollen.forEach { (name, farbe) -> Farbfeld(name, farbe) }

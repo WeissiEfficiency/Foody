@@ -56,6 +56,9 @@ fun kontrastPaare(dunkel: Boolean, farbwelt: Farbwelt = Farbwelt.Standard): List
                 add(KontrastPaar("Primär als Text auf Glas ${stufe.name} @$i", f.primaer, glas, TEXT))
                 add(KontrastPaar("Oliv als Grafik auf Glas ${stufe.name} @$i", f.oliv, glas, GRAFIK))
                 add(KontrastPaar("Safran als Grafik auf Glas ${stufe.name} @$i", f.safran, glas, GRAFIK))
+                add(KontrastPaar("Eiweiß als Grafik auf Glas ${stufe.name} @$i", f.makro.eiweiss, glas, GRAFIK))
+                add(KontrastPaar("Kohlenhydrate als Grafik auf Glas ${stufe.name} @$i", f.makro.kohlenhydrate, glas, GRAFIK))
+                add(KontrastPaar("Fett als Grafik auf Glas ${stufe.name} @$i", f.makro.fett, glas, GRAFIK))
                 add(KontrastPaar("aufPrimär auf Primär (Glas ${stufe.name})", f.aufPrimaer, f.primaer, TEXT))
                 add(KontrastPaar("aufPrimärBehälter auf Behälter (Glas ${stufe.name})", f.aufPrimaerBehaelter, f.primaerBehaelter, TEXT))
             }

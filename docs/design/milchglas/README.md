@@ -17,6 +17,16 @@ Git-Verlauf. Wie die App heute aussieht, zeigen die Referenzbilder der Features 
 
 Maßgeblich ist `Farbwelt.kt` in `:core:designsystem`; der Kontrast-Test prüft jede Farbwelt hell und dunkel (WCAG 2.2 AA ohne Unschärfe, gegen Grund und volle Stellen des Verlaufs, Glas per Alpha gemischt; Text ≥ 4,5 : 1, Grafik ≥ 3 : 1). Die Entwürfe waren mit genau diesen Werten gerendert (Nebentext im hellen Modus dunkler als im ersten Canvas-Stand, weil er auch direkt auf dem Verlauf AA halten muss).
 
+### Nährwerte (`MakroFarben`, seit 2026-11-08)
+
+In allen Farbwelten gleich, nur Grafik (Balken, Punkte). Vorher Oliv, Safran und Primär – bei Mango fast ein Ton.
+`MakroFarbenTest` verlangt je Paar ≥ 80° Farbton und ΔE ≥ 40 (CIE-Lab), der Kontrast-Test 3 : 1 auf jedem Glas.
+
+| Modus | Eiweiß | Kohlenhydrate | Fett |
+|---|---|---|---|
+| Hell | `#1F76A8` | `#A8650F` | `#A83C7C` |
+| Dunkel | `#6CC0E6` | `#E3A653` | `#EA8FC4` |
+
 ### Hell
 
 | Farbwelt | Grund | Text | Nebentext | Primär | Auf Primär | Behälter | Auf Behälter | Oliv | Safran | Spur | Verlauf oben | Verlauf unten | Glas |
