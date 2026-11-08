@@ -78,9 +78,9 @@ internal fun TagBilanz(kcal: Int, ziel: Int?, eiweiss: Int, kh: Int, fett: Int) 
                 }
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
-                MakroBalken("Eiweiß", eiweiss, eiweiss * 4f / energie, f.oliv)
-                MakroBalken("KH", kh, kh * 4f / energie, f.safran)
-                MakroBalken("Fett", fett, fett * 9f / energie, f.primaer)
+                MakroBalken("Eiweiß", eiweiss, eiweiss * 4f / energie, f.makro.eiweiss)
+                MakroBalken("KH", kh, kh * 4f / energie, f.makro.kohlenhydrate)
+                MakroBalken("Fett", fett, fett * 9f / energie, f.makro.fett)
             }
         }
     }

@@ -13,7 +13,9 @@ Squircle …). Der Nutzer wollte eine Oberfläche, die er selbst einfärben kann
 - **Farbwelten:** acht wählbare Paletten (Beere, Kirsche, Mango, Pflaume, Heidelbeere, Lagune, Pistazie, Abendrot),
   je hell und dunkel; **Standard Mango**. Der Hintergrundverlauf ist Ton in Ton aus der Hauptfarbe (zweiter Ton um 28°
   verschoben, bei Grün Richtung Gelb), das Glas ist mit der Hauptfarbe getönt, der Platzhalter für Rezepte ohne Foto
-  folgt der Farbwelt. Oliv bleibt die Eiweiß-Farbe, Safran die Kohlenhydrat-Farbe.
+  folgt der Farbwelt. ~~Oliv bleibt die Eiweiß-Farbe, Safran die Kohlenhydrat-Farbe.~~ Seit 2026-11-08 haben die
+  Nährwerte eigene Farben (`MakroFarben`, siehe `docs/design/milchglas/README.md`): Oliv, Safran und die Primärfarbe
+  lagen bei Mango fast auf einem Ton.
 - **Wahl** unter Einstellungen › Darstellung (Muster mit Namen, neben Hell/Dunkel/System); gespeichert in den Prefs
   `foody` unter `farbwelt` (Name der Farbwelt), fehlend = Standard. Vorerst nur auf dem Gerät, kein Sync.
 - **Milchglas:** Unschärfe 40 dp statt 24 dp, feines Korn (Haze `noiseFactor` 0,08 hell, 0,05 dunkel), Tönung je

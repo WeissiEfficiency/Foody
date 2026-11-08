@@ -70,17 +70,17 @@ fun Naehrwertbalken(kcal: Int, ziel: Int?, eiweissG: Int, khG: Int, fettG: Int, 
                 .semantics { contentDescription = beschreibung },
         ) {
             Row(Modifier.fillMaxWidth().fillMaxHeight()) {
-                Segment(a.eiweiss, f.oliv)
-                Segment(a.kh, f.safran)
-                Segment(a.fett, f.primaer)
+                Segment(a.eiweiss, f.makro.eiweiss)
+                Segment(a.kh, f.makro.kohlenhydrate)
+                Segment(a.fett, f.makro.fett)
                 val rest = 1f - a.eiweiss - a.kh - a.fett
                 if (rest > 0.0001f) Spacer(Modifier.weight(rest))
             }
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1)) {
-            Legende("Eiweiß $eiweissG g", f.oliv)
-            Legende("KH $khG g", f.safran)
-            Legende("Fett $fettG g", f.primaer)
+            Legende("Eiweiß $eiweissG g", f.makro.eiweiss)
+            Legende("KH $khG g", f.makro.kohlenhydrate)
+            Legende("Fett $fettG g", f.makro.fett)
         }
     }
 }
