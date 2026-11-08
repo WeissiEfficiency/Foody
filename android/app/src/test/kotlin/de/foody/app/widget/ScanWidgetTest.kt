@@ -31,6 +31,8 @@ class ScanWidgetTest {
         )
         val widget = assertNotNull(empfaenger.firstOrNull { it.activityInfo.name == ScanWidget::class.java.name }, "ScanWidget fehlt")
         assertEquals(R.xml.scan_widget_info, widget.activityInfo.metaData.getInt(AppWidgetManager.META_DATA_APPWIDGET_PROVIDER))
+        // Hersteller-Launcher lesen die Widget-Liste teils selbst über den PackageManager: nicht exportiert fehlte es dort
+        assertTrue(widget.activityInfo.exported, "für fremde Launcher sichtbar")
     }
 
     @Test

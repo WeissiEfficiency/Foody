@@ -7,6 +7,7 @@
     android:minHeight="40dp"
     android:minResizeWidth="40dp"
     android:minResizeHeight="40dp"
+    android:previewImage="@drawable/ic_widget_scan"
     android:previewLayout="@layout/widget_scan"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="2"
