@@ -30,10 +30,11 @@
             </intent-filter>
         </activity>
 
-        <!-- Homescreen-Widget „Scannen“: öffnet foody://scannen (ScanWidget) -->
+        <!-- Homescreen-Widget „Scannen“: öffnet foody://scannen (ScanWidget). Exportiert, sonst fehlt es in der
+             Widget-Liste mancher Hersteller-Launcher; onUpdate setzt nur den Knopf, ein fremdes APPWIDGET_UPDATE schadet nicht -->
         <receiver
             android:name=".widget.ScanWidget"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/widget_scan_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
