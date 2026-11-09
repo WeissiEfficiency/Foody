@@ -18,6 +18,8 @@ data class ErkennungZustand(
     val meldung: String? = null,
     /** Datei des Kamerafotos, solange die Kamera offen ist. */
     val fotoPfad: String? = null,
+    /** Widget „KI-Foto“: Der Knopf soll gleich die Kamera öffnen (einmal, dann [ErkennungLauf.kameraAnfrageErledigt]). */
+    val kameraAngefragt: Boolean = false,
 )
 
 /**
@@ -32,13 +34,26 @@ class ErkennungLauf(
     private val gespeichert: SavedStateHandle,
     private val onVorschlag: suspend (FotoVorschlag) -> Unit,
 ) {
-    private val _zustand = MutableStateFlow(ErkennungZustand(meldung = gespeichert[MELDUNG], fotoPfad = gespeichert[FOTO]))
+    private val _zustand = MutableStateFlow(
+        ErkennungZustand(meldung = gespeichert[MELDUNG], fotoPfad = gespeichert[FOTO], kameraAngefragt = gespeichert[ANFRAGE] ?: false),
+    )
     val zustand: StateFlow<ErkennungZustand> = _zustand.asStateFlow()
 
     private var arbeit: Job? = null
 
     init {
         gespeichert.get<String>(BILD)?.let { starten(it, gespeichert[LOESCHEN]) }
+    }
+
+    /** Die Kamera soll aufgehen, sobald der Knopf zu sehen ist; übersteht Drehen und Prozessende bis dahin. */
+    fun kameraAnfragen() = anfrage(true)
+
+    /** Angenommen (vor dem Start der Kamera, damit ein Neuaufbau sie nicht noch einmal öffnet) oder verworfen. */
+    fun kameraAnfrageErledigt() = anfrage(false)
+
+    private fun anfrage(an: Boolean) {
+        gespeichert[ANFRAGE] = an
+        _zustand.value = _zustand.value.copy(kameraAngefragt = an)
     }
 
     fun kameraGestartet(pfad: String) {
@@ -92,6 +107,7 @@ class ErkennungLauf(
         const val LOESCHEN = "fotoErkennung.loeschen"
         const val FOTO = "fotoErkennung.kamera"
         const val MELDUNG = "fotoErkennung.meldung"
+        const val ANFRAGE = "fotoErkennung.kameraAnfrage"
     }
 }
 

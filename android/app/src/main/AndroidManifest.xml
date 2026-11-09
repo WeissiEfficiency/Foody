@@ -21,7 +21,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Deep Links foody://rezept|einkauf|kochen|tagebuch/… (Navigation Compose ordnet sie zu) und foody://scannen (Widget) -->
+            <!-- Deep Links foody://rezept|einkauf|kochen|tagebuch/… (Navigation Compose ordnet sie zu), foody://scannen und foody://foto (Widgets) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -42,6 +42,19 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/scan_widget_info" />
+        </receiver>
+
+        <!-- Homescreen-Widget „KI-Foto“: öffnet foody://foto (FotoWidget); exportiert wie „Scannen“ -->
+        <receiver
+            android:name=".widget.FotoWidget"
+            android:exported="true"
+            android:label="@string/widget_foto_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/foto_widget_info" />
         </receiver>
 
         <!-- WorkManager wird mit der HiltWorkerFactory selbst konfiguriert (FoodyApp) -->

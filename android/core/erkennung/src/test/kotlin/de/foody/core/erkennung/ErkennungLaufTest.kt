@@ -49,6 +49,21 @@ class ErkennungLaufTest {
         assertFalse(foto.exists())
     }
 
+    /** Widget „KI-Foto“: Die Kamera-Anfrage übersteht ein Prozessende, bis der Knopf sie annimmt; danach nicht mehr. */
+    @Test fun kameraAnfrageBisZumAnnehmen() = runTest {
+        val h = SavedStateHandle()
+        val l = lauf(h) { ErkennungStatus.Fehler }
+        assertFalse(l.zustand.value.kameraAngefragt)
+        l.kameraAnfragen()
+        assertTrue(l.zustand.value.kameraAngefragt)
+        val nachher = h.nachProzessende()
+        val l2 = lauf(nachher) { ErkennungStatus.Fehler }
+        assertTrue(l2.zustand.value.kameraAngefragt)
+        l2.kameraAnfrageErledigt()
+        assertFalse(l2.zustand.value.kameraAngefragt)
+        assertFalse(lauf(nachher.nachProzessende()) { ErkennungStatus.Fehler }.zustand.value.kameraAngefragt)
+    }
+
     @Test fun ohneVorschlagEineMeldung() = runTest {
         for (status in listOf(ErkennungStatus.KeinModell, ErkennungStatus.ZuWenigSpeicher, ErkennungStatus.Zeitlimit, ErkennungStatus.Unlesbar, ErkennungStatus.Fehler)) {
             val l = lauf(SavedStateHandle()) { status }

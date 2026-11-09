@@ -253,6 +253,13 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   Eintragen-Blatt (`BlattAuftrag(scannen = true)`, ID = Anfrage) und löscht die Anfrage; `EintragenViewModel.oeffnen(…,
   scannen = true)` setzt „Frei“ und startet den Strichcode-Scan einmal je Auftrag – Drehen oder Prozessende starten ihn
   nicht erneut. Ohne Play-Dienste bleibt es beim Blatt in „Frei“.
+  **Widget „KI-Foto“** (`FotoWidget`, gleiche Basis `KnopfWidget`, gleiche Farben): `foody://foto` (`FOTO_LINK`) geht
+  denselben Weg; die Anfrage im `SavedStateHandle` (`SCHNELLSTART`) ist ein `Schnellstart(art, id)` (`:feature:heute`,
+  als Text) mit `SCANNEN` oder `FOTO`, `BlattAuftrag(start = …)`. Bei `FOTO` setzt `oeffnen` „Frei“ und
+  `ErkennungLauf.kameraAnfragen()` (im `SavedStateHandle`); der `FotoErkennungKnopf` hält den Kamera-Launcher und öffnet
+  die Kamera, sobald er zu sehen ist und den Ordner aufgeräumt hat – vorher `kameraAnfrageErledigt()`, damit Drehen oder
+  Prozessende sie nicht noch einmal öffnen. Ohne Modell fehlt der Knopf: Das Blatt bleibt in „Frei“, das nächste normale
+  Öffnen verwirft die Anfrage.
   `Bildschirme` bündelt die Hilt-Bildschirme; Navigationstests setzen `Bildschirme.platzhalter` ein und laufen ohne Hilt.
 - **`:core:data`**: `HeuteRepository` (Plan heute/morgen nur mit vorhandenem, nicht archiviertem Rezept; kcal je
   Portion über `RecipeProfiles`; Rezeptvorschläge; offene Artikel der zuletzt geänderten Liste), `TagebuchRepository`

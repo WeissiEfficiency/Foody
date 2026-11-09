@@ -47,7 +47,8 @@ import java.io.File
 
 /**
  * „Foto erkennen“ neben „Packung scannen“: Menü mit Kamera und Galerie, während der Erkennung ein Fortschritt statt des
- * Symbols. Der Ablauf liegt in [lauf] (im ViewModel); Fortschritt und Meldung zeigt [FotoErkennungStand].
+ * Symbols. Der Ablauf liegt in [lauf] (im ViewModel); Fortschritt und Meldung zeigt [FotoErkennungStand]. Hat das
+ * Widget „KI-Foto“ die Kamera angefragt, öffnet der Knopf sie gleich selbst.
  */
 @Composable
 internal fun FotoErkennungKnopf(lauf: ErkennungLauf, modifier: Modifier = Modifier) {
@@ -59,9 +60,11 @@ internal fun FotoErkennungKnopf(lauf: ErkennungLauf, modifier: Modifier = Modifi
     // Läuft schon eine Erkennung (nach einem Prozessende neu gestartet), bleibt ihr Foto ebenfalls liegen.
     val behalten = remember { lauf.zustand.value.fotoPfad }
     val laeuftSchon = remember { lauf.zustand.value.laeuft }
+    var aufgeraeumt by remember { mutableStateOf(laeuftSchon) }
     LaunchedEffect(Unit) {
         if (!laeuftSchon) {
             withContext(Dispatchers.IO) { mahlzeitOrdner(context).listFiles()?.filter { it.path != behalten }?.forEach { it.delete() } }
+            aufgeraeumt = true
         }
     }
 
@@ -85,6 +88,14 @@ internal fun FotoErkennungKnopf(lauf: ErkennungLauf, modifier: Modifier = Modifi
         } catch (_: ActivityNotFoundException) {
             // Keine Kamera-App: bleibt die Galerie
             lauf.kameraZurueck()
+        }
+    }
+
+    // Widget „KI-Foto“: erst nach dem Aufräumen (sonst löscht es die neue Fotodatei), einmal je Anfrage
+    LaunchedEffect(aufgeraeumt, zustand.kameraAngefragt, zustand.laeuft) {
+        if (aufgeraeumt && zustand.kameraAngefragt && !zustand.laeuft) {
+            lauf.kameraAnfrageErledigt()
+            kameraStarten()
         }
     }
 

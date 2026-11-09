@@ -71,7 +71,7 @@ private val WEGE = listOf(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EintragenBlatt(auftrag: BlattAuftrag, onFertig: () -> Unit, vm: EintragenViewModel) {
-    LaunchedEffect(auftrag.id) { vm.oeffnen(auftrag.datum, auftrag.mahlzeit, auftrag = auftrag.id, scannen = auftrag.scannen) }
+    LaunchedEffect(auftrag.id) { vm.oeffnen(auftrag.datum, auftrag.mahlzeit, auftrag = auftrag.id, start = auftrag.start) }
     val z by vm.zustand.collectAsStateWithLifecycle()
     val moeglich by vm.speichernMoeglich.collectAsStateWithLifecycle()
     val bereich = rememberCoroutineScope()

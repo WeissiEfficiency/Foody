@@ -52,6 +52,7 @@ import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
+import de.foody.feature.heute.Schnellstart
 import de.foody.feature.heute.TAGEBUCH_INHALT
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
@@ -74,16 +75,17 @@ data class BlattAuftrag(
     val mahlzeit: Mahlzeit?,
     val datum: LocalDate,
     val id: String = UUID.randomUUID().toString(),
-    /** Vom Widget „Scannen“: gleich in „Frei“ mit dem Strichcode-Scan beginnen. */
-    val scannen: Boolean = false,
+    /** Vom Widget: gleich in „Frei“ mit dem Strichcode-Scan oder der Kamera beginnen; `null` = normal. */
+    val start: Schnellstart.Art? = null,
 ) {
     companion object {
         val Saver: Saver<BlattAuftrag?, Any> = Saver(
-            save = { a -> a?.let { arrayListOf(it.mahlzeit?.name.orEmpty(), it.datum.toString(), it.id, if (it.scannen) "scannen" else "") } },
+            save = { a -> a?.let { arrayListOf(it.mahlzeit?.name.orEmpty(), it.datum.toString(), it.id, it.start?.name.orEmpty()) } },
             restore = { w ->
                 @Suppress("UNCHECKED_CAST")
                 (w as List<String>).let { (m, d, id, s) ->
-                    BlattAuftrag(m.takeIf { it.isNotEmpty() }?.let(Mahlzeit::valueOf), LocalDate.parse(d), id, scannen = s.isNotEmpty())
+                    val mahlzeit = m.takeIf { it.isNotEmpty() }?.let(Mahlzeit::valueOf)
+                    BlattAuftrag(mahlzeit, LocalDate.parse(d), id, s.takeIf { it.isNotEmpty() }?.let(Schnellstart.Art::valueOf))
                 }
             },
         )
