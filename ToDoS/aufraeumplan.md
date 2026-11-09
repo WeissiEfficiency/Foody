@@ -20,6 +20,9 @@ Formatierung und CI, kein Rebuild nötig. Die signierte `foody.apk` 3.1.0 liegt 
 Als Nächstes: Test und Abnahme der Fotoerkennung (`ToDoS/foto-erkennung-plan.md`, Phase 5). Die KI-Hilfe über den
 Server ist gestrichen (ADR 0019).
 
+**Stand 2026-11-09** (Version 3.7.1): Gesamtprüfung ohne kritischen oder wichtigen Befund; offen sind die
+Kleinigkeiten P1–P6 und die Ideen O1–O4 in Stufe 8.
+
 Zusätzlich erledigt: **Z1** Release stürzte bei „Frei“ im Tagebuch ab – R8 entfernte die Konstruktoren der
 ML-Kit-Registrare (`firebase-components` 16.1.0 behält nur die Klasse); Keep-Regel in `proguard-rules.pro` (#139).
 
@@ -196,6 +199,37 @@ Geschichte sind). „Vorrat“ und „Haushalt“ stehen nur noch bei der bewuss
 | ✅ F7 | Tag `v1-server` auf GitHub und Forgejo löschen: Er ist ein Vorfahr von `v1-final`, den die Doku nennt **Erledigt 01.11.** (GitHub, Forgejo, lokal) | 👤 |
 | ✅ F8 | Zwei Worktrees abgeschlossener Sitzungen („Design-Visualisierung“, #170; „Alte Dateien aufräumen“, ohne Commit): Sitzungen archivieren, die App räumt die Worktrees mit weg **Geschlossen 04.11.:** alle fünf Worktrees unter `.claude/worktrees/` geprüft, ihr Inhalt ist in `main` (#170, #177, #192/#193, #201); sie gehen beim Archivieren der Sitzungen mit weg | 👤 |
 | ✅ F9 | Außerhalb des Repos, im OpenCloud-Ordner: `androidApp-debug.apk` (21.10., 40 MB, Stand v2) und `foody-vorschau.apk` (31.10.) löschen, falls nicht mehr gebraucht **Erledigt 04.11.:** beide gelöscht, nur `foody.apk` 3.4.1 bleibt | 👤 |
+
+## Stufe 8 – Gesamtprüfung 2026-11-09 (`main` e85801e, Version 3.7.1)
+
+Geprüft mit `./gradlew check ktlintPruefen` (1.500 Tests grün, ktlint ohne Befund, Lint 0 Fehler und 22 Warnungen) und
+`:app:assembleRelease` (R8, APK 11,2 MB); gelesen vor allem das Neue seit Stufe 7: Fotoerkennung (Kotlin und C++),
+BLS-Nachschlagen, Eintragen-Blatt, Widget „Scannen“, Einstellungen, dazu Build, CI und Docker. Sync und Server nur
+stichprobenartig. Nicht gelaufen: Emulator-Tests, Bildvergleich, Fotoerkennung auf dem Handy.
+
+**Ergebnis:** kein kritischer und kein wichtiger Befund. Offen sind nur Kleinigkeiten (P, im Chat N1–N5) und Ideen (O).
+
+| ID | Was | Vorschlag | Wer |
+|---|---|---|---|
+| P1 | **Reste eines abgebrochenen Modell-Imports** (`ModellDateien.kt:53`): Endet der Prozess mitten im Import, bleiben `import-0.teil` und `import-1.teil` in `filesDir/modell/` liegen – bis zu 2,95 GB, in den Einstellungen nicht sichtbar, weg erst beim nächsten Import | Beim Start (oder beim ersten Lesen des Stands) alle `import-*.teil` löschen; Test, der vorher fehlschlägt | 🤖 PR |
+| P2 | **Gerätewechsel** (`AndroidManifest.xml:9`, Lint `DataExtractionRules`): `allowBackup="false"` sperrt nur das Cloud-Backup. Eine Direktübertragung aufs neue Handy könnte Datenbank (mit Tagebuch) und Modell trotzdem kopieren; `docs/security.md` sagt, Daten verlassen das Gerät nur über Sicherung oder Sync | `dataExtractionRules` anlegen und dort bewusst ausschließen oder zulassen, in `security.md` festhalten. Vorher prüfen, ob das Handy diesen Weg überhaupt nutzt | 👤 entscheidet, 🤖 PR |
+| P3 | **Doku hinkt der Fotoerkennung hinterher:** `docs/security.md:17` nennt beim FileProvider `cache/mahlzeit/` nicht (`kamera_pfade.xml` gibt es frei); „1,5 GB“ statt 2,95 GB in `ModellVerwaltung.kt:39` und `EinstellungenViewModel.kt:118`; `README.md:8` mit „Stand (2026-10-28)“ | nachziehen | 🤖 PR (mit P1) |
+| P4 | **Worktrees:** unter `.claude/worktrees` liegen sieben von gemergten PRs (#206–#213: `bls-dichte`, `foto-4b`, `foto-text`, `makro-farben`, `portionen-gebaeck`, `scan-widget`, `widget-sichtbar`) und vier ohne Branch. `bold-poincare-7e26f0` (Widget „Foto“, 09.11.) ist noch nicht in `main` und bleibt | Sitzungen archivieren, die App räumt die Worktrees mit weg (wie F8) | 👤 |
+| P5 | **Arbeiten mit Claude:** Ein Worktree hat keine `local.properties`, `JAVA_HOME` und `ANDROID_HOME` sind auf dem Rechner nicht gesetzt; die Sitzung musste beides suchen (seit dem Umzug nach `C:\Dev` war das Gedächtnis der Sitzungen leer, vgl. V6). Die Pfade stehen jetzt wieder dort | Optional: `.claude/settings.json` im Projekt mit erlaubten Gradle-Befehlen, falls nicht schon global erlaubt | 👤 |
+| P6 | Klein: `Thread.sleep` in acht Testdateien (Nebenläufigkeit; können wackeln), `SyncSpeicher.kt` mit 803 Zeilen, 13 Lint-Hinweise `UseKtx` | Beim nächsten Anfassen der Stellen | 🤖 |
+
+**Ideen zur Optimierung** (Einschätzung, nicht gemessen; keine davon ist nötig):
+
+| ID | Was | Hinweis |
+|---|---|---|
+| O1 | Fotoerkennung: den Gerichtnamen eintragen, sobald das Modell ihn geschrieben hat, statt auf die ganze Antwort zu warten (Median 34 s). Der Name steht vorne, die Zutatenliste danach kostet die meisten der bis zu 600 Tokens | Braucht eine Rückmeldung je Token aus `foody_erkennung.cpp`; nach der Abnahme (Phase 5), wenn die Wartezeit im Alltag stört |
+| O2 | Modell nach einer Erkennung kurz geladen lassen: Bei zwei Fotos hintereinander entfiele das zweite Laden | Hält rund 3,7 GB Arbeitsspeicher belegt – erst auf dem Handy messen |
+| O3 | E6 ist erreicht: `:core:data` hat 6.640 Zeilen (beobachtet ab 6.250). Die Sicherung als `:core:sicherung` abtrennen | Bei 2 Minuten für den ganzen Check noch kein Muss |
+| O4 | `libfoody_erkennung.so` in der CI von Hand nachbauen und mit der eingecheckten vergleichen (Restrisiko in `docs/security.md`) | Vorher klären, ob der Bau bitgenau wiederholbar ist |
+
+**Gemessen, kein Handlungsbedarf:** `BlsDichteNachtragen` liest den BLS-Auszug bei jedem Start (24 Startzutaten mit
+BLS-Herkunft bleiben ohne Dichte Kandidaten): 9 ms auf dem PC, im Hintergrund. Der Katalogfilter im Eintragen-Blatt
+läuft je Tastendruck auf dem Haupt-Thread: 0,75 ms für 500 Zutaten.
 
 ## Empfohlene Reihenfolge
 
