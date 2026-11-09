@@ -34,6 +34,7 @@ import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
+import de.foody.feature.heute.Schnellstart
 import de.foody.feature.heute.mahlzeitNachUhrzeit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -247,15 +248,17 @@ class EintragenViewModel @Inject constructor(
      * Neues Blatt: alles zurück; Mahlzeit aus der angetippten Zeile, sonst nach Uhrzeit. Derselbe [auftrag] erneut
      * (Neuaufbau nach Drehen) lässt die Eingaben stehen; ein neuer bricht eine laufende Fotoerkennung ab.
      */
-    fun oeffnen(datum: LocalDate, mahlzeit: Mahlzeit?, uhrzeit: LocalTime = LocalTime.now(), auftrag: String? = null, scannen: Boolean = false) {
+    fun oeffnen(datum: LocalDate, mahlzeit: Mahlzeit?, uhrzeit: LocalTime = LocalTime.now(), auftrag: String? = null, start: Schnellstart.Art? = null) {
         if (auftrag != null && auftrag == letzterAuftrag) return
         letzterAuftrag = auftrag
         fotoLauf.abbrechen()
         val m = mahlzeit ?: mahlzeitNachUhrzeit(uhrzeit)
-        eingaben.value = if (scannen) Eingaben(datum = datum, mahlzeit = m, weg = EintragenWeg.FREI) else Eingaben(datum = datum, mahlzeit = m)
+        eingaben.value = if (start != null) Eingaben(datum = datum, mahlzeit = m, weg = EintragenWeg.FREI) else Eingaben(datum = datum, mahlzeit = m)
         gesperrt.value = false
-        // Widget „Scannen“: nur einmal je Auftrag (der Abgleich oben), also nicht erneut nach Drehen oder Prozessende
-        if (scannen && scanLauf.verfuegbar) scanLauf.strichcode()
+        // Widgets: nur einmal je Auftrag (der Abgleich oben), also nicht erneut nach Drehen oder Prozessende. Die Kamera
+        // startet der Foto-Knopf (er hält den Launcher), sobald er zu sehen ist; ohne Modell bleibt es beim Blatt in „Frei“.
+        if (start == Schnellstart.Art.SCANNEN && scanLauf.verfuegbar) scanLauf.strichcode()
+        if (start == Schnellstart.Art.FOTO) fotoLauf.kameraAnfragen() else fotoLauf.kameraAnfrageErledigt()
     }
 
     fun weg(w: EintragenWeg) = eingaben.update { it.copy(weg = w, suche = "") }

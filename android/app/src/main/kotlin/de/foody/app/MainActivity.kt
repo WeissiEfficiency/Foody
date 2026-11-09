@@ -15,8 +15,8 @@ import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import de.foody.app.navigation.Hauptgeruest
 import de.foody.app.navigation.deepLinkOeffnen
-import de.foody.app.navigation.istScan
-import de.foody.app.navigation.scanAnfragen
+import de.foody.app.navigation.schnellstart
+import de.foody.app.navigation.schnellstartAnfragen
 import de.foody.core.data.DarstellungSpeicher
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
@@ -27,8 +27,8 @@ import javax.inject.Inject
 
 /**
  * Einzige Activity der V3. `singleTask`: Ein Deep Link bei laufender App kommt über `onNewIntent` und wird an die
- * Navigation weitergereicht; beim Kaltstart liest die Navigation den Start-Intent selbst (außer dem Scan-Link vom
- * Widget, den gibt die Activity weiter).
+ * Navigation weitergereicht; beim Kaltstart liest die Navigation den Start-Intent selbst (außer den Links der Widgets
+ * „Scannen“ und „KI-Foto“, die gibt die Activity weiter).
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -39,11 +39,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        // Kaltstart vom Widget „Scannen“ (nicht nach Drehen/Prozessende: Die Anfrage liegt dann schon in „Heute“)
-        val scanBeimStart = savedInstanceState == null && intent.istScan()
+        // Kaltstart von einem Widget (nicht nach Drehen/Prozessende: Die Anfrage liegt dann schon in „Heute“)
+        val widgetBeimStart = if (savedInstanceState == null) intent.schnellstart() else null
         setContent {
             val nav = rememberNavController()
-            LaunchedEffect(nav) { if (scanBeimStart) nav.scanAnfragen() }
+            LaunchedEffect(nav) { widgetBeimStart?.let(nav::schnellstartAnfragen) }
             DisposableEffect(nav) {
                 val weiter = Consumer<Intent> { nav.deepLinkOeffnen(it) }
                 addOnNewIntentListener(weiter)

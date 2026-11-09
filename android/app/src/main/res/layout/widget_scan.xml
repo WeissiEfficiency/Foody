@@ -4,7 +4,7 @@
     android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_scan_hintergrund"
+    android:background="@drawable/widget_hintergrund"
     android:clipToOutline="true"
     android:contentDescription="@string/widget_scan_beschreibung"
     android:gravity="center"
@@ -25,7 +25,7 @@
         android:importantForAccessibility="no"
         android:maxLines="1"
         android:text="@string/widget_scan_text"
-        android:textColor="@color/widget_scan_inhalt"
+        android:textColor="@color/widget_inhalt"
         android:textSize="16sp"
         android:textStyle="bold" />
 </LinearLayout>

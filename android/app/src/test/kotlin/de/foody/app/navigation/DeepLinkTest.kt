@@ -10,6 +10,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.feature.heute.Schnellstart
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -70,15 +71,15 @@ class DeepLinkTest {
 
     /**
      * Widget „Scannen“ bei laufender App: zurück zu „Heute“ (wie der Tab), dort eine Scan-Anfrage, die „Heute“ einmal
-     * annimmt. Ein zweiter Tipp bringt eine neue Anfrage mit eigener ID.
+     * annimmt. Ein zweiter Tipp bringt eine neue Anfrage mit eigener ID; „KI-Foto“ eine mit der Art FOTO.
      */
     @Test
-    fun scanLinkFuehrtZuHeuteMitAnfrage() {
-        val angenommen = mutableListOf<String>()
-        val bildschirme = Bildschirme.platzhalter.mitHeute { _, scan, annehmen ->
-            LaunchedEffect(scan) {
-                if (scan != null) {
-                    angenommen += scan
+    fun widgetLinksFuehrenZuHeuteMitAnfrage() {
+        val angenommen = mutableListOf<Schnellstart>()
+        val bildschirme = Bildschirme.platzhalter.mitHeute { _, start, annehmen ->
+            LaunchedEffect(start) {
+                if (start != null) {
+                    angenommen += start
                     annehmen()
                 }
             }
@@ -96,21 +97,39 @@ class DeepLinkTest {
             assertTrue(nav.currentBackStackEntry!!.destination.hasRoute<Heute>())
             assertEquals(1, nav.currentBackStack.value.count { it.destination.hasRoute<Heute>() })
             assertEquals(1, angenommen.size)
-            assertNull(nav.getBackStackEntry<Heute>().savedStateHandle.get<String>(SCAN_ANFRAGE), "angenommen und weg")
+            assertNull(nav.getBackStackEntry<Heute>().savedStateHandle.get<String>(SCHNELLSTART), "angenommen und weg")
         }
         compose.runOnIdle { assertTrue(nav.deepLinkOeffnen(link)) }
         compose.waitForIdle()
         compose.runOnIdle {
             assertEquals(2, angenommen.size)
-            assertEquals(2, angenommen.toSet().size, "jeder Tipp eine eigene Anfrage")
+            assertEquals(2, angenommen.map { it.id }.toSet().size, "jeder Tipp eine eigene Anfrage")
+            assertEquals(Schnellstart.Art.SCANNEN, angenommen.last().art)
+        }
+        compose.runOnIdle { nav.navigate(Einstellungen) }
+        compose.runOnIdle { assertTrue(nav.deepLinkOeffnen(Intent(Intent.ACTION_VIEW, Uri.parse(FOTO_LINK)))) }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertTrue(nav.currentBackStackEntry!!.destination.hasRoute<Heute>())
+            assertEquals(Schnellstart.Art.FOTO, angenommen.last().art)
         }
     }
 
     @Test
-    fun scanLinkErkannt() {
-        assertTrue(Intent(Intent.ACTION_VIEW, Uri.parse("foody://scannen")).istScan())
-        assertFalse(Intent(Intent.ACTION_VIEW, Uri.parse("foody://rezept/r1")).istScan())
-        assertFalse(Intent(Intent.ACTION_MAIN).istScan())
+    fun widgetLinksErkannt() {
+        assertEquals(Schnellstart.Art.SCANNEN, Intent(Intent.ACTION_VIEW, Uri.parse("foody://scannen")).schnellstart())
+        assertEquals(Schnellstart.Art.FOTO, Intent(Intent.ACTION_VIEW, Uri.parse("foody://foto")).schnellstart())
+        assertNull(Intent(Intent.ACTION_VIEW, Uri.parse("foody://rezept/r1")).schnellstart())
+        assertNull(Intent(Intent.ACTION_MAIN).schnellstart())
+    }
+
+    @Test
+    fun schnellstartAlsText() {
+        val start = Schnellstart(Schnellstart.Art.FOTO, "a:b")
+        assertEquals(start, Schnellstart.ausText(start.alsText()))
+        assertNull(Schnellstart.ausText("GIBT_ES_NICHT:1"))
+        assertNull(Schnellstart.ausText("ohne-art"))
+        assertNull(Schnellstart.ausText(null))
     }
 
     @Test

@@ -3,7 +3,10 @@
     <string name="widget_scan_name">Foody scannen</string>
     <string name="widget_scan_text">Scannen</string>
     <string name="widget_scan_beschreibung">Packung scannen und gleich eintragen</string>
-    <!-- Farben aus dem Hintergrundbild (Material You); dunkel siehe values-night -->
-    <color name="widget_scan_flaeche">@android:color/system_accent1_100</color>
-    <color name="widget_scan_inhalt">@android:color/system_accent1_900</color>
+    <string name="widget_foto_name">Foody KI-Foto</string>
+    <string name="widget_foto_text">Foto</string>
+    <string name="widget_foto_beschreibung">Mahlzeit fotografieren, von der KI auswerten lassen und eintragen</string>
+    <!-- Farben beider Widgets aus dem Hintergrundbild (Material You); dunkel siehe values-night -->
+    <color name="widget_flaeche">@android:color/system_accent1_100</color>
+    <color name="widget_inhalt">@android:color/system_accent1_900</color>
 </resources>

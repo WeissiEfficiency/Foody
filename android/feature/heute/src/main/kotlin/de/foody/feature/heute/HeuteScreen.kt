@@ -56,16 +56,16 @@ fun HeuteRoute(
     onEinstellungen: () -> Unit,
     vm: HeuteViewModel = hiltViewModel(),
     eintragenVm: EintragenViewModel? = null,
-    /** Vom Widget „Scannen“ (eindeutig je Tipp): öffnet das Blatt mit dem Strichcode-Scan; danach [onScanAngenommen]. */
-    scanAnfrage: String? = null,
-    onScanAngenommen: () -> Unit = {},
+    /** Vom Widget „Scannen“ oder „KI-Foto“ (eindeutig je Tipp): öffnet das Blatt damit; danach [onSchnellstartAngenommen]. */
+    schnellstart: Schnellstart? = null,
+    onSchnellstartAngenommen: () -> Unit = {},
 ) {
     val zustand by vm.zustand.collectAsStateWithLifecycle()
     var blatt by rememberSaveable(stateSaver = BlattAuftrag.Saver) { mutableStateOf(null) }
-    LaunchedEffect(scanAnfrage) {
-        if (scanAnfrage == null) return@LaunchedEffect
-        blatt = BlattAuftrag(null, LocalDate.now(), id = scanAnfrage, scannen = true)
-        onScanAngenommen()
+    LaunchedEffect(schnellstart) {
+        if (schnellstart == null) return@LaunchedEffect
+        blatt = BlattAuftrag(null, LocalDate.now(), id = schnellstart.id, start = schnellstart.art)
+        onSchnellstartAngenommen()
     }
     val aktionen = HeuteAktionen(
         onKochen, onRezept, onEinkauf, onAlleEintraege, onEinstellungen,

@@ -31,8 +31,8 @@ android {
     defaultConfig {
         applicationId = "de.foody.app"
         // Vor jedem Release erhöhen; muss über dem der v1 (1) liegen, sonst lehnt Android das Update ab
-        versionCode = 371
-        versionName = "3.7.1"
+        versionCode = 380
+        versionName = "3.8.0"
     }
 
     androidResources {

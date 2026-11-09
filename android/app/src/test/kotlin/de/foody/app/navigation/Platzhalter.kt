@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
+import de.foody.feature.heute.Schnellstart
 
 /** Ersatz für einen Bereich in Navigationstests: zeigt den Titel und die übergebenen Argumente. */
 @Composable
@@ -36,14 +37,14 @@ object Platzhalter {
 }
 
 /** Dieselben Bildschirme mit einem anderen „Heute“. */
-fun Bildschirme.mitHeute(heute: @Composable (NavHostController, String?, () -> Unit) -> Unit) = Bildschirme(
+fun Bildschirme.mitHeute(heute: @Composable (NavHostController, Schnellstart?, () -> Unit) -> Unit) = Bildschirme(
     heute, tagebuch, einstellungen, serverVerbinden, zutaten, zutat, rezepte, rezeptDetail, editor, kochen, woche, einkauf,
 )
 
 /** Alle Bereiche als [Platzhalter] – für Navigationstests ohne ViewModels. */
 val Bildschirme.Companion.platzhalter: Bildschirme
     get() = Bildschirme(
-        heute = { _, scan, _ -> Platzhalter("Heute", scan?.let { "Scan angefragt" }) },
+        heute = { _, start, _ -> Platzhalter("Heute", start?.let { "${it.art} angefragt" }) },
         tagebuch = { datum, _ -> Platzhalter("Tagebuch", "Tagebuch $datum") },
         einstellungen = { Platzhalter("Einstellungen") },
         serverVerbinden = { Platzhalter("Server verbinden") },

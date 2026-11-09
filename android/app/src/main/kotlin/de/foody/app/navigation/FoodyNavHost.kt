@@ -16,6 +16,7 @@ import de.foody.feature.einkauf.EinkaufRoute
 import de.foody.feature.einstellungen.EinstellungenRoute
 import de.foody.feature.einstellungen.VerbindenRoute
 import de.foody.feature.heute.HeuteRoute
+import de.foody.feature.heute.Schnellstart
 import de.foody.feature.heute.tagebuch.TagebuchTagRoute
 import de.foody.feature.kochen.KochenRoute
 import de.foody.feature.rezepte.RezepteBereich
@@ -29,8 +30,8 @@ import java.util.UUID
 
 /** Die Bildschirme mit ViewModel (Hilt); Navigationstests setzen eigene Platzhalter ein (`Platzhalter.kt` in den Tests). */
 class Bildschirme(
-    /** „Heute“; dazu die offene Scan-Anfrage vom Widget (`null` = keine) und der Rückruf, wenn sie angenommen ist. */
-    val heute: @Composable (NavHostController, String?, () -> Unit) -> Unit,
+    /** „Heute“; dazu die offene Anfrage eines Widgets (`null` = keine) und der Rückruf, wenn sie angenommen ist. */
+    val heute: @Composable (NavHostController, Schnellstart?, () -> Unit) -> Unit,
     val tagebuch: @Composable (LocalDate, NavHostController) -> Unit,
     val einstellungen: @Composable (NavHostController) -> Unit,
     val serverVerbinden: @Composable (NavHostController) -> Unit,
@@ -49,15 +50,15 @@ class Bildschirme(
 ) {
     companion object {
         val echt = Bildschirme(
-            heute = { nav, scanAnfrage, onScanAngenommen ->
+            heute = { nav, schnellstart, onSchnellstartAngenommen ->
                 HeuteRoute(
                     onKochen = { id, portionen -> nav.navigate(Kochen(id, portionen)) },
                     onRezept = { nav.navigate(RezeptDetail(it)) },
                     onEinkauf = { nav.navigate(EinkaufListe(it)) },
                     onAlleEintraege = { nav.navigate(TagebuchTag(LocalDate.now().toString())) },
                     onEinstellungen = { nav.navigate(Einstellungen) },
-                    scanAnfrage = scanAnfrage,
-                    onScanAngenommen = onScanAngenommen,
+                    schnellstart = schnellstart,
+                    onSchnellstartAngenommen = onSchnellstartAngenommen,
                 )
             },
             tagebuch = { datum, nav ->
@@ -130,22 +131,33 @@ const val SCHEMA = "foody://"
 /** Tipp aufs Widget „Scannen“: „Heute“ mit dem Eintragen-Blatt und gleich dem Strichcode-Scan. */
 const val SCAN_LINK = "${SCHEMA}scannen"
 
-/** Offene Scan-Anfrage im SavedStateHandle von „Heute“: übersteht Drehen und Prozessende, bis „Heute“ sie annimmt. */
-internal const val SCAN_ANFRAGE = "scanAnfrage"
+/** Tipp aufs Widget „KI-Foto“: „Heute“ mit dem Eintragen-Blatt und gleich der Kamera für die Fotoerkennung. */
+const val FOTO_LINK = "${SCHEMA}foto"
 
-fun Intent.istScan(): Boolean = data?.toString() == SCAN_LINK
+/**
+ * Offene Widget-Anfrage im SavedStateHandle von „Heute“ ([Schnellstart.alsText]): übersteht Drehen und Prozessende,
+ * bis „Heute“ sie annimmt.
+ */
+internal const val SCHNELLSTART = "schnellstart"
+
+/** Der Link eines Widgets ([SCAN_LINK], [FOTO_LINK]) als Schnellstart; andere Links → `null`. */
+fun Intent.schnellstart(): Schnellstart.Art? = when (data?.toString()) {
+    SCAN_LINK -> Schnellstart.Art.SCANNEN
+    FOTO_LINK -> Schnellstart.Art.FOTO
+    else -> null
+}
 
 /**
  * Alle Ziele der V3. Deep Links: `foody://rezept/{id}`, `foody://einkauf/{listeId}`,
  * `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute); dazu
- * [SCAN_LINK] vom Widget, den [deepLinkOeffnen] selbst behandelt.
+ * [SCAN_LINK] und [FOTO_LINK] von den Widgets, die [deepLinkOeffnen] selbst behandelt.
  */
 @Composable
 fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Modifier = Modifier) {
     NavHost(nav, startDestination = Heute, modifier = modifier) {
         composable<Heute> { eintrag ->
-            val scan by eintrag.savedStateHandle.getStateFlow<String?>(SCAN_ANFRAGE, null).collectAsStateWithLifecycle()
-            bildschirme.heute(nav, scan) { eintrag.savedStateHandle[SCAN_ANFRAGE] = null }
+            val anfrage by eintrag.savedStateHandle.getStateFlow<String?>(SCHNELLSTART, null).collectAsStateWithLifecycle()
+            bildschirme.heute(nav, Schnellstart.ausText(anfrage)) { eintrag.savedStateHandle[SCHNELLSTART] = null }
         }
         composable<Rezepte> { bildschirme.rezepte(nav) }
         composable<Woche> { bildschirme.woche(nav) }
@@ -178,11 +190,11 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
 /**
  * Deep Link bei laufender App (`onNewIntent`): ins laufende Gerüst navigieren. [NavHostController.handleDeepLink] baut
  * bei `FLAG_ACTIVITY_NEW_TASK` (Tipp auf die Timer-Meldung) den Task neu auf und verwirft ungespeicherte Eingaben.
- * Derselbe Link zweimal legt das Ziel nicht doppelt an. [SCAN_LINK] führt zu [scanAnfragen].
+ * Derselbe Link zweimal legt das Ziel nicht doppelt an. Die Widget-Links führen zu [schnellstartAnfragen].
  */
 fun NavHostController.deepLinkOeffnen(intent: Intent): Boolean {
-    if (intent.istScan()) {
-        scanAnfragen()
+    intent.schnellstart()?.let {
+        schnellstartAnfragen(it)
         return true
     }
     val uri = intent.data ?: return false
@@ -192,12 +204,12 @@ fun NavHostController.deepLinkOeffnen(intent: Intent): Boolean {
 }
 
 /**
- * Widget „Scannen“: zurück zu „Heute“ wie ein Tipp auf den Tab und dort eine neue Scan-Anfrage hinterlegen (je Tipp
- * eine eigene ID, also auch beim zweiten Tipp ein neuer Scan).
+ * Widget „Scannen“ oder „KI-Foto“: zurück zu „Heute“ wie ein Tipp auf den Tab und dort eine neue Anfrage hinterlegen
+ * (je Tipp eine eigene ID, also auch beim zweiten Tipp ein neuer Scan bzw. ein neues Foto).
  */
-fun NavHostController.scanAnfragen() {
+fun NavHostController.schnellstartAnfragen(art: Schnellstart.Art) {
     popBackStack<Heute>(inclusive = false)
-    getBackStackEntry<Heute>().savedStateHandle[SCAN_ANFRAGE] = UUID.randomUUID().toString()
+    getBackStackEntry<Heute>().savedStateHandle[SCHNELLSTART] = Schnellstart(art, UUID.randomUUID().toString()).alsText()
 }
 
 /** „Rezept anpassen“ nach dem Kochen: der Editor ersetzt den Kochmodus, „Zurück“ führt dorthin, woher man kam. */

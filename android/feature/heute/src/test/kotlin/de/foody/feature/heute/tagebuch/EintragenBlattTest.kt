@@ -17,6 +17,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.core.content.FileProvider
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.NichtGegessenSpeicher
@@ -32,6 +33,7 @@ import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.HeuteRoute
 import de.foody.feature.heute.HeuteViewModel
+import de.foody.feature.heute.Schnellstart
 import de.foody.feature.heute.Zeitgeber
 import de.foody.feature.heute.bestand
 import de.foody.feature.heute.keinErkenner
@@ -45,6 +47,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.After
+import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -52,12 +55,15 @@ import org.junit.runner.RunWith
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * Das Eintragen-Blatt aus „Heute“ und der Ändern-Dialog in „Alle Einträge“. Ohne Breiten-Qualifier: Unter Robolectric
@@ -126,11 +132,11 @@ class EintragenBlattTest {
                 testErkennung(), testGedaechtnis(), testBls(), ZutatenRepository(db) { 1L },
             ),
         )
-        var anfrage by mutableStateOf<String?>("widget-1")
+        var anfrage by mutableStateOf<Schnellstart?>(Schnellstart(Schnellstart.Art.SCANNEN, "widget-1"))
         val wiederherstellen = StateRestorationTester(compose)
         wiederherstellen.setContent {
             FoodyTheme {
-                HeuteRoute({ _, _ -> }, {}, {}, {}, {}, vm = vm, eintragenVm = eintragen, scanAnfrage = anfrage, onScanAngenommen = { anfrage = null })
+                HeuteRoute({ _, _ -> }, {}, {}, {}, {}, vm = vm, eintragenVm = eintragen, schnellstart = anfrage, onSchnellstartAngenommen = { anfrage = null })
             }
         }
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("Frei") and isSelected()).fetchSemanticsNodes().isNotEmpty() }
@@ -141,6 +147,50 @@ class EintragenBlattTest {
         wiederherstellen.emulateSavedInstanceStateRestore()
         compose.onNode(hasText("Frei") and isSelected()).assertExists()
         compose.runOnIdle { assertEquals(1, gelesen) }
+    }
+
+    /**
+     * Widget „KI-Foto“: „Heute“ öffnet das Blatt in „Frei“, der Foto-Knopf gleich die Kamera (das Kamerafoto ist
+     * gemerkt). Nach einem Neuaufbau geht sie nicht noch einmal auf (dasselbe Foto, keine neue Anfrage).
+     */
+    @Test
+    fun fotoAnfrageVomWidget() {
+        // FileProvider vergleicht Pfade mit „/“: Unter Windows findet er den Cache-Ordner nie (läuft in der CI, Linux)
+        assumeFalse("FileProvider unter Windows", File.separatorChar == '\\')
+        // Er merkt sich seine Ordner statisch (aus dem ersten Test dieser JVM, mit anderem Robolectric-Ordner)
+        FileProvider::class.java.getDeclaredField("sCache").apply { isAccessible = true }.let { (it.get(null) as MutableMap<*, *>).clear() }
+        val eintragen = halter.behalten(
+            EintragenViewModel(
+                SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), tagebuch, db, testScan(), keinErkenner,
+                testErkennung(modell = true), testGedaechtnis(), testBls(), ZutatenRepository(db) { 1L },
+            ),
+        )
+        var anfrage by mutableStateOf<Schnellstart?>(Schnellstart(Schnellstart.Art.FOTO, "widget-2"))
+        val wiederherstellen = StateRestorationTester(compose)
+        wiederherstellen.setContent {
+            FoodyTheme {
+                HeuteRoute({ _, _ -> }, {}, {}, {}, {}, vm = vm, eintragenVm = eintragen, schnellstart = anfrage, onSchnellstartAngenommen = { anfrage = null })
+            }
+        }
+        compose.waitUntil(5_000) { eintragen.fotoLauf.zustand.value.fotoPfad != null }
+        val foto = eintragen.fotoLauf.zustand.value.fotoPfad
+        compose.onNode(hasText("Frei") and isSelected()).assertExists()
+        compose.runOnIdle {
+            assertNull(anfrage)
+            assertFalse(eintragen.fotoLauf.zustand.value.kameraAngefragt)
+        }
+        wiederherstellen.emulateSavedInstanceStateRestore()
+        compose.onNode(hasText("Frei") and isSelected()).assertExists()
+        compose.runOnIdle { assertEquals(foto, eintragen.fotoLauf.zustand.value.fotoPfad) }
+    }
+
+    /** Ein normales Öffnen verwirft eine liegengebliebene Kamera-Anfrage (etwa ohne Modell, wo der Knopf fehlt). */
+    @Test
+    fun normalesOeffnenVerwirftKameraAnfrage() {
+        eintragen.oeffnen(heute, null, auftrag = "a1", start = Schnellstart.Art.FOTO)
+        assertTrue(eintragen.fotoLauf.zustand.value.kameraAngefragt)
+        eintragen.oeffnen(heute, Mahlzeit.SNACK, auftrag = "a2")
+        assertFalse(eintragen.fotoLauf.zustand.value.kameraAngefragt)
     }
 
     @Test
