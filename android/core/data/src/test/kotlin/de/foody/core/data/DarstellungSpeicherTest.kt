@@ -72,4 +72,20 @@ class DarstellungSpeicherTest {
         speicher.setzen(Darstellung.DUNKEL)
         assertEquals(Darstellung.DUNKEL, speicher.darstellung().first())
     }
+
+    @Test
+    fun stilOhneWahlLeer() = runTest {
+        assertEquals(StilWahl(), DarstellungSpeicher(kontext).stil().first())
+    }
+
+    @Test
+    fun stilVarianteUndAkzentGespeichert() = runTest {
+        val speicher = DarstellungSpeicher(kontext)
+        speicher.stilSetzen("SAGE")
+        speicher.stilVarianteSetzen("RUHIG")
+        speicher.stilAkzentSetzen("SILBER")
+        assertEquals(StilWahl("SAGE", "RUHIG", "SILBER"), speicher.stil().first())
+        assertEquals(StilWahl("SAGE", "RUHIG", "SILBER"), DarstellungSpeicher(kontext).stilAktuell())
+        assertEquals("SAGE", prefs.getString(Einstellungsschluessel.STIL, null))
+    }
 }

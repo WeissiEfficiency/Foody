@@ -64,7 +64,7 @@ fun rememberModellwahl(onGewaehlt: (List<Uri>) -> Unit): () -> Unit {
 }
 
 /**
- * Einstellungen: Konto (→ „Server verbinden“), Darstellung mit Farbwelt, Tagesziel, Zutatenkatalog und Online-Produktsuche,
+ * Einstellungen: Konto (→ „Server verbinden“), Darstellung mit Stil und Farbwelt, Tagesziel, Zutatenkatalog und Online-Produktsuche,
  * Fotoerkennung, Sicherung,
  * alle Daten löschen, Hinweise.
  * Wiederherstellen, Löschen und „Modell entfernen“ fragen nach; bei verbundenem Sync sind die ersten beiden gesperrt.
@@ -107,7 +107,9 @@ fun EinstellungenRoute(
             ) {
                 Seitenkopf("Einstellungen", onZurueck = onZurueck)
                 KontoAbschnitt(z.konto, System.currentTimeMillis(), onServer)
-                DarstellungAbschnitt(z.darstellung, z.farbwelt, vm::darstellungSetzen, vm::farbweltSetzen)
+                DarstellungAbschnitt(
+                    z, vm::darstellungSetzen, vm::farbweltSetzen, vm::stilSetzen, vm::stilVarianteSetzen, vm::stilAkzentSetzen,
+                )
                 TageszielAbschnitt(
                     zielText ?: z.tagesziel?.toString().orEmpty(), zielFehler,
                     onFertig = {

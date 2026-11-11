@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.token.AugenbraueStil
 import java.util.Locale
 
 /** Abschnittstitel (für TalkBack eine Überschrift) mit optionalem Link rechts („6 offen“). */
@@ -40,5 +39,5 @@ fun Modifier.ueberschrift(): Modifier = semantics { heading() }
 /** Kleine Zeile in Großbuchstaben über Überschriften („ABENDESSEN · 18:30“). */
 @Composable
 fun Augenbraue(text: String, modifier: Modifier = Modifier, farbe: Color = FoodyTheme.farben.nebentext) {
-    Text(text.uppercase(Locale.GERMAN), style = AugenbraueStil, color = farbe, modifier = modifier)
+    Text(text.uppercase(Locale.GERMAN), style = FoodyTheme.augenbraue, color = farbe, modifier = modifier)
 }

@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -47,7 +46,7 @@ fun Suchfeld(
     onFertig: (() -> Unit)? = null,
 ) {
     val farben = FoodyTheme.farben
-    GlasFlaeche(GlasStufe.DICHT, modifier.fillMaxWidth().heightIn(min = 52.dp), form = CircleShape, unschaerfeErlaubt = false) {
+    GlasFlaeche(GlasStufe.DICHT, modifier.fillMaxWidth().heightIn(min = 52.dp), form = FoodyTheme.formen.knopf, unschaerfeErlaubt = false) {
         Row(
             Modifier.padding(start = FoodyAbstaende.s5, end = FoodyAbstaende.s1).heightIn(min = 52.dp),
             verticalAlignment = Alignment.CenterVertically,

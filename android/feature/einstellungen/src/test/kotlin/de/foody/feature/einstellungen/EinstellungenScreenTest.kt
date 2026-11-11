@@ -175,6 +175,23 @@ class EinstellungenScreenTest {
     }
 
     @Test
+    fun stilWaehlenZeigtVarianteStattModus() {
+        zeigen()
+        compose.warteAufText("Düstere Sage")
+        compose.onNodeWithText("Milchglas").assertIsSelected()
+        compose.onNodeWithText("Modus").assertExists()
+        compose.onNodeWithText("Düstere Sage").performScrollTo().performClick()
+        compose.waitUntil(5_000) { u.darstellung.stilAktuell().stil == "SAGE" }
+        compose.warteAufText("Variante")
+        compose.onNodeWithText("Modus").assertDoesNotExist()
+        compose.onNodeWithText("Gold").assertIsSelected()
+        compose.onNodeWithText("Ruhig").performScrollTo().performClick()
+        compose.waitUntil(5_000) { u.darstellung.stilAktuell().variante == "RUHIG" }
+        compose.onNodeWithText("Silber").performScrollTo().performClick()
+        compose.waitUntil(5_000) { u.darstellung.stilAktuell().akzent == "SILBER" }
+    }
+
+    @Test
     fun tageszielZeigtGespeichertenWert() {
         u.ziel.setzen(2000)
         zeigen()

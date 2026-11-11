@@ -1,6 +1,6 @@
 # Foody – wählbare Stile Q bis V
 
-Stand: 2026-11-11, Entwurf des Plans, noch nichts umgesetzt. Grundlage sind die Entwürfe im Design-Canvas
+Stand: 2026-11-11, Phase 1 und der Kern von Phase 2/3 umgesetzt (Branch `claude/stile-q-v`), siehe „Ergebnis“. Grundlage sind die Entwürfe im Design-Canvas
 „Foody Design“ (privat, https://claude.ai/artifact/4GQ6pcboqoVPJCfJmyFdHj). Q bis V haben dort je 14 Screens als
 „Version 1“, jeder Screen mit den Varianten **Immersiv** und **Ruhig**. Die Phasen werden der Reihe nach abgearbeitet.
 Die nächste beginnt, wenn die vorige abgehakt ist.
@@ -188,4 +188,23 @@ Gemeinsame liegt in `:core:designsystem`.
 
 ## Ergebnis
 
-(noch offen)
+**2026-11-11 – Grundgerüst und alle Stile wählbar** (Branch `claude/stile-q-v`, Nutzerwunsch: alle Stile Q bis V
+gleich, nicht nur der Pilot):
+- `:core:designsystem/stil/`: `FoodyStil` (Milchglas + Q bis V, je vier Akzente aus dem Canvas), `StilVariante`,
+  `StilWerte`. Farben, Formen (Q kantig, R Pillen mit Versatzschatten, V abgeschnittene Ecken …), Schrift,
+  deckende Karten (`Flaechenart.DECKEND`) und Hintergrundmuster (Punkte, Fasern, Rautenband, Sterne, nur Immersiv).
+  Die Farben der Entwürfe werden beim Ableiten so weit verschoben, bis sie AA halten (`angleichen`).
+- `FoodyTheme(stil, variante, akzent)`; `FoodyTheme.stil`, `.formen`, `.augenbraue`. `FoodyFormen` ist jetzt eine
+  Datenklasse (`FoodyFormen.Rund` = Milchglas, neu `knopf`), die Typografie eine Fabrik (`foodyTypografie`).
+- Speicher: Schlüssel `stil`, `stilVariante`, `stilAkzent` (`DarstellungSpeicher.stil()` als `StilWahl`).
+- Einstellungen › Darstellung: Stil (Musterkacheln), bei Milchglas Farbe und Modus wie bisher, sonst Variante und
+  Akzent. `MainActivity` gibt die Wahl ans Theme, die Systemleisten folgen dem festen Grund.
+- Tests: `KontrastTest` über alle Stile × Varianten × Akzente, `StilTest`, Milchglas unverändert (Werte und alle
+  Referenzbilder außer Einstellungen, dort kam die Stilwahl dazu), Speicher-, ViewModel- und Screen-Tests;
+  neue Referenzbilder `feature/heute/.../stil_<stil>_<variante>.png`.
+
+Offen:
+- Schriften der Entwürfe (Cinzel, EB Garamond, Dela Gothic One, M PLUS Rounded 1c, Kaisei Decol, Zen Kaku Gothic
+  New, UnifrakturCook, Alegreya, Alegreya Sans, IM Fell English, Special Elite, Exo 2, Share Tech Mono). Bis dahin
+  Systemschriften der passenden Art (Serife, Grotesk, Monospace). Download braucht die Freigabe des Nutzers.
+- Szenen und Wörter von Immersiv (Phase 4 bis 6), Widgets (Phase 7), ADR 0020, Abschnitt in `docs/architecture.md`.

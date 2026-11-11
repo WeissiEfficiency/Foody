@@ -20,6 +20,15 @@ object Einstellungsschluessel {
     /** Gewählte Farbwelt als Name (z. B. `MANGO`); neu in der V3, fehlt = Standard des Designsystems. */
     const val FARBWELT = "farbwelt"
 
+    /** Gewählter Stil als Name (z. B. `SAGE`); fehlt = Milchglas. */
+    const val STIL = "stil"
+
+    /** Variante des Stils (`IMMERSIV`, `RUHIG`); fehlt = Immersiv. */
+    const val STIL_VARIANTE = "stilVariante"
+
+    /** Akzentfarbe des Stils als Name (z. B. `GOLD`); fehlt oder passt nicht zum Stil = dessen erster Akzent. */
+    const val STIL_AKZENT = "stilAkzent"
+
     /** Geplante Mahlzeiten mit „Nein“ auf „Gegessen?“ (String-Set `Datum|Plan-ID`); neu in der V3. */
     const val NICHT_GEGESSEN = "nichtGegessen"
 

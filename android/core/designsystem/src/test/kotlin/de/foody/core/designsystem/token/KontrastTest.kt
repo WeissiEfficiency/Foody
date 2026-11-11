@@ -1,6 +1,9 @@
 package de.foody.core.designsystem.token
 
 import androidx.compose.ui.graphics.Color
+import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.StilVariante
+import de.foody.core.designsystem.stil.stilWerte
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -29,6 +32,29 @@ class KontrastTest {
 
     @Test
     fun allePaareDunkel() = pruefe(Farbwelt.entries.flatMap { w -> kontrastPaare(dunkel = true, farbwelt = w).map { it.copy(name = "${w.name}: ${it.name}") } })
+
+    @Test
+    fun allePaareAllerStile() = pruefe(
+        FoodyStil.entries.filter { it != FoodyStil.MILCHGLAS }.flatMap { stil ->
+            StilVariante.entries.flatMap { v ->
+                stil.akzente.flatMap { a ->
+                    kontrastPaare(stilWerte(stil, v, a.name)).map { it.copy(name = "${stil.name}/${v.name}/${a.name}: ${it.name}") }
+                }
+            }
+        },
+    )
+
+    @Test
+    fun milchglasUnveraendert() {
+        for (w in Farbwelt.entries) {
+            for (dunkel in listOf(false, true)) {
+                val s = stilWerte(FoodyStil.MILCHGLAS, dunkel = dunkel, farbwelt = w)
+                assertEquals(w.werte(dunkel), s.werte)
+                assertEquals(herzFarbe(w), s.herz)
+                for (stufe in GlasStufe.entries) assertEquals(glasWerte(stufe, dunkel, w), glasWerte(stufe, s))
+            }
+        }
+    }
 
     @Test
     fun farbweltAusNameMitStandard() {

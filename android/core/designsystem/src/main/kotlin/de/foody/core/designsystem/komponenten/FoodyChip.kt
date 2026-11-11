@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -37,9 +36,9 @@ fun FoodyChip(text: String, ausgewaehlt: Boolean, onKlick: () -> Unit, modifier:
         Box(
             Modifier
                 .heightIn(min = 36.dp)
-                .clip(CircleShape)
+                .clip(FoodyTheme.formen.knopf)
                 .background(if (ausgewaehlt) farben.primaer else Color.Transparent)
-                .border(1.dp, if (ausgewaehlt) Color.Transparent else farben.nebentext.copy(alpha = 0.55f), CircleShape)
+                .border(1.dp, if (ausgewaehlt) Color.Transparent else farben.nebentext.copy(alpha = 0.55f), FoodyTheme.formen.knopf)
                 .indication(druck, ripple())
                 .padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s2),
             contentAlignment = Alignment.Center,

@@ -8,6 +8,8 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.testing.FoodyBildvergleich
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
@@ -45,6 +47,21 @@ class HeuteScreenshotTest {
     @Test
     @Config(qualifiers = "w1280dp-h1200dp")
     fun tablet() = alle("tablet")
+
+    /** „Heute“ in jedem Stil und jeder Variante (nur Handy), damit Farben, Formen und Muster sichtbar geprüft werden. */
+    @Test
+    @Config(qualifiers = "w411dp-h1600dp")
+    fun stile() {
+        for (stil in FoodyStil.entries.filter { it != FoodyStil.MILCHGLAS }) {
+            for (variante in StilVariante.entries) {
+                captureRoboImage("src/test/screenshots/stil_${stil.name.lowercase()}_${variante.name.lowercase()}.png", roborazziOptions = vergleich) {
+                    FoodyTheme(stil = stil, variante = variante, unschaerfe = false) {
+                        FoodyHintergrund { HeuteScreen(beispielZustand(), KEINE_AKTIONEN) }
+                    }
+                }
+            }
+        }
+    }
 
     private val vergleich = FoodyBildvergleich
 

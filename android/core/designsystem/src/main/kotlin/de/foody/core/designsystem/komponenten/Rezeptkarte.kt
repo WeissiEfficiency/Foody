@@ -34,9 +34,7 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.token.FoodyAbstaende
-import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
-import de.foody.core.designsystem.token.herzFarbe
 
 /** Testkennung des Bild-Platzhalters (Rezept ohne Foto). */
 const val PLATZHALTER_TAG = "rezept-platzhalter"
@@ -68,7 +66,7 @@ fun RezeptkarteGross(
         modifier
             .fillMaxWidth()
             .heightIn(min = 232.dp)
-            .clip(FoodyFormen.gross)
+            .clip(FoodyTheme.formen.gross)
             .clickable(onClick = onKlick)
             .semantics { contentDescription = beschreibung },
     ) {
@@ -80,7 +78,7 @@ fun RezeptkarteGross(
         GlasFlaeche(
             GlasStufe.BILD,
             Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(10.dp).testTag(GLASLEISTE_TAG),
-            form = FoodyFormen.mittel,
+            form = FoodyTheme.formen.mittel,
         ) {
             val text: @Composable (Modifier) -> Unit = { m ->
                 Column(m, verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -128,18 +126,18 @@ fun RezeptkarteRaster(
     val beschreibung = listOfNotNull(titel, "Favorit".takeIf { favorit }, zeit, kcal).joinToString(", ")
     Column(
         modifier
-            .clip(FoodyFormen.mittel)
+            .clip(FoodyTheme.formen.mittel)
             .clickable(onClick = onKlick)
             .semantics { contentDescription = beschreibung },
     ) {
-        Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(FoodyFormen.mittel)) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(FoodyTheme.formen.mittel)) {
             bild?.invoke() ?: RezeptPlatzhalter(Modifier.fillMaxSize())
             if (favorit) {
                 Box(
                     Modifier.align(Alignment.TopEnd).padding(FoodyAbstaende.s2).size(28.dp).clip(CircleShape)
                         .background(Color.White.copy(alpha = 0.9f)),
                     contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Filled.Favorite, contentDescription = null, tint = herzFarbe(FoodyTheme.farbwelt), modifier = Modifier.size(18.dp)) }
+                ) { Icon(Icons.Filled.Favorite, contentDescription = null, tint = FoodyTheme.stil.herz, modifier = Modifier.size(18.dp)) }
             }
             if (zeit != null) Abzeichen(zeit, Modifier.align(Alignment.BottomStart).padding(FoodyAbstaende.s2))
         }

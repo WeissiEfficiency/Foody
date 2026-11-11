@@ -6,6 +6,8 @@ import de.foody.core.data.Darstellung
 import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.sicherung.ImportErgebnis
+import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.token.Farbwelt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -123,6 +125,17 @@ class EinstellungenViewModelTest {
         vm.farbweltSetzen(Farbwelt.LAGUNE)
         assertEquals("LAGUNE", u.darstellung.farbweltAktuell())
         warte { vm.zustand.value.farbwelt == Farbwelt.LAGUNE }
+    }
+
+    @Test
+    fun stilStandardUndSetzen() = runTest {
+        val vm = u.vm()
+        assertEquals(FoodyStil.MILCHGLAS, vm.zustand.value.stil)
+        vm.stilSetzen(FoodyStil.KREUZER)
+        vm.stilVarianteSetzen(StilVariante.RUHIG)
+        vm.stilAkzentSetzen(FoodyStil.KREUZER.akzente[2])
+        assertEquals("KREUZER", u.darstellung.stilAktuell().stil)
+        warte { vm.zustand.value.let { it.stil == FoodyStil.KREUZER && it.variante == StilVariante.RUHIG && it.akzent == "GRUEN" } }
     }
 
     @Test
