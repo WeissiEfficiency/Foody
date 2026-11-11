@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.token.AugenbraueStil
+import de.foody.core.designsystem.token.CinzelFamilie
+import de.foody.core.designsystem.token.EbGaramondFamilie
 import de.foody.core.designsystem.token.Farbwelt
 import de.foody.core.designsystem.token.FarbweltWerte
 import de.foody.core.designsystem.token.Flaechenart
@@ -59,6 +61,9 @@ data class StilWerte(
     val herz: Color,
 ) {
     val farben: FoodyFarben get() = werte.farben
+
+    /** `true`, wenn [stil] in der Variante Immersiv gewählt ist: Dann zeigt ein Screen seine Szene für diesen Stil. */
+    fun immersiv(stil: FoodyStil): Boolean = this.stil == stil && variante == StilVariante.IMMERSIV
 }
 
 /** Milchglas mit der [farbwelt] im Modus [dunkel]: dieselben Werte wie vor den Stilen. */
@@ -287,15 +292,15 @@ private fun muster(stil: FoodyStil): Hintergrundmuster = when (stil) {
 private class Schrift(val typografie: Typography, val augenbraue: TextStyle)
 
 /**
- * Schriften je Stil. Vorerst die Systemschriften der passenden Art (Serife, Grotesk, Monospace); die Schriften der
- * Entwürfe (Cinzel, EB Garamond, Dela Gothic One …) kommen als eigene Dateien nach `res/font` (Plan, Phase 2 und 3).
+ * Schriften je Stil. Q nutzt die Schriften des Entwurfs (Cinzel, EB Garamond); die übrigen vorerst Systemschriften der
+ * passenden Art (Serife, Grotesk, Monospace), bis ihre Schriften nach `res/font` kommen (Plan, Phase 3).
  */
 private fun schrift(stil: FoodyStil): Schrift = SCHRIFTEN.getValue(stil)
 
 private val SCHRIFTEN: Map<FoodyStil, Schrift> = mapOf(
     FoodyStil.SAGE to Schrift(
-        foodyTypografie(FontFamily.Serif, FontFamily.Serif, FontWeight.SemiBold, titelAbstand = 0.8.sp),
-        augenbraue(FontFamily.Serif),
+        foodyTypografie(CinzelFamilie, EbGaramondFamilie, FontWeight.SemiBold, titelAbstand = 0.8.sp),
+        augenbraue(CinzelFamilie),
     ),
     FoodyStil.ANIME to Schrift(foodyTypografie(FontFamily.SansSerif, FontFamily.SansSerif, FontWeight.Black), augenbraue(FontFamily.SansSerif)),
     FoodyStil.EDO to Schrift(foodyTypografie(FontFamily.Serif, FontFamily.SansSerif), augenbraue(FontFamily.SansSerif)),

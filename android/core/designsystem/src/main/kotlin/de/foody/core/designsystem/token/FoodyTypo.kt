@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.R
 
-// Beide Schriften liegen als variable Dateien vor; den Schnitt wählt die Achse „wght“.
+// Alle Schriften liegen als variable Dateien vor; den Schnitt wählt die Achse „wght“.
 private fun schnitt(datei: Int, gewicht: FontWeight) =
     Font(datei, gewicht, variationSettings = FontVariation.Settings(FontVariation.weight(gewicht.weight)))
 
@@ -30,6 +30,21 @@ val FigtreeFamilie = FontFamily(
     schnitt(R.font.figtree, FontWeight.Medium),
     schnitt(R.font.figtree, FontWeight.SemiBold),
     schnitt(R.font.figtree, FontWeight.Bold),
+)
+
+/** Cinzel – Versalien-Antiqua für Titel der „Düsteren Sage“ (Stil Q). */
+val CinzelFamilie = FontFamily(
+    schnitt(R.font.cinzel, FontWeight.Medium),
+    schnitt(R.font.cinzel, FontWeight.SemiBold),
+    schnitt(R.font.cinzel, FontWeight.Bold),
+)
+
+/** EB Garamond – Buchschrift für den Text der „Düsteren Sage“ (Stil Q). */
+val EbGaramondFamilie = FontFamily(
+    schnitt(R.font.eb_garamond, FontWeight.Normal),
+    schnitt(R.font.eb_garamond, FontWeight.Medium),
+    schnitt(R.font.eb_garamond, FontWeight.SemiBold),
+    schnitt(R.font.eb_garamond, FontWeight.Bold),
 )
 
 private val basis = Typography()

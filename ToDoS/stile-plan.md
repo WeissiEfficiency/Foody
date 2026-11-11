@@ -152,7 +152,7 @@ Gemeinsame liegt in `:core:designsystem`.
 ### Phase 4 – Immersiv Pilot, Hauptscreens
 - [ ] Zustand und Anzeige trennen, wo es noch fehlt: Woche, Einkauf, Rezeptliste (je ein kleiner PR).
 - [ ] Die Szenen-Plätze und `StilTexte` einführen.
-- [ ] Q Immersiv für Heute (Rast am Feuer), Rezepte (Grimoire), Woche (Karte der Woche) und Einkauf (Händler).
+- [ ] Q Immersiv für Heute (Rast am Feuer, erledigt 2026-11-11), Rezepte (Grimoire), Woche (Karte der Woche) und Einkauf (Händler).
       Flamme und Glut ruhen, wenn Animationen aus sind.
 - [ ] Leistung: In Listen keine Unschärfe oder teuren Zeichnungen pro Zeile. Baseline-Profil prüfen.
 
@@ -203,8 +203,18 @@ gleich, nicht nur der Pilot):
   Referenzbilder außer Einstellungen, dort kam die Stilwahl dazu), Speicher-, ViewModel- und Screen-Tests;
   neue Referenzbilder `feature/heute/.../stil_<stil>_<variante>.png`.
 
+**2026-11-11 – Pilot Q Immersiv auf „Heute“** (Branch `claude/stile-q-heute`, baut auf dem Grundgerüst auf):
+- Schriften Cinzel und EB Garamond (variabel, noch unbeschnitten, zusammen 976 KB) in `res/font`, Lizenzen in
+  `core/designsystem/lizenzen/`. Q nutzt sie in Immersiv und Ruhig.
+- Szenen-Platz: `StilWerte.immersiv(stil)`; `HeuteScreen` zeigt bei Q Immersiv `stil/HeuteSage.kt` mit demselben
+  Zustand und denselben Aktionen. Szene „Rast am Feuer“ als Compose-`Canvas` aus den SVG-Pfaden des Entwurfs,
+  Flamme und Glut ruhen ohne Animationen. Darunter Vitalität und das Menü „Was tun?“ (`sageMenue`) mit Hauptknopf;
+  „Gegessen?“, Eintragen, Tagebuch, Einkauf und Einstellungen bleiben erreichbar. TalkBack liest die normalen Begriffe.
+- Tests: `SageMenueTest`, `HeuteSageTest`, Referenzbild `stil_sage_immersiv`.
+
 Offen:
-- Schriften der Entwürfe (Cinzel, EB Garamond, Dela Gothic One, M PLUS Rounded 1c, Kaisei Decol, Zen Kaku Gothic
+- Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
+- Schriften der übrigen Entwürfe (Dela Gothic One, M PLUS Rounded 1c, Kaisei Decol, Zen Kaku Gothic
   New, UnifrakturCook, Alegreya, Alegreya Sans, IM Fell English, Special Elite, Exo 2, Share Tech Mono). Bis dahin
   Systemschriften der passenden Art (Serife, Grotesk, Monospace). Download braucht die Freigabe des Nutzers.
 - Szenen und Wörter von Immersiv (Phase 4 bis 6), Widgets (Phase 7), ADR 0020, Abschnitt in `docs/architecture.md`.
