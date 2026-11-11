@@ -15,6 +15,7 @@ import com.github.takahirom.roborazzi.captureScreenRoboImage
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.testing.FoodyBildvergleich
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -141,9 +142,18 @@ class EinkaufScreenshotTest {
         captureScreenRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich)
     }
 
-    private fun bild(name: String, dunkel: Boolean, inhalt: @Composable () -> Unit) {
+    /** Düstere Sage, Immersiv: der Händler. */
+    @Test
+    @Config(qualifiers = "w411dp-h1600dp")
+    fun sage() {
+        liste()
+        val vm = u.vm()
+        bild("sage_einkauf_handy", dunkel = false, stil = FoodyStil.SAGE) { EinkaufRoute(null, {}, {}, vm = vm) }
+    }
+
+    private fun bild(name: String, dunkel: Boolean, stil: FoodyStil = FoodyStil.MILCHGLAS, inhalt: @Composable () -> Unit) {
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
-            FoodyTheme(dunkel = dunkel, unschaerfe = false) { FoodyHintergrund { inhalt() } }
+            FoodyTheme(dunkel = dunkel, stil = stil, unschaerfe = false) { FoodyHintergrund { inhalt() } }
         }
     }
 }

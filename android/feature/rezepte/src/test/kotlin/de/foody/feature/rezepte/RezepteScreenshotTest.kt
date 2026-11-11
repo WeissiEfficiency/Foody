@@ -15,6 +15,7 @@ import de.foody.core.data.rezepte.RezeptEntwurf
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.testing.FoodyBildvergleich
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.NutrientBasis
@@ -117,9 +118,18 @@ class RezepteScreenshotTest {
         }
     }
 
-    private fun bild(name: String, dunkel: Boolean, inhalt: @Composable () -> Unit) {
+    /** Düstere Sage, Immersiv: das Grimoire. */
+    @Test
+    @Config(qualifiers = "w411dp-h1600dp")
+    fun sage() {
+        bild("sage_liste_handy", dunkel = false, stil = FoodyStil.SAGE) {
+            RezeptListeRoute({}, {}, {}, vm = remember { halter.behalten(RezeptListeViewModel(repo)) })
+        }
+    }
+
+    private fun bild(name: String, dunkel: Boolean, stil: FoodyStil = FoodyStil.MILCHGLAS, inhalt: @Composable () -> Unit) {
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
-            FoodyTheme(dunkel = dunkel, unschaerfe = false) { FoodyHintergrund { inhalt() } }
+            FoodyTheme(dunkel = dunkel, stil = stil, unschaerfe = false) { FoodyHintergrund { inhalt() } }
         }
     }
 }

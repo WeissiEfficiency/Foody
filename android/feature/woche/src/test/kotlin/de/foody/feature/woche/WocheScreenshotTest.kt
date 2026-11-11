@@ -17,6 +17,7 @@ import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.testing.FoodyBildvergleich
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -110,9 +111,17 @@ class WocheScreenshotTest {
         captureScreenRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich)
     }
 
-    private fun bild(name: String, dunkel: Boolean, inhalt: @Composable () -> Unit) {
+    /** Düstere Sage, Immersiv: die Karte der Woche. */
+    @Test
+    @Config(qualifiers = "w411dp-h1600dp")
+    fun sage() {
+        val vm = u.vm()
+        bild("sage_woche_handy", dunkel = false, stil = FoodyStil.SAGE) { WocheRoute({ _, _ -> }, {}, vm = vm) }
+    }
+
+    private fun bild(name: String, dunkel: Boolean, stil: FoodyStil = FoodyStil.MILCHGLAS, inhalt: @Composable () -> Unit) {
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
-            FoodyTheme(dunkel = dunkel, unschaerfe = false) { FoodyHintergrund { inhalt() } }
+            FoodyTheme(dunkel = dunkel, stil = stil, unschaerfe = false) { FoodyHintergrund { inhalt() } }
         }
     }
 }

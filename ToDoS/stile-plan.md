@@ -150,9 +150,9 @@ Gemeinsame liegt in `:core:designsystem`.
 - [ ] Danach kann man schon alle Stile im Alltag benutzen. Ab hier könnte man aufhören, falls Immersiv zu viel ist.
 
 ### Phase 4 – Immersiv Pilot, Hauptscreens
-- [ ] Zustand und Anzeige trennen, wo es noch fehlt: Woche, Einkauf, Rezeptliste (je ein kleiner PR).
-- [ ] Die Szenen-Plätze und `StilTexte` einführen.
-- [ ] Q Immersiv für Heute (Rast am Feuer, erledigt 2026-11-11), Rezepte (Grimoire), Woche (Karte der Woche) und Einkauf (Händler).
+- [x] Zustand und Anzeige trennen: war nicht nötig, die Szenen hängen sich in die bestehenden Routen ein.
+- [ ] Die Szenen-Plätze (erledigt: `StilWerte.immersiv`) und `StilTexte` einführen.
+- [x] Q Immersiv für Heute (Rast am Feuer), Rezepte (Grimoire), Woche (Karte der Woche) und Einkauf (Händler), 2026-11-11.
       Flamme und Glut ruhen, wenn Animationen aus sind.
 - [ ] Leistung: In Listen keine Unschärfe oder teuren Zeichnungen pro Zeile. Baseline-Profil prüfen.
 
@@ -211,6 +211,21 @@ gleich, nicht nur der Pilot):
   Flamme und Glut ruhen ohne Animationen. Darunter Vitalität und das Menü „Was tun?“ (`sageMenue`) mit Hauptknopf;
   „Gegessen?“, Eintragen, Tagebuch, Einkauf und Einstellungen bleiben erreichbar. TalkBack liest die normalen Begriffe.
 - Tests: `SageMenueTest`, `HeuteSageTest`, Referenzbild `stil_sage_immersiv`.
+
+**2026-11-11 – Q Immersiv: Rezepte, Woche, Einkauf** (Branch `claude/stile-q-haupt`):
+- Gemeinsame Bausteine der Sage in `:core:designsystem/stil/sage/SageBausteine.kt` (Schriften in den Größen des
+  Entwurfs, Seitenkopf, Hauptknopf, Nebenknopf, Raute); „Heute“ nutzt sie jetzt auch.
+- Rezepte als **Grimoire** (`feature/rezepte/liste/stil/RezepteSage.kt`): Suche und alle Filter der normalen Liste,
+  Treffer einzeln aufgeschlagen mit Emblem, Art, Zeit, kcal, „gekocht“ und einem Satz aus den Zutaten (statt eines
+  erfundenen Textes); „‹ Aufschlagen ›“, „+“ für Neu/Import.
+- Woche als **Karte der Woche** (`feature/woche/stil/WocheSage.kt`): Weg durch die sieben Tage (heute leuchtet,
+  leere Tage hohl), darunter der gewählte Tag; Gerichte öffnen das Mahlzeit-Blatt, „+ Mahl hinzufügen“ und „Leere
+  Tage füllen“ nutzen dieselben Blätter wie die normale Ansicht. Ein eigener Umbau von `WocheRoute` war nicht nötig.
+- Einkauf als **Der Händler** (`feature/einkauf/stil/EinkaufSage.kt`): Kopf mit erledigt/gesamt, „Listen“ und Menü,
+  der Laden mit dem Spruch des Händlers, Posten als Felder mit Raute (Antippen hakt ab und wieder auf, Langdruck =
+  Details). Eingabe, Abgleich-Hinweis, „Zuletzt“ und Katalog bleiben wie gehabt.
+- Tests: je Bereich Szene im Screen-Test (Blättern, Öffnen, Abhaken, Blätter), `GrimoireTexteTest`,
+  `HaendlerSpruchTest`; Referenzbilder `sage_liste_handy`, `sage_woche_handy`, `sage_einkauf_handy`.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).

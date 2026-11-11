@@ -50,9 +50,12 @@ import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.Tagesleiste
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.ueberLeiste
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
+import de.foody.feature.woche.stil.WocheSage
+import de.foody.feature.woche.stil.WocheSageAktionen
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -64,7 +67,8 @@ private val LISTE_UNTEN = 104.dp
  * Der Tab „Woche“ wie im Entwurf: Kopf mit Kalenderwoche und runden Pfeilen, Tagesleiste (Tippen springt zum Tag),
  * Tageskarten mit Einträgen und Plätzen für fehlende Mahlzeiten (ab 840 dp in zwei Spalten), am Ende „x von 28
  * Mahlzeiten geplant“ und „Leere Tage füllen“. „+ Mahlzeit“ führt über die Mahlzeitwahl, ein Platz direkt zur
- * Rezeptwahl; je Eintrag das Mahlzeit-Blatt.
+ * Rezeptwahl; je Eintrag das Mahlzeit-Blatt. Die Düstere Sage zeigt in Immersiv die Karte der Woche
+ * (`stil/WocheSage.kt`) mit denselben Blättern.
  */
 @Composable
 fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: WocheViewModel = hiltViewModel()) {
@@ -85,44 +89,56 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
     // Lage der Tageskarten in der Liste, für den Sprung aus der Tagesleiste
     val lagen = remember { mutableStateMapOf<Int, Int>() }
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
-        val zweispaltig = maxWidth >= FoodyBreiten.zweispaltig
-        Column(
-            Modifier.widthIn(max = FoodyBreiten.zweiBereiche).fillMaxSize().verticalScroll(scroll)
-                .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s3, bottom = ueberLeiste(LISTE_UNTEN)),
-            verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
-        ) {
-            Kopf(woche, zeigtHeute, vm::blaettern, vm::heute)
-            val tage = woche?.tage.orEmpty()
-            if (tage.isNotEmpty()) {
-                val heuteIndex = tage.indexOfFirst { it.datum == vm.heuteDatum }
-                Tagesleiste(
-                    tage.map { LeistenTag(wochentagKurz(it.datum), it.datum.dayOfMonth, it.eintraege.isNotEmpty(), tagLang(it.datum)) },
-                    gewaehlt = heuteIndex,
-                    onWahl = { i -> lagen[i]?.let { y -> bereich.launch { scroll.animateScrollTo(y) } } },
-                )
-            }
-            val karte = @Composable { i: Int, tag: WochenTag ->
-                TagKarte(
-                    tag, tag.datum == vm.heuteDatum, ziel,
-                    onEintrag = { offen = it.id },
-                    onPlus = { neuAm = tag.datum.toString() },
-                    modifier = Modifier.onPlaced { lagen[i] = it.positionInParent().y.toInt() },
-                    onPlatz = { m -> auswahlFuer = "${tag.datum}|${m.name}" },
-                )
-            }
-            if (zweispaltig) {
-                Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
-                        tage.take(4).forEachIndexed { i, t -> karte(i, t) }
-                    }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
-                        tage.drop(4).forEachIndexed { i, t -> karte(i + 4, t) }
-                    }
+        // Düstere Sage in Immersiv: die Karte der Woche; die Blätter unten bleiben dieselben
+        if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
+            WocheSage(
+                woche, vm.heuteDatum, zeigtHeute,
+                WocheSageAktionen(
+                    onBlaettern = vm::blaettern, onHeute = vm::heute, onEintrag = { offen = it.id },
+                    onPlus = { neuAm = it.toString() }, onFuellen = { vm.fuellenOeffnen() },
+                ),
+                unten = ueberLeiste(LISTE_UNTEN),
+            )
+        } else {
+            val zweispaltig = maxWidth >= FoodyBreiten.zweispaltig
+            Column(
+                Modifier.widthIn(max = FoodyBreiten.zweiBereiche).fillMaxSize().verticalScroll(scroll)
+                    .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s3, bottom = ueberLeiste(LISTE_UNTEN)),
+                verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
+            ) {
+                Kopf(woche, zeigtHeute, vm::blaettern, vm::heute)
+                val tage = woche?.tage.orEmpty()
+                if (tage.isNotEmpty()) {
+                    val heuteIndex = tage.indexOfFirst { it.datum == vm.heuteDatum }
+                    Tagesleiste(
+                        tage.map { LeistenTag(wochentagKurz(it.datum), it.datum.dayOfMonth, it.eintraege.isNotEmpty(), tagLang(it.datum)) },
+                        gewaehlt = heuteIndex,
+                        onWahl = { i -> lagen[i]?.let { y -> bereich.launch { scroll.animateScrollTo(y) } } },
+                    )
                 }
-            } else {
-                tage.forEachIndexed { i, t -> karte(i, t) }
+                val karte = @Composable { i: Int, tag: WochenTag ->
+                    TagKarte(
+                        tag, tag.datum == vm.heuteDatum, ziel,
+                        onEintrag = { offen = it.id },
+                        onPlus = { neuAm = tag.datum.toString() },
+                        modifier = Modifier.onPlaced { lagen[i] = it.positionInParent().y.toInt() },
+                        onPlatz = { m -> auswahlFuer = "${tag.datum}|${m.name}" },
+                    )
+                }
+                if (zweispaltig) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
+                            tage.take(4).forEachIndexed { i, t -> karte(i, t) }
+                        }
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
+                            tage.drop(4).forEachIndexed { i, t -> karte(i + 4, t) }
+                        }
+                    }
+                } else {
+                    tage.forEachIndexed { i, t -> karte(i, t) }
+                }
+                if (tage.isNotEmpty()) Fuss(tage) { vm.fuellenOeffnen() }
             }
-            if (tage.isNotEmpty()) Fuss(tage) { vm.fuellenOeffnen() }
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = ueberLeiste(UEBER_LEISTE)))
     }

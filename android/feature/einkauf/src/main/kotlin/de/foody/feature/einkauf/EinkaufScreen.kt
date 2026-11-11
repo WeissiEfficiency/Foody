@@ -30,11 +30,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.LeererZustandZeile
 import de.foody.core.designsystem.komponenten.ueberLeiste
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
+import de.foody.feature.einkauf.stil.haendlerKopf
+import de.foody.feature.einkauf.stil.haendlerPosten
 
 /** Platz unter der Liste für die schwebende Navigationsleiste. */
 private val LISTE_UNTEN = 104.dp
@@ -42,7 +46,8 @@ private val KACHEL_MIN = 104.dp
 
 /**
  * Der Tab „Einkauf“ (und `EinkaufListe(id)`): Kopf, Hinweis „Plan geändert“, Eingabe, offene Kacheln je Abteilung,
- * „Zuletzt verwendet“ und der Katalog; ab 840 dp der Katalog rechts daneben. [listeId] `null` = aktuelle Liste.
+ * „Zuletzt verwendet“ und der Katalog; ab 840 dp der Katalog rechts daneben. [listeId] `null` = aktuelle Liste. Die
+ * Düstere Sage zeigt in Immersiv Kopf und Posten als „Der Händler“ (`stil/EinkaufSage.kt`).
  */
 @Composable
 fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> Unit, vm: EinkaufViewModel = hiltViewModel()) {
@@ -54,8 +59,15 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
     val umschalten = { name: String -> aufgeklappt = if (name in aufgeklappt) aufgeklappt - name else aufgeklappt + name }
     val alle = z.ansicht?.alle.orEmpty()
 
+    // Düstere Sage in Immersiv: Kopf und Posten als „Der Händler“, sonst die normale Ansicht
+    val sage = FoodyTheme.stil.immersiv(FoodyStil.SAGE)
+    val menue = @Composable { EinkaufMenue(z.ansicht, vm::blattOeffnen) { loeschenFrage = true } }
     val oben: LazyGridScope.() -> Unit = {
-        ganz("kopf") { EinkaufKopf(z.ansicht) { EinkaufMenue(z.ansicht, vm::blattOeffnen) { loeschenFrage = true } } }
+        if (sage) {
+            haendlerKopf(z.ansicht, onListen = { vm.blattOeffnen(Blatt.Frueher) }, menue = menue)
+        } else {
+            ganz("kopf") { EinkaufKopf(z.ansicht) { menue() } }
+        }
         if (z.abgleich.isNotEmpty()) ganz("hinweis") { AbgleichHinweis { vm.blattOeffnen(Blatt.Abgleich) } }
         ganz("eingabe") { EingabeFeld(z.suche, vm::suche, vm::eingeben) }
     }
@@ -68,7 +80,11 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
                     LeererZustandZeile("Noch nichts auf der Liste", "Neue Liste aus dem Plan", { vm.blattOeffnen(Blatt.Vorschau) })
                 }
             }
-            offeneKacheln(z.ansicht?.offen.orEmpty(), onGekauft = { vm.abhaken(it, true) }, onDetails = { vm.blattOeffnen(Blatt.Details(it)) })
+            if (sage) {
+                haendlerPosten(z.ansicht, onUmschalten = { id, an -> vm.abhaken(id, an) }, onDetails = { vm.blattOeffnen(Blatt.Details(it)) })
+            } else {
+                offeneKacheln(z.ansicht?.offen.orEmpty(), onGekauft = { vm.abhaken(it, true) }, onDetails = { vm.blattOeffnen(Blatt.Details(it)) })
+            }
             zuletztKacheln(z.zuletzt, alle, ZULETZT in aufgeklappt, { umschalten(ZULETZT) }, { vm.zuletztAntippen(it) })
         }
     }

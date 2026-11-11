@@ -1,5 +1,8 @@
 package de.foody.feature.einkauf
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasSetTextAction
@@ -19,6 +22,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.stil.FoodyStil
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -55,10 +59,10 @@ class EinkaufScreenTest {
         db.close()
     }
 
-    private fun zeigen(listeId: String? = null, schrift200: Boolean = false): EinkaufViewModel {
+    private fun zeigen(listeId: String? = null, schrift200: Boolean = false, stil: FoodyStil = FoodyStil.MILCHGLAS): EinkaufViewModel {
         val vm = u.vm()
         compose.setContent {
-            FoodyTheme {
+            FoodyTheme(stil = stil) {
                 val inhalt = @androidx.compose.runtime.Composable {
                     EinkaufRoute(listeId, onListe = { geoeffnet += it }, onAktuelle = { aktuelle++ }, vm = vm)
                 }
@@ -341,4 +345,28 @@ class EinkaufScreenTest {
         compose.waitUntil(5_000) { runBlocking { db.einkaufslisteDao().alle() }.isEmpty() }
         compose.warteAufText("Noch nichts auf der Liste")
     }
+
+    @Test
+    fun haendlerHaktAbUndWiederAuf() {
+        planListe()
+        zeigen(stil = FoodyStil.SAGE)
+        compose.warteAufText("DER HÄNDLER")
+        compose.warteAufText("„Was führt Euch her? Zwei Dinge fehlen Euch noch.“")
+        compose.onNodeWithContentDescription("Zwiebeln", substring = true).performScrollTo().performClick()
+        compose.warteAufText("„Was führt Euch her? Ein Ding fehlt Euch noch.“")
+        compose.onNodeWithContentDescription("Zwiebeln", substring = true).assert(hasStateDescription("gekauft"))
+        compose.onNodeWithContentDescription("Zwiebeln", substring = true).performScrollTo().performClick()
+        compose.warteAufText("„Was führt Euch her? Zwei Dinge fehlen Euch noch.“")
+    }
+
+    @Test
+    fun haendlerListenOeffnetFruehere() {
+        planListe()
+        zeigen(stil = FoodyStil.SAGE)
+        compose.warteAufText("DER HÄNDLER")
+        compose.onNodeWithContentDescription("Frühere Listen").performClick()
+        compose.warteAufText("Frühere Listen")
+    }
+
+    private fun hasStateDescription(text: String) = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, text)
 }
