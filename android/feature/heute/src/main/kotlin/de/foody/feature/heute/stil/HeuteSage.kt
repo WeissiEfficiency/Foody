@@ -82,8 +82,9 @@ import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.balkenanteile
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.ueberLeiste
-import de.foody.core.designsystem.token.CinzelFamilie
-import de.foody.core.designsystem.token.EbGaramondFamilie
+import de.foody.core.designsystem.stil.sage.Sage
+import de.foody.core.designsystem.stil.sage.SageHauptknopf
+import de.foody.core.designsystem.stil.sage.sageHell
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.heute.HEUTE_INHALT
 import de.foody.feature.heute.HeuteAktionen
@@ -126,15 +127,6 @@ internal fun HeuteSage(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier
     }
 }
 
-/** Heller Ton für Titel und Zahlen (im Entwurf #F4EEDD), aus dem Text des Stils. */
-@Composable
-private fun hell(): Color = lerp(FoodyTheme.farben.text, Color.White, 0.4f)
-
-private fun cinzel(groesse: Float, abstand: Float, gewicht: FontWeight = FontWeight.SemiBold) =
-    TextStyle(fontFamily = CinzelFamilie, fontWeight = gewicht, fontSize = groesse.sp, letterSpacing = abstand.em)
-
-private fun garamond(groesse: Float) = TextStyle(fontFamily = EbGaramondFamilie, fontSize = groesse.sp, lineHeight = (groesse * 1.25f).sp)
-
 @Composable
 private fun RastAmFeuer(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: () -> Unit) {
     val glut = FoodyTheme.stil.zier
@@ -147,7 +139,7 @@ private fun RastAmFeuer(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: 
         ) {
             datum?.let {
                 Text(
-                    DATUM.format(it).uppercase(Locale.GERMAN), style = cinzel(11.5f, 0.3f, FontWeight.Medium),
+                    DATUM.format(it).uppercase(Locale.GERMAN), style = Sage.titel(11.5f, 0.3f, FontWeight.Medium),
                     color = FoodyTheme.farben.nebentext, textAlign = TextAlign.Center,
                 )
             }
@@ -157,8 +149,8 @@ private fun RastAmFeuer(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: 
                     heading()
                     contentDescription = "Heute"
                 },
-                style = cinzel(30f, 0.14f).copy(shadow = Shadow(Color.Black.copy(alpha = 0.9f), blurRadius = 18f)),
-                color = hell(),
+                style = Sage.titel(30f, 0.14f).copy(shadow = Shadow(Color.Black.copy(alpha = 0.9f), blurRadius = 18f)),
+                color = sageHell(),
                 textAlign = TextAlign.Center,
             )
             sync?.let { SyncStatus(it, Modifier.padding(top = 6.dp)) }
@@ -262,11 +254,11 @@ private fun Vitalitaet(t: TagebuchHeute) {
         (if (ueber) ", über Ziel" else "") + ": Eiweiß ${s.eiweiss} g, Kohlenhydrate ${s.kohlenhydrate} g, Fett ${s.fett} g"
     Column(Modifier.clearAndSetSemantics { contentDescription = satz }, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.Bottom) {
-            Text("VITALITÄT", Modifier.weight(1f), style = cinzel(12f, 0.2f), color = f.nebentext)
-            Text(ganzzahlDeutsch(s.kcal), style = cinzel(22f, 0.02f), color = hell())
+            Text("VITALITÄT", Modifier.weight(1f), style = Sage.titel(12f, 0.2f), color = f.nebentext)
+            Text(ganzzahlDeutsch(s.kcal), style = Sage.titel(22f, 0.02f), color = sageHell())
             Text(
                 (if (ziel != null) " / ${ganzzahlDeutsch(ziel)} kcal" else " kcal") + if (ueber) " · über Ziel" else "",
-                style = garamond(15f), color = f.nebentext,
+                style = Sage.text(15f), color = f.nebentext,
             )
         }
         if (ziel != null) {
@@ -295,8 +287,8 @@ private fun Vitalitaet(t: TagebuchHeute) {
 private fun Makro(name: String, gramm: Int, anteil: Float, farbe: Color, modifier: Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Row {
-            Text(name, Modifier.weight(1f), style = garamond(14f), color = FoodyTheme.farben.nebentext)
-            Text("$gramm g", style = garamond(14f), color = FoodyTheme.farben.text)
+            Text(name, Modifier.weight(1f), style = Sage.text(14f), color = FoodyTheme.farben.nebentext)
+            Text("$gramm g", style = Sage.text(14f), color = FoodyTheme.farben.text)
         }
         Box(
             Modifier.fillMaxWidth().height(4.dp).background(FoodyTheme.werte.glas).drawBehind {
@@ -332,8 +324,8 @@ private fun WasTun(menue: List<SageEintrag>, aktionen: HeuteAktionen) {
                 }
                 Spacer(Modifier.size(10.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                    Text(e.titel, style = cinzel(15f, 0.06f), color = if (an) hell() else f.nebentext)
-                    Text(e.zeile, style = garamond(16f), color = f.nebentext)
+                    Text(e.titel, style = Sage.titel(15f, 0.06f), color = if (an) sageHell() else f.nebentext)
+                    Text(e.zeile, style = Sage.text(16f), color = f.nebentext)
                 }
             }
         }
@@ -348,16 +340,7 @@ private fun WasTun(menue: List<SageEintrag>, aktionen: HeuteAktionen) {
             SageZiel.EINKAUF -> aktionen.onEinkauf(requireNotNull(aktiv.listeId))
         }
     }
-    Box(
-        Modifier.fillMaxWidth().heightIn(min = 50.dp).border(1.dp, glut)
-            .background(Brush.horizontalGradient(listOf(glut.copy(alpha = 0f), glut.copy(alpha = 0.24f), glut.copy(alpha = 0f))))
-            .clickable(role = Role.Button, onClick = ausfuehren)
-            .semantics(mergeDescendants = true) { contentDescription = aktiv.beschreibung }
-            .padding(horizontal = 12.dp, vertical = 12.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(aktiv.aktion, style = cinzel(15f, 0.18f), color = hell(), textAlign = TextAlign.Center)
-    }
+    SageHauptknopf(aktiv.aktion, aktiv.beschreibung, ausfuehren)
     val naechstes = menue.firstOrNull { it.ziel == SageZiel.KOCHEN }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         naechstes?.let { n -> NebenWeg("REZEPT ANSEHEN", "Rezept ansehen", Modifier.weight(1f)) { aktionen.onRezept(requireNotNull(n.rezeptId)) } }
@@ -388,7 +371,7 @@ private fun NebenWeg(text: String, beschreibung: String, modifier: Modifier, onK
             .padding(4.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = cinzel(11f, 0.14f), color = f.nebentext, textAlign = TextAlign.Center)
+        Text(text, style = Sage.titel(11f, 0.14f), color = f.nebentext, textAlign = TextAlign.Center)
     }
 }
 

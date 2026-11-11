@@ -12,12 +12,14 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.RezeptZutatEntity
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.domain.MeasureUnit
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -60,10 +62,10 @@ class WocheScreenTest {
 
     private fun prefs() = RuntimeEnvironment.getApplication().getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE)
 
-    private fun zeigen(schrift200: Boolean = false) {
+    private fun zeigen(schrift200: Boolean = false, stil: FoodyStil = FoodyStil.MILCHGLAS) {
         val vm = u.vm()
         compose.setContent {
-            FoodyTheme {
+            FoodyTheme(stil = stil) {
                 val inhalt = @androidx.compose.runtime.Composable {
                     WocheRoute(onKochen = { r, p -> gekocht += r to p }, onRezept = { rezepte += it }, vm = vm)
                 }
@@ -281,6 +283,38 @@ class WocheScreenTest {
         compose.onNodeWithContentDescription("Nächste Woche").performClick()
         compose.warteAufText("KW 45 · 2.11.–8.11.")
         tester.emulateSavedInstanceStateRestore()
+        compose.warteAufText("KW 45 · 2.11.–8.11.")
+    }
+
+    @Test
+    fun karteDerWocheOeffnetBlaetter() {
+        planen(2, "ABENDESSEN")
+        zeigen(stil = FoodyStil.SAGE)
+        compose.warteAufText("KARTE DER WOCHE")
+        compose.onNodeWithContentDescription("Mittwoch", substring = true).performClick()
+        compose.warteAufText("Reispfanne")
+        compose.onNodeWithText("Reispfanne").performScrollTo().performClick()
+        compose.warteAufText("Rezept ansehen")
+        compose.onNodeWithText("Rezept ansehen").performClick()
+        assertEquals(listOf("r1"), rezepte)
+    }
+
+    @Test
+    fun karteDerWocheHinzufuegenUndFuellen() {
+        zeigen(stil = FoodyStil.SAGE)
+        compose.warteAufText("KARTE DER WOCHE")
+        compose.onNodeWithText("+ MAHL HINZUFÜGEN").performScrollTo().performClick()
+        compose.warteAufText("Mahlzeit wählen")
+        Espresso.pressBack()
+        compose.onNodeWithText("LEERE TAGE FÜLLEN").performScrollTo().performClick()
+        compose.warteAufText("Neu mischen")
+    }
+
+    @Test
+    fun karteDerWocheBlaettert() {
+        zeigen(stil = FoodyStil.SAGE)
+        compose.warteAufText("KW 44 · 26.10.–1.11.")
+        compose.onNodeWithContentDescription("Nächste Woche").performClick()
         compose.warteAufText("KW 45 · 2.11.–8.11.")
     }
 }

@@ -26,11 +26,13 @@ import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.RezeptkarteRaster
 import de.foody.core.designsystem.komponenten.rezeptBild
 import de.foody.core.designsystem.komponenten.ueberLeiste
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.feature.rezepte.liste.stil.RezepteSage
 
 /**
  * Rezeptliste: Kopf mit Menü, Suche, Filterchips, Bildraster. [ausgewaehlt] hebt auf dem Tablet das rechts offene
- * Rezept hervor.
+ * Rezept hervor. Die Düstere Sage zeigt in Immersiv das Grimoire (`stil/RezepteSage.kt`).
  */
 @Composable
 fun RezeptListeRoute(
@@ -41,6 +43,11 @@ fun RezeptListeRoute(
     vm: RezeptListeViewModel = hiltViewModel(),
 ) {
     val z by vm.zustand.collectAsStateWithLifecycle()
+    // Düstere Sage in Immersiv: das Grimoire mit derselben Liste und denselben Filtern
+    if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
+        RezepteSage(z, vm::filter, vm::zuruecksetzen, onOeffnen, onNeu, onImport)
+        return
+    }
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
         ListeKopf(z.anzahl.takeIf { z.geladen && !z.keineRezepte }, onNeu, onImport)
         if (z.geladen && z.keineRezepte) {
