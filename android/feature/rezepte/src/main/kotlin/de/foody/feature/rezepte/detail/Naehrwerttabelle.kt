@@ -47,30 +47,35 @@ private fun gramm(wert: BigDecimal): String =
  */
 @Composable
 internal fun Naehrwerttabelle(v: RezeptVoll, portionen: Int) {
-    val n = v.naehrwerte
-    val faktor = BigDecimal(portionen)
     Abschnittskopf("Nährwerte")
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
         Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             kcalJePortion(v)?.let { Text(it, style = MaterialTheme.typography.titleMedium, color = FoodyTheme.farben.text) }
             Zeile("", "je Portion", if (portionen == 1) "1 Portion" else "$portionen Portionen", kopf = true)
-            n.perServing(Nutrient.ENERGY_KJ)?.let { kj ->
-                Zeile("Energie", kcal(kj), kcal(kj.multiply(faktor)))
-                Zeile("Brennwert", kilojoule(kj), kilojoule(kj.multiply(faktor)))
-            }
-            NAEHRSTOFFE.forEach { (naehrstoff, name) ->
-                n.perServing(naehrstoff)?.let { Zeile(name, gramm(it), gramm(it.multiply(faktor))) }
-            }
-            val ohneWerte = v.zeilen.count { !it.hatNaehrwerte }
-            if (ohneWerte > 0) {
-                Text(
-                    "Für $ohneWerte von ${v.zeilen.size} Zutaten fehlen Werte",
-                    style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext,
-                )
-            }
+            naehrwertZeilen(v, portionen).forEach { Zeile(it.name, it.jePortion, it.gesamt) }
+            fehlendeWerte(v)?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext) }
         }
     }
 }
+
+/** Eine Zeile der Nährwerttabelle: Name, Wert je Portion, Wert für die gewählten Portionen. */
+internal data class NaehrwertZeile(val name: String, val jePortion: String, val gesamt: String)
+
+/** Energie, Brennwert und die Nährstoffe mit Werten, je Portion und für [portionen]. */
+internal fun naehrwertZeilen(v: RezeptVoll, portionen: Int): List<NaehrwertZeile> {
+    val n = v.naehrwerte
+    val faktor = BigDecimal(portionen)
+    val energie = n.perServing(Nutrient.ENERGY_KJ)?.let { kj ->
+        listOf(NaehrwertZeile("Energie", kcal(kj), kcal(kj.multiply(faktor))), NaehrwertZeile("Brennwert", kilojoule(kj), kilojoule(kj.multiply(faktor))))
+    }.orEmpty()
+    return energie + NAEHRSTOFFE.mapNotNull { (naehrstoff, name) ->
+        n.perServing(naehrstoff)?.let { NaehrwertZeile(name, gramm(it), gramm(it.multiply(faktor))) }
+    }
+}
+
+/** „Für 2 von 5 Zutaten fehlen Werte“; `null`, wenn alle Werte da sind. */
+internal fun fehlendeWerte(v: RezeptVoll): String? =
+    v.zeilen.count { !it.hatNaehrwerte }.takeIf { it > 0 }?.let { "Für $it von ${v.zeilen.size} Zutaten fehlen Werte" }
 
 private fun kcal(kj: BigDecimal) = "${ganzzahlDeutsch(NutritionResult.kcal(kj))} kcal"
 

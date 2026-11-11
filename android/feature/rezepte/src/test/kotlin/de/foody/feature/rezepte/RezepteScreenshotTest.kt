@@ -125,6 +125,9 @@ class RezepteScreenshotTest {
         bild("sage_liste_handy", dunkel = false, stil = FoodyStil.SAGE) {
             RezeptListeRoute({}, {}, {}, vm = remember { halter.behalten(RezeptListeViewModel(repo)) })
         }
+        bild("sage_detail_handy", dunkel = false, stil = FoodyStil.SAGE) {
+            RezeptDetailRoute("r1", { _, _ -> }, {}, {}, {}, vm = remember { halter.behalten(RezeptDetailViewModel(repo, db.einkauf())) })
+        }
     }
 
     private fun bild(name: String, dunkel: Boolean, stil: FoodyStil = FoodyStil.MILCHGLAS, inhalt: @Composable () -> Unit) {

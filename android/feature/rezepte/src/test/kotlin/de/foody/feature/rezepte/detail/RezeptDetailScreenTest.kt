@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -18,6 +20,7 @@ import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.MeasureUnit
 import de.foody.feature.rezepte.MitSchrift200
@@ -73,10 +76,10 @@ class RezeptDetailScreenTest {
         db.close()
     }
 
-    private fun zeigen(id: String = "r1", schrift200: Boolean = false) {
+    private fun zeigen(id: String = "r1", schrift200: Boolean = false, stil: FoodyStil = FoodyStil.MILCHGLAS) {
         val vm = halter.behalten(RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1_000L }, db.einkauf()))
         compose.setContent {
-            FoodyTheme {
+            FoodyTheme(stil = stil) {
                 val inhalt = @androidx.compose.runtime.Composable {
                     RezeptDetailRoute(
                         id, onKochen = { r, p -> gekocht += r to p }, onBearbeiten = { bearbeitet += it },
@@ -272,5 +275,56 @@ class RezeptDetailScreenTest {
         compose.onNodeWithText("Hinzufügen").performClick()
         compose.warteAufText("Nichts einzukaufen")
         assertTrue(runBlocking { db.einkaufslisteDao().alle() }.isEmpty())
+    }
+
+    @Test
+    fun grimoireSeiteMitReitern() {
+        zeigen(stil = FoodyStil.SAGE)
+        compose.warteAufText("AUS DEM GRIMOIRE")
+        compose.warteAufText("400 g")
+        compose.onNodeWithContentDescription("Mehr Portionen").performClick()
+        compose.warteAufText("600 g")
+        compose.onNodeWithContentDescription("Zubereitung").performClick()
+        compose.warteAufText("Reis kochen.")
+        compose.onNodeWithContentDescription("Schritt 1").assertExists()
+        compose.onNodeWithContentDescription("Nährwerte").performClick()
+        compose.warteAufText("Energie")
+        compose.onNodeWithText("3 PORTIONEN").assertExists()
+    }
+
+    @Test
+    fun grimoireAktionen() {
+        zeigen(stil = FoodyStil.SAGE)
+        compose.warteAufText("AUS DEM GRIMOIRE")
+        compose.onNodeWithContentDescription("Kochen").performClick()
+        assertEquals(listOf("r1" to 2), gekocht)
+        compose.onNodeWithContentDescription("Als Favorit merken").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithContentDescription("Favorit entfernen").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("Auf die Einkaufsliste").performClick()
+        compose.warteAufText("Hinzufügen")
+        compose.onNodeWithText("Abbrechen").performClick()
+        compose.onNodeWithContentDescription("Weitere Aktionen").performClick()
+        compose.onNodeWithText("Neu niederschreiben").performClick()
+        assertEquals(listOf("r1"), bearbeitet)
+        compose.onNodeWithContentDescription("Zurück").performClick()
+        assertEquals(1, zurueck)
+    }
+
+    @Test
+    fun grimoireArchivUndZurueckholen() {
+        zeigen(stil = FoodyStil.SAGE)
+        compose.warteAufText("AUS DEM GRIMOIRE")
+        compose.onNodeWithContentDescription("Weitere Aktionen").performClick()
+        compose.onNodeWithText("Ins Archiv verbannen").performClick()
+        compose.warteAufText("Dieses Rezept ruht im Archiv.")
+        compose.onNodeWithContentDescription("Wiederherstellen").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Dieses Rezept ruht im Archiv.").fetchSemanticsNodes().isEmpty() }
+    }
+
+    @Test
+    fun grimoireMitSchrift200() {
+        zeigen(schrift200 = true, stil = FoodyStil.SAGE)
+        compose.warteAufText("AUS DEM GRIMOIRE")
+        compose.pruefeNichtsAbgeschnitten()
     }
 }

@@ -29,10 +29,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.ueberLeiste
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
+import de.foody.feature.rezepte.detail.stil.RezeptSage
 import kotlinx.coroutines.launch
 
 /** Was das Detail auslösen kann; die Navigation liegt in der App. */
@@ -86,6 +89,7 @@ fun RezeptDetailRoute(
         onPortionen = vm::portionenSchritt,
         onZurueck = onZurueck,
     )
+    val sage = FoodyTheme.stil.immersiv(FoodyStil.SAGE)
     Box(Modifier.fillMaxSize()) {
         when (val z = zustand) {
             DetailZustand.Laden -> Unit
@@ -93,11 +97,15 @@ fun RezeptDetailRoute(
                 Icons.AutoMirrored.Outlined.MenuBook, "Rezept nicht gefunden", "Es wurde vielleicht gelöscht.",
                 aktionText = "Zurück", onAktion = onZurueck, modifier = Modifier.safeDrawingPadding().padding(FoodyAbstaende.s4),
             )
-            is DetailZustand.Da -> Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
-                Column(
-                    Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().safeDrawingPadding().padding(bottom = ueberLeiste(104.dp)),
-                    verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
-                ) { DetailInhalt(z, aktionen) }
+            is DetailZustand.Da -> if (sage) {
+                RezeptSage(z, aktionen)
+            } else {
+                Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
+                    Column(
+                        Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().safeDrawingPadding().padding(bottom = ueberLeiste(104.dp)),
+                        verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
+                    ) { DetailInhalt(z, aktionen) }
+                }
             }
         }
         einkaufPortionen?.let { p ->

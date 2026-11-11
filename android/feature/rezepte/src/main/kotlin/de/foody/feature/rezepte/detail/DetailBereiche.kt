@@ -45,6 +45,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
+import de.foody.core.data.rezepte.RezeptZeile
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.Augenbraue
@@ -89,10 +90,7 @@ internal fun DetailInhalt(z: DetailZustand.Da, a: DetailAktionen) {
                 Portionen(z.portionen, a.onPortionen)
             }
             z.voll.zeilen.forEach { zeile ->
-                val menge = zeile.menge.takeIf { it.signum() > 0 }?.let { m ->
-                    val skaliert = RecipeScaler.scale(m, r.defaultServings.coerceAtLeast(1), z.portionen)
-                    QuantityFormatter.format(Quantity.of(skaliert, zeile.einheit), zeile.einheit)
-                }.orEmpty()
+                val menge = mengeText(z, zeile)
                 Row(Modifier.padding(vertical = FoodyAbstaende.s1)) {
                     Text(menge, Modifier.width(88.dp), style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.primaer)
                     Column(Modifier.weight(1f)) {
@@ -240,6 +238,12 @@ private fun Quelle(url: String) {
         style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext,
     )
 }
+
+/** Menge einer Zutat für die gewählten Portionen („300 g“), leer ohne Menge. */
+internal fun mengeText(z: DetailZustand.Da, zeile: RezeptZeile): String = zeile.menge.takeIf { it.signum() > 0 }?.let { m ->
+    val skaliert = RecipeScaler.scale(m, z.voll.rezept.defaultServings.coerceAtLeast(1), z.portionen)
+    QuantityFormatter.format(Quantity.of(skaliert, zeile.einheit), zeile.einheit)
+}.orEmpty()
 
 internal fun zeit(vorbereitung: Int?, kochen: Int?): String? =
     listOfNotNull(vorbereitung, kochen).takeIf { it.isNotEmpty() }?.sum()?.let { "$it Min." }

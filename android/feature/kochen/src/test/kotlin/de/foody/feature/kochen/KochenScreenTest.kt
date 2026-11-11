@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.stil.FoodyStil
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -50,10 +51,10 @@ class KochenScreenTest {
 
     private val angepasst = mutableListOf<Pair<String, Int>>()
 
-    private fun zeigen(id: String = "r1", schrift200: Boolean = false, portionen: Int? = null) {
+    private fun zeigen(id: String = "r1", schrift200: Boolean = false, portionen: Int? = null, stil: FoodyStil = FoodyStil.MILCHGLAS) {
         val vm = u.vm()
         compose.setContent {
-            FoodyTheme {
+            FoodyTheme(stil = stil) {
                 val inhalt = @androidx.compose.runtime.Composable {
                     KochenRoute(id, portionen, onRezeptAnpassen = { r, p -> angepasst += r to p }, onSchliessen = { geschlossen++ }, vm = vm)
                 }
@@ -175,5 +176,40 @@ class KochenScreenTest {
         compose.warteAufText("SCHRITT 1 VON 3")
         tester.emulateSavedInstanceStateRestore()
         compose.warteAufText("SCHRITT 1 VON 3")
+    }
+
+    @Test
+    fun sageLegeBereitUndSchritte() {
+        zeigen(stil = FoodyStil.SAGE)
+        compose.warteAufText("LEGE BEREIT")
+        compose.warteAufText("0 von 2 bereit")
+        compose.onNodeWithText("Reis").performClick()
+        compose.warteAufText("1 von 2 bereit")
+        compose.onNodeWithText("BEGINNEN").performClick()
+        compose.warteAufText("SCHRITT 1 VON 3")
+        compose.onNodeWithText("von 400 g").assertExists()
+        compose.onNodeWithContentDescription("Zurück").performClick()
+        compose.warteAufText("LEGE BEREIT")
+        compose.onNodeWithContentDescription("Kochen beenden").performClick()
+        assertEquals(1, geschlossen)
+    }
+
+    @Test
+    fun sageSanduhrStartetTimer() {
+        zeigen(stil = FoodyStil.SAGE)
+        compose.warteAufText("LEGE BEREIT")
+        compose.onNodeWithText("BEGINNEN").performClick()
+        compose.onNodeWithText("WEITER").performClick()
+        compose.warteAufText("SCHRITT 2 VON 3")
+        compose.onNodeWithText("Sanduhr", substring = true).performClick()
+        compose.waitUntil(5_000) { u.timer.timer.value.isNotEmpty() }
+        compose.onNodeWithContentDescription("Timer 20 Minuten beenden").assertExists()
+    }
+
+    @Test
+    fun sageMitSchrift200() {
+        zeigen(schrift200 = true, stil = FoodyStil.SAGE)
+        compose.warteAufText("LEGE BEREIT")
+        compose.pruefeNichtsAbgeschnitten()
     }
 }
