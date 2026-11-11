@@ -25,11 +25,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.data.heute.GeplanteMahlzeit
+import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.ueberLeiste
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
+import de.foody.feature.heute.stil.HeuteSage
 import de.foody.feature.heute.tagebuch.BlattAuftrag
 import de.foody.feature.heute.tagebuch.EintragenBlatt
 import de.foody.feature.heute.tagebuch.EintragenViewModel
@@ -77,10 +80,15 @@ fun HeuteRoute(
 
 /**
  * Startseite: Kopf, nächste Mahlzeit, Inspiration (nur ohne Plan für heute), Tagebuch des Tages, offener Einkauf.
- * Unten Platz für die schwebende Navigationsleiste.
+ * Unten Platz für die schwebende Navigationsleiste. Ein Stil in Immersiv zeigt stattdessen seine Szene (`stil/`).
  */
 @Composable
 fun HeuteScreen(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modifier = Modifier) {
+    // Szenen der Stile in Immersiv; sonst die normale Ansicht
+    if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
+        HeuteSage(zustand, aktionen, modifier)
+        return
+    }
     Box(modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         HeuteInhalt(zustand, aktionen)
     }
