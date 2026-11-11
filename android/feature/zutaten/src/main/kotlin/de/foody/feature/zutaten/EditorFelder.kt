@@ -28,7 +28,6 @@ import de.foody.core.designsystem.komponenten.FoodyTextfeld
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.vorausgefuelltFarben
 import de.foody.core.designsystem.token.FoodyAbstaende
-import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.core.scan.ScanTexte
 import de.foody.domain.IngredientCatalog
@@ -37,7 +36,7 @@ import de.foody.domain.NutrientBasis
 /** Ein Abschnitt des Editors: Glasfläche, optional mit Augenbraue. */
 @Composable
 private fun Bereich(titel: String?, inhalt: @Composable ColumnScope.() -> Unit) {
-    GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth(), form = FoodyFormen.gross) {
+    GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth(), form = FoodyTheme.formen.gross) {
         Column(Modifier.fillMaxWidth().padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
             titel?.let { Augenbraue(it) }
             inhalt()

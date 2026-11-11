@@ -2,7 +2,6 @@ package de.foody.core.designsystem.komponenten
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
@@ -32,14 +31,14 @@ fun FoodyKnopf(
             onClick = onKlick,
             modifier = m,
             enabled = aktiv,
-            shape = CircleShape,
+            shape = FoodyTheme.formen.knopf,
             colors = ButtonDefaults.buttonColors(containerColor = farben.primaer, contentColor = farben.aufPrimaer),
         ) { Text(text) }
         KnopfArt.UMRISS -> OutlinedButton(
             onClick = onKlick,
             modifier = m,
             enabled = aktiv,
-            shape = CircleShape,
+            shape = FoodyTheme.formen.knopf,
             border = BorderStroke(1.dp, farben.primaer),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = farben.primaer),
         ) { Text(text) }

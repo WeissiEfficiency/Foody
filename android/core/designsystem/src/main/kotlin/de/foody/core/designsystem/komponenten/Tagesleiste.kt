@@ -29,7 +29,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.token.AugenbraueStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.core.designsystem.token.glasWerte
@@ -45,7 +44,7 @@ data class LeistenTag(val kuerzel: String, val tag: Int, val markiert: Boolean, 
 @Composable
 fun Tagesleiste(tage: List<LeistenTag>, gewaehlt: Int, onWahl: (Int) -> Unit, modifier: Modifier = Modifier) {
     val farben = FoodyTheme.farben
-    val glas = glasWerte(GlasStufe.LEICHT, FoodyTheme.dunkel, FoodyTheme.farbwelt)
+    val glas = glasWerte(GlasStufe.LEICHT, FoodyTheme.stil)
     val form = RoundedCornerShape(FoodyAbstaende.s4)
     Row(modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         tage.forEachIndexed { i, t ->
@@ -66,7 +65,7 @@ fun Tagesleiste(tage: List<LeistenTag>, gewaehlt: Int, onWahl: (Int) -> Unit, mo
             ) {
                 Text(
                     t.kuerzel.uppercase(Locale.GERMAN),
-                    style = AugenbraueStil.copy(fontSize = 10.sp),
+                    style = FoodyTheme.augenbraue.copy(fontSize = 10.sp),
                     color = if (aktiv) farben.aufPrimaer else farben.nebentext,
                     textAlign = TextAlign.Center,
                     maxLines = 1,

@@ -27,7 +27,6 @@ import de.foody.core.designsystem.komponenten.RezeptkarteRaster
 import de.foody.core.designsystem.komponenten.rezeptBild
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.token.FoodyAbstaende
-import de.foody.core.designsystem.token.FoodyFormen
 
 /**
  * Rezeptliste: Kopf mit Menü, Suche, Filterchips, Bildraster. [ausgewaehlt] hebt auf dem Tablet das rechts offene
@@ -71,7 +70,7 @@ fun RezeptListeRoute(
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
             items(z.treffer, key = { it.id }) { k ->
-                val markiert = if (k.id == ausgewaehlt) Modifier.border(2.dp, FoodyTheme.farben.primaer, FoodyFormen.mittel) else Modifier
+                val markiert = if (k.id == ausgewaehlt) Modifier.border(2.dp, FoodyTheme.farben.primaer, FoodyTheme.formen.mittel) else Modifier
                 RezeptkarteRaster(
                     titel = k.name, onKlick = { onOeffnen(k.id) }, modifier = markiert, bild = rezeptBild(k.bild),
                     favorit = k.favorit, zeit = k.zeitMinuten?.let { "$it min" }, kcal = k.kcalJePortion?.let { "$it kcal" },

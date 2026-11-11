@@ -22,7 +22,6 @@ import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.token.FoodyAbstaende
-import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.domain.StepTimer
 
@@ -46,7 +45,7 @@ internal fun SchrittSeite(s: KochSchritt, abgehakt: Set<Int>, a: KochAktionen, n
             }
         }
         if (naechster != null) {
-            GlasFlaeche(GlasStufe.LEICHT, Modifier.fillMaxWidth(), form = FoodyFormen.mittel) {
+            GlasFlaeche(GlasStufe.LEICHT, Modifier.fillMaxWidth(), form = FoodyTheme.formen.mittel) {
                 Column(Modifier.padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s3)) {
                     Augenbraue("Als nächstes")
                     Text(naechster, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext, maxLines = 2)
@@ -59,7 +58,7 @@ internal fun SchrittSeite(s: KochSchritt, abgehakt: Set<Int>, a: KochAktionen, n
 /** Kasten in der Schrittkarte: „TIMER“, die Dauer groß, „Start“. */
 @Composable
 private fun TimerKasten(t: StepTimer, onStart: () -> Unit) {
-    GlasFlaeche(GlasStufe.LEICHT, Modifier.fillMaxWidth(), form = FoodyFormen.mittel, unschaerfeErlaubt = false) {
+    GlasFlaeche(GlasStufe.LEICHT, Modifier.fillMaxWidth(), form = FoodyTheme.formen.mittel, unschaerfeErlaubt = false) {
         Row(Modifier.padding(FoodyAbstaende.s4), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Augenbraue("Timer · ${t.label}")

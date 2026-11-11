@@ -33,15 +33,17 @@ import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.StilAkzent
+import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.token.Farbwelt
 import de.foody.core.designsystem.token.FoodyAbstaende
-import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 
 /** Ein Abschnitt der Seite: Glasfläche mit Augenbraue. */
 @Composable
 internal fun Abschnitt(titel: String, inhalt: @Composable ColumnScope.() -> Unit) {
-    GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth(), form = FoodyFormen.gross) {
+    GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth(), form = FoodyTheme.formen.gross) {
         Column(Modifier.fillMaxWidth().padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
             Augenbraue(titel)
             inhalt()
@@ -80,21 +82,46 @@ internal fun KontoAbschnitt(konto: VerbindungsZustand?, jetzt: Long, onServer: (
     }
 }
 
+/**
+ * Darstellung: zuerst der Stil. Bei Milchglas folgen Farbwelt und Modus wie bisher; bei einem anderen Stil die
+ * Variante und dessen vier Akzente. Den Modus gibt es dort nicht, weil jeder Stil einen festen Grund hat.
+ */
 @Composable
 internal fun DarstellungAbschnitt(
-    gewaehlt: Darstellung,
-    farbwelt: Farbwelt,
+    z: EinstellungenZustand,
     onWahl: (Darstellung) -> Unit,
     onFarbwelt: (Farbwelt) -> Unit,
+    onStil: (FoodyStil) -> Unit,
+    onVariante: (StilVariante) -> Unit,
+    onAkzent: (StilAkzent) -> Unit,
 ) = Abschnitt("Darstellung") {
-    Text("Farbe", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text)
-    FarbweltWahl(farbwelt, onFarbwelt)
-    Klein("Gilt für Hauptfarbe, Verlauf und Glas.")
-    Text("Modus", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text, modifier = Modifier.padding(top = FoodyAbstaende.s1))
-    Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-        listOf(Darstellung.SYSTEM to "System", Darstellung.HELL to "Hell", Darstellung.DUNKEL to "Dunkel").forEach { (d, text) ->
-            FoodyChip(text, ausgewaehlt = d == gewaehlt, onKlick = { onWahl(d) })
+    Text("Stil", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text)
+    StilWahl(z.stil, z.variante, onStil)
+    val akzent = z.stil.akzent(z.akzent)
+    if (akzent == null) {
+        Text("Farbe", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text, modifier = Modifier.padding(top = FoodyAbstaende.s1))
+        FarbweltWahl(z.farbwelt, onFarbwelt)
+        Klein("Gilt für Hauptfarbe, Verlauf und Glas.")
+        Text("Modus", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text, modifier = Modifier.padding(top = FoodyAbstaende.s1))
+        Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
+            listOf(Darstellung.SYSTEM to "System", Darstellung.HELL to "Hell", Darstellung.DUNKEL to "Dunkel").forEach { (d, text) ->
+                FoodyChip(text, ausgewaehlt = d == z.darstellung, onKlick = { onWahl(d) })
+            }
         }
+    } else {
+        Text("Variante", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text, modifier = Modifier.padding(top = FoodyAbstaende.s1))
+        Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
+            StilVariante.entries.forEach { v -> FoodyChip(v.anzeigename, ausgewaehlt = v == z.variante, onKlick = { onVariante(v) }) }
+        }
+        Klein(
+            if (z.variante == StilVariante.IMMERSIV) {
+                "Mit Muster, Verlauf und kräftigen Kanten."
+            } else {
+                "Farben und Schrift des Stils, schlicht."
+            },
+        )
+        Text("Farbe", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text, modifier = Modifier.padding(top = FoodyAbstaende.s1))
+        AkzentWahl(z.stil, akzent, onAkzent)
     }
 }
 

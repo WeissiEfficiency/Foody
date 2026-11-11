@@ -7,13 +7,15 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.core.designsystem.token.glasWerte
 import dev.chrisbanes.haze.HazeInput
@@ -44,11 +46,11 @@ internal fun glasModus(unschaerfe: Boolean, hatHaze: Boolean, stufe: GlasStufe):
 fun GlasFlaeche(
     stufe: GlasStufe,
     modifier: Modifier = Modifier,
-    form: Shape = FoodyFormen.gross,
+    form: Shape = FoodyTheme.formen.gross,
     unschaerfeErlaubt: Boolean = true,
     inhalt: @Composable BoxScope.() -> Unit,
 ) {
-    val werte = glasWerte(stufe, FoodyTheme.dunkel, FoodyTheme.farbwelt)
+    val werte = glasWerte(stufe, FoodyTheme.stil)
     val hazeState = LocalHazeState.current
     val modus = glasModus(FoodyTheme.unschaerfe && unschaerfeErlaubt, hazeState != null, stufe)
     val flaeche = when (modus) {
@@ -63,11 +65,20 @@ fun GlasFlaeche(
         )
         GlasModus.TOENUNG -> Modifier.background(werte.toenung)
     }
+    val stil = FoodyTheme.stil
+    // Harter Versatzschatten (Anime): vor dem Zuschnitt gezeichnet, damit er neben der Fläche liegt
+    val schatten = stil.schatten?.let { farbe ->
+        Modifier.drawBehind {
+            val versatz = 4.dp.toPx()
+            translate(versatz, versatz) { drawOutline(form.createOutline(size, layoutDirection, this), farbe) }
+        }
+    } ?: Modifier
     Box(
         modifier
+            .then(schatten)
             .clip(form)
             .then(flaeche)
-            .border(1.dp, werte.kante, form)
+            .border(stil.kante, werte.kante, form)
             .semantics { glasModus = modus },
         content = inhalt,
     )

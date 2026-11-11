@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.foody.core.data.Darstellung
 import de.foody.core.data.DarstellungSpeicher
+import de.foody.core.data.StilWahl
 import de.foody.core.data.TAGESZIEL_MAX
 import de.foody.core.data.TAGESZIEL_MIN
 import de.foody.core.data.TageszielSpeicher
@@ -17,6 +18,9 @@ import de.foody.core.data.sicherung.LoeschErgebnis
 import de.foody.core.data.sicherung.Sicherung
 import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.designsystem.SolangeAppOffen
+import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.StilAkzent
+import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.token.Farbwelt
 import de.foody.core.erkennung.ErkennungEinstellung
 import de.foody.core.erkennung.ModellDateien
@@ -40,6 +44,9 @@ import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
 
+private fun EinstellungenZustand.mitStil(w: StilWahl) =
+    copy(stil = FoodyStil.ausName(w.stil), variante = StilVariante.ausName(w.variante), akzent = w.akzent)
+
 /** Was gerade läuft; solange eine Aktion läuft, werden weitere ignoriert. */
 enum class Aktion { ERSTELLEN, WIEDERHERSTELLEN, LOESCHEN, MODELL_INSTALLIEREN, MODELL_ENTFERNEN }
 
@@ -53,8 +60,12 @@ data class EinstellungenZustand(
     val zutaten: Int? = null,
     /** Schalter „Online-Produktsuche“ (Open Food Facts beim Scan). */
     val onlineSuche: Boolean = true,
-    /** Gewählte Farbwelt (Einstellungen › Darstellung). */
+    /** Gewählte Farbwelt (Einstellungen › Darstellung); wirkt nur bei Milchglas. */
     val farbwelt: Farbwelt = Farbwelt.Standard,
+    /** Gewählter Stil mit Variante und Akzent (Name; `null` = Standard des Stils). */
+    val stil: FoodyStil = FoodyStil.Standard,
+    val variante: StilVariante = StilVariante.Standard,
+    val akzent: String? = null,
     /** Schalter „Foto erkennen“ (nur dieses Gerät). */
     val fotoErkennung: Boolean = true,
     /** Größe des installierten Modells für die Fotoerkennung; `null`: keins. */
@@ -64,7 +75,7 @@ data class EinstellungenZustand(
 }
 
 /**
- * Einstellungen: Darstellung, Farbwelt und Tagesziel sofort speichern; Sicherung erstellen, wiederherstellen und alles löschen
+ * Einstellungen: Darstellung, Stil, Farbwelt und Tagesziel sofort speichern; Sicherung erstellen, wiederherstellen und alles löschen
  * sowie das Modell der Fotoerkennung installieren und entfernen im [viewModelScope] (Drehen bricht sie nicht ab),
  * Ergebnis als Meldung. Die Dateidialoge liegen in der Route; hier
  * kommt nur die Uri an.
@@ -90,6 +101,7 @@ class EinstellungenViewModel @Inject constructor(
             EinstellungenZustand(d, t, k, l, n)
         }.combine(scan.onlineSuche) { z, online -> z.copy(onlineSuche = online) }
             .combine(darstellungen.farbwelt()) { z, w -> z.copy(farbwelt = Farbwelt.ausName(w)) }
+            .combine(darstellungen.stil()) { z, s -> z.mitStil(s) }
             .combine(erkennung.an) { z, an -> z.copy(fotoErkennung = an) }
             .combine(modell.stand) { z, s -> z.copy(modellBytes = s.bytes()) }
             .stateIn(
@@ -99,7 +111,7 @@ class EinstellungenViewModel @Inject constructor(
                     darstellung = darstellungen.aktuell(), farbwelt = Farbwelt.ausName(darstellungen.farbweltAktuell()),
                     tagesziel = ziel.aktuell(), onlineSuche = scan.onlineSuche.value,
                     fotoErkennung = erkennung.an.value, modellBytes = modell.stand.value.bytes(),
-                ),
+                ).mitStil(darstellungen.stilAktuell()),
             )
 
     private val kanal = Channel<String>(Channel.BUFFERED)
@@ -108,6 +120,12 @@ class EinstellungenViewModel @Inject constructor(
     fun darstellungSetzen(d: Darstellung) = darstellungen.setzen(d)
 
     fun farbweltSetzen(w: Farbwelt) = darstellungen.farbweltSetzen(w.name)
+
+    fun stilSetzen(s: FoodyStil) = darstellungen.stilSetzen(s.name)
+
+    fun stilVarianteSetzen(v: StilVariante) = darstellungen.stilVarianteSetzen(v.name)
+
+    fun stilAkzentSetzen(a: StilAkzent) = darstellungen.stilAkzentSetzen(a.name)
 
     /** Wirkt sofort für alle Scan-Einstiege (Tagebuch, Zutateneditor, „Neue Zutat“). */
     fun onlineSucheSetzen(an: Boolean) = scan.setzen(an)

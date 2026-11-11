@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.token.FoodyAbstaende
-import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 import java.util.Locale
 
@@ -66,7 +65,7 @@ fun Kachel(
     val zustand = zustandsText ?: if (abgehakt) "abgehakt" else null
     val bedienung = modifier
         .heightIn(min = 92.dp)
-        .clip(FoodyFormen.mittel)
+        .clip(FoodyTheme.formen.mittel)
         .combinedClickable(onLongClickLabel = onLangdruck?.let { "Details" }, onLongClick = onLangdruck, onClick = onKlick)
         .semantics { if (zustand != null) stateDescription = zustand }
     val inhalt = @Composable {
@@ -114,10 +113,10 @@ fun Kachel(
         }
     }
     // Kacheln stehen in Listen: Unschärfe hinter jedem Eintrag kostet zu viel – nur Tönung
-    GlasFlaeche(GlasStufe.DICHT, bedienung, form = FoodyFormen.mittel, unschaerfeErlaubt = false) {
+    GlasFlaeche(GlasStufe.DICHT, bedienung, form = FoodyTheme.formen.mittel, unschaerfeErlaubt = false) {
         inhalt()
         if (aufDerListe) {
-            Box(Modifier.matchParentSize().border(2.dp, farben.primaer, FoodyFormen.mittel))
+            Box(Modifier.matchParentSize().border(2.dp, farben.primaer, FoodyTheme.formen.mittel))
             Box(
                 Modifier.align(Alignment.TopEnd).padding(FoodyAbstaende.s2).size(20.dp).clip(CircleShape).background(farben.primaer),
                 contentAlignment = Alignment.Center,

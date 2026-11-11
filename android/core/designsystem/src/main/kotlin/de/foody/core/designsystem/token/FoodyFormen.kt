@@ -1,17 +1,33 @@
 package de.foody.core.designsystem.token
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.unit.dp
 
 /**
- * Ecken „Rund“: klein für Chips und Felder, mittel für Kacheln und Bilder, groß für Karten und Glasflächen, [leiste]
- * für die schwebende Navigation. Knöpfe und Chips sind Pillen (`CircleShape`).
+ * Ecken eines Stils: klein für Chips und Felder, mittel für Kacheln und Bilder, groß für Karten und Glasflächen,
+ * [leiste] für die schwebende Navigation, [knopf] für Knöpfe und Chips (bei Milchglas Pillen). Gelesen wird über
+ * `FoodyTheme.formen`; Milchglas nutzt [Rund].
  */
-object FoodyFormen {
-    val klein = RoundedCornerShape(14.dp)
-    val mittel = RoundedCornerShape(23.dp)
-    val gross = RoundedCornerShape(32.dp)
-    val leiste = RoundedCornerShape(39.dp)
+@Immutable
+data class FoodyFormen(
+    val klein: CornerBasedShape,
+    val mittel: CornerBasedShape,
+    val gross: CornerBasedShape,
+    val leiste: CornerBasedShape,
+    val knopf: CornerBasedShape = CircleShape,
+) {
+    companion object {
+        /** Milchglas: weich und rund. */
+        val Rund = FoodyFormen(
+            klein = RoundedCornerShape(14.dp),
+            mittel = RoundedCornerShape(23.dp),
+            gross = RoundedCornerShape(32.dp),
+            leiste = RoundedCornerShape(39.dp),
+        )
+    }
 }
 
 /** Abstände im 4-dp-Raster. */

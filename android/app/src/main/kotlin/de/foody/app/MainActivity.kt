@@ -20,6 +20,8 @@ import de.foody.app.navigation.schnellstartAnfragen
 import de.foody.core.data.DarstellungSpeicher
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.token.Farbwelt
 import de.foody.feature.kochen.timer.KochTimerDienst
 import de.foody.feature.kochen.timer.KochTimerSpeicher
@@ -52,9 +54,15 @@ class MainActivity : ComponentActivity() {
             // Startwert sofort aus den Prefs: kein Aufblitzen der falschen Darstellung beim Start
             val d by remember { darstellung.darstellung() }.collectAsStateWithLifecycle(darstellung.aktuell())
             val farbwelt by remember { darstellung.farbwelt() }.collectAsStateWithLifecycle(darstellung.farbweltAktuell())
-            val dunkel = istDunkel(d)
-            SystemleistenPassend(dunkel)
-            FoodyTheme(dunkel = dunkel, farbwelt = Farbwelt.ausName(farbwelt)) { FoodyHintergrund { Hauptgeruest(nav) } }
+            val wahl by remember { darstellung.stil() }.collectAsStateWithLifecycle(darstellung.stilAktuell())
+            val stil = FoodyStil.ausName(wahl.stil)
+            val variante = StilVariante.ausName(wahl.variante)
+            val modusDunkel = istDunkel(d)
+            // Stile haben einen festen Grund; die Systemleisten folgen ihm
+            SystemleistenPassend(stil.dunkel(variante, modusDunkel))
+            FoodyTheme(dunkel = modusDunkel, farbwelt = Farbwelt.ausName(farbwelt), stil = stil, variante = variante, akzent = wahl.akzent) {
+                FoodyHintergrund { Hauptgeruest(nav) }
+            }
         }
     }
 

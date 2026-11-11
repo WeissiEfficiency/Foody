@@ -41,7 +41,6 @@ import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.rezeptBild
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
-import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -129,7 +128,7 @@ private fun MahlzeitZeilen(a: MahlzeitAbschnitt, aktionen: HeuteAktionen) {
         a.vorschlaege.forEach { v ->
             // Geplant, noch nicht eingetragen: hervorgehoben mit „Gegessen?“ wie im Entwurf
             Row(
-                Modifier.fillMaxWidth().clip(FoodyFormen.mittel).background(FoodyTheme.farben.primaerBehaelter.copy(alpha = 0.6f))
+                Modifier.fillMaxWidth().clip(FoodyTheme.formen.mittel).background(FoodyTheme.farben.primaerBehaelter.copy(alpha = 0.6f))
                     .padding(horizontal = FoodyAbstaende.s3, vertical = FoodyAbstaende.s2),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

@@ -1,6 +1,8 @@
 package de.foody.core.designsystem.token
 
 import androidx.compose.ui.graphics.Color
+import de.foody.core.designsystem.stil.StilWerte
+import de.foody.core.designsystem.stil.milchglasWerte
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
@@ -38,8 +40,12 @@ private const val GRAFIK = 3.0
  * Alle Paare, die das Designsystem für eine [farbwelt] zusagt – Text 4,5:1, Grafik 3:1, auf Glas ohne Unschärfe und
  * Korn, gegen den Grund und die vollen Stellen beider Verläufe.
  */
-fun kontrastPaare(dunkel: Boolean, farbwelt: Farbwelt = Farbwelt.Standard): List<KontrastPaar> {
-    val werte = farbwelt.werte(dunkel)
+fun kontrastPaare(dunkel: Boolean, farbwelt: Farbwelt = Farbwelt.Standard): List<KontrastPaar> =
+    kontrastPaare(milchglasWerte(farbwelt, dunkel))
+
+/** Dieselben Paare für einen beliebigen Stil in seiner Variante und mit seinem Akzent. */
+fun kontrastPaare(stil: StilWerte): List<KontrastPaar> {
+    val werte = stil.werte
     val f = werte.farben
     val untergruende = ungünstigsteUntergruende(f, werte.verlauf)
     return buildList {
@@ -50,7 +56,7 @@ fun kontrastPaare(dunkel: Boolean, farbwelt: Farbwelt = Farbwelt.Standard): List
             add(KontrastPaar("Primär als Text ohne Glas @$i", f.primaer, u, TEXT))
             add(KontrastPaar("Primär als Kante ohne Glas @$i", f.primaer, u, GRAFIK))
             for (stufe in GlasStufe.entries) {
-                val glas = mischen(glasWerte(stufe, dunkel, farbwelt).toenung, u)
+                val glas = mischen(glasWerte(stufe, stil).toenung, u)
                 add(KontrastPaar("Text auf Glas ${stufe.name} @$i", f.text, glas, TEXT))
                 add(KontrastPaar("Nebentext auf Glas ${stufe.name} @$i", f.nebentext, glas, TEXT))
                 add(KontrastPaar("Primär als Text auf Glas ${stufe.name} @$i", f.primaer, glas, TEXT))
@@ -66,11 +72,11 @@ fun kontrastPaare(dunkel: Boolean, farbwelt: Farbwelt = Farbwelt.Standard): List
         // Über Fotos: alles von Schwarz bis Weiß möglich, dazu hellste und dunkelste Stelle des Platzhalter-Verlaufs
         val bilder = BildUntergruende + listOf("Platzhalter hell" to werte.platzhalter.first(), "Platzhalter dunkel" to werte.platzhalter.last())
         for ((name, bild) in bilder) {
-            val leiste = mischen(glasWerte(GlasStufe.BILD, dunkel, farbwelt).toenung, bild)
+            val leiste = mischen(glasWerte(GlasStufe.BILD, stil).toenung, bild)
             add(KontrastPaar("Text über Bild $name", f.text, leiste, TEXT))
             add(KontrastPaar("Nebentext über Bild $name", f.nebentext, leiste, TEXT))
             add(KontrastPaar("Primär als Text über Bild $name", f.primaer, leiste, TEXT))
-            add(KontrastPaar("Herz auf Abzeichen über Bild $name", herzFarbe(farbwelt), mischen(Color.White.copy(alpha = 0.9f), bild), GRAFIK))
+            add(KontrastPaar("Herz auf Abzeichen über Bild $name", stil.herz, mischen(Color.White.copy(alpha = 0.9f), bild), GRAFIK))
             add(KontrastPaar("Abzeichen-Text über Bild $name", Color.White, mischen(Color.Black.copy(alpha = 0.6f), bild), TEXT))
         }
     }

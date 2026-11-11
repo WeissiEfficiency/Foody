@@ -53,7 +53,7 @@ private val BlattForm = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
 fun GlasBlatt(onSchliessen: () -> Unit, modifier: Modifier = Modifier, ganzOffen: Boolean = false, inhalt: @Composable ColumnScope.() -> Unit) {
     val farben = FoodyTheme.farben
     val verlauf = FoodyTheme.werte.verlauf
-    val glas = glasWerte(GlasStufe.DICHT, FoodyTheme.dunkel, FoodyTheme.farbwelt)
+    val glas = glasWerte(GlasStufe.DICHT, FoodyTheme.stil)
     val zustand = rememberModalBottomSheetState(skipPartiallyExpanded = ganzOffen)
     val scope = rememberCoroutineScope()
     ModalBottomSheet(

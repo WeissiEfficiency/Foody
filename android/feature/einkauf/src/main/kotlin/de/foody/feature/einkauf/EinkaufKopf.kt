@@ -31,7 +31,6 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.token.FoodyAbstaende
-import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.GlasStufe
 
 /**
@@ -68,8 +67,8 @@ internal fun EinkaufKopf(ansicht: EinkaufsAnsicht?, aktionen: @Composable RowSco
 internal fun AbgleichHinweis(onKlick: () -> Unit) {
     GlasFlaeche(
         GlasStufe.DICHT,
-        Modifier.fillMaxWidth().clip(FoodyFormen.mittel).clickable(role = Role.Button, onClick = onKlick),
-        form = FoodyFormen.mittel,
+        Modifier.fillMaxWidth().clip(FoodyTheme.formen.mittel).clickable(role = Role.Button, onClick = onKlick),
+        form = FoodyTheme.formen.mittel,
     ) {
         Row(Modifier.padding(horizontal = FoodyAbstaende.s4, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
