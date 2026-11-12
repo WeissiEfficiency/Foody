@@ -152,6 +152,17 @@ class EinkaufScreenshotTest {
         bild("sage_einkauf_handy", dunkel = false, stil = FoodyStil.SAGE) { EinkaufRoute(null, {}, {}, vm = vm) }
     }
 
+    /** Stile R–V, Immersiv: die Szenen des Einkaufs. */
+    @Test
+    @Config(qualifiers = "w411dp-h1600dp")
+    fun stileHandy() {
+        liste()
+        for (stil in listOf(FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)) {
+            val vm = u.vm()
+            bild("stil_${stil.name.lowercase()}_einkauf_handy", dunkel = false, stil = stil) { EinkaufRoute(null, {}, {}, vm = vm) }
+        }
+    }
+
     private fun bild(name: String, dunkel: Boolean, stil: FoodyStil = FoodyStil.MILCHGLAS, inhalt: @Composable () -> Unit) {
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
             FoodyTheme(dunkel = dunkel, stil = stil, unschaerfe = false) { FoodyHintergrund { inhalt() } }
