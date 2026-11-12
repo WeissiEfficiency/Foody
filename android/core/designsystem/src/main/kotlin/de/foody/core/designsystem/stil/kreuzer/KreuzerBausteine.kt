@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -81,12 +82,20 @@ fun kreuzerAmber(): Color = FoodyTheme.stil.akzent?.farbe ?: FoodyTheme.farben.p
  * mindestens 48 dp hoch; TalkBack hört [beschreibung], falls gesetzt.
  */
 @Composable
-fun KreuzerKnopf(text: String, onKlick: () -> Unit, modifier: Modifier = Modifier, voll: Boolean = true, beschreibung: String? = null) {
+fun KreuzerKnopf(
+    text: String,
+    onKlick: () -> Unit,
+    modifier: Modifier = Modifier,
+    voll: Boolean = true,
+    beschreibung: String? = null,
+    aktiv: Boolean = true,
+) {
     val amber = kreuzerAmber()
     Box(
         modifier.heightIn(min = 48.dp)
+            .alpha(if (aktiv) 1f else 0.38f)
             .then(if (voll) Modifier.background(amber) else Modifier.border(1.dp, amber.copy(alpha = 0.45f)))
-            .clickable(role = Role.Button, onClick = onKlick)
+            .clickable(enabled = aktiv, role = Role.Button, onClick = onKlick)
             .then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier)
             .padding(horizontal = 10.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,

@@ -15,7 +15,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.TitelArt
 import de.foody.core.designsystem.stil.sage.Sage
+import de.foody.core.designsystem.stil.stilTitel
 import de.foody.core.designsystem.token.FoodyAbstaende
 
 /**
@@ -37,12 +39,15 @@ fun Seitenkopf(
         Column(Modifier.weight(1f)) {
             if (ueberzeile != null) Augenbraue(ueberzeile)
             // Düstere Sage, Immersiv: Titel in Cinzel mit Laufweite im Akzent wie die Köpfe der Szenen
+            // Stile R–V, Immersiv: Titelschrift des Stils ([stilTitel])
             val sage = FoodyTheme.stil.immersiv(FoodyStil.SAGE)
+            val eigen = stilTitel(if (onZurueck != null) TitelArt.SEITE_ZURUECK else TitelArt.SEITE)
             Text(
                 titel,
                 Modifier.ueberschrift().then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier),
                 style = when {
                     sage -> if (onZurueck != null) Sage.titel(20f, 0.06f) else Sage.titel(28f, 0.1f)
+                    eigen != null -> eigen
                     onZurueck != null -> MaterialTheme.typography.headlineMedium
                     else -> MaterialTheme.typography.headlineLarge
                 },
@@ -63,7 +68,7 @@ fun BlattTitel(titel: String, modifier: Modifier = Modifier, beschreibung: Strin
     Text(
         titel,
         modifier.ueberschrift().then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier),
-        style = if (sage) Sage.titel(20f, 0.1f) else MaterialTheme.typography.headlineSmall,
+        style = if (sage) Sage.titel(20f, 0.1f) else stilTitel(TitelArt.BLATT) ?: MaterialTheme.typography.headlineSmall,
         color = if (sage) FoodyTheme.farben.primaer else FoodyTheme.farben.text,
     )
 }

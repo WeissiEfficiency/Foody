@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.Role
@@ -51,17 +52,25 @@ object Grauen {
 fun grauenHell(): Color = lerp(FoodyTheme.farben.text, Color.White, 0.45f)
 
 /**
- * Knopf des Grauens: eckig, Rahmen in der Glut, Fläche mit einem Hauch Glut, Buchschrift. Mindestens 48 dp hoch;
- * TalkBack hört [beschreibung], falls gesetzt.
+ * Knopf des Grauens: eckig, Rahmen in der Glut, Fläche mit einem Hauch Glut, Buchschrift; [umriss] = nur ein Rahmen
+ * im Nebenton. Mindestens 48 dp hoch, [aktiv] = false blasst ihn ab; TalkBack hört [beschreibung], falls gesetzt.
  */
 @Composable
-fun GrauenKnopf(text: String, onKlick: () -> Unit, modifier: Modifier = Modifier, beschreibung: String? = null) {
+fun GrauenKnopf(
+    text: String,
+    onKlick: () -> Unit,
+    modifier: Modifier = Modifier,
+    beschreibung: String? = null,
+    umriss: Boolean = false,
+    aktiv: Boolean = true,
+) {
     val glut = FoodyTheme.stil.zier
     Box(
         modifier.heightIn(min = 48.dp)
-            .border(1.dp, glut)
-            .background(glut.copy(alpha = 0.1f))
-            .clickable(role = Role.Button, onClick = onKlick)
+            .alpha(if (aktiv) 1f else 0.38f)
+            .border(1.dp, if (umriss) FoodyTheme.farben.nebentext else glut)
+            .background(if (umriss) Color.Transparent else glut.copy(alpha = 0.1f))
+            .clickable(enabled = aktiv, role = Role.Button, onClick = onKlick)
             .then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier)
             .padding(horizontal = 14.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
