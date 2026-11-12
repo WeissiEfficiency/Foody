@@ -51,6 +51,7 @@ import de.foody.core.designsystem.komponenten.Tagesleiste
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
@@ -197,7 +198,11 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
 
 @Composable
 private fun Kopf(woche: WochenAnsicht?, zeigtHeute: Boolean, onBlaettern: (Long) -> Unit, onHeute: () -> Unit) {
-    Seitenkopf("Woche", ueberzeile = woche?.let { wochenTitel(it.montag) }) {
+    Seitenkopf(
+        stilText("Woche", anime = "Woche!", bayrisch = "Wochn", grauen = "Mondphasen", kreuzer = "Flugplan"),
+        ueberzeile = woche?.let { wochenTitel(it.montag) },
+        beschreibung = "Woche",
+    ) {
         RunderKnopf(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, "Vorige Woche", { onBlaettern(-1) })
         RunderKnopf(Icons.AutoMirrored.Outlined.KeyboardArrowRight, "Nächste Woche", { onBlaettern(1) })
     }

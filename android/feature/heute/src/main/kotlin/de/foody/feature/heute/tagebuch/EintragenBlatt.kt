@@ -95,7 +95,10 @@ fun EintragenBlatt(auftrag: BlattAuftrag, onFertig: () -> Unit, vm: EintragenVie
             Modifier.verticalScroll(rememberScrollState()).padding(horizontal = FoodyAbstaende.s4).padding(bottom = FoodyAbstaende.s6),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
-            BlattTitel(stilText("Eintragen", sage = "Mahl eintragen"), beschreibung = "Eintragen")
+            BlattTitel(
+                stilText("Eintragen", sage = "Mahl eintragen", anime = "Eintragen!", bayrisch = "Eitragn", grauen = "Notieren"),
+                beschreibung = "Eintragen",
+            )
             FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 MAHLZEITEN.forEach { m ->
                     FoodyChip(stilText(m.anzeigename(), sage = m.sageKurz()), m == e.mahlzeit, { vm.mahlzeit(m) }, beschreibung = m.anzeigename())
@@ -111,7 +114,7 @@ fun EintragenBlatt(auftrag: BlattAuftrag, onFertig: () -> Unit, vm: EintragenVie
                 EintragenWeg.FREI -> FreiEingabe(z, vm)
             }
             FoodyKnopf(
-                stilText("Eintragen", sage = "In die Chronik"),
+                stilText("Eintragen", sage = "In die Chronik", anime = "Eintragen! ✓", bayrisch = "Eitragn", grauen = "Ins Logbuch", kreuzer = "Ins Bordbuch"),
                 { bereich.launch { if (vm.speichern() != null) onFertig() } },
                 Modifier.fillMaxWidth().testTag(EINTRAGEN_SPEICHERN),
                 aktiv = moeglich,

@@ -23,7 +23,8 @@ import de.foody.core.designsystem.stil.stilText
 /** „Frühere Listen“: Antippen öffnet, Papierkorb löscht (mit Rückfrage beim Aufrufer). */
 @Composable
 internal fun FruehereBlatt(listen: List<ListenKopf>, onOeffnen: (String) -> Unit, onLoeschen: (ListenKopf) -> Unit, onSchliessen: () -> Unit) {
-    BlattRahmen(stilText("Frühere Listen", sage = "Listen des Händlers"), onSchliessen, beschreibung = "Frühere Listen") {
+    val titel = stilText("Frühere Listen", sage = "Listen des Händlers", anime = "Listen!", bayrisch = "Eikaufszettl", kreuzer = "Ladelisten")
+    BlattRahmen(titel, onSchliessen, beschreibung = "Frühere Listen") {
         if (listen.isEmpty()) {
             Text(stilText("Keine früheren Listen.", sage = "Der Händler führt noch keine früheren Listen."), color = FoodyTheme.farben.nebentext)
         }

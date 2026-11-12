@@ -63,7 +63,10 @@ internal fun FuellenBlatt(z: FuellenZustand, namen: Map<String, String>, a: Fuel
                 .padding(bottom = FoodyAbstaende.s6).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
-            BlattTitel(stilText("Leere Tage füllen", sage = "Leere Tage bestücken"), beschreibung = "Leere Tage füllen")
+            BlattTitel(
+                stilText("Leere Tage füllen", sage = "Leere Tage bestücken", anime = "Planen!", bayrisch = "Wochn plana", kreuzer = "Kurs plotten"),
+                beschreibung = "Leere Tage füllen",
+            )
             if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
                 Text(
                     "Für jeden leeren Tag wählt das Grimoire ein Mahl, das du länger nicht hattest.",
@@ -81,7 +84,15 @@ internal fun FuellenBlatt(z: FuellenZustand, namen: Map<String, String>, a: Fuel
             Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
                 FoodyKnopf("Neu mischen", a.onNeuMischen, Modifier.weight(1f), art = KnopfArt.UMRISS, aktiv = z.hinweis == null)
                 val bestuecken = if (anzahl == 1) "1 Tag bestücken" else "$anzahl Tage bestücken"
-                FoodyKnopf(stilText("Übernehmen ($anzahl)", sage = bestuecken), a.onUebernehmen, Modifier.weight(1f), aktiv = anzahl > 0)
+                FoodyKnopf(
+                    stilText(
+                        "Übernehmen ($anzahl)",
+                        sage = bestuecken,
+                        bayrisch = "Olle nehma ($anzahl)",
+                        grauen = "Den Sternen folgen ($anzahl)",
+                        kreuzer = "Route übernehmen ($anzahl)",
+                    ),
+                    a.onUebernehmen, Modifier.weight(1f), aktiv = anzahl > 0)
             }
         }
     }

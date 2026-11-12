@@ -56,6 +56,7 @@ import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.designsystem.token.GlasStufe
@@ -240,6 +241,11 @@ private fun Knoepfe(z: KochZustand.Da, pager: PagerState, onSeite: (Int) -> Unit
     val vorAnteil = if (LocalDensity.current.fontScale > 1.2f) 1f else 2f
     Row(Modifier.fillMaxWidth().padding(FoodyAbstaende.s4), horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
         FoodyKnopf("Zurück", { onSeite(seite - 1) }, Modifier.weight(1f), art = KnopfArt.UMRISS, aktiv = seite > 0)
-        FoodyKnopf(if (letzte) "Fertig" else "Weiter", { if (letzte) onFertig() else onSeite(seite + 1) }, Modifier.weight(vorAnteil))
+        val text = if (letzte) {
+            stilText("Fertig", bayrisch = "Feddig!", grauen = "Vollenden", kreuzer = "Mission abschließen")
+        } else {
+            stilText("Weiter", bayrisch = "Weida", kreuzer = "Nächste Phase")
+        }
+        FoodyKnopf(text, { if (letzte) onFertig() else onSeite(seite + 1) }, Modifier.weight(vorAnteil))
     }
 }

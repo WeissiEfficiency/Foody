@@ -22,6 +22,7 @@ import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.Suchfeld
+import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.domain.Diet
 import de.foody.domain.Mahlzeit
@@ -41,9 +42,10 @@ private val MAHLZEITEN = listOf(
 internal fun ListeKopf(anzahl: Int?, onNeu: () -> Unit, onImport: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     Seitenkopf(
-        "Rezepte",
+        stilText("Rezepte", grauen = "Die Bibliothek", kreuzer = "Sternkarte"),
         Modifier.fillMaxWidth().padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s3, top = FoodyAbstaende.s3),
         ueberzeile = anzahl?.let { if (it == 1) "1 Rezept" else "$it Rezepte" },
+        beschreibung = "Rezepte",
     ) {
         Box {
             RunderKnopf(Icons.Outlined.Add, "Rezept hinzufügen", onKlick = { menu = true }, primaer = true)

@@ -71,7 +71,7 @@ internal fun MahlzeitBlatt(e: PlanEintrag, montag: LocalDate, a: MahlzeitAktione
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 FoodyChip("Gekocht", ausgewaehlt = e.gekocht, onKlick = { a.onGekocht(!e.gekocht) })
-                FoodyKnopf(stilText("Kochen", sage = "Am Feuer kochen"), a.onKochen)
+                FoodyKnopf(stilText("Kochen", sage = "Am Feuer kochen", grauen = "Das Ritual", kreuzer = "Mission starten"), a.onKochen)
                 FoodyKnopf("Rezept ansehen", a.onRezept, art = KnopfArt.UMRISS)
             }
             Augenbraue("Verschieben")
