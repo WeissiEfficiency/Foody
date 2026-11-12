@@ -62,7 +62,6 @@ import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.woche.mahlzeitAnzeige
 import de.foody.feature.woche.wochenTitel
 import java.time.LocalDate
-import java.time.format.TextStyle
 import java.util.Locale
 
 /** Was die Karte der Woche auslösen kann; die Blätter (Mahlzeit, Wahl, Füllen) liegen weiter in der Route. */
@@ -196,9 +195,6 @@ private fun TagMarke(t: WochenTag, heute: Boolean, an: Boolean, modifier: Modifi
         )
     }
 }
-
-/** „Samstag, 24.10.“ */
-private fun tagLangText(d: LocalDate) = "${d.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.GERMAN)}, ${d.dayOfMonth}.${d.monthValue}."
 
 @Composable
 private fun TagSeite(t: WochenTag, heute: Boolean, aktionen: WocheSageAktionen) {
