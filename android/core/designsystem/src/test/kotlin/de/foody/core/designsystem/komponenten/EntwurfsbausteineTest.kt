@@ -14,6 +14,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -29,6 +30,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.GraphicsMode
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -48,6 +50,36 @@ class EntwurfsbausteineTest {
         compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)).assertExists()
         compose.onNodeWithContentDescription("Zurück").assertHeightIsAtLeast(48.dp).performClick()
         assertEquals(1, zurueck)
+    }
+
+    /** Kurze Aktion: Titel und Knopf in einer Zeile. */
+    @Test
+    fun seitenkopfKurzeAktionNebenDemTitel() {
+        compose.setContent {
+            FoodyTheme { Seitenkopf("Bearbeiten", Modifier.width(360.dp), onZurueck = {}) { FoodyKnopf("OK", {}) } }
+        }
+        val titel = compose.onNodeWithText("Bearbeiten").getUnclippedBoundsInRoot()
+        val knopf = compose.onNodeWithText("OK").getUnclippedBoundsInRoot()
+        assertTrue(knopf.top < titel.bottom, "Knopf liegt neben dem Titel")
+    }
+
+    /** Lange Aktion: Der Knopf rückt unter den Titel, statt dessen Wort zu trennen. */
+    @Test
+    fun seitenkopfLangeAktionRueckUnterDenTitel() {
+        compose.setContent {
+            FoodyTheme {
+                Seitenkopf("Bearbeiten", Modifier.width(360.dp), onZurueck = {}) { FoodyKnopf("Ein sehr langer Speicherknopf", {}) }
+            }
+        }
+        val titel = compose.onNodeWithText("Bearbeiten").getUnclippedBoundsInRoot()
+        val knopf = compose.onNodeWithText("Ein sehr langer Speicherknopf").getUnclippedBoundsInRoot()
+        assertTrue(knopf.top >= titel.bottom, "Knopf liegt unter dem Titel")
+        val zeilen = compose.onNodeWithText("Bearbeiten").fetchSemanticsNode().let { n ->
+            val ergebnis = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+            n.config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult].action?.invoke(ergebnis)
+            ergebnis.first().lineCount
+        }
+        assertEquals(1, zeilen)
     }
 
     @Test
