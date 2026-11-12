@@ -165,6 +165,7 @@ Gemeinsame liegt in `:core:designsystem`.
 - [ ] Ein Stil nach dem anderen, je Stil zwei bis drei PRs (Hauptscreens, dann Rest). Die Reihenfolge legt der Nutzer
       fest.
 - [ ] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen.
+- Erledigt: Wörter R–V (Navigation, Titel, Knöpfe), U „Das Auge“ (Heute). Weiter mit den Heute-Szenen von V, T, R, S.
 
 ### Phase 7 – Widgets und Abschluss
 - [ ] Die bestehenden Knopf-Widgets (Scannen, Foto) bekommen Farbe und Form des gewählten Stils. Es sind
@@ -255,6 +256,23 @@ gleich, nicht nur der Pilot):
   überall die normalen Begriffe.
 - Bilder `sage_einstellungen_handy`, `sage_zutaten_handy`, `sage_editor_handy`, `sage_listen_handy`,
   `sage_fuellen_handy`; Test „Eintragen-Blatt im Stil“.
+
+**2026-11-12 – R–V: Wörter der Entwürfe** (Branch `claude/stile-woerter`):
+- In Immersiv zeigen Navigation, Seitentitel, Blätter und Knöpfe die Wörter je Stil (Bayrisch „Heid · Rezepte ·
+  Wochn · Eikaufn“, Sternenkreuzer „Brücke · Archiv · Kurs · Fracht“, Grauen „Das Auge“, „Mondphasen“, „Logbuch“,
+  Anime „Heute!“, „Quest!“ …). `NavZiel.beschreibung` und `beschreibung` am Seitenkopf: TalkBack liest die normalen
+  Begriffe. Test `StilTexteTest`.
+
+**2026-11-12 – U Immersiv: „Das Auge“** (Branch `claude/stile-u-heute`):
+- Heute (`feature/heute/stil/HeuteGrauen.kt`): Titel und Datum in Schreibmaschine, das Auge mit Ring um die Iris
+  (kcal gegen das Ziel, in der Glut), schwebt und blinzelt (ruht ohne Animationen), Satz „Es hat 860 von 2.000 kcal
+  gesehen.“; Tafel „Das Ritual des Abends“ mit doppeltem Rahmen und „Das Ritual beginnen“ (ohne Plan „Eine
+  Eingebung“); Protokoll „Was bisher dargebracht wurde“ je Mahlzeit, leer mit „+ notieren“, Geplantes mit
+  „Gegessen?“; Verweis „Expeditionsliste“. Fangarme aus der Tiefe am unteren Rand.
+- Der Entwurf zeigt im Protokoll Uhrzeiten; die App speichert keine, dort steht die Mahlzeit.
+- Designsystem: `stil/grauen/GrauenBausteine.kt` (`Grauen.titel/text/maschine`, `GrauenKnopf`, `GrauenNotizknopf`),
+  Systemschriften Serif und Monospace statt IM Fell English und Special Elite.
+- Tests `HeuteGrauenTest` (Aktionen, TalkBack, 200 % Schrift, Texte); Bild `stil_grauen_immersiv` neu.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).

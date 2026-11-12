@@ -32,6 +32,7 @@ import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
+import de.foody.feature.heute.stil.HeuteGrauen
 import de.foody.feature.heute.stil.HeuteSage
 import de.foody.feature.heute.tagebuch.BlattAuftrag
 import de.foody.feature.heute.tagebuch.EintragenBlatt
@@ -85,9 +86,9 @@ fun HeuteRoute(
 @Composable
 fun HeuteScreen(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modifier = Modifier) {
     // Szenen der Stile in Immersiv; sonst die normale Ansicht
-    if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
-        HeuteSage(zustand, aktionen, modifier)
-        return
+    when {
+        FoodyTheme.stil.immersiv(FoodyStil.SAGE) -> return HeuteSage(zustand, aktionen, modifier)
+        FoodyTheme.stil.immersiv(FoodyStil.GRAUEN) -> return HeuteGrauen(zustand, aktionen, modifier)
     }
     Box(modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         HeuteInhalt(zustand, aktionen)
