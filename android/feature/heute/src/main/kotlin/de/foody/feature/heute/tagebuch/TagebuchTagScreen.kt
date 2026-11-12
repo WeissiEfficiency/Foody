@@ -59,6 +59,8 @@ import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.Schnellstart
 import de.foody.feature.heute.TAGEBUCH_INHALT
 import de.foody.feature.heute.stil.TagebuchSage
+import de.foody.feature.heute.stil.TagebuchStil
+import de.foody.feature.heute.stil.TagebuchSzene
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.Instant
@@ -127,9 +129,15 @@ fun TagebuchTagRoute(
     }
 
     Box(Modifier.fillMaxSize()) {
+        val szene = TagebuchSzene.aktuell()
         if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
             TagebuchSage(
                 datum, LocalDate.now(), zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeitenId = it.id },
+                onLoeschen = loeschen, onEintragen = { blatt = BlattAuftrag(it, datum) },
+            )
+        } else if (szene != null) {
+            TagebuchStil(
+                szene, datum, LocalDate.now(), zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeitenId = it.id },
                 onLoeschen = loeschen, onEintragen = { blatt = BlattAuftrag(it, datum) },
             )
         } else {
