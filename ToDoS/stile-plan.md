@@ -167,8 +167,8 @@ Gemeinsame liegt in `:core:designsystem`.
 - [ ] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen.
 - Erledigt: Wörter R–V (Navigation, Titel, Knöpfe) und die Heute-Szenen aller Stile (U „Das Auge“, V
   „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Offen: Szenen der übrigen Hauptscreens (Rezepte, Woche,
-  Einkauf, Tagebuch …) für R–V und stilfähige Chips und Blätter über die Sage hinaus. Knopf, Seitenkopf und
-  Blatt-Titel folgen dem Stil seit „Bausteine R–V“.
+  Einkauf, Tagebuch …) für R–V. Knopf, Seitenkopf, Blatt-Titel, Chip und Blatt folgen dem Stil seit „Bausteine
+  R–V“ und „Chips und Blätter R–V“.
 
 ### Phase 7 – Widgets und Abschluss
 - [ ] Die bestehenden Knopf-Widgets (Scannen, Foto) bekommen Farbe und Form des gewählten Stils. Es sind
@@ -334,6 +334,14 @@ gleich, nicht nur der Pilot):
 - Die Knöpfe der fünf Stile haben dafür `aktiv` bekommen, Grauen einen Umriss, Anime eine weiße Pille.
 - Tests `StilKnopfTest` (jeder Stil, jede Art klickt und hat 48 dp; inaktiv nicht klickbar); Galerie
   `StilBausteineScreenshotTest` im Katalog, Bilder `stil_bausteine_*`.
+
+**2026-11-12 – Chips und Blätter R–V** (Branch `claude/stile-chips-blatt`):
+- `FoodyChip` in R–V (Immersiv): gewählt wie der volle Knopf des Stils, sonst wie sein Umriss (`stilChip`).
+- `GlasBlatt` in R–V (Immersiv) mit Grund und Kante des Stils (`stilBlatt`): Tintenrand und Pillengriff (Anime),
+  Indigoband mit Holzlinie (Edo), weiß-blaue Rautenreihe (Bayrisch), doppelte Glutlinie (Grauen), Amberlinie mit
+  abgeschnittener Ecke oben rechts (Kreuzer). Der Grund ist der des Stils, damit der Text AA hält.
+- Tests: `StilKnopfTest` prüft auch den Chip (Auswahl für TalkBack, 48 dp); Galerie mit Chips, neue
+  `StilBlattScreenshotTest` (Bilder `stil_blatt_*`).
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).

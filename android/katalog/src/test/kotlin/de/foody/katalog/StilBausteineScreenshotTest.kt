@@ -14,6 +14,7 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
 import de.foody.core.designsystem.komponenten.BlattTitel
+import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.Seitenkopf
@@ -28,7 +29,7 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * Die gemeinsamen Bausteine in den Stilen R–V (Immersiv): Seitenkopf mit und ohne Zurück, Blatt-Titel und die vier
- * Knöpfe (Primär, Umriss, Text, inaktiv). Ein Bild je Stil, damit Schrift, Form und Farben sichtbar geprüft werden.
+ * Knöpfe (Primär, Umriss, Text, inaktiv), Chips gewählt und offen. Ein Bild je Stil, damit Schrift, Form und Farben sichtbar geprüft werden.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -57,6 +58,10 @@ class StilBausteineScreenshotTest {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 FoodyKnopf("+ Eintragen", {}, Modifier.weight(1f), art = KnopfArt.TEXT)
                                 FoodyKnopf("Übernehmen (0)", {}, Modifier.weight(1f), aktiv = false)
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                FoodyChip("Vegetarisch", ausgewaehlt = true, onKlick = {})
+                                FoodyChip("Schnell", ausgewaehlt = false, onKlick = {})
                             }
                         }
                     }

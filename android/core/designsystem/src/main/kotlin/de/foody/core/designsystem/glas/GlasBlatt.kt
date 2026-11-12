@@ -33,6 +33,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.stilBlatt
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.core.designsystem.token.glasWerte
 import kotlinx.coroutines.launch
@@ -49,6 +50,8 @@ private val BlattForm = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
  * Gezeichnet wird im Inhalt, nicht am Modifier des Blatts: Der liegt außerhalb der Verschiebung beim Hochfahren, ein
  * Zuschnitt dort schneidet den Inhalt weg. Der Griff ist deshalb eigener Inhalt, mit denselben TalkBack-Aktionen.
  *
+ * In der Düsteren Sage und den Stilen R–V (Immersiv) trägt das Blatt Form, Grund und Kante des Stils ([stilBlatt]).
+ *
  * [ganzOffen] öffnet gleich ganz (Blätter mit Knopf unten), sonst zuerst halb wie im Standard.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,7 +63,12 @@ fun GlasBlatt(onSchliessen: () -> Unit, modifier: Modifier = Modifier, ganzOffen
     // Düstere Sage, Immersiv: eckiges Blatt, dunkler Verlauf, oben eine Linie im Akzent wie im Entwurf
     val sage = FoodyTheme.stil.immersiv(FoodyStil.SAGE)
     val zier = FoodyTheme.stil.zier
-    val form = if (sage) RectangleShape else BlattForm
+    val eigen = stilBlatt()
+    val form = when {
+        sage -> RectangleShape
+        eigen != null -> eigen.form
+        else -> BlattForm
+    }
     val zustand = rememberModalBottomSheetState(skipPartiallyExpanded = ganzOffen)
     val scope = rememberCoroutineScope()
     ModalBottomSheet(
@@ -78,6 +86,10 @@ fun GlasBlatt(onSchliessen: () -> Unit, modifier: Modifier = Modifier, ganzOffen
                 if (sage) {
                     drawRect(Brush.verticalGradient(listOf(lerp(farben.grund, zier, 0.06f), farben.grund)))
                     drawLine(zier, Offset.Zero, Offset(size.width, 0f), 1.dp.toPx())
+                    return@drawBehind
+                }
+                if (eigen != null) {
+                    eigen.zeichnen(this)
                     return@drawBehind
                 }
                 drawRect(farben.grund)
@@ -104,8 +116,11 @@ fun GlasBlatt(onSchliessen: () -> Unit, modifier: Modifier = Modifier, ganzOffen
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
-                    Modifier.size(width = if (sage) 40.dp else 36.dp, height = 4.dp)
-                        .background(farben.nebentext.copy(alpha = 0.5f), if (sage) RectangleShape else CircleShape),
+                    when {
+                        eigen != null -> Modifier.size(width = eigen.griffBreite, height = 4.dp).background(eigen.griff, eigen.griffForm)
+                        else -> Modifier.size(width = if (sage) 40.dp else 36.dp, height = 4.dp)
+                            .background(farben.nebentext.copy(alpha = 0.5f), if (sage) RectangleShape else CircleShape)
+                    },
                 )
             }
             inhalt()
