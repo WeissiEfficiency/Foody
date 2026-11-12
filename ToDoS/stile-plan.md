@@ -166,8 +166,8 @@ Gemeinsame liegt in `:core:designsystem`.
       fest.
 - [ ] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen.
 - Erledigt: Wörter R–V (Navigation, Titel, Knöpfe) und die Heute-Szenen aller Stile (U „Das Auge“, V
-  „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Offen: Szenen der übrigen Hauptscreens (Tagebuch,
-  Kochen) für R–V; Einkauf, Woche, Rezeptliste und Rezept sind fertig. Knopf, Seitenkopf, Blatt-Titel, Chip und Blatt folgen dem
+  „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Offen: Szene Kochen für R–V; Einkauf, Woche,
+  Rezeptliste, Rezept und Tagebuch sind fertig. Knopf, Seitenkopf, Blatt-Titel, Chip und Blatt folgen dem
   Stil seit „Bausteine R–V“ und „Chips und Blätter R–V“.
 
 ### Phase 7 – Widgets und Abschluss
@@ -396,6 +396,21 @@ gleich, nicht nur der Pilot):
 - Tests `RezeptStileTest` (Reiter, Portionen, alle Aktionen, Archiv, 200 % Schrift, Texte); Bilder
   `stil_*_rezept_handy`.
 - Mundart: „Zuadaten“, „So geht's“, „Portiona“, „Eikaufn“, „zruckholn“.
+
+**2026-11-12 – Tagebuch R–V** (Branch `claude/stile-tagebuch`):
+- Gemeinsames Gerüst (`feature/heute/stil/TagebuchStile.kt`) mit Wörtern und Schriften je Stil (`TagebuchArt`):
+  Titel, Tag mit ‹ › und Datumswahl, Ring mit kcal und Makros, je Mahlzeit eine Gruppe; Antippen eines Eintrags
+  öffnet darunter „Ändern“ und „Löschen“ (U „Tilgen“), „+“ unten rechts trägt ein. Eine leere Mahlzeit trägt dort ein.
+- R „TAGEBUCH!“ schräg, die Mahlzeiten als farbige Pillen, „Noch leer – tippe auf +“.
+- S schlicht auf Papier; T „Tagebiachl“, „heid“, „Friahstück“, „Brotzeit“, „Passt scho · no 1.140 frei“, „no nix“.
+- U „Logbuch – Aufzeichnungen eines Hungrigen“ mit einer Notiz zum Tag aus dem, was verzeichnet ist.
+- V „Bordbuch – LOGBUCH · VERSORGUNG“, „HEUTE · LOGBUCH 297“, 20 Segmente statt Ring, „kein Kontakt“.
+- Der Entwurf hat getrennte Knöpfe „Menge“ und „Mahlzeit“; beides ändert derselbe Dialog, daher ein „Ändern“. Die
+  Uhrzeiten (U) fehlen, die App speichert keine; den Stempel „済“ (S) zeigt die App nicht.
+- Tests `TagebuchStileTest` (öffnen und löschen, blättern, leere Mahlzeit und „+“ öffnen das Blatt, 200 % Schrift,
+  Texte); Bilder `stil_*_tagebuch_handy`.
+- Mundart: „Tagebiachl“, „heid“, „vorgestern“, „morgn“, „Friahstück“, „Passt scho · no … frei“, „Gnua für heid · …
+  drüber“, „no nix“.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
