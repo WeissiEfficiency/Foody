@@ -166,8 +166,9 @@ Gemeinsame liegt in `:core:designsystem`.
       fest.
 - [ ] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen.
 - Erledigt: Wörter R–V (Navigation, Titel, Knöpfe) und die Heute-Szenen aller Stile (U „Das Auge“, V
-  „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Offen: Szene Kochen für R–V; Einkauf, Woche,
-  Rezeptliste, Rezept und Tagebuch sind fertig. Knopf, Seitenkopf, Blatt-Titel, Chip und Blatt folgen dem
+  „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Alle Hauptscreens haben in R–V ihre Szene
+  (Heute, Einkauf, Woche, Rezeptliste, Rezept, Tagebuch, Kochen), so weit wie bei der Sage. Editor, Einstellungen,
+  Eintragen, Listen, Planen und Zutaten zeigen wie bei der Sage die Bausteine und Wörter des Stils. Knopf, Seitenkopf, Blatt-Titel, Chip und Blatt folgen dem
   Stil seit „Bausteine R–V“ und „Chips und Blätter R–V“.
 
 ### Phase 7 – Widgets und Abschluss
@@ -411,6 +412,20 @@ gleich, nicht nur der Pilot):
   Texte); Bilder `stil_*_tagebuch_handy`.
 - Mundart: „Tagebiachl“, „heid“, „vorgestern“, „morgn“, „Friahstück“, „Passt scho · no … frei“, „Gnua für heid · …
   drüber“, „no nix“.
+
+**2026-11-12 – Kochen R–V** (Branch `claude/stile-kochen`):
+- Gemeinsame Teile (`feature/kochen/stil/KochenStile.kt`) mit Wörtern und Schriften je Stil (`KochArt`): Kopf mit ✕,
+  Überzeile, Rezept und Portionen, Segmente; „Bereitlegen“ mit Kästchen zum Abhaken, „Von vorn“ und Portionen; je
+  Schritt die Nummer groß im Akzent, der Text groß, die genannten Zutaten, Zeitkarten mit Start und „Als Nächstes“;
+  unten Zurück und Beginnen/Weiter/Fertig. Pager, Timerleiste und Fertig-Blatt bleiben dieselben.
+- R „BEREITLEGEN!“, „LOS GEHT'S! ▶“, „⏱ Start“; S schlicht in Zinnober; T „Herrichten“, „Pack ma's!“, „Weida“,
+  „Zruck“, „Feddig!“, „Uhr aufziehn“; U römische Zahlen, „Was das Ritual verlangt“, „Die Zeit beginnen“, „Vollenden“;
+  V „MISSION · REISTOPF · CREW 2“, „PHASE 2 / 3“, Countdown T-03 … T-01, „Countdown starten“, „Mission abschließen“.
+- Den Kreisbogen des laufenden Timers (V) und die Schriftzeichen im Hintergrund (S) zeigt die App nicht; die
+  laufenden Timer stehen wie sonst in der Timerleiste.
+- Tests `KochenStileTest` (Abhaken, Weiter, Zurück, Schließen, Timer, 200 % Schrift, Texte); Bilder
+  `stil_*_bereitlegen_handy`, `stil_*_schritt_handy`.
+- Mundart: „Herrichten“, „Des brauchst“, „Weida“, „Zruck“, „Feddig!“, „Uhr aufziehn“, „Danach“.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).

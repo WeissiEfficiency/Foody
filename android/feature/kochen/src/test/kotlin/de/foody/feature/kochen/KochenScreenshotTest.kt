@@ -83,6 +83,21 @@ class KochenScreenshotTest {
         KochTestUmgebung.leeren()
     }
 
+    /** Die Stile R–V, Immersiv: Bereitlegen und ein Schritt mit Timer. */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun stileHandy() {
+        for (stil in listOf(FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)) {
+            val name = stil.name.lowercase()
+            val bereit = u.vm().apply { starten("r1", null); abhaken(0) }
+            bild("stil_${name}_bereitlegen_handy", dunkel = false, stil = stil) { KochenRoute("r1", null, { _, _ -> }, {}, vm = bereit) }
+            KochTestUmgebung.leeren()
+            val schritt = u.vm().apply { starten("r1", null); abhaken(0); seiteWaehlen(2) }
+            bild("stil_${name}_schritt_handy", dunkel = false, stil = stil) { KochenRoute("r1", null, { _, _ -> }, {}, vm = schritt) }
+            KochTestUmgebung.leeren()
+        }
+    }
+
     private fun seiten(geraet: String) {
         for (dunkel in listOf(false, true)) {
             val modus = if (dunkel) "dunkel" else "hell"

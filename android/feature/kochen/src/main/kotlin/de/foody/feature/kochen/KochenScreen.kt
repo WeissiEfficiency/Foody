@@ -62,9 +62,15 @@ import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.domain.StepTimer
 import de.foody.feature.kochen.stil.BereitlegenSage
+import de.foody.feature.kochen.stil.BereitlegenStil
 import de.foody.feature.kochen.stil.KochKnoepfeSage
+import de.foody.feature.kochen.stil.KochKnoepfeStil
 import de.foody.feature.kochen.stil.KochKopfSage
+import de.foody.feature.kochen.stil.KochKopfStil
+import de.foody.feature.kochen.stil.KochSzene
 import de.foody.feature.kochen.stil.SchrittSage
+import de.foody.feature.kochen.stil.SchrittStil
+import de.foody.feature.kochen.stil.kochArt
 import de.foody.feature.kochen.timer.KochTimerDienst
 import kotlinx.coroutines.launch
 
@@ -173,18 +179,25 @@ private fun KochInhalt(
     LaunchedEffect(pager) { snapshotFlow { pager.settledPage }.collect(onSeite) }
     LaunchedEffect(z.seite) { if (pager.currentPage != z.seite) pager.animateScrollToPage(z.seite) }
     val sage = FoodyTheme.stil.immersiv(FoodyStil.SAGE)
+    val art = KochSzene.aktuell()?.let(::kochArt)
     Column(modifier) {
-        if (sage) KochKopfSage(z, pager.currentPage, onSchliessen) else Kopf(z, pager.currentPage, onSchliessen)
+        when {
+            sage -> KochKopfSage(z, pager.currentPage, onSchliessen)
+            art != null -> KochKopfStil(art, z, pager.currentPage, onSchliessen)
+            else -> Kopf(z, pager.currentPage, onSchliessen)
+        }
         HorizontalPager(pager, Modifier.weight(1f)) { seite ->
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                    .padding(horizontal = if (sage) 20.dp else FoodyAbstaende.s4, vertical = FoodyAbstaende.s3),
+                    .padding(horizontal = if (sage || art != null) 20.dp else FoodyAbstaende.s4, vertical = FoodyAbstaende.s3),
             ) {
                 val schritt = z.schritt(seite)
                 val naechster = z.schritt(seite + 1)?.text
                 when {
                     sage && schritt == null -> BereitlegenSage(z, a)
                     sage -> SchrittSage(schritt!!, seite + if (z.hatBereitlegen) 0 else 1, z.schritte.size, z.abgehakt, a, naechster)
+                    art != null && schritt == null -> BereitlegenStil(art, z, a)
+                    art != null -> SchrittStil(art, schritt!!, seite + if (z.hatBereitlegen) 0 else 1, z.schritte.size, z.abgehakt, a, naechster)
                     schritt == null -> BereitlegenSeite(z, a)
                     else -> SchrittSeite(schritt, z.abgehakt, a, naechster)
                 }
@@ -192,7 +205,11 @@ private fun KochInhalt(
         }
         // Laufende Timer über den Knöpfen
         timerLeiste()
-        if (sage) KochKnoepfeSage(pager.currentPage, z.seitenzahl, onSeite, onFertig) else Knoepfe(z, pager, onSeite, onFertig)
+        when {
+            sage -> KochKnoepfeSage(pager.currentPage, z.seitenzahl, onSeite, onFertig)
+            art != null -> KochKnoepfeStil(art, pager.currentPage, z.seitenzahl, onSeite, onFertig)
+            else -> Knoepfe(z, pager, onSeite, onFertig)
+        }
     }
 }
 
