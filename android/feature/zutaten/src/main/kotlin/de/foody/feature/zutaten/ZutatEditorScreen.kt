@@ -38,6 +38,7 @@ import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
 import de.foody.core.designsystem.komponenten.ueberLeiste
+import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.scan.PackungScanKnopf
@@ -143,7 +144,7 @@ private fun Kopf(titel: String, onZurueck: () -> Unit, onZusammenfuehren: () -> 
     Seitenkopf(
         titel,
         Modifier.padding(start = FoodyAbstaende.s3, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2),
-        ueberzeile = "Zutat",
+        ueberzeile = stilText("Zutat", sage = "Verzeichnis"),
         onZurueck = onZurueck,
     ) {
         Box {

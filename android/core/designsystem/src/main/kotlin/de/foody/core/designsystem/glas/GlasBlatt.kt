@@ -21,8 +21,10 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.dismiss
@@ -30,6 +32,7 @@ import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.core.designsystem.token.glasWerte
 import kotlinx.coroutines.launch
@@ -54,13 +57,17 @@ fun GlasBlatt(onSchliessen: () -> Unit, modifier: Modifier = Modifier, ganzOffen
     val farben = FoodyTheme.farben
     val verlauf = FoodyTheme.werte.verlauf
     val glas = glasWerte(GlasStufe.DICHT, FoodyTheme.stil)
+    // Düstere Sage, Immersiv: eckiges Blatt, dunkler Verlauf, oben eine Linie im Akzent wie im Entwurf
+    val sage = FoodyTheme.stil.immersiv(FoodyStil.SAGE)
+    val zier = FoodyTheme.stil.zier
+    val form = if (sage) RectangleShape else BlattForm
     val zustand = rememberModalBottomSheetState(skipPartiallyExpanded = ganzOffen)
     val scope = rememberCoroutineScope()
     ModalBottomSheet(
         onDismissRequest = onSchliessen,
         modifier = modifier,
         sheetState = zustand,
-        shape = BlattForm,
+        shape = form,
         containerColor = Color.Transparent,
         contentColor = farben.text,
         tonalElevation = 0.dp,
@@ -68,11 +75,16 @@ fun GlasBlatt(onSchliessen: () -> Unit, modifier: Modifier = Modifier, ganzOffen
     ) {
         Column(
             Modifier.fillMaxWidth().drawBehind {
+                if (sage) {
+                    drawRect(Brush.verticalGradient(listOf(lerp(farben.grund, zier, 0.06f), farben.grund)))
+                    drawLine(zier, Offset.Zero, Offset(size.width, 0f), 1.dp.toPx())
+                    return@drawBehind
+                }
                 drawRect(farben.grund)
                 drawRect(Brush.radialGradient(listOf(verlauf.oben, Color.Transparent), Offset.Zero, size.maxDimension * 0.85f))
                 drawRect(Brush.radialGradient(listOf(verlauf.unten, Color.Transparent), Offset(size.width, size.height), size.maxDimension * 0.7f))
                 drawRect(glas.toenung)
-                drawOutline(BlattForm.createOutline(size, layoutDirection, this), glas.kante, style = Stroke(1.dp.toPx()))
+                drawOutline(form.createOutline(size, layoutDirection, this), glas.kante, style = Stroke(1.dp.toPx()))
             },
         ) {
             Box(
@@ -91,7 +103,10 @@ fun GlasBlatt(onSchliessen: () -> Unit, modifier: Modifier = Modifier, ganzOffen
                 },
                 contentAlignment = Alignment.Center,
             ) {
-                Box(Modifier.size(width = 36.dp, height = 4.dp).background(farben.nebentext.copy(alpha = 0.5f), CircleShape))
+                Box(
+                    Modifier.size(width = if (sage) 40.dp else 36.dp, height = 4.dp)
+                        .background(farben.nebentext.copy(alpha = 0.5f), if (sage) RectangleShape else CircleShape),
+                )
             }
             inhalt()
         }

@@ -32,6 +32,7 @@ import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
 import de.foody.core.designsystem.komponenten.ueberLeiste
+import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import kotlinx.coroutines.launch
@@ -67,8 +68,14 @@ fun EditorRoute(
                 .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = ueberLeiste(104.dp)),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
-            Seitenkopf(if (id == null) "Neues Rezept" else "Bearbeiten", ueberzeile = "Rezept", onZurueck = zurueck) {
-                FoodyKnopf("Speichern", {
+            val titel = if (id == null) "Neues Rezept" else "Bearbeiten"
+            Seitenkopf(
+                stilText(titel, sage = if (id == null) "Neue Seite" else "Berichtigen"),
+                ueberzeile = stilText("Rezept", sage = "Grimoire"),
+                onZurueck = zurueck,
+                beschreibung = titel,
+            ) {
+                FoodyKnopf(stilText("Speichern", sage = "Ins Grimoire"), {
                     bereich.launch { (vm.speichern() as? Gespeichert.Ok)?.let { onFertig(it.id) } }
                 }, aktiv = moeglich)
             }

@@ -38,16 +38,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasBlatt
+import de.foody.core.designsystem.komponenten.BlattTitel
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.FoodyTextfeld
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.komponenten.vorausgefuelltFarben
+import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.erkennung.ErkennungTexte
 import de.foody.core.scan.PackungScanKnopf
 import de.foody.domain.BlsTreffer
 import de.foody.domain.FotoPortion
+import de.foody.domain.Mahlzeit
 import de.foody.domain.Nutrient
 import de.foody.domain.NutritionResult
 import de.foody.feature.heute.anzeigename
@@ -67,6 +70,17 @@ private val WEGE = listOf(
     EintragenWeg.FREI to "Frei",
 )
 
+/** Wege in der Düsteren Sage (Immersiv). */
+private val SAGE_WEGE = mapOf(EintragenWeg.REZEPT to "Eigenes Rezept", EintragenWeg.PLAN to "Vorgesehen", EintragenWeg.FREI to "Frei")
+
+/** Kurzname einer Mahlzeit in der Düsteren Sage wie im Entwurf („Morgen“, „Zwischen“). */
+private fun Mahlzeit.sageKurz(): String = when (this) {
+    Mahlzeit.FRUEHSTUECK -> "Morgen"
+    Mahlzeit.MITTAGESSEN -> "Mittag"
+    Mahlzeit.SNACK -> "Zwischen"
+    Mahlzeit.ABENDESSEN -> "Abend"
+}
+
 /** Blatt von unten zum Eintragen (siehe [BlattAuftrag]). Schließt nach erfolgreichem Speichern. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -81,12 +95,14 @@ fun EintragenBlatt(auftrag: BlattAuftrag, onFertig: () -> Unit, vm: EintragenVie
             Modifier.verticalScroll(rememberScrollState()).padding(horizontal = FoodyAbstaende.s4).padding(bottom = FoodyAbstaende.s6),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
-            Text("Eintragen", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+            BlattTitel(stilText("Eintragen", sage = "Mahl eintragen"), beschreibung = "Eintragen")
             FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-                MAHLZEITEN.forEach { m -> FoodyChip(m.anzeigename(), m == e.mahlzeit, { vm.mahlzeit(m) }) }
+                MAHLZEITEN.forEach { m ->
+                    FoodyChip(stilText(m.anzeigename(), sage = m.sageKurz()), m == e.mahlzeit, { vm.mahlzeit(m) }, beschreibung = m.anzeigename())
+                }
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-                WEGE.forEach { (w, text) -> FoodyChip(text, w == e.weg, { vm.weg(w) }) }
+                WEGE.forEach { (w, text) -> FoodyChip(stilText(text, sage = SAGE_WEGE[w]), w == e.weg, { vm.weg(w) }, beschreibung = text) }
             }
             when (e.weg) {
                 EintragenWeg.REZEPT -> RezeptWahl(z, vm)
@@ -95,7 +111,7 @@ fun EintragenBlatt(auftrag: BlattAuftrag, onFertig: () -> Unit, vm: EintragenVie
                 EintragenWeg.FREI -> FreiEingabe(z, vm)
             }
             FoodyKnopf(
-                "Eintragen",
+                stilText("Eintragen", sage = "In die Chronik"),
                 { bereich.launch { if (vm.speichern() != null) onFertig() } },
                 Modifier.fillMaxWidth().testTag(EINTRAGEN_SPEICHERN),
                 aktiv = moeglich,
@@ -146,7 +162,10 @@ private fun ZutatWahl(z: EintragenZustand, vm: EintragenViewModel) {
     Suche(z.eingaben.suche, "Zutat suchen", vm::suche)
     z.zutaten.forEach { t -> Treffer(t.name, t.id == z.eingaben.zutatId) { vm.zutatWaehlen(t.id) } }
     if (z.bls.isNotEmpty()) {
-        Text("Aus dem Bundeslebensmittelschlüssel", style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.nebentext)
+        Text(
+            stilText("Aus dem Bundeslebensmittelschlüssel", sage = "Aus dem großen Verzeichnis"),
+            style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.nebentext,
+        )
         z.bls.forEach { t -> BlsZeile(t) { vm.blsWaehlen(t) } }
     }
     // Nach „im Katalog“ (Scan in „Frei“) geht der Fokus auf die Menge
@@ -181,7 +200,10 @@ private fun BlsZeile(t: BlsTreffer, onWahl: () -> Unit) {
 @Composable
 private fun PlanWahl(z: EintragenZustand, vm: EintragenViewModel) {
     if (z.plan.isEmpty()) {
-        Text("Für diesen Tag ist nichts Geplantes mehr offen.", color = FoodyTheme.farben.nebentext)
+        Text(
+            stilText("Für diesen Tag ist nichts Geplantes mehr offen.", sage = "Für diesen Tag ist nichts Weiteres vorgesehen."),
+            color = FoodyTheme.farben.nebentext,
+        )
     }
     z.plan.forEach { p ->
         Treffer("${p.titel} · ${slotName(p.slot)}", p.planEintragId == z.eingaben.planEintragId) { vm.planWaehlen(p.planEintragId) }

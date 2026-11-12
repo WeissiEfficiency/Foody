@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -186,7 +187,7 @@ class TagebuchTagScreenTest {
         compose.warteAufText("FREITAG, 23. OKT.")
         assertEquals(heute.minusDays(1), aktuell)
         compose.onAllNodesWithContentDescription("Noch nichts eingetragen", substring = true)[0].performClick()
-        compose.warteAufText("Eintragen")
+        compose.warteAufText("Mahl eintragen")
     }
 
     @Test
@@ -195,5 +196,17 @@ class TagebuchTagScreenTest {
         zeigen(schrift200 = true, stil = FoodyStil.SAGE)
         compose.warteAufText("CHRONIK")
         compose.pruefeNichtsAbgeschnitten()
+    }
+
+    @Test
+    fun chronikEintragenBlattImStil() {
+        zeigen(stil = FoodyStil.SAGE)
+        compose.warteAufText("CHRONIK")
+        compose.onNodeWithContentDescription("Eintragen").performClick()
+        compose.warteAufText("Mahl eintragen")
+        compose.onNodeWithText("In die Chronik").assertExists()
+        compose.onNodeWithText("Morgen").assertExists()
+        // TalkBack liest die normalen Namen
+        compose.onAllNodesWithContentDescription("Frühstück").assertCountEquals(2)
     }
 }

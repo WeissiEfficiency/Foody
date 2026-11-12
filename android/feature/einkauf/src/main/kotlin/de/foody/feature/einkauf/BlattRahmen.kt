@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasBlatt
+import de.foody.core.designsystem.komponenten.BlattTitel
 import de.foody.core.designsystem.komponenten.FoodyFrage
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
@@ -22,14 +23,20 @@ import de.foody.core.designsystem.token.FoodyAbstaende
  * Blatt des Einkaufs: ganz geöffnet, Inhalt scrollbar, [knopf] fest unten (ohne Ziehen erreichbar).
  */
 @Composable
-internal fun BlattRahmen(titel: String, onSchliessen: () -> Unit, knopf: (@Composable () -> Unit)? = null, inhalt: @Composable ColumnScope.() -> Unit) {
+internal fun BlattRahmen(
+    titel: String,
+    onSchliessen: () -> Unit,
+    knopf: (@Composable () -> Unit)? = null,
+    beschreibung: String? = null,
+    inhalt: @Composable ColumnScope.() -> Unit,
+) {
     GlasBlatt(onSchliessen, ganzOffen = true) {
         Column(Modifier.padding(horizontal = FoodyAbstaende.s6).padding(bottom = FoodyAbstaende.s6).navigationBarsPadding()) {
             Column(
                 Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
             ) {
-                Text(titel, Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+                BlattTitel(titel, beschreibung = beschreibung)
                 inhalt()
             }
             knopf?.let { Column(Modifier.fillMaxWidth().padding(top = FoodyAbstaende.s4)) { it() } }
