@@ -274,3 +274,25 @@ private fun DrawScope.rautenreihe(farbe: Color, hoehe: Float) {
         x += breite
     }
 }
+
+/**
+ * Knopf des aktuellen Stils R–V mit eigener Beschreibung für TalkBack (‹ ›, kurze Wörter): [voll] wie Primär, sonst
+ * wie Umriss. Ohne eigenen Stil (Milchglas, Sage) der Knopf des Sternenkreuzers – Szenen rufen ihn nur in R–V.
+ */
+@Composable
+fun StilAktion(
+    text: String,
+    onKlick: () -> Unit,
+    modifier: Modifier = Modifier,
+    beschreibung: String? = null,
+    voll: Boolean = false,
+    aktiv: Boolean = true,
+) {
+    when (FoodyTheme.stil.stil) {
+        FoodyStil.ANIME -> AnimeKnopf(text, onKlick, modifier, beschreibung, voll = voll, aktiv = aktiv)
+        FoodyStil.EDO -> EdoKnopf(text, onKlick, modifier, voll = voll, beschreibung = beschreibung, aktiv = aktiv)
+        FoodyStil.BAYRISCH -> BayrischKnopf(text, onKlick, modifier, voll = voll, beschreibung = beschreibung, aktiv = aktiv)
+        FoodyStil.GRAUEN -> GrauenKnopf(text, onKlick, modifier, beschreibung, umriss = !voll, aktiv = aktiv)
+        else -> KreuzerKnopf(text, onKlick, modifier, voll = voll, beschreibung = beschreibung, aktiv = aktiv)
+    }
+}

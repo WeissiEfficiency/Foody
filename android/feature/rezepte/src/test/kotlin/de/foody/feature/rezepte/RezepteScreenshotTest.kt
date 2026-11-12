@@ -134,6 +134,17 @@ class RezepteScreenshotTest {
         }
     }
 
+    /** Die Stile R–V, Immersiv: die Szenen der Rezeptliste. */
+    @Test
+    @Config(qualifiers = "w411dp-h1100dp")
+    fun stileHandy() {
+        for (stil in listOf(FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)) {
+            bild("stil_${stil.name.lowercase()}_liste_handy", dunkel = false, stil = stil) {
+                RezeptListeRoute({}, {}, {}, vm = remember { halter.behalten(RezeptListeViewModel(repo)) })
+            }
+        }
+    }
+
     private fun bild(name: String, dunkel: Boolean, stil: FoodyStil = FoodyStil.MILCHGLAS, inhalt: @Composable () -> Unit) {
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
             FoodyTheme(dunkel = dunkel, stil = stil, unschaerfe = false) { FoodyHintergrund { inhalt() } }
