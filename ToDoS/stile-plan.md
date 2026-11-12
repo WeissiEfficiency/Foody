@@ -167,8 +167,8 @@ Gemeinsame liegt in `:core:designsystem`.
 - [ ] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen.
 - Erledigt: Wörter R–V (Navigation, Titel, Knöpfe) und die Heute-Szenen aller Stile (U „Das Auge“, V
   „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Offen: Szenen der übrigen Hauptscreens (Rezepte, Woche,
-  Einkauf, Tagebuch …) für R–V. Knopf, Seitenkopf, Blatt-Titel, Chip und Blatt folgen dem Stil seit „Bausteine
-  R–V“ und „Chips und Blätter R–V“.
+  Tagebuch, Kochen, Rezept) für R–V; Einkauf ist fertig. Knopf, Seitenkopf, Blatt-Titel, Chip und Blatt folgen dem
+  Stil seit „Bausteine R–V“ und „Chips und Blätter R–V“.
 
 ### Phase 7 – Widgets und Abschluss
 - [ ] Die bestehenden Knopf-Widgets (Scannen, Foto) bekommen Farbe und Form des gewählten Stils. Es sind
@@ -342,6 +342,18 @@ gleich, nicht nur der Pilot):
   abgeschnittener Ecke oben rechts (Kreuzer). Der Grund ist der des Stils, damit der Text AA hält.
 - Tests: `StilKnopfTest` prüft auch den Chip (Auswahl für TalkBack, 48 dp); Galerie mit Chips, neue
   `StilBlattScreenshotTest` (Bilder `stil_blatt_*`).
+
+**2026-11-12 – Einkauf R–V** (Branch `claude/stile-einkauf`):
+- Wie bei der Sage ersetzt die Szene Kopf und Posten; Eingabe, „Zuletzt“ und Katalog bleiben. Antippen hakt ab (und
+  wieder auf), Langdruck öffnet die Details, der Knopf im Kopf die früheren Listen (`stil/EinkaufStile.kt`).
+- R „QUEST!“ mit XP-Balken, Abteilungen als weiße Karten mit Abzeichen, gekaufte mit „GET!“ (`EinkaufAnime.kt`).
+- S Tuschering für den Fortschritt, Zeilen mit Ensō und Pinselstrich, Abteilungen „Vom Markt“ … (`EinkaufEdo.kt`).
+- T Markise, Schild „'s Standl“ mit „no 3 offn“, Abteilungen als Holzkisten („Vom Gmiasstandl“) (`EinkaufBayrisch.kt`).
+- U „Expeditionsliste“ auf schiefem Pergament, nummeriert, Stempel „Besorgt“, die Liste flüstert (`EinkaufGrauen.kt`).
+- V „Frachtraum“ mit Ladeanzeige in Segmenten, Posten als Kisten mit Code, Band „GELADEN“ (`EinkaufKreuzer.kt`).
+- Die Abteilungsnamen der Stile hören TalkBack in normalen Worten; Titel wachsen bis 130 %.
+- Tests `EinkaufStileTest` (Abhaken, Details, frühere Listen, 200 % Schrift, Texte); Bilder `stil_*_einkauf_handy`.
+- Die Mundart („Vom Gmiasstandl“, „no 3 offn“, „Zettl“) bitte mit gegenlesen.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).

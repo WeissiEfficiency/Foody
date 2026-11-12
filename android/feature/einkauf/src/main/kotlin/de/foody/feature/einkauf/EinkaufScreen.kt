@@ -30,15 +30,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.LeererZustandZeile
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
+import de.foody.feature.einkauf.stil.EinkaufSzene
+import de.foody.feature.einkauf.stil.animeKopf
+import de.foody.feature.einkauf.stil.animePosten
+import de.foody.feature.einkauf.stil.bayrischKopf
+import de.foody.feature.einkauf.stil.bayrischPosten
+import de.foody.feature.einkauf.stil.edoKopf
+import de.foody.feature.einkauf.stil.edoPosten
+import de.foody.feature.einkauf.stil.grauenKopf
+import de.foody.feature.einkauf.stil.grauenPosten
 import de.foody.feature.einkauf.stil.haendlerKopf
 import de.foody.feature.einkauf.stil.haendlerPosten
+import de.foody.feature.einkauf.stil.kreuzerKopf
+import de.foody.feature.einkauf.stil.kreuzerPosten
 
 /** Platz unter der Liste für die schwebende Navigationsleiste. */
 private val LISTE_UNTEN = 104.dp
@@ -47,7 +57,8 @@ private val KACHEL_MIN = 104.dp
 /**
  * Der Tab „Einkauf“ (und `EinkaufListe(id)`): Kopf, Hinweis „Plan geändert“, Eingabe, offene Kacheln je Abteilung,
  * „Zuletzt verwendet“ und der Katalog; ab 840 dp der Katalog rechts daneben. [listeId] `null` = aktuelle Liste. Die
- * Düstere Sage zeigt in Immersiv Kopf und Posten als „Der Händler“ (`stil/EinkaufSage.kt`).
+ * Düstere Sage zeigt in Immersiv Kopf und Posten als „Der Händler“ (`stil/EinkaufSage.kt`), die Stile R–V ihre eigene
+ * Szene (`stil/Einkauf*.kt`).
  */
 @Composable
 fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> Unit, vm: EinkaufViewModel = hiltViewModel()) {
@@ -59,14 +70,19 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
     val umschalten = { name: String -> aufgeklappt = if (name in aufgeklappt) aufgeklappt - name else aufgeklappt + name }
     val alle = z.ansicht?.alle.orEmpty()
 
-    // Düstere Sage in Immersiv: Kopf und Posten als „Der Händler“, sonst die normale Ansicht
-    val sage = FoodyTheme.stil.immersiv(FoodyStil.SAGE)
+    // Immersiv: Kopf und Posten als Szene des Stils (Sage „Der Händler“, R–V), sonst die normale Ansicht
+    val szene = EinkaufSzene.aktuell()
+    val onListen: () -> Unit = { vm.blattOeffnen(Blatt.Frueher) }
     val menue = @Composable { EinkaufMenue(z.ansicht, vm::blattOeffnen) { loeschenFrage = true } }
     val oben: LazyGridScope.() -> Unit = {
-        if (sage) {
-            haendlerKopf(z.ansicht, onListen = { vm.blattOeffnen(Blatt.Frueher) }, menue = menue)
-        } else {
-            ganz("kopf") { EinkaufKopf(z.ansicht) { menue() } }
+        when (szene) {
+            FoodyStil.SAGE -> haendlerKopf(z.ansicht, onListen, menue)
+            FoodyStil.ANIME -> animeKopf(z.ansicht, onListen, menue)
+            FoodyStil.EDO -> edoKopf(z.ansicht, onListen, menue)
+            FoodyStil.BAYRISCH -> bayrischKopf(z.ansicht, onListen, menue)
+            FoodyStil.GRAUEN -> grauenKopf(z.ansicht, onListen, menue)
+            FoodyStil.KREUZER -> kreuzerKopf(z.ansicht, onListen, menue)
+            else -> ganz("kopf") { EinkaufKopf(z.ansicht) { menue() } }
         }
         if (z.abgleich.isNotEmpty()) ganz("hinweis") { AbgleichHinweis { vm.blattOeffnen(Blatt.Abgleich) } }
         ganz("eingabe") { EingabeFeld(z.suche, vm::suche, vm::eingeben) }
@@ -80,10 +96,16 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
                     LeererZustandZeile("Noch nichts auf der Liste", "Neue Liste aus dem Plan", { vm.blattOeffnen(Blatt.Vorschau) })
                 }
             }
-            if (sage) {
-                haendlerPosten(z.ansicht, onUmschalten = { id, an -> vm.abhaken(id, an) }, onDetails = { vm.blattOeffnen(Blatt.Details(it)) })
-            } else {
-                offeneKacheln(z.ansicht?.offen.orEmpty(), onGekauft = { vm.abhaken(it, true) }, onDetails = { vm.blattOeffnen(Blatt.Details(it)) })
+            val umschalten: (String, Boolean) -> Unit = { id, an -> vm.abhaken(id, an) }
+            val details: (String) -> Unit = { vm.blattOeffnen(Blatt.Details(it)) }
+            when (szene) {
+                FoodyStil.SAGE -> haendlerPosten(z.ansicht, umschalten, details)
+                FoodyStil.ANIME -> animePosten(z.ansicht, umschalten, details)
+                FoodyStil.EDO -> edoPosten(z.ansicht, umschalten, details)
+                FoodyStil.BAYRISCH -> bayrischPosten(z.ansicht, umschalten, details)
+                FoodyStil.GRAUEN -> grauenPosten(z.ansicht, umschalten, details)
+                FoodyStil.KREUZER -> kreuzerPosten(z.ansicht, umschalten, details)
+                else -> offeneKacheln(z.ansicht?.offen.orEmpty(), onGekauft = { vm.abhaken(it, true) }, onDetails = details)
             }
             zuletztKacheln(z.zuletzt, alle, ZULETZT in aufgeklappt, { umschalten(ZULETZT) }, { vm.zuletztAntippen(it) })
         }
