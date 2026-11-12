@@ -34,6 +34,7 @@ import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.stil.HeuteAnime
 import de.foody.feature.heute.stil.HeuteBayrisch
+import de.foody.feature.heute.stil.HeuteEdo
 import de.foody.feature.heute.stil.HeuteGrauen
 import de.foody.feature.heute.stil.HeuteKreuzer
 import de.foody.feature.heute.stil.HeuteSage
@@ -95,6 +96,7 @@ fun HeuteScreen(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modif
         FoodyTheme.stil.immersiv(FoodyStil.KREUZER) -> return HeuteKreuzer(zustand, aktionen, modifier)
         FoodyTheme.stil.immersiv(FoodyStil.BAYRISCH) -> return HeuteBayrisch(zustand, aktionen, modifier)
         FoodyTheme.stil.immersiv(FoodyStil.ANIME) -> return HeuteAnime(zustand, aktionen, modifier)
+        FoodyTheme.stil.immersiv(FoodyStil.EDO) -> return HeuteEdo(zustand, aktionen, modifier)
     }
     Box(modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         HeuteInhalt(zustand, aktionen)

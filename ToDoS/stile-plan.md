@@ -165,8 +165,9 @@ Gemeinsame liegt in `:core:designsystem`.
 - [ ] Ein Stil nach dem anderen, je Stil zwei bis drei PRs (Hauptscreens, dann Rest). Die Reihenfolge legt der Nutzer
       fest.
 - [ ] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen.
-- Erledigt: Wörter R–V (Navigation, Titel, Knöpfe), U „Das Auge“, V „Tagessystem“, T „Maibaum“ und R „HEUTE!“
-  (Heute). Weiter mit der Heute-Szene von S.
+- Erledigt: Wörter R–V (Navigation, Titel, Knöpfe) und die Heute-Szenen aller Stile (U „Das Auge“, V
+  „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Offen: Szenen der übrigen Hauptscreens (Rezepte, Woche,
+  Einkauf, Tagebuch …) für R–V und stilfähige Bausteine (Knopf, Chip, Blatt, Seitenkopf) über die Sage hinaus.
 
 ### Phase 7 – Widgets und Abschluss
 - [ ] Die bestehenden Knopf-Widgets (Scannen, Foto) bekommen Farbe und Form des gewählten Stils. Es sind
@@ -310,6 +311,18 @@ gleich, nicht nur der Pilot):
 - Designsystem: `stil/anime/AnimeBausteine.kt` (`Anime.titel/text`, Gelb, Türkis, `animeSchatten`, `AnimeKnopf`,
   `AnimePille`), Systemschrift statt Dela Gothic One und M PLUS Rounded 1c.
 - Tests `HeuteAnimeTest` (alle Wege, 200 % Schrift, Sprechblase, Texte); Bild `stil_anime_immersiv` neu.
+
+**2026-11-12 – S Immersiv: Heute als Rollbild** (Branch `claude/stile-s-heute`):
+- Heute (`feature/heute/stil/HeuteEdo.kt`): Rollbild mit Holzstäben, Indigo-Montierung und Quasten; auf dem
+  Papier eine Tuschelandschaft (Sonne im Zinnober, Berge, Nebel, Vögel, der Wochentag senkrecht, Siegel), darunter
+  „HEUTE ABEND · 24. OKTOBER“, das Gericht und „KOCHEN“. „Speisefolge ›“ mit kcal gegen das Ziel, Nährwertbalken
+  und je Mahlzeit einer Zeile mit Stempel (gegessen 済 im Zinnober, offen gestrichelt). Neu gegenüber dem Entwurf:
+  den leeren Stempel einer geplanten Mahlzeit antippen fragt „Gegessen?“. Unten „Einkaufszettel“, „＋ Eintragen“,
+  „Scannen · Foto“ und die Einstellungen.
+- Das Zeichen 済 bleibt so groß wie sein Stempel; TalkBack liest „gegessen“ an der Zeile.
+- Designsystem: `stil/edo/EdoBausteine.kt` (`Edo.titel/text/kopf`, Papier-, Holz- und Indigofarben, `EdoKnopf`,
+  `edoShu`), Systemschriften statt Kaisei Decol und Zen Kaku Gothic New.
+- Tests `HeuteEdoTest` (alle Wege, Stempel, 200 % Schrift, Texte); Bild `stil_edo_immersiv` neu.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
