@@ -7,12 +7,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import org.junit.Rule
@@ -21,7 +24,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.GraphicsMode
 import kotlin.test.assertEquals
 
-/** Der gemeinsame Knopf in den Stilen R–V (Immersiv): Knopf des Stils, 48 dp, inaktiv nicht klickbar. */
+/** Knopf und Chip in den Stilen R–V (Immersiv): Aussehen des Stils, 48 dp, inaktiv nicht klickbar, Auswahl für TalkBack. */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
 class StilKnopfTest {
@@ -50,6 +53,22 @@ class StilKnopfTest {
             }
         }
         assertEquals(stile.size * 3, klicks)
+    }
+
+    @Test
+    fun chipJederStilMeldetAuswahlUndHat48dp() {
+        val stile = listOf(FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)
+        var stil by mutableStateOf(stile.first())
+        var gewaehlt by mutableStateOf(false)
+        compose.setContent {
+            FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV) { FoodyChip("Schnell", gewaehlt, { gewaehlt = !gewaehlt }) }
+        }
+        stile.forEach { s ->
+            stil = s
+            compose.waitForIdle()
+            compose.onNodeWithText("Schnell").assertIsNotSelected().assertHeightIsAtLeast(48.dp).performClick()
+            compose.onNodeWithText("Schnell").assertIsSelected().performClick()
+        }
     }
 
     @Test

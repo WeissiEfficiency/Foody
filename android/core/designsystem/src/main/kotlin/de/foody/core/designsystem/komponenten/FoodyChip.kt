@@ -24,11 +24,13 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.sageHell
+import de.foody.core.designsystem.stil.stilChip
 import de.foody.core.designsystem.token.FoodyAbstaende
 
 /**
  * Filter-Chip (an/aus) wie im Entwurf: gewählt in Primär gefüllt, sonst mit feinem Rahmen. Meldet „ausgewählt“ an
- * TalkBack; sichtbar 36 dp hoch, die Berührfläche darum 48 dp.
+ * TalkBack; sichtbar 36 dp hoch, die Berührfläche darum 48 dp. In den Stilen R–V (Immersiv) gewählt wie der volle
+ * Knopf des Stils, sonst wie sein Umriss ([stilChip]).
  */
 @Composable
 fun FoodyChip(text: String, ausgewaehlt: Boolean, onKlick: () -> Unit, modifier: Modifier = Modifier, beschreibung: String? = null) {
@@ -37,12 +39,15 @@ fun FoodyChip(text: String, ausgewaehlt: Boolean, onKlick: () -> Unit, modifier:
     // Düstere Sage, Immersiv: eckig, gewählt mit Rahmen im Akzent und leichtem Schimmer statt gefüllt
     val sage = FoodyTheme.stil.immersiv(FoodyStil.SAGE)
     val zier = FoodyTheme.stil.zier
+    val eigen = stilChip(ausgewaehlt)
     Box(
         modifier.heightIn(min = 48.dp).selectable(selected = ausgewaehlt, onClick = onKlick, interactionSource = druck, indication = null)
             .then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        Box(
+        val chip = if (eigen != null) {
+            Modifier.heightIn(min = 36.dp).clip(eigen.form).background(eigen.flaeche).border(eigen.randBreite, eigen.rand, eigen.form)
+        } else {
             Modifier
                 .heightIn(min = 36.dp)
                 .clip(FoodyTheme.formen.knopf)
@@ -63,14 +68,18 @@ fun FoodyChip(text: String, ausgewaehlt: Boolean, onKlick: () -> Unit, modifier:
                     },
                     FoodyTheme.formen.knopf,
                 )
+        }
+        Box(
+            chip
                 .indication(druck, ripple())
                 .padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s2),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text,
-                style = if (sage) Sage.text(15.5f) else MaterialTheme.typography.labelLarge,
+                style = eigen?.schrift ?: if (sage) Sage.text(15.5f) else MaterialTheme.typography.labelLarge,
                 color = when {
+                    eigen != null -> eigen.schriftFarbe
                     sage && ausgewaehlt -> sageHell()
                     ausgewaehlt -> farben.aufPrimaer
                     else -> farben.text
