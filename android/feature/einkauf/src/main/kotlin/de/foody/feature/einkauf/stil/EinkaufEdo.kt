@@ -119,7 +119,8 @@ private fun Gruppe(g: PostenGruppe, onUmschalten: (String, Boolean) -> Unit, onD
     Column(Modifier.fillMaxWidth()) {
         Text(
             edoAbteilung(g.name), Modifier.padding(top = 8.dp).semantics { heading() },
-            style = Edo.titel(17f), color = edoShu(),
+            // Text im Primärton (AA geprüft), nicht im rohen Akzent
+            style = Edo.titel(17f), color = FoodyTheme.farben.primaer,
         )
         g.artikel.forEach { Zeile(it, onUmschalten, onDetails) }
     }

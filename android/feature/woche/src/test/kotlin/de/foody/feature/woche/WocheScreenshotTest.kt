@@ -120,6 +120,16 @@ class WocheScreenshotTest {
         bild("sage_woche_handy", dunkel = false, stil = FoodyStil.SAGE) { WocheRoute({ _, _ -> }, {}, vm = vm) }
     }
 
+    /** Stile R–V, Immersiv: die Szenen der Woche (heute Mittwoch, Reispfanne am Mittwoch). */
+    @Test
+    @Config(qualifiers = "w411dp-h1100dp")
+    fun stileHandy() {
+        for (stil in listOf(FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)) {
+            val vm = u.vm()
+            bild("stil_${stil.name.lowercase()}_woche_handy", dunkel = false, stil = stil) { WocheRoute({ _, _ -> }, {}, vm = vm) }
+        }
+    }
+
     private fun bild(name: String, dunkel: Boolean, stil: FoodyStil = FoodyStil.MILCHGLAS, inhalt: @Composable () -> Unit) {
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
             FoodyTheme(dunkel = dunkel, stil = stil, unschaerfe = false) { FoodyHintergrund { inhalt() } }

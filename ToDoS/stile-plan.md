@@ -167,7 +167,7 @@ Gemeinsame liegt in `:core:designsystem`.
 - [ ] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen.
 - Erledigt: Wörter R–V (Navigation, Titel, Knöpfe) und die Heute-Szenen aller Stile (U „Das Auge“, V
   „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Offen: Szenen der übrigen Hauptscreens (Rezepte, Woche,
-  Tagebuch, Kochen, Rezept) für R–V; Einkauf ist fertig. Knopf, Seitenkopf, Blatt-Titel, Chip und Blatt folgen dem
+  Tagebuch, Kochen, Rezept) für R–V; Einkauf und Woche sind fertig. Knopf, Seitenkopf, Blatt-Titel, Chip und Blatt folgen dem
   Stil seit „Bausteine R–V“ und „Chips und Blätter R–V“.
 
 ### Phase 7 – Widgets und Abschluss
@@ -354,6 +354,19 @@ gleich, nicht nur der Pilot):
 - Die Abteilungsnamen der Stile hören TalkBack in normalen Worten; Titel wachsen bis 130 %.
 - Tests `EinkaufStileTest` (Abhaken, Details, frühere Listen, 200 % Schrift, Texte); Bilder `stil_*_einkauf_handy`.
 - Die Mundart („Vom Gmiasstandl“, „no 3 offn“, „Zettl“) bitte mit gegenlesen.
+
+**2026-11-12 – Woche R–V** (Branch `claude/stile-woche`):
+- Wie bei der Sage zeigt die Szene die ganze Woche; die Blätter (Mahlzeit, Mahlzeitwahl, Füllen) bleiben dieselben.
+  Jede Szene: Kopf mit „6 / 7“, Blättern (‹ › und „Heute“), die sieben Tage zum Wählen, der gewählte Tag mit seinen
+  Gerichten (Antippen öffnet das Mahlzeit-Blatt), „+ Mahlzeit“ und „Leere Tage füllen“ (`stil/WocheStile.kt`).
+- R „WOCHE!“, die Tage als Comic-Panels in drei Reihen, heute im Akzent mit Speedlines, leere mit „?!“.
+- S Votivtafeln an zwei Holzleisten, heute im Zinnober; Papier des Tages, „絵馬 · Leere Tage vorschlagen lassen“.
+- T „Wochn“ mit Wimpelkette (blau-weiß, heute rot), Karte mit doppeltem Rahmen, alle Tage als Liste („heid“).
+- U „Mondphasen“: je mehr Mahlzeiten geplant sind, desto voller der Mond; Tafel mit Notiz, „Die dunklen Nächte …“.
+- V „Flugplan“: Sprungroute aus Rauten (vergangen Holo, heute Amber pulsierend), Sprungkarte, Liste mit Status.
+- Tests `WocheStileTest` (Tag wählen, Eintrag, + Mahlzeit, Füllen, Blättern, 200 % Schrift, Texte); Bilder
+  `stil_*_woche_handy`. Robolectric hängt mit `w411dp` und offenem Dialog; der Test nimmt deshalb die Standardbreite.
+- Mundart: „Wochn“, „plana“, „heid“, „Sunda“, „no frei“, „Noch nix gplant“, „+ Essn planen“, „Leere Tag füllen“.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).

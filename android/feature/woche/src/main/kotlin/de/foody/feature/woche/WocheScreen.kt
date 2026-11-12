@@ -57,6 +57,8 @@ import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
 import de.foody.feature.woche.stil.WocheSage
 import de.foody.feature.woche.stil.WocheSageAktionen
+import de.foody.feature.woche.stil.WocheStil
+import de.foody.feature.woche.stil.WocheSzene
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -69,7 +71,7 @@ private val LISTE_UNTEN = 104.dp
  * Tageskarten mit Einträgen und Plätzen für fehlende Mahlzeiten (ab 840 dp in zwei Spalten), am Ende „x von 28
  * Mahlzeiten geplant“ und „Leere Tage füllen“. „+ Mahlzeit“ führt über die Mahlzeitwahl, ein Platz direkt zur
  * Rezeptwahl; je Eintrag das Mahlzeit-Blatt. Die Düstere Sage zeigt in Immersiv die Karte der Woche
- * (`stil/WocheSage.kt`) mit denselben Blättern.
+ * (`stil/WocheSage.kt`), die Stile R–V ihre eigene Szene (`stil/Woche*.kt`), alle mit denselben Blättern.
  */
 @Composable
 fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: WocheViewModel = hiltViewModel()) {
@@ -90,16 +92,16 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
     // Lage der Tageskarten in der Liste, für den Sprung aus der Tagesleiste
     val lagen = remember { mutableStateMapOf<Int, Int>() }
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
-        // Düstere Sage in Immersiv: die Karte der Woche; die Blätter unten bleiben dieselben
+        // Immersiv: die Szene des Stils (Sage „Karte der Woche“, R–V); die Blätter unten bleiben dieselben
+        val szenenAktionen = WocheSageAktionen(
+            onBlaettern = vm::blaettern, onHeute = vm::heute, onEintrag = { offen = it.id },
+            onPlus = { neuAm = it.toString() }, onFuellen = { vm.fuellenOeffnen() },
+        )
+        val szene = WocheSzene.aktuell()
         if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
-            WocheSage(
-                woche, vm.heuteDatum, zeigtHeute,
-                WocheSageAktionen(
-                    onBlaettern = vm::blaettern, onHeute = vm::heute, onEintrag = { offen = it.id },
-                    onPlus = { neuAm = it.toString() }, onFuellen = { vm.fuellenOeffnen() },
-                ),
-                unten = ueberLeiste(LISTE_UNTEN),
-            )
+            WocheSage(woche, vm.heuteDatum, zeigtHeute, szenenAktionen, unten = ueberLeiste(LISTE_UNTEN))
+        } else if (szene != null) {
+            WocheStil(szene, woche, vm.heuteDatum, zeigtHeute, szenenAktionen, unten = ueberLeiste(LISTE_UNTEN))
         } else {
             val zweispaltig = maxWidth >= FoodyBreiten.zweispaltig
             Column(
