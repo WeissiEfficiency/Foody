@@ -151,7 +151,7 @@ fun ZutatenListeRoute(onZutat: (String) -> Unit, onZurueck: () -> Unit, vm: Zuta
 private fun Kopf(onZurueck: () -> Unit, onVereinheitlichen: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     Seitenkopf(
-        stilText("Zutatenkatalog", sage = "Verzeichnis"),
+        stilText("Zutatenkatalog", sage = "Verzeichnis", bayrisch = "Zuadatn", grauen = "Verzeichnis der Substanzen", kreuzer = "Ressourcen-Datenbank"),
         Modifier.padding(start = FoodyAbstaende.s3, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2),
         ueberzeile = stilText("Einstellungen", sage = "Das Lager"),
         onZurueck = onZurueck,

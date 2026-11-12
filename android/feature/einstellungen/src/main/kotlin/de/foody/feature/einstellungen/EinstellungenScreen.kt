@@ -106,7 +106,7 @@ fun EinstellungenRoute(
                     .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = ueberLeiste(104.dp)),
                 verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
             ) {
-                Seitenkopf(stilText("Einstellungen", sage = "Das Lager"), onZurueck = onZurueck, beschreibung = "Einstellungen")
+                Seitenkopf(stilText("Einstellungen", sage = "Das Lager", bayrisch = "Eistellunga"), onZurueck = onZurueck, beschreibung = "Einstellungen")
                 KontoAbschnitt(z.konto, System.currentTimeMillis(), onServer)
                 DarstellungAbschnitt(
                     z, vm::darstellungSetzen, vm::farbweltSetzen, vm::stilSetzen, vm::stilVarianteSetzen, vm::stilAkzentSetzen,

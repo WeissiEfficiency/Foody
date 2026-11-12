@@ -70,12 +70,25 @@ fun EditorRoute(
         ) {
             val titel = if (id == null) "Neues Rezept" else "Bearbeiten"
             Seitenkopf(
-                stilText(titel, sage = if (id == null) "Neue Seite" else "Berichtigen"),
+                if (id == null) {
+                    stilText(
+                        titel,
+                        sage = "Neue Seite",
+                        anime = "Rezept-Edit!",
+                        bayrisch = "Neis Rezept",
+                        grauen = "Neue Abschrift",
+                        kreuzer = "Rezept anlegen",
+                    )
+                } else {
+                    stilText(titel, sage = "Berichtigen", anime = "Rezept-Edit!")
+                },
                 ueberzeile = stilText("Rezept", sage = "Grimoire"),
                 onZurueck = zurueck,
                 beschreibung = titel,
             ) {
-                FoodyKnopf(stilText("Speichern", sage = "Ins Grimoire"), {
+                val speichern =
+                    stilText("Speichern", sage = "Ins Grimoire", bayrisch = "Obacht, speichern!", grauen = "In die Bibliothek", kreuzer = "Ins Archiv")
+                FoodyKnopf(speichern, {
                     bereich.launch { (vm.speichern() as? Gespeichert.Ok)?.let { onFertig(it.id) } }
                 }, aktiv = moeglich)
             }

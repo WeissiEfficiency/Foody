@@ -27,6 +27,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -50,8 +52,8 @@ val LocalLeistenZuwachs = compositionLocalOf { 0.dp }
 @Composable
 fun ueberLeiste(abstand: Dp): Dp = abstand + LocalLeistenZuwachs.current
 
-/** Ein Ziel der Hauptnavigation. */
-data class NavZiel(val text: String, val symbol: ImageVector)
+/** Ein Ziel der Hauptnavigation; [beschreibung] liest TalkBack, wenn [text] ein Stilwort ist (Bayrisch „Heid“ für Heute). */
+data class NavZiel(val text: String, val symbol: ImageVector, val beschreibung: String? = null)
 
 /** Schwebende Glas-Leiste unten (Handy), 12 dp vom Rand. */
 @Composable
@@ -90,6 +92,7 @@ private fun NavEintrag(ziel: NavZiel, aktiv: Boolean, onKlick: () -> Unit, modif
         modifier
             .heightIn(min = 64.dp)
             .selectable(selected = aktiv, onClick = onKlick, role = Role.Tab, interactionSource = druck, indication = null)
+            .then(if (ziel.beschreibung != null) Modifier.semantics { contentDescription = ziel.beschreibung } else Modifier)
             .padding(vertical = FoodyAbstaende.s2, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,

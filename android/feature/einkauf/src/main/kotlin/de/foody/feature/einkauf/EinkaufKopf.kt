@@ -30,6 +30,7 @@ import de.foody.core.data.einkauf.EinkaufsAnsicht
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.Seitenkopf
+import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 
@@ -40,7 +41,11 @@ import de.foody.core.designsystem.token.GlasStufe
 @Composable
 internal fun EinkaufKopf(ansicht: EinkaufsAnsicht?, aktionen: @Composable RowScope.() -> Unit = {}) {
     Column(verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-        Seitenkopf("Einkauf", aktionen = aktionen)
+        Seitenkopf(
+            stilText("Einkauf", anime = "Quest!", bayrisch = "Eikaufn", grauen = "Expeditionsliste", kreuzer = "Frachtraum"),
+            beschreibung = "Einkauf",
+            aktionen = aktionen,
+        )
         ansicht?.let {
             Text("${it.name} · ${it.anzahlOffen} offen", style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
             val gesamt = it.alle.size

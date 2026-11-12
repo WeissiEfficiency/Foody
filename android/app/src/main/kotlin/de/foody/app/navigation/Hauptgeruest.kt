@@ -35,6 +35,7 @@ import de.foody.core.designsystem.komponenten.FoodyNavigationsleiste
 import de.foody.core.designsystem.komponenten.LEISTE_REGELHOEHE
 import de.foody.core.designsystem.komponenten.LocalLeistenZuwachs
 import de.foody.core.designsystem.komponenten.NavZiel
+import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyBreiten
 
 /** Ein Tab mit seiner Route. */
@@ -79,7 +80,14 @@ fun Hauptgeruest(
             }
         }
     }
-    val ziele = tabs.map { it.ziel }
+    // Wörter je Stil in Immersiv (Bayrisch „Heid · Rezepte · Wochn · Eikaufn“, Sternenkreuzer „Brücke · Archiv · Kurs · Fracht“)
+    val woerter = listOf(
+        stilText("Heute", bayrisch = "Heid", kreuzer = "Brücke"),
+        stilText("Rezepte", kreuzer = "Archiv"),
+        stilText("Woche", bayrisch = "Wochn", kreuzer = "Kurs"),
+        stilText("Einkauf", bayrisch = "Eikaufn", kreuzer = "Fracht"),
+    )
+    val ziele = tabs.mapIndexed { i, t -> if (woerter[i] == t.ziel.text) t.ziel else t.ziel.copy(text = woerter[i], beschreibung = t.ziel.text) }
     val dichte = LocalDensity.current
     var leiste by remember { mutableStateOf(LEISTE_REGELHOEHE) }
     BoxWithConstraints(Modifier.fillMaxSize()) {

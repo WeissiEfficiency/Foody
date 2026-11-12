@@ -20,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import de.foody.core.data.heute.OffenerEinkauf
 import de.foody.core.data.heute.RezeptKurz
 import de.foody.core.designsystem.FoodyTheme
@@ -40,6 +42,7 @@ import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.rezeptBild
 import de.foody.core.designsystem.komponenten.ueberschrift
+import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 import java.time.LocalDate
@@ -58,7 +61,11 @@ internal fun HeuteKopf(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: (
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         Column(Modifier.weight(1f)) {
             datum?.let { Augenbraue(DATUM.format(it)) }
-            Text("Heute", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineLarge, color = FoodyTheme.farben.text)
+            val titel = stilText("Heute", anime = "Heute!", bayrisch = "Heid", grauen = "Das Auge", kreuzer = "Tagessystem")
+            Text(
+                titel, Modifier.ueberschrift().semantics { contentDescription = "Heute" },
+                style = MaterialTheme.typography.headlineLarge, color = FoodyTheme.farben.text,
+            )
             if (syncDarunter) sync?.let { SyncStatus(it, Modifier.padding(top = FoodyAbstaende.s2)) }
         }
         if (!syncDarunter) sync?.let { SyncStatus(it) }

@@ -52,6 +52,7 @@ import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.Tagesleiste
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
@@ -207,7 +208,11 @@ private fun TagInhalt(
 /** Kopf wie im Entwurf: Datum als Überzeile, Titel „Tagebuch“, rechts runde Knöpfe für Vortag, Kalender und Folgetag. */
 @Composable
 private fun TagKopf(datum: LocalDate, onDatum: (LocalDate) -> Unit, onWahl: () -> Unit) {
-    Seitenkopf("Tagebuch", ueberzeile = TAG_LANG.format(datum)) {
+    Seitenkopf(
+        stilText("Tagebuch", anime = "Tagebuch!", bayrisch = "Tagebiachl", grauen = "Logbuch", kreuzer = "Bordbuch"),
+        ueberzeile = TAG_LANG.format(datum),
+        beschreibung = "Tagebuch",
+    ) {
         RunderKnopf(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, "Vorheriger Tag", { onDatum(datum.minusDays(1)) })
         RunderKnopf(Icons.Outlined.CalendarMonth, "Datum wählen", onWahl)
         RunderKnopf(Icons.AutoMirrored.Outlined.KeyboardArrowRight, "Nächster Tag", { onDatum(datum.plusDays(1)) })
