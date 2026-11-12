@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -52,13 +53,20 @@ fun bayrischBlau(): Color = FoodyTheme.stil.akzent?.farbe ?: FoodyTheme.farben.p
  * mindestens 48 dp hoch; TalkBack hört [beschreibung], falls gesetzt.
  */
 @Composable
-fun BayrischKnopf(text: String, onKlick: () -> Unit, modifier: Modifier = Modifier, voll: Boolean = true, beschreibung: String? = null) {
+fun BayrischKnopf(
+    text: String,
+    onKlick: () -> Unit,
+    modifier: Modifier = Modifier,
+    voll: Boolean = true,
+    beschreibung: String? = null,
+    aktiv: Boolean = true,
+) {
     val f = FoodyTheme.farben
     val form = Bayrisch.knopfForm
     Box(
-        modifier.heightIn(min = 48.dp).clip(form)
+        modifier.heightIn(min = 48.dp).alpha(if (aktiv) 1f else 0.38f).clip(form)
             .then(if (voll) Modifier.background(bayrischBlau()) else Modifier.background(Color.White).border(2.dp, f.text, form))
-            .clickable(role = Role.Button, onClick = onKlick)
+            .clickable(enabled = aktiv, role = Role.Button, onClick = onKlick)
             .then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier)
             .padding(horizontal = 12.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,

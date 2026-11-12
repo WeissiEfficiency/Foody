@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
@@ -65,20 +66,31 @@ fun Modifier.animeSchatten(form: Shape, farbe: Color, versatz: Dp = 5.dp): Modif
     translate(v, v) { drawOutline(form.createOutline(size, layoutDirection, this), farbe) }
 }
 
-/** Gelber Pillenknopf mit dicker Kante und hartem Schatten; mindestens 48 dp hoch. */
+/**
+ * Gelber Pillenknopf mit dicker Kante und hartem Schatten; [voll] = false ist eine weiße Pille ohne Schatten.
+ * Mindestens 48 dp hoch, [aktiv] = false blasst ihn ab.
+ */
 @Composable
-fun AnimeKnopf(text: String, onKlick: () -> Unit, modifier: Modifier = Modifier, beschreibung: String? = null) {
+fun AnimeKnopf(
+    text: String,
+    onKlick: () -> Unit,
+    modifier: Modifier = Modifier,
+    beschreibung: String? = null,
+    voll: Boolean = true,
+    aktiv: Boolean = true,
+) {
     val tinte = FoodyTheme.farben.text
     Box(
-        modifier.heightIn(min = 50.dp)
-            .animeSchatten(Anime.pille, tinte, 3.dp)
-            .clip(Anime.pille).background(Anime.gelb).border(3.dp, tinte, Anime.pille)
-            .clickable(role = Role.Button, onClick = onKlick)
+        modifier.heightIn(min = if (voll) 50.dp else 48.dp)
+            .alpha(if (aktiv) 1f else 0.38f)
+            .then(if (voll) Modifier.animeSchatten(Anime.pille, tinte, 3.dp) else Modifier)
+            .clip(Anime.pille).background(if (voll) Anime.gelb else Color.White).border(if (voll) 3.dp else 2.5.dp, tinte, Anime.pille)
+            .clickable(enabled = aktiv, role = Role.Button, onClick = onKlick)
             .then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier)
             .padding(horizontal = 14.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = Anime.titel(18f, 0.04f), color = tinte, textAlign = TextAlign.Center)
+        Text(text, style = if (voll) Anime.titel(18f, 0.04f) else Anime.text(15f, FontWeight.ExtraBold), color = tinte, textAlign = TextAlign.Center)
     }
 }
 

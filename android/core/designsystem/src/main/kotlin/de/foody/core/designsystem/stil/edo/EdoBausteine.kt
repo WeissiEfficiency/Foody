@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -73,12 +74,19 @@ fun edoShu(): Color = FoodyTheme.stil.akzent?.farbe ?: FoodyTheme.farben.primaer
  * 48 dp hoch; TalkBack hört [beschreibung], falls gesetzt.
  */
 @Composable
-fun EdoKnopf(text: String, onKlick: () -> Unit, modifier: Modifier = Modifier, voll: Boolean = true, beschreibung: String? = null) {
+fun EdoKnopf(
+    text: String,
+    onKlick: () -> Unit,
+    modifier: Modifier = Modifier,
+    voll: Boolean = true,
+    beschreibung: String? = null,
+    aktiv: Boolean = true,
+) {
     val f = FoodyTheme.farben
     Box(
-        modifier.heightIn(min = 48.dp).clip(Edo.form)
+        modifier.heightIn(min = 48.dp).alpha(if (aktiv) 1f else 0.38f).clip(Edo.form)
             .then(if (voll) Modifier.background(edoShu()) else Modifier.border(1.5.dp, f.text, Edo.form))
-            .clickable(role = Role.Button, onClick = onKlick)
+            .clickable(enabled = aktiv, role = Role.Button, onClick = onKlick)
             .then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier)
             .padding(horizontal = 10.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,

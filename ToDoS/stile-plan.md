@@ -167,7 +167,8 @@ Gemeinsame liegt in `:core:designsystem`.
 - [ ] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen.
 - Erledigt: Wörter R–V (Navigation, Titel, Knöpfe) und die Heute-Szenen aller Stile (U „Das Auge“, V
   „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Offen: Szenen der übrigen Hauptscreens (Rezepte, Woche,
-  Einkauf, Tagebuch …) für R–V und stilfähige Bausteine (Knopf, Chip, Blatt, Seitenkopf) über die Sage hinaus.
+  Einkauf, Tagebuch …) für R–V und stilfähige Chips und Blätter über die Sage hinaus. Knopf, Seitenkopf und
+  Blatt-Titel folgen dem Stil seit „Bausteine R–V“.
 
 ### Phase 7 – Widgets und Abschluss
 - [ ] Die bestehenden Knopf-Widgets (Scannen, Foto) bekommen Farbe und Form des gewählten Stils. Es sind
@@ -323,6 +324,16 @@ gleich, nicht nur der Pilot):
 - Designsystem: `stil/edo/EdoBausteine.kt` (`Edo.titel/text/kopf`, Papier-, Holz- und Indigofarben, `EdoKnopf`,
   `edoShu`), Systemschriften statt Kaisei Decol und Zen Kaku Gothic New.
 - Tests `HeuteEdoTest` (alle Wege, Stempel, 200 % Schrift, Texte); Bild `stil_edo_immersiv` neu.
+
+**2026-11-12 – Bausteine R–V** (Branch `claude/stile-bausteine`):
+- `FoodyKnopf` zeichnet in R–V (Immersiv) den Knopf des Stils: Primär voll, Umriss als helle oder umrandete
+  Variante, Text als Verweis in der Schrift des Stils (`stil/StilBausteine.kt`, `StilKnopf`). Inaktiv blasst er ab
+  und ist nicht klickbar; immer mindestens 48 dp hoch.
+- `Seitenkopf` und `BlattTitel` nehmen die Titelschrift des Stils (`stilTitel`), in den Größen der normalen Ansicht.
+  Damit tragen alle Screens ohne eigene Szene (Rezepte, Woche, Einkauf, Einstellungen …) Schrift und Knöpfe des Stils.
+- Die Knöpfe der fünf Stile haben dafür `aktiv` bekommen, Grauen einen Umriss, Anime eine weiße Pille.
+- Tests `StilKnopfTest` (jeder Stil, jede Art klickt und hat 48 dp; inaktiv nicht klickbar); Galerie
+  `StilBausteineScreenshotTest` im Katalog, Bilder `stil_bausteine_*`.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
