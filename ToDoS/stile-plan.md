@@ -166,8 +166,8 @@ Gemeinsame liegt in `:core:designsystem`.
       fest.
 - [ ] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen.
 - Erledigt: Wörter R–V (Navigation, Titel, Knöpfe) und die Heute-Szenen aller Stile (U „Das Auge“, V
-  „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Offen: Szenen der übrigen Hauptscreens (Rezepte, Woche,
-  Tagebuch, Kochen, Rezept) für R–V; Einkauf und Woche sind fertig. Knopf, Seitenkopf, Blatt-Titel, Chip und Blatt folgen dem
+  „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Offen: Szenen der übrigen Hauptscreens (Tagebuch,
+  Kochen, Rezept) für R–V; Einkauf, Woche und die Rezeptliste sind fertig. Knopf, Seitenkopf, Blatt-Titel, Chip und Blatt folgen dem
   Stil seit „Bausteine R–V“ und „Chips und Blätter R–V“.
 
 ### Phase 7 – Widgets und Abschluss
@@ -367,6 +367,22 @@ gleich, nicht nur der Pilot):
 - Tests `WocheStileTest` (Tag wählen, Eintrag, + Mahlzeit, Füllen, Blättern, 200 % Schrift, Texte); Bilder
   `stil_*_woche_handy`. Robolectric hängt mit `w411dp` und offenem Dialog; der Test nimmt deshalb die Standardbreite.
 - Mundart: „Wochn“, „plana“, „heid“, „Sunda“, „no frei“, „Noch nix gplant“, „+ Essn planen“, „Leere Tag füllen“.
+
+**2026-11-12 – Rezeptliste R–V** (Branch `claude/stile-rezepte`):
+- Wie beim Grimoire der Sage dieselbe Suche, dieselben Filter und Ziele (öffnen, neu, importieren). Die Treffer
+  kommen in Seiten zu sechs (‹ Seite 1 / 3 ›), das gewählte Rezept übersteht das Drehen und beginnt bei jeder neuen
+  Suche vorn (`liste/stil/RezepteStile.kt`). Neuer Baustein `StilAktion`: Knopf des Stils mit eigener Beschreibung.
+- R „REZEPTE“ schräg, die Treffer als Comic-Karten zu zweit (Kopf mit Speedlines, Sterne für „gekocht“, FAV/FIX/NEU);
+  Antippen öffnet direkt.
+- S Fächer aus Papierblättern (das gewählte in Zinnober), Papierkarte mit „Öffnen“.
+- T Lebkuchenherzen an Holzstangen („Vom Lebkuchenstand“), Karte mit doppeltem Rahmen und „Pack ma's!“.
+- U „Die Bibliothek“: Bände auf dem Regal, der gewählte steht heraus und glüht; Pergamentseite, „Aufschlagen“.
+- V „Sternkarte“: Systeme nach kcal groß, Favoriten in Amber, das gewählte mit Ring; Karte mit FLUGZEIT, ENERGIE,
+  BESUCHE und „Kurs setzen“.
+- Der Entwurf zeigt „Kochen“ und „In die Woche“ auf der Karte; die Liste hat diese Ziele nicht, der Knopf öffnet das
+  Rezept (dort geht beides). Die Texte des Entwurfs je Rezept sind erfunden; die App zeigt den Zutatensatz.
+- Tests `RezepteStileTest` (wählen, öffnen, Seiten, Menü, leer, 200 % Schrift, Texte); Bilder `stil_*_liste_handy`.
+- Mundart: „Rezept oder Zutat suacha“, „Pack ma's!“, „Aus da Kuchl“.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
