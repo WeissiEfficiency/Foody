@@ -165,8 +165,8 @@ Gemeinsame liegt in `:core:designsystem`.
 - [ ] Ein Stil nach dem anderen, je Stil zwei bis drei PRs (Hauptscreens, dann Rest). Die Reihenfolge legt der Nutzer
       fest.
 - [ ] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen.
-- Erledigt: Wörter R–V (Navigation, Titel, Knöpfe), U „Das Auge“ und V „Tagessystem“ (Heute). Weiter mit den
-  Heute-Szenen von T, R, S.
+- Erledigt: Wörter R–V (Navigation, Titel, Knöpfe), U „Das Auge“, V „Tagessystem“ und T „Maibaum“ (Heute). Weiter
+  mit den Heute-Szenen von R und S.
 
 ### Phase 7 – Widgets und Abschluss
 - [ ] Die bestehenden Knopf-Widgets (Scannen, Foto) bekommen Farbe und Form des gewählten Stils. Es sind
@@ -286,6 +286,19 @@ gleich, nicht nur der Pilot):
 - Designsystem: `stil/kreuzer/KreuzerBausteine.kt` (`Kreuzer.titel/mono/ecke`, `KreuzerKnopf`, `KreuzerVerweis`,
   `kreuzerAmber`), Systemschriften statt Exo 2 und Share Tech Mono.
 - Tests `HeuteKreuzerTest` (Planeten wählen, alle Wege, TalkBack, 200 % Schrift, Texte); Bild `stil_kreuzer_immersiv`.
+
+**2026-11-12 – T Immersiv: „Heid“ mit dem Maibaum** (Branch `claude/stile-t-heute`, Entwurf `T-Maibaum`):
+- Heute (`feature/heute/stil/HeuteBayrisch.kt`): links der Maibaum mit weiß-blauem Stamm, Kranz (= Tagesziel) und
+  Fahne; der Stand der kcal klettert als Ring mit Schild hinauf, die Mahlzeiten hängen als Schilder daran
+  (Friahstück unten, Brotzeit oben; gegessen weiß, offen gestrichelt, „no nix“). Bei großer Schrift rücken die
+  Schilder auseinander und der Baum wird höher (eigenes Layout). Rechts „Griaß di!“, „Heid“, „Heid auf d'Nacht“ mit
+  „Pack ma's!“, die Bilanz „Passt scho – no 1.140 frei“ mit den Nährwerten, „+ Brotzeit eitragn“ und Kamera,
+  „Eikaufszettl“. Hinten Himmel, Berge und Kirchturm. TalkBack liest den Baum als einen Satz in normalen Worten.
+- Der Titel „Heid“ wächst mit der Systemschrift nur bis 130 % (wie große Schrift unter Android 14).
+- Designsystem: `stil/bayrisch/BayrischBausteine.kt` (`Bayrisch.titel/text`, Formen, `BayrischKnopf`,
+  `bayrischBlau`), Systemschriften statt UnifrakturCook und Alegreya.
+- Tests `HeuteBayrischTest` (alle Wege, 200 % Schrift, Texte); Bild `stil_bayrisch_immersiv` neu.
+- Die Mundart bitte einmal gegenlesen (Phase 6).
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
