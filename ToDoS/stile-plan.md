@@ -166,8 +166,8 @@ Gemeinsame liegt in `:core:designsystem`.
       fest.
 - [ ] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen.
 - Erledigt: Wörter R–V (Navigation, Titel, Knöpfe) und die Heute-Szenen aller Stile (U „Das Auge“, V
-  „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Offen: Szenen der übrigen Hauptscreens (Tagebuch,
-  Kochen, Rezept) für R–V; Einkauf, Woche und die Rezeptliste sind fertig. Knopf, Seitenkopf, Blatt-Titel, Chip und Blatt folgen dem
+  „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Offen: Szene Kochen für R–V; Einkauf, Woche,
+  Rezeptliste, Rezept und Tagebuch sind fertig. Knopf, Seitenkopf, Blatt-Titel, Chip und Blatt folgen dem
   Stil seit „Bausteine R–V“ und „Chips und Blätter R–V“.
 
 ### Phase 7 – Widgets und Abschluss
@@ -383,6 +383,34 @@ gleich, nicht nur der Pilot):
   Rezept (dort geht beides). Die Texte des Entwurfs je Rezept sind erfunden; die App zeigt den Zutatensatz.
 - Tests `RezepteStileTest` (wählen, öffnen, Seiten, Menü, leer, 200 % Schrift, Texte); Bilder `stil_*_liste_handy`.
 - Mundart: „Rezept oder Zutat suacha“, „Pack ma's!“, „Aus da Kuchl“.
+
+**2026-11-12 – Rezept R–V** (Branch `claude/stile-rezept`):
+- Alle fünf Entwürfe haben denselben Aufbau, daher ein gemeinsames Gerüst (`detail/stil/RezeptStile.kt`) mit Wörtern
+  und Schriften je Stil (`RezeptArt`): Kopf mit ‹ und Menü (Bearbeiten, Duplizieren, Archivieren), Hinweis
+  „archiviert“ mit Zurückholen, Portionen, die Reiter Zutaten · Zubereitung · Nährwerte (für TalkBack immer diese
+  Wörter), unten Kochen, Einkaufsliste und Favorit. Die Knopfleiste wächst mit der Schrift, der Inhalt rückt mit.
+- Titelblöcke je Stil (`RezeptHelden.kt`): R Comic-Panel mit Speedlines, Pille und Abzeichen ZEIT/KCAL; S Papier mit
+  Zinnober-Stempel; T Rautenband und Herz; U glühende Pergamentseite; V Karte mit FLUGZEIT, ENERGIE, EIWEISS.
+- Der Entwurf zeigt „In die Woche“; das Rezept hat dieses Ziel nicht, an seiner Stelle steht die Einkaufsliste.
+- Die Einordnungszeile der Sage nutzt jetzt dieselbe Funktion.
+- Tests `RezeptStileTest` (Reiter, Portionen, alle Aktionen, Archiv, 200 % Schrift, Texte); Bilder
+  `stil_*_rezept_handy`.
+- Mundart: „Zuadaten“, „So geht's“, „Portiona“, „Eikaufn“, „zruckholn“.
+
+**2026-11-12 – Tagebuch R–V** (Branch `claude/stile-tagebuch`):
+- Gemeinsames Gerüst (`feature/heute/stil/TagebuchStile.kt`) mit Wörtern und Schriften je Stil (`TagebuchArt`):
+  Titel, Tag mit ‹ › und Datumswahl, Ring mit kcal und Makros, je Mahlzeit eine Gruppe; Antippen eines Eintrags
+  öffnet darunter „Ändern“ und „Löschen“ (U „Tilgen“), „+“ unten rechts trägt ein. Eine leere Mahlzeit trägt dort ein.
+- R „TAGEBUCH!“ schräg, die Mahlzeiten als farbige Pillen, „Noch leer – tippe auf +“.
+- S schlicht auf Papier; T „Tagebiachl“, „heid“, „Friahstück“, „Brotzeit“, „Passt scho · no 1.140 frei“, „no nix“.
+- U „Logbuch – Aufzeichnungen eines Hungrigen“ mit einer Notiz zum Tag aus dem, was verzeichnet ist.
+- V „Bordbuch – LOGBUCH · VERSORGUNG“, „HEUTE · LOGBUCH 297“, 20 Segmente statt Ring, „kein Kontakt“.
+- Der Entwurf hat getrennte Knöpfe „Menge“ und „Mahlzeit“; beides ändert derselbe Dialog, daher ein „Ändern“. Die
+  Uhrzeiten (U) fehlen, die App speichert keine; den Stempel „済“ (S) zeigt die App nicht.
+- Tests `TagebuchStileTest` (öffnen und löschen, blättern, leere Mahlzeit und „+“ öffnen das Blatt, 200 % Schrift,
+  Texte); Bilder `stil_*_tagebuch_handy`.
+- Mundart: „Tagebiachl“, „heid“, „vorgestern“, „morgn“, „Friahstück“, „Passt scho · no … frei“, „Gnua für heid · …
+  drüber“, „no nix“.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
