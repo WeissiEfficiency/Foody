@@ -22,8 +22,11 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasBlatt
+import de.foody.core.designsystem.komponenten.BlattTitel
 import de.foody.core.designsystem.komponenten.FoodyTextfeld
+import de.foody.core.designsystem.komponenten.WahlZeile
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.zeilenImStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.domain.Mahlzeit
 
@@ -48,10 +51,16 @@ internal fun RezeptAuswahlBlatt(mahlzeit: String, karten: List<RezeptKarte>, onW
             Modifier.padding(horizontal = FoodyAbstaende.s4).padding(bottom = FoodyAbstaende.s4),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
         ) {
-            Text("${mahlzeitAnzeige(mahlzeit)}: Rezept wählen", style = MaterialTheme.typography.titleLarge, color = FoodyTheme.farben.text)
+            val titel = "${mahlzeitAnzeige(mahlzeit)}: Rezept wählen"
+            val imStil = zeilenImStil()
+            if (imStil) BlattTitel(titel) else Text(titel, style = MaterialTheme.typography.titleLarge, color = FoodyTheme.farben.text)
             FoodyTextfeld("Rezept suchen", suche) { suche = it }
             LazyColumn(Modifier.heightIn(max = 480.dp)) {
                 items(treffer, key = { it.id }) { k ->
+                    if (imStil) {
+                        WahlZeile(k.name, gewaehlt = false, { onWahl(k) }, wert = k.kcalJePortion?.let { "${ganzzahlDeutsch(it)} kcal" }, knopf = true)
+                        return@items
+                    }
                     Row(
                         Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onWahl(k) }.padding(vertical = FoodyAbstaende.s2),
                         verticalAlignment = Alignment.CenterVertically,

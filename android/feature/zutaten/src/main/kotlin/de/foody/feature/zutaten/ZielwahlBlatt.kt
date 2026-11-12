@@ -22,6 +22,9 @@ import de.foody.core.data.zutaten.ZutatKurz
 import de.foody.core.data.zutaten.filtern
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasBlatt
+import de.foody.core.designsystem.komponenten.BlattTitel
+import de.foody.core.designsystem.komponenten.WahlZeile
+import de.foody.core.designsystem.komponenten.zeilenImStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 
 /** Ziel fürs Zusammenführen wählen: Suche und Liste der übrigen Zutaten ([ziele] enthält die eigene nicht). */
@@ -30,16 +33,28 @@ internal fun ZielwahlBlatt(ziele: List<ZutatKurz>, onGewaehlt: (ZutatKurz) -> Un
     var suche by rememberSaveable { mutableStateOf("") }
     GlasBlatt(onSchliessen, ganzOffen = true) {
         Column(Modifier.fillMaxWidth().padding(bottom = FoodyAbstaende.s4)) {
-            Text(
-                "Zusammenführen mit …", Modifier.padding(horizontal = FoodyAbstaende.s4),
-                style = MaterialTheme.typography.titleLarge, color = FoodyTheme.farben.text,
-            )
+            val imStil = zeilenImStil()
+            if (imStil) {
+                BlattTitel("Zusammenführen mit …", Modifier.padding(horizontal = FoodyAbstaende.s4))
+            } else {
+                Text(
+                    "Zusammenführen mit …", Modifier.padding(horizontal = FoodyAbstaende.s4),
+                    style = MaterialTheme.typography.titleLarge, color = FoodyTheme.farben.text,
+                )
+            }
             OutlinedTextField(
                 suche, { suche = it }, Modifier.fillMaxWidth().padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s2),
                 label = { Text("Suchen") }, singleLine = true,
             )
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = 480.dp)) {
                 items(filtern(ziele, suche, emptySet()), key = { it.id }) { z ->
+                    if (imStil) {
+                        WahlZeile(
+                            z.name, gewaehlt = false, { onGewaehlt(z) }, Modifier.padding(horizontal = FoodyAbstaende.s4),
+                            info = z.kategorie, knopf = true,
+                        )
+                        return@items
+                    }
                     Column(
                         Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button) { onGewaehlt(z) }
                             .padding(horizontal = FoodyAbstaende.s4, vertical = 10.dp),

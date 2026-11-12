@@ -1,9 +1,12 @@
 package de.foody.core.designsystem.komponenten
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.MaterialTheme
@@ -11,11 +14,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.TitelArt
+import de.foody.core.designsystem.stil.edo.Edo
+import de.foody.core.designsystem.stil.edo.edoShu
 import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.stilTitel
 import de.foody.core.designsystem.token.FoodyAbstaende
@@ -60,15 +69,31 @@ fun Seitenkopf(
 
 /**
  * Titel eines Blatts (Überschrift für TalkBack). In der Düsteren Sage (Immersiv) in Cinzel mit Laufweite im Akzent;
- * [beschreibung] liest TalkBack statt eines Stilworts.
+ * [beschreibung] liest TalkBack statt eines Stilworts. [zeichen] steht im Edo-Stil (Immersiv) als schräger
+ * Zinnoberstempel vor dem Titel wie im Entwurf („記“), TalkBack überspringt ihn.
  */
 @Composable
-fun BlattTitel(titel: String, modifier: Modifier = Modifier, beschreibung: String? = null) {
+fun BlattTitel(titel: String, modifier: Modifier = Modifier, beschreibung: String? = null, zeichen: String? = null) {
     val sage = FoodyTheme.stil.immersiv(FoodyStil.SAGE)
-    Text(
-        titel,
-        modifier.ueberschrift().then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier),
-        style = if (sage) Sage.titel(20f, 0.1f) else stilTitel(TitelArt.BLATT) ?: MaterialTheme.typography.headlineSmall,
-        color = if (sage) FoodyTheme.farben.primaer else FoodyTheme.farben.text,
-    )
+    val text = @Composable { m: Modifier ->
+        Text(
+            titel,
+            m.ueberschrift().then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier),
+            style = if (sage) Sage.titel(20f, 0.1f) else stilTitel(TitelArt.BLATT) ?: MaterialTheme.typography.headlineSmall,
+            color = if (sage) FoodyTheme.farben.primaer else FoodyTheme.farben.text,
+        )
+    }
+    if (zeichen == null || !FoodyTheme.stil.immersiv(FoodyStil.EDO)) {
+        text(modifier)
+        return
+    }
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3), verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier.size(34.dp).rotate(-4f).background(edoShu(), Edo.form).clearAndSetSemantics {},
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(zeichen, style = Edo.titel(18f), color = Color.White, maxLines = 1)
+        }
+        text(Modifier.weight(1f))
+    }
 }

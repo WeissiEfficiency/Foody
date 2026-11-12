@@ -205,4 +205,22 @@ class ZutatenScreenshotTest {
         compose.onNodeWithContentDescription("Zutatenkatalog").assertExists()
         bild("sage_zutaten_handy")
     }
+
+    /** Stile R–V, Immersiv: die Zutatenliste mit den Zeilen des Stils. */
+    private fun stilListe(stil: FoodyStil) {
+        val vm = u.liste()
+        zeigen(stil = stil) { ZutatenListeRoute(onZutat = {}, onZurueck = {}, vm = vm) }
+        compose.warteAufText("Reis")
+        bild("stil_${stil.name.lowercase()}_zutaten_handy")
+    }
+
+    @Test fun animeListe() = stilListe(FoodyStil.ANIME)
+
+    @Test fun edoListe() = stilListe(FoodyStil.EDO)
+
+    @Test fun bayrischListe() = stilListe(FoodyStil.BAYRISCH)
+
+    @Test fun grauenListe() = stilListe(FoodyStil.GRAUEN)
+
+    @Test fun kreuzerListe() = stilListe(FoodyStil.KREUZER)
 }
