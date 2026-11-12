@@ -165,8 +165,8 @@ Gemeinsame liegt in `:core:designsystem`.
 - [ ] Ein Stil nach dem anderen, je Stil zwei bis drei PRs (Hauptscreens, dann Rest). Die Reihenfolge legt der Nutzer
       fest.
 - [ ] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen.
-- Erledigt: Wörter R–V (Navigation, Titel, Knöpfe), U „Das Auge“, V „Tagessystem“ und T „Maibaum“ (Heute). Weiter
-  mit den Heute-Szenen von R und S.
+- Erledigt: Wörter R–V (Navigation, Titel, Knöpfe), U „Das Auge“, V „Tagessystem“, T „Maibaum“ und R „HEUTE!“
+  (Heute). Weiter mit der Heute-Szene von S.
 
 ### Phase 7 – Widgets und Abschluss
 - [ ] Die bestehenden Knopf-Widgets (Scannen, Foto) bekommen Farbe und Form des gewählten Stils. Es sind
@@ -299,6 +299,17 @@ gleich, nicht nur der Pilot):
   `bayrischBlau`), Systemschriften statt UnifrakturCook und Alegreya.
 - Tests `HeuteBayrischTest` (alle Wege, 200 % Schrift, Texte); Bild `stil_bayrisch_immersiv` neu.
 - Die Mundart bitte einmal gegenlesen (Phase 6).
+
+**2026-11-12 – R Immersiv: „HEUTE!“** (Branch `claude/stile-r-heute`):
+- Heute (`feature/heute/stil/HeuteAnime.kt`): schräges „HEUTE!“ mit Schatten im Akzent, gelbes Datumsabzeichen;
+  Foody das Reisbällchen mit Sprechblase („Heute Abend gibt's Ofengemüse! Noch 1.140 kcal frei – das passt
+  perfekt.“, Texte je Lage); die nächste Mahlzeit als Karte im Akzent mit Speedlines, hartem Schatten, Angaben als
+  Pillen und „LOS GEHT'S! ▶“; „ENERGIE · Tagebuch ▸“ mit zehn schrägen Segmenten und den Nährwerten; gegessene
+  Mahlzeiten als schief geklebte Zettel neben der Kachel „+ Eintragen“; „QUEST · 9 offen ▸“.
+- Der Titel wächst mit der Systemschrift nur bis 130 %.
+- Designsystem: `stil/anime/AnimeBausteine.kt` (`Anime.titel/text`, Gelb, Türkis, `animeSchatten`, `AnimeKnopf`,
+  `AnimePille`), Systemschrift statt Dela Gothic One und M PLUS Rounded 1c.
+- Tests `HeuteAnimeTest` (alle Wege, 200 % Schrift, Sprechblase, Texte); Bild `stil_anime_immersiv` neu.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
