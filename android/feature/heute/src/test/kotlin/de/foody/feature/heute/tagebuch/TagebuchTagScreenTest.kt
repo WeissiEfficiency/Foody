@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -22,6 +23,7 @@ import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.MitSchrift200
@@ -74,12 +76,12 @@ class TagebuchTagScreenTest {
         db.close()
     }
 
-    private fun zeigen(schrift200: Boolean = false) {
+    private fun zeigen(schrift200: Boolean = false, stil: FoodyStil = FoodyStil.MILCHGLAS) {
         val kontext = RuntimeEnvironment.getApplication()
         val vm = halter.behalten(TagebuchTagViewModel(tagebuch, TageszielSpeicher(kontext)))
         val eintragen = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), tagebuch, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis(), testBls(), ZutatenRepository(db) { 1L }))
         compose.setContent {
-            FoodyTheme {
+            FoodyTheme(stil = stil) {
                 var datum by remember { mutableStateOf(heute) }
                 val inhalt = @androidx.compose.runtime.Composable {
                     TagebuchTagRoute(datum, onDatum = { datum = it; aktuell = it }, vm = vm, eintragenVm = eintragen)
@@ -160,6 +162,38 @@ class TagebuchTagScreenTest {
         }
         zeigen(schrift200 = true)
         compose.warteAufText("Reispfanne")
+        compose.pruefeNichtsAbgeschnitten()
+    }
+
+    @Test
+    fun chronikBerichtigenUndTilgen() {
+        runBlocking { tagebuch.frei(heute, Mahlzeit.SNACK, "Apfel", 500, null, null, null) }
+        zeigen(stil = FoodyStil.SAGE)
+        compose.warteAufText("CHRONIK")
+        compose.warteAufText("ZWISCHENMAHL")
+        compose.onNodeWithText("Apfel").performClick()
+        compose.warteAufText("EINTRAG BERICHTIGEN")
+        compose.onNodeWithContentDescription("Apfel löschen").performClick()
+        compose.warteAufText("Eintrag gelöscht")
+        compose.onNodeWithText("Apfel").assertDoesNotExist()
+    }
+
+    @Test
+    fun chronikBlaetternUndEintragen() {
+        zeigen(stil = FoodyStil.SAGE)
+        compose.warteAufText("SAMSTAG, 24. OKT.")
+        compose.onNodeWithContentDescription("Vorheriger Tag").performClick()
+        compose.warteAufText("FREITAG, 23. OKT.")
+        assertEquals(heute.minusDays(1), aktuell)
+        compose.onAllNodesWithContentDescription("Noch nichts eingetragen", substring = true)[0].performClick()
+        compose.warteAufText("Eintragen")
+    }
+
+    @Test
+    fun chronikMitSchrift200() {
+        runBlocking { tagebuch.frei(heute, Mahlzeit.SNACK, "Apfel", 500, null, null, null) }
+        zeigen(schrift200 = true, stil = FoodyStil.SAGE)
+        compose.warteAufText("CHRONIK")
         compose.pruefeNichtsAbgeschnitten()
     }
 }

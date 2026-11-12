@@ -157,7 +157,8 @@ Gemeinsame liegt in `:core:designsystem`.
 - [ ] Leistung: In Listen keine Unschärfe oder teuren Zeichnungen pro Zeile. Baseline-Profil prüfen.
 
 ### Phase 5 – Immersiv Pilot, restliche Screens
-- [ ] Eintragen, Tagebuch, Rezept, Editor, Kochen, Planen, Listen, Einstellungen, Zutaten.
+- [ ] Eintragen, Tagebuch, Rezept, Editor, Kochen, Planen, Listen, Einstellungen, Zutaten. Erledigt: Rezept, Kochen,
+      Tagebuch.
 - [ ] Abnahme des Pilots auf dem Handy. Erst danach geht es mit den nächsten Stilen weiter.
 
 ### Phase 6 – Immersiv für die übrigen Stile
@@ -226,6 +227,21 @@ gleich, nicht nur der Pilot):
   Details). Eingabe, Abgleich-Hinweis, „Zuletzt“ und Katalog bleiben wie gehabt.
 - Tests: je Bereich Szene im Screen-Test (Blättern, Öffnen, Abhaken, Blätter), `GrimoireTexteTest`,
   `HaendlerSpruchTest`; Referenzbilder `sage_liste_handy`, `sage_woche_handy`, `sage_einkauf_handy`.
+
+**2026-11-11 – Q Immersiv: Rezept, Kochen, Tagebuch** (Branch `claude/stile-q-rezept`):
+- Rezept „Aus dem Grimoire“ (`feature/rezepte/detail/stil/RezeptSage.kt`): Raute mit Anfangsbuchstaben, Titel,
+  Angaben und Einordnung, Portionen, Reiter Zutaten · Ritual · Werte (römische Schritte, Nährwerttabelle, Notiz,
+  Quelle), unten „Am Feuer kochen“, „Auf die Liste“ und die Favoriten-Raute; im Menü „⋯“ Neu niederschreiben,
+  Abschrift anfertigen, Ins Archiv verbannen. „In die Woche“ aus dem Entwurf fehlt, die App hat dafür keine Funktion.
+- Kochen (`feature/kochen/stil/KochenSage.kt`): „Vorbereitung“/„Schritt 2 / 5“ über dem Rezept, Segmente, „Lege
+  bereit“ mit Rauten, je Schritt die römische Zahl groß, Zeitangaben als Sanduhr, unten „‹“ und Beginnen/Weiter/
+  Vollenden. Pager, Timerleiste und Fertig-Blatt bleiben gemeinsam.
+- Tagebuch als „Chronik“ (`feature/heute/stil/TagebuchSage.kt`): Tageswahl mit „gestern“/„vor zwei Tagen“ (Antippen
+  öffnet die Datumswahl), Ring und Makros, Gruppen „Des Morgens“ …, Antippen eines Eintrags öffnet „Eintrag
+  berichtigen“ (Ändern im bekannten Dialog, Tilgen mit „Rückgängig“), Raute „+“ zum Eintragen.
+- Designsystem: `Sage.roemisch`, `SageHauptknopf(schrift, aktiv)`, `SageNebenknopf(farbe)`.
+- Tests: Szenen in den Screen-Tests (auch 200 % Schrift), `ChronikTexteTest`; Bilder `sage_detail_handy`,
+  `sage_bereitlegen_handy`, `sage_schritt_handy`, `sage_tagebuch_handy`.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).

@@ -11,6 +11,7 @@ import com.github.takahirom.roborazzi.captureScreenRoboImage
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.testing.FoodyBildvergleich
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -70,6 +71,18 @@ class KochenScreenshotTest {
     @Config(qualifiers = "w411dp-h891dp")
     fun fertigDunkelHandy() = fertig("fertig_dunkel_handy", dunkel = true)
 
+    /** Düstere Sage, Immersiv: „Lege bereit“ und ein Schritt mit Sanduhr. */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun sage() {
+        val bereit = u.vm().apply { starten("r1", null); abhaken(0) }
+        bild("sage_bereitlegen_handy", dunkel = false, stil = FoodyStil.SAGE) { KochenRoute("r1", null, { _, _ -> }, {}, vm = bereit) }
+        KochTestUmgebung.leeren()
+        val schritt = u.vm().apply { starten("r1", null); abhaken(0); seiteWaehlen(2) }
+        bild("sage_schritt_handy", dunkel = false, stil = FoodyStil.SAGE) { KochenRoute("r1", null, { _, _ -> }, {}, vm = schritt) }
+        KochTestUmgebung.leeren()
+    }
+
     private fun seiten(geraet: String) {
         for (dunkel in listOf(false, true)) {
             val modus = if (dunkel) "dunkel" else "hell"
@@ -93,9 +106,9 @@ class KochenScreenshotTest {
         captureScreenRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich)
     }
 
-    private fun bild(name: String, dunkel: Boolean, inhalt: @Composable () -> Unit) {
+    private fun bild(name: String, dunkel: Boolean, stil: FoodyStil = FoodyStil.MILCHGLAS, inhalt: @Composable () -> Unit) {
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
-            FoodyTheme(dunkel = dunkel, unschaerfe = false) { FoodyHintergrund { inhalt() } }
+            FoodyTheme(dunkel = dunkel, stil = stil, unschaerfe = false) { FoodyHintergrund { inhalt() } }
         }
     }
 }

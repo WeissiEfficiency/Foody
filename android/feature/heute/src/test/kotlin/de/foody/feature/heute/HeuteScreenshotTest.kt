@@ -15,6 +15,7 @@ import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Summe
 import de.foody.domain.TagebuchArt
+import de.foody.feature.heute.stil.TagebuchSage
 import de.foody.feature.heute.tagebuch.TagAbschnitt
 import de.foody.feature.heute.tagebuch.TagZustand
 import de.foody.feature.heute.tagebuch.TagebuchTagInhalt
@@ -71,6 +72,17 @@ class HeuteScreenshotTest {
             bild("heute_${modus}_$geraet", dunkel) { HeuteScreen(beispielZustand(), KEINE_AKTIONEN) }
             bild("tagebuch_${modus}_$geraet", dunkel) {
                 TagebuchTagInhalt(BEISPIEL_TAG, beispielTag(), {}, {}, {}, {}, {})
+            }
+        }
+    }
+
+    /** Düstere Sage, Immersiv: die Chronik (Tagebuch) mit dem Beispieltag. */
+    @Test
+    @Config(qualifiers = "w411dp-h1100dp")
+    fun sageChronik() {
+        captureRoboImage("src/test/screenshots/sage_tagebuch_handy.png", roborazziOptions = vergleich) {
+            FoodyTheme(stil = FoodyStil.SAGE, unschaerfe = false) {
+                FoodyHintergrund { TagebuchSage(BEISPIEL_TAG, BEISPIEL_TAG, beispielTag(), {}, {}, {}, {}, {}) }
             }
         }
     }

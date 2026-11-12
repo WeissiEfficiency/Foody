@@ -2,6 +2,7 @@ package de.foody.feature.heute.tagebuch
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,6 +42,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.data.wochentagKurz
+import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyFab
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
@@ -49,11 +51,13 @@ import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.Tagesleiste
 import de.foody.core.designsystem.komponenten.ueberLeiste
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.Schnellstart
 import de.foody.feature.heute.TAGEBUCH_INHALT
+import de.foody.feature.heute.stil.TagebuchSage
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.Instant
@@ -122,14 +126,18 @@ fun TagebuchTagRoute(
     }
 
     Box(Modifier.fillMaxSize()) {
-        TagebuchTagInhalt(
-            datum, zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeitenId = it.id }, onLoeschen = loeschen,
-            onEintragen = { blatt = BlattAuftrag(it, datum) },
-        )
-        FoodyFab(
-            "Eintragen", Icons.Outlined.Add, { blatt = BlattAuftrag(null, datum) },
-            Modifier.align(Alignment.BottomEnd).safeDrawingPadding().padding(end = FoodyAbstaende.s4, bottom = ueberLeiste(96.dp)),
-        )
+        if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
+            TagebuchSage(
+                datum, LocalDate.now(), zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeitenId = it.id },
+                onLoeschen = loeschen, onEintragen = { blatt = BlattAuftrag(it, datum) },
+            )
+        } else {
+            TagebuchTagInhalt(
+                datum, zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeitenId = it.id }, onLoeschen = loeschen,
+                onEintragen = { blatt = BlattAuftrag(it, datum) },
+            )
+            Fab { blatt = BlattAuftrag(null, datum) }
+        }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = ueberLeiste(160.dp)))
     }
 
@@ -142,6 +150,14 @@ fun TagebuchTagRoute(
     }
     blatt?.let { b -> EintragenBlatt(b, onFertig = { blatt = null }, vm = eintragenVm ?: hiltViewModel()) }
     if (datumWahl) DatumWahl(datum, onDatum = { datumWahl = false; onDatum(it) }, onAbbrechen = { datumWahl = false })
+}
+
+@Composable
+private fun BoxScope.Fab(onKlick: () -> Unit) {
+    FoodyFab(
+        "Eintragen", Icons.Outlined.Add, onKlick,
+        Modifier.align(Alignment.BottomEnd).safeDrawingPadding().padding(end = FoodyAbstaende.s4, bottom = ueberLeiste(96.dp)),
+    )
 }
 
 /** Inhalt ohne eigenen Zustand: Kopf, Bilanz, Mahlzeiten mit Einträgen. */

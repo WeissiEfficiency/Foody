@@ -57,6 +57,12 @@ object Sage {
         lineHeight = (groesse * 1.3f).sp,
         fontStyle = if (kursiv) FontStyle.Italic else FontStyle.Normal,
     )
+
+    /** Römische Zahl für Schritte und Kapitel (I … XXXIX), ab 40 die arabische. */
+    fun roemisch(n: Int): String {
+        if (n !in 1..39) return n.toString()
+        return "X".repeat(n / 10) + listOf("", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX")[n % 10]
+    }
 }
 
 /** Heller Ton für Titel und Zahlen (im Entwurf #F4EEDD), aus dem Text des Stils. */
@@ -92,23 +98,30 @@ fun SageKopf(unter: String, titel: String, beschreibung: String, modifier: Modif
     }
 }
 
-/** Hauptknopf: Rahmen im Akzent, Goldschimmer zur Mitte, Cinzel in Versalien; mindestens 50 dp hoch. */
+/** Hauptknopf: Rahmen im Akzent, Goldschimmer zur Mitte, Cinzel in Versalien ([schrift]); mindestens 50 dp hoch. */
 @Composable
-fun SageHauptknopf(text: String, beschreibung: String, onKlick: () -> Unit, modifier: Modifier = Modifier) {
-    val glut = FoodyTheme.stil.zier
+fun SageHauptknopf(
+    text: String,
+    beschreibung: String,
+    onKlick: () -> Unit,
+    modifier: Modifier = Modifier,
+    schrift: TextStyle = Sage.titel(15f, 0.18f),
+    aktiv: Boolean = true,
+) {
+    val glut = if (aktiv) FoodyTheme.stil.zier else FoodyTheme.farben.lichtkante
     Box(
         modifier.fillMaxWidth().heightIn(min = 50.dp).border(1.dp, glut)
             .background(Brush.horizontalGradient(listOf(glut.copy(alpha = 0f), glut.copy(alpha = 0.24f), glut.copy(alpha = 0f))))
-            .clickable(role = Role.Button, onClick = onKlick)
+            .clickable(enabled = aktiv, role = Role.Button, onClick = onKlick)
             .semantics(mergeDescendants = true) { contentDescription = beschreibung }
             .padding(horizontal = 12.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = Sage.titel(15f, 0.18f), color = sageHell(), textAlign = TextAlign.Center)
+        Text(text, style = schrift, color = if (aktiv) sageHell() else FoodyTheme.farben.nebentext, textAlign = TextAlign.Center)
     }
 }
 
-/** Nebenknopf: schmaler Rahmen in der Kantenfarbe, Cinzel klein ([schrift] etwa groß für Pfeile); mindestens 48 dp hoch. */
+/** Nebenknopf: schmaler Rahmen in der Kantenfarbe, Cinzel klein ([schrift] etwa groß für Pfeile, [farbe] für Warnungen); mindestens 48 dp hoch. */
 @Composable
 fun SageNebenknopf(
     text: String,
@@ -117,6 +130,7 @@ fun SageNebenknopf(
     modifier: Modifier = Modifier,
     akzent: Boolean = false,
     schrift: TextStyle = Sage.titel(11.5f, 0.12f),
+    farbe: Color? = null,
 ) {
     val f = FoodyTheme.farben
     Box(
@@ -126,7 +140,7 @@ fun SageNebenknopf(
             .padding(horizontal = 10.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = schrift, color = if (akzent) f.primaer else f.text, textAlign = TextAlign.Center)
+        Text(text, style = schrift, color = farbe ?: if (akzent) f.primaer else f.text, textAlign = TextAlign.Center)
     }
 }
 
