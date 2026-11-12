@@ -70,13 +70,10 @@ import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.rezepte.detail.DetailAktionen
 import de.foody.feature.rezepte.detail.DetailZustand
 import de.foody.feature.rezepte.detail.fehlendeWerte
-import de.foody.feature.rezepte.detail.gangName
 import de.foody.feature.rezepte.detail.kcalJePortion
-import de.foody.feature.rezepte.detail.mahlzeitName
 import de.foody.feature.rezepte.detail.mengeText
 import de.foody.feature.rezepte.detail.naehrwertZeilen
 import de.foody.feature.rezepte.detail.zeit
-import java.util.Locale
 
 /** Die drei Reiter des Entwurfs: Wort der Sage und der normale Begriff für TalkBack. */
 private enum class Reiter(val wort: String, val begriff: String) {
@@ -187,16 +184,8 @@ private fun Titel(z: DetailZustand.Da) {
         Text(r.name, style = Sage.titel(22f, 0.03f), color = sageHell(), textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() })
         val angaben = listOfNotNull(zeit(r.prepMinutes, r.cookMinutes), kcalJePortion(z.voll), if (r.favorite) "♦ Favorit" else null)
         if (angaben.isNotEmpty()) Text(angaben.joinToString(" · "), style = Sage.text(15f), color = f.nebentext, textAlign = TextAlign.Center)
-        einordnung(z)?.let { Text(it, style = Sage.titel(10.5f, 0.14f), color = f.nebentext, textAlign = TextAlign.Center) }
+        einordnungGross(z)?.let { Text(it, style = Sage.titel(10.5f, 0.14f), color = f.nebentext, textAlign = TextAlign.Center) }
     }
-}
-
-/** „ABENDESSEN · HAUPTSPEISE · VEGETARISCH“: Mahlzeiten, Gänge und der erste Tag, wie die Zeile im Entwurf. */
-private fun einordnung(z: DetailZustand.Da): String? {
-    val e = z.voll.einordnung
-    val teile = e.mahlzeiten.sortedBy { it.ordinal }.map(::mahlzeitName) + e.gaenge.sortedBy { it.ordinal }.map(::gangName) +
-        z.voll.rezept.tags.split(',').map { it.trim() }.filter { it.isNotEmpty() }.take(1)
-    return teile.takeIf { it.isNotEmpty() }?.joinToString(" · ")?.uppercase(Locale.GERMAN)
 }
 
 @Composable

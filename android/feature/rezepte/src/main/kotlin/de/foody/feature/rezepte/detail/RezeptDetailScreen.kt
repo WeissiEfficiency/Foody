@@ -36,6 +36,8 @@ import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.rezepte.detail.stil.RezeptSage
+import de.foody.feature.rezepte.detail.stil.RezeptStil
+import de.foody.feature.rezepte.detail.stil.RezeptSzene
 import kotlinx.coroutines.launch
 
 /** Was das Detail auslösen kann; die Navigation liegt in der App. */
@@ -90,6 +92,7 @@ fun RezeptDetailRoute(
         onZurueck = onZurueck,
     )
     val sage = FoodyTheme.stil.immersiv(FoodyStil.SAGE)
+    val szene = RezeptSzene.aktuell()
     Box(Modifier.fillMaxSize()) {
         when (val z = zustand) {
             DetailZustand.Laden -> Unit
@@ -99,6 +102,8 @@ fun RezeptDetailRoute(
             )
             is DetailZustand.Da -> if (sage) {
                 RezeptSage(z, aktionen)
+            } else if (szene != null) {
+                RezeptStil(szene, z, aktionen)
             } else {
                 Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
                     Column(

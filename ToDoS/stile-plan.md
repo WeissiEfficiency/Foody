@@ -167,7 +167,7 @@ Gemeinsame liegt in `:core:designsystem`.
 - [ ] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen.
 - Erledigt: Wörter R–V (Navigation, Titel, Knöpfe) und die Heute-Szenen aller Stile (U „Das Auge“, V
   „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Offen: Szenen der übrigen Hauptscreens (Tagebuch,
-  Kochen, Rezept) für R–V; Einkauf, Woche und die Rezeptliste sind fertig. Knopf, Seitenkopf, Blatt-Titel, Chip und Blatt folgen dem
+  Kochen) für R–V; Einkauf, Woche, Rezeptliste und Rezept sind fertig. Knopf, Seitenkopf, Blatt-Titel, Chip und Blatt folgen dem
   Stil seit „Bausteine R–V“ und „Chips und Blätter R–V“.
 
 ### Phase 7 – Widgets und Abschluss
@@ -383,6 +383,19 @@ gleich, nicht nur der Pilot):
   Rezept (dort geht beides). Die Texte des Entwurfs je Rezept sind erfunden; die App zeigt den Zutatensatz.
 - Tests `RezepteStileTest` (wählen, öffnen, Seiten, Menü, leer, 200 % Schrift, Texte); Bilder `stil_*_liste_handy`.
 - Mundart: „Rezept oder Zutat suacha“, „Pack ma's!“, „Aus da Kuchl“.
+
+**2026-11-12 – Rezept R–V** (Branch `claude/stile-rezept`):
+- Alle fünf Entwürfe haben denselben Aufbau, daher ein gemeinsames Gerüst (`detail/stil/RezeptStile.kt`) mit Wörtern
+  und Schriften je Stil (`RezeptArt`): Kopf mit ‹ und Menü (Bearbeiten, Duplizieren, Archivieren), Hinweis
+  „archiviert“ mit Zurückholen, Portionen, die Reiter Zutaten · Zubereitung · Nährwerte (für TalkBack immer diese
+  Wörter), unten Kochen, Einkaufsliste und Favorit. Die Knopfleiste wächst mit der Schrift, der Inhalt rückt mit.
+- Titelblöcke je Stil (`RezeptHelden.kt`): R Comic-Panel mit Speedlines, Pille und Abzeichen ZEIT/KCAL; S Papier mit
+  Zinnober-Stempel; T Rautenband und Herz; U glühende Pergamentseite; V Karte mit FLUGZEIT, ENERGIE, EIWEISS.
+- Der Entwurf zeigt „In die Woche“; das Rezept hat dieses Ziel nicht, an seiner Stelle steht die Einkaufsliste.
+- Die Einordnungszeile der Sage nutzt jetzt dieselbe Funktion.
+- Tests `RezeptStileTest` (Reiter, Portionen, alle Aktionen, Archiv, 200 % Schrift, Texte); Bilder
+  `stil_*_rezept_handy`.
+- Mundart: „Zuadaten“, „So geht's“, „Portiona“, „Eikaufn“, „zruckholn“.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
