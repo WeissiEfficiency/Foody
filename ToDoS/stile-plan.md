@@ -165,7 +165,8 @@ Gemeinsame liegt in `:core:designsystem`.
 - [ ] Ein Stil nach dem anderen, je Stil zwei bis drei PRs (Hauptscreens, dann Rest). Die Reihenfolge legt der Nutzer
       fest.
 - [ ] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen.
-- Erledigt: Wörter R–V (Navigation, Titel, Knöpfe), U „Das Auge“ (Heute). Weiter mit den Heute-Szenen von V, T, R, S.
+- Erledigt: Wörter R–V (Navigation, Titel, Knöpfe), U „Das Auge“ und V „Tagessystem“ (Heute). Weiter mit den
+  Heute-Szenen von T, R, S.
 
 ### Phase 7 – Widgets und Abschluss
 - [ ] Die bestehenden Knopf-Widgets (Scannen, Foto) bekommen Farbe und Form des gewählten Stils. Es sind
@@ -273,6 +274,18 @@ gleich, nicht nur der Pilot):
 - Designsystem: `stil/grauen/GrauenBausteine.kt` (`Grauen.titel/text/maschine`, `GrauenKnopf`, `GrauenNotizknopf`),
   Systemschriften Serif und Monospace statt IM Fell English und Special Elite.
 - Tests `HeuteGrauenTest` (Aktionen, TalkBack, 200 % Schrift, Texte); Bild `stil_grauen_immersiv` neu.
+
+**2026-11-12 – V Immersiv: „Tagessystem“** (Branch `claude/stile-v-heute`):
+- Heute (`feature/heute/stil/HeuteKreuzer.kt`): Kopf „SA 24.10. · LOGBUCH 297“, Titel und „43 % ERREICHT“; die
+  Sonne ist das Tagesziel, jede Mahlzeit ein Planet auf ihrer Bahn (gelandet = gegessen, gestrichelt Amber =
+  geplant, grau = frei). Antippen wählt, darunter „ORBIT 3 · ABEND“ mit Gericht und dem Weg weiter (Bordbuch,
+  Systemdaten/Gelandet?, Proviant erfassen). Rechts der Treibstoff (kcal gegen das Ziel), darunter Makros, die
+  Karte „Nächste Mission“ mit abgeschnittenen Ecken („Mission starten“, „+ Eintragen“) und „Frachtraum“. Bahn dreht
+  sich, die Korona pulsiert (ruhen ohne Animationen).
+- Uhrzeiten des Entwurfs („19:00“) fehlen, die App speichert keine.
+- Designsystem: `stil/kreuzer/KreuzerBausteine.kt` (`Kreuzer.titel/mono/ecke`, `KreuzerKnopf`, `KreuzerVerweis`,
+  `kreuzerAmber`), Systemschriften statt Exo 2 und Share Tech Mono.
+- Tests `HeuteKreuzerTest` (Planeten wählen, alle Wege, TalkBack, 200 % Schrift, Texte); Bild `stil_kreuzer_immersiv`.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
