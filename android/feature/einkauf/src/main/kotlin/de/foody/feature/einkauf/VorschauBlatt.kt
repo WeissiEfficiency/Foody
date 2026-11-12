@@ -19,6 +19,7 @@ import de.foody.core.data.datumKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyKnopf
+import de.foody.core.designsystem.stil.stilText
 import java.time.LocalDate
 
 /** „Neue Liste aus dem Plan“: Zeitraum, Artikel je Abteilung mit Häkchen, „Liste anlegen (n)“. */
@@ -32,8 +33,9 @@ internal fun VorschauBlatt(
 ) {
     val anzahl = v.zeilen.orEmpty().count { it.schluessel !in v.abgewaehlt }
     BlattRahmen(
-        "Neue Liste aus dem Plan", onSchliessen,
-        knopf = { FoodyKnopf("Liste anlegen ($anzahl)", onAnlegen, Modifier.fillMaxWidth(), aktiv = anzahl > 0) },
+        stilText("Neue Liste aus dem Plan", sage = "Neue Liste aus der Karte"), onSchliessen,
+        knopf = { FoodyKnopf(stilText("Liste anlegen ($anzahl)", sage = "Liste schreiben ($anzahl)"), onAnlegen, Modifier.fillMaxWidth(), aktiv = anzahl > 0) },
+        beschreibung = "Neue Liste aus dem Plan",
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Datum(v.von, "Anfang", { onZeitraum(v.von.minusDays(1), v.bis) }, { onZeitraum(v.von.plusDays(1), v.bis) })
@@ -43,7 +45,10 @@ internal fun VorschauBlatt(
         val zeilen = v.zeilen
         when {
             zeilen == null -> Text("Wird berechnet …", color = FoodyTheme.farben.nebentext)
-            zeilen.isEmpty() -> Text("Im Zeitraum ist nichts geplant", style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.nebentext)
+            zeilen.isEmpty() -> Text(
+                stilText("Im Zeitraum ist nichts geplant", sage = "Auf diesem Abschnitt des Wegs ist nichts vorgesehen"),
+                style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.nebentext,
+            )
             else -> zeilen.groupBy { it.abteilung }.forEach { (abteilung, liste) ->
                 Augenbraue(abteilung)
                 liste.forEach { z ->

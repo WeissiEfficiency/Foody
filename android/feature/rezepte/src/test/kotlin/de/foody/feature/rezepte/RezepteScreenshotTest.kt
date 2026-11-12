@@ -125,6 +125,10 @@ class RezepteScreenshotTest {
         bild("sage_liste_handy", dunkel = false, stil = FoodyStil.SAGE) {
             RezeptListeRoute({}, {}, {}, vm = remember { halter.behalten(RezeptListeViewModel(repo)) })
         }
+        bild("sage_editor_handy", dunkel = false, stil = FoodyStil.SAGE) {
+            val ablage = FotoAblage(RuntimeEnvironment.getApplication())
+            EditorRoute("r1", {}, {}, vm = remember { halter.behalten(EditorViewModel(SavedStateHandle(), repo, db, ablage)) })
+        }
         bild("sage_detail_handy", dunkel = false, stil = FoodyStil.SAGE) {
             RezeptDetailRoute("r1", { _, _ -> }, {}, {}, {}, vm = remember { halter.behalten(RezeptDetailViewModel(repo, db.einkauf())) })
         }

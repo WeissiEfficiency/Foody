@@ -4,6 +4,7 @@ import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -131,11 +132,11 @@ class EinkaufScreenshotTest {
     }
 
     @OptIn(ExperimentalRoborazziApi::class)
-    private fun blatt(name: String, dunkel: Boolean, warteAuf: String, mitListe: Boolean = true, oeffnen: () -> Unit) {
+    private fun blatt(name: String, dunkel: Boolean, warteAuf: String, mitListe: Boolean = true, stil: FoodyStil = FoodyStil.MILCHGLAS, oeffnen: () -> Unit) {
         if (mitListe) liste() else runBlocking { db.planen("s2", MITTWOCH, "p"); db.planen("s3", MITTWOCH.plusDays(2), "c") }
         val vm = u.vm()
-        compose.setContent { FoodyTheme(dunkel = dunkel, unschaerfe = false) { FoodyHintergrund { EinkaufRoute(null, {}, {}, vm = vm) } } }
-        compose.warteAufText(if (mitListe) "Zwiebeln" else "Noch nichts auf der Liste")
+        compose.setContent { FoodyTheme(dunkel = dunkel, stil = stil, unschaerfe = false) { FoodyHintergrund { EinkaufRoute(null, {}, {}, vm = vm) } } }
+        compose.warteAufText(if (mitListe) "Zwiebeln" else if (stil == FoodyStil.SAGE) "DER HÄNDLER" else "Noch nichts auf der Liste")
         oeffnen()
         compose.warteAufText(warteAuf)
         compose.waitForIdle()
@@ -155,5 +156,12 @@ class EinkaufScreenshotTest {
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
             FoodyTheme(dunkel = dunkel, stil = stil, unschaerfe = false) { FoodyHintergrund { inhalt() } }
         }
+    }
+
+    /** Düstere Sage, Immersiv: „Listen des Händlers“ (frühere Listen) als Blatt. */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun sageListenHandy() = blatt("sage_listen_handy", dunkel = false, warteAuf = "Listen des Händlers", stil = FoodyStil.SAGE) {
+        compose.onNodeWithContentDescription("Frühere Listen").performClick()
     }
 }

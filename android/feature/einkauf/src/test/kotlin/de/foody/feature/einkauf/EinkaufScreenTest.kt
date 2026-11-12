@@ -365,7 +365,7 @@ class EinkaufScreenTest {
         zeigen(stil = FoodyStil.SAGE)
         compose.warteAufText("DER HÄNDLER")
         compose.onNodeWithContentDescription("Frühere Listen").performClick()
-        compose.warteAufText("Frühere Listen")
+        compose.warteAufText("Listen des Händlers")
     }
 
     private fun hasStateDescription(text: String) = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, text)

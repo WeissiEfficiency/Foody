@@ -5,6 +5,7 @@ import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -101,10 +102,10 @@ class WocheScreenshotTest {
     }
 
     @OptIn(ExperimentalRoborazziApi::class)
-    private fun blatt(name: String, dunkel: Boolean, warteAuf: String, oeffnen: () -> Unit) {
+    private fun blatt(name: String, dunkel: Boolean, warteAuf: String, stil: FoodyStil = FoodyStil.MILCHGLAS, oeffnen: () -> Unit) {
         val vm = u.vm()
-        compose.setContent { FoodyTheme(dunkel = dunkel, unschaerfe = false) { FoodyHintergrund { WocheRoute({ _, _ -> }, {}, vm = vm) } } }
-        compose.warteAufText("KW 44 · 26.10.–1.11.")
+        compose.setContent { FoodyTheme(dunkel = dunkel, stil = stil, unschaerfe = false) { FoodyHintergrund { WocheRoute({ _, _ -> }, {}, vm = vm) } } }
+        if (stil == FoodyStil.SAGE) compose.warteAufText("KARTE DER WOCHE") else compose.warteAufText("KW 44 · 26.10.–1.11.")
         oeffnen()
         compose.warteAufText(warteAuf)
         compose.waitForIdle()
@@ -123,5 +124,12 @@ class WocheScreenshotTest {
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
             FoodyTheme(dunkel = dunkel, stil = stil, unschaerfe = false) { FoodyHintergrund { inhalt() } }
         }
+    }
+
+    /** Düstere Sage, Immersiv: „Leere Tage bestücken“. */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun sageFuellenHandy() = blatt("sage_fuellen_handy", dunkel = false, warteAuf = "Neu mischen", stil = FoodyStil.SAGE) {
+        compose.onNodeWithContentDescription("Leere Tage füllen").performScrollTo().performClick()
     }
 }

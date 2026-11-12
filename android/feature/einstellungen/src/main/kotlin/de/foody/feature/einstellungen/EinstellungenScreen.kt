@@ -36,6 +36,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyFrage
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.ueberLeiste
+import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 
@@ -105,7 +106,7 @@ fun EinstellungenRoute(
                     .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2, bottom = ueberLeiste(104.dp)),
                 verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
             ) {
-                Seitenkopf("Einstellungen", onZurueck = onZurueck)
+                Seitenkopf(stilText("Einstellungen", sage = "Das Lager"), onZurueck = onZurueck, beschreibung = "Einstellungen")
                 KontoAbschnitt(z.konto, System.currentTimeMillis(), onServer)
                 DarstellungAbschnitt(
                     z, vm::darstellungSetzen, vm::farbweltSetzen, vm::stilSetzen, vm::stilVarianteSetzen, vm::stilAkzentSetzen,

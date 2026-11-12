@@ -21,6 +21,7 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import com.github.takahirom.roborazzi.captureScreenRoboImage
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.testing.FoodyBildvergleich
 import de.foody.domain.NutrientBasis
 import org.junit.After
@@ -72,8 +73,8 @@ class ZutatenScreenshotTest {
     @After
     fun tearDown() = u.schliessen()
 
-    private fun zeigen(dunkel: Boolean = false, inhalt: @Composable () -> Unit) {
-        compose.setContent { FoodyTheme(dunkel = dunkel, unschaerfe = false) { FoodyHintergrund { inhalt() } } }
+    private fun zeigen(dunkel: Boolean = false, stil: FoodyStil = FoodyStil.MILCHGLAS, inhalt: @Composable () -> Unit) {
+        compose.setContent { FoodyTheme(dunkel = dunkel, stil = stil, unschaerfe = false) { FoodyHintergrund { inhalt() } } }
     }
 
     private fun liste(dunkel: Boolean = false) {
@@ -193,5 +194,15 @@ class ZutatenScreenshotTest {
         compose.onNodeWithText("Löschen").performClick()
         compose.warteAufText(inVerwendungText(2))
         bildschirm("inverwendung_hell_handy")
+    }
+
+    /** Düstere Sage, Immersiv: das Verzeichnis der Zutaten. */
+    @Test
+    fun sage() {
+        val vm = u.liste()
+        zeigen(stil = FoodyStil.SAGE) { ZutatenListeRoute(onZutat = {}, onZurueck = {}, vm = vm) }
+        compose.warteAufText("Reis")
+        compose.onNodeWithContentDescription("Zutatenkatalog").assertExists()
+        bild("sage_zutaten_handy")
     }
 }

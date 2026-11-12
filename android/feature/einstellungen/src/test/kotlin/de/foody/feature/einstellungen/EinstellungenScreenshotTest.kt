@@ -16,6 +16,7 @@ import com.github.takahirom.roborazzi.captureScreenRoboImage
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.testing.FoodyBildvergleich
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -106,6 +107,18 @@ class EinstellungenScreenshotTest {
                         FoodyHintergrund { EinstellungenRoute({}, {}, {}, vm = vm, dateiwahl = keineDateien) }
                     }
                 }
+            }
+        }
+    }
+
+    /** Düstere Sage, Immersiv: „Das Lager“. */
+    @Test
+    @Config(qualifiers = "w411dp-h1600dp")
+    fun sage() {
+        val vm = vm()
+        captureRoboImage("src/test/screenshots/sage_einstellungen_handy.png", roborazziOptions = vergleich) {
+            FoodyTheme(stil = FoodyStil.SAGE, unschaerfe = false) {
+                FoodyHintergrund { EinstellungenRoute({}, {}, {}, vm = vm, dateiwahl = keineDateien) }
             }
         }
     }

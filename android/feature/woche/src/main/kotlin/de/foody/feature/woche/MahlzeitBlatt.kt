@@ -24,10 +24,12 @@ import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasBlatt
 import de.foody.core.designsystem.komponenten.Augenbraue
+import de.foody.core.designsystem.komponenten.BlattTitel
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.ueberschrift
+import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import java.time.LocalDate
 
@@ -56,7 +58,7 @@ internal fun MahlzeitBlatt(e: PlanEintrag, montag: LocalDate, a: MahlzeitAktione
                 .padding(bottom = FoodyAbstaende.s6).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
-            Text(e.rezeptName, Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+            BlattTitel(e.rezeptName)
             Text(mahlzeitAnzeige(e.mahlzeit), style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { a.onPortionen(e.portionen - 1) }) {
@@ -69,7 +71,7 @@ internal fun MahlzeitBlatt(e: PlanEintrag, montag: LocalDate, a: MahlzeitAktione
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 FoodyChip("Gekocht", ausgewaehlt = e.gekocht, onKlick = { a.onGekocht(!e.gekocht) })
-                FoodyKnopf("Kochen", a.onKochen)
+                FoodyKnopf(stilText("Kochen", sage = "Am Feuer kochen"), a.onKochen)
                 FoodyKnopf("Rezept ansehen", a.onRezept, art = KnopfArt.UMRISS)
             }
             Augenbraue("Verschieben")
@@ -83,7 +85,7 @@ internal fun MahlzeitBlatt(e: PlanEintrag, montag: LocalDate, a: MahlzeitAktione
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 FoodyKnopf("Umbenennen", a.onUmbenennen, art = KnopfArt.TEXT)
-                FoodyKnopf("Entfernen", a.onEntfernen, art = KnopfArt.TEXT)
+                FoodyKnopf(stilText("Entfernen", sage = "Von der Karte nehmen"), a.onEntfernen, art = KnopfArt.TEXT)
             }
         }
     }

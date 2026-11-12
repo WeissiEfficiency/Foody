@@ -14,6 +14,7 @@ import de.foody.core.data.einkauf.AbgleichArt
 import de.foody.core.data.einkauf.AbgleichZeile
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
+import de.foody.core.designsystem.stil.stilText
 
 /** Text einer Abgleichzeile: „+ 🍅 Tomaten · 400 g · neu“, „↑ 🧅 Zwiebeln · 3 → 4 Stk.“, „− 🥬 Spinat · entfällt“. */
 internal fun abgleichText(z: AbgleichZeile): String {
@@ -38,10 +39,13 @@ internal fun AbgleichBlatt(
 ) {
     val anzahl = zeilen.count { it.schluessel !in abgewaehlt }
     BlattRahmen(
-        "Mit Plan abgleichen", onSchliessen,
-        knopf = { FoodyKnopf("Übernehmen ($anzahl)", onUebernehmen, Modifier.fillMaxWidth(), aktiv = anzahl > 0) },
+        stilText("Mit Plan abgleichen", sage = "Mit dem Weg abgleichen"), onSchliessen,
+        knopf = {
+            FoodyKnopf(stilText("Übernehmen ($anzahl)", sage = "Änderungen übernehmen ($anzahl)"), onUebernehmen, Modifier.fillMaxWidth(), aktiv = anzahl > 0)
+        },
+        beschreibung = "Mit Plan abgleichen",
     ) {
-        if (zeilen.isEmpty()) Text("Die Liste passt zum Plan.", color = FoodyTheme.farben.nebentext)
+        if (zeilen.isEmpty()) Text(stilText("Die Liste passt zum Plan.", sage = "Die Liste passt zum Weg."), color = FoodyTheme.farben.nebentext)
         zeilen.forEach { z ->
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(

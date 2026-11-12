@@ -25,10 +25,13 @@ import androidx.compose.ui.semantics.semantics
 import de.foody.core.data.datumKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasBlatt
+import de.foody.core.designsystem.komponenten.BlattTitel
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.ueberschrift
+import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.domain.Mahlzeit
 import java.time.LocalDate
@@ -60,7 +63,13 @@ internal fun FuellenBlatt(z: FuellenZustand, namen: Map<String, String>, a: Fuel
                 .padding(bottom = FoodyAbstaende.s6).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
-            Text("Leere Tage füllen", Modifier.ueberschrift(), style = MaterialTheme.typography.headlineSmall, color = FoodyTheme.farben.text)
+            BlattTitel(stilText("Leere Tage füllen", sage = "Leere Tage bestücken"), beschreibung = "Leere Tage füllen")
+            if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
+                Text(
+                    "Für jeden leeren Tag wählt das Grimoire ein Mahl, das du länger nicht hattest.",
+                    style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.nebentext,
+                )
+            }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 listOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.SNACK, Mahlzeit.ABENDESSEN).forEach { m ->
                     FoodyChip(mahlzeitAnzeige(m), ausgewaehlt = m == z.mahlzeit, onKlick = { a.onMahlzeit(m) })
@@ -71,7 +80,8 @@ internal fun FuellenBlatt(z: FuellenZustand, namen: Map<String, String>, a: Fuel
             z.meldung?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext) }
             Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
                 FoodyKnopf("Neu mischen", a.onNeuMischen, Modifier.weight(1f), art = KnopfArt.UMRISS, aktiv = z.hinweis == null)
-                FoodyKnopf("Übernehmen ($anzahl)", a.onUebernehmen, Modifier.weight(1f), aktiv = anzahl > 0)
+                val bestuecken = if (anzahl == 1) "1 Tag bestücken" else "$anzahl Tage bestücken"
+                FoodyKnopf(stilText("Übernehmen ($anzahl)", sage = bestuecken), a.onUebernehmen, Modifier.weight(1f), aktiv = anzahl > 0)
             }
         }
     }

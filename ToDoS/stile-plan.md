@@ -158,7 +158,7 @@ Gemeinsame liegt in `:core:designsystem`.
 
 ### Phase 5 – Immersiv Pilot, restliche Screens
 - [ ] Eintragen, Tagebuch, Rezept, Editor, Kochen, Planen, Listen, Einstellungen, Zutaten. Erledigt: Rezept, Kochen,
-      Tagebuch.
+      Tagebuch; die übrigen über Bausteine und Wörter (2026-11-12).
 - [ ] Abnahme des Pilots auf dem Handy. Erst danach geht es mit den nächsten Stilen weiter.
 
 ### Phase 6 – Immersiv für die übrigen Stile
@@ -242,6 +242,19 @@ gleich, nicht nur der Pilot):
 - Designsystem: `Sage.roemisch`, `SageHauptknopf(schrift, aktiv)`, `SageNebenknopf(farbe)`.
 - Tests: Szenen in den Screen-Tests (auch 200 % Schrift), `ChronikTexteTest`; Bilder `sage_detail_handy`,
   `sage_bereitlegen_handy`, `sage_schritt_handy`, `sage_tagebuch_handy`.
+
+**2026-11-12 – Q Immersiv: übrige Screens über die Bausteine** (Branch `claude/stile-q-rest`):
+- Gemeinsame Bausteine kennen die Sage in Immersiv: `FoodyKnopf` (eckig, Cinzel, Primär mit Goldschimmer),
+  `FoodyChip` (Rahmen im Akzent statt gefüllt, `beschreibung` für TalkBack), `GlasBlatt` (eckig, dunkler Verlauf,
+  Goldlinie oben), `Seitenkopf` (Cinzel im Akzent, `beschreibung`), neu `BlattTitel`.
+- `stilText(standard, sage = …, anime = …, …)` für Wörter je Stil (Punkt 6 des Aufbaus).
+- Wörter der Entwürfe: Eintragen („Mahl eintragen“, Morgen/Mittag/Zwischen/Abend, „In die Chronik“), Planen („Leere
+  Tage bestücken“, „Am Feuer kochen“, „Von der Karte nehmen“), Listen („Listen des Händlers“, „Mit dem Weg
+  abgleichen“, „Liste schreiben“), Editor („Neue Seite“/„Berichtigen“, „Ins Grimoire“), Zutaten („Verzeichnis“),
+  Einstellungen („Das Lager“, Abschnitte Botendienst, Gestalt, Vitalität, Wissen, Die Seherin). TalkBack liest
+  überall die normalen Begriffe.
+- Bilder `sage_einstellungen_handy`, `sage_zutaten_handy`, `sage_editor_handy`, `sage_listen_handy`,
+  `sage_fuellen_handy`; Test „Eintragen-Blatt im Stil“.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).

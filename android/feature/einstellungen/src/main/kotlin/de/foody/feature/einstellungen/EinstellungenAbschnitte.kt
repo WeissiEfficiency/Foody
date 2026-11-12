@@ -23,6 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -36,16 +38,18 @@ import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilAkzent
 import de.foody.core.designsystem.stil.StilVariante
+import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.Farbwelt
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 
 /** Ein Abschnitt der Seite: Glasfläche mit Augenbraue. */
 @Composable
-internal fun Abschnitt(titel: String, inhalt: @Composable ColumnScope.() -> Unit) {
+internal fun Abschnitt(titel: String, sage: String? = null, inhalt: @Composable ColumnScope.() -> Unit) {
+    val wort = stilText(titel, sage = sage)
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth(), form = FoodyTheme.formen.gross) {
         Column(Modifier.fillMaxWidth().padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
-            Augenbraue(titel)
+            Augenbraue(wort, if (wort != titel) Modifier.semantics { contentDescription = titel } else Modifier)
             inhalt()
         }
     }
@@ -59,7 +63,7 @@ private const val MAX_PROBLEME = 5
 
 /** Konto: Status, Tipp öffnet „Server verbinden“; darunter, was nicht vollständig übertragen wurde. */
 @Composable
-internal fun KontoAbschnitt(konto: VerbindungsZustand?, jetzt: Long, onServer: () -> Unit) = Abschnitt("Konto") {
+internal fun KontoAbschnitt(konto: VerbindungsZustand?, jetzt: Long, onServer: () -> Unit) = Abschnitt("Konto", sage = "Botendienst") {
     val verbunden = konto?.takeIf { it.verbunden }
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onServer),
@@ -94,7 +98,7 @@ internal fun DarstellungAbschnitt(
     onStil: (FoodyStil) -> Unit,
     onVariante: (StilVariante) -> Unit,
     onAkzent: (StilAkzent) -> Unit,
-) = Abschnitt("Darstellung") {
+) = Abschnitt("Darstellung", sage = "Gestalt") {
     Text("Stil", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text)
     StilWahl(z.stil, z.variante, onStil)
     val akzent = z.stil.akzent(z.akzent)
@@ -127,7 +131,10 @@ internal fun DarstellungAbschnitt(
 
 /** Tagesziel als Zahlenfeld; [fehler] zeigt „500 bis 10.000 kcal“ am Feld. */
 @Composable
-internal fun TageszielAbschnitt(text: String, fehler: Boolean, onFertig: () -> Unit, onText: (String) -> Unit) = Abschnitt("Tagesziel") {
+internal fun TageszielAbschnitt(text: String, fehler: Boolean, onFertig: () -> Unit, onText: (String) -> Unit) = Abschnitt(
+    "Tagesziel",
+    sage = "Vitalität · Tagesziel",
+) {
     OutlinedTextField(
         text, onText, Modifier.fillMaxWidth().onFocusChanged { if (!it.isFocused) onFertig() },
         label = { Text("Tagesziel") },
@@ -142,7 +149,10 @@ internal fun TageszielAbschnitt(text: String, fehler: Boolean, onFertig: () -> U
 
 /** Zutatenkatalog: ganze Zeile mit Anzahl und „›“; darunter der Schalter „Online-Produktsuche“ (ganze Zeile tippbar). */
 @Composable
-internal fun ZutatenAbschnitt(anzahl: Int?, onlineSuche: Boolean, onZutaten: () -> Unit, onOnlineSuche: (Boolean) -> Unit) = Abschnitt("Zutaten") {
+internal fun ZutatenAbschnitt(anzahl: Int?, onlineSuche: Boolean, onZutaten: () -> Unit, onOnlineSuche: (Boolean) -> Unit) = Abschnitt(
+    "Zutaten",
+    sage = "Wissen",
+) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onZutaten),
         verticalAlignment = Alignment.CenterVertically,
@@ -176,7 +186,7 @@ internal fun FotoErkennungAbschnitt(
     onSchalter: (Boolean) -> Unit,
     onInstallieren: () -> Unit,
     onEntfernen: () -> Unit,
-) = Abschnitt("Fotoerkennung") {
+) = Abschnitt("Fotoerkennung", sage = "Die Seherin") {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(z.fotoErkennung, role = Role.Switch, onValueChange = onSchalter),
         verticalAlignment = Alignment.CenterVertically,
@@ -211,7 +221,10 @@ internal fun FotoErkennungAbschnitt(
 }
 
 @Composable
-internal fun SicherungAbschnitt(z: EinstellungenZustand, onErstellen: () -> Unit, onWiederherstellen: () -> Unit) = Abschnitt("Sicherung") {
+internal fun SicherungAbschnitt(z: EinstellungenZustand, onErstellen: () -> Unit, onWiederherstellen: () -> Unit) = Abschnitt(
+    "Sicherung",
+    sage = "Abschrift des Lagers",
+) {
     Klein("Rezepte, Zutaten, Plan, Einkauf, Tagebuch und Fotos als ZIP-Datei.")
     FoodyKnopf(
         if (z.laeuft == Aktion.ERSTELLEN) "Läuft …" else "Sicherung erstellen", onErstellen, Modifier.fillMaxWidth(),

@@ -18,12 +18,15 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.einkauf.ListenKopf
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.stil.stilText
 
 /** „Frühere Listen“: Antippen öffnet, Papierkorb löscht (mit Rückfrage beim Aufrufer). */
 @Composable
 internal fun FruehereBlatt(listen: List<ListenKopf>, onOeffnen: (String) -> Unit, onLoeschen: (ListenKopf) -> Unit, onSchliessen: () -> Unit) {
-    BlattRahmen("Frühere Listen", onSchliessen) {
-        if (listen.isEmpty()) Text("Keine früheren Listen.", color = FoodyTheme.farben.nebentext)
+    BlattRahmen(stilText("Frühere Listen", sage = "Listen des Händlers"), onSchliessen, beschreibung = "Frühere Listen") {
+        if (listen.isEmpty()) {
+            Text(stilText("Keine früheren Listen.", sage = "Der Händler führt noch keine früheren Listen."), color = FoodyTheme.farben.nebentext)
+        }
         listen.forEach { l ->
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f).heightIn(min = 48.dp).clickable(role = Role.Button) { onOeffnen(l.id) }) {

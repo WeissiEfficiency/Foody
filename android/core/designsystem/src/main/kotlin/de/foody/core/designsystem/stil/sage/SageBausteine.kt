@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.token.CinzelFamilie
 import de.foody.core.designsystem.token.EbGaramondFamilie
 
@@ -159,3 +160,41 @@ fun SageRaute(groesse: Dp, gefuellt: Boolean, modifier: Modifier = Modifier, fue
 /** Feine Linie unter einer Zeile, in der Farbe der Balkenspur. */
 fun Modifier.sageLinieUnten(farbe: Color): Modifier =
     drawBehind { drawLine(farbe, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx()) }
+
+/**
+ * [de.foody.core.designsystem.komponenten.FoodyKnopf] in der Düsteren Sage: eckig, Cinzel; Primär mit Rahmen im Akzent
+ * und Goldschimmer, Umriss mit feiner Kante, Text nur in Akzentfarbe. Mindestens 48 dp hoch, inaktiv gedämpft.
+ */
+@Composable
+internal fun SageKnopf(text: String, onKlick: () -> Unit, modifier: Modifier, art: KnopfArt, aktiv: Boolean) {
+    val f = FoodyTheme.farben
+    val glut = FoodyTheme.stil.zier
+    val primaer = art == KnopfArt.PRIMAER
+    val rand = when {
+        art == KnopfArt.TEXT -> null
+        !aktiv -> f.balkenSpur
+        primaer -> glut
+        else -> f.lichtkante
+    }
+    val schimmer = Brush.horizontalGradient(listOf(glut.copy(alpha = 0.06f), glut.copy(alpha = 0.26f), glut.copy(alpha = 0.06f)))
+    Box(
+        modifier.heightIn(min = 48.dp)
+            .then(if (rand != null) Modifier.border(1.dp, rand) else Modifier)
+            .then(if (primaer && aktiv) Modifier.background(schimmer) else Modifier)
+            .clickable(enabled = aktiv, role = Role.Button, onClick = onKlick)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            style = Sage.titel(if (primaer) 14f else 12.5f, 0.12f),
+            color = when {
+                !aktiv -> f.nebentext
+                primaer -> sageHell()
+                art == KnopfArt.UMRISS -> f.text
+                else -> f.primaer
+            },
+            textAlign = TextAlign.Center,
+        )
+    }
+}

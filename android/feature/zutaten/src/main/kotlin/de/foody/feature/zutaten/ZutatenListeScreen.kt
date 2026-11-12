@@ -51,6 +51,7 @@ import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.Suchfeld
 import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.ueberLeiste
+import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.scan.PackungScanKnopf
@@ -150,10 +151,11 @@ fun ZutatenListeRoute(onZutat: (String) -> Unit, onZurueck: () -> Unit, vm: Zuta
 private fun Kopf(onZurueck: () -> Unit, onVereinheitlichen: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     Seitenkopf(
-        "Zutatenkatalog",
+        stilText("Zutatenkatalog", sage = "Verzeichnis"),
         Modifier.padding(start = FoodyAbstaende.s3, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2),
-        ueberzeile = "Einstellungen",
+        ueberzeile = stilText("Einstellungen", sage = "Das Lager"),
         onZurueck = onZurueck,
+        beschreibung = "Zutatenkatalog",
     ) {
         Box {
             RunderKnopf(Icons.Outlined.MoreVert, "Mehr", { menu = true })
