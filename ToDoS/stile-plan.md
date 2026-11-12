@@ -438,6 +438,17 @@ gleich, nicht nur der Pilot):
 - Tests `EintragenStileTest` (Auswahl, 200 % Schrift); Bilder `stil_*_eintragen_handy`, `stil_*_listen_handy`,
   `stil_*_zutaten_handy`.
 
+**2026-11-12 – Planen R–V** (Branch `claude/stile-planen`):
+- „Leere Tage füllen“: über den Vorschlägen ein Satz je Stil wie im Entwurf; jeder Vorschlag als `WahlZeile` mit
+  dem Tag des Stils links (Anime buntes Kästchen, Edo „月 火 水 …“ in Zinnober, Bayrisch blau, Grauen in der Glut,
+  Kreuzer „MO“ in Amber) und „↻“ rechts. Antippen wählt ab und wieder an (TalkBack: Kontrollkästchen „MI 28.10.
+  übernehmen“), ohne Vorschlag ist die Zeile gesperrt (`stil/PlanenStile.kt`).
+- `WahlZeile` kann dafür `haken` (Kontrollkästchen), `aktiv` und `anfang` (Platz links).
+- Mahlzeit-Blatt: Portionen mit „−“ und „+“ als Knöpfe des Stils und „2 Portionen“ dazwischen.
+- Tests `PlanenStileTest` (abwählen, neu ziehen, Portionen, 200 % Schrift, Texte); Bilder `stil_*_fuellen_handy`,
+  `stil_*_mahlzeit_handy`.
+- Mundart: „Foody füllt die freien Tag mit Rezepten, die länger nimma dran warn.“
+
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
 - Schriften der übrigen Entwürfe (Dela Gothic One, M PLUS Rounded 1c, Kaisei Decol, Zen Kaku Gothic

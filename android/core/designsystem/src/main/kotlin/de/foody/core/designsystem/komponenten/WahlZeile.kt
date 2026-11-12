@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -50,7 +52,8 @@ import de.foody.core.designsystem.token.FoodyAbstaende
 /**
  * Auswählbare Zeile für Treffer und Listen: [titel], darunter [info], rechts [wert]. Mit [knopf] = false eine Auswahl
  * (TalkBack: Optionsfeld, [gewaehlt] mit Haken), sonst ein Knopf ohne Auswahl. [ende] steht ganz rechts (etwa ein
- * Löschen-Knopf mit eigener Beschreibung). Mindestens 48 dp hoch.
+ * Löschen-Knopf mit eigener Beschreibung), [anfang] ganz links (etwa ein Tag). Mit [haken] ein Kästchen zum An- und
+ * Abwählen (TalkBack: Kontrollkästchen); [aktiv] = false blasst die Zeile ab und sperrt sie. Mindestens 48 dp hoch.
  *
  * In den Stilen R–V (Immersiv) wie in den Entwürfen: umrandete Karte mit Akzentfläche (Anime), Haarlinie mit
  * Zinnobermarke links (Edo), gestrichelte Linie mit Punkt rechts (Bayrisch), Linie mit Glutpunkt (Grauen), Linie mit
@@ -65,13 +68,16 @@ fun WahlZeile(
     info: String? = null,
     wert: String? = null,
     knopf: Boolean = false,
+    haken: Boolean = false,
+    aktiv: Boolean = true,
+    anfang: (@Composable RowScope.() -> Unit)? = null,
     ende: (@Composable RowScope.() -> Unit)? = null,
 ) {
-    val klick = if (knopf) {
-        Modifier.clickable(role = Role.Button, onClick = onWahl)
-    } else {
-        Modifier.selectable(gewaehlt, onClick = onWahl, role = Role.RadioButton)
-    }
+    val klick = when {
+        haken -> Modifier.toggleable(gewaehlt, enabled = aktiv, role = Role.Checkbox) { onWahl() }
+        knopf -> Modifier.clickable(enabled = aktiv, role = Role.Button, onClick = onWahl)
+        else -> Modifier.selectable(gewaehlt, enabled = aktiv, onClick = onWahl, role = Role.RadioButton)
+    }.alpha(if (aktiv) 1f else 0.5f)
     val a = zeilenAussehen(gewaehlt)
     if (a == null) {
         Row(
@@ -79,6 +85,7 @@ fun WahlZeile(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
         ) {
+            anfang?.invoke(this)
             ZeilenText(titel, info, MaterialTheme.typography.bodyLarge, MaterialTheme.typography.bodySmall)
             if (wert != null) Text(wert, style = MaterialTheme.typography.labelMedium, color = FoodyTheme.farben.nebentext)
             if (gewaehlt && !knopf) Icon(Icons.Outlined.Check, contentDescription = null, tint = FoodyTheme.farben.primaer)
@@ -91,6 +98,7 @@ fun WahlZeile(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
     ) {
+        anfang?.invoke(this)
         ZeilenText(titel, info, a.titel, a.info)
         if (wert != null) Text(wert, style = a.wert, color = FoodyTheme.farben.text)
         a.punkt?.let { (farbe, groesse) ->
