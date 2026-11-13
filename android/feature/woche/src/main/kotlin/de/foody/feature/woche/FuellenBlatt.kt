@@ -30,10 +30,13 @@ import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.ueberschrift
+import de.foody.core.designsystem.komponenten.zeilenImStil
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.domain.Mahlzeit
+import de.foody.feature.woche.stil.VorschlagStil
+import de.foody.feature.woche.stil.planenEinleitung
 import java.time.LocalDate
 
 /** Was das Füllen-Blatt auslösen kann. */
@@ -73,13 +76,22 @@ internal fun FuellenBlatt(z: FuellenZustand, namen: Map<String, String>, a: Fuel
                     style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.nebentext,
                 )
             }
+            planenEinleitung()?.let { (satz, schrift) -> Text(satz, style = schrift, color = FoodyTheme.farben.nebentext) }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 listOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.SNACK, Mahlzeit.ABENDESSEN).forEach { m ->
                     FoodyChip(mahlzeitAnzeige(m), ausgewaehlt = m == z.mahlzeit, onKlick = { a.onMahlzeit(m) })
                 }
             }
             z.hinweis?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext) }
-            z.tage.forEach { tag -> VorschlagZeile(tag, z.vorschlag[tag]?.let { namen[it] }, tag !in z.abgewaehlt, a) }
+            val imStil = zeilenImStil()
+            z.tage.forEachIndexed { nr, tag ->
+                val name = z.vorschlag[tag]?.let { namen[it] }
+                if (imStil) {
+                    VorschlagStil(tag, tagKurz(tag), name, tag !in z.abgewaehlt, nr, { a.onAbwaehlen(tag) }, { a.onTagNeu(tag) })
+                } else {
+                    VorschlagZeile(tag, name, tag !in z.abgewaehlt, a)
+                }
+            }
             z.meldung?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext) }
             Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
                 FoodyKnopf("Neu mischen", a.onNeuMischen, Modifier.weight(1f), art = KnopfArt.UMRISS, aktiv = z.hinweis == null)
