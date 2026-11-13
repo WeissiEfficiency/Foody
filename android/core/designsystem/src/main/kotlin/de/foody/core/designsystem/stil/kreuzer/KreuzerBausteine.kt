@@ -21,7 +21,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
@@ -31,16 +30,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.token.Exo2Familie
+import de.foody.core.designsystem.token.ShareTechMonoFamilie
 
 /**
- * Bausteine des Sternenkreuzers (Stil V) in Immersiv. Der Entwurf setzt Exo 2 und Share Tech Mono; bis die Schriften
- * geladen werden dürfen, stehen die Grotesk und die Monospace des Systems dafür. Zwei Farben: Amber (der gewählte
+ * Bausteine des Sternenkreuzers (Stil V) in Immersiv. Der Entwurf setzt Exo 2 und Share Tech Mono. Zwei Farben: Amber (der gewählte
  * Akzent) für Handlungen, Holo-Blau (`FoodyTheme.stil.zier`) für Anzeigen.
  */
 object Kreuzer {
     /** Grotesk für Titel und Knöpfe. */
     fun titel(groesse: Float, gewicht: FontWeight = FontWeight.ExtraBold, abstand: Float = 0.02f) = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = Exo2Familie,
         fontWeight = gewicht,
         fontSize = groesse.sp,
         lineHeight = (groesse * 1.2f).sp,
@@ -49,7 +49,7 @@ object Kreuzer {
 
     /** Monospace für Anzeigen, Kennungen und Kopfzeilen. */
     fun mono(groesse: Float, abstand: Float = 0.06f) =
-        TextStyle(fontFamily = FontFamily.Monospace, fontSize = groesse.sp, lineHeight = (groesse * 1.3f).sp, letterSpacing = abstand.em)
+        TextStyle(fontFamily = ShareTechMonoFamilie, fontSize = groesse.sp, lineHeight = (groesse * 1.3f).sp, letterSpacing = abstand.em)
 
     /** Text auf Amber (im Entwurf #1A1206). */
     val aufAmber = Color(0xFF1A1206)

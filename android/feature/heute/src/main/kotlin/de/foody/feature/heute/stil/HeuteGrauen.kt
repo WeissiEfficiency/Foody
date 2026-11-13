@@ -369,7 +369,7 @@ private fun Tafel(ueber: String, titel: String, zeile: String, onTitel: () -> Un
                 "$titel ›",
                 Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onTitel)
                     .semantics { contentDescription = "$titel, Rezept öffnen" }.padding(vertical = 4.dp),
-                style = Grauen.titel(25f, 0f), color = f.text,
+                style = Grauen.name(25f), color = f.text,
             )
             if (zeile.isNotEmpty()) Text(zeile, style = Grauen.maschine(13f), color = f.nebentext)
             GrauenKnopf(knopf, onKnopf, Modifier.fillMaxWidth().padding(top = 6.dp), beschreibung = knopfBeschreibung)

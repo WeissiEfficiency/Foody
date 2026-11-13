@@ -22,7 +22,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -30,10 +29,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.token.DelaGothicFamilie
+import de.foody.core.designsystem.token.MPlusRundFamilie
 
 /**
- * Bausteine des Anime-Stils (R) in Immersiv. Der Entwurf setzt Dela Gothic One (Titel) und M PLUS Rounded 1c; bis
- * die Schriften geladen werden dürfen, steht die Grotesk des Systems in sehr fetten Schnitten dafür. Kanten und
+ * Bausteine des Anime-Stils (R) in Immersiv. Der Entwurf setzt Dela Gothic One (Titel) und M PLUS Rounded 1c. Kanten und
  * harte Schatten in der Tintenfarbe des Stils, Flächen im gewählten Akzent und im Gelb des Entwurfs.
  */
 object Anime {
@@ -45,7 +45,7 @@ object Anime {
 
     /** Plakative Titelschrift (sehr fett). */
     fun titel(groesse: Float, abstand: Float = 0.02f) = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = DelaGothicFamilie,
         fontWeight = FontWeight.Black,
         fontSize = groesse.sp,
         lineHeight = (groesse * 1.12f).sp,
@@ -54,7 +54,7 @@ object Anime {
 
     /** Runde, fette Textschrift. */
     fun text(groesse: Float, gewicht: FontWeight = FontWeight.Bold) =
-        TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp)
+        TextStyle(fontFamily = MPlusRundFamilie, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp)
 
     /** Pille für Knöpfe und Abzeichen. */
     val pille = RoundedCornerShape(999.dp)

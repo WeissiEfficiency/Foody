@@ -67,7 +67,7 @@ fun stilTitel(art: TitelArt): TextStyle? {
     return when (s.stil) {
         FoodyStil.GRAUEN -> Grauen.titel(g, 0.02f)
         FoodyStil.KREUZER -> Kreuzer.titel(g - 2f)
-        FoodyStil.BAYRISCH -> Bayrisch.titel(g, FontWeight.ExtraBold)
+        FoodyStil.BAYRISCH -> Bayrisch.fraktur(g + 2f)
         FoodyStil.EDO -> Edo.titel(g - 2f)
         FoodyStil.ANIME -> {
             val d = LocalDensity.current.density

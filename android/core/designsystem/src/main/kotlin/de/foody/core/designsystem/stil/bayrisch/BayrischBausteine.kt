@@ -18,26 +18,31 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.token.AlegreyaFamilie
+import de.foody.core.designsystem.token.AlegreyaSansFamilie
+import de.foody.core.designsystem.token.UnifrakturFamilie
 
 /**
- * Bausteine des Bayrischen Stils (T) in Immersiv. Der Entwurf setzt UnifrakturCook (Titel), Alegreya und Alegreya
- * Sans; bis die Schriften geladen werden dürfen, stehen Serife und Grotesk des Systems dafür. Das Blau ist der
- * gewählte Akzent (auch Grün, Rot oder Braun), Text und Linien das dunkle Braun des Stils.
+ * Bausteine des Bayrischen Stils (T) in Immersiv. Der Entwurf setzt UnifrakturCook (Seitentitel), Alegreya und
+ * Alegreya Sans. Das Blau ist der gewählte Akzent (auch Grün, Rot oder Braun), Text und Linien das dunkle Braun des Stils.
  */
 object Bayrisch {
-    /** Serife für Titel, Überschriften und Knöpfe. */
+    /** Alegreya für Titel, Überschriften und Knöpfe. */
     fun titel(groesse: Float, gewicht: FontWeight = FontWeight.Bold) =
-        TextStyle(fontFamily = FontFamily.Serif, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.15f).sp)
+        TextStyle(fontFamily = AlegreyaFamilie, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.15f).sp)
 
-    /** Grotesk für Fließtext und Angaben. */
+    /** Fraktur (UnifrakturCook) nur für den Seitentitel („Heid“, „’s Standl“, „Eistellunga“). */
+    fun fraktur(groesse: Float) =
+        TextStyle(fontFamily = UnifrakturFamilie, fontWeight = FontWeight.Bold, fontSize = groesse.sp, lineHeight = (groesse * 1.1f).sp)
+
+    /** Alegreya Sans für Fließtext und Angaben. */
     fun text(groesse: Float, gewicht: FontWeight = FontWeight.Normal) =
-        TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.3f).sp)
+        TextStyle(fontFamily = AlegreyaSansFamilie, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.3f).sp)
 
     /** Form der Knöpfe (10 dp) und der Karten (14 dp) wie im Entwurf. */
     val knopfForm = RoundedCornerShape(10.dp)

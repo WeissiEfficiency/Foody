@@ -8,14 +8,17 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.foody.core.designsystem.token.AlegreyaFamilie
+import de.foody.core.designsystem.token.AlegreyaSansFamilie
 import de.foody.core.designsystem.token.AugenbraueStil
 import de.foody.core.designsystem.token.CinzelFamilie
+import de.foody.core.designsystem.token.DelaGothicFamilie
 import de.foody.core.designsystem.token.EbGaramondFamilie
+import de.foody.core.designsystem.token.Exo2Familie
 import de.foody.core.designsystem.token.Farbwelt
 import de.foody.core.designsystem.token.FarbweltWerte
 import de.foody.core.designsystem.token.Flaechenart
@@ -23,8 +26,15 @@ import de.foody.core.designsystem.token.FoodyFarben
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.FoodyTypografie
 import de.foody.core.designsystem.token.GlasStufe
+import de.foody.core.designsystem.token.ImFellFamilie
+import de.foody.core.designsystem.token.ImFellKapitaelchenFamilie
+import de.foody.core.designsystem.token.KaiseiDecolFamilie
+import de.foody.core.designsystem.token.MPlusRundFamilie
 import de.foody.core.designsystem.token.MakroFarben
+import de.foody.core.designsystem.token.ShareTechMonoFamilie
+import de.foody.core.designsystem.token.SpecialEliteFamilie
 import de.foody.core.designsystem.token.Verlauf
+import de.foody.core.designsystem.token.ZenKakuFamilie
 import de.foody.core.designsystem.token.augenbraue
 import de.foody.core.designsystem.token.foodyTypografie
 import de.foody.core.designsystem.token.glasWerte
@@ -291,10 +301,7 @@ private fun muster(stil: FoodyStil): Hintergrundmuster = when (stil) {
 
 private class Schrift(val typografie: Typography, val augenbraue: TextStyle)
 
-/**
- * Schriften je Stil. Q nutzt die Schriften des Entwurfs (Cinzel, EB Garamond); die übrigen vorerst Systemschriften der
- * passenden Art (Serife, Grotesk, Monospace), bis ihre Schriften nach `res/font` kommen (Plan, Phase 3).
- */
+/** Schriften je Stil, wie in den Entwürfen (beschnitten in `res/font`, siehe `werkzeuge/schriften_beschneiden.py`). */
 private fun schrift(stil: FoodyStil): Schrift = SCHRIFTEN.getValue(stil)
 
 private val SCHRIFTEN: Map<FoodyStil, Schrift> = mapOf(
@@ -302,12 +309,12 @@ private val SCHRIFTEN: Map<FoodyStil, Schrift> = mapOf(
         foodyTypografie(CinzelFamilie, EbGaramondFamilie, FontWeight.SemiBold, titelAbstand = 0.8.sp),
         augenbraue(CinzelFamilie),
     ),
-    FoodyStil.ANIME to Schrift(foodyTypografie(FontFamily.SansSerif, FontFamily.SansSerif, FontWeight.Black), augenbraue(FontFamily.SansSerif)),
-    FoodyStil.EDO to Schrift(foodyTypografie(FontFamily.Serif, FontFamily.SansSerif), augenbraue(FontFamily.SansSerif)),
-    FoodyStil.BAYRISCH to Schrift(foodyTypografie(FontFamily.Serif, FontFamily.Serif), augenbraue(FontFamily.SansSerif)),
-    FoodyStil.GRAUEN to Schrift(foodyTypografie(FontFamily.Serif, FontFamily.Serif), augenbraue(FontFamily.Monospace)),
+    FoodyStil.ANIME to Schrift(foodyTypografie(DelaGothicFamilie, MPlusRundFamilie, FontWeight.Black), augenbraue(MPlusRundFamilie)),
+    FoodyStil.EDO to Schrift(foodyTypografie(KaiseiDecolFamilie, ZenKakuFamilie), augenbraue(ZenKakuFamilie)),
+    FoodyStil.BAYRISCH to Schrift(foodyTypografie(AlegreyaFamilie, AlegreyaSansFamilie, FontWeight.ExtraBold), augenbraue(AlegreyaFamilie)),
+    FoodyStil.GRAUEN to Schrift(foodyTypografie(ImFellKapitaelchenFamilie, ImFellFamilie, FontWeight.Normal), augenbraue(SpecialEliteFamilie)),
     FoodyStil.KREUZER to Schrift(
-        foodyTypografie(FontFamily.SansSerif, FontFamily.SansSerif, FontWeight.ExtraBold, titelAbstand = 0.5.sp),
-        augenbraue(FontFamily.Monospace),
+        foodyTypografie(Exo2Familie, Exo2Familie, FontWeight.ExtraBold, titelAbstand = 0.5.sp),
+        augenbraue(ShareTechMonoFamilie),
     ),
 )

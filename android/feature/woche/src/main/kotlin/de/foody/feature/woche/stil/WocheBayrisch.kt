@@ -103,7 +103,7 @@ private fun Kopf(w: WocheDaten, onFuellen: () -> Unit) {
                     heading()
                     contentDescription = "Woche"
                 },
-                style = Bayrisch.titel(50f * min(k, 1.3f) / k, FontWeight.ExtraBold), color = f.text,
+                style = Bayrisch.fraktur(50f * min(k, 1.3f) / k), color = f.text,
             )
         }
         if (w.tage.isNotEmpty()) {
