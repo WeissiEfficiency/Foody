@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fläche der Widgets in den Stilen: weiß, zur Laufzeit eingefärbt; die Rundung kommt aus dem Umriss (KnopfAussehen) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@android:color/white" />
+</shape>
