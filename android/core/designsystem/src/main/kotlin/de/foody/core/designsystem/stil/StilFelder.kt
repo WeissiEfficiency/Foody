@@ -13,13 +13,17 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -31,8 +35,10 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
@@ -50,7 +56,9 @@ import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
  * Eingabefeld der Stile R–V wie in den Entwürfen: das [etikett] klein darüber (Versalien außer Bayrisch), das Feld im
  * Aussehen des Stils – weiße Fläche mit Tintenrand (Anime, Bayrisch), Unterstrich (Edo), dünne Linie (Grauen, Kreuzer,
  * beim Tippen im Akzent). TalkBack liest das Feld mit dem Etikett. Mindestens 48 dp hoch; mehrzeilig ([einzeilig]
- * `false`) mindestens [zeilen] Zeilen. Nur in Szenen der Stile R–V verwenden.
+ * `false`) mindestens [zeilen] Zeilen. Mit [etikettZeigen] = `false` steht das Etikett nur für TalkBack da (etwa
+ * neben einem Feld, das schon beschriftet ist), mit [zentriert] steht der Text mittig. [onFertig] läuft bei „Fertig“
+ * auf der Tastatur und wenn das Feld den Fokus verliert. Nur in Szenen der Stile R–V verwenden.
  */
 @Composable
 fun StilFeld(
@@ -62,6 +70,9 @@ fun StilFeld(
     einzeilig: Boolean = true,
     zeilen: Int = 3,
     satzanfangGross: Boolean = false,
+    etikettZeigen: Boolean = true,
+    zentriert: Boolean = false,
+    onFertig: (() -> Unit)? = null,
 ) {
     val f = FoodyTheme.farben
     val stil = FoodyTheme.stil.stil
@@ -69,17 +80,23 @@ fun StilFeld(
     val fokus by quelle.collectIsFocusedAsState()
     val a = feldAussehen(stil, fokus)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            if (stil == FoodyStil.BAYRISCH) etikett else etikett.uppercase(),
-            Modifier.clearAndSetSemantics {},
-            style = a.etikett,
-            color = f.nebentext,
-        )
+        if (etikettZeigen) {
+            Text(
+                if (stil == FoodyStil.BAYRISCH) etikett else etikett.uppercase(),
+                Modifier.clearAndSetSemantics {},
+                style = a.etikett,
+                color = f.nebentext,
+            )
+        }
+        var hatteFokus by remember { mutableStateOf(false) }
         BasicTextField(
             wert,
             onWert,
-            Modifier.fillMaxWidth().semantics { contentDescription = etikett },
-            textStyle = a.schrift.copy(color = f.text),
+            Modifier.fillMaxWidth().semantics { contentDescription = etikett }.onFocusChanged {
+                if (hatteFokus && !it.isFocused) onFertig?.invoke()
+                hatteFokus = it.isFocused
+            },
+            textStyle = a.schrift.copy(color = f.text, textAlign = if (zentriert) TextAlign.Center else TextAlign.Start),
             singleLine = einzeilig,
             minLines = if (einzeilig) 1 else zeilen,
             cursorBrush = SolidColor(f.primaer),
@@ -87,7 +104,9 @@ fun StilFeld(
             keyboardOptions = KeyboardOptions(
                 keyboardType = tastatur,
                 capitalization = if (satzanfangGross) KeyboardCapitalization.Sentences else KeyboardCapitalization.None,
+                imeAction = if (onFertig != null) ImeAction.Done else ImeAction.Default,
             ),
+            keyboardActions = KeyboardActions(onDone = { onFertig?.invoke() }),
             decorationBox = { feld ->
                 Box(Modifier.fillMaxWidth().heightIn(min = 48.dp).then(a.rahmen).padding(horizontal = a.innen, vertical = 10.dp)) { feld() }
             },
@@ -145,12 +164,12 @@ private fun unterstrich(farbe: Color, staerke: Dp) = Modifier.drawBehind {
 
 /**
  * Überschrift eines Abschnitts in Szenen R–V (für TalkBack eine Überschrift): Zinnober (Edo), Blau (Bayrisch), Glut
- * (Grauen), Holo-Blau in Monospace-Versalien (Kreuzer), Tinte in Versalien (Anime).
+ * (Grauen), Holo-Blau in Monospace-Versalien (Kreuzer), Tinte in Versalien (Anime); [farbe] ersetzt die Farbe.
  */
 @Composable
-fun StilAbschnitt(titel: String, modifier: Modifier = Modifier, beschreibung: String? = null) {
+fun StilAbschnitt(titel: String, modifier: Modifier = Modifier, beschreibung: String? = null, farbe: Color? = null) {
     val s = FoodyTheme.stil
-    val (schrift, farbe) = when (s.stil) {
+    val (schrift, stilFarbe) = when (s.stil) {
         FoodyStil.ANIME -> Anime.text(15f, FontWeight.ExtraBold) to FoodyTheme.farben.text
         FoodyStil.EDO -> Edo.titel(17f) to edoShu()
         FoodyStil.BAYRISCH -> Bayrisch.titel(18f) to bayrischBlau()
@@ -165,7 +184,7 @@ fun StilAbschnitt(titel: String, modifier: Modifier = Modifier, beschreibung: St
             if (beschreibung != null) contentDescription = beschreibung
         },
         style = schrift,
-        color = farbe,
+        color = farbe ?: stilFarbe,
     )
 }
 

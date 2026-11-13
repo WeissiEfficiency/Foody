@@ -473,6 +473,24 @@ gleich, nicht nur der Pilot):
   Texte); Bilder `stil_*_editor_handy` neu.
 - `EintragenStileTest` wählt die Mahlzeit jetzt fest; ohne Wahl hingen die Bilder von der Uhrzeit ab.
 
+**2026-11-13 – Einstellungen R–V** (Branch `claude/stile-einstellungen`):
+- Einstellungen in R–V (Immersiv) wie in den Entwürfen (`feature/einstellungen/EinstellungenStile.kt`): Abschnitte als
+  Karten (Anime mit Versatzschatten, Bayrisch) oder durch Linien getrennt (Edo, Grauen, Kreuzer); der Abgleich als
+  eigene Karte (Edo Papier, Grauen Tafel, Kreuzer Amberkarte mit Schnittecken) mit Marke „verbunden“ (Edo Stempel
+  „繋“, Punkt, Kreuzer grünes Quadrat). Wörter: Anime „EINSTELLUNGEN“/„SYNC“, Edo „Aussehen“/„Abgleich mit dem
+  Server“, Bayrisch „Wia’s ausschaut“/„Mit’m Server abgleicha“, Grauen Überzeile „Die Instrumente justieren“,
+  „Der Schein“, „Verbindung zum fernen Archiv“, „Verzeichnis der Substanzen“, Kreuzer Überzeile „BORDSYSTEME“,
+  „ANZEIGE“, „Energieziel“ „KCAL / TAG“, „Ressourcen-Datenbank“, „VERBINDUNG ZUR BASIS“, Schalter „AN“/„AUS“.
+- Zeilen mit gepunkteter (Anime, Edo), gestrichelter (Bayrisch) oder durchgezogener Linie und Schalter in der Form des
+  Stils; Variante als Leiste (Optionsfelder), Akzente als Farbmuster (Kreis, Quadrat, Kreuzer mit Schnittecken).
+- Tagesziel mit − und + (Schritte von 50, 500 bis 10.000) und Feld dazwischen; leeres Feld = kein Ziel wie bisher.
+  `StilFeld` kann das Etikett nur für TalkBack tragen, mittig schreiben und „Fertig“ melden.
+- Nicht übernommen: „Jetzt abgleichen“ und „Trennen“ direkt auf der Karte und das Anmeldeformular – das bleibt auf der
+  Seite „Server verbinden“, die Zeile öffnet sie; Modus Hell/Dunkel/System gibt es in den Stilen nicht (fester Grund),
+  an seiner Stelle steht die Variante. Stilwahl, Fotoerkennung, Sicherung, Daten und Hinweise behalten ihre Abschnitte.
+- Tests `EinstellungenStileTest` (Abgleich öffnet, Farbe und Variante wählen, Ziel mit −/+ und Feld, Schalter, 200 %
+  Schrift); Bilder `stil_*_einstellungen_handy` neu (verbunden, mit dem gewählten Stil).
+
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
 - Schriften der übrigen Entwürfe (Dela Gothic One, M PLUS Rounded 1c, Kaisei Decol, Zen Kaku Gothic
