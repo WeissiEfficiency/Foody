@@ -158,6 +158,12 @@ class DeepLinkTest {
     }
 
     @Test
+    fun wocheLink() {
+        oeffnen("foody://woche")
+        compose.runOnIdle { assertTrue(nav.currentDestination?.hasRoute<Woche>() == true) }
+    }
+
+    @Test
     fun tagebuchLink() {
         oeffnen("foody://tagebuch/2026-10-20")
         compose.onNodeWithText("Tagebuch 2026-10-20").assertExists()

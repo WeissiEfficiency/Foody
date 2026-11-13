@@ -31,6 +31,8 @@ Alle Phasen und der Umstieg sind fertig; Offenes (Messungen, TalkBack, Review-Be
   Zusammenführen) und **Packung scannen** (Strichcode, Open Food Facts abschaltbar, Foto der Nährwerttabelle; ADR 0013),
   auch direkt vom Homescreen-Widget **„Scannen“**. Das Widget **„KI-Foto“** öffnet gleich die Kamera für die
   Fotoerkennung.
+- **Widgets:** „Heute“, „Kalorien“, „Einkauf“, „Woche“ und „Schnell eintragen“ zeigen die Daten des Tages auf dem
+  Homescreen, im gewählten Stil.
 
 Gestrichen gegenüber der v1 (ADR 0011): Vorrat mit MHD, „Aus dem Vorrat“, Abbuchen bei „Gekocht“, Liste als Text
 teilen, Planer-Modi 1/2/3/7 Tage, Web-App.
