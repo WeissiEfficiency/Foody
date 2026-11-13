@@ -449,6 +449,14 @@ gleich, nicht nur der Pilot):
   `stil_*_mahlzeit_handy`.
 - Mundart: „Foody füllt die freien Tag mit Rezepten, die länger nimma dran warn.“
 
+**2026-11-12 – Seitenkopf ohne Worttrennung, Bilder Editor und Einstellungen R–V** (Branch `claude/stile-editor`):
+- `Seitenkopf` legt Zurück, Titel und Aktionen selbst aus: Passt das längste Wort des Titels nicht mehr neben die
+  Aktionen, rücken sie in eine Zeile darunter, statt das Wort zu trennen. Vorher brach „Bearbeiten“ im Editor
+  (Bayrisch „Obacht, speichern!“, Grauen „In die Bibliothek“) als „Bearbeite/n“ um, in Milchglas bei 320 dp
+  „Zutaten-/katalog“. Tests in `EntwurfsbausteineTest` (kurze Aktion daneben, lange darunter, Titel einzeilig).
+- Neue Bilder `stil_*_editor_handy` und `stil_*_einstellungen_handy`. Editor und Einstellungen tragen wie bei der
+  Sage Knöpfe, Felder, Chips, Kopf und Wörter des Stils; eigene Szenen haben sie nicht.
+
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
 - Schriften der übrigen Entwürfe (Dela Gothic One, M PLUS Rounded 1c, Kaisei Decol, Zen Kaku Gothic

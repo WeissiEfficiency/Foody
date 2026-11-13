@@ -111,6 +111,20 @@ class EinstellungenScreenshotTest {
         }
     }
 
+    /** Stile R–V, Immersiv: Einstellungen mit Abschnitten, Knöpfen und Wörtern des Stils. */
+    @Test
+    @Config(qualifiers = "w411dp-h1600dp")
+    fun stile() {
+        for (stil in listOf(FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)) {
+            val vm = vm()
+            captureRoboImage("src/test/screenshots/stil_${stil.name.lowercase()}_einstellungen_handy.png", roborazziOptions = vergleich) {
+                FoodyTheme(stil = stil, unschaerfe = false) {
+                    FoodyHintergrund { EinstellungenRoute({}, {}, {}, vm = vm, dateiwahl = keineDateien) }
+                }
+            }
+        }
+    }
+
     /** Düstere Sage, Immersiv: „Das Lager“. */
     @Test
     @Config(qualifiers = "w411dp-h1600dp")
