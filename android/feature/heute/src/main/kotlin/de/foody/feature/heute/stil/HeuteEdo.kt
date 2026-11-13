@@ -64,9 +64,9 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.heute.GeplanteMahlzeit
 import de.foody.core.designsystem.FoodyTheme
@@ -222,7 +222,7 @@ private fun Landschaft(datum: LocalDate?, shu: Color) {
         }
         // Wochentag senkrecht, Buchstabe unter Buchstabe; darunter das Siegel
         var y = 10f * s
-        val stil = TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = (13f * s).toSp(), color = tinte)
+        val stil = Edo.titel(13f).copy(fontSize = (13f * s).toSp(), lineHeight = TextUnit.Unspecified, color = tinte)
         wochentag.forEach { c ->
             val m = messer.measure(c.toString(), stil)
             drawText(m, topLeft = Offset(270f * s - m.size.width / 2f, y))

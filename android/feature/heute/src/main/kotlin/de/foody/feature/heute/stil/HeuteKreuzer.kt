@@ -74,11 +74,11 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.foody.core.data.heute.GeplanteMahlzeit
@@ -302,11 +302,14 @@ private fun Sonnensystem(ziel: Int?, planeten: List<Planet>, wahl: Int, onWahl: 
             drawCircle(amber.copy(alpha = 0.25f * korona), 34f * px, mitte)
             drawCircle(amber, 24f * px, mitte)
             // Beschriftung der Sonne in fester Größe: Zierde, die Zahl liest TalkBack am Treibstoff
-            val oben = messer.measure("ZIEL", TextStyle(fontFamily = FontFamily.Monospace, fontSize = (11f * px).toSp(), color = Kreuzer.aufAmber))
+            val oben = messer.measure(
+                "ZIEL",
+                Kreuzer.mono(11f, 0f).copy(fontSize = (11f * px).toSp(), lineHeight = TextUnit.Unspecified, color = Kreuzer.aufAmber),
+            )
             drawText(oben, topLeft = Offset(mitte.x - oben.size.width / 2f, mitte.y - 2f * px - oben.size.height))
             val zahl = messer.measure(
                 ziel?.let { ganzzahlDeutsch(it) } ?: "–",
-                TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.ExtraBold, fontSize = (12f * px).toSp(), color = Kreuzer.aufAmber),
+                Kreuzer.titel(12f, abstand = 0f).copy(fontSize = (12f * px).toSp(), lineHeight = TextUnit.Unspecified, color = Kreuzer.aufAmber),
             )
             drawText(zahl, topLeft = Offset(mitte.x - zahl.size.width / 2f, mitte.y))
         }

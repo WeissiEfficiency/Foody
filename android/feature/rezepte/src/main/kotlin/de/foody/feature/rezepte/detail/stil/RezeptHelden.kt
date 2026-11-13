@@ -206,7 +206,7 @@ internal fun GrauenHeld(z: DetailZustand.Da) {
     ) {
         val band = listOfNotNull(einordnungZeile(z), if (r.favorite) "♦ Favorit" else null).joinToString(" · ")
         if (band.isNotEmpty()) Text(band, style = Grauen.text(14f, kursiv = true), color = TINTE_NEBEN)
-        Text(r.name, Modifier.semantics { heading() }, style = Grauen.titel(begrenzt(26f)), color = TINTE)
+        Text(r.name, Modifier.semantics { heading() }, style = Grauen.name(begrenzt(26f)), color = TINTE)
         angabenZeile(z)?.let { Text(it, style = Grauen.text(15f), color = TINTE_NEBEN) }
     }
 }

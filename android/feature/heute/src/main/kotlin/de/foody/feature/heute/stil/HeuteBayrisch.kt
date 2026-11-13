@@ -146,7 +146,7 @@ private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
                     heading()
                     contentDescription = "Heute"
                 },
-                style = Bayrisch.titel(54f * min(k, 1.3f) / k), color = f.text, maxLines = 1,
+                style = Bayrisch.fraktur(54f * min(k, 1.3f) / k), color = f.text, maxLines = 1,
             )
             zustand?.datum?.let { Text(DATUM.format(it), style = Bayrisch.text(14.5f, FontWeight.Medium), color = f.text) }
             zustand?.sync?.let { SyncStatus(it, Modifier.padding(top = 4.dp)) }
