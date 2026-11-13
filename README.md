@@ -27,7 +27,8 @@ Alle Phasen und der Umstieg sind fertig; Offenes (Messungen, TalkBack, Review-Be
 - **Woche:** eine fortlaufende Wochenansicht; „Leere Tage füllen“ schlägt Hauptspeisen ohne Wiederholung vor.
 - **Einkauf:** eine Ansicht; Vorschau mit Abwählen vorhandener Artikel, gruppiert nach Abteilung, Rezepte auch direkt
   auf die Liste. Wasser wird nie eingekauft.
-- **Einstellungen:** Server und Anmeldung, Sicherung als ZIP, Darstellung, Tagesziel, **Zutatenkatalog** (Synonyme,
+- **Einstellungen:** Server und Anmeldung, Sicherung als ZIP, Darstellung (Milchglas mit Farbwelten oder einer von
+  sechs Stilen mit Immersiv und Ruhig, ADR 0020), Tagesziel, **Zutatenkatalog** (Synonyme,
   Zusammenführen) und **Packung scannen** (Strichcode, Open Food Facts abschaltbar, Foto der Nährwerttabelle; ADR 0013),
   auch direkt vom Homescreen-Widget **„Scannen“**. Das Widget **„KI-Foto“** öffnet gleich die Kamera für die
   Fotoerkennung.
