@@ -253,7 +253,8 @@ class EintragenViewModel @Inject constructor(
         letzterAuftrag = auftrag
         fotoLauf.abbrechen()
         val m = mahlzeit ?: mahlzeitNachUhrzeit(uhrzeit)
-        eingaben.value = if (start != null) Eingaben(datum = datum, mahlzeit = m, weg = EintragenWeg.FREI) else Eingaben(datum = datum, mahlzeit = m)
+        val frei = start == Schnellstart.Art.SCANNEN || start == Schnellstart.Art.FOTO
+        eingaben.value = if (frei) Eingaben(datum = datum, mahlzeit = m, weg = EintragenWeg.FREI) else Eingaben(datum = datum, mahlzeit = m)
         gesperrt.value = false
         // Widgets: nur einmal je Auftrag (der Abgleich oben), also nicht erneut nach Drehen oder Prozessende. Die Kamera
         // startet der Foto-Knopf (er hält den Launcher), sobald er zu sehen ist; ohne Modell bleibt es beim Blatt in „Frei“.

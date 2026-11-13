@@ -6,7 +6,14 @@
     <string name="widget_foto_name">Foody KI-Foto</string>
     <string name="widget_foto_text">Foto</string>
     <string name="widget_foto_beschreibung">Mahlzeit fotografieren, von der KI auswerten lassen und eintragen</string>
-    <!-- Farben beider Widgets aus dem Hintergrundbild (Material You); dunkel siehe values-night -->
+    <string name="widget_einkauf_name">Foody Einkauf</string>
+    <string name="widget_einkauf_titel">Einkauf</string>
+    <string name="widget_einkauf_beschreibung">Offene Artikel der aktuellen Einkaufsliste</string>
+    <string name="widget_eintragen_name">Foody Schnell eintragen</string>
+    <string name="widget_eintragen_titel">Eintragen</string>
+    <string name="widget_eintragen_fuss">Suchen · Scannen · Foto</string>
+    <string name="widget_eintragen_beschreibung">Essen eintragen: suchen, scannen oder fotografieren</string>
+    <!-- Farben aller Widgets aus dem Hintergrundbild (Material You); dunkel siehe values-night -->
     <color name="widget_flaeche">@android:color/system_accent1_100</color>
     <color name="widget_inhalt">@android:color/system_accent1_900</color>
 </resources>

@@ -57,6 +57,32 @@
                 android:resource="@xml/foto_widget_info" />
         </receiver>
 
+        <!-- Homescreen-Widget „Einkauf“ (EinkaufWidget): offene Artikel, Tipp öffnet die Liste; exportiert wie „Scannen“ -->
+        <receiver
+            android:name=".widget.EinkaufWidget"
+            android:exported="true"
+            android:label="@string/widget_einkauf_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/einkauf_widget_info" />
+        </receiver>
+
+        <!-- Homescreen-Widget „Schnell eintragen“: öffnet foody://eintragen (EintragenWidget) -->
+        <receiver
+            android:name=".widget.EintragenWidget"
+            android:exported="true"
+            android:label="@string/widget_eintragen_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/eintragen_widget_info" />
+        </receiver>
+
         <!-- WorkManager wird mit der HiltWorkerFactory selbst konfiguriert (FoodyApp) -->
         <provider
             android:name="androidx.startup.InitializationProvider"

@@ -20,7 +20,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-/** Widgets „Scannen“ und „KI-Foto“: im Manifest angemeldet, der Tipp startet die App mit ihrem Link. */
+/** Widgets „Scannen“, „KI-Foto“, „Einkauf“ und „Schnell eintragen“: im Manifest angemeldet (für fremde Launcher sichtbar). */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = Application::class)
 class WidgetTest {
@@ -51,6 +51,12 @@ class WidgetTest {
 
     @Test
     fun fotoImManifest() = imManifest(FotoWidget::class.java, R.xml.foto_widget_info)
+
+    @Test
+    fun einkaufImManifest() = imManifest(EinkaufWidget::class.java, R.xml.einkauf_widget_info)
+
+    @Test
+    fun eintragenImManifest() = imManifest(EintragenWidget::class.java, R.xml.eintragen_widget_info)
 
     @Test
     fun scanTippStartetScan() = tippStartet(ScanWidget::class.java, R.layout.widget_scan, SCAN_LINK)

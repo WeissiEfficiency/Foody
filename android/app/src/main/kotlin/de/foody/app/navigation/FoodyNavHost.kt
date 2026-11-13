@@ -134,16 +134,20 @@ const val SCAN_LINK = "${SCHEMA}scannen"
 /** Tipp aufs Widget „KI-Foto“: „Heute“ mit dem Eintragen-Blatt und gleich der Kamera für die Fotoerkennung. */
 const val FOTO_LINK = "${SCHEMA}foto"
 
+/** Tipp aufs Widget „Schnell eintragen“ (oder dessen Knopf im Heute-Widget): „Heute“ mit dem Eintragen-Blatt. */
+const val EINTRAGEN_LINK = "${SCHEMA}eintragen"
+
 /**
  * Offene Widget-Anfrage im SavedStateHandle von „Heute“ ([Schnellstart.alsText]): übersteht Drehen und Prozessende,
  * bis „Heute“ sie annimmt.
  */
 internal const val SCHNELLSTART = "schnellstart"
 
-/** Der Link eines Widgets ([SCAN_LINK], [FOTO_LINK]) als Schnellstart; andere Links → `null`. */
+/** Der Link eines Widgets ([SCAN_LINK], [FOTO_LINK], [EINTRAGEN_LINK]) als Schnellstart; andere Links → `null`. */
 fun Intent.schnellstart(): Schnellstart.Art? = when (data?.toString()) {
     SCAN_LINK -> Schnellstart.Art.SCANNEN
     FOTO_LINK -> Schnellstart.Art.FOTO
+    EINTRAGEN_LINK -> Schnellstart.Art.EINTRAGEN
     else -> null
 }
 
