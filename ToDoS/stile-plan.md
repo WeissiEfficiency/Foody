@@ -427,6 +427,17 @@ gleich, nicht nur der Pilot):
   `stil_*_bereitlegen_handy`, `stil_*_schritt_handy`.
 - Mundart: „Herrichten“, „Des brauchst“, „Weida“, „Zruck“, „Feddig!“, „Uhr aufziehn“, „Danach“.
 
+**2026-11-12 – Zeilen und Stempel R–V** (Branch `claude/stile-felder`):
+- Neu `WahlZeile` (`komponenten/WahlZeile.kt`): Treffer- und Listenzeile mit Titel, Info, Wert und Platz rechts
+  (`ende`). In R–V (Immersiv) wie in den Entwürfen: umrandete Karte mit Akzentfläche (Anime), Haarlinie mit
+  Zinnobermarke (Edo), gestrichelte Linie mit Punkt (Bayrisch), Linie mit Glutpunkt (Grauen), Linie mit Amberleiste
+  (Kreuzer); sonst die normale Zeile mit Haken. TalkBack: Optionsfeld oder Knopf.
+- `BlattTitel(zeichen = …)`: im Edo-Stil ein schräger Zinnoberstempel vor dem Titel („記“ beim Eintragen).
+- Eintragen (Treffer, Lebensmittelschlüssel, gescannte Produkte), Planen (Rezept wählen), Listen (frühere Listen),
+  Zutaten (Liste und „Zusammenführen mit …“) nehmen die Zeile; Milchglas, Ruhig und Sage bleiben unverändert.
+- Tests `EintragenStileTest` (Auswahl, 200 % Schrift); Bilder `stil_*_eintragen_handy`, `stil_*_listen_handy`,
+  `stil_*_zutaten_handy`.
+
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
 - Schriften der übrigen Entwürfe (Dela Gothic One, M PLUS Rounded 1c, Kaisei Decol, Zen Kaku Gothic

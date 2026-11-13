@@ -175,4 +175,29 @@ class EinkaufScreenshotTest {
     fun sageListenHandy() = blatt("sage_listen_handy", dunkel = false, warteAuf = "Listen des Händlers", stil = FoodyStil.SAGE) {
         compose.onNodeWithContentDescription("Frühere Listen").performClick()
     }
+
+    /** Stile R–V, Immersiv: frühere Listen mit den Zeilen des Stils. */
+    private fun stilListen(stil: FoodyStil, titel: String) = blatt("stil_${stil.name.lowercase()}_listen_handy", dunkel = false, warteAuf = titel, stil = stil) {
+        compose.onNodeWithContentDescription("Frühere Listen").performClick()
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun animeListen() = stilListen(FoodyStil.ANIME, "Listen!")
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun edoListen() = stilListen(FoodyStil.EDO, "Frühere Listen")
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun bayrischListen() = stilListen(FoodyStil.BAYRISCH, "Eikaufszettl")
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun grauenListen() = stilListen(FoodyStil.GRAUEN, "Frühere Listen")
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun kreuzerListen() = stilListen(FoodyStil.KREUZER, "Ladelisten")
 }

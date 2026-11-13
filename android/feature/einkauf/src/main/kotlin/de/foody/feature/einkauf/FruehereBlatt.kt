@@ -18,6 +18,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.einkauf.ListenKopf
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.WahlZeile
+import de.foody.core.designsystem.komponenten.zeilenImStil
 import de.foody.core.designsystem.stil.stilText
 
 /** „Frühere Listen“: Antippen öffnet, Papierkorb löscht (mit Rückfrage beim Aufrufer). */
@@ -29,13 +31,19 @@ internal fun FruehereBlatt(listen: List<ListenKopf>, onOeffnen: (String) -> Unit
             Text(stilText("Keine früheren Listen.", sage = "Der Händler führt noch keine früheren Listen."), color = FoodyTheme.farben.nebentext)
         }
         listen.forEach { l ->
+            val info = "angelegt ${l.angelegt.dayOfMonth}.${l.angelegt.monthValue}. · ${l.artikel} Artikel"
+            if (zeilenImStil()) {
+                WahlZeile(l.name, gewaehlt = false, { onOeffnen(l.id) }, info = info, knopf = true) {
+                    IconButton(onClick = { onLoeschen(l) }) {
+                        Icon(Icons.Outlined.Delete, contentDescription = "„${l.name}“ löschen", tint = FoodyTheme.farben.text)
+                    }
+                }
+                return@forEach
+            }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f).heightIn(min = 48.dp).clickable(role = Role.Button) { onOeffnen(l.id) }) {
                     Text(l.name, style = MaterialTheme.typography.titleMedium, color = FoodyTheme.farben.text)
-                    Text(
-                        "angelegt ${l.angelegt.dayOfMonth}.${l.angelegt.monthValue}. · ${l.artikel} Artikel",
-                        style = MaterialTheme.typography.bodySmall, color = FoodyTheme.farben.nebentext,
-                    )
+                    Text(info, style = MaterialTheme.typography.bodySmall, color = FoodyTheme.farben.nebentext)
                 }
                 IconButton(onClick = { onLoeschen(l) }) {
                     Icon(Icons.Outlined.Delete, contentDescription = "„${l.name}“ löschen", tint = FoodyTheme.farben.text)
