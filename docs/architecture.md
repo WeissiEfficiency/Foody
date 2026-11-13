@@ -243,7 +243,7 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   markieren ihren Tab. **Ein `FoodyNavHost` an fester Stelle** (seit R-W6): Kochen-Vollbild, Drehen und
   Breitenwechsel blenden nur Leiste bzw. Rail daneben ein oder aus, der Zustand der Bildschirme (`rememberSaveable`)
   bleibt. Deep Links `foody://rezept/{id}`, `foody://einkauf/{listeId}`, `foody://kochen/{rezeptId}?portionen={n}`,
-  `foody://tagebuch/{datum}` (ungültiges Datum → heute). Bei laufender App navigiert `deepLinkOeffnen` mit
+  `foody://tagebuch/{datum}` (ungültiges Datum → heute), `foody://woche`. Bei laufender App navigiert `deepLinkOeffnen` mit
   `launchSingleTop` ins Gerüst – **nicht** `handleDeepLink`: das baut bei `FLAG_ACTIVITY_NEW_TASK` (Tipp auf die
   Timer-Meldung) den Task neu auf und verwirft ungespeicherte Eingaben (R-W5).
   **Widget „Scannen“** (`widget/ScanWidget`, `AppWidgetProvider`, 2×1, Farben aus dem Hintergrundbild): Der Tipp öffnet
@@ -260,6 +260,20 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   die Kamera, sobald er zu sehen ist und den Ordner aufgeräumt hat – vorher `kameraAnfrageErledigt()`, damit Drehen oder
   Prozessende sie nicht noch einmal öffnen. Ohne Modell fehlt der Knopf: Das Blatt bleibt in „Frei“, das nächste normale
   Öffnen verwirft die Anfrage.
+  **Widgets mit Daten** (`widget/`, alle im gewählten Stil, siehe unten): „Einkauf“ (2×2, offene Artikel der jüngsten
+  Liste, Tipp `foody://einkauf/{listeId}`), „Schnell eintragen“ (2×2, `foody://eintragen` → `Schnellstart.Art.EINTRAGEN`
+  öffnet das Eintragen-Blatt wie gewohnt), „Heute“ (4×2, nächste Mahlzeit, kcal mit Balken, Ring oder Tank und die
+  Knöpfe „Kochen“/„Eintragen“), „Kalorien“ (2×2, Ring, Tipp `foody://tagebuch/{datum}`) und „Woche“ (4×1, Hauptgericht
+  je Tag – Abendessen vor Mittag, Frühstück, Snack –, Tipp `foody://woche`).
+  `WidgetDatenQuelle` liest nur aus den Repositories (`HeuteRepository`, `TagebuchRepository`, `TageszielSpeicher`,
+  Plan- und Rezept-DAO); die Empfänger holen sie über den Hilt-`@EntryPoint` `WidgetEinstieg` und laden in `onUpdate`
+  mit `goAsync` (`imHintergrund`). Solange der Prozess lebt, sammelt `WidgetBeobachter` (gestartet in `FoodyApp`) die
+  Flows und zeichnet nur Widgets neu, die auf dem Homescreen liegen; eine Uhr alle fünf Minuten wechselt die nächste
+  Mahlzeit und um Mitternacht den Tag. Sonst gilt das Update des Systems alle 30 Minuten.
+  Aussehen: `RemoteViews` kennen keine Szenen. `WidgetStil` (`Flaeche`, `KartenAussehen`) legt Schatten, Rand und Fläche
+  als drei eingefärbte, über den Umriss gerundete Ebenen übereinander; Schrift über Spans, Zeilenlinien als Drawables,
+  Ring, Balken, Tank, Rauten und Tagesmarken als Bitmaps in Gerätedichte (`WidgetBilder`, `markenBild`). Milchglas
+  bleibt in den Farben des Hintergrundbilds. Ein Wechsel des Stils zeichnet alle Widgets neu (`alleAktualisieren`).
   `Bildschirme` bündelt die Hilt-Bildschirme; Navigationstests setzen `Bildschirme.platzhalter` ein und laufen ohne Hilt.
 - **`:core:data`**: `HeuteRepository` (Plan heute/morgen nur mit vorhandenem, nicht archiviertem Rezept; kcal je
   Portion über `RecipeProfiles`; Rezeptvorschläge; offene Artikel der zuletzt geänderten Liste), `TagebuchRepository`

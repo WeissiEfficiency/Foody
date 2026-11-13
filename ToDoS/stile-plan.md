@@ -174,9 +174,10 @@ Gemeinsame liegt in `:core:designsystem`.
 ### Phase 7 – Widgets und Abschluss
 - [x] Die bestehenden Knopf-Widgets (Scannen, Foto) bekommen Farbe und Form des gewählten Stils. Es sind
       `RemoteViews`, Szenen gehen dort nicht.
-- [ ] Die neuen Widgets aus den Entwürfen (Heute, Kalorien, Einkauf, Woche) sind eigene Funktionen und bekommen einen
-      eigenen Plan.
-- [ ] Doku: `docs/architecture.md`, Tabelle in `docs/design/`, „Ergebnis“ hier.
+- [x] Die neuen Widgets aus den Entwürfen (Heute, Kalorien, Einkauf, Woche, Schnell eintragen) mit eigenem Plan
+      (`docs/superpowers/plans/2026-11-13-widgets.md`).
+- [x] Doku: `docs/architecture.md` (Navigation und Widgets), „Ergebnis“ hier. In `docs/design/` gibt es keine Tabelle
+      der Widgets.
 
 ## Aufwand und Risiken
 
@@ -502,12 +503,24 @@ gleich, nicht nur der Pilot):
   zeichnet vorhandene Widgets neu (`alleAktualisieren` aus der `MainActivity`).
 - Tests `WidgetStilTest` (Milchglas wie bisher, Anime mit Wort, Schatten, Farbe und Rundung, Ruhig, Wörter und Akzent,
   Neuzeichnen nach dem Wechsel).
-- Die übrigen Widgets der Entwürfe (Heute, Kalorien, Einkauf, Woche, bei S–V „Schnell eintragen“) sind neue
-  Funktionen und brauchen einen eigenen Plan (Phase 7).
+- Die übrigen Widgets der Entwürfe folgen mit eigenem Plan, siehe unten.
+
+**2026-11-13 – Widgets mit Daten** (Branches `claude/widgets-einkauf`, `claude/widgets-heute`, `claude/widgets-woche`;
+Spec `docs/superpowers/specs/2026-11-13-widgets-design.md`, Plan `docs/superpowers/plans/2026-11-13-widgets.md`):
+- Neue Widgets „Einkauf“ (2×2), „Schnell eintragen“ (2×2), „Heute“ (4×2), „Kalorien“ (2×2) und „Woche“ (4×1) im
+  gewählten Stil wie in den Widget-Entwürfen: Wörter je Stil in Immersiv (etwa „DER HÄNDLER“, „QUEST!“, „Fracht“,
+  „ABENDMAHL“, „NÄCHSTE MISSION“), Ring bei Edo, Bayrisch und Grauen, Tank bei Kreuzer, Balken sonst; in der Woche
+  Kanji bei Edo, Boxen bei Anime, Wimpel bei Bayrisch, Rauten bei Sage und Kreuzer, leuchtender Kreis bei Grauen.
+- Daten aus den Repositories (`WidgetDatenQuelle`), neu gezeichnet bei jeder Änderung (`WidgetBeobachter`), beim
+  Stilwechsel und alle 30 Minuten. Links `foody://eintragen` und `foody://woche` neu.
+- Tests `WidgetStilTest`, `DatenWidgetTest`, `HeuteWidgetTest`, `WocheWidgetTest` (Texte, Beschreibungen für
+  TalkBack, Links, Ansicht je Stil, Bitmaps), Manifest in `WidgetTest`, Links in `DeepLinkTest`.
+- Nicht prüfbar ohne Gerät: das Abrunden über den Umriss im Launcher (Robolectric zeichnet ohne) und der
+  `WidgetBeobachter` über Hilt.
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
 - Schriften der übrigen Entwürfe (Dela Gothic One, M PLUS Rounded 1c, Kaisei Decol, Zen Kaku Gothic
   New, UnifrakturCook, Alegreya, Alegreya Sans, IM Fell English, Special Elite, Exo 2, Share Tech Mono). Bis dahin
   Systemschriften der passenden Art (Serife, Grotesk, Monospace). Download braucht die Freigabe des Nutzers.
-- Szenen und Wörter von Immersiv (Phase 4 bis 6), Widgets (Phase 7), ADR 0020, Abschnitt in `docs/architecture.md`.
+- Szenen und Wörter von Immersiv (Phase 4 bis 6), ADR 0020, Abschnitt in `docs/architecture.md`.
