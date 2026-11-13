@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.isHeading
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onFirst
@@ -90,7 +91,7 @@ class EintragenStileTest {
         db.close()
     }
 
-    /** Öffnet das Blatt über „+“ und wechselt zu „Zutat“. */
+    /** Öffnet das Blatt über „+“, wählt „Abendessen“ und wechselt zu „Zutat“. */
     private fun oeffnen(stil: FoodyStil, schrift200: Boolean = false) {
         val kontext = RuntimeEnvironment.getApplication()
         val vm = halter.behalten(TagebuchTagViewModel(tagebuch, TageszielSpeicher(kontext)))
@@ -109,6 +110,10 @@ class EintragenStileTest {
         compose.warteAufText("Apfel")
         compose.onAllNodes(hasContentDescription("Eintragen") and !isHeading()).onFirst().performClick()
         compose.waitUntil(5_000) { compose.onAllNodes(hasContentDescription("Eintragen") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
+        // Die Mahlzeit fest wählen: ohne Wahl richtet sie sich nach der Uhrzeit, und die Bilder hingen davon ab
+        val abend = compose.onNode(hasContentDescription("Abendessen") and isSelectable())
+        abend.performClick()
+        abend.assertIsSelected()
         compose.onAllNodesWithContentDescription("Zutat").onFirst().performClick()
         compose.warteAufText("Haferflocken")
     }
