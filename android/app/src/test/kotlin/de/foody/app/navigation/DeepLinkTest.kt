@@ -119,6 +119,7 @@ class DeepLinkTest {
     fun widgetLinksErkannt() {
         assertEquals(Schnellstart.Art.SCANNEN, Intent(Intent.ACTION_VIEW, Uri.parse("foody://scannen")).schnellstart())
         assertEquals(Schnellstart.Art.FOTO, Intent(Intent.ACTION_VIEW, Uri.parse("foody://foto")).schnellstart())
+        assertEquals(Schnellstart.Art.EINTRAGEN, Intent(Intent.ACTION_VIEW, Uri.parse("foody://eintragen")).schnellstart())
         assertNull(Intent(Intent.ACTION_VIEW, Uri.parse("foody://rezept/r1")).schnellstart())
         assertNull(Intent(Intent.ACTION_MAIN).schnellstart())
     }

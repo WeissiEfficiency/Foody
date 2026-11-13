@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget „Schnell eintragen“ (EintragenWidget): Titel, großes „+“ im Kreis, darunter „Suchen · Scannen · Foto“.
+     Der ganze Knopf öffnet das Eintragen-Blatt; Farben, Rand und Kreis im Stil (eintragenAnsicht). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:contentDescription="@string/widget_eintragen_beschreibung">
+
+    <FrameLayout
+        android:id="@+id/widget_schatten"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_form"
+        android:clipToOutline="true"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:id="@+id/widget_rand"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_form"
+        android:clipToOutline="true"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/widget_knopf"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_hintergrund"
+        android:clipToOutline="true"
+        android:importantForAccessibility="no"
+        android:orientation="vertical"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="12dp">
+
+        <TextView
+            android:id="@+id/widget_titel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:importantForAccessibility="no"
+            android:maxLines="1"
+            android:text="@string/widget_eintragen_titel"
+            android:textColor="@color/widget_inhalt"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:importantForAccessibility="no">
+
+            <FrameLayout
+                android:id="@+id/widget_kreis_rand"
+                android:layout_width="62dp"
+                android:layout_height="62dp"
+                android:layout_gravity="center"
+                android:background="@drawable/widget_kreis"
+                android:backgroundTint="@color/widget_inhalt"
+                android:importantForAccessibility="no">
+
+                <TextView
+                    android:id="@+id/widget_plus"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/widget_kreis"
+                    android:backgroundTint="@color/widget_inhalt"
+                    android:gravity="center"
+                    android:importantForAccessibility="no"
+                    android:text="+"
+                    android:textColor="@color/widget_flaeche"
+                    android:textSize="32sp"
+                    android:textStyle="bold" />
+            </FrameLayout>
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/widget_fuss"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:importantForAccessibility="no"
+            android:maxLines="1"
+            android:text="@string/widget_eintragen_fuss"
+            android:textColor="@color/widget_inhalt"
+            android:textSize="12sp" />
+    </LinearLayout>
+</FrameLayout>
