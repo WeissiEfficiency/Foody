@@ -57,7 +57,7 @@ fun alleAktualisieren(context: Context) {
     }
     val eintragen = context.widgetIds(EintragenWidget::class.java)
     if (eintragen.isNotEmpty()) manager.updateAppWidget(eintragen, eintragenAnsicht(context, DarstellungSpeicher(context).stilAktuell()))
-    for (widget in listOf(EinkaufWidget::class.java)) {
+    for (widget in listOf(EinkaufWidget::class.java, HeuteWidget::class.java, KalorienWidget::class.java)) {
         val ids = context.widgetIds(widget)
         if (ids.isEmpty()) continue
         context.sendBroadcast(

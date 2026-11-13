@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget „Heute“ (HeuteWidget): 4×2 Zellen; neu gezeichnet, wenn sich Plan, Tagebuch oder Ziel ändern, sonst
+     alle 30 Minuten -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_heute_beschreibung"
+    android:initialLayout="@layout/widget_heute"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="110dp"
+    android:previewLayout="@layout/widget_heute"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen" />
