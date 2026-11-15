@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -59,6 +60,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.platform.testTag
@@ -183,41 +185,62 @@ private fun Lagerfeuer(glut: Color, modifier: Modifier) {
         remember { mutableStateOf(0.35f) }
     }
     val pfade = remember { SzenePfade() }
-    Canvas(modifier.clearAndSetSemantics { }) {
-        val s = size.height / ENTWURF_HOEHE
-        val x0 = (size.width - ENTWURF_BREITE * s) / 2f
-        drawRect(Brush.verticalGradient(0f to Color(0xFF07070A), 0.7f to Color(0xFF1A1712), 1f to Color(0xFF0D0C0A)))
-        // Hügel und Boden über die ganze Breite
-        drawRect(Color(0xFF121010), Offset(0f, 214f * s), Size(size.width, size.height - 214f * s))
-        translate(x0, 0f) {
-            scale(s, Offset.Zero) {
-                drawCircle(Color(0xFFC9C2AE).copy(alpha = 0.12f), 20f, Offset(300f, 62f))
-                drawPath(pfade.huegel, Color(0xFF121010))
-                pfade.ruinen.forEach { drawPath(it, Color(0xFF191612)) }
-            }
-        }
-        // Lichtschein des Feuers
-        drawRect(
-            Brush.radialGradient(
+    // Die ruhende Szene entsteht einmal je Größe (Verläufe inklusive); Flamme und Glut liegen in einer eigenen Ebene,
+    // damit ein Bild der Animation nur sie neu aufnimmt und nicht Himmel, Hügel und Ruinen.
+    Box(
+        modifier.clearAndSetSemantics { }.drawWithCache {
+            val s = size.height / ENTWURF_HOEHE
+            val x0 = (size.width - ENTWURF_BREITE * s) / 2f
+            val himmel = Brush.verticalGradient(0f to Color(0xFF07070A), 0.7f to Color(0xFF1A1712), 1f to Color(0xFF0D0C0A))
+            val schein = Brush.radialGradient(
                 0f to glut.copy(alpha = 0.45f), 0.5f to glut.copy(alpha = 0.1f), 1f to Color.Transparent,
                 center = Offset(size.width / 2f, size.height * 0.86f), radius = size.height * 0.62f,
-            ),
-        )
-        drawRect(Color(0xFF0D0C0A), Offset(0f, 268f * s), Size(size.width, size.height - 268f * s))
-        translate(x0, 0f) {
-            scale(s, Offset.Zero) {
-                drawLine(Color(0xFF3A2A18), Offset(160f, 270f), Offset(230f, 264f), 6f, StrokeCap.Round)
-                drawLine(Color(0xFF3A2A18), Offset(168f, 266f), Offset(226f, 274f), 6f, StrokeCap.Round)
-                feuer(pfade, flamme)
-                glutFunken(glut, funken)
+            )
+            onDrawBehind {
+                drawRect(himmel)
+                // Hügel und Boden über die ganze Breite
+                drawRect(Color(0xFF121010), Offset(0f, 214f * s), Size(size.width, size.height - 214f * s))
+                translate(x0, 0f) {
+                    scale(s, Offset.Zero) {
+                        drawCircle(Color(0xFFC9C2AE).copy(alpha = 0.12f), 20f, Offset(300f, 62f))
+                        drawPath(pfade.huegel, Color(0xFF121010))
+                        pfade.ruinen.forEach { drawPath(it, Color(0xFF191612)) }
+                    }
+                }
+                // Lichtschein des Feuers
+                drawRect(schein)
+                drawRect(Color(0xFF0D0C0A), Offset(0f, 268f * s), Size(size.width, size.height - 268f * s))
+                translate(x0, 0f) {
+                    scale(s, Offset.Zero) {
+                        drawLine(Color(0xFF3A2A18), Offset(160f, 270f), Offset(230f, 264f), 6f, StrokeCap.Round)
+                        drawLine(Color(0xFF3A2A18), Offset(168f, 266f), Offset(226f, 274f), 6f, StrokeCap.Round)
+                    }
+                }
             }
-        }
+        },
+    ) {
+        Spacer(
+            Modifier.matchParentSize().graphicsLayer { }.drawWithCache {
+                val s = size.height / ENTWURF_HOEHE
+                val x0 = (size.width - ENTWURF_BREITE * s) / 2f
+                onDrawBehind {
+                    translate(x0, 0f) {
+                        scale(s, Offset.Zero) {
+                            feuer(pfade, flamme)
+                            glutFunken(glut, funken)
+                        }
+                    }
+                }
+            },
+        )
     }
 }
 
+private val FLAMMENFARBE = Brush.verticalGradient(0f to Color(0xFFFDE68A), 0.5f to Color(0xFFF59E0B), 1f to Color(0xFFC2410C), startY = 196f, endY = 268f)
+
 private fun DrawScope.feuer(pfade: SzenePfade, flamme: Float) {
     withTransform({ scale(1f, 1f + 0.06f * flamme, Offset(195f, 268f)); translate(0f, -2f * flamme) }) {
-        drawPath(pfade.flamme, Brush.verticalGradient(0f to Color(0xFFFDE68A), 0.5f to Color(0xFFF59E0B), 1f to Color(0xFFC2410C), startY = 196f, endY = 268f))
+        drawPath(pfade.flamme, FLAMMENFARBE)
         drawPath(pfade.kern, Color(0xFFFFF7D6))
     }
 }

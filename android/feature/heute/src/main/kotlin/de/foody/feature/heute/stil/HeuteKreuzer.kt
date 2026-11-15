@@ -56,13 +56,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -291,32 +294,61 @@ private fun Sonnensystem(ziel: Int?, planeten: List<Planet>, wahl: Int, onWahl: 
     val messer = rememberTextMeasurer()
     BoxWithConstraints(modifier) {
         val s = maxWidth.value / SYSTEM_BREITE
-        Canvas(Modifier.matchParentSize().clearAndSetSemantics { }) {
-            val px = size.width / SYSTEM_BREITE
-            val mitte = Offset(140f * px, 135f * px)
-            listOf(Offset(12f, 20f), Offset(260f, 40f), Offset(30f, 240f), Offset(250f, 250f), Offset(200f, 12f)).forEach {
-                drawCircle(Color.White.copy(alpha = 0.5f), 0.8f * px, Offset(it.x * px, it.y * px))
-            }
-            val bahn = holo.copy(alpha = 0.28f)
-            drawCircle(bahn, 46f * px, mitte, style = Stroke(1.dp.toPx()))
-            drawCircle(bahn, 72f * px, mitte, style = Stroke(1.dp.toPx()))
-            rotate(drehung, mitte) {
-                drawCircle(bahn, 98f * px, mitte, style = Stroke(1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(3f * px, 5f * px))))
-            }
-            drawCircle(bahn, 122f * px, mitte, style = Stroke(1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(1f * px, 6f * px))))
-            drawCircle(amber.copy(alpha = 0.25f * korona), 34f * px, mitte)
-            drawCircle(amber, 24f * px, mitte)
-            // Beschriftung der Sonne in fester Größe: Zierde, die Zahl liest TalkBack am Treibstoff
-            val oben = messer.measure(
-                "ZIEL",
-                Kreuzer.mono(11f, 0f).copy(fontSize = (11f * px).toSp(), lineHeight = TextUnit.Unspecified, color = Kreuzer.aufAmber),
+        // Sterne, feste Bahnen, Sonne und Schrift entstehen einmal je Größe. Die gestrichelte Bahn dreht sich als eigene
+        // Ebene und die Korona pulsiert über die Deckkraft ihrer Ebene – beides ohne neu zu zeichnen.
+        val bahn = holo.copy(alpha = 0.28f)
+        Box(
+            Modifier.matchParentSize().clearAndSetSemantics { }.drawWithCache {
+                val px = size.width / SYSTEM_BREITE
+                val mitte = Offset(140f * px, 135f * px)
+                val linie = Stroke(1.dp.toPx())
+                val aussen = Stroke(1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(1f * px, 6f * px)))
+                onDrawBehind {
+                    STERNE.forEach { drawCircle(Color.White.copy(alpha = 0.5f), 0.8f * px, Offset(it.x * px, it.y * px)) }
+                    drawCircle(bahn, 46f * px, mitte, style = linie)
+                    drawCircle(bahn, 72f * px, mitte, style = linie)
+                    drawCircle(bahn, 122f * px, mitte, style = aussen)
+                }
+            },
+        ) {
+            Spacer(
+                Modifier.matchParentSize()
+                    .graphicsLayer {
+                        rotationZ = drehung
+                        transformOrigin = TransformOrigin(140f / SYSTEM_BREITE, 135f * size.width / SYSTEM_BREITE / size.height)
+                    }
+                    .drawWithCache {
+                        val px = size.width / SYSTEM_BREITE
+                        val strich = Stroke(1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(3f * px, 5f * px)))
+                        onDrawBehind { drawCircle(bahn, 98f * px, Offset(140f * px, 135f * px), style = strich) }
+                    },
             )
-            drawText(oben, topLeft = Offset(mitte.x - oben.size.width / 2f, mitte.y - 2f * px - oben.size.height))
-            val zahl = messer.measure(
-                ziel?.let { ganzzahlDeutsch(it) } ?: "–",
-                Kreuzer.titel(12f, abstand = 0f).copy(fontSize = (12f * px).toSp(), lineHeight = TextUnit.Unspecified, color = Kreuzer.aufAmber),
+            Spacer(
+                Modifier.matchParentSize().graphicsLayer { alpha = korona }.drawWithCache {
+                    val px = size.width / SYSTEM_BREITE
+                    onDrawBehind { drawCircle(amber.copy(alpha = 0.25f), 34f * px, Offset(140f * px, 135f * px)) }
+                },
             )
-            drawText(zahl, topLeft = Offset(mitte.x - zahl.size.width / 2f, mitte.y))
+            Spacer(
+                Modifier.matchParentSize().drawWithCache {
+                    val px = size.width / SYSTEM_BREITE
+                    val mitte = Offset(140f * px, 135f * px)
+                    // Beschriftung der Sonne in fester Größe: Zierde, die Zahl liest TalkBack am Treibstoff
+                    val oben = messer.measure(
+                        "ZIEL",
+                        Kreuzer.mono(11f, 0f).copy(fontSize = (11f * px).toSp(), lineHeight = TextUnit.Unspecified, color = Kreuzer.aufAmber),
+                    )
+                    val zahl = messer.measure(
+                        ziel?.let { ganzzahlDeutsch(it) } ?: "–",
+                        Kreuzer.titel(12f, abstand = 0f).copy(fontSize = (12f * px).toSp(), lineHeight = TextUnit.Unspecified, color = Kreuzer.aufAmber),
+                    )
+                    onDrawBehind {
+                        drawCircle(amber, 24f * px, mitte)
+                        drawText(oben, topLeft = Offset(mitte.x - oben.size.width / 2f, mitte.y - 2f * px - oben.size.height))
+                        drawText(zahl, topLeft = Offset(mitte.x - zahl.size.width / 2f, mitte.y))
+                    }
+                },
+            )
         }
         Box(Modifier.matchParentSize().selectableGroup()) {
             planeten.forEachIndexed { i, p ->
@@ -517,6 +549,9 @@ private fun Mission(zustand: HeuteZustand, aktionen: HeuteAktionen) {
 
 private const val SYSTEM_BREITE = 280f
 private const val SYSTEM_HOEHE = 270f
+
+/** Sterne um das Sonnensystem im Maß des Entwurfs. */
+private val STERNE = listOf(Offset(12f, 20f), Offset(260f, 40f), Offset(30f, 240f), Offset(250f, 250f), Offset(200f, 12f))
 
 /** Ort (Mitte) und Größe der Planeten je Bahn im Maß des Entwurfs. */
 private val PLANETENORT = mapOf(1 to Triple(170f, 100f, 14f), 2 to Triple(78f, 171f, 16f), 3 to Triple(229f, 176f, 18f), 4 to Triple(79f, 29f, 9f))
