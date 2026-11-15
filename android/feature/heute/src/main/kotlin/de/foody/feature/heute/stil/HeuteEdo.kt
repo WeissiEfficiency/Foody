@@ -75,7 +75,9 @@ import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.balkenanteile
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
+import de.foody.core.designsystem.komponenten.kcalZahl
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.EdoKnopf
@@ -317,11 +319,11 @@ private fun Speisefolge(t: TagebuchHeute, aktionen: HeuteAktionen) {
             )
             Row(
                 Modifier.clearAndSetSemantics {
-                    contentDescription = if (ziel != null) "${ganzzahlDeutsch(s.kcal)} von ${ganzzahlDeutsch(ziel)} kcal" else "${ganzzahlDeutsch(s.kcal)} kcal"
+                    contentDescription = kcalStand(s.kcal, ziel, s.vollstaendig)
                 },
                 verticalAlignment = Alignment.Bottom,
             ) {
-                Text(ganzzahlDeutsch(s.kcal), style = Edo.titel(20f), color = f.text)
+                Text(kcalZahl(s.kcal, s.vollstaendig), style = Edo.titel(20f), color = f.text)
                 Text(ziel?.let { " / ${ganzzahlDeutsch(it)} kcal" } ?: " kcal", Modifier.padding(bottom = 3.dp), style = Edo.text(13f), color = f.nebentext)
             }
         }

@@ -138,6 +138,8 @@ class HeuteKreuzerTest {
         assertEquals("43 % ERREICHT", kreuzerStatus(860, 2000))
         assertEquals("115 % · ÜBER ZIEL", kreuzerStatus(2300, 2000))
         assertEquals("860 KCAL", kreuzerStatus(860, null))
+        assertEquals("≥ 43 % ERREICHT", kreuzerStatus(860, 2000, vollstaendig = false))
+        assertEquals("≥ 860 KCAL", kreuzerStatus(860, null, vollstaendig = false))
         val p = planeten(beispielZustand().tagebuch)
         assertEquals(listOf(1, 2, 3, 4), p.map { it.bahn })
         assertEquals(listOf(Planetenart.GELANDET, Planetenart.GELANDET, Planetenart.KURS, Planetenart.FREI), p.map { it.art })

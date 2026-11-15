@@ -78,7 +78,9 @@ import de.foody.core.designsystem.komponenten.FoodyFrage
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
+import de.foody.core.designsystem.komponenten.kcalZahl
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
@@ -168,10 +170,10 @@ internal fun grauenDatum(d: LocalDate): String =
         d.month.getDisplayName(Wochentagform.FULL, Locale.GERMAN)
 
 /** Satz unter dem Auge: was es gesehen hat, gegen das Ziel. Ohne Ziel nur die Summe. */
-internal fun augenSatz(kcal: Int, ziel: Int?): String = when {
-    ziel == null -> "Es hat ${ganzzahlDeutsch(kcal)} kcal gesehen."
-    kcal > ziel -> "Es hat ${ganzzahlDeutsch(kcal)} von ${ganzzahlDeutsch(ziel)} kcal gesehen. Mehr, als es wollte."
-    else -> "Es hat ${ganzzahlDeutsch(kcal)} von ${ganzzahlDeutsch(ziel)} kcal gesehen."
+internal fun augenSatz(kcal: Int, ziel: Int?, vollstaendig: Boolean = true): String = when {
+    ziel == null -> "Es hat ${kcalText(kcal, vollstaendig)} gesehen."
+    kcal > ziel -> "Es hat ${kcalStand(kcal, ziel, vollstaendig)} gesehen. Mehr, als es wollte."
+    else -> "Es hat ${kcalStand(kcal, ziel, vollstaendig)} gesehen."
 }
 
 /** Das Auge mit dem Ring (Anteil am Ziel) und der Satz darunter; TalkBack hört einen nüchternen Satz. */
@@ -182,7 +184,7 @@ private fun DasAuge(t: TagebuchHeute) {
     val s = t.summe
     val ziel = t.ziel?.takeIf { it > 0 }
     val anteil = ziel?.let { (s.kcal.toFloat() / it).coerceIn(0f, 1f) }
-    val vorlesen = (if (ziel != null) "${ganzzahlDeutsch(s.kcal)} von ${ganzzahlDeutsch(ziel)} kcal" else "${ganzzahlDeutsch(s.kcal)} kcal") +
+    val vorlesen = kcalStand(s.kcal, ziel, s.vollstaendig) +
         (if (ziel != null && s.kcal > ziel) ", über Ziel" else "") +
         ": Eiweiß ${s.eiweiss} g, Kohlenhydrate ${s.kohlenhydrate} g, Fett ${s.fett} g"
     Column(
@@ -191,8 +193,8 @@ private fun DasAuge(t: TagebuchHeute) {
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Auge(anteil, glut, Modifier.widthIn(max = 300.dp).fillMaxWidth().aspectRatio(AUGE_BREITE / AUGE_HOEHE))
-        val satz = augenSatz(s.kcal, ziel)
-        val zahl = ganzzahlDeutsch(s.kcal)
+        val satz = augenSatz(s.kcal, ziel, s.vollstaendig)
+        val zahl = kcalZahl(s.kcal, s.vollstaendig)
         Text(
             buildAnnotatedString {
                 val i = satz.indexOf(zahl)

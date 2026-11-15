@@ -129,6 +129,8 @@ class HeuteGrauenTest {
         assertEquals("Sa · 24. Oktober", grauenDatum(LocalDate.of(2026, 10, 24)))
         assertEquals("Es hat 860 von 2.000 kcal gesehen.", augenSatz(860, 2000))
         assertEquals("Es hat 860 kcal gesehen.", augenSatz(860, null))
+        assertEquals("Es hat ≥ 860 von 2.000 kcal gesehen.", augenSatz(860, 2000, vollstaendig = false))
+        assertEquals("Es hat ≥ 860 kcal gesehen.", augenSatz(860, null, vollstaendig = false))
         assertEquals("Es hat 2.300 von 2.000 kcal gesehen. Mehr, als es wollte.", augenSatz(2300, 2000))
         assertEquals("Das Ritual des Abends", ritualName("ABENDESSEN", morgen = false))
         assertEquals("Das Ritual des Morgens · morgen", ritualName("FRUEHSTUECK", morgen = true))

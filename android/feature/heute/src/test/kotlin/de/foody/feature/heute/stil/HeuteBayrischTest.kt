@@ -105,6 +105,9 @@ class HeuteBayrischTest {
         assertEquals("Passt scho – no 1.140 frei", bilanzSatz(860, 2000))
         assertEquals("Obacht – 300 drüber", bilanzSatz(2300, 2000))
         assertEquals("860 kcal heid", bilanzSatz(860, null))
+        assertEquals("Passt scho – no ≤ 1.140 frei", bilanzSatz(860, 2000, vollstaendig = false))
+        assertEquals("Obacht – ≥ 300 drüber", bilanzSatz(2300, 2000, vollstaendig = false))
+        assertEquals("≥ 860 kcal heid", bilanzSatz(860, null, vollstaendig = false))
         assertEquals("Heid auf d'Nacht", essenKopf("ABENDESSEN", morgen = false))
         assertEquals("Morgn in da Friah", essenKopf("FRUEHSTUECK", morgen = true))
         val t = beispielZustand().tagebuch

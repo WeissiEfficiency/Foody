@@ -75,7 +75,21 @@ class HeuteWidgetTest {
             id = kj ?: "leer", datum = tag, mahlzeit = "SNACK", art = TagebuchArt.FREI, name = "x", energieKj = kj?.let(::BigDecimal),
             createdAt = 1, updatedAt = 1,
         )
-        assertEquals(1000, kcalSumme(listOf(eintrag("2092"), eintrag("2092"), eintrag(null))))
+        val summe = tagesSumme(listOf(eintrag("2092"), eintrag("2092"), eintrag(null)))
+        assertEquals(1000, summe.kcal)
+        assertEquals(false, summe.vollstaendig)
+        assertEquals(true, tagesSumme(listOf(eintrag("2092"))).vollstaendig)
+    }
+
+    /** Regel 24: fehlen Energiewerte, ist die Tagessumme eine Untergrenze und der Rest eine Obergrenze. */
+    @Test
+    fun unvollstaendigZeigtMindestens() {
+        val d = HeuteDaten(tag, mahlzeit(), 860, 2000, vollstaendig = false)
+        assertEquals("≥ 860 / 2.000 kcal", kcalText(d))
+        assertEquals("≤ 1.140" to "übrig", kalorienRest(d))
+        assertEquals("≥ 140" to "drüber", kalorienRest(d.copy(kcal = 2140)))
+        assertEquals("≥ 860" to "kcal heute", kalorienRest(d.copy(ziel = null)))
+        assertEquals("Heute: ≥ 860 von 2.000 kcal. Nichts geplant.", heuteBeschreibung(d.copy(naechste = null)))
     }
 
     @Test

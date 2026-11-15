@@ -81,6 +81,8 @@ import de.foody.core.designsystem.komponenten.SyncAnzeige
 import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.balkenanteile
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.kcalStand
+import de.foody.core.designsystem.komponenten.kcalZahl
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.SageHauptknopf
@@ -250,12 +252,12 @@ private fun Vitalitaet(t: TagebuchHeute) {
     val s = t.summe
     val ziel = t.ziel?.takeIf { it > 0 }
     val ueber = ziel != null && s.kcal > ziel
-    val satz = (if (ziel != null) "${ganzzahlDeutsch(s.kcal)} von ${ganzzahlDeutsch(ziel)} kcal" else "${ganzzahlDeutsch(s.kcal)} kcal") +
+    val satz = kcalStand(s.kcal, ziel, s.vollstaendig) +
         (if (ueber) ", über Ziel" else "") + ": Eiweiß ${s.eiweiss} g, Kohlenhydrate ${s.kohlenhydrate} g, Fett ${s.fett} g"
     Column(Modifier.clearAndSetSemantics { contentDescription = satz }, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text("VITALITÄT", Modifier.weight(1f), style = Sage.titel(12f, 0.2f), color = f.nebentext)
-            Text(ganzzahlDeutsch(s.kcal), style = Sage.titel(22f, 0.02f), color = sageHell())
+            Text(kcalZahl(s.kcal, s.vollstaendig), style = Sage.titel(22f, 0.02f), color = sageHell())
             Text(
                 (if (ziel != null) " / ${ganzzahlDeutsch(ziel)} kcal" else " kcal") + if (ueber) " · über Ziel" else "",
                 style = Sage.text(15f), color = f.nebentext,

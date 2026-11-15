@@ -51,7 +51,9 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
+import de.foody.core.designsystem.komponenten.kcalZahl
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.SageNebenknopf
@@ -208,7 +210,7 @@ private fun Bilanz(z: TagZustand) {
     val s = z.summe
     val ziel = z.ziel?.takeIf { it > 0 }
     val anteil = if (ziel != null) (s.kcal.toFloat() / ziel).coerceIn(0f, 1f) else if (s.kcal > 0) 1f else 0f
-    val satz = (if (ziel != null) "${ganzzahlDeutsch(s.kcal)} von ${ganzzahlDeutsch(ziel)} kcal" else "${ganzzahlDeutsch(s.kcal)} kcal") +
+    val satz = kcalStand(s.kcal, ziel, s.vollstaendig) +
         ": Eiweiß ${s.eiweiss} g, Kohlenhydrate ${s.kohlenhydrate} g, Fett ${s.fett} g"
     val energie = (s.eiweiss * 4 + s.kohlenhydrate * 4 + s.fett * 9).coerceAtLeast(1)
     Row(
@@ -225,7 +227,7 @@ private fun Bilanz(z: TagZustand) {
                 if (anteil > 0f) drawArc(glut, -90f, 360f * anteil, false, tl, Size(2 * r, 2 * r), style = Stroke(strich))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(ganzzahlDeutsch(s.kcal), style = Sage.titel(22f, 0f), color = sageHell())
+                Text(kcalZahl(s.kcal, s.vollstaendig), style = Sage.titel(22f, 0f), color = sageHell())
                 Text(if (ziel != null) "von ${ganzzahlDeutsch(ziel)}" else "kcal", style = Sage.text(13f), color = f.nebentext)
             }
         }

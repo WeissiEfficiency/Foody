@@ -49,13 +49,13 @@ fun balkenanteile(kcal: Int, ziel: Int?, eiweissG: Int, khG: Int, fettG: Int): B
  * nennt die Grammzahlen, damit die Farbe nicht allein trägt; TalkBack liest den ganzen Stand als einen Satz.
  */
 @Composable
-fun Naehrwertbalken(kcal: Int, ziel: Int?, eiweissG: Int, khG: Int, fettG: Int, modifier: Modifier = Modifier) {
+fun Naehrwertbalken(kcal: Int, ziel: Int?, eiweissG: Int, khG: Int, fettG: Int, modifier: Modifier = Modifier, vollstaendig: Boolean = true) {
     val f = FoodyTheme.farben
     val a = balkenanteile(kcal, ziel, eiweissG, khG, fettG)
     val hatZiel = ziel != null && ziel > 0
-    val stand = if (hatZiel) "${ganzzahlDeutsch(kcal)} / ${ganzzahlDeutsch(ziel)} kcal" else "${ganzzahlDeutsch(kcal)} kcal"
+    val stand = if (hatZiel) "${kcalZahl(kcal, vollstaendig)} / ${ganzzahlDeutsch(ziel)} kcal" else kcalText(kcal, vollstaendig)
     val kopf = if (a.ueberZiel) "$stand · über Ziel" else stand
-    val satzStand = if (hatZiel) "${ganzzahlDeutsch(kcal)} von ${ganzzahlDeutsch(ziel)} kcal" else "${ganzzahlDeutsch(kcal)} kcal"
+    val satzStand = kcalStand(kcal, ziel, vollstaendig)
     val beschreibung = (if (a.ueberZiel) "$satzStand, über Ziel" else satzStand) +
         ": Eiweiß $eiweissG g, Kohlenhydrate $khG g, Fett $fettG g"
 

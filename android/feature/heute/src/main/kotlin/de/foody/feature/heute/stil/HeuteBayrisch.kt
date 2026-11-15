@@ -65,7 +65,10 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.kcalRest
+import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
+import de.foody.core.designsystem.komponenten.kcalZahl
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.bayrisch.BayrischKnopf
@@ -192,10 +195,10 @@ internal fun essenKopf(slot: String, morgen: Boolean): String {
 }
 
 /** Bilanz in einem Satz: „Passt scho – no 1.140 frei“, über dem Ziel „Obacht – 300 drüber“. */
-internal fun bilanzSatz(kcal: Int, ziel: Int?): String = when {
-    ziel == null || ziel <= 0 -> "${ganzzahlDeutsch(kcal)} kcal heid"
-    kcal <= ziel -> "Passt scho – no ${ganzzahlDeutsch(ziel - kcal)} frei"
-    else -> "Obacht – ${ganzzahlDeutsch(kcal - ziel)} drüber"
+internal fun bilanzSatz(kcal: Int, ziel: Int?, vollstaendig: Boolean = true): String = when {
+    ziel == null || ziel <= 0 -> "${kcalText(kcal, vollstaendig)} heid"
+    kcal <= ziel -> "Passt scho – no ${kcalRest(ziel - kcal, vollstaendig)} frei"
+    else -> "Obacht – ${kcalZahl(kcal - ziel, vollstaendig)} drüber"
 }
 
 /** Text auf dem Schild einer Mahlzeit: Gericht und kcal, offen „no nix“. */
@@ -211,7 +214,7 @@ internal fun schildText(a: MahlzeitAbschnitt): String {
 /** Was TalkBack über den Maibaum hört: die Bilanz und jede Mahlzeit in normalen Worten. */
 internal fun maibaumBeschreibung(t: TagebuchHeute): String {
     val ziel = t.ziel?.takeIf { it > 0 }
-    val kopf = if (ziel != null) "${ganzzahlDeutsch(t.summe.kcal)} von ${ganzzahlDeutsch(ziel)} kcal" else "${ganzzahlDeutsch(t.summe.kcal)} kcal"
+    val kopf = kcalStand(t.summe.kcal, ziel, t.summe.vollstaendig)
     val mahlzeiten = t.mahlzeiten.joinToString(". ") { a ->
         val v = a.vorschlaege.firstOrNull()
         "${a.mahlzeit.anzeigename()}: " + when {
@@ -255,7 +258,7 @@ private fun Maibaum(t: TagebuchHeute, modifier: Modifier) {
             // Stand der kcal: Schild über dem Ring am Stamm
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    "${ganzzahlDeutsch(t.summe.kcal)} kcal",
+                    kcalText(t.summe.kcal, t.summe.vollstaendig),
                     Modifier.fillMaxWidth().background(Color(0xFFFBF6EA), RoundedCornerShape(6.dp)).border(1.5.dp, f.text, RoundedCornerShape(6.dp))
                         .padding(vertical = 1.dp),
                     style = Bayrisch.titel(15f, FontWeight.ExtraBold), color = f.text, textAlign = TextAlign.Center,
@@ -408,8 +411,8 @@ private fun Bilanz(t: TagebuchHeute, onTagebuch: () -> Unit) {
         Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.75f), RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        val vorlesen = "Tagebuch, " + if (ziel != null) "${ganzzahlDeutsch(s.kcal)} von ${ganzzahlDeutsch(ziel)} kcal" else "${ganzzahlDeutsch(s.kcal)} kcal"
-        Verweis("${bilanzSatz(s.kcal, ziel)} ›", vorlesen, onTagebuch)
+        val vorlesen = "Tagebuch, " + kcalStand(s.kcal, ziel, s.vollstaendig)
+        Verweis("${bilanzSatz(s.kcal, ziel, s.vollstaendig)} ›", vorlesen, onTagebuch)
         listOf(
             Triple("Eiweiß", s.eiweiss, f.makro.eiweiss),
             Triple("Kohlenhydrate", s.kohlenhydrate, f.makro.kohlenhydrate),
