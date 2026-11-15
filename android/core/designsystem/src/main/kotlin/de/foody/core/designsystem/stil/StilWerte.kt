@@ -106,8 +106,8 @@ fun stilWerte(
 ): StilWerte {
     val akzent = stil.akzent(akzentName) ?: return milchglasWerte(farbwelt, dunkel)
     val immersiv = variante == StilVariante.IMMERSIV
-    val g = grundlage(stil, immersiv, akzent.farbe)
-    val (werte, akzentFarbe) = ableiten(g, akzent.farbe, if (stil == FoodyStil.KREUZER) Holo else null)
+    val g = stilGrundlage(stil, immersiv, akzent.farbe)
+    val (werte, akzentFarbe) = ableiten(g, akzent.farbe, if (stil == FoodyStil.KREUZER) HoloBlau else null)
     return StilWerte(
         stil = stil, variante = variante, akzent = akzent, dunkel = g.dunkel, werte = werte,
         formen = formen(stil, immersiv), typografie = schrift(stil).typografie, augenbraue = schrift(stil).augenbraue,
@@ -115,14 +115,14 @@ fun stilWerte(
         kante = if (immersiv && (stil == FoodyStil.ANIME || stil == FoodyStil.BAYRISCH)) 2.dp else 1.dp,
         schatten = if (immersiv && stil == FoodyStil.ANIME) g.text else null,
         muster = if (!immersiv) Hintergrundmuster.KEINS else muster(stil),
-        zier = if (stil == FoodyStil.KREUZER) Holo else akzent.farbe,
+        zier = if (stil == FoodyStil.KREUZER) HoloBlau else akzent.farbe,
         herz = angleichen(akzent.farbe, AbzeichenUntergruende, GRAFIK, Color.Black),
         akzentFarbe = akzentFarbe,
     )
 }
 
 /** Holo-Blau des Sternenkreuzers: zweite Farbe neben dem Akzent (Grafik, Linien). */
-private val Holo = Color(0xFF5CE1FF)
+val HoloBlau = Color(0xFF5CE1FF)
 
 private const val TEXT = 4.5
 private const val GRAFIK = 3.0
@@ -130,8 +130,11 @@ private const val GRAFIK = 3.0
 // Helles Abzeichen (Weiß 90 %) über einem Foto von Schwarz bis Weiß
 private val AbzeichenUntergruende = listOf(mischen(Color.White.copy(alpha = 0.9f), Color.Black), Color.White)
 
-/** Rohwerte eines Stils aus dem Entwurf, vor dem Angleichen an AA. */
-private data class Grundlage(
+/**
+ * Rohwerte eines Stils aus dem Entwurf, vor dem Angleichen an AA. Die Widgets nehmen sie direkt, weil sie eigene
+ * Flächen haben und gegen diese angleichen.
+ */
+data class StilGrundlage(
     val dunkel: Boolean,
     val grund: Color,
     val text: Color,
@@ -143,78 +146,78 @@ private data class Grundlage(
     val unten: Color = Color.Transparent,
 )
 
-private fun grundlage(stil: FoodyStil, immersiv: Boolean, akzent: Color): Grundlage = when (stil) {
+fun stilGrundlage(stil: FoodyStil, immersiv: Boolean, akzent: Color): StilGrundlage = when (stil) {
     FoodyStil.SAGE -> if (immersiv) {
-        Grundlage(
+        StilGrundlage(
             dunkel = true, grund = Color(0xFF0D0C0A), text = Color(0xFFE4DCC8), neben = Color(0xFF9A9079),
             glas = Color(0xFF17140F), linie = Color(0xFF3A3428), kante = Color(0xFF5A4F38),
             oben = Color(0xFF1E1B16), unten = akzent.copy(alpha = 0.10f),
         )
     } else {
-        Grundlage(
+        StilGrundlage(
             dunkel = true, grund = Color(0xFF121110), text = Color(0xFFE4DCC8), neben = Color(0xFF9A9079),
             glas = Color(0xFF1A1814), linie = Color(0xFF2E2A22), kante = Color(0xFF3A3428),
         )
     }
     FoodyStil.ANIME -> if (immersiv) {
-        Grundlage(
+        StilGrundlage(
             dunkel = false, grund = Color(0xFFFFF4F8), text = Color(0xFF1B1A2E), neben = Color(0xFF4A4860),
             glas = Color(0xFFFFFFFF), linie = Color(0xFFF0E2EA), kante = Color(0xFF1B1A2E),
             oben = akzent.copy(alpha = 0.22f), unten = Color(0xFFFFE45C).copy(alpha = 0.30f),
         )
     } else {
-        Grundlage(
+        StilGrundlage(
             dunkel = false, grund = Color(0xFFFFFFFF), text = Color(0xFF1B1A2E), neben = Color(0xFF55546A),
             glas = Color(0xFFFFF8FB), linie = Color(0xFFEEE6EA), kante = Color(0xFFE4DAE0),
         )
     }
     FoodyStil.EDO -> if (immersiv) {
-        Grundlage(
+        StilGrundlage(
             dunkel = false, grund = Color(0xFFE6DCC4), text = Color(0xFF231F1A), neben = Color(0xFF5A5145),
             glas = Color(0xFFF6EFDF), linie = Color(0xFFD8CBAE), kante = Color(0xFFC9B98F),
             oben = Color(0xFFF6EFDF).copy(alpha = 0.7f), unten = akzent.copy(alpha = 0.10f),
         )
     } else {
-        Grundlage(
+        StilGrundlage(
             dunkel = false, grund = Color(0xFFEFE6D2), text = Color(0xFF231F1A), neben = Color(0xFF5A5145),
             glas = Color(0xFFF6EFDF), linie = Color(0xFFD8CBAE), kante = Color(0xFFD8CBAE),
         )
     }
     FoodyStil.BAYRISCH -> if (immersiv) {
-        Grundlage(
+        StilGrundlage(
             dunkel = false, grund = Color(0xFFFBF6EA), text = Color(0xFF2B1E14), neben = Color(0xFF5C4A3A),
             glas = Color(0xFFFFFFFF), linie = Color(0xFFCDBB9C), kante = akzent,
             // Himmel oben, der in Papier übergeht
             oben = Color(0xFFCFE3F3).copy(alpha = 0.9f),
         )
     } else {
-        Grundlage(
+        StilGrundlage(
             dunkel = false, grund = Color(0xFFFBF6EA), text = Color(0xFF2B1E14), neben = Color(0xFF5C4A3A),
             glas = Color(0xFFFFFFFF), linie = Color(0xFFCDBB9C), kante = Color(0xFFCDBB9C),
         )
     }
     FoodyStil.GRAUEN -> if (immersiv) {
-        Grundlage(
+        StilGrundlage(
             dunkel = true, grund = Color(0xFF070B0A), text = Color(0xFFCFE0D6), neben = Color(0xFF7F948A),
             glas = Color(0xFF0E1814), linie = Color(0xFF24352E), kante = Color(0xFF2E4A3E),
             oben = Color(0xFF13221C), unten = akzent.copy(alpha = 0.08f),
         )
     } else {
         // Pergament
-        Grundlage(
+        StilGrundlage(
             dunkel = false, grund = Color(0xFFC9BB96), text = Color(0xFF2A2418), neben = Color(0xFF4A4030),
             glas = Color(0xFFD9CDAE), linie = Color(0xFFB9AA86), kante = Color(0xFFA89A76),
             oben = Color(0xFFE2D8BC), unten = Color(0xFFB9AA86).copy(alpha = 0.9f),
         )
     }
     FoodyStil.KREUZER -> if (immersiv) {
-        Grundlage(
+        StilGrundlage(
             dunkel = true, grund = Color(0xFF050913), text = Color(0xFFE9EEF2), neben = Color(0xFF8A97AD),
-            glas = Color(0xFF0A1222), linie = Color(0xFF1C2A44), kante = Holo.copy(alpha = 0.35f),
-            oben = Color(0xFF0E1A33), unten = Holo.copy(alpha = 0.07f),
+            glas = Color(0xFF0A1222), linie = Color(0xFF1C2A44), kante = HoloBlau.copy(alpha = 0.35f),
+            oben = Color(0xFF0E1A33), unten = HoloBlau.copy(alpha = 0.07f),
         )
     } else {
-        Grundlage(
+        StilGrundlage(
             dunkel = true, grund = Color(0xFF0B0F17), text = Color(0xFFE6EAF0), neben = Color(0xFF8D96A6),
             glas = Color(0xFF121826), linie = Color(0xFF222A38), kante = Color(0xFF2A3346),
         )
@@ -227,7 +230,7 @@ private fun grundlage(stil: FoodyStil, immersiv: Boolean, akzent: Color): Grundl
  * Szenen ([StilWerte.akzentFarbe]): als Text auf Grund und Karten angeglichen, aber anders als `primaer` nicht auch für
  * die Leiste über Fotos, damit er dem Entwurf so nah wie möglich bleibt.
  */
-private fun ableiten(g: Grundlage, akzent: Color, zweite: Color?): Pair<FarbweltWerte, Color> {
+private fun ableiten(g: StilGrundlage, akzent: Color, zweite: Color?): Pair<FarbweltWerte, Color> {
     val verlauf = Verlauf(oben = g.oben, unten = g.unten)
     val platzhalter = listOf(lerp(g.glas, akzent, 0.35f), lerp(g.glas, akzent, 0.55f), lerp(g.glas, akzent, 0.8f))
     val untergruende = listOf(g.grund, mischen(g.oben, g.grund), mischen(g.unten, g.grund))

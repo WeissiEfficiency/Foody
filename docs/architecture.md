@@ -292,7 +292,10 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   Aussehen: `RemoteViews` kennen keine Szenen. `WidgetStil` (`Flaeche`, `KartenAussehen`) legt Schatten, Rand und Fläche
   als drei eingefärbte, über den Umriss gerundete Ebenen übereinander; Schrift über Spans, Zeilenlinien als Drawables,
   Ring, Balken, Tank, Rauten und Tagesmarken als Bitmaps in Gerätedichte (`WidgetBilder`, `markenBild`). Milchglas
-  bleibt in den Farben des Hintergrundbilds. Ein Wechsel des Stils zeichnet alle Widgets neu (`alleAktualisieren`).
+  bleibt in den Farben des Hintergrundbilds. Die Farben der Stile kommen aus den Entwürfen im Designsystem
+  (`stilGrundlage`, über `Entwuerfe` in `WidgetFarben`); Schrift und Nebentext werden gegen die Fläche des Widgets auf
+  4,5:1 angeglichen (`lesbarAuf`, geprüft in `WidgetStilTest`). Nur Werte, die es allein auf Widgets gibt (Anime-Gelb,
+  Ringspuren, der Grauen-Zettel), stehen in `app/`. Ein Wechsel des Stils zeichnet alle Widgets neu (`alleAktualisieren`).
   Jede Aktualisierung geht über `frischZeigen`: Die Ansicht steckt in der Hülle `widget_huelle` und wird jedes Mal
   entfernt und neu eingesetzt. Bei gleichem Layout wendet der Launcher sonst nur die neuen Aufrufe auf die alten Views an,
   und Stempel, Band, Knöpfe oder abgehakte Zeilen blieben aus dem vorigen Stil oder den vorigen Daten stehen. Enge

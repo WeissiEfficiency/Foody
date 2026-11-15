@@ -79,10 +79,6 @@ data class KartenAussehen(
     val nebenSchrift: String?,
 )
 
-private const val TINTE = 0xFF1B1A2E.toInt()
-
-private fun argb(wert: Long) = wert.toInt()
-
 /** Akzent des gewählten Stils als ARGB; Milchglas hat keinen. */
 internal fun akzentVon(wahl: StilWahl): Int? = FoodyStil.ausName(wahl.stil).akzent(wahl.akzent)?.farbe?.toArgb()
 
@@ -119,40 +115,39 @@ fun kartenAussehen(context: Context, wahl: StilWahl, zettel: Boolean = false): K
             text, ColorUtils.setAlphaComponent(text, 0xC0), text, ColorUtils.setAlphaComponent(text, 0x40), Linie.KEINE, null, null,
         )
     }
-    return when (stil) {
+    val e = Entwurf(stil)
+    val k = when (stil) {
         FoodyStil.SAGE -> KartenAussehen(
-            stil, immersiv, Flaeche(argb(0xFF1E1B16), argb(0xFF5A4F38), 1f, 2f, false),
-            argb(0xFFF4EEDD), argb(0xFF9A9079), akzent, argb(0xFF5A4F38), Linie.KEINE, "serif", null,
+            stil, immersiv, Flaeche(e.oben, e.kante, 1f, 2f, false), e.text, e.neben, akzent, e.kante, Linie.KEINE, "serif", null,
         )
         FoodyStil.ANIME -> KartenAussehen(
-            stil, immersiv, Flaeche(argb(0xFFFFFFFF), TINTE, 3f, 22f, immersiv),
-            TINTE, ColorUtils.setAlphaComponent(TINTE, 0xC0), akzent, TINTE, if (immersiv) Linie.PILLE else Linie.KEINE, "sans-serif-black", null,
+            stil, immersiv, Flaeche(e.glas, e.kante, 3f, 22f, immersiv),
+            e.text, ColorUtils.setAlphaComponent(e.text, 0xC0), akzent, e.kante, if (immersiv) Linie.PILLE else Linie.KEINE, "sans-serif-black", null,
         )
         FoodyStil.EDO -> KartenAussehen(
-            stil, immersiv, Flaeche(argb(0xFFF6EFDF), argb(0xFFC9B98F), 1f, 18f, false),
-            argb(0xFF231F1A), argb(0xFF5A5145), akzent, argb(0xFFC9B98F), Linie.PUNKTE, "serif", null,
+            stil, immersiv, Flaeche(e.glas, e.kante, 1f, 18f, false), e.text, e.neben, akzent, e.kante, Linie.PUNKTE, "serif", null,
         )
         FoodyStil.BAYRISCH -> KartenAussehen(
-            stil, immersiv, Flaeche(argb(0xFFFFFFFF), argb(0xFF2B1E14), 2f, 22f, false),
-            argb(0xFF2B1E14), argb(0xFF5C4A3A), akzent, argb(0xFFCDBB9C), Linie.STRICHE, "serif", null,
+            stil, immersiv, Flaeche(e.glas, e.text, 2f, 22f, false), e.text, e.neben, akzent, e.linie, Linie.STRICHE, "serif", null,
         )
         FoodyStil.GRAUEN -> if (zettel) {
+            // Schrift des Pergaments, der Akzent als Tinte auf dem Zettel
+            val p = Entwuerfe.pergament
             KartenAussehen(
-                stil, immersiv, Flaeche(argb(0xFFDCCB98), argb(0xFF8C7A4E), 1f, 22f, false),
-                argb(0xFF2A2418), argb(0xFF5A4C34), argb(0xFF2F5A43), ColorUtils.setAlphaComponent(argb(0xFF2A2418), 0x4D), Linie.PUNKTE,
-                "serif", "monospace",
+                stil, immersiv, Flaeche(ZETTEL, ZETTEL_RAND, 1f, 22f, false),
+                p.text, p.neben, lesbarAuf(akzent, ZETTEL), ColorUtils.setAlphaComponent(p.text, 0x4D), Linie.PUNKTE, "serif", "monospace",
             )
         } else {
             KartenAussehen(
-                stil, immersiv, Flaeche(argb(0xFF0C1210), akzent, 1f, 22f, false),
-                argb(0xFFCFE0D6), argb(0xFF7F948A), akzent, argb(0xFF24352E), Linie.VOLL, "serif", "monospace",
+                stil, immersiv, Flaeche(e.glas, akzent, 1f, 22f, false), e.text, e.neben, akzent, e.linie, Linie.VOLL, "serif", "monospace",
             )
         }
         else -> KartenAussehen(
-            stil, immersiv, Flaeche(argb(0xFF070C18), ColorUtils.setAlphaComponent(argb(0xFF5CE1FF), 0x59), 1f, 22f, false),
-            argb(0xFFE9EEF2), argb(0xFF8A97AD), akzent, argb(0xFF1C2A44), Linie.VOLL, "sans-serif-condensed", "monospace",
+            stil, immersiv, Flaeche(e.glas, e.kante, 1f, 22f, false), e.text, e.neben, akzent, e.linie, Linie.VOLL, "sans-serif-condensed", "monospace",
         )
     }
+    // Schrift und Nebentext halten 4,5:1 auf der Fläche des Widgets, wie die App auf ihren Flächen
+    return k.copy(text = lesbarAuf(k.text, k.flaeche.farbe), neben = lesbarAuf(k.neben, k.flaeche.farbe))
 }
 
 /**

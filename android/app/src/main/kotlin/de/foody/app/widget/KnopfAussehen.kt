@@ -1,5 +1,6 @@
 package de.foody.app.widget
 
+import android.graphics.Color
 import android.widget.RemoteViews
 import androidx.compose.ui.graphics.toArgb
 import de.foody.app.R
@@ -26,8 +27,6 @@ data class KnopfAussehen(
     val text: String?,
 )
 
-private const val TINTE = 0xFF1B1A2E.toInt()
-
 /** Versatz des Schattens (Anime) in dp. */
 internal const val SCHATTEN_VERSATZ = 4f
 
@@ -44,22 +43,22 @@ fun knopfAussehen(wahl: StilWahl, art: KnopfArt): KnopfAussehen? {
         FoodyStil.MILCHGLAS -> null
         // Q: dunkle Fläche mit feinem Goldrand, Cinzel-Wörter des Entwurfs
         FoodyStil.SAGE -> KnopfAussehen(
-            0xFF1E1B16.toInt(), 0xFFF4EEDD.toInt(), akzent, 0xFF5A4F38.toInt(), 1f, 4f, false,
+            Entwuerfe.sage.oben, Entwuerfe.sage.text, akzent, Entwuerfe.sage.kante, 1f, 4f, false,
             if (immersiv) (if (scan) "SIEGEL" else "DEUTEN") else null,
         )
         // R: Türkis und Gelb mit Tintenrand und Versatzschatten
         FoodyStil.ANIME -> KnopfAussehen(
-            if (scan) 0xFF3EC6E0.toInt() else 0xFFFFE45C.toInt(), TINTE, TINTE, TINTE, 2.5f, 18f, immersiv,
+            if (scan) ANIME_TUERKIS else ANIME_GELB, TINTE, TINTE, TINTE, 2.5f, 18f, immersiv,
             if (immersiv) (if (scan) "SCAN!" else "FOTO!") else null,
         )
         // S: Tusche-Fläche mit Papierschrift, Symbol im Zinnober
-        FoodyStil.EDO -> KnopfAussehen(0xFF231F1A.toInt(), 0xFFF6EFDF.toInt(), akzent, null, 0f, 18f, false, null)
+        FoodyStil.EDO -> KnopfAussehen(Entwuerfe.edo.text, Entwuerfe.edo.glas, akzent, null, 0f, 18f, false, null)
         // T: Himmelblau mit dunklem Rand, weiße Schrift
-        FoodyStil.BAYRISCH -> KnopfAussehen(akzent, 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFF2B1E14.toInt(), 2f, 22f, false, null)
+        FoodyStil.BAYRISCH -> KnopfAussehen(akzent, Color.WHITE, Color.WHITE, Entwuerfe.bayrisch.text, 2f, 22f, false, null)
         // U: dunkle Karte mit Glutrand
-        FoodyStil.GRAUEN -> KnopfAussehen(0xFF0C1210.toInt(), 0xFFCFE0D6.toInt(), akzent, akzent, 1f, 22f, false, null)
+        FoodyStil.GRAUEN -> KnopfAussehen(Entwuerfe.grauen.glas, Entwuerfe.grauen.text, akzent, akzent, 1f, 22f, false, null)
         // V: Amberfläche mit dunkler Schrift
-        FoodyStil.KREUZER -> KnopfAussehen(akzent, 0xFF1A1206.toInt(), 0xFF1A1206.toInt(), null, 0f, 22f, false, null)
+        FoodyStil.KREUZER -> KnopfAussehen(akzent, AUF_AMBER, AUF_AMBER, null, 0f, 22f, false, null)
     }
 }
 

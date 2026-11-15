@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
@@ -88,9 +89,6 @@ internal data class Marke(
 /** Zustand eines Tages für die Marke. */
 private data class TagLage(val heute: Boolean, val geplant: Boolean, val vorbei: Boolean, val index: Int)
 
-private val TINTE = 0xFF1B1A2E.toInt()
-private val HOLO = 0xFF5CE1FF.toInt()
-
 /** Die Marke eines Tages im Stil wie in den Widget-Entwürfen. */
 private fun marke(k: KartenAussehen, lage: TagLage, kuerzel: String): Marke {
     val (heute, geplant, vorbei, i) = lage
@@ -103,18 +101,18 @@ private fun marke(k: KartenAussehen, lage: TagLage, kuerzel: String): Marke {
             MarkenForm.RAUTE, 12f, 12f, if (geplant || heute) k.akzent else null, k.akzent, 1.2f, schein = if (heute) k.akzent else null, scheinPlatz = true,
         )
         FoodyStil.ANIME -> Marke(
-            MarkenForm.BOX, 38f, 46f, if (heute) k.akzent else if (vorbei) 0xFFF2EEF4.toInt() else 0xFFFFFFFF.toInt(), TINTE, 2f, kuerzel, TINTE,
+            MarkenForm.BOX, 38f, 46f, if (heute) k.akzent else if (vorbei) ANIME_SPUR else Color.WHITE, TINTE, 2f, kuerzel, TINTE,
         )
         FoodyStil.EDO -> Marke(MarkenForm.KREIS, 22f, 22f, if (heute) k.akzent else if (geplant) k.text else null, k.text, 1.5f)
         FoodyStil.BAYRISCH -> {
             val stoff = when {
                 heute -> 0xFFB8322A.toInt()
-                !geplant -> 0xFFFBF6EA.toInt()
+                !geplant -> Entwuerfe.bayrisch.grund
                 i % 2 == 0 -> k.akzent
-                else -> 0xFFFFFFFF.toInt()
+                else -> Color.WHITE
             }
-            val hell = stoff == 0xFFFFFFFF.toInt() || stoff == 0xFFFBF6EA.toInt()
-            Marke(MarkenForm.WIMPEL, 34f, 44f, stoff, k.text, 1.5f, kuerzel, if (hell) k.text else 0xFFFFFFFF.toInt(), serif = true)
+            val hell = stoff == Color.WHITE || stoff == Entwuerfe.bayrisch.grund
+            Marke(MarkenForm.WIMPEL, 34f, 44f, stoff, k.text, 1.5f, kuerzel, if (hell) k.text else Color.WHITE, serif = true)
         }
         FoodyStil.GRAUEN -> Marke(
             MarkenForm.KREIS, 18f, 18f, if (geplant || heute) 0xFFD9DEC8.toInt() else null, if (heute) k.akzent else k.neben, if (heute) 2f else 1f,
