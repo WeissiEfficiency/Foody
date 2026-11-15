@@ -13,22 +13,74 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import de.foody.app.MainActivity
 import de.foody.core.data.DarstellungSpeicher
+import de.foody.core.data.TageszielSpeicher
+import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.heute.OffenerEinkauf
+import de.foody.core.data.tagebuch.TagebuchRepository
+import de.foody.domain.EintragWerte
+import de.foody.domain.Mahlzeit
+import de.foody.domain.Naehrwerte
+import de.foody.domain.Tagebuch
+import de.foody.feature.heute.NaechsteMahlzeit
+import de.foody.feature.heute.naechsteMahlzeit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
+/** Was „Heute“ und „Kalorien“ zeigen: die nächste geplante Mahlzeit, kcal des Tages und das Tagesziel (`null` = keins). */
+data class HeuteDaten(val datum: LocalDate, val naechste: NaechsteMahlzeit?, val kcal: Int, val ziel: Int?)
+
+/** Abstand der Uhr für die Widgets: Die nächste Mahlzeit wechselt mit ihrem Zeitfenster, der Tag um Mitternacht. */
+private const val UHR_TAKT_MS = 5 * 60_000L
+
 /** Was die Daten-Widgets zeigen, aus den Repositories der App (nur lesen). */
-class WidgetDatenQuelle @Inject constructor(private val heute: HeuteRepository) {
+class WidgetDatenQuelle @Inject constructor(
+    private val heute: HeuteRepository,
+    private val tagebuch: TagebuchRepository,
+    private val ziel: TageszielSpeicher,
+) {
     /** Offene Artikel der jüngsten Einkaufsliste; `null` = nichts offen. */
     fun einkauf(): Flow<OffenerEinkauf?> = heute.offenerEinkauf()
+
+    /** Minutengenaue Uhrzeit, alle fünf Minuten neu. */
+    private fun uhr(): Flow<LocalDateTime> = flow {
+        while (true) {
+            emit(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
+            delay(UHR_TAKT_MS)
+        }
+    }
+
+    /** Heute: Plan, Tagebuch und Ziel; wechselt um Mitternacht auf den neuen Tag. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun heute(): Flow<HeuteDaten> {
+        val uhr = uhr()
+        return uhr.map { it.toLocalDate() }.distinctUntilChanged().flatMapLatest { datum ->
+            combine(heute.planHeuteUndMorgen(datum), tagebuch.amTag(datum), ziel.tagesziel(), uhr) { plan, eintraege, z, jetzt ->
+                HeuteDaten(datum, naechsteMahlzeit(plan, jetzt), kcalSumme(eintraege), z)
+            }
+        }
+    }
 }
+
+/** kcal aller Einträge des Tages wie im Tagebuch. */
+internal fun kcalSumme(eintraege: List<TagebuchEintragEntity>): Int = Tagebuch.bilanz(
+    eintraege.map { EintragWerte(Mahlzeit.SNACK, Naehrwerte(it.energieKj, it.eiweiss, it.kohlenhydrate, it.fett, it.vollstaendig)) },
+).tag.kcal
 
 /** Zugang zur [WidgetDatenQuelle] für die Widget-Empfänger (sie werden vom System angelegt, nicht von Hilt). */
 @EntryPoint
@@ -65,17 +117,27 @@ internal fun AppWidgetProvider.imHintergrund(arbeit: suspend () -> Unit) {
 }
 
 /**
- * Hält die Daten-Widgets aktuell, solange der Prozess lebt: Jede Änderung der Einkaufsliste (in der App oder über den
- * Sync) zeichnet das Widget „Einkauf“ neu, nur wenn eins auf dem Homescreen liegt. Sonst gilt das Update des Systems
+ * Hält die Daten-Widgets aktuell, solange der Prozess lebt: Jede Änderung (in der App oder über den Sync) zeichnet
+ * „Einkauf“, „Heute“ und „Kalorien“ neu, nur wenn welche auf dem Homescreen liegen. Sonst gilt das Update des Systems
  * (alle 30 Minuten).
  */
 class WidgetBeobachter @Inject constructor(private val quelle: WidgetDatenQuelle, private val darstellung: DarstellungSpeicher) {
     fun starten(context: Context, bereich: CoroutineScope) {
         val app = context.applicationContext
+        val manager = AppWidgetManager.getInstance(app)
         bereich.launch {
             quelle.einkauf().distinctUntilChanged().conflate().collect { einkauf ->
                 val ids = app.widgetIds(EinkaufWidget::class.java)
-                if (ids.isNotEmpty()) AppWidgetManager.getInstance(app).updateAppWidget(ids, einkaufAnsicht(app, einkauf, darstellung.stilAktuell()))
+                if (ids.isNotEmpty()) manager.updateAppWidget(ids, einkaufAnsicht(app, einkauf, darstellung.stilAktuell()))
+            }
+        }
+        bereich.launch {
+            quelle.heute().distinctUntilChanged().conflate().collect { daten ->
+                val wahl = darstellung.stilAktuell()
+                val heute = app.widgetIds(HeuteWidget::class.java)
+                if (heute.isNotEmpty()) manager.updateAppWidget(heute, heuteAnsicht(app, daten, wahl))
+                val kalorien = app.widgetIds(KalorienWidget::class.java)
+                if (kalorien.isNotEmpty()) manager.updateAppWidget(kalorien, kalorienAnsicht(app, daten, wahl))
             }
         }
     }
@@ -83,3 +145,5 @@ class WidgetBeobachter @Inject constructor(private val quelle: WidgetDatenQuelle
 
 /** Einmal laden, etwa für [AppWidgetProvider.onUpdate]. */
 internal suspend fun WidgetDatenQuelle.einkaufJetzt(): OffenerEinkauf? = einkauf().first()
+
+internal suspend fun WidgetDatenQuelle.heuteJetzt(): HeuteDaten = heute().first()

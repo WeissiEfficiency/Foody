@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget „Kalorien“ (KalorienWidget, 2×2): Ring mit dem, was vom Tagesziel übrig ist (kalorienAnsicht). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/widget_schatten"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_form"
+        android:clipToOutline="true"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:id="@+id/widget_rand"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_form"
+        android:clipToOutline="true"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/widget_knopf"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_hintergrund"
+        android:clipToOutline="true"
+        android:gravity="center"
+        android:importantForAccessibility="no"
+        android:orientation="vertical"
+        android:padding="10dp">
+
+            <FrameLayout
+                android:id="@+id/widget_ring_rahmen"
+                android:layout_width="110dp"
+                android:layout_height="110dp"
+                android:importantForAccessibility="no">
+
+                <ImageView
+                    android:id="@+id/widget_ring"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:importantForAccessibility="no" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:importantForAccessibility="no"
+                    android:orientation="vertical">
+
+                    <TextView
+                    android:id="@+id/widget_ring_zahl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:importantForAccessibility="no"
+                    android:maxLines="1"
+                    android:textColor="@color/widget_inhalt"
+                    android:textSize="20sp" android:textStyle="bold" android:gravity="center" />
+
+                    <TextView
+                    android:id="@+id/widget_ring_unter"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:importantForAccessibility="no"
+                    android:maxLines="1"
+                    android:textColor="@color/widget_inhalt"
+                    android:textSize="12sp" android:gravity="center" />
+                </LinearLayout>
+            </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

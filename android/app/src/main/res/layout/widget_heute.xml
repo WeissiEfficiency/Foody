@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget „Heute“ (HeuteWidget, 4×2): links Ring (Edo, Bayrisch, Grauen) oder Tank (Kreuzer), rechts Marke, Gericht,
+     Angaben, Balken und die Knöpfe „Kochen“/„Eintragen“ (Milchglas, Sage, Anime). Was sichtbar ist, legt heuteAnsicht
+     je Stil fest. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/widget_schatten"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_form"
+        android:clipToOutline="true"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:id="@+id/widget_rand"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_form"
+        android:clipToOutline="true"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/widget_knopf"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_hintergrund"
+        android:clipToOutline="true"
+        android:importantForAccessibility="no"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/widget_streifen"
+            android:layout_width="match_parent"
+            android:layout_height="12dp"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:importantForAccessibility="no"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp">
+
+            <FrameLayout
+                android:id="@+id/widget_ring_rahmen"
+                android:layout_width="104dp"
+                android:layout_height="104dp"
+                android:importantForAccessibility="no">
+
+                <ImageView
+                    android:id="@+id/widget_ring"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:importantForAccessibility="no" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:importantForAccessibility="no"
+                    android:orientation="vertical">
+
+                    <TextView
+                    android:id="@+id/widget_ring_zahl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:importantForAccessibility="no"
+                    android:maxLines="1"
+                    android:textColor="@color/widget_inhalt"
+                    android:textSize="21sp" android:textStyle="bold" android:gravity="center" />
+
+                    <TextView
+                    android:id="@+id/widget_ring_unter"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:importantForAccessibility="no"
+                    android:maxLines="1"
+                    android:textColor="@color/widget_inhalt"
+                    android:textSize="11sp" android:gravity="center" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <ImageView
+                android:id="@+id/widget_tank"
+                android:layout_width="26dp"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/widget_spalte"
+                android:layout_width="0dp"
+                android:layout_marginStart="14dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:importantForAccessibility="no"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/widget_gross"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:importantForAccessibility="no"
+                    android:maxLines="1"
+                    android:textColor="@color/widget_inhalt"
+                    android:textSize="30sp" android:textStyle="bold" android:visibility="gone" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:importantForAccessibility="no"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/widget_marke"
+                        android:layout_width="wrap_content"
+                        android:clipToOutline="true"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:importantForAccessibility="no"
+                        android:maxLines="1"
+                        android:textColor="@color/widget_inhalt"
+                        android:textSize="11.5sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/widget_titel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:importantForAccessibility="no"
+                    android:maxLines="2"
+                    android:textColor="@color/widget_inhalt"
+                    android:textSize="18sp" android:textStyle="bold" android:layout_marginTop="4dp" />
+
+                <TextView
+                    android:id="@+id/widget_info"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:importantForAccessibility="no"
+                    android:maxLines="1"
+                    android:textColor="@color/widget_inhalt"
+                    android:textSize="13sp" android:layout_marginTop="2dp" />
+
+                <ImageView
+                    android:id="@+id/widget_balken"
+                    android:layout_width="match_parent"
+                    android:layout_height="6dp"
+                    android:layout_marginTop="6dp"
+                    android:importantForAccessibility="no"
+                    android:scaleType="fitXY"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/widget_knoepfe"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <FrameLayout
+                        android:id="@+id/widget_kochen_rand"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/widget_form"
+                        android:clipToOutline="true">
+
+                        <TextView
+                            android:id="@+id/widget_kochen"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/widget_form"
+                            android:clipToOutline="true"
+                            android:gravity="center"
+                            android:maxLines="1"
+                            android:textColor="@color/widget_inhalt"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </FrameLayout>
+
+                    <FrameLayout
+                        android:layout_width="8dp"
+                        android:layout_height="1dp"
+                        android:importantForAccessibility="no" />
+
+                    <FrameLayout
+                        android:id="@+id/widget_eintragen_rand"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/widget_form"
+                        android:clipToOutline="true">
+
+                        <TextView
+                            android:id="@+id/widget_eintragen"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/widget_form"
+                            android:clipToOutline="true"
+                            android:gravity="center"
+                            android:maxLines="1"
+                            android:textColor="@color/widget_inhalt"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </FrameLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>
