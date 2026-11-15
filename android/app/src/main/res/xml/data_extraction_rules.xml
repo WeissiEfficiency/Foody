@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Was Foody beim Sichern und Übertragen hergibt (Android 12+, docs/security.md „Backup“). Vorgesehener Weg auf ein
+    neues Handy ist der eigene Sync-Server, daneben „Sicherung erstellen“; diese Regeln betreffen nur Android selbst:
+    - Cloud-Backup: nichts.
+    - Gerätewechsel (Kabel/WLAN von Handy zu Handy), zusätzlich erlaubt: alles – Datenbank, Einstellungen, Fotos,
+      Modelldateien.
+      Ausgenommen ist nur das Sync-Token (foody_sync.xml): Sein Schlüssel liegt im Android Keystore und zieht nicht
+      mit, das verschlüsselte Token wäre auf dem neuen Gerät wertlos. Dort meldet man sich neu am Server an.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+        <exclude domain="device_root" path="." />
+        <exclude domain="device_file" path="." />
+        <exclude domain="device_database" path="." />
+        <exclude domain="device_sharedpref" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="foody_sync.xml" />
+    </device-transfer>
+</data-extraction-rules>
