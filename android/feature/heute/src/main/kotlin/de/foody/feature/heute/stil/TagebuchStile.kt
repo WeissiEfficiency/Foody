@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,7 +51,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextGeometricTransform
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
@@ -317,19 +320,11 @@ private fun Ring(art: TagebuchArt, z: TagZustand) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Box(Modifier.size(112.dp), contentAlignment = Alignment.Center) {
-            Canvas(Modifier.matchParentSize()) {
-                val strich = 10.dp.toPx()
-                val r = size.minDimension / 2 - strich / 2 - 1.dp.toPx()
-                val tl = Offset(center.x - r, center.y - r)
-                drawArc(f.balkenSpur, -90f, 360f, false, tl, Size(2 * r, 2 * r), style = Stroke(strich))
-                if (a > 0f) drawArc(akzent, -90f, 360f * a, false, tl, Size(2 * r, 2 * r), style = Stroke(strich, cap = StrokeCap.Round))
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(ganzzahlDeutsch(s.kcal), style = art.titelSchrift(22f), color = f.text)
-                Text(z.ziel?.let { "von ${ganzzahlDeutsch(it)}" } ?: "kcal", style = art.klein(11.5f), color = f.nebentext)
-            }
-        }
+        KcalRing(
+            a, akzent, 112.dp, 10.dp, rund = true,
+            ganzzahlDeutsch(s.kcal), art.titelSchrift(22f).copy(color = f.text),
+            z.ziel?.let { "von ${ganzzahlDeutsch(it)}" } ?: "kcal", art.klein(11.5f).copy(color = f.nebentext),
+        )
         Makros(art, z, Modifier.weight(1f))
     }
 }
@@ -476,3 +471,51 @@ private fun Offen(art: TagebuchArt, e: TagebuchEintragEntity, onAendern: () -> U
         }
     }
 }
+
+/**
+ * Ring der Tagesbilanz (Sage und die Stile R–V): [anteil] in [farbe] auf der Spur, Durchmesser [groesse], Strich
+ * [strich] ([rund] = runde Enden); in der Mitte [zahl] und darunter [unter]. TalkBack liest den Satz der Bilanz.
+ * Beide bleiben einzeilig im Innern ([RING_INNEN] des freien Durchmessers): Bei großer Schrift werden sie kleiner,
+ * statt über den Strich zu laufen, höchstens bis auf ihre Größe bei 100 % Schrift (dafür ist der Ring gemacht).
+ */
+@Composable
+internal fun KcalRing(
+    anteil: Float,
+    farbe: Color,
+    groesse: Dp,
+    strich: Dp,
+    rund: Boolean,
+    zahl: String,
+    zahlStil: TextStyle,
+    unter: String,
+    unterStil: TextStyle,
+    modifier: Modifier = Modifier,
+) {
+    val spur = FoodyTheme.farben.balkenSpur
+    Box(modifier.size(groesse), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.matchParentSize()) {
+            val s = strich.toPx()
+            val r = size.minDimension / 2 - s / 2 - 1.dp.toPx()
+            val tl = Offset(center.x - r, center.y - r)
+            drawArc(spur, -90f, 360f, false, tl, Size(2 * r, 2 * r), style = Stroke(s))
+            val kappe = if (rund) StrokeCap.Round else StrokeCap.Butt
+            if (anteil > 0f) drawArc(farbe, -90f, 360f * anteil, false, tl, Size(2 * r, 2 * r), style = Stroke(s, cap = kappe))
+        }
+        val innen = (groesse - strich * 2) * RING_INNEN
+        val schrift = LocalDensity.current.fontScale
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(zahl, Modifier.widthIn(max = innen).testTag(RING_ZAHL), style = zahlStil, maxLines = 1, autoSize = ringSchrift(zahlStil, schrift))
+            Text(unter, Modifier.widthIn(max = innen).testTag(RING_UNTER), style = unterStil, maxLines = 1, autoSize = ringSchrift(unterStil, schrift))
+        }
+    }
+}
+
+/** Höchstens so breit wie dieser Anteil des freien Durchmessers (Kreis, nicht Quadrat). */
+internal const val RING_INNEN = 0.85f
+
+// Nie größer als der Stil vorgibt und nie kleiner als bei 100 % Schrift ([fontScale] rechnet sp in die Systemschrift)
+private fun ringSchrift(stil: TextStyle, fontScale: Float) =
+    TextAutoSize.StepBased(minFontSize = (stil.fontSize.value / fontScale.coerceAtLeast(1f)).sp, maxFontSize = stil.fontSize, stepSize = 0.25.sp)
+
+internal const val RING_ZAHL = "ringZahl"
+internal const val RING_UNTER = "ringUnter"

@@ -216,19 +216,11 @@ private fun Bilanz(z: TagZustand) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Box(Modifier.size(110.dp), contentAlignment = Alignment.Center) {
-            Canvas(Modifier.matchParentSize()) {
-                val strich = 8.dp.toPx()
-                val r = size.minDimension / 2 - strich / 2 - 1.dp.toPx()
-                val tl = Offset(center.x - r, center.y - r)
-                drawArc(f.balkenSpur, -90f, 360f, false, tl, Size(2 * r, 2 * r), style = Stroke(strich))
-                if (anteil > 0f) drawArc(glut, -90f, 360f * anteil, false, tl, Size(2 * r, 2 * r), style = Stroke(strich))
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(ganzzahlDeutsch(s.kcal), style = Sage.titel(22f, 0f), color = sageHell())
-                Text(if (ziel != null) "von ${ganzzahlDeutsch(ziel)}" else "kcal", style = Sage.text(13f), color = f.nebentext)
-            }
-        }
+        KcalRing(
+            anteil, glut, 110.dp, 8.dp, rund = false,
+            ganzzahlDeutsch(s.kcal), Sage.titel(22f, 0f).copy(color = sageHell()),
+            if (ziel != null) "von ${ganzzahlDeutsch(ziel)}" else "kcal", Sage.text(13f).copy(color = f.nebentext),
+        )
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Makro("Eiweiß", s.eiweiss, s.eiweiss * 4f / energie, f.makro.eiweiss)
             Makro("Kohlenhydrate", s.kohlenhydrate, s.kohlenhydrate * 4f / energie, f.makro.kohlenhydrate)

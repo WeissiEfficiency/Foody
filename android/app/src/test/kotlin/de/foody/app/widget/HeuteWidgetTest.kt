@@ -3,6 +3,7 @@ package de.foody.app.widget
 import android.app.Application
 import android.view.View
 import android.widget.FrameLayout
+import android.widget.RemoteViews
 import android.widget.TextView
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -16,6 +17,7 @@ import de.foody.domain.TagebuchArt
 import de.foody.feature.heute.NaechsteMahlzeit
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
@@ -127,5 +129,34 @@ class HeuteWidgetTest {
         assertEquals("übrig", v.text(R.id.widget_ring_unter))
         assertEquals("Kalorien: 860 von 2.000 kcal, 1.140 übrig", v.findViewById<View>(android.R.id.background).contentDescription)
         assertEquals("foody://tagebuch/2026-11-13", tipp(v, android.R.id.background))
+    }
+
+    /** [ansicht] in einer Zelle von [breiteDp] × [hoeheDp] bei Systemschrift [schrift]; die Texte, die abgeschnitten („…“) sind. */
+    private fun abgeschnitten(ansicht: RemoteViews, breiteDp: Int, hoeheDp: Int, schrift: Float = 2f): List<String> {
+        RuntimeEnvironment.setFontScale(schrift)
+        try {
+            val d = kontext.resources.displayMetrics.density
+            val rahmen = FrameLayout(kontext)
+            val v = ansicht.apply(kontext, rahmen)
+            rahmen.addView(v, FrameLayout.LayoutParams((breiteDp * d).toInt(), (hoeheDp * d).toInt()))
+            rahmen.measure(View.MeasureSpec.makeMeasureSpec((breiteDp * d).toInt(), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec((hoeheDp * d).toInt(), View.MeasureSpec.EXACTLY))
+            rahmen.layout(0, 0, rahmen.measuredWidth, rahmen.measuredHeight)
+            return listOf(R.id.widget_ring_zahl, R.id.widget_ring_unter, R.id.widget_kochen, R.id.widget_eintragen).mapNotNull { id ->
+                val t = v.findViewById<TextView>(id)?.takeIf { it.visibility == View.VISIBLE && it.text.isNotEmpty() } ?: return@mapNotNull null
+                val l = t.layout ?: return@mapNotNull null
+                val zuHoch = t.layout.height > t.height - t.totalPaddingTop - t.totalPaddingBottom + 1
+                if ((0 until l.lineCount).any { l.getEllipsisCount(it) > 0 } || zuHoch) "${kontext.resources.getResourceEntryName(id)}: ${t.text}" else null
+            }
+        } finally {
+            RuntimeEnvironment.setFontScale(1f)
+        }
+    }
+
+    @Test
+    fun grosseSchriftSchneidetKeineZahlAb() {
+        // 200 % Systemschrift in einer engen 2×2-Zelle (Testgerät etwa 123 dp) und im 4×2-Widget (Review W6)
+        assertEquals(emptyList(), abgeschnitten(kalorienAnsicht(kontext, daten(), wahl(FoodyStil.ANIME)), 123, 123))
+        assertEquals(emptyList(), abgeschnitten(heuteAnsicht(kontext, daten(), wahl(FoodyStil.EDO)), 260, 123))
+        assertEquals(emptyList(), abgeschnitten(heuteAnsicht(kontext, daten(), StilWahl()), 260, 123))
     }
 }
