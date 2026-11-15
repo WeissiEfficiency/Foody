@@ -118,6 +118,18 @@ class RezepteScreenshotTest {
         }
     }
 
+    /** Stile R–V, Immersiv: der Editor mit Knöpfen, Feldern und Wörtern des Stils. */
+    @Test
+    @Config(qualifiers = "w411dp-h1600dp")
+    fun stileEditor() {
+        for (stil in listOf(FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)) {
+            bild("stil_${stil.name.lowercase()}_editor_handy", dunkel = false, stil = stil) {
+                val ablage = FotoAblage(RuntimeEnvironment.getApplication())
+                EditorRoute("r1", {}, {}, vm = remember { halter.behalten(EditorViewModel(SavedStateHandle(), repo, db, ablage)) })
+            }
+        }
+    }
+
     /** Düstere Sage, Immersiv: das Grimoire. */
     @Test
     @Config(qualifiers = "w411dp-h1600dp")
