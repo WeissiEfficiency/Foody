@@ -111,11 +111,15 @@ class EinstellungenScreenshotTest {
         }
     }
 
-    /** Stile R–V, Immersiv: Einstellungen mit Abschnitten, Knöpfen und Wörtern des Stils. */
+    /** Stile R–V, Immersiv, verbunden: Einstellungen wie in den Entwürfen (Rahmen, Zeilen, Schalter, Tagesziel mit − und +). */
     @Test
     @Config(qualifiers = "w411dp-h1600dp")
     fun stile() {
+        u.verbinden()
         for (stil in listOf(FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)) {
+            // Der gewählte Stil steht auch in der Wahl, mit seinen Farben
+            u.darstellung.stilSetzen(stil.name)
+            u.darstellung.stilVarianteSetzen("IMMERSIV")
             val vm = vm()
             captureRoboImage("src/test/screenshots/stil_${stil.name.lowercase()}_einstellungen_handy.png", roborazziOptions = vergleich) {
                 FoodyTheme(stil = stil, unschaerfe = false) {
