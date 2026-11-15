@@ -1,5 +1,6 @@
 package de.foody.core.data.bls
 
+import android.content.Context
 import androidx.room.Room
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.ZutatEntity
@@ -39,8 +40,13 @@ class BlsDichteNachtragenTest {
             .addCallback(FoodyDatenbank.CALLBACK).allowMainThreadQueries().build()
     }
 
+    private val prefs = RuntimeEnvironment.getApplication().getSharedPreferences("bls-test", Context.MODE_PRIVATE)
+
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        db.close()
+        prefs.edit().clear().commit()
+    }
 
     private fun zutat(id: String, name: String, quelle: String?, dichte: String? = null) = ZutatEntity(
         id = id, canonicalName = name, nutrientBasis = NutrientBasis.PER_100_G, nutrientSource = quelle,
@@ -54,7 +60,7 @@ class BlsDichteNachtragenTest {
         db.zutatDao().upsert(zutat("z-saft", "Saft", "Etikett"))
         db.zutatDao().upsert(zutat("z-eigen", "Milch", "BLS 4.0 (MRI): Vollmilch frisch, 3,5 % Fett, pasteurisiert", dichte = "1.1"))
 
-        assertEquals(1, BlsDichteNachtragen(db, bls) { 50L }.nachtragen())
+        assertEquals(1, BlsDichteNachtragen(db, bls, prefs) { 50L }.nachtragen())
 
         val milch = assertNotNull(db.zutatDao().nachId("z-milch"))
         assertEquals(0, BigDecimal("1.03").compareTo(milch.densityGPerMl))
@@ -68,7 +74,25 @@ class BlsDichteNachtragenTest {
     @Test
     fun zweiterLaufTutNichts() = runTest {
         db.zutatDao().upsert(zutat("z-milch", "Vollmilch", "BLS 4.0 (MRI): Vollmilch frisch, 3,5 % Fett, pasteurisiert"))
-        BlsDichteNachtragen(db, bls) { 50L }.nachtragen()
-        assertEquals(0, BlsDichteNachtragen(db, bls) { 60L }.nachtragen())
+        BlsDichteNachtragen(db, bls, prefs) { 50L }.nachtragen()
+        assertEquals(0, BlsDichteNachtragen(db, bls, prefs) { 60L }.nachtragen())
+    }
+
+    @Test
+    fun festesLiestDenAuszugNichtBeiJedemStart() = runTest {
+        // Festes bekommt nie eine Dichte und blieb so für immer Kandidat: jeder Start las den ganzen Auszug (Review W1)
+        var gelesen = 0
+        val zaehlend = BlsNachschlag({ gelesen++; sequenceOf("B723000	Laugengebäck mit Hagelsalz	1191	9.132	50	1.4	4.113	3.746	2.81") }, EmptyCoroutineContext)
+        db.zutatDao().upsert(zutat("z-breze", "Breze", "BLS 4.0 (MRI): Laugengebäck mit Hagelsalz"))
+        BlsDichteNachtragen(db, zaehlend, prefs) { 50L }.nachtragen()
+        assertEquals(1, gelesen)
+
+        BlsDichteNachtragen(db, zaehlend, prefs) { 60L }.nachtragen()
+        assertEquals(1, gelesen, "zweiter Start ohne Änderung liest den Auszug nicht")
+
+        // Geändert (etwa über den Sync): wird wieder geprüft
+        db.zutatDao().upsert(assertNotNull(db.zutatDao().nachId("z-breze")).copy(updatedAt = 70))
+        BlsDichteNachtragen(db, zaehlend, prefs) { 80L }.nachtragen()
+        assertEquals(2, gelesen)
     }
 }
