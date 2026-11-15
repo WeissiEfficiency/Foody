@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -19,6 +21,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import de.foody.core.data.woche.PlanEintrag
 import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
@@ -29,6 +33,8 @@ import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.ueberschrift
+import de.foody.core.designsystem.komponenten.zeilenImStil
+import de.foody.core.designsystem.stil.StilAktion
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import java.time.LocalDate
@@ -60,14 +66,10 @@ internal fun MahlzeitBlatt(e: PlanEintrag, montag: LocalDate, a: MahlzeitAktione
         ) {
             BlattTitel(e.rezeptName)
             Text(mahlzeitAnzeige(e.mahlzeit), style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { a.onPortionen(e.portionen - 1) }) {
-                    Icon(Icons.Outlined.Remove, contentDescription = "Weniger Portionen", tint = FoodyTheme.farben.text)
-                }
-                Text("${e.portionen} P.", style = MaterialTheme.typography.titleMedium, color = FoodyTheme.farben.text)
-                IconButton(onClick = { a.onPortionen(e.portionen + 1) }) {
-                    Icon(Icons.Outlined.Add, contentDescription = "Mehr Portionen", tint = FoodyTheme.farben.text)
-                }
+            if (zeilenImStil()) {
+                PortionenStil(e.portionen, a.onPortionen)
+            } else {
+                PortionenNormal(e.portionen, a.onPortionen)
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 FoodyChip("Gekocht", ausgewaehlt = e.gekocht, onKlick = { a.onGekocht(!e.gekocht) })
@@ -88,5 +90,31 @@ internal fun MahlzeitBlatt(e: PlanEintrag, montag: LocalDate, a: MahlzeitAktione
                 FoodyKnopf(stilText("Entfernen", sage = "Von der Karte nehmen"), a.onEntfernen, art = KnopfArt.TEXT)
             }
         }
+    }
+}
+
+@Composable
+private fun PortionenNormal(portionen: Int, onPortionen: (Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = { onPortionen(portionen - 1) }) {
+            Icon(Icons.Outlined.Remove, contentDescription = "Weniger Portionen", tint = FoodyTheme.farben.text)
+        }
+        Text("$portionen P.", style = MaterialTheme.typography.titleMedium, color = FoodyTheme.farben.text)
+        IconButton(onClick = { onPortionen(portionen + 1) }) {
+            Icon(Icons.Outlined.Add, contentDescription = "Mehr Portionen", tint = FoodyTheme.farben.text)
+        }
+    }
+}
+
+/** Portionen in R–V wie im Entwurf: „−“ und „+“ als Knöpfe des Stils, dazwischen „2 Portionen“. */
+@Composable
+private fun PortionenStil(portionen: Int, onPortionen: (Int) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
+        StilAktion("−", { onPortionen(portionen - 1) }, Modifier.widthIn(min = 48.dp), beschreibung = "Weniger Portionen")
+        Text(
+            if (portionen == 1) "1 Portion" else "$portionen Portionen", Modifier.weight(1f),
+            style = MaterialTheme.typography.titleMedium, color = FoodyTheme.farben.text, textAlign = TextAlign.Center,
+        )
+        StilAktion("+", { onPortionen(portionen + 1) }, Modifier.widthIn(min = 48.dp), beschreibung = "Mehr Portionen")
     }
 }
