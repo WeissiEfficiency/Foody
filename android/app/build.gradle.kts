@@ -12,6 +12,12 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.baselineprofile)
+    alias(libs.plugins.roborazzi)
+}
+
+roborazzi {
+    // Referenzbilder der Widgets (WidgetBildTest); zugleich die Vorschaubilder in res/drawable-nodpi.
+    outputDir.set(file("src/test/screenshots"))
 }
 
 // Rechnerspezifisches aus local.properties (nicht im Repository), UTF-8 gelesen: Pfade können Umlaute enthalten.
@@ -161,6 +167,7 @@ dependencies {
     testImplementation(libs.junit4)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.compose.ui.test.junit4)

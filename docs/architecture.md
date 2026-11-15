@@ -293,6 +293,10 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   und Stempel, Band, Knöpfe oder abgehakte Zeilen blieben aus dem vorigen Stil oder den vorigen Daten stehen. Enge
   2×2-Zellen (auf dem Testgerät etwa 123 dp breit) fangen Titel und Fußzeile mit `autoSizeTextType` ab; der Ring im
   Widget „Kalorien“ füllt die Fläche quadratisch (`fitCenter`).
+  Vorschau in der Widget-Auswahl: `android:previewImage` mit Bildern in `res/drawable-nodpi/widget_vorschau_*.png`
+  (ein `previewLayout` zeigte nur das leere Layout, ColorOS nur das App-Symbol). Die Bilder sind die Referenzbilder aus
+  `WidgetBildTest` (Milchglas, Beispieldaten, volle Auflösung); `vorschauGleichReferenz` schlägt fehl, wenn nach
+  `recordRoborazziDebug` das Kopieren vergessen wurde.
   `Bildschirme` bündelt die Hilt-Bildschirme; Navigationstests setzen `Bildschirme.platzhalter` ein und laufen ohne Hilt.
 - **`:core:data`**: `HeuteRepository` (Plan heute/morgen nur mit vorhandenem, nicht archiviertem Rezept; kcal je
   Portion über `RecipeProfiles`; Rezeptvorschläge; offene Artikel der zuletzt geänderten Liste), `TagebuchRepository`

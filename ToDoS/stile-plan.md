@@ -559,3 +559,10 @@ Handy des Nutzers, ColorOS-Launcher, 2×2-Zelle etwa 123 dp breit):
   Ab…“). Titel und Fußzeile schrumpfen jetzt (`autoSizeTextType`), die Marke im Widget „Heute“ darf zwei Zeilen haben,
   die Fußzeile von „Schnell eintragen“ hat schmale Leerzeichen um die Punkte.
 - Im Widget-Auswahlmenü von ColorOS zeigt jedes Foody-Widget nur das App-Symbol als Vorschau (kein `previewLayout`).
+  Behoben am selben Tag, siehe unten.
+
+**2026-11-15 – Vorschau in der Widget-Auswahl** (Branch `claude/widget-vorschau`):
+- Die fünf Widgets mit Daten haben jetzt ein `android:previewImage` statt des leeren `previewLayout`.
+- Die Bilder kommen aus dem neuen Bildtest `WidgetBildTest` in `:app` (Roborazzi, Milchglas mit Beispieldaten, volle
+  Auflösung, Ecken gerundet). Erste Referenzbilder für Widgets überhaupt; `vorschauGleichReferenz` hält Vorschau und
+  Referenz gleich.
