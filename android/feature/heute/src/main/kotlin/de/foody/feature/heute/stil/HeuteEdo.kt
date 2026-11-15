@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -84,8 +85,11 @@ import de.foody.core.designsystem.stil.edo.EdoKnopf
 import de.foody.core.designsystem.stil.edo.edoShu
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
+import de.foody.feature.heute.DatenbankLeerHinweis
+import de.foody.feature.heute.GegessenFrage
 import de.foody.feature.heute.HEUTE_INHALT
 import de.foody.feature.heute.HeuteAktionen
+import de.foody.feature.heute.HeuteRahmen
 import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.MahlzeitAbschnitt
 import de.foody.feature.heute.TagebuchHeute
@@ -108,15 +112,8 @@ private val TAG_MONAT = DateTimeFormatter.ofPattern("d. MMMM", Locale.GERMAN)
  */
 @Composable
 internal fun HeuteEdo(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
-        Column(
-            Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-                .statusBarsPadding()
-                .padding(top = 14.dp, bottom = ueberLeiste(PLATZ_FUER_LEISTE))
-                .testTag(HEUTE_INHALT),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+    HeuteRahmen(modifier, innen = PaddingValues(top = 14.dp)) { rahmen ->
+        Column(rahmen, horizontalAlignment = Alignment.CenterHorizontally) {
             Rollbild(zustand, aktionen)
             if (zustand == null) return@Column
             Column(
@@ -124,12 +121,7 @@ internal fun HeuteEdo(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier:
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 zustand.sync?.let { SyncStatus(it) }
-                if (zustand.datenbankLeer) {
-                    LeererZustandFlaeche(
-                        Icons.AutoMirrored.Outlined.MenuBook, "Noch keine Rezepte", "Verbinde Foody mit deinem Server, um deine Rezepte zu laden.",
-                        aktionText = "Server verbinden", onAktion = aktionen.onEinstellungen,
-                    )
-                }
+                if (zustand.datenbankLeer) DatenbankLeerHinweis(aktionen.onEinstellungen)
                 Speisefolge(zustand.tagebuch, aktionen)
                 zustand.einkauf?.let { e ->
                     Text(
@@ -345,19 +337,6 @@ private fun Speisefolge(t: TagebuchHeute, aktionen: HeuteAktionen) {
     offen?.let { (mahlzeit, v) -> GegessenFrage(mahlzeit, v, aktionen) { frage = null } }
 }
 
-@Composable
-private fun GegessenFrage(mahlzeit: Mahlzeit, v: GeplanteMahlzeit, aktionen: HeuteAktionen, onZu: () -> Unit) {
-    FoodyFrage(
-        titel = "Gegessen?",
-        text = "„${v.titel}“ als ${mahlzeit.anzeigename()} eintragen? Bei „Nein“ verschwindet der Vorschlag für heute.",
-        ja = "Ja",
-        onJa = { onZu(); aktionen.onGegessen(v.planEintragId) },
-        onNein = { onZu(); aktionen.onNichtGegessen(v) },
-        nein = "Nein",
-        onAbbrechen = onZu,
-    )
-}
-
 /** Die kcal rechts in einer Zeile der Speisefolge: gegessen die Summe, sonst die geplante Portion, ohne Plan „–“. */
 internal fun folgeKcal(a: MahlzeitAbschnitt): String = when {
     a.eintraege.isNotEmpty() -> a.kcalZahl()
@@ -451,5 +430,3 @@ private fun Knoepfe(aktionen: HeuteAktionen) {
         }
     }
 }
-
-private val PLATZ_FUER_LEISTE = 104.dp

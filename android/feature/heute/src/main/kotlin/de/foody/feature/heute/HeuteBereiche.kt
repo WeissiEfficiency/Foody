@@ -146,18 +146,7 @@ private fun MahlzeitZeilen(a: MahlzeitAbschnitt, aktionen: HeuteAktionen) {
                 FoodyKnopf("Gegessen?", { frage = v.planEintragId })
             }
         }
-        // Rückfrage zu „Gegessen?“: Ja trägt ein, Nein blendet den Vorschlag für heute aus, Danebentippen ändert nichts
-        a.vorschlaege.firstOrNull { it.planEintragId == frage }?.let { v ->
-            FoodyFrage(
-                titel = "Gegessen?",
-                text = "„${v.titel}“ als $name eintragen? Bei „Nein“ verschwindet der Vorschlag für heute.",
-                ja = "Ja",
-                onJa = { frage = null; aktionen.onGegessen(v.planEintragId) },
-                onNein = { frage = null; aktionen.onNichtGegessen(v) },
-                nein = "Nein",
-                onAbbrechen = { frage = null },
-            )
-        }
+        a.vorschlaege.firstOrNull { it.planEintragId == frage }?.let { v -> GegessenFrage(a.mahlzeit, v, aktionen) { frage = null } }
         if (a.eintraege.isEmpty() && a.vorschlaege.isEmpty()) {
             LeererZustandZeile("Noch kein $name", "Eintragen", { aktionen.onEintragen(a.mahlzeit) })
         }
