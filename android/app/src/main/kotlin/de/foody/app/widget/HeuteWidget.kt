@@ -32,6 +32,7 @@ import java.util.Locale
 class HeuteWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) = imHintergrund {
         manager.frischZeigen(ids, heuteAnsicht(context, context.widgetDaten().heuteJetzt(), DarstellungSpeicher(context).stilAktuell()))
+        context.widgetsBeobachten()
     }
 }
 
@@ -39,6 +40,7 @@ class HeuteWidget : AppWidgetProvider() {
 class KalorienWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) = imHintergrund {
         manager.frischZeigen(ids, kalorienAnsicht(context, context.widgetDaten().heuteJetzt(), DarstellungSpeicher(context).stilAktuell()))
+        context.widgetsBeobachten()
     }
 }
 

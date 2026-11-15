@@ -27,6 +27,7 @@ import java.util.Locale
 class WocheWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) = imHintergrund {
         manager.frischZeigen(ids, wocheAnsicht(context, context.widgetDaten().wocheJetzt(), DarstellungSpeicher(context).stilAktuell()))
+        context.widgetsBeobachten()
     }
 }
 
