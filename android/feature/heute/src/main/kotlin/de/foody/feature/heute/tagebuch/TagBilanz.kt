@@ -36,7 +36,9 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.LeererZustandZeile
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
+import de.foody.core.designsystem.komponenten.kcalZahl
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
@@ -47,11 +49,11 @@ import de.foody.feature.heute.anzeigename
  * als Balken. Makroziele gibt es nicht; die Balken zeigen den Anteil an der Energie des Tages.
  */
 @Composable
-internal fun TagBilanz(kcal: Int, ziel: Int?, eiweiss: Int, kh: Int, fett: Int) {
+internal fun TagBilanz(kcal: Int, ziel: Int?, eiweiss: Int, kh: Int, fett: Int, vollstaendig: Boolean = true) {
     val f = FoodyTheme.farben
     val hatZiel = ziel != null && ziel > 0
     val anteil = if (hatZiel) (kcal.toFloat() / ziel).coerceIn(0f, 1f) else if (kcal > 0) 1f else 0f
-    val beschreibung = (if (hatZiel) "${ganzzahlDeutsch(kcal)} von ${ganzzahlDeutsch(ziel)} kcal" else "${ganzzahlDeutsch(kcal)} kcal") +
+    val beschreibung = kcalStand(kcal, ziel, vollstaendig) +
         ": Eiweiß $eiweiss g, Kohlenhydrate $kh g, Fett $fett g"
     val energie = (eiweiss * 4 + kh * 4 + fett * 9).coerceAtLeast(1)
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
@@ -68,7 +70,7 @@ internal fun TagBilanz(kcal: Int, ziel: Int?, eiweiss: Int, kh: Int, fett: Int) 
                     if (anteil > 0f) drawArc(f.primaer, -90f, 360f * anteil, false, style = stil)
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(ganzzahlDeutsch(kcal), style = MaterialTheme.typography.headlineSmall, color = f.text)
+                    Text(kcalZahl(kcal, vollstaendig), style = MaterialTheme.typography.headlineSmall, color = f.text)
                     Text(
                         if (hatZiel) "von ${ganzzahlDeutsch(ziel)} kcal" else "kcal",
                         style = MaterialTheme.typography.labelSmall,

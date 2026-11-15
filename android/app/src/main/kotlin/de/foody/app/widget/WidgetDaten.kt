@@ -23,6 +23,7 @@ import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.domain.EintragWerte
 import de.foody.domain.Mahlzeit
 import de.foody.domain.Naehrwerte
+import de.foody.domain.Summe
 import de.foody.domain.Tagebuch
 import de.foody.feature.heute.NaechsteMahlzeit
 import de.foody.feature.heute.naechsteMahlzeit
@@ -45,8 +46,11 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
-/** Was „Heute“ und „Kalorien“ zeigen: die nächste geplante Mahlzeit, kcal des Tages und das Tagesziel (`null` = keins). */
-data class HeuteDaten(val datum: LocalDate, val naechste: NaechsteMahlzeit?, val kcal: Int, val ziel: Int?)
+/**
+ * Was „Heute“ und „Kalorien“ zeigen: die nächste geplante Mahlzeit, kcal des Tages und das Tagesziel (`null` = keins);
+ * [vollstaendig] ist false, wenn einem Eintrag Energiewerte fehlen (Anzeige „≥“).
+ */
+data class HeuteDaten(val datum: LocalDate, val naechste: NaechsteMahlzeit?, val kcal: Int, val ziel: Int?, val vollstaendig: Boolean = true)
 
 /** Ein Tag im Widget „Woche“: [gericht] ist das Hauptgericht des Tages (Abendessen vor Mittag …), `null` = nichts geplant. */
 data class WochenTagKurz(val datum: LocalDate, val gericht: String?)
@@ -98,7 +102,7 @@ class WidgetDatenQuelle @Inject constructor(
         val uhr = uhr()
         return uhr.map { it.toLocalDate() }.distinctUntilChanged().flatMapLatest { datum ->
             combine(heute.planHeuteUndMorgen(datum), tagebuch.amTag(datum), ziel.tagesziel(), uhr) { plan, eintraege, z, jetzt ->
-                HeuteDaten(datum, naechsteMahlzeit(plan, jetzt), kcalSumme(eintraege), z)
+                tagesSumme(eintraege).let { s -> HeuteDaten(datum, naechsteMahlzeit(plan, jetzt), s.kcal, z, s.vollstaendig) }
             }
         }
     }
@@ -113,10 +117,10 @@ class WidgetDatenQuelle @Inject constructor(
     }
 }
 
-/** kcal aller Einträge des Tages wie im Tagebuch. */
-internal fun kcalSumme(eintraege: List<TagebuchEintragEntity>): Int = Tagebuch.bilanz(
+/** Summe aller Einträge des Tages wie im Tagebuch. */
+internal fun tagesSumme(eintraege: List<TagebuchEintragEntity>): Summe = Tagebuch.bilanz(
     eintraege.map { EintragWerte(Mahlzeit.SNACK, Naehrwerte(it.energieKj, it.eiweiss, it.kohlenhydrate, it.fett, it.vollstaendig)) },
-).tag.kcal
+).tag
 
 /** Zugang zur [WidgetDatenQuelle] für die Widget-Empfänger (sie werden vom System angelegt, nicht von Hilt). */
 @EntryPoint

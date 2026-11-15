@@ -68,7 +68,10 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.kcalRest
+import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
+import de.foody.core.designsystem.komponenten.kcalZahl
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.anime.AnimeKnopf
@@ -180,6 +183,7 @@ internal fun kurzname(titel: String): String = titel.substringBefore(" mit ").su
 /** Was Foody in der Sprechblase sagt: was ansteht und wie viel noch frei ist. */
 internal fun sprechblase(z: HeuteZustand): String {
     val s = z.tagebuch.summe.kcal
+    val voll = z.tagebuch.summe.vollstaendig
     val ziel = z.tagebuch.ziel?.takeIf { it > 0 }
     val n = z.naechste
     val gericht = n?.let {
@@ -192,12 +196,12 @@ internal fun sprechblase(z: HeuteZustand): String {
         "$wann gibt's ${kurzname(it.mahlzeit.titel)}!"
     } ?: z.inspiration?.let { "Noch nichts geplant – wie wär's mit ${kurzname(it.titel)}?" } ?: "Noch nichts geplant – trag ein, was du isst!"
     val bilanz = when {
-        ziel == null -> "Schon ${ganzzahlDeutsch(s)} kcal heute!"
+        ziel == null -> "Schon ${kcalZahl(s, voll)} kcal heute!"
         s > ziel -> "Heute war's schon reichlich – morgen geht's weiter!"
         else -> {
             val frei = ziel - s
             val passt = n?.takeIf { !it.morgen }?.mahlzeit?.kcalJePortion?.let { it <= frei } == true
-            "Noch ${ganzzahlDeutsch(frei)} kcal frei" + if (passt) " – das passt perfekt." else "."
+            "Noch ${kcalRest(frei, voll)} kcal frei" + if (passt) " – das passt perfekt." else "."
         }
     }
     return "$gericht $bilanz"
@@ -346,11 +350,11 @@ private fun Energie(t: TagebuchHeute, onTagebuch: () -> Unit) {
             )
             Row(
                 Modifier.align(Alignment.CenterVertically).clearAndSetSemantics {
-                    contentDescription = if (ziel != null) "${ganzzahlDeutsch(s.kcal)} von ${ganzzahlDeutsch(ziel)} kcal" else "${ganzzahlDeutsch(s.kcal)} kcal"
+                    contentDescription = kcalStand(s.kcal, ziel, s.vollstaendig)
                 },
                 verticalAlignment = Alignment.Bottom,
             ) {
-                Text(ganzzahlDeutsch(s.kcal), style = Anime.titel(24f, 0f), color = f.text)
+                Text(kcalZahl(s.kcal, s.vollstaendig), style = Anime.titel(24f, 0f), color = f.text)
                 val rest = ziel?.let { " / ${ganzzahlDeutsch(it)} kcal" } ?: " kcal"
                 Text(rest, Modifier.padding(bottom = 3.dp), style = Anime.text(13f), color = f.text)
             }

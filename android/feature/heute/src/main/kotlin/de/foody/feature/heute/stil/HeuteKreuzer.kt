@@ -89,6 +89,8 @@ import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.balkenanteile
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.kcalStand
+import de.foody.core.designsystem.komponenten.kcalZahl
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.KreuzerKnopf
@@ -168,7 +170,8 @@ private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
                     )
                     zustand?.let { z ->
                         Text(
-                            kreuzerStatus(z.tagebuch.summe.kcal, z.tagebuch.ziel), Modifier.align(Alignment.Bottom).clearAndSetSemantics { },
+                            kreuzerStatus(z.tagebuch.summe.kcal, z.tagebuch.ziel, z.tagebuch.summe.vollstaendig),
+                            Modifier.align(Alignment.Bottom).clearAndSetSemantics { },
                             style = Kreuzer.mono(13f, 0.04f), color = FoodyTheme.stil.zier,
                         )
                     }
@@ -187,10 +190,13 @@ internal fun logbuchZeile(d: LocalDate): String {
 }
 
 /** Anzeige oben rechts: Anteil am Ziel, ohne Ziel die Summe. */
-internal fun kreuzerStatus(kcal: Int, ziel: Int?): String = when {
-    ziel == null || ziel <= 0 -> "${ganzzahlDeutsch(kcal)} KCAL"
-    kcal > ziel -> "${kcal * 100 / ziel} % · ÜBER ZIEL"
-    else -> "${kcal * 100 / ziel} % ERREICHT"
+internal fun kreuzerStatus(kcal: Int, ziel: Int?, vollstaendig: Boolean = true): String {
+    val mindestens = if (vollstaendig) "" else "≥ "
+    return when {
+        ziel == null || ziel <= 0 -> "${kcalZahl(kcal, vollstaendig)} KCAL"
+        kcal > ziel -> "$mindestens${kcal * 100 / ziel} % · ÜBER ZIEL"
+        else -> "$mindestens${kcal * 100 / ziel} % ERREICHT"
+    }
 }
 
 /** Zustand eines Planeten: gegessen (gelandet), geplant (Kurs gesetzt) oder frei. */
@@ -261,7 +267,7 @@ private fun Tagessystem(t: TagebuchHeute, planeten: List<Planet>, wahl: Int, onW
         val hoehe = breite * (SYSTEM_HOEHE / SYSTEM_BREITE)
         Row(Modifier.height(hoehe), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Sonnensystem(t.ziel, planeten, wahl, onWahl, Modifier.width(breite).fillMaxHeight())
-            Treibstoff(t.summe.kcal, t.ziel, Modifier.width(treibstoffBreite).fillMaxHeight())
+            Treibstoff(t.summe.kcal, t.ziel, t.summe.vollstaendig, Modifier.width(treibstoffBreite).fillMaxHeight())
         }
     }
 }
@@ -350,17 +356,17 @@ private fun Planetenknopf(p: Planet, groesse: Float, an: Boolean, onKlick: () ->
 
 /** Senkrechte Anzeige „Treibstoff“: kcal gegen das Ziel, mit Strichen alle 24 dp. */
 @Composable
-private fun Treibstoff(kcal: Int, ziel: Int?, modifier: Modifier) {
+private fun Treibstoff(kcal: Int, ziel: Int?, vollstaendig: Boolean, modifier: Modifier) {
     val f = FoodyTheme.farben
     val holo = FoodyTheme.stil.zier
     val anteil = ziel?.takeIf { it > 0 }?.let { (kcal.toFloat() / it).coerceIn(0f, 1f) } ?: 0f
-    val vorlesen = if (ziel != null && ziel > 0) "${ganzzahlDeutsch(kcal)} von ${ganzzahlDeutsch(ziel)} kcal" else "${ganzzahlDeutsch(kcal)} kcal"
+    val vorlesen = kcalStand(kcal, ziel, vollstaendig)
     Column(
         modifier.clearAndSetSemantics { contentDescription = vorlesen },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(ganzzahlDeutsch(kcal), style = Kreuzer.mono(13f, 0f), color = holo, maxLines = 1)
+        Text(kcalZahl(kcal, vollstaendig), style = Kreuzer.mono(13f, 0f), color = holo, maxLines = 1)
         Box(
             Modifier.width(22.dp).weight(1f).border(1.dp, f.lichtkante).drawBehind {
                 val schritt = 24.dp.toPx()

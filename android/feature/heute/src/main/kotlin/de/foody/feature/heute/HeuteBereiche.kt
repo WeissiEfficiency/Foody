@@ -111,7 +111,7 @@ internal fun TagebuchBereich(t: TagebuchHeute, aktionen: HeuteAktionen) {
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
         Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
             Abschnittskopf("Tagebuch", linkText = "Alle Einträge", onLink = aktionen.onAlleEintraege)
-            Naehrwertbalken(t.summe.kcal, t.ziel, t.summe.eiweiss, t.summe.kohlenhydrate, t.summe.fett)
+            Naehrwertbalken(t.summe.kcal, t.ziel, t.summe.eiweiss, t.summe.kohlenhydrate, t.summe.fett, vollstaendig = t.summe.vollstaendig)
             t.mahlzeiten.forEach { MahlzeitZeilen(it, aktionen) }
             FoodyKnopf("+ Eintragen", { aktionen.onEintragen(null) }, art = KnopfArt.TEXT)
         }
