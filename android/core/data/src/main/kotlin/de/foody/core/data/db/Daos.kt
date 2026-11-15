@@ -23,6 +23,10 @@ interface ZutatDao {
 
     @Query("SELECT * FROM ingredient WHERE id = :id") suspend fun nachId(id: String): ZutatEntity?
 
+    /** Zutaten ohne Dichte, deren Herkunft mit [anfang] beginnt (Nachtragen der BLS-Dichte beim Start). */
+    @Query("SELECT * FROM ingredient WHERE densityGPerMl IS NULL AND substr(nutrientSource, 1, length(:anfang)) = :anfang ORDER BY id")
+    suspend fun ohneDichteAus(anfang: String): List<ZutatEntity>
+
     /** Alle Zutaten als Flow (Nährwertberechnung der Oberfläche). */
     @Query("SELECT * FROM ingredient ORDER BY id") fun alleFlow(): Flow<List<ZutatEntity>>
 
