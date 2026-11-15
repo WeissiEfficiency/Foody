@@ -219,6 +219,9 @@ wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für 
   - `stil/` (ADR 0020): `FoodyStil` (Milchglas und die Stile Sage, Anime, Edo, Bayrisch, Grauen, Kreuzer, je vier
     Akzente), `StilVariante` (Immersiv, Ruhig) und `StilWerte` (Farben als `FoodyFarben`, `FoodyFormen`, Typografie,
     `Flaechenart.DECKEND`, Hintergrundmuster nur in Immersiv; Farben der Entwürfe rückt `angleichen` auf AA).
+    Den Akzent der Szenen (`edoShu()`, `bayrischBlau()`, `kreuzerAmber()`) liefert `StilWerte.akzentFarbe`: wie im
+    Entwurf, solange er als Text auf Grund und Karten 4,5:1 hält, sonst angeglichen (`KontrastTest`, Review 2026-11-15).
+    Im Widget „Heute“ gleicht `lesbarAuf` die Marke gegen die Fläche des Widgets an.
     Schriften je Stil in `token/FoodyTypo.kt` (`DelaGothicFamilie`, `KaiseiDecolFamilie`, `UnifrakturFamilie` …),
     beschnitten mit `werkzeuge/schriften_beschneiden.py`, Lizenzen in `core/designsystem/lizenzen/`.
     `FoodyTheme(stil, variante, akzent)` stellt `FoodyTheme.stil` bereit; `FoodyTheme.stil.immersiv(stil)` fragt die Szene ab,
