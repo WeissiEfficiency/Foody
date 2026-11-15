@@ -16,7 +16,7 @@ import de.foody.core.designsystem.stil.FoodyStil
 /** Widget „Schnell eintragen“ (2×2): großes „+“, der Tipp öffnet das Eintragen-Blatt ([EINTRAGEN_LINK]). */
 class EintragenWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
-        manager.updateAppWidget(ids, eintragenAnsicht(context, DarstellungSpeicher(context).stilAktuell()))
+        manager.frischZeigen(ids, eintragenAnsicht(context, DarstellungSpeicher(context).stilAktuell()))
     }
 }
 
@@ -43,7 +43,8 @@ private const val TINTE = 0xFF1B1A2E.toInt()
 internal fun eintragenAussehen(context: Context, wahl: StilWahl): EintragenAussehen {
     val k = kartenAussehen(context, wahl)
     val imm = k.immersiv
-    val fuss = "Suchen · Scannen · Foto"
+    // Schmale Leerzeichen um den Punkt: In engen 2×2-Zellen (etwa 123 dp) passt die Zeile so noch in eine Zeile
+    val fuss = "Suchen · Scannen · Foto"
     fun titel(wort: String) = if (imm) wort else "Eintragen"
     return when (k.stil) {
         FoodyStil.MILCHGLAS -> EintragenAussehen(null, k.text, k.neben, null, 0f, k.text, k.flaeche.farbe, false, "Eintragen", fuss, null)

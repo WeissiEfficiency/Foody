@@ -53,6 +53,10 @@
                 android:text="@string/widget_einkauf_titel"
                 android:textColor="@color/widget_inhalt"
                 android:textSize="15sp"
+                android:autoSizeMaxTextSize="15sp"
+                android:autoSizeMinTextSize="9sp"
+                android:autoSizeStepGranularity="1sp"
+                android:autoSizeTextType="uniform"
                 android:textStyle="bold" />
 
             <TextView
@@ -140,6 +144,10 @@
             android:importantForAccessibility="no"
             android:maxLines="1"
             android:textColor="@color/widget_inhalt"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+                android:autoSizeMaxTextSize="12sp"
+                android:autoSizeMinTextSize="9sp"
+                android:autoSizeStepGranularity="1sp"
+                android:autoSizeTextType="uniform" />
     </LinearLayout>
 </FrameLayout>

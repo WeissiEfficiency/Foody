@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Widget „Kalorien“ (KalorienWidget, 2×2): Ring mit dem, was vom Tagesziel übrig ist (kalorienAnsicht). -->
+<!-- Widget „Kalorien“ (KalorienWidget, 2×2): Ring mit dem, was vom Tagesziel übrig ist (kalorienAnsicht). Der Ring füllt
+     die Fläche quadratisch aus (fitCenter), auch wenn der Launcher die Zelle schmaler macht als 110 dp. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
     android:layout_width="match_parent"
@@ -36,14 +37,15 @@
 
             <FrameLayout
                 android:id="@+id/widget_ring_rahmen"
-                android:layout_width="110dp"
-                android:layout_height="110dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:importantForAccessibility="no">
 
                 <ImageView
                     android:id="@+id/widget_ring"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:scaleType="fitCenter"
                     android:importantForAccessibility="no" />
 
                 <LinearLayout

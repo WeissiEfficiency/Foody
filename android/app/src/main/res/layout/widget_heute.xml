@@ -134,7 +134,7 @@
                         android:layout_height="wrap_content"
                         android:ellipsize="end"
                         android:importantForAccessibility="no"
-                        android:maxLines="1"
+                        android:maxLines="2"
                         android:textColor="@color/widget_inhalt"
                         android:textSize="11.5sp"
                         android:textStyle="bold" />

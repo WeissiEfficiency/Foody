@@ -22,7 +22,7 @@ import de.foody.core.data.DarstellungSpeicher
  */
 abstract class KnopfWidget(@param:LayoutRes private val layout: Int, private val link: String, private val art: KnopfArt) : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
-        manager.updateAppWidget(ids, ansicht(context))
+        manager.frischZeigen(ids, ansicht(context))
     }
 
     fun ansicht(context: Context): RemoteViews = RemoteViews(context.packageName, layout).apply {
@@ -53,10 +53,10 @@ fun alleAktualisieren(context: Context) {
     val manager = AppWidgetManager.getInstance(context)
     for (widget in listOf(ScanWidget(), FotoWidget())) {
         val ids = manager.getAppWidgetIds(ComponentName(context, widget::class.java))
-        if (ids.isNotEmpty()) manager.updateAppWidget(ids, widget.ansicht(context))
+        if (ids.isNotEmpty()) manager.frischZeigen(ids, widget.ansicht(context))
     }
     val eintragen = context.widgetIds(EintragenWidget::class.java)
-    if (eintragen.isNotEmpty()) manager.updateAppWidget(eintragen, eintragenAnsicht(context, DarstellungSpeicher(context).stilAktuell()))
+    if (eintragen.isNotEmpty()) manager.frischZeigen(eintragen, eintragenAnsicht(context, DarstellungSpeicher(context).stilAktuell()))
     for (widget in listOf(EinkaufWidget::class.java, HeuteWidget::class.java, KalorienWidget::class.java, WocheWidget::class.java)) {
         val ids = context.widgetIds(widget)
         if (ids.isEmpty()) continue

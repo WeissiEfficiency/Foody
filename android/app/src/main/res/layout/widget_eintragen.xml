@@ -33,7 +33,7 @@
         android:clipToOutline="true"
         android:importantForAccessibility="no"
         android:orientation="vertical"
-        android:paddingHorizontal="14dp"
+        android:paddingHorizontal="12dp"
         android:paddingVertical="12dp">
 
         <TextView
@@ -46,6 +46,10 @@
             android:text="@string/widget_eintragen_titel"
             android:textColor="@color/widget_inhalt"
             android:textSize="15sp"
+                android:autoSizeMaxTextSize="15sp"
+                android:autoSizeMinTextSize="9sp"
+                android:autoSizeStepGranularity="1sp"
+                android:autoSizeTextType="uniform"
             android:textStyle="bold" />
 
         <FrameLayout
@@ -84,6 +88,10 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:importantForAccessibility="no"
+            android:autoSizeMaxTextSize="12sp"
+            android:autoSizeMinTextSize="7sp"
+            android:autoSizeStepGranularity="0.5sp"
+            android:autoSizeTextType="uniform"
             android:maxLines="1"
             android:text="@string/widget_eintragen_fuss"
             android:textColor="@color/widget_inhalt"

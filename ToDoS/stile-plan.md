@@ -516,7 +516,7 @@ Spec `docs/superpowers/specs/2026-11-13-widgets-design.md`, Plan `docs/superpowe
 - Tests `WidgetStilTest`, `DatenWidgetTest`, `HeuteWidgetTest`, `WocheWidgetTest` (Texte, Beschreibungen für
   TalkBack, Links, Ansicht je Stil, Bitmaps), Manifest in `WidgetTest`, Links in `DeepLinkTest`.
 - Nicht prüfbar ohne Gerät: das Abrunden über den Umriss im Launcher (Robolectric zeichnet ohne) und der
-  `WidgetBeobachter` über Hilt.
+  `WidgetBeobachter` über Hilt. Am 2026-11-15 auf dem Gerät nachgeholt, siehe „Ergebnis“.
 
 Offen:
 
@@ -545,3 +545,17 @@ Offen:
 - Angeglichen, wo der Entwurf nichts vorgibt: „+ Essn plana“ (wie „plana ›“), „Freie Tag fülln“ (wie „die freien Tag“),
   „Eikaufszettl · no 3 offn ›“ (wie „no 3 offn“ im Einkauf).
 - TalkBack-Texte bleiben Hochdeutsch.
+
+**2026-11-15 – Widgets auf dem Gerät** (Branch `claude/widgets-geraet`, Debug-Variante per WLAN-Debugging auf dem
+Handy des Nutzers, ColorOS-Launcher, 2×2-Zelle etwa 123 dp breit):
+- Gut: Umriss, Glühen und Versatzschatten werden vom Launcher nicht abgeschnitten; ein Wechsel des Stils und neue Daten
+  erreichen alle Widgets von selbst (`WidgetBeobachter`).
+- Fehler 1: Nach einem Wechsel des Stils blieben Teile des vorigen stehen (Stempel 籠 aus Edo, Rautenband aus Bayrisch,
+  gelbe Knöpfe aus Anime), nach dem Abhaken auch die alte Zeile im Einkauf. Ursache: Bei gleichem Layout wendet der
+  Launcher die `RemoteViews` nur auf die alten Views an. Behoben mit `frischZeigen` (Hülle `widget_huelle`, Inhalt mit
+  `removeAllViews` und `addView` jedes Mal neu). Die Tests sahen das nicht, weil sie jede Ansicht frisch aufbauen.
+- Fehler 2: Der Ring im Widget „Kalorien“ (fest 110 dp) war seitlich abgeschnitten; jetzt füllt er die Fläche quadratisch.
+- Fehler 3: Abgeschnittene Texte in engen Zellen („DER HÄ…“, „QU…“, „EINTRA…“, „Suchen · Scann…“, „Das Ritual des
+  Ab…“). Titel und Fußzeile schrumpfen jetzt (`autoSizeTextType`), die Marke im Widget „Heute“ darf zwei Zeilen haben,
+  die Fußzeile von „Schnell eintragen“ hat schmale Leerzeichen um die Punkte.
+- Im Widget-Auswahlmenü von ColorOS zeigt jedes Foody-Widget nur das App-Symbol als Vorschau (kein `previewLayout`).

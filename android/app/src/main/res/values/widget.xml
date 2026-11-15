@@ -11,7 +11,7 @@
     <string name="widget_einkauf_beschreibung">Offene Artikel der aktuellen Einkaufsliste</string>
     <string name="widget_eintragen_name">Foody Schnell eintragen</string>
     <string name="widget_eintragen_titel">Eintragen</string>
-    <string name="widget_eintragen_fuss">Suchen · Scannen · Foto</string>
+    <string name="widget_eintragen_fuss">Suchen · Scannen · Foto</string>
     <string name="widget_eintragen_beschreibung">Essen eintragen: suchen, scannen oder fotografieren</string>
     <string name="widget_heute_name">Foody Heute</string>
     <string name="widget_heute_beschreibung">Nächste geplante Mahlzeit und Kalorien des Tages</string>

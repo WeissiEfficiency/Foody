@@ -28,14 +28,14 @@ import java.util.Locale
 /** Widget „Heute“ (4×2): nächste geplante Mahlzeit und kcal des Tages; Fläche öffnet die App. */
 class HeuteWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) = imHintergrund {
-        manager.updateAppWidget(ids, heuteAnsicht(context, context.widgetDaten().heuteJetzt(), DarstellungSpeicher(context).stilAktuell()))
+        manager.frischZeigen(ids, heuteAnsicht(context, context.widgetDaten().heuteJetzt(), DarstellungSpeicher(context).stilAktuell()))
     }
 }
 
 /** Widget „Kalorien“ (2×2): Ring mit dem Rest des Tagesziels; der Tipp öffnet das Tagebuch von heute. */
 class KalorienWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) = imHintergrund {
-        manager.updateAppWidget(ids, kalorienAnsicht(context, context.widgetDaten().heuteJetzt(), DarstellungSpeicher(context).stilAktuell()))
+        manager.frischZeigen(ids, kalorienAnsicht(context, context.widgetDaten().heuteJetzt(), DarstellungSpeicher(context).stilAktuell()))
     }
 }
 

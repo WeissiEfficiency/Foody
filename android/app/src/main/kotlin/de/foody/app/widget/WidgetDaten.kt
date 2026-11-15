@@ -164,22 +164,22 @@ class WidgetBeobachter @Inject constructor(private val quelle: WidgetDatenQuelle
         bereich.launch {
             quelle.einkauf().distinctUntilChanged().conflate().collect { einkauf ->
                 val ids = app.widgetIds(EinkaufWidget::class.java)
-                if (ids.isNotEmpty()) manager.updateAppWidget(ids, einkaufAnsicht(app, einkauf, darstellung.stilAktuell()))
+                if (ids.isNotEmpty()) manager.frischZeigen(ids, einkaufAnsicht(app, einkauf, darstellung.stilAktuell()))
             }
         }
         bereich.launch {
             quelle.woche().distinctUntilChanged().conflate().collect { daten ->
                 val ids = app.widgetIds(WocheWidget::class.java)
-                if (ids.isNotEmpty()) manager.updateAppWidget(ids, wocheAnsicht(app, daten, darstellung.stilAktuell()))
+                if (ids.isNotEmpty()) manager.frischZeigen(ids, wocheAnsicht(app, daten, darstellung.stilAktuell()))
             }
         }
         bereich.launch {
             quelle.heute().distinctUntilChanged().conflate().collect { daten ->
                 val wahl = darstellung.stilAktuell()
                 val heute = app.widgetIds(HeuteWidget::class.java)
-                if (heute.isNotEmpty()) manager.updateAppWidget(heute, heuteAnsicht(app, daten, wahl))
+                if (heute.isNotEmpty()) manager.frischZeigen(heute, heuteAnsicht(app, daten, wahl))
                 val kalorien = app.widgetIds(KalorienWidget::class.java)
-                if (kalorien.isNotEmpty()) manager.updateAppWidget(kalorien, kalorienAnsicht(app, daten, wahl))
+                if (kalorien.isNotEmpty()) manager.frischZeigen(kalorien, kalorienAnsicht(app, daten, wahl))
             }
         }
     }

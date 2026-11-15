@@ -288,6 +288,11 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   als drei eingefärbte, über den Umriss gerundete Ebenen übereinander; Schrift über Spans, Zeilenlinien als Drawables,
   Ring, Balken, Tank, Rauten und Tagesmarken als Bitmaps in Gerätedichte (`WidgetBilder`, `markenBild`). Milchglas
   bleibt in den Farben des Hintergrundbilds. Ein Wechsel des Stils zeichnet alle Widgets neu (`alleAktualisieren`).
+  Jede Aktualisierung geht über `frischZeigen`: Die Ansicht steckt in der Hülle `widget_huelle` und wird jedes Mal
+  entfernt und neu eingesetzt. Bei gleichem Layout wendet der Launcher sonst nur die neuen Aufrufe auf die alten Views an,
+  und Stempel, Band, Knöpfe oder abgehakte Zeilen blieben aus dem vorigen Stil oder den vorigen Daten stehen. Enge
+  2×2-Zellen (auf dem Testgerät etwa 123 dp breit) fangen Titel und Fußzeile mit `autoSizeTextType` ab; der Ring im
+  Widget „Kalorien“ füllt die Fläche quadratisch (`fitCenter`).
   `Bildschirme` bündelt die Hilt-Bildschirme; Navigationstests setzen `Bildschirme.platzhalter` ein und laufen ohne Hilt.
 - **`:core:data`**: `HeuteRepository` (Plan heute/morgen nur mit vorhandenem, nicht archiviertem Rezept; kcal je
   Portion über `RecipeProfiles`; Rezeptvorschläge; offene Artikel der zuletzt geänderten Liste), `TagebuchRepository`
