@@ -62,6 +62,9 @@ class WidgetTest {
     fun kalorienImManifest() = imManifest(KalorienWidget::class.java, R.xml.kalorien_widget_info)
 
     @Test
+    fun wocheImManifest() = imManifest(WocheWidget::class.java, R.xml.woche_widget_info)
+
+    @Test
     fun eintragenImManifest() = imManifest(EintragenWidget::class.java, R.xml.eintragen_widget_info)
 
     @Test

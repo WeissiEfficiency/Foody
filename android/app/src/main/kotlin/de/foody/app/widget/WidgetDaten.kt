@@ -14,6 +14,8 @@ import dagger.hilt.components.SingletonComponent
 import de.foody.app.MainActivity
 import de.foody.core.data.DarstellungSpeicher
 import de.foody.core.data.TageszielSpeicher
+import de.foody.core.data.db.FoodyDatenbank
+import de.foody.core.data.db.PlanEintragEntity
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.heute.OffenerEinkauf
@@ -37,6 +39,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -45,11 +48,35 @@ import javax.inject.Inject
 /** Was „Heute“ und „Kalorien“ zeigen: die nächste geplante Mahlzeit, kcal des Tages und das Tagesziel (`null` = keins). */
 data class HeuteDaten(val datum: LocalDate, val naechste: NaechsteMahlzeit?, val kcal: Int, val ziel: Int?)
 
+/** Ein Tag im Widget „Woche“: [gericht] ist das Hauptgericht des Tages (Abendessen vor Mittag …), `null` = nichts geplant. */
+data class WochenTagKurz(val datum: LocalDate, val gericht: String?)
+
+/** Die Woche ab Montag für das Widget „Woche“, [heute] hervorgehoben. */
+data class WocheDaten(val heute: LocalDate, val tage: List<WochenTagKurz>)
+
+/** Reihenfolge, in der ein Gericht des Tages ins Widget „Woche“ kommt: Abendessen, Mittag, Frühstück, Snack, Eigenes. */
+private fun vorrang(slot: String): Int = when (Mahlzeit.ausText(slot)) {
+    Mahlzeit.ABENDESSEN -> 0
+    Mahlzeit.MITTAGESSEN -> 1
+    Mahlzeit.FRUEHSTUECK -> 2
+    Mahlzeit.SNACK -> 3
+    null -> 4
+}
+
+/** Die sieben Tage ab [montag] mit dem Hauptgericht je Tag (nur Rezepte, die es noch gibt). */
+internal fun wochenTage(montag: LocalDate, plan: List<PlanEintragEntity>, namen: Map<String, String>): List<WochenTagKurz> =
+    (0L..6L).map { i ->
+        val datum = montag.plusDays(i)
+        val gericht = plan.filter { it.date == datum && it.recipeId in namen }.minByOrNull { vorrang(it.slotType) }?.let { namen.getValue(it.recipeId) }
+        WochenTagKurz(datum, gericht)
+    }
+
 /** Abstand der Uhr für die Widgets: Die nächste Mahlzeit wechselt mit ihrem Zeitfenster, der Tag um Mitternacht. */
 private const val UHR_TAKT_MS = 5 * 60_000L
 
 /** Was die Daten-Widgets zeigen, aus den Repositories der App (nur lesen). */
 class WidgetDatenQuelle @Inject constructor(
+    private val db: FoodyDatenbank,
     private val heute: HeuteRepository,
     private val tagebuch: TagebuchRepository,
     private val ziel: TageszielSpeicher,
@@ -73,6 +100,15 @@ class WidgetDatenQuelle @Inject constructor(
             combine(heute.planHeuteUndMorgen(datum), tagebuch.amTag(datum), ziel.tagesziel(), uhr) { plan, eintraege, z, jetzt ->
                 HeuteDaten(datum, naechsteMahlzeit(plan, jetzt), kcalSumme(eintraege), z)
             }
+        }
+    }
+
+    /** Plan dieser Woche (Montag bis Sonntag); wechselt um Mitternacht. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun woche(): Flow<WocheDaten> = uhr().map { it.toLocalDate() }.distinctUntilChanged().flatMapLatest { tag ->
+        val montag = tag.with(DayOfWeek.MONDAY)
+        combine(db.planEintragDao().zwischen(montag, montag.plusDays(6)), db.rezeptDao().aktive()) { plan, rezepte ->
+            WocheDaten(tag, wochenTage(montag, plan, rezepte.associate { it.id to it.name }))
         }
     }
 }
@@ -118,7 +154,7 @@ internal fun AppWidgetProvider.imHintergrund(arbeit: suspend () -> Unit) {
 
 /**
  * Hält die Daten-Widgets aktuell, solange der Prozess lebt: Jede Änderung (in der App oder über den Sync) zeichnet
- * „Einkauf“, „Heute“ und „Kalorien“ neu, nur wenn welche auf dem Homescreen liegen. Sonst gilt das Update des Systems
+ * „Einkauf“, „Heute“, „Kalorien“ und „Woche“ neu, nur wenn welche auf dem Homescreen liegen. Sonst gilt das Update des Systems
  * (alle 30 Minuten).
  */
 class WidgetBeobachter @Inject constructor(private val quelle: WidgetDatenQuelle, private val darstellung: DarstellungSpeicher) {
@@ -129,6 +165,12 @@ class WidgetBeobachter @Inject constructor(private val quelle: WidgetDatenQuelle
             quelle.einkauf().distinctUntilChanged().conflate().collect { einkauf ->
                 val ids = app.widgetIds(EinkaufWidget::class.java)
                 if (ids.isNotEmpty()) manager.updateAppWidget(ids, einkaufAnsicht(app, einkauf, darstellung.stilAktuell()))
+            }
+        }
+        bereich.launch {
+            quelle.woche().distinctUntilChanged().conflate().collect { daten ->
+                val ids = app.widgetIds(WocheWidget::class.java)
+                if (ids.isNotEmpty()) manager.updateAppWidget(ids, wocheAnsicht(app, daten, darstellung.stilAktuell()))
             }
         }
         bereich.launch {
@@ -147,3 +189,5 @@ class WidgetBeobachter @Inject constructor(private val quelle: WidgetDatenQuelle
 internal suspend fun WidgetDatenQuelle.einkaufJetzt(): OffenerEinkauf? = einkauf().first()
 
 internal suspend fun WidgetDatenQuelle.heuteJetzt(): HeuteDaten = heute().first()
+
+internal suspend fun WidgetDatenQuelle.wocheJetzt(): WocheDaten = woche().first()

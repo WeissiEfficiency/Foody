@@ -153,7 +153,7 @@ fun Intent.schnellstart(): Schnellstart.Art? = when (data?.toString()) {
 
 /**
  * Alle Ziele der V3. Deep Links: `foody://rezept/{id}`, `foody://einkauf/{listeId}`,
- * `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute); dazu
+ * `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute), `foody://woche`; dazu
  * [SCAN_LINK] und [FOTO_LINK] von den Widgets, die [deepLinkOeffnen] selbst behandelt.
  */
 @Composable
@@ -164,7 +164,7 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
             bildschirme.heute(nav, Schnellstart.ausText(anfrage)) { eintrag.savedStateHandle[SCHNELLSTART] = null }
         }
         composable<Rezepte> { bildschirme.rezepte(nav) }
-        composable<Woche> { bildschirme.woche(nav) }
+        composable<Woche>(deepLinks = listOf(navDeepLink<Woche>(basePath = "${SCHEMA}woche"))) { bildschirme.woche(nav) }
         composable<Einkauf> { bildschirme.einkauf(null, nav) }
         composable<Einstellungen> { bildschirme.einstellungen(nav) }
         composable<ServerVerbinden> { bildschirme.serverVerbinden(nav) }

@@ -109,6 +109,19 @@
                 android:resource="@xml/kalorien_widget_info" />
         </receiver>
 
+        <!-- Homescreen-Widget „Woche“ (WocheWidget): Plan der Woche, Tipp öffnet foody://woche -->
+        <receiver
+            android:name=".widget.WocheWidget"
+            android:exported="true"
+            android:label="@string/widget_woche_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/woche_widget_info" />
+        </receiver>
+
         <!-- WorkManager wird mit der HiltWorkerFactory selbst konfiguriert (FoodyApp) -->
         <provider
             android:name="androidx.startup.InitializationProvider"

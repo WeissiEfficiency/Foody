@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget „Woche“ (WocheWidget, 4×1): sieben Tage ab Montag, je Tag Kürzel, Marke und erstes Gericht; heute
+     hervorgehoben. Marken als Bitmap in der Form des Stils (wocheAnsicht). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/widget_schatten"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_form"
+        android:clipToOutline="true"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:id="@+id/widget_rand"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_form"
+        android:clipToOutline="true"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/widget_knopf"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_hintergrund"
+        android:clipToOutline="true"
+        android:importantForAccessibility="no"
+        android:orientation="horizontal"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="8dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:importantForAccessibility="no"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_tag1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:textColor="@color/widget_inhalt"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/widget_marke1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="4dp"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/widget_gericht1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:textColor="@color/widget_inhalt"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:importantForAccessibility="no"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_tag2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:textColor="@color/widget_inhalt"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/widget_marke2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="4dp"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/widget_gericht2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:textColor="@color/widget_inhalt"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:importantForAccessibility="no"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_tag3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:textColor="@color/widget_inhalt"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/widget_marke3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="4dp"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/widget_gericht3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:textColor="@color/widget_inhalt"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:importantForAccessibility="no"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_tag4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:textColor="@color/widget_inhalt"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/widget_marke4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="4dp"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/widget_gericht4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:textColor="@color/widget_inhalt"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:importantForAccessibility="no"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_tag5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:textColor="@color/widget_inhalt"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/widget_marke5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="4dp"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/widget_gericht5"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:textColor="@color/widget_inhalt"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:importantForAccessibility="no"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_tag6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:textColor="@color/widget_inhalt"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/widget_marke6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="4dp"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/widget_gericht6"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:textColor="@color/widget_inhalt"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:importantForAccessibility="no"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_tag7"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:textColor="@color/widget_inhalt"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/widget_marke7"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="4dp"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/widget_gericht7"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:textColor="@color/widget_inhalt"
+                android:textSize="10sp" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

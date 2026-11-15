@@ -17,6 +17,8 @@
     <string name="widget_heute_beschreibung">Nächste geplante Mahlzeit und Kalorien des Tages</string>
     <string name="widget_kalorien_name">Foody Kalorien</string>
     <string name="widget_kalorien_beschreibung">Was vom Tagesziel übrig ist</string>
+    <string name="widget_woche_name">Foody Woche</string>
+    <string name="widget_woche_beschreibung">Die geplanten Gerichte dieser Woche</string>
     <!-- Farben aller Widgets aus dem Hintergrundbild (Material You); dunkel siehe values-night -->
     <color name="widget_flaeche">@android:color/system_accent1_100</color>
     <color name="widget_inhalt">@android:color/system_accent1_900</color>
