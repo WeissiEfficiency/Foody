@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LEISTE_REGELHOEHE
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilAktion
@@ -73,7 +74,6 @@ import de.foody.feature.rezepte.detail.DetailZustand
 import de.foody.feature.rezepte.detail.fehlendeWerte
 import de.foody.feature.rezepte.detail.gangName
 import de.foody.feature.rezepte.detail.kcalJePortion
-import de.foody.feature.rezepte.detail.mahlzeitName
 import de.foody.feature.rezepte.detail.mengeText
 import de.foody.feature.rezepte.detail.naehrwertZeilen
 import de.foody.feature.rezepte.detail.zeit
@@ -165,7 +165,7 @@ internal fun roemisch(zahl: Int): String {
 /** „Abendessen · Hauptspeise · vegetarisch“: Mahlzeiten, Gänge und der erste Tag; `null` ohne Einordnung. */
 internal fun einordnungZeile(z: DetailZustand.Da): String? {
     val e = z.voll.einordnung
-    val teile = e.mahlzeiten.sortedBy { it.ordinal }.map(::mahlzeitName) + e.gaenge.sortedBy { it.ordinal }.map(::gangName) +
+    val teile = e.mahlzeiten.sortedBy { it.ordinal }.map { it.anzeigename() } + e.gaenge.sortedBy { it.ordinal }.map(::gangName) +
         z.voll.rezept.tags.split(',').map { it.trim() }.filter { it.isNotEmpty() }.take(1)
     return teile.takeIf { it.isNotEmpty() }?.joinToString(" · ")
 }

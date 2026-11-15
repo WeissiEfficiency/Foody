@@ -53,6 +53,7 @@ import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.RezeptPlatzhalter
 import de.foody.core.designsystem.komponenten.RunderKnopf
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.rezeptBild
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
@@ -211,13 +212,13 @@ private fun Portionen(n: Int, onSchritt: (Boolean) -> Unit) {
 /** „Hauptspeise · Abendessen“ für die Überzeile; nur sicher bekannte Einordnung, vermutete bleibt unten in der Zeile. */
 internal fun gangZeile(e: Einordnung): String? {
     val gaenge = if (e.gaengeVermutet) emptyList() else e.gaenge.sortedBy { it.ordinal }.map(::gangName)
-    val mahlzeiten = if (e.mahlzeitenVermutet) emptyList() else e.mahlzeiten.sortedBy { it.ordinal }.map(::mahlzeitName)
+    val mahlzeiten = if (e.mahlzeitenVermutet) emptyList() else e.mahlzeiten.sortedBy { it.ordinal }.map { it.anzeigename() }
     return (gaenge + mahlzeiten).takeIf { it.isNotEmpty() }?.joinToString(" · ")
 }
 
 @Composable
 private fun Einordnungszeile(e: Einordnung) {
-    val mahlzeiten = e.mahlzeiten.sortedBy { it.ordinal }.joinToString(", ") { mahlzeitName(it) }.ifEmpty { "alle" }
+    val mahlzeiten = e.mahlzeiten.sortedBy { it.ordinal }.joinToString(", ") { it.anzeigename() }.ifEmpty { "alle" }
     val gaenge = e.gaenge.sortedBy { it.ordinal }.joinToString(", ") { gangName(it) }.ifEmpty { "–" }
     val vermutet = if (e.mahlzeitenVermutet || e.gaengeVermutet) " (vermutet)" else ""
     Text("Mahlzeit: $mahlzeiten · Gang: $gaenge$vermutet", style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
@@ -247,13 +248,6 @@ internal fun mengeText(z: DetailZustand.Da, zeile: RezeptZeile): String = zeile.
 
 internal fun zeit(vorbereitung: Int?, kochen: Int?): String? =
     listOfNotNull(vorbereitung, kochen).takeIf { it.isNotEmpty() }?.sum()?.let { "$it Min." }
-
-internal fun mahlzeitName(m: Mahlzeit) = when (m) {
-    Mahlzeit.FRUEHSTUECK -> "Frühstück"
-    Mahlzeit.MITTAGESSEN -> "Mittagessen"
-    Mahlzeit.ABENDESSEN -> "Abendessen"
-    Mahlzeit.SNACK -> "Snack"
-}
 
 internal fun gangName(g: Gang) = when (g) {
     Gang.VORSPEISE -> "Vorspeise"

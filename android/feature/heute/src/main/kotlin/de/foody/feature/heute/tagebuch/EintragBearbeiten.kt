@@ -34,13 +34,13 @@ import de.foody.core.data.zutaten.zahlText
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.vorausgefuelltFarben
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.domain.Mahlzeit
 import de.foody.domain.Naehrwerte
 import de.foody.domain.Tagebuch
 import de.foody.domain.TagebuchArt
-import de.foody.feature.heute.anzeigename
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter

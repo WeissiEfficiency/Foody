@@ -32,6 +32,7 @@ import de.foody.core.designsystem.komponenten.BlattTitel
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.slotName
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.komponenten.zeilenImStil
 import de.foody.core.designsystem.stil.StilAktion
@@ -65,7 +66,7 @@ internal fun MahlzeitBlatt(e: PlanEintrag, montag: LocalDate, a: MahlzeitAktione
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
             BlattTitel(e.rezeptName)
-            Text(mahlzeitAnzeige(e.mahlzeit), style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
+            Text(slotName(e.mahlzeit), style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
             if (zeilenImStil()) {
                 PortionenStil(e.portionen, a.onPortionen)
             } else {

@@ -33,6 +33,7 @@ import de.foody.core.data.woche.WochenAnsicht
 import de.foody.core.data.woche.WochenTag
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.slotName
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.stil.anime.AnimeKnopf
@@ -41,7 +42,6 @@ import de.foody.core.designsystem.stil.edo.EdoKnopf
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
 import de.foody.core.designsystem.stil.kreuzer.KreuzerKnopf
 import de.foody.core.designsystem.token.FoodyBreiten
-import de.foody.feature.woche.mahlzeitAnzeige
 import java.time.LocalDate
 import java.time.temporal.WeekFields
 import java.util.Locale
@@ -184,7 +184,7 @@ internal fun Eintragszeile(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Column(Modifier.weight(1f).padding(vertical = 4.dp)) {
-            Text(mahlzeitAnzeige(e.mahlzeit), style = oben, color = obenFarbe)
+            Text(slotName(e.mahlzeit), style = oben, color = obenFarbe)
             Text(e.rezeptName, style = gericht, color = farbe)
         }
         Text(eintragStand(e), style = stand, color = farbe)

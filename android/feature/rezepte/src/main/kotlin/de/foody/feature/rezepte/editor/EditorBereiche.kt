@@ -15,11 +15,11 @@ import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.FoodyTextfeld
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.domain.Gang
 import de.foody.domain.Mahlzeit
 import de.foody.feature.rezepte.detail.gangName
-import de.foody.feature.rezepte.detail.mahlzeitName
 
 private val MAHLZEITEN = listOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.ABENDESSEN, Mahlzeit.SNACK)
 
@@ -49,7 +49,7 @@ internal fun Einordnungswahl(z: EditorZustand, vm: EditorViewModel) {
     val e = z.einordnung
     Augenbraue(if (z.eingaben.mahlzeiten == null && z.eingaben.gaenge == null) "Einordnung (vermutet)" else "Einordnung")
     FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-        MAHLZEITEN.forEach { m -> FoodyChip(mahlzeitName(m), m in e.mahlzeiten, { vm.mahlzeitUmschalten(m) }) }
+        MAHLZEITEN.forEach { m -> FoodyChip(m.anzeigename(), m in e.mahlzeiten, { vm.mahlzeitUmschalten(m) }) }
     }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         Gang.entries.forEach { g -> FoodyChip(gangName(g), g in e.gaenge, { vm.gangUmschalten(g) }) }

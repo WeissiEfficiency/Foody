@@ -29,6 +29,7 @@ import de.foody.core.designsystem.komponenten.BlattTitel
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.komponenten.zeilenImStil
 import de.foody.core.designsystem.stil.FoodyStil
@@ -79,7 +80,7 @@ internal fun FuellenBlatt(z: FuellenZustand, namen: Map<String, String>, a: Fuel
             planenEinleitung()?.let { (satz, schrift) -> Text(satz, style = schrift, color = FoodyTheme.farben.nebentext) }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 listOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.SNACK, Mahlzeit.ABENDESSEN).forEach { m ->
-                    FoodyChip(mahlzeitAnzeige(m), ausgewaehlt = m == z.mahlzeit, onKlick = { a.onMahlzeit(m) })
+                    FoodyChip(m.anzeigename(), ausgewaehlt = m == z.mahlzeit, onKlick = { a.onMahlzeit(m) })
                 }
             }
             z.hinweis?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext) }

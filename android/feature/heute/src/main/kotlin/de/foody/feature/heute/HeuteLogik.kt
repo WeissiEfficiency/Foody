@@ -49,14 +49,3 @@ val MahlzeitAbschnitt.kcalVollstaendig: Boolean get() = eintraege.all { it.volls
 
 /** [kcal] als Zahl ohne Einheit, unvollständig mit „≥“ („≥ 380“); mit Einheit: `kcalText(kcal, kcalVollstaendig)`. */
 fun MahlzeitAbschnitt.kcalZahl(): String = (if (kcalVollstaendig) "" else "≥ ") + ganzzahlDeutsch(kcal)
-
-/** Anzeigename einer Mahlzeit. */
-fun Mahlzeit.anzeigename(): String = when (this) {
-    Mahlzeit.FRUEHSTUECK -> "Frühstück"
-    Mahlzeit.MITTAGESSEN -> "Mittagessen"
-    Mahlzeit.SNACK -> "Snack"
-    Mahlzeit.ABENDESSEN -> "Abendessen"
-}
-
-/** Anzeigename eines Plan-Slots; alte Freitexte bleiben, wie sie sind. */
-fun slotName(slot: String): String = Mahlzeit.ausText(slot)?.anzeigename() ?: slot

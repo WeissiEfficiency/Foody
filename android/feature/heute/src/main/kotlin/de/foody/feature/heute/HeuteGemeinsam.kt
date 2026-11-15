@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.data.heute.GeplanteMahlzeit
 import de.foody.core.designsystem.komponenten.FoodyFrage
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit

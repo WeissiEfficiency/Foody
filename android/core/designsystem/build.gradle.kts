@@ -9,6 +9,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":domain"))
     implementation(libs.haze)
     implementation(libs.haze.blur)
     // Rezeptfotos (rezeptBild) aus der Fotoablage

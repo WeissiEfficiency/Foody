@@ -15,13 +15,3 @@ fun wochenTitel(montag: LocalDate): String {
     val kw = montag.get(WeekFields.ISO.weekOfWeekBasedYear())
     return "KW $kw · ${montag.dayOfMonth}.${montag.monthValue}.–${sonntag.dayOfMonth}.${sonntag.monthValue}."
 }
-
-/** Anzeigename einer Mahlzeit; eigene Namen unverändert. */
-fun mahlzeitAnzeige(text: String): String = Mahlzeit.ausText(text)?.let(::mahlzeitAnzeige) ?: text
-
-fun mahlzeitAnzeige(m: Mahlzeit): String = when (m) {
-    Mahlzeit.FRUEHSTUECK -> "Frühstück"
-    Mahlzeit.MITTAGESSEN -> "Mittagessen"
-    Mahlzeit.SNACK -> "Snack"
-    Mahlzeit.ABENDESSEN -> "Abendessen"
-}

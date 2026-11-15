@@ -187,7 +187,8 @@ ADR 0012, Spec `docs/superpowers/archiv/v3/specs/2026-10-19-v3-phase4-designsyst
 seit ADR 0015 (Spec `docs/superpowers/specs/2026-10-31-farbwelten-milchglas-design.md`, Entwürfe `docs/design/milchglas/`);
 wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für das Aussehen der App.
 
-- **`:core:designsystem`** (`de.foody.core.designsystem`, ohne Abhängigkeit zu `:core:data`/`:core:sync`):
+- **`:core:designsystem`** (`de.foody.core.designsystem`, ohne Abhängigkeit zu `:core:data`/`:core:sync`; nutzt
+  `:domain` nur für Anzeigetexte wie `Mahlzeit.anzeigename()`/`kurzname()` und `slotName()` in `komponenten/Mahlzeitnamen.kt`):
   - `token/`: `Farbwelt` (acht wählbare Paletten, Standard Mango; je Modus `FarbweltWerte` = `FoodyFarben`, `Verlauf`,
     Glastönung, Platzhalter – seit ADR 0015), `GlasStufe` + `glasWerte(stufe, dunkel, farbwelt)` (Milchglas: LEICHT/DICHT
     mit Unschärfe 40 dp und Korn, BILD fast deckend ohne Unschärfe; Tönung, Lichtkante), `FoodyTypografie` (Fraunces bis

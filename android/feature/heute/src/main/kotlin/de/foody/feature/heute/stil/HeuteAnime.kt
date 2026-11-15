@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.em
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncStatus
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.kcalRest
 import de.foody.core.designsystem.komponenten.kcalStand
@@ -87,7 +88,6 @@ import de.foody.feature.heute.HeuteRahmen
 import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.MahlzeitAbschnitt
 import de.foody.feature.heute.TagebuchHeute
-import de.foody.feature.heute.anzeigename
 import de.foody.feature.heute.gericht
 import de.foody.feature.heute.kcal
 import de.foody.feature.heute.kcalVollstaendig

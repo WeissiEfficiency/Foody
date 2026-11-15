@@ -1,10 +1,10 @@
 package de.foody.feature.heute.stil
 
 import de.foody.core.data.heute.GeplanteMahlzeit
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.HeuteZustand
-import de.foody.feature.heute.anzeigename
 import java.util.Locale
 
 /** Wohin ein Eintrag im Menü „Was tun?“ führt. */

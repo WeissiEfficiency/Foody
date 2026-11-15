@@ -74,11 +74,13 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyFrage
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncStatus
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.balkenanteile
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.kcalZahl
+import de.foody.core.designsystem.komponenten.kurzname
 import de.foody.core.designsystem.komponenten.makroSatz
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.edo.Edo
@@ -94,7 +96,6 @@ import de.foody.feature.heute.HeuteRahmen
 import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.MahlzeitAbschnitt
 import de.foody.feature.heute.TagebuchHeute
-import de.foody.feature.heute.anzeigename
 import de.foody.feature.heute.gericht
 import de.foody.feature.heute.kcal
 import de.foody.feature.heute.kcalVollstaendig
@@ -273,14 +274,6 @@ private fun Papier(zustand: HeuteZustand, aktionen: HeuteAktionen) {
     }
 }
 
-/** Name in der linken Spalte der Speisefolge. */
-internal fun Mahlzeit.edoName(): String = when (this) {
-    Mahlzeit.FRUEHSTUECK -> "Frühstück"
-    Mahlzeit.MITTAGESSEN -> "Mittag"
-    Mahlzeit.SNACK -> "Snack"
-    Mahlzeit.ABENDESSEN -> "Abend"
-}
-
 /** Was in der Zeile steht: die Einträge, „Ofengemüse, geplant“ oder „＋ Eintragen“. */
 internal fun folgeText(a: MahlzeitAbschnitt): String {
     val v = a.vorschlaege.firstOrNull()
@@ -369,7 +362,7 @@ private fun Folgezeile(a: MahlzeitAbschnitt, aktionen: HeuteAktionen, onFrage: (
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(a.mahlzeit.edoName(), Modifier.widthIn(min = 74.dp), style = Edo.text(12.5f), color = f.nebentext)
+            Text(a.mahlzeit.kurzname(), Modifier.widthIn(min = 74.dp), style = Edo.text(12.5f), color = f.nebentext)
             Text(folgeText(a), Modifier.weight(1f), style = Edo.text(15f), color = if (gegessen) f.text else f.nebentext)
             Text(kcal, style = Edo.text(13.5f), color = f.text)
         }

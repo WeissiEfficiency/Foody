@@ -53,11 +53,13 @@ import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.kcalRest
 import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.kcalZahl
+import de.foody.core.designsystem.komponenten.kurzname
 import de.foody.core.designsystem.komponenten.makroSatz
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.FoodyStil
@@ -71,7 +73,6 @@ import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.TAGEBUCH_INHALT
-import de.foody.feature.heute.anzeigename
 import de.foody.feature.heute.tagebuch.TagAbschnitt
 import de.foody.feature.heute.tagebuch.TagZustand
 import de.foody.feature.heute.tagebuch.werte
@@ -135,26 +136,20 @@ internal fun logbuchZusatz(datum: LocalDate, heute: LocalDate): String =
     (if (datum == heute) "HEUTE · " else "") + "LOGBUCH ${datum.dayOfYear}"
 
 /** Kurze Mahlzeitnamen der Entwürfe („Mittag“, „Abend“); Bayrisch „Friahstück“ und „Brotzeit“. */
-internal fun mahlzeitKurz(m: Mahlzeit): String = when (m) {
-    Mahlzeit.FRUEHSTUECK -> "Frühstück"
-    Mahlzeit.MITTAGESSEN -> "Mittag"
-    Mahlzeit.ABENDESSEN -> "Abend"
-    Mahlzeit.SNACK -> "Snack"
-}
 
 internal fun mahlzeitBayrisch(m: Mahlzeit): String = when (m) {
     Mahlzeit.FRUEHSTUECK -> "Friahstück"
     Mahlzeit.SNACK -> "Brotzeit"
-    else -> mahlzeitKurz(m)
+    else -> m.kurzname()
 }
 
 internal fun tagebuchArt(stil: FoodyStil): TagebuchArt = when (stil) {
     FoodyStil.ANIME -> TagebuchArt(
-        "TAGEBUCH!", null, ::mahlzeitKurz, "Noch leer – tippe auf +", "Löschen", ::tagZusatzKurz,
+        "TAGEBUCH!", null, Mahlzeit::kurzname, "Noch leer – tippe auf +", "Löschen", ::tagZusatzKurz,
         { Anime.titel(it, 0f) }, { Anime.text(it, FontWeight.Medium) }, { Anime.text(it, FontWeight.ExtraBold) },
     )
     FoodyStil.EDO -> TagebuchArt(
-        "Tagebuch", null, ::mahlzeitKurz, "—", "Löschen", ::tagZusatzKurz,
+        "Tagebuch", null, Mahlzeit::kurzname, "—", "Löschen", ::tagZusatzKurz,
         { Edo.titel(it) }, { Edo.text(it) }, { Edo.kopf(it) },
     )
     FoodyStil.BAYRISCH -> TagebuchArt(

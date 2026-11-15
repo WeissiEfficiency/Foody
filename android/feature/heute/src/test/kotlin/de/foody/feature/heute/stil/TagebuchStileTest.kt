@@ -22,6 +22,7 @@ import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.kurzname
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.testing.ViewModelHalter
@@ -176,7 +177,7 @@ class TagebuchStileTest {
         assertEquals("HEUTE · LOGBUCH 297", logbuchZusatz(heute, heute))
         assertEquals("LOGBUCH 296", logbuchZusatz(heute.minusDays(1), heute))
         assertEquals("Brotzeit", mahlzeitBayrisch(Mahlzeit.SNACK))
-        assertEquals("Mittag", mahlzeitKurz(Mahlzeit.MITTAGESSEN))
+        assertEquals("Mittag", Mahlzeit.MITTAGESSEN.kurzname())
         val tag = { kcal: Int, ziel: Int?, voll: Int ->
             TagZustand(
                 heute, Summe(kcal, 0, 0, 0, true), ziel,
