@@ -184,6 +184,31 @@ class EintragenBlattTest {
         compose.runOnIdle { assertEquals(foto, eintragen.fotoLauf.zustand.value.fotoPfad) }
     }
 
+    /** Widget „Schnell eintragen“: das Blatt wie über „+“ – nicht in „Frei“, kein Scan, keine Kamera. */
+    @Test
+    fun eintragenAnfrageVomWidget() {
+        var gelesen = 0
+        val eintragen = halter.behalten(
+            EintragenViewModel(
+                SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), tagebuch, db, testScan(beimLesen = { gelesen++ }), keinErkenner,
+                testErkennung(modell = true), testGedaechtnis(), testBls(), ZutatenRepository(db) { 1L },
+            ),
+        )
+        var anfrage by mutableStateOf<Schnellstart?>(Schnellstart(Schnellstart.Art.EINTRAGEN, "widget-3"))
+        compose.setContent {
+            FoodyTheme {
+                HeuteRoute({ _, _ -> }, {}, {}, {}, {}, vm = vm, eintragenVm = eintragen, schnellstart = anfrage, onSchnellstartAngenommen = { anfrage = null })
+            }
+        }
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Rezept") and isSelected()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasText("Frei") and isSelected()).assertDoesNotExist()
+        compose.runOnIdle {
+            assertNull(anfrage)
+            assertEquals(0, gelesen)
+            assertFalse(eintragen.fotoLauf.zustand.value.kameraAngefragt)
+        }
+    }
+
     /** Ein normales Öffnen verwirft eine liegengebliebene Kamera-Anfrage (etwa ohne Modell, wo der Knopf fehlt). */
     @Test
     fun normalesOeffnenVerwirftKameraAnfrage() {

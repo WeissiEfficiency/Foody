@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Listenzeile als Pille mit Rand (Anime), weiß und zur Laufzeit eingefärbt -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <!-- ohne Füllung zeichnet die Tönung die ganze Fläche -->
+    <solid android:color="@android:color/transparent" />
+    <stroke
+        android:width="2dp"
+        android:color="@android:color/white" />
+    <corners android:radius="999dp" />
+    <padding
+        android:bottom="1dp"
+        android:left="10dp"
+        android:right="10dp"
+        android:top="1dp" />
+</shape>

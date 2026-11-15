@@ -7,6 +7,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
+import de.foody.app.widget.WidgetBeobachter
 import de.foody.core.data.bls.BlsDichteNachtragen
 import de.foody.core.data.rezepte.KuechenmasseNachtragen
 import de.foody.core.data.startdaten.StartdatenLader
@@ -36,6 +37,8 @@ class FoodyApp : Application(), Configuration.Provider {
 
     @Inject lateinit var blsDichte: BlsDichteNachtragen
 
+    @Inject lateinit var widgets: WidgetBeobachter
+
     /** Lebt so lange wie der Prozess; Fehler eines Auftrags beenden die anderen nicht. */
     private val bereich = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -50,6 +53,7 @@ class FoodyApp : Application(), Configuration.Provider {
             kuechenmasse.nachtragen()
             blsDichte.nachtragen()
         }
+        widgets.starten(this, bereich)
         ProcessLifecycleOwner.get().lifecycle.addObserver(
             object : DefaultLifecycleObserver {
                 override fun onStart(owner: LifecycleOwner) {

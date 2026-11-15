@@ -11,6 +11,9 @@ data class Schnellstart(val art: Art, val id: String) {
 
         /** Widget „KI-Foto“: „Frei“ mit der Kamera für die Fotoerkennung. */
         FOTO,
+
+        /** Widget „Schnell eintragen“: das Blatt wie über „+“ (Suchen, Scannen, Foto zur Wahl). */
+        EINTRAGEN,
     }
 
     fun alsText(): String = "${art.name}:$id"

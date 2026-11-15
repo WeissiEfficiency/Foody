@@ -1,8 +1,5 @@
 package de.foody.app.widget
 
-import android.content.res.ColorStateList
-import android.util.TypedValue
-import android.view.View
 import android.widget.RemoteViews
 import androidx.compose.ui.graphics.toArgb
 import de.foody.app.R
@@ -68,31 +65,7 @@ fun knopfAussehen(wahl: StilWahl, art: KnopfArt): KnopfAussehen? {
 
 /** Setzt [a] auf die Ansicht eines Knopf-Widgets (Layout mit Schatten, Rand und Knopf übereinander). */
 internal fun RemoteViews.stilAnwenden(a: KnopfAussehen) {
-    val dp = TypedValue.COMPLEX_UNIT_DIP
-    val versatz = if (a.schatten) SCHATTEN_VERSATZ else 0f
-    fun flaeche(id: Int, farbe: Int, radius: Float) {
-        setViewVisibility(id, View.VISIBLE)
-        setInt(id, "setBackgroundResource", R.drawable.widget_form)
-        setColorStateList(id, "setBackgroundTintList", ColorStateList.valueOf(farbe))
-        setViewOutlinePreferredRadius(id, radius, dp)
-    }
-    fun abstand(id: Int, links: Float, oben: Float, rechts: Float, unten: Float) {
-        setViewLayoutMargin(id, RemoteViews.MARGIN_LEFT, links, dp)
-        setViewLayoutMargin(id, RemoteViews.MARGIN_TOP, oben, dp)
-        setViewLayoutMargin(id, RemoteViews.MARGIN_RIGHT, rechts, dp)
-        setViewLayoutMargin(id, RemoteViews.MARGIN_BOTTOM, unten, dp)
-    }
-    if (a.schatten) {
-        flaeche(R.id.widget_schatten, a.rand ?: a.inhalt, a.radius)
-        abstand(R.id.widget_schatten, versatz, versatz, 0f, 0f)
-    }
-    if (a.rand != null) {
-        flaeche(R.id.widget_rand, a.rand, a.radius)
-        abstand(R.id.widget_rand, 0f, 0f, versatz, versatz)
-    }
-    val rand = if (a.rand != null) a.randBreite else 0f
-    flaeche(R.id.widget_knopf, a.flaeche, (a.radius - rand).coerceAtLeast(0f))
-    abstand(R.id.widget_knopf, rand, rand, rand + versatz, rand + versatz)
+    flaecheAnwenden(Flaeche(a.flaeche, a.rand, a.randBreite, a.radius, a.schatten))
     setTextColor(R.id.widget_text, a.inhalt)
     setInt(R.id.widget_symbol, "setColorFilter", a.symbol)
     a.text?.let { setTextViewText(R.id.widget_text, it) }
