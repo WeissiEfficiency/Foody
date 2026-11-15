@@ -79,6 +79,7 @@ import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.kcalZahl
+import de.foody.core.designsystem.komponenten.makroSatz
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.EdoKnopf
@@ -94,10 +95,12 @@ import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.MahlzeitAbschnitt
 import de.foody.feature.heute.TagebuchHeute
 import de.foody.feature.heute.anzeigename
+import de.foody.feature.heute.gericht
 import de.foody.feature.heute.kcal
 import de.foody.feature.heute.kcalVollstaendig
 import de.foody.feature.heute.kcalZahl
 import de.foody.feature.heute.meta
+import de.foody.feature.heute.rezeptLink
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -248,20 +251,18 @@ private fun Papier(zustand: HeuteZustand, aktionen: HeuteAktionen) {
             else -> "HEUTE · ${TAG_MONAT.format(zustand.datum).uppercase(Locale.GERMAN)}"
         }
         Text(kopf, style = Edo.kopf(), color = shu)
-        val titel = n?.mahlzeit?.titel ?: r?.titel
-        val rezeptId = n?.mahlzeit?.rezeptId ?: r?.id
-        if (titel == null || rezeptId == null) {
+        val g = zustand.gericht()
+        if (g == null) {
             Text("Für heute ist nichts vorgesehen.", style = Edo.text(14f), color = f.nebentext)
             return@Column
         }
+        val (titel, rezeptId) = g
         Text(
             "$titel ›",
-            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button) { aktionen.onRezept(rezeptId) }
-                .semantics { contentDescription = "$titel, Rezept öffnen" }.padding(vertical = 4.dp),
+            Modifier.rezeptLink(titel) { aktionen.onRezept(rezeptId) }.padding(vertical = 4.dp),
             style = Edo.titel(21f), color = f.text,
         )
-        val zeile = n?.mahlzeit?.let { meta(it.portionen, it.kcalJePortion, it.zeitMinuten) }
-            ?: r?.let { meta(null, it.kcalJePortion, it.zeitMinuten) }.orEmpty()
+        val zeile = g.zeile
         if (zeile.isNotEmpty()) Text(zeile, style = Edo.text(13f), color = f.nebentext)
         val breit = Modifier.fillMaxWidth().padding(top = 6.dp)
         if (n != null) {
@@ -322,7 +323,7 @@ private fun Speisefolge(t: TagebuchHeute, aktionen: HeuteAktionen) {
         val a = balkenanteile(s.kcal, ziel, s.eiweiss, s.kohlenhydrate, s.fett)
         Row(
             Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp).height(6.dp).background(Edo.papierLinie)
-                .clearAndSetSemantics { contentDescription = "Eiweiß ${s.eiweiss} g, Kohlenhydrate ${s.kohlenhydrate} g, Fett ${s.fett} g" },
+                .clearAndSetSemantics { contentDescription = makroSatz(s.eiweiss, s.kohlenhydrate, s.fett) },
             horizontalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             listOf(a.eiweiss to f.makro.eiweiss, a.kh to f.makro.kohlenhydrate, a.fett to f.makro.fett).forEach { (anteil, farbe) ->

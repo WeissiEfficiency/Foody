@@ -83,10 +83,12 @@ import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.MahlzeitAbschnitt
 import de.foody.feature.heute.TagebuchHeute
 import de.foody.feature.heute.anzeigename
+import de.foody.feature.heute.gericht
 import de.foody.feature.heute.kcal
 import de.foody.feature.heute.kcalVollstaendig
 import de.foody.feature.heute.kcalZahl
 import de.foody.feature.heute.meta
+import de.foody.feature.heute.rezeptLink
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -364,9 +366,9 @@ private fun Essen(zustand: HeuteZustand, aktionen: HeuteAktionen) {
     val r = zustand.inspiration
     if (n == null && r == null) return
     val kopf = n?.let { essenKopf(it.mahlzeit.slot, it.morgen) } ?: "A Vorschlag"
-    val titel = n?.mahlzeit?.titel ?: requireNotNull(r).titel
-    val rezeptId = n?.mahlzeit?.rezeptId ?: requireNotNull(r).id
-    val zeile = n?.mahlzeit?.let { meta(it.portionen, it.kcalJePortion, it.zeitMinuten) } ?: r?.let { meta(null, it.kcalJePortion, it.zeitMinuten) }.orEmpty()
+    val g = requireNotNull(zustand.gericht())
+    val (titel, rezeptId) = g
+    val zeile = g.zeile
     Box(Modifier.fillMaxWidth().border(1.dp, f.text, RoundedCornerShape(17.dp)).padding(3.dp)) {
         Column(
             Modifier.fillMaxWidth().clip(Bayrisch.kartenForm).background(Color.White).border(2.dp, f.text, Bayrisch.kartenForm)
@@ -376,8 +378,7 @@ private fun Essen(zustand: HeuteZustand, aktionen: HeuteAktionen) {
             Text(kopf, style = Bayrisch.titel(14f), color = bayrischBlau())
             Text(
                 "$titel ›",
-                Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button) { aktionen.onRezept(rezeptId) }
-                    .semantics { contentDescription = "$titel, Rezept öffnen" }.padding(vertical = 4.dp),
+                Modifier.rezeptLink(titel) { aktionen.onRezept(rezeptId) }.padding(vertical = 4.dp),
                 style = Bayrisch.titel(21f, FontWeight.ExtraBold), color = f.text,
             )
             if (zeile.isNotEmpty()) Text(zeile, style = Bayrisch.text(14f), color = f.nebentext)

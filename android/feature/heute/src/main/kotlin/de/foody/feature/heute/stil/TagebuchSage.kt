@@ -54,6 +54,7 @@ import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.kcalZahl
+import de.foody.core.designsystem.komponenten.makroSatz
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.SageNebenknopf
@@ -211,7 +212,7 @@ private fun Bilanz(z: TagZustand) {
     val ziel = z.ziel?.takeIf { it > 0 }
     val anteil = if (ziel != null) (s.kcal.toFloat() / ziel).coerceIn(0f, 1f) else if (s.kcal > 0) 1f else 0f
     val satz = kcalStand(s.kcal, ziel, s.vollstaendig) +
-        ": Eiweiß ${s.eiweiss} g, Kohlenhydrate ${s.kohlenhydrate} g, Fett ${s.fett} g"
+        ": " + makroSatz(s.eiweiss, s.kohlenhydrate, s.fett)
     val energie = (s.eiweiss * 4 + s.kohlenhydrate * 4 + s.fett * 9).coerceAtLeast(1)
     Row(
         Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = satz },

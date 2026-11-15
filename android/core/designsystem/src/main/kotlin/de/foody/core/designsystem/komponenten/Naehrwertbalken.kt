@@ -57,7 +57,7 @@ fun Naehrwertbalken(kcal: Int, ziel: Int?, eiweissG: Int, khG: Int, fettG: Int, 
     val kopf = if (a.ueberZiel) "$stand · über Ziel" else stand
     val satzStand = kcalStand(kcal, ziel, vollstaendig)
     val beschreibung = (if (a.ueberZiel) "$satzStand, über Ziel" else satzStand) +
-        ": Eiweiß $eiweissG g, Kohlenhydrate $khG g, Fett $fettG g"
+        ": " + makroSatz(eiweissG, khG, fettG)
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
         Text(kopf, style = MaterialTheme.typography.titleSmall, color = f.text)

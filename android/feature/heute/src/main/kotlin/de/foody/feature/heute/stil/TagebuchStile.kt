@@ -58,6 +58,7 @@ import de.foody.core.designsystem.komponenten.kcalRest
 import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.kcalZahl
+import de.foody.core.designsystem.komponenten.makroSatz
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilAktion
@@ -305,7 +306,7 @@ private fun bilanzSatz(z: TagZustand): String {
     val s = z.summe
     val ziel = z.ziel?.takeIf { it > 0 }
     return kcalStand(s.kcal, ziel, s.vollstaendig) +
-        ": Eiweiß ${s.eiweiss} g, Kohlenhydrate ${s.kohlenhydrate} g, Fett ${s.fett} g"
+        ": " + makroSatz(s.eiweiss, s.kohlenhydrate, s.fett)
 }
 
 private fun anteil(z: TagZustand): Float {

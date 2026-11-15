@@ -1,11 +1,13 @@
 package de.foody.feature.heute
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -20,6 +22,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.heute.GeplanteMahlzeit
 import de.foody.core.designsystem.komponenten.FoodyFrage
@@ -77,3 +82,18 @@ internal fun GegessenFrage(mahlzeit: Mahlzeit, v: GeplanteMahlzeit, aktionen: He
         onAbbrechen = onZu,
     )
 }
+
+/** Das Gericht auf „Heute“: die nächste geplante Mahlzeit, sonst die Inspiration (dann ohne Portionen). */
+internal data class HeuteGericht(val titel: String, val rezeptId: String, val portionen: Int?, val kcalJePortion: Int?, val zeitMinuten: Int?) {
+    /** „2 Portionen · 540 kcal je Portion · 45 Min.“, leer ohne Angaben. */
+    val zeile: String get() = meta(portionen, kcalJePortion, zeitMinuten)
+}
+
+/** [HeuteGericht] aus der nächsten Mahlzeit oder der Inspiration; `null`, wenn es keins gibt. */
+internal fun HeuteZustand.gericht(): HeuteGericht? =
+    naechste?.mahlzeit?.let { HeuteGericht(it.titel, it.rezeptId, it.portionen, it.kcalJePortion, it.zeitMinuten) }
+        ?: inspiration?.let { HeuteGericht(it.titel, it.id, null, it.kcalJePortion, it.zeitMinuten) }
+
+/** Titel als Link zum Rezept: volle Breite, mindestens 48 dp hoch, TalkBack hört „<Titel>, Rezept öffnen“. */
+internal fun Modifier.rezeptLink(titel: String, onKlick: () -> Unit): Modifier =
+    fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onKlick).semantics { contentDescription = "$titel, Rezept öffnen" }

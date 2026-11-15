@@ -21,3 +21,7 @@ fun kcalRest(rest: Int, vollstaendig: Boolean = true): String = (if (vollstaendi
 /** Tagesstand für TalkBack: „860 von 2.000 kcal“, ohne Ziel „860 kcal“, unvollständig mit „≥“. */
 fun kcalStand(kcal: Int, ziel: Int?, vollstaendig: Boolean = true): String =
     if (ziel != null && ziel > 0) "${kcalZahl(kcal, vollstaendig)} von ${ganzzahlDeutsch(ziel)} kcal" else kcalText(kcal, vollstaendig)
+
+/** „Eiweiß 42 g, Kohlenhydrate 96 g, Fett 31 g“ – so liest TalkBack die Nährwerte überall; [trenner] für sichtbaren Text. */
+fun makroSatz(eiweiss: Int, kohlenhydrate: Int, fett: Int, trenner: String = ", "): String =
+    "Eiweiß $eiweiss g${trenner}Kohlenhydrate $kohlenhydrate g${trenner}Fett $fett g"

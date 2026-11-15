@@ -110,8 +110,10 @@ import de.foody.feature.heute.HeuteRahmen
 import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.TagebuchHeute
 import de.foody.feature.heute.anzeigename
+import de.foody.feature.heute.gericht
 import de.foody.feature.heute.kcalZahl
 import de.foody.feature.heute.meta
+import de.foody.feature.heute.rezeptLink
 import java.time.LocalDate
 import java.util.Locale
 import kotlin.math.max
@@ -504,16 +506,15 @@ private fun Mission(zustand: HeuteZustand, aktionen: HeuteAktionen) {
             else -> "KEINE MISSION GEPLANT"
         }
         Text(kopf, style = Kreuzer.mono(12f, 0.1f), color = amber)
-        val titel = n?.mahlzeit?.titel ?: r?.titel
-        val rezeptId = n?.mahlzeit?.rezeptId ?: r?.id
-        if (titel != null && rezeptId != null) {
+        val g = zustand.gericht()
+        if (g != null) {
+            val (titel, rezeptId) = g
             Text(
                 "$titel ›",
-                Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button) { aktionen.onRezept(rezeptId) }
-                    .semantics { contentDescription = "$titel, Rezept öffnen" }.padding(vertical = 4.dp),
+                Modifier.rezeptLink(titel) { aktionen.onRezept(rezeptId) }.padding(vertical = 4.dp),
                 style = Kreuzer.titel(20f, FontWeight.Bold, 0f), color = f.text,
             )
-            val zeile = n?.mahlzeit?.let { meta(it.portionen, it.kcalJePortion, it.zeitMinuten) } ?: r?.let { meta(null, it.kcalJePortion, it.zeitMinuten) }
+            val zeile = g.zeile
             if (!zeile.isNullOrEmpty()) Text(zeile, style = Kreuzer.mono(13f, 0f), color = f.nebentext)
         }
         Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
