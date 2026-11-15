@@ -32,9 +32,11 @@ import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
 import de.foody.core.designsystem.komponenten.ueberLeiste
+import de.foody.core.designsystem.komponenten.zeilenImStil
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
+import de.foody.feature.rezepte.editor.stil.EditorStil
 import kotlinx.coroutines.launch
 
 /**
@@ -61,6 +63,20 @@ fun EditorRoute(
     val bereich = rememberCoroutineScope()
     val zurueck = { if (geaendert) fragen = true else onZurueck() }
     BackHandler(onBack = zurueck)
+    val speichern = { bereich.launch { (vm.speichern() as? Gespeichert.Ok)?.let { onFertig(it.id) } }; Unit }
+    val rezeptPortionen = ursprung.portionen.toIntOrNull()
+    val portionenHinweis = if (z.geladen && gekochtMit != null && rezeptPortionen != null && gekochtMit != rezeptPortionen) {
+        "Gekocht mit $gekochtMit statt $rezeptPortionen Portionen – Mengen beziehen sich auf $rezeptPortionen"
+    } else {
+        null
+    }
+
+    if (zeilenImStil()) {
+        val hinweise = listOfNotNull(z.hinweis?.let { it to true }, portionenHinweis?.let { it to false })
+        EditorStil(id == null, z, hinweise, moeglich, zurueck, speichern, vm)
+        if (fragen) VerwerfenFrage(onVerwerfen = { fragen = false; onZurueck() }, onWeiter = { fragen = false })
+        return
+    }
 
     Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         Column(
@@ -86,20 +102,12 @@ fun EditorRoute(
                 onZurueck = zurueck,
                 beschreibung = titel,
             ) {
-                val speichern =
+                val speichernText =
                     stilText("Speichern", sage = "Ins Grimoire", bayrisch = "Obacht, speichern!", grauen = "In die Bibliothek", kreuzer = "Ins Archiv")
-                FoodyKnopf(speichern, {
-                    bereich.launch { (vm.speichern() as? Gespeichert.Ok)?.let { onFertig(it.id) } }
-                }, aktiv = moeglich)
+                FoodyKnopf(speichernText, speichern, aktiv = moeglich)
             }
             z.hinweis?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error) }
-            val rezeptPortionen = ursprung.portionen.toIntOrNull()
-            if (z.geladen && gekochtMit != null && rezeptPortionen != null && gekochtMit != rezeptPortionen) {
-                Text(
-                    "Gekocht mit $gekochtMit statt $rezeptPortionen Portionen – Mengen beziehen sich auf $rezeptPortionen",
-                    style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.primaer,
-                )
-            }
+            portionenHinweis?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.primaer) }
             if (z.geladen) EditorFelder(z, vm)
         }
     }

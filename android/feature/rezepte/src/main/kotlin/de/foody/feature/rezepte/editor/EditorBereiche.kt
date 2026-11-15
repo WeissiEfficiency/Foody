@@ -45,7 +45,7 @@ internal fun EditorFelder(z: EditorZustand, vm: EditorViewModel) {
 /** Mahlzeit und Gang als Chips; ohne eigene Wahl vorbelegt mit der Vermutung, „Automatisch“ setzt zurück. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Einordnungswahl(z: EditorZustand, vm: EditorViewModel) {
+internal fun Einordnungswahl(z: EditorZustand, vm: EditorViewModel) {
     val e = z.einordnung
     Augenbraue(if (z.eingaben.mahlzeiten == null && z.eingaben.gaenge == null) "Einordnung (vermutet)" else "Einordnung")
     FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {

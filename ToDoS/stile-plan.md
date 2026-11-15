@@ -457,6 +457,22 @@ gleich, nicht nur der Pilot):
 - Neue Bilder `stil_*_editor_handy` und `stil_*_einstellungen_handy`. Editor und Einstellungen tragen wie bei der
   Sage Knöpfe, Felder, Chips, Kopf und Wörter des Stils; eigene Szenen haben sie nicht.
 
+**2026-11-13 – Editor R–V** (Branch `claude/stile-editor-szene`):
+- Der Nutzer legt fest: Die Entwürfe im Canvas sind der Soll-Zustand, auch für Editor und Einstellungen.
+- Editor in R–V (Immersiv) wie in den Entwürfen (`feature/rezepte/editor/stil/EditorStile.kt`): Kopf mit ✕, Überzeile
+  und Titel des Stils (Anime „Rezept-Edit!“, Bayrisch „Neis Rezept“, Grauen „Neue Abschrift“/„Abschrift berichtigen“,
+  Kreuzer „Rezept anlegen“), Edo mit Stempel „新“ bei neuen Rezepten; Grunddaten auf einer Karte mit Etiketten über den
+  Feldern (Kreuzer „CREW“, Bayrisch „Portiona“); Foto, Einordnung; Abschnitte „Zutaten“ (Bayrisch „Zuadaten“, Kreuzer
+  „RESSOURCEN“) mit den erkannten Zeilen (Name, „neu im Katalog“ oder Fehler, Menge rechts) und „Zubereitung“
+  („So geht’s“, „MISSIONSABLAUF“); unten „Verwerfen“ und „Speichern“ (Bayrisch „Obacht, speichern!“, Grauen „In die
+  Bibliothek stellen“, Kreuzer „Ins Archiv speichern“).
+- Nicht übernommen: die Reiter „Selbst · Link · Foto · Text“ der Entwürfe – Einlesen läuft in der App über den Import der
+  Rezeptliste; Zutaten bleiben ein Textfeld mit Zeilenvorschau statt einzelner Zeilen mit ✕.
+- Designsystem: `StilFeld` (Etikett über dem Feld, Aussehen je Stil), `StilAbschnitt`, `StilKarte`.
+- Tests `EditorStileTest` (neu anlegen und speichern, Speichern gesperrt ohne Namen, Verwerfen fragt, 200 % Schrift,
+  Texte); Bilder `stil_*_editor_handy` neu.
+- `EintragenStileTest` wählt die Mahlzeit jetzt fest; ohne Wahl hingen die Bilder von der Uhrzeit ab.
+
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
 - Schriften der übrigen Entwürfe (Dela Gothic One, M PLUS Rounded 1c, Kaisei Decol, Zen Kaku Gothic
