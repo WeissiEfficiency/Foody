@@ -73,9 +73,9 @@ object Kreuzer {
     }
 }
 
-/** Amber des Sternenkreuzers: der gewählte Akzent (Handlungen, Sonne). */
+/** Amber des Sternenkreuzers: der gewählte Akzent (Handlungen, Sonne), als Text lesbar ([StilWerte.akzentFarbe]). */
 @Composable
-fun kreuzerAmber(): Color = FoodyTheme.stil.akzent?.farbe ?: FoodyTheme.farben.primaer
+fun kreuzerAmber(): Color = FoodyTheme.stil.akzentFarbe
 
 /**
  * Knopf des Sternenkreuzers: [voll] = Amber mit dunkler Schrift, sonst Rahmen in Amber (halb durchsichtig). Eckig,

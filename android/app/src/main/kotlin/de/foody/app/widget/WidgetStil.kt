@@ -3,6 +3,7 @@ package de.foody.app.widget
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.graphics.Typeface
 import android.text.SpannableString
 import android.text.Spanned
@@ -84,6 +85,23 @@ private fun argb(wert: Long) = wert.toInt()
 
 /** Akzent des gewählten Stils als ARGB; Milchglas hat keinen. */
 internal fun akzentVon(wahl: StilWahl): Int? = FoodyStil.ausName(wahl.stil).akzent(wahl.akzent)?.farbe?.toArgb()
+
+/**
+ * [farbe] als Text auf [flaeche]: unverändert, solange sie 4,5:1 hält, sonst in kleinen Schritten zu Schwarz bzw. Weiß
+ * hin, wie `angleichen` in der App. Die Widgets haben eigene Flächen (Grauen bleibt auch in Ruhig dunkel), deshalb hier
+ * gegen die Fläche des Widgets.
+ */
+@ColorInt
+internal fun lesbarAuf(@ColorInt farbe: Int, @ColorInt flaeche: Int): Int {
+    val richtung = if (ColorUtils.calculateLuminance(flaeche) > 0.5) Color.BLACK else Color.WHITE
+    for (schritt in 0..50) {
+        val c = ColorUtils.blendARGB(farbe, richtung, schritt / 50f)
+        if (ColorUtils.calculateContrast(c, flaeche) >= TEXT_KONTRAST) return c
+    }
+    return richtung
+}
+
+private const val TEXT_KONTRAST = 4.55
 
 /**
  * Karte im Stil [wahl]. Milchglas nimmt die Farben des Hintergrundbilds (Material You, hell oder dunkel) und die

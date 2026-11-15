@@ -4,6 +4,7 @@ import android.app.Application
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.core.graphics.ColorUtils
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.app.R
@@ -127,5 +128,22 @@ class HeuteWidgetTest {
         assertEquals("übrig", v.text(R.id.widget_ring_unter))
         assertEquals("Kalorien: 860 von 2.000 kcal, 1.140 übrig", v.findViewById<View>(android.R.id.background).contentDescription)
         assertEquals("foody://tagebuch/2026-11-13", tipp(v, android.R.id.background))
+    }
+
+    @Test
+    fun markeInAkzentfarbeLesbar() {
+        // Edo, Bayrisch und Grauen zeigen die Marke im Akzent: Text, also 4,5:1 auf der Fläche (Review K2)
+        val fehler = listOf(FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN).flatMap { stil ->
+            listOf("IMMERSIV", "RUHIG").flatMap { variante ->
+                stil.akzente.mapNotNull { a ->
+                    val w = StilWahl(stil.name, variante, a.name)
+                    val v = heuteAnsicht(kontext, daten(), w).apply(kontext, FrameLayout(kontext))
+                    val schrift = v.findViewById<TextView>(R.id.widget_marke).currentTextColor
+                    val k = ColorUtils.calculateContrast(schrift, kartenAussehen(kontext, w).flaeche.farbe)
+                    if (k < 4.5) "${stil.name}/$variante/${a.name}: %.2f".format(k) else null
+                }
+            }
+        }
+        assertEquals(emptyList(), fehler)
     }
 }

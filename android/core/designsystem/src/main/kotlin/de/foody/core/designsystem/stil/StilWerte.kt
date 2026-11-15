@@ -69,6 +69,11 @@ data class StilWerte(
     val zier: Color,
     /** Herz auf dem hellen Abzeichen über Rezeptbildern (3:1 auf Weiß). */
     val herz: Color,
+    /**
+     * Der gewählte Akzent, wie ihn die Szenen für Text, Linien und Flächen nutzen (`edoShu()`, `bayrischBlau()`,
+     * `kreuzerAmber()`): wie im Entwurf, solange er als Text auf Grund und Karten 4,5:1 hält, sonst angeglichen.
+     */
+    val akzentFarbe: Color = werte.farben.primaer,
 ) {
     val farben: FoodyFarben get() = werte.farben
 
@@ -102,7 +107,7 @@ fun stilWerte(
     val akzent = stil.akzent(akzentName) ?: return milchglasWerte(farbwelt, dunkel)
     val immersiv = variante == StilVariante.IMMERSIV
     val g = grundlage(stil, immersiv, akzent.farbe)
-    val werte = ableiten(g, akzent.farbe, if (stil == FoodyStil.KREUZER) Holo else null)
+    val (werte, akzentFarbe) = ableiten(g, akzent.farbe, if (stil == FoodyStil.KREUZER) Holo else null)
     return StilWerte(
         stil = stil, variante = variante, akzent = akzent, dunkel = g.dunkel, werte = werte,
         formen = formen(stil, immersiv), typografie = schrift(stil).typografie, augenbraue = schrift(stil).augenbraue,
@@ -112,6 +117,7 @@ fun stilWerte(
         muster = if (!immersiv) Hintergrundmuster.KEINS else muster(stil),
         zier = if (stil == FoodyStil.KREUZER) Holo else akzent.farbe,
         herz = angleichen(akzent.farbe, AbzeichenUntergruende, GRAFIK, Color.Black),
+        akzentFarbe = akzentFarbe,
     )
 }
 
@@ -216,8 +222,12 @@ private fun grundlage(stil: FoodyStil, immersiv: Boolean, akzent: Color): Grundl
     FoodyStil.MILCHGLAS -> error("Milchglas hat keine Grundlage, es nutzt die Farbwelt")
 }
 
-/** Rollen aus der [g]rundlage und dem [akzent]; [zweite] ersetzt Oliv (Grafik), etwa das Holo-Blau. */
-private fun ableiten(g: Grundlage, akzent: Color, zweite: Color?): FarbweltWerte {
+/**
+ * Rollen aus der [g]rundlage und dem [akzent]; [zweite] ersetzt Oliv (Grafik), etwa das Holo-Blau. Dazu der Akzent der
+ * Szenen ([StilWerte.akzentFarbe]): als Text auf Grund und Karten angeglichen, aber anders als `primaer` nicht auch für
+ * die Leiste über Fotos, damit er dem Entwurf so nah wie möglich bleibt.
+ */
+private fun ableiten(g: Grundlage, akzent: Color, zweite: Color?): Pair<FarbweltWerte, Color> {
     val verlauf = Verlauf(oben = g.oben, unten = g.unten)
     val platzhalter = listOf(lerp(g.glas, akzent, 0.35f), lerp(g.glas, akzent, 0.55f), lerp(g.glas, akzent, 0.8f))
     val untergruende = listOf(g.grund, mischen(g.oben, g.grund), mischen(g.unten, g.grund))
@@ -254,7 +264,7 @@ private fun ableiten(g: Grundlage, akzent: Color, zweite: Color?): FarbweltWerte
             )
         },
     )
-    return FarbweltWerte(farben, verlauf, g.glas, platzhalter)
+    return FarbweltWerte(farben, verlauf, g.glas, platzhalter) to angleichen(akzent, untergruende + glasflaechen, TEXT, richtung)
 }
 
 /**

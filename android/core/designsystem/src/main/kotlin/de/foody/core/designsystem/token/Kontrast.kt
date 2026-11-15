@@ -55,11 +55,13 @@ fun kontrastPaare(stil: StilWerte): List<KontrastPaar> {
             // Text- und Umriss-Knöpfe, Links stehen auch direkt auf dem Hintergrund
             add(KontrastPaar("Primär als Text ohne Glas @$i", f.primaer, u, TEXT))
             add(KontrastPaar("Primär als Kante ohne Glas @$i", f.primaer, u, GRAFIK))
+            add(KontrastPaar("Akzent als Text ohne Glas @$i", stil.akzentFarbe, u, TEXT))
             for (stufe in GlasStufe.entries) {
                 val glas = mischen(glasWerte(stufe, stil).toenung, u)
                 add(KontrastPaar("Text auf Glas ${stufe.name} @$i", f.text, glas, TEXT))
                 add(KontrastPaar("Nebentext auf Glas ${stufe.name} @$i", f.nebentext, glas, TEXT))
                 add(KontrastPaar("Primär als Text auf Glas ${stufe.name} @$i", f.primaer, glas, TEXT))
+                add(KontrastPaar("Akzent als Text auf Glas ${stufe.name} @$i", stil.akzentFarbe, glas, TEXT))
                 add(KontrastPaar("Oliv als Grafik auf Glas ${stufe.name} @$i", f.oliv, glas, GRAFIK))
                 add(KontrastPaar("Safran als Grafik auf Glas ${stufe.name} @$i", f.safran, glas, GRAFIK))
                 add(KontrastPaar("Eiweiß als Grafik auf Glas ${stufe.name} @$i", f.makro.eiweiss, glas, GRAFIK))

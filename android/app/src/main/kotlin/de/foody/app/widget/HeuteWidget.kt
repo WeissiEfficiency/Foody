@@ -160,7 +160,7 @@ fun heuteAnsicht(context: Context, d: HeuteDaten, wahl: StilWahl): RemoteViews =
     when (k.stil) {
         FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN -> {
             ring(context, k, 104f, zielAnteil(d), zahl(d.kcal), d.ziel?.let { "/ ${zahl(it)}" } ?: "kcal")
-            setTextColor(R.id.widget_marke, k.akzent)
+            setTextColor(R.id.widget_marke, lesbarAuf(k.akzent, k.flaeche.farbe))
             setTextViewText(R.id.widget_info, schrift(info.orEmpty(), k.nebenSchrift))
             if (k.stil == FoodyStil.BAYRISCH && imm) {
                 setViewVisibility(R.id.widget_streifen, View.VISIBLE)

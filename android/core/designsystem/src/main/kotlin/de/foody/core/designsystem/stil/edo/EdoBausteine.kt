@@ -65,9 +65,9 @@ object Edo {
     val form = RoundedCornerShape(2.dp)
 }
 
-/** Das Zinnober des Stils: der gewählte Akzent. */
+/** Das Zinnober des Stils: der gewählte Akzent, als Text lesbar ([StilWerte.akzentFarbe]). */
 @Composable
-fun edoShu(): Color = FoodyTheme.stil.akzent?.farbe ?: FoodyTheme.farben.primaer
+fun edoShu(): Color = FoodyTheme.stil.akzentFarbe
 
 /**
  * Knopf im Edo-Stil: [voll] = Zinnober mit weißer, gesperrter Schrift, sonst dünner Rahmen in Tusche. Mindestens

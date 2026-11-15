@@ -49,9 +49,9 @@ object Bayrisch {
     val kartenForm = RoundedCornerShape(14.dp)
 }
 
-/** Das Blau des Stils: der gewählte Akzent. */
+/** Das Blau des Stils: der gewählte Akzent, als Text lesbar ([StilWerte.akzentFarbe]). */
 @Composable
-fun bayrischBlau(): Color = FoodyTheme.stil.akzent?.farbe ?: FoodyTheme.farben.primaer
+fun bayrischBlau(): Color = FoodyTheme.stil.akzentFarbe
 
 /**
  * Knopf des Bayrischen Stils: [voll] = Akzent mit weißer Serife, sonst weiß mit dunklem Rahmen (2 dp). Ecken 10 dp,
