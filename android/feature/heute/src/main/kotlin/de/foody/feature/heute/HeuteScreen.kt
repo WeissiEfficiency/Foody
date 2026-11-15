@@ -113,18 +113,10 @@ private fun HeuteInhalt(zustand: HeuteZustand?, aktionen: HeuteAktionen) {
     ) {
         HeuteKopf(zustand?.datum, zustand?.sync, aktionen.onEinstellungen)
         if (zustand == null) return@Column
-        if (zustand.datenbankLeer) {
-            LeererZustandFlaeche(
-                Icons.AutoMirrored.Outlined.MenuBook, "Noch keine Rezepte", "Verbinde Foody mit deinem Server, um deine Rezepte zu laden.",
-                aktionText = "Server verbinden", onAktion = aktionen.onEinstellungen,
-            )
-        }
+        if (zustand.datenbankLeer) DatenbankLeerHinweis(aktionen.onEinstellungen)
         zustand.naechste?.let { NaechsteMahlzeitKarte(it, aktionen) }
         zustand.inspiration?.let { InspirationKarte(it, aktionen.onRezept) }
         TagebuchBereich(zustand.tagebuch, aktionen)
         zustand.einkauf?.let { EinkaufBereich(it, aktionen.onEinkauf) }
     }
 }
-
-/** Höhe der schwebenden Leiste samt Abstand, damit der letzte Bereich nicht darunter liegt. */
-private val PLATZ_FUER_LEISTE = 104.dp

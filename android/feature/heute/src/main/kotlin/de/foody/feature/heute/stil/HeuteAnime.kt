@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -79,8 +80,10 @@ import de.foody.core.designsystem.stil.anime.AnimePille
 import de.foody.core.designsystem.stil.anime.animeSchatten
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
+import de.foody.feature.heute.DatenbankLeerHinweis
 import de.foody.feature.heute.HEUTE_INHALT
 import de.foody.feature.heute.HeuteAktionen
+import de.foody.feature.heute.HeuteRahmen
 import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.MahlzeitAbschnitt
 import de.foody.feature.heute.TagebuchHeute
@@ -100,23 +103,11 @@ import kotlin.math.min
  */
 @Composable
 internal fun HeuteAnime(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
-        Column(
-            Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-                .statusBarsPadding()
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = ueberLeiste(PLATZ_FUER_LEISTE))
-                .testTag(HEUTE_INHALT),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
+    HeuteRahmen(modifier, innen = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp)) { rahmen ->
+        Column(rahmen, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Kopf(zustand, aktionen.onEinstellungen)
             if (zustand == null) return@Column
-            if (zustand.datenbankLeer) {
-                LeererZustandFlaeche(
-                    Icons.AutoMirrored.Outlined.MenuBook, "Noch keine Rezepte", "Verbinde Foody mit deinem Server, um deine Rezepte zu laden.",
-                    aktionText = "Server verbinden", onAktion = aktionen.onEinstellungen,
-                )
-            }
+            if (zustand.datenbankLeer) DatenbankLeerHinweis(aktionen.onEinstellungen)
             Reisbaellchen(sprechblase(zustand))
             Mahlzeitkarte(zustand, aktionen)
             Energie(zustand.tagebuch, aktionen.onAlleEintraege)
@@ -462,5 +453,3 @@ private fun EintragenKachel(onKlick: () -> Unit, modifier: Modifier) {
         Text("Eintragen", style = Anime.text(12f, FontWeight.ExtraBold), color = f.text)
     }
 }
-
-private val PLATZ_FUER_LEISTE = 104.dp

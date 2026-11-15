@@ -90,8 +90,11 @@ import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.SageHauptknopf
 import de.foody.core.designsystem.stil.sage.sageHell
 import de.foody.core.designsystem.token.FoodyBreiten
+import de.foody.feature.heute.DatenbankLeerHinweis
+import de.foody.feature.heute.GegessenFrage
 import de.foody.feature.heute.HEUTE_INHALT
 import de.foody.feature.heute.HeuteAktionen
+import de.foody.feature.heute.HeuteRahmen
 import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.TagebuchHeute
 import de.foody.feature.heute.anzeigename
@@ -108,22 +111,12 @@ private val DATUM = DateTimeFormatter.ofPattern("EEEE · d. MMMM", Locale.GERMAN
  */
 @Composable
 internal fun HeuteSage(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
-        Column(
-            Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-                .padding(bottom = ueberLeiste(PLATZ_FUER_LEISTE))
-                .testTag(HEUTE_INHALT),
-        ) {
+    HeuteRahmen(modifier, statusLeiste = false) { rahmen ->
+        Column(rahmen) {
             RastAmFeuer(zustand?.datum, zustand?.sync, aktionen.onEinstellungen)
             if (zustand == null) return@Column
             Column(Modifier.padding(horizontal = 20.dp).padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                if (zustand.datenbankLeer) {
-                    LeererZustandFlaeche(
-                        Icons.AutoMirrored.Outlined.MenuBook, "Noch keine Rezepte", "Verbinde Foody mit deinem Server, um deine Rezepte zu laden.",
-                        aktionText = "Server verbinden", onAktion = aktionen.onEinstellungen,
-                    )
-                }
+                if (zustand.datenbankLeer) DatenbankLeerHinweis(aktionen.onEinstellungen)
                 Vitalitaet(zustand.tagebuch)
                 WasTun(sageMenue(zustand), aktionen)
             }
@@ -372,17 +365,7 @@ private fun WasTun(menue: List<SageEintrag>, aktionen: HeuteAktionen) {
         NebenWeg("+ SCANNEN · FOTO", "Eintragen mit Scan oder Foto", Modifier.weight(1f)) { aktionen.onEintragen(null) }
     }
     frage?.let { id -> menue.firstOrNull { it.vorschlag?.planEintragId == id } }?.let { e ->
-        val v = requireNotNull(e.vorschlag)
-        val name = requireNotNull(e.mahlzeit)
-        FoodyFrage(
-            titel = "Gegessen?",
-            text = "„${v.titel}“ als ${name.anzeigename()} eintragen? Bei „Nein“ verschwindet der Vorschlag für heute.",
-            ja = "Ja",
-            onJa = { frage = null; aktionen.onGegessen(v.planEintragId) },
-            onNein = { frage = null; aktionen.onNichtGegessen(v) },
-            nein = "Nein",
-            onAbbrechen = { frage = null },
-        )
+        GegessenFrage(requireNotNull(e.mahlzeit), requireNotNull(e.vorschlag), aktionen) { frage = null }
     }
 }
 
@@ -402,4 +385,3 @@ private fun NebenWeg(text: String, beschreibung: String, modifier: Modifier, onK
 
 private const val ENTWURF_BREITE = 390f
 private const val ENTWURF_HOEHE = 318f
-private val PLATZ_FUER_LEISTE = 104.dp

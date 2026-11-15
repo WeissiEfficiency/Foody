@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -101,8 +102,11 @@ import de.foody.core.designsystem.stil.kreuzer.KreuzerVerweis
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
+import de.foody.feature.heute.DatenbankLeerHinweis
+import de.foody.feature.heute.GegessenFrage
 import de.foody.feature.heute.HEUTE_INHALT
 import de.foody.feature.heute.HeuteAktionen
+import de.foody.feature.heute.HeuteRahmen
 import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.TagebuchHeute
 import de.foody.feature.heute.anzeigename
@@ -121,24 +125,12 @@ import kotlin.math.roundToInt
  */
 @Composable
 internal fun HeuteKreuzer(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
-        Column(
-            Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-                .statusBarsPadding()
-                .padding(start = 18.dp, end = 6.dp, top = 12.dp, bottom = ueberLeiste(PLATZ_FUER_LEISTE))
-                .testTag(HEUTE_INHALT),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+    HeuteRahmen(modifier, innen = PaddingValues(start = 18.dp, end = 6.dp, top = 12.dp)) { rahmen ->
+        Column(rahmen, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Kopf(zustand, aktionen.onEinstellungen)
             if (zustand == null) return@Column
             Column(Modifier.padding(end = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (zustand.datenbankLeer) {
-                    LeererZustandFlaeche(
-                        Icons.AutoMirrored.Outlined.MenuBook, "Noch keine Rezepte", "Verbinde Foody mit deinem Server, um deine Rezepte zu laden.",
-                        aktionText = "Server verbinden", onAktion = aktionen.onEinstellungen,
-                    )
-                }
+                if (zustand.datenbankLeer) DatenbankLeerHinweis(aktionen.onEinstellungen)
                 val planeten = planeten(zustand.tagebuch)
                 var wahl by rememberSaveable { mutableIntStateOf(startWahl(planeten)) }
                 Tagessystem(zustand.tagebuch, planeten, wahl.coerceIn(planeten.indices)) { wahl = it }
@@ -456,17 +448,7 @@ private fun Planetendaten(p: Planet, aktionen: HeuteAktionen) {
         }
     }
     val v = p.vorschlag
-    if (frage && v != null) {
-        FoodyFrage(
-            titel = "Gegessen?",
-            text = "„${p.gericht}“ als ${p.mahlzeit.anzeigename()} eintragen? Bei „Nein“ verschwindet der Vorschlag für heute.",
-            ja = "Ja",
-            onJa = { frage = false; aktionen.onGegessen(v.planEintragId) },
-            onNein = { frage = false; aktionen.onNichtGegessen(v) },
-            nein = "Nein",
-            onAbbrechen = { frage = false },
-        )
-    }
+    if (frage && v != null) GegessenFrage(p.mahlzeit, v, aktionen) { frage = false }
 }
 
 /** Eiweiß, Kohlenhydrate und Fett nebeneinander mit dünnem Balken. */
@@ -555,4 +537,3 @@ private val STERNE = listOf(Offset(12f, 20f), Offset(260f, 40f), Offset(30f, 240
 
 /** Ort (Mitte) und Größe der Planeten je Bahn im Maß des Entwurfs. */
 private val PLANETENORT = mapOf(1 to Triple(170f, 100f, 14f), 2 to Triple(78f, 171f, 16f), 3 to Triple(229f, 176f, 18f), 4 to Triple(79f, 29f, 9f))
-private val PLATZ_FUER_LEISTE = 104.dp

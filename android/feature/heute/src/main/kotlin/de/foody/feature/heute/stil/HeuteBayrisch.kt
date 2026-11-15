@@ -75,8 +75,10 @@ import de.foody.core.designsystem.stil.bayrisch.BayrischKnopf
 import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
+import de.foody.feature.heute.DatenbankLeerHinweis
 import de.foody.feature.heute.HEUTE_INHALT
 import de.foody.feature.heute.HeuteAktionen
+import de.foody.feature.heute.HeuteRahmen
 import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.MahlzeitAbschnitt
 import de.foody.feature.heute.TagebuchHeute
@@ -105,14 +107,8 @@ internal fun HeuteBayrisch(zustand: HeuteZustand?, aktionen: HeuteAktionen, modi
     val k = LocalDensity.current.fontScale
     Box(modifier.fillMaxSize()) {
         Landschaft(Modifier.matchParentSize())
-        Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
-            Row(
-                Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-                    .statusBarsPadding()
-                    .padding(bottom = ueberLeiste(PLATZ_FUER_LEISTE))
-                    .testTag(HEUTE_INHALT),
-            ) {
+        HeuteRahmen { rahmen ->
+            Row(rahmen) {
                 // Bei großer Schrift wird der Baum etwas breiter, damit die Schilder lesbar bleiben
                 zustand?.let { Maibaum(it.tagebuch, Modifier.padding(start = 14.dp).width(104.dp * min(max(k, 1f), 1.5f))) }
                 Column(
@@ -121,12 +117,7 @@ internal fun HeuteBayrisch(zustand: HeuteZustand?, aktionen: HeuteAktionen, modi
                 ) {
                     Kopf(zustand, aktionen.onEinstellungen)
                     if (zustand == null) return@Column
-                    if (zustand.datenbankLeer) {
-                        LeererZustandFlaeche(
-                            Icons.AutoMirrored.Outlined.MenuBook, "Noch keine Rezepte", "Verbinde Foody mit deinem Server, um deine Rezepte zu laden.",
-                            aktionText = "Server verbinden", onAktion = aktionen.onEinstellungen,
-                        )
-                    }
+                    if (zustand.datenbankLeer) DatenbankLeerHinweis(aktionen.onEinstellungen)
                     Essen(zustand, aktionen)
                     Bilanz(zustand.tagebuch, aktionen.onAlleEintraege)
                     Eintragen(zustand.tagebuch, aktionen)
@@ -504,4 +495,3 @@ private fun Landschaft(modifier: Modifier) {
 }
 
 private const val BAUM_HOEHE = 772f
-private val PLATZ_FUER_LEISTE = 104.dp
