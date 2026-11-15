@@ -101,6 +101,7 @@ import de.foody.feature.heute.HeuteAktionen
 import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.TagebuchHeute
 import de.foody.feature.heute.anzeigename
+import de.foody.feature.heute.kcalZahl
 import de.foody.feature.heute.meta
 import java.time.LocalDate
 import java.util.Locale
@@ -226,11 +227,9 @@ internal fun planeten(t: TagebuchHeute): List<Planet> = t.mahlzeiten.map { a ->
     val v = a.vorschlaege.firstOrNull()
     when {
         a.eintraege.isNotEmpty() -> {
-            val kcal = a.eintraege.sumOf { it.kcal ?: 0 }
-            val voll = a.eintraege.all { it.vollstaendig && it.kcal != null }
             Planet(
                 a.mahlzeit, a.mahlzeit.bahn(), Planetenart.GELANDET, a.eintraege.joinToString(", ") { it.name },
-                (if (voll) "" else "≥ ") + "${ganzzahlDeutsch(kcal)} kcal · gelandet", null,
+                "${a.kcalZahl()} kcal · gelandet", null,
             )
         }
         v != null -> Planet(

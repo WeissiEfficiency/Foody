@@ -65,6 +65,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.bayrisch.BayrischKnopf
@@ -77,6 +78,9 @@ import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.MahlzeitAbschnitt
 import de.foody.feature.heute.TagebuchHeute
 import de.foody.feature.heute.anzeigename
+import de.foody.feature.heute.kcal
+import de.foody.feature.heute.kcalVollstaendig
+import de.foody.feature.heute.kcalZahl
 import de.foody.feature.heute.meta
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -198,7 +202,7 @@ internal fun bilanzSatz(kcal: Int, ziel: Int?): String = when {
 internal fun schildText(a: MahlzeitAbschnitt): String {
     val v = a.vorschlaege.firstOrNull()
     return when {
-        a.eintraege.isNotEmpty() -> a.eintraege.joinToString(", ") { it.name } + " · " + ganzzahlDeutsch(a.eintraege.sumOf { it.kcal ?: 0 })
+        a.eintraege.isNotEmpty() -> a.eintraege.joinToString(", ") { it.name } + " · " + a.kcalZahl()
         v != null -> v.titel + (v.kcalJePortion?.let { " · ${ganzzahlDeutsch(it)}" } ?: "")
         else -> "no nix"
     }
@@ -211,7 +215,7 @@ internal fun maibaumBeschreibung(t: TagebuchHeute): String {
     val mahlzeiten = t.mahlzeiten.joinToString(". ") { a ->
         val v = a.vorschlaege.firstOrNull()
         "${a.mahlzeit.anzeigename()}: " + when {
-            a.eintraege.isNotEmpty() -> a.eintraege.joinToString(", ") { it.name } + ", ${ganzzahlDeutsch(a.eintraege.sumOf { it.kcal ?: 0 })} kcal"
+            a.eintraege.isNotEmpty() -> a.eintraege.joinToString(", ") { it.name } + ", " + kcalText(a.kcal, a.kcalVollstaendig)
             v != null -> "${v.titel}, geplant"
             else -> "noch nichts"
         }

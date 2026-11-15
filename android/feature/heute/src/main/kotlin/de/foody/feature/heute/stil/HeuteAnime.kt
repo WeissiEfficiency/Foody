@@ -82,6 +82,9 @@ import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.MahlzeitAbschnitt
 import de.foody.feature.heute.TagebuchHeute
 import de.foody.feature.heute.anzeigename
+import de.foody.feature.heute.kcal
+import de.foody.feature.heute.kcalVollstaendig
+import de.foody.feature.heute.kcalZahl
 import java.time.LocalDate
 import java.util.Locale
 import kotlin.math.min
@@ -412,18 +415,16 @@ private fun Zettel(t: TagebuchHeute, aktionen: HeuteAktionen) {
 @Composable
 private fun MahlzeitZettel(a: MahlzeitAbschnitt, modifier: Modifier) {
     val f = FoodyTheme.farben
-    val kcal = a.eintraege.sumOf { it.kcal ?: 0 }
-    val voll = a.eintraege.all { it.vollstaendig && it.kcal != null }
     val name = a.mahlzeit.anzeigename()
     Column(
         modifier.background(Color.White, RoundedCornerShape(4.dp)).border(2.5.dp, f.text, RoundedCornerShape(4.dp))
-            .clearAndSetSemantics { contentDescription = "$name: ${a.eintraege.joinToString(", ") { it.name }}, ${kcalText(kcal, voll)}" }
+            .clearAndSetSemantics { contentDescription = "$name: ${a.eintraege.joinToString(", ") { it.name }}, ${kcalText(a.kcal, a.kcalVollstaendig)}" }
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text("${animeKurz(a.mahlzeit)} ✓", style = Anime.text(11f, FontWeight.ExtraBold), color = f.primaer)
         Text(a.eintraege.joinToString(", ") { it.name }, style = Anime.text(13.5f), color = f.text)
-        Text((if (voll) "" else "≥ ") + ganzzahlDeutsch(kcal), style = Anime.text(12f), color = f.text)
+        Text(a.kcalZahl(), style = Anime.text(12f), color = f.text)
     }
 }
 

@@ -12,6 +12,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.domain.Mahlzeit
+import de.foody.feature.heute.EintragKurz
 import de.foody.feature.heute.HeuteAktionen
 import de.foody.feature.heute.HeuteScreen
 import de.foody.feature.heute.MahlzeitAbschnitt
@@ -117,5 +118,17 @@ class HeuteEdoTest {
         assertEquals("Haferflocken mit Apfel", folgeText(t.mahlzeiten[0]))
         assertEquals("Ofengemüse, geplant", folgeText(t.mahlzeiten[3]))
         assertEquals("＋ Eintragen", folgeText(MahlzeitAbschnitt(Mahlzeit.SNACK, emptyList(), emptyList())))
+    }
+
+    // Regel 24: Fehlen einem Eintrag die Energiewerte, ist die Summe nur eine Untergrenze („≥“)
+    private val unvollstaendig = MahlzeitAbschnitt(
+        Mahlzeit.FRUEHSTUECK,
+        listOf(EintragKurz("e1", "Brot", 300, vollstaendig = true), EintragKurz("e2", "Kaffee", null, vollstaendig = false)),
+        emptyList(),
+    )
+
+    @Test
+    fun unvollstaendigZeigtMindestens() {
+        assertEquals("≥ 300", folgeKcal(unvollstaendig))
     }
 }
