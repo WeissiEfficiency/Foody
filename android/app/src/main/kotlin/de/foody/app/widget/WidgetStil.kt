@@ -1,5 +1,6 @@
 package de.foody.app.widget
 
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Typeface
@@ -134,6 +135,19 @@ fun kartenAussehen(context: Context, wahl: StilWahl, zettel: Boolean = false): K
             argb(0xFFE9EEF2), argb(0xFF8A97AD), akzent, argb(0xFF1C2A44), Linie.VOLL, "sans-serif-condensed", "monospace",
         )
     }
+}
+
+/**
+ * Zeigt [ansicht] auf den Widgets [ids], in der Hülle `widget_huelle`: Der Inhalt wird jedes Mal entfernt und neu
+ * eingesetzt. Bei gleichem Layout wendet der Launcher sonst nur die neuen Aufrufe auf die alten Views an, und was die
+ * neue Ansicht nicht setzt (Stempel, Band, Zeilen, Farben), bliebe aus dem vorigen Stil oder den vorigen Daten stehen.
+ */
+internal fun AppWidgetManager.frischZeigen(ids: IntArray, ansicht: RemoteViews) = updateAppWidget(ids, frischeHuelle(ansicht))
+
+/** [ansicht] in der Hülle `widget_huelle`, die ihren Inhalt bei jedem Anwenden leert und neu einsetzt. */
+internal fun frischeHuelle(ansicht: RemoteViews): RemoteViews = RemoteViews(ansicht.`package`, R.layout.widget_huelle).apply {
+    removeAllViews(R.id.widget_huelle)
+    addView(R.id.widget_huelle, ansicht)
 }
 
 /** [text] in der Schriftfamilie [familie] (`null` = Standard), wahlweise fett – `RemoteViews` nehmen Spans mit. */

@@ -26,7 +26,7 @@ import java.util.Locale
 /** Widget „Woche“ (4×1): sieben Tage ab Montag mit dem Hauptgericht je Tag; der Tipp öffnet „Woche“. */
 class WocheWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) = imHintergrund {
-        manager.updateAppWidget(ids, wocheAnsicht(context, context.widgetDaten().wocheJetzt(), DarstellungSpeicher(context).stilAktuell()))
+        manager.frischZeigen(ids, wocheAnsicht(context, context.widgetDaten().wocheJetzt(), DarstellungSpeicher(context).stilAktuell()))
     }
 }
 

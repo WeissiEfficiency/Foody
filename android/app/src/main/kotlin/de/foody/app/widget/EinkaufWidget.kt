@@ -22,7 +22,7 @@ private val ZEILEN = intArrayOf(R.id.widget_zeile1, R.id.widget_zeile2, R.id.wid
 class EinkaufWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) = imHintergrund {
         val einkauf = context.widgetDaten().einkaufJetzt()
-        manager.updateAppWidget(ids, einkaufAnsicht(context, einkauf, DarstellungSpeicher(context).stilAktuell()))
+        manager.frischZeigen(ids, einkaufAnsicht(context, einkauf, DarstellungSpeicher(context).stilAktuell()))
     }
 }
 

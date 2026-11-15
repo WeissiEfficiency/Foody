@@ -93,6 +93,22 @@ class DatenWidgetTest {
     }
 
     @Test
+    fun frischeHuelleLaesstNichtsStehen() {
+        // So macht es der Launcher bei gleichem Layout: die neue Ansicht auf die alten Views anwenden
+        val alt = einkaufAnsicht(kontext, einkauf("Paprika", "Feta", "Zwiebeln"), wahl(FoodyStil.EDO))
+        val neu = einkaufAnsicht(kontext, einkauf("Paprika"), wahl(FoodyStil.BAYRISCH))
+        val ohneHuelle = alt.apply(kontext, FrameLayout(kontext)).also { neu.reapply(kontext, it) }
+        // ohne Hülle bleiben der Stempel aus Edo und die abgehakten Zeilen stehen (auf dem Gerät gesehen)
+        assertEquals(true, ohneHuelle.sichtbar(R.id.widget_stempel))
+        assertEquals(true, ohneHuelle.sichtbar(R.id.widget_zeile3))
+        val mitHuelle = frischeHuelle(alt).apply(kontext, FrameLayout(kontext)).also { frischeHuelle(neu).reapply(kontext, it) }
+        assertEquals(false, mitHuelle.sichtbar(R.id.widget_stempel))
+        assertEquals(false, mitHuelle.sichtbar(R.id.widget_zeile2))
+        assertEquals("Paprika", mitHuelle.text(R.id.widget_zeile1))
+        assertEquals("Eikaufn", mitHuelle.text(R.id.widget_titel))
+    }
+
+    @Test
     fun einkaufWoerter() {
         assertEquals("no 9 offn", einkaufTexte(FoodyStil.BAYRISCH, true, 9).fuss)
         assertEquals("noch 9 offen", einkaufTexte(FoodyStil.GRAUEN, true, 9).fuss)
@@ -106,7 +122,7 @@ class DatenWidgetTest {
     fun eintragenOeffnetDasBlatt() {
         val v = eintragenAnsicht(kontext, StilWahl()).apply(kontext, FrameLayout(kontext))
         assertEquals("Eintragen", v.text(R.id.widget_titel))
-        assertEquals("Suchen · Scannen · Foto", v.text(R.id.widget_fuss))
+        assertEquals("Suchen · Scannen · Foto", v.text(R.id.widget_fuss))
         assertEquals("Essen eintragen: suchen, scannen oder fotografieren", v.findViewById<View>(android.R.id.background).contentDescription)
         assertEquals(EINTRAGEN_LINK, tippOeffnet(v))
     }
@@ -119,6 +135,6 @@ class DatenWidgetTest {
         assertEquals("Notieren", eintragenAussehen(kontext, wahl(FoodyStil.GRAUEN)).titel)
         assertEquals("Eintragen", eintragenAussehen(kontext, wahl(FoodyStil.GRAUEN, "RUHIG")).titel)
         val v = eintragenAnsicht(kontext, wahl(FoodyStil.KREUZER)).apply(kontext, FrameLayout(kontext))
-        assertEquals("SUCHEN · SCANNEN · FOTO", v.text(R.id.widget_fuss))
+        assertEquals("SUCHEN · SCANNEN · FOTO", v.text(R.id.widget_fuss))
     }
 }
