@@ -46,7 +46,8 @@
     festgehalten und ändern sich nicht, wenn Rezept oder Zutat später geändert oder gelöscht werden (ADR 0007).
     Ein Plan-Eintrag lässt sich höchstens einmal als „gegessen“ übernehmen; „Gegessen?“ fragt vorher nach, „Nein“
     blendet den Vorschlag auf „Heute“ für diesen Tag aus, ohne etwas einzutragen (`HeuteScreenTest`). Fehlen
-    Energiewerte, zeigen Zeile, Mahlzeit und Tag „≥“.
+    Energiewerte, zeigen Zeile, Mahlzeit und Tag „≥“ – in allen Stilen und Widgets, auch für TalkBack; der Rest bis zum
+    Ziel steht dann als Obergrenze („≤ 1.140 frei“).
 25. Planer „Ø kcal pro Tag“: zählt nur Tage mit Abendessen und mindestens einer weiteren Mahlzeit; „≥“, wenn einem
     gezählten Tag Nährwerte fehlen.
 26. Packung scannen: Gescannte Werte (Strichcode/Open Food Facts oder Foto) sind nur ein Vorschlag – vorausgefüllt und
@@ -126,7 +127,7 @@ Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/te
 | 21 | `ShoppingRoundingTest.countableNeedsAreRoundedUp`, `ShoppingRoundingTest.roundingNoiseDoesNotBuyAnExtraPiece` |
 | 22 | `RezeptEinordnungTest` (u. a. `festgelegtSchlaegtVermutungJeDimension`, `ohneTrefferPasstUeberall`) |
 | 23 | `WocheLesenTest.auswahlOhneArchivierte`, `WocheVorschlagTest.leereTageNurAbHeute`, `WocheVorschlagTest.belegterTagFehlt` |
-| 24 | `TagebuchTest.rezeptPortionenSkalieren`, `TagebuchRepositoryTest.ausRezeptHaeltWerteFest`, `TagebuchRepositoryTest.ausPlanEinePortionUndNurEinmal`, `TagebuchRepositoryTest.geloeschtesRezeptBehaeltEintrag` |
+| 24 | `TagebuchTest.rezeptPortionenSkalieren`, `TagebuchRepositoryTest.ausRezeptHaeltWerteFest`, `TagebuchRepositoryTest.ausPlanEinePortionUndNurEinmal`, `TagebuchRepositoryTest.geloeschtesRezeptBehaeltEintrag`, `TagessummeMindestensTest`, `HeuteWidgetTest.unvollstaendigZeigtMindestens` |
 | 25 | `PlanDurchschnittTest` |
 | 26 | `PackungScanTest.katalogTrefferOhneOnlineAbfrage`, `ZutatEditorScanTest.uebernimmtUndMarkiert`, `TagebuchRepositoryTest.packungOhneHaekchenFrei`, `TagebuchRepositoryTest.packungAktualisiertVorhandene` |
 | 27 | `MarkdownImportTest.servingsFromHeaderLine`, `RezeptImportTest.portionenAusDerDateiStattSchaetzung`, `RezeptImportTest.eineGanzeBackwareWirdGeschaetzt`, `KcalJePortionTest`, `PortionenNachtragenTest` |

@@ -1,6 +1,7 @@
 package de.foody.feature.heute
 
 import de.foody.core.data.heute.GeplanteMahlzeit
+import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.domain.Mahlzeit
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -39,6 +40,15 @@ fun naechsteMahlzeit(plan: List<GeplanteMahlzeit>, jetzt: LocalDateTime): Naechs
     offen.firstOrNull { it.datum == heute && jetzt.toLocalTime() < fensterEnde(it.slot) }?.let { return NaechsteMahlzeit(it, morgen = false) }
     return offen.firstOrNull { it.datum == heute.plusDays(1) }?.let { NaechsteMahlzeit(it, morgen = true) }
 }
+
+/** kcal aller Einträge der Mahlzeit; fehlende Werte zählen 0, siehe [kcalVollstaendig]. */
+val MahlzeitAbschnitt.kcal: Int get() = eintraege.sumOf { it.kcal ?: 0 }
+
+/** `false`, wenn einem Eintrag Werte fehlen: [kcal] ist dann nur eine Untergrenze (Regel 24, „≥“). */
+val MahlzeitAbschnitt.kcalVollstaendig: Boolean get() = eintraege.all { it.vollstaendig && it.kcal != null }
+
+/** [kcal] als Zahl ohne Einheit, unvollständig mit „≥“ („≥ 380“); mit Einheit: `kcalText(kcal, kcalVollstaendig)`. */
+fun MahlzeitAbschnitt.kcalZahl(): String = (if (kcalVollstaendig) "" else "≥ ") + ganzzahlDeutsch(kcal)
 
 /** Anzeigename einer Mahlzeit. */
 fun Mahlzeit.anzeigename(): String = when (this) {

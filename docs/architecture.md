@@ -345,7 +345,9 @@ Spec `docs/superpowers/specs/2026-11-03-bls-nachschlagen-design.md`, ADR 0018.
   liefert die gleichnamige.
 - **`BlsDichte`** (`:domain`, Regel 33): Dichte flüssiger Einträge aus den Bestandteilen, damit ml, EL und TL rechnen
   (591 von 7.140 Einträgen). `BlsDichteNachtragen` (`:core:data`, bei jedem Start aus `FoodyApp`) setzt sie bei schon
-  übernommenen Zutaten mit BLS-Herkunft und ohne Dichte; den Auszug liest es nur, wenn es solche gibt.
+  übernommenen Zutaten mit BLS-Herkunft und ohne Dichte; den Auszug liest es nur, wenn es ungeprüfte gibt. Festes bekommt
+  nie eine Dichte: Geprüfte Zeilen ohne Ergebnis merkt es sich als `ID@updatedAt` in den Prefs (`blsDichteGeprueft`), eine
+  geänderte Zeile (Sync, Sicherung) wird wieder geprüft.
 - **`BlsSuche`** (`:domain`): Teilwörter ohne Groß/klein, regionale Namen mit bevorzugtem Eintrag, Anzeigename und
   Stückgewicht (Breze, Semmel, Leberkäse, Fleischpflanzerl, Weißwurst, Obazda, Weißbier …), Zusammengesetztes aus
   zwei bekannten Namen. Ergänzen: neue Zeile in `regionalnamen`, Test in `BlsSucheTest`.
@@ -514,7 +516,8 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6e2-zutaten-design.md`
   ml-Angaben ohne Dichte 171 → 3. Mengen ohne Waage (Prise, Messerspitze, Schuss, Tasse) und Gewichte im Hinweis
   rechnet der Import um (Regeln 30 und 31). Schon gespeicherte Zeilen mit Küchenmaßen stellt `KuechenmasseNachtragen`
   (`:core:data`, Logik in `KuechenmassNachtrag` in `:domain`) bei jedem App-Start nach den Startdaten um; umgestellte
-  Zeilen passen nicht mehr, es ist also idempotent und erwischt auch alte Zeilen aus einer Sicherung. Geschrieben werden
+  Zeilen passen nicht mehr, es ist also idempotent und erwischt auch alte Zeilen aus einer Sicherung. Gesucht wird ohne
+  Transaktion, geschrieben nur bei Treffern. Geschrieben werden
   nur die Rezeptzeilen, die Trigger merken die Rezepte für den Sync vor; beide Geräte rechnen gleich, Last-Writer-Wins
   ändert am Ergebnis nichts. Gewichte im Hinweis (Regel 31) werden nicht nachgetragen.
 - **Sync auf dem zweiten Gerät:** `anwenden` schreibt erst Datensätze, dann Löschungen; mit offener Rezeptänderung wird

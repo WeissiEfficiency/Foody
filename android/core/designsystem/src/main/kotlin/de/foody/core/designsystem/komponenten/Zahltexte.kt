@@ -11,3 +11,13 @@ fun kcalText(kcal: Int?, vollstaendig: Boolean = true): String = when {
     !vollstaendig -> "≥ ${ganzzahlDeutsch(kcal)} kcal"
     else -> "${ganzzahlDeutsch(kcal)} kcal"
 }
+
+/** kcal-Zahl ohne Einheit; unvollständig „≥ 860“, denn fehlende Werte machen die Summe nur größer (Regel 24). */
+fun kcalZahl(kcal: Int, vollstaendig: Boolean = true): String = (if (vollstaendig) "" else "≥ ") + ganzzahlDeutsch(kcal)
+
+/** Rest bis zum Ziel; bei unvollständiger Summe höchstens so viel („≤ 1.140“). */
+fun kcalRest(rest: Int, vollstaendig: Boolean = true): String = (if (vollstaendig) "" else "≤ ") + ganzzahlDeutsch(rest)
+
+/** Tagesstand für TalkBack: „860 von 2.000 kcal“, ohne Ziel „860 kcal“, unvollständig mit „≥“. */
+fun kcalStand(kcal: Int, ziel: Int?, vollstaendig: Boolean = true): String =
+    if (ziel != null && ziel > 0) "${kcalZahl(kcal, vollstaendig)} von ${ganzzahlDeutsch(ziel)} kcal" else kcalText(kcal, vollstaendig)

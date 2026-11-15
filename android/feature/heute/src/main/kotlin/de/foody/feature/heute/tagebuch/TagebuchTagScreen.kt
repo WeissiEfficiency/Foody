@@ -209,7 +209,7 @@ private fun TagInhalt(
         onWahl = { i -> onDatum(montag.plusDays(i.toLong())) },
     )
     val z = zustand?.takeIf { it.datum == datum } ?: return
-    TagBilanz(z.summe.kcal, z.ziel, z.summe.eiweiss, z.summe.kohlenhydrate, z.summe.fett)
+    TagBilanz(z.summe.kcal, z.ziel, z.summe.eiweiss, z.summe.kohlenhydrate, z.summe.fett, z.summe.vollstaendig)
     z.abschnitte.forEach { a -> MahlzeitKarte(a, onAendern, onLoeschen) { onEintragen(a.mahlzeit) } }
 }
 

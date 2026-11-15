@@ -12,6 +12,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.domain.Mahlzeit
+import de.foody.feature.heute.EintragKurz
 import de.foody.feature.heute.HeuteAktionen
 import de.foody.feature.heute.HeuteScreen
 import de.foody.feature.heute.MahlzeitAbschnitt
@@ -104,6 +105,9 @@ class HeuteBayrischTest {
         assertEquals("Passt scho – no 1.140 frei", bilanzSatz(860, 2000))
         assertEquals("Obacht – 300 drüber", bilanzSatz(2300, 2000))
         assertEquals("860 kcal heid", bilanzSatz(860, null))
+        assertEquals("Passt scho – no ≤ 1.140 frei", bilanzSatz(860, 2000, vollstaendig = false))
+        assertEquals("Obacht – ≥ 300 drüber", bilanzSatz(2300, 2000, vollstaendig = false))
+        assertEquals("≥ 860 kcal heid", bilanzSatz(860, null, vollstaendig = false))
         assertEquals("Heid auf d'Nacht", essenKopf("ABENDESSEN", morgen = false))
         assertEquals("Morgn in da Friah", essenKopf("FRUEHSTUECK", morgen = true))
         val t = beispielZustand().tagebuch
@@ -115,5 +119,20 @@ class HeuteBayrischTest {
                 "Snack: noch nichts. Abendessen: Ofengemüse mit Feta und Kräuterquark, geplant",
             maibaumBeschreibung(t),
         )
+    }
+
+    // Regel 24: Fehlen einem Eintrag die Energiewerte, ist die Summe nur eine Untergrenze („≥“)
+    private val unvollstaendig = MahlzeitAbschnitt(
+        Mahlzeit.FRUEHSTUECK,
+        listOf(EintragKurz("e1", "Brot", 300, vollstaendig = true), EintragKurz("e2", "Kaffee", null, vollstaendig = false)),
+        emptyList(),
+    )
+
+    @Test
+    fun unvollstaendigZeigtMindestens() {
+        assertEquals("Brot, Kaffee · ≥ 300", schildText(unvollstaendig))
+        val t = beispielZustand().tagebuch
+        val satz = maibaumBeschreibung(t.copy(mahlzeiten = listOf(unvollstaendig)))
+        assertEquals("860 von 2.000 kcal. Frühstück: Brot, Kaffee, ≥ 300 kcal", satz)
     }
 }

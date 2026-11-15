@@ -19,6 +19,9 @@ import de.foody.app.navigation.EINTRAGEN_LINK
 import de.foody.app.navigation.SCHEMA
 import de.foody.core.data.DarstellungSpeicher
 import de.foody.core.data.StilWahl
+import de.foody.core.designsystem.komponenten.kcalRest
+import de.foody.core.designsystem.komponenten.kcalStand
+import de.foody.core.designsystem.komponenten.kcalZahl
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.NaechsteMahlzeit
@@ -48,7 +51,10 @@ internal const val WIDGET_KALORIEN = 15
 internal fun zahl(n: Int): String = String.format(Locale.GERMAN, "%,d", n)
 
 /** „860 / 2.000 kcal“, ohne Ziel „860 kcal“. */
-internal fun kcalText(d: HeuteDaten): String = d.ziel?.let { "${zahl(d.kcal)} / ${zahl(it)} kcal" } ?: "${zahl(d.kcal)} kcal"
+internal fun kcalText(d: HeuteDaten): String = d.ziel?.let { "${d.kcalZahl()} / ${zahl(it)} kcal" } ?: "${d.kcalZahl()} kcal"
+
+/** kcal des Tages, unvollständig mit „≥“. */
+internal fun HeuteDaten.kcalZahl(): String = kcalZahl(kcal, vollstaendig)
 
 /** Anteil am Ziel für Ring, Balken und Tank; ohne Ziel leer. */
 internal fun zielAnteil(d: HeuteDaten): Float = d.ziel?.takeIf { it > 0 }?.let { d.kcal.toFloat() / it } ?: 0f
@@ -75,7 +81,7 @@ internal fun gerichtInfo(n: NaechsteMahlzeit?): String? {
 
 /** Was TalkBack am Widget „Heute“ liest. */
 internal fun heuteBeschreibung(d: HeuteDaten): String {
-    val kcal = d.ziel?.let { "${zahl(d.kcal)} von ${zahl(it)} kcal" } ?: "${zahl(d.kcal)} kcal"
+    val kcal = kcalStand(d.kcal, d.ziel, d.vollstaendig)
     val n = d.naechste ?: return "Heute: $kcal. Nichts geplant."
     val wann = "${if (n.morgen) "Morgen" else "Heute"}, ${slotName(n.mahlzeit.slot)}"
     return "Heute: $kcal. $wann: ${n.mahlzeit.titel}" + (n.mahlzeit.zeitMinuten?.let { ", $it Minuten" } ?: "") + "."
@@ -83,9 +89,9 @@ internal fun heuteBeschreibung(d: HeuteDaten): String {
 
 /** Rest des Ziels für „Kalorien“: Zahl und Wort darunter („1.140 übrig“, „120 drüber“, ohne Ziel „860 kcal heute“). */
 internal fun kalorienRest(d: HeuteDaten): Pair<String, String> {
-    val ziel = d.ziel ?: return zahl(d.kcal) to "kcal heute"
+    val ziel = d.ziel ?: return d.kcalZahl() to "kcal heute"
     val rest = ziel - d.kcal
-    return if (rest >= 0) zahl(rest) to "übrig" else zahl(-rest) to "drüber"
+    return if (rest >= 0) kcalRest(rest, d.vollstaendig) to "übrig" else kcalZahl(-rest, d.vollstaendig) to "drüber"
 }
 
 /** Ring je Stil: Spur, Farbe und Strichstärke wie in den Entwürfen. */
@@ -159,7 +165,7 @@ fun heuteAnsicht(context: Context, d: HeuteDaten, wahl: StilWahl): RemoteViews =
     val info = gerichtInfo(n)
     when (k.stil) {
         FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN -> {
-            ring(context, k, 104f, zielAnteil(d), zahl(d.kcal), d.ziel?.let { "/ ${zahl(it)}" } ?: "kcal")
+            ring(context, k, 104f, zielAnteil(d), d.kcalZahl(), d.ziel?.let { "/ ${zahl(it)}" } ?: "kcal")
             setTextColor(R.id.widget_marke, lesbarAuf(k.akzent, k.flaeche.farbe))
             setTextViewText(R.id.widget_info, schrift(info.orEmpty(), k.nebenSchrift))
             if (k.stil == FoodyStil.BAYRISCH && imm) {
@@ -178,7 +184,7 @@ fun heuteAnsicht(context: Context, d: HeuteDaten, wahl: StilWahl): RemoteViews =
             setViewVisibility(R.id.widget_tank, View.VISIBLE)
             setImageViewBitmap(R.id.widget_tank, tankBild(context, 26f, 140f, zielAnteil(d), k.linie, HOLO))
             setViewVisibility(R.id.widget_gross, View.VISIBLE)
-            val gross = SpannableStringBuilder(zahl(d.kcal)).apply {
+            val gross = SpannableStringBuilder(d.kcalZahl()).apply {
                 val start = length
                 append(d.ziel?.let { "  / ${zahl(it)} kcal" } ?: "  kcal")
                 setSpan(RelativeSizeSpan(0.4f), start, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)

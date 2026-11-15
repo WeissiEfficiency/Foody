@@ -35,6 +35,12 @@ object Einstellungsschluessel {
     /** Ob beim Scannen online nach Produkten gesucht werden darf. */
     const val ONLINE_SUCHE = "onlineProduktsuche"
 
+    /**
+     * BLS-Zutaten ohne Dichte, die das Nachtragen schon geprüft hat (String-Set `Stand:ID@updatedAt`): Festes bekommt
+     * nie eine Dichte, und der Auszug soll nicht bei jedem Start gelesen werden.
+     */
+    const val BLS_DICHTE_GEPRUEFT = "blsDichteGeprueft"
+
     /** Ob die vorhandenen Rezeptfotos bereits verkleinert wurden. */
     const val FOTOS_VERKLEINERT = "fotosVerkleinert"
 

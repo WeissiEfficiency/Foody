@@ -54,7 +54,10 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.kcalRest
+import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
+import de.foody.core.designsystem.komponenten.kcalZahl
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilAktion
@@ -190,7 +193,8 @@ internal fun grauenNotiz(z: TagZustand, heute: LocalDate): String {
 /** Bayrisch: „Passt scho · no 1.140 frei“ bzw. „Gnua für heid“; `null` ohne Ziel. */
 internal fun bayrischSpruch(z: TagZustand): String? = z.ziel?.takeIf { it > 0 }?.let { ziel ->
     val rest = ziel - z.summe.kcal
-    if (rest >= 0) "Passt scho · no ${ganzzahlDeutsch(rest)} frei" else "Gnua für heid · ${ganzzahlDeutsch(-rest)} drüber"
+    val voll = z.summe.vollstaendig
+    if (rest >= 0) "Passt scho · no ${kcalRest(rest, voll)} frei" else "Gnua für heid · ${kcalZahl(-rest, voll)} drüber"
 }
 
 @Composable
@@ -292,11 +296,15 @@ private fun Tageswahl(art: TagebuchArt, datum: LocalDate, heute: LocalDate, onDa
     }
 }
 
+/** Kreuzer: Anteil am Ziel („43 %“), bei fehlenden Energiewerten „≥ 43 %“; `null` ohne Ziel. */
+internal fun kreuzerAnteil(z: TagZustand): String? =
+    z.ziel?.takeIf { it > 0 }?.let { (if (z.summe.vollstaendig) "" else "≥ ") + "${(anteil(z) * 100).toInt()} %" }
+
 /** Was TalkBack zur Bilanz hört: „860 von 2.000 kcal: Eiweiß 42 g, …“. */
 private fun bilanzSatz(z: TagZustand): String {
     val s = z.summe
     val ziel = z.ziel?.takeIf { it > 0 }
-    return (if (ziel != null) "${ganzzahlDeutsch(s.kcal)} von ${ganzzahlDeutsch(ziel)} kcal" else "${ganzzahlDeutsch(s.kcal)} kcal") +
+    return kcalStand(s.kcal, ziel, s.vollstaendig) +
         ": Eiweiß ${s.eiweiss} g, Kohlenhydrate ${s.kohlenhydrate} g, Fett ${s.fett} g"
 }
 
@@ -326,7 +334,7 @@ private fun Ring(art: TagebuchArt, z: TagZustand) {
                 if (a > 0f) drawArc(akzent, -90f, 360f * a, false, tl, Size(2 * r, 2 * r), style = Stroke(strich, cap = StrokeCap.Round))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(ganzzahlDeutsch(s.kcal), style = art.titelSchrift(22f), color = f.text)
+                Text(kcalZahl(s.kcal, s.vollstaendig), style = art.titelSchrift(22f), color = f.text)
                 Text(z.ziel?.let { "von ${ganzzahlDeutsch(it)}" } ?: "kcal", style = art.klein(11.5f), color = f.nebentext)
             }
         }
@@ -370,10 +378,10 @@ private fun Balken(art: TagebuchArt, z: TagZustand) {
     Column(Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = bilanzSatz(z) }, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
-                ganzzahlDeutsch(z.summe.kcal) + (z.ziel?.let { " / ${ganzzahlDeutsch(it)} kcal" } ?: " kcal"), Modifier.weight(1f),
+                kcalZahl(z.summe.kcal, z.summe.vollstaendig) + (z.ziel?.let { " / ${ganzzahlDeutsch(it)} kcal" } ?: " kcal"), Modifier.weight(1f),
                 style = Kreuzer.mono(15f), color = f.text,
             )
-            if (z.ziel != null) Text("${(a * 100).toInt()} %", style = Kreuzer.mono(15f), color = holo)
+            kreuzerAnteil(z)?.let { Text(it, style = Kreuzer.mono(15f), color = holo) }
         }
         Row(Modifier.fillMaxWidth().height(14.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
             repeat(20) { i -> Box(Modifier.weight(1f).height(14.dp).background(if (i < voll) holo else f.balkenSpur)) }

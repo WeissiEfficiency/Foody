@@ -528,7 +528,9 @@ Schalter und Modell gelten **je Gerät** und werden nicht gesynct. Auf dem Table
 | **Release-Schlüssel** | `.jks` + Passwort einmalig sichern (3.3) | Passwortmanager, zweiter Datenträger |
 | Server-Konfiguration | `server/.env` | mit sichern; sie liegt nicht im Repository |
 
-Foody macht kein automatisches Cloud-Backup (`allowBackup=false`). Die Sicherungsdatei ist unverschlüsselt und
+Foody macht kein automatisches Cloud-Backup. Für ein neues Handy ist der eigene Sync-Server der vorgesehene Weg: auf dem
+neuen Gerät anmelden, die Daten kommen vom Server. Zusätzlich erlaubt ist der Gerätewechsel von Android (ab Android 12,
+Handy an Handy): Foody zieht mit allen Daten mit, nur am Sync-Server meldet man sich neu an. Die Sicherungsdatei ist unverschlüsselt und
 enthält das Ernährungstagebuch – sie gehört an einen Ort, auf den nur man selbst Zugriff hat.
 
 ---

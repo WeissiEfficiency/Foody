@@ -75,7 +75,9 @@ import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.balkenanteile
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
+import de.foody.core.designsystem.komponenten.kcalZahl
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.EdoKnopf
@@ -88,6 +90,9 @@ import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.MahlzeitAbschnitt
 import de.foody.feature.heute.TagebuchHeute
 import de.foody.feature.heute.anzeigename
+import de.foody.feature.heute.kcal
+import de.foody.feature.heute.kcalVollstaendig
+import de.foody.feature.heute.kcalZahl
 import de.foody.feature.heute.meta
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -314,11 +319,11 @@ private fun Speisefolge(t: TagebuchHeute, aktionen: HeuteAktionen) {
             )
             Row(
                 Modifier.clearAndSetSemantics {
-                    contentDescription = if (ziel != null) "${ganzzahlDeutsch(s.kcal)} von ${ganzzahlDeutsch(ziel)} kcal" else "${ganzzahlDeutsch(s.kcal)} kcal"
+                    contentDescription = kcalStand(s.kcal, ziel, s.vollstaendig)
                 },
                 verticalAlignment = Alignment.Bottom,
             ) {
-                Text(ganzzahlDeutsch(s.kcal), style = Edo.titel(20f), color = f.text)
+                Text(kcalZahl(s.kcal, s.vollstaendig), style = Edo.titel(20f), color = f.text)
                 Text(ziel?.let { " / ${ganzzahlDeutsch(it)} kcal" } ?: " kcal", Modifier.padding(bottom = 3.dp), style = Edo.text(13f), color = f.nebentext)
             }
         }
@@ -353,6 +358,12 @@ private fun GegessenFrage(mahlzeit: Mahlzeit, v: GeplanteMahlzeit, aktionen: Heu
     )
 }
 
+/** Die kcal rechts in einer Zeile der Speisefolge: gegessen die Summe, sonst die geplante Portion, ohne Plan „–“. */
+internal fun folgeKcal(a: MahlzeitAbschnitt): String = when {
+    a.eintraege.isNotEmpty() -> a.kcalZahl()
+    else -> a.vorschlaege.firstOrNull()?.kcalJePortion?.let { ganzzahlDeutsch(it) } ?: "–"
+}
+
 /** Eine Zeile der Speisefolge; der Stempel rechts ist bei einer geplanten Mahlzeit ein eigener Knopf. */
 @Composable
 private fun Folgezeile(a: MahlzeitAbschnitt, aktionen: HeuteAktionen, onFrage: (String) -> Unit) {
@@ -360,13 +371,10 @@ private fun Folgezeile(a: MahlzeitAbschnitt, aktionen: HeuteAktionen, onFrage: (
     val gegessen = a.eintraege.isNotEmpty()
     val v = a.vorschlaege.firstOrNull()
     val name = a.mahlzeit.anzeigename()
-    val kcal = when {
-        gegessen -> ganzzahlDeutsch(a.eintraege.sumOf { it.kcal ?: 0 })
-        else -> v?.kcalJePortion?.let { ganzzahlDeutsch(it) } ?: "–"
-    }
+    val kcal = folgeKcal(a)
     val (beschreibung, onKlick) = when {
         gegessen -> "$name: ${a.eintraege.joinToString(", ") { it.name }}, " +
-            kcalText(a.eintraege.sumOf { it.kcal ?: 0 }, a.eintraege.all { it.vollstaendig && it.kcal != null }) + ", gegessen" to aktionen.onAlleEintraege
+            kcalText(a.kcal, a.kcalVollstaendig) + ", gegessen" to aktionen.onAlleEintraege
         v != null -> "$name: ${v.titel}, geplant, Rezept öffnen" to { aktionen.onRezept(v.rezeptId) }
         else -> "$name eintragen" to { aktionen.onEintragen(a.mahlzeit) }
     }
