@@ -172,7 +172,7 @@ Gemeinsame liegt in `:core:designsystem`.
   Stil seit „Bausteine R–V“ und „Chips und Blätter R–V“.
 
 ### Phase 7 – Widgets und Abschluss
-- [ ] Die bestehenden Knopf-Widgets (Scannen, Foto) bekommen Farbe und Form des gewählten Stils. Es sind
+- [x] Die bestehenden Knopf-Widgets (Scannen, Foto) bekommen Farbe und Form des gewählten Stils. Es sind
       `RemoteViews`, Szenen gehen dort nicht.
 - [ ] Die neuen Widgets aus den Entwürfen (Heute, Kalorien, Einkauf, Woche) sind eigene Funktionen und bekommen einen
       eigenen Plan.
@@ -490,6 +490,20 @@ gleich, nicht nur der Pilot):
   an seiner Stelle steht die Variante. Stilwahl, Fotoerkennung, Sicherung, Daten und Hinweise behalten ihre Abschnitte.
 - Tests `EinstellungenStileTest` (Abgleich öffnet, Farbe und Variante wählen, Ziel mit −/+ und Feld, Schalter, 200 %
   Schrift); Bilder `stil_*_einstellungen_handy` neu (verbunden, mit dem gewählten Stil).
+
+**2026-11-13 – Knopf-Widgets im Stil** (Branch `claude/stile-widgets`):
+- „Scannen“ und „KI-Foto“ tragen Fläche, Schrift, Rand, Rundung und Schatten des gewählten Stils wie in den
+  Widget-Entwürfen (`app/widget/KnopfAussehen.kt`): Sage dunkel mit Goldrand und „SIEGEL“/„DEUTEN“, Anime Türkis und
+  Gelb mit Tintenrand, Versatzschatten und „SCAN!“/„FOTO!“, Edo Tusche mit Zinnober-Symbol, Bayrisch im Akzent mit
+  dunklem Rand, Grauen dunkel mit Glutrand, Kreuzer Amber. Milchglas bleibt in den Farben des Hintergrundbilds.
+  Wörter nur in Immersiv, Ruhig ohne Schatten.
+- `RemoteViews` kennen keine Szenen: Schatten, Rand und Knopf liegen als drei Flächen übereinander, eingefärbt und
+  gerundet über `setBackgroundTintList` und den Umriss (`setViewOutlinePreferredRadius`). Ein Wechsel des Stils
+  zeichnet vorhandene Widgets neu (`alleAktualisieren` aus der `MainActivity`).
+- Tests `WidgetStilTest` (Milchglas wie bisher, Anime mit Wort, Schatten, Farbe und Rundung, Ruhig, Wörter und Akzent,
+  Neuzeichnen nach dem Wechsel).
+- Die übrigen Widgets der Entwürfe (Heute, Kalorien, Einkauf, Woche, bei S–V „Schnell eintragen“) sind neue
+  Funktionen und brauchen einen eigenen Plan (Phase 7).
 
 Offen:
 - Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).

@@ -1,31 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Widget „Scannen“: der ganze Knopf ist die Tippfläche (ScanWidget) -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Widget „Scannen“: der ganze Knopf ist die Tippfläche (ScanWidget). Schatten und Rand sind nur in den Stilen sichtbar
+     (KnopfAussehen); ohne Stil sieht der Knopf aus wie bisher (Farben aus dem Hintergrundbild). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_hintergrund"
-    android:clipToOutline="true"
-    android:contentDescription="@string/widget_scan_beschreibung"
-    android:gravity="center"
-    android:orientation="horizontal"
-    android:paddingHorizontal="16dp"
-    android:paddingVertical="8dp">
+    android:contentDescription="@string/widget_scan_beschreibung">
 
-    <ImageView
-        android:layout_width="28dp"
-        android:layout_height="28dp"
+    <FrameLayout
+        android:id="@+id/widget_schatten"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_form"
+        android:clipToOutline="true"
         android:importantForAccessibility="no"
-        android:src="@drawable/ic_widget_scan" />
+        android:visibility="gone" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
+    <FrameLayout
+        android:id="@+id/widget_rand"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_form"
+        android:clipToOutline="true"
         android:importantForAccessibility="no"
-        android:maxLines="1"
-        android:text="@string/widget_scan_text"
-        android:textColor="@color/widget_inhalt"
-        android:textSize="16sp"
-        android:textStyle="bold" />
-</LinearLayout>
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/widget_knopf"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_hintergrund"
+        android:clipToOutline="true"
+        android:gravity="center"
+        android:importantForAccessibility="no"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp">
+
+        <ImageView
+            android:id="@+id/widget_symbol"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_widget_scan" />
+
+        <TextView
+            android:id="@+id/widget_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:importantForAccessibility="no"
+            android:maxLines="1"
+            android:text="@string/widget_scan_text"
+            android:textColor="@color/widget_inhalt"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</FrameLayout>

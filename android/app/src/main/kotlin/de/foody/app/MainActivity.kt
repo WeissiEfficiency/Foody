@@ -17,6 +17,7 @@ import de.foody.app.navigation.Hauptgeruest
 import de.foody.app.navigation.deepLinkOeffnen
 import de.foody.app.navigation.schnellstart
 import de.foody.app.navigation.schnellstartAnfragen
+import de.foody.app.widget.alleAktualisieren
 import de.foody.core.data.DarstellungSpeicher
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
@@ -56,6 +57,8 @@ class MainActivity : ComponentActivity() {
             val farbwelt by remember { darstellung.farbwelt() }.collectAsStateWithLifecycle(darstellung.farbweltAktuell())
             val wahl by remember { darstellung.stil() }.collectAsStateWithLifecycle(darstellung.stilAktuell())
             val stil = FoodyStil.ausName(wahl.stil)
+            // Knopf-Widgets tragen Farbe und Wort des Stils: nach jedem Wechsel neu zeichnen
+            LaunchedEffect(wahl) { alleAktualisieren(applicationContext) }
             val variante = StilVariante.ausName(wahl.variante)
             val modusDunkel = istDunkel(d)
             // Stile haben einen festen Grund; die Systemleisten folgen ihm
