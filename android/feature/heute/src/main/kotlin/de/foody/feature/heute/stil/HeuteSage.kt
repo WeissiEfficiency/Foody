@@ -85,6 +85,7 @@ import de.foody.core.designsystem.komponenten.balkenanteile
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalZahl
+import de.foody.core.designsystem.komponenten.makroSatz
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.SageHauptknopf
@@ -269,7 +270,7 @@ private fun Vitalitaet(t: TagebuchHeute) {
     val ziel = t.ziel?.takeIf { it > 0 }
     val ueber = ziel != null && s.kcal > ziel
     val satz = kcalStand(s.kcal, ziel, s.vollstaendig) +
-        (if (ueber) ", über Ziel" else "") + ": Eiweiß ${s.eiweiss} g, Kohlenhydrate ${s.kohlenhydrate} g, Fett ${s.fett} g"
+        (if (ueber) ", über Ziel" else "") + ": " + makroSatz(s.eiweiss, s.kohlenhydrate, s.fett)
     Column(Modifier.clearAndSetSemantics { contentDescription = satz }, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text("VITALITÄT", Modifier.weight(1f), style = Sage.titel(12f, 0.2f), color = f.nebentext)

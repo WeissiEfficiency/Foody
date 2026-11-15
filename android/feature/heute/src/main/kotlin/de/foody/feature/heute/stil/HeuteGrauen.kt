@@ -85,6 +85,7 @@ import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.kcalZahl
+import de.foody.core.designsystem.komponenten.makroSatz
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
@@ -101,6 +102,7 @@ import de.foody.feature.heute.MahlzeitAbschnitt
 import de.foody.feature.heute.TagebuchHeute
 import de.foody.feature.heute.anzeigename
 import de.foody.feature.heute.meta
+import de.foody.feature.heute.rezeptLink
 import java.time.LocalDate
 import java.util.Locale
 import java.time.format.TextStyle as Wochentagform
@@ -181,7 +183,7 @@ private fun DasAuge(t: TagebuchHeute) {
     val anteil = ziel?.let { (s.kcal.toFloat() / it).coerceIn(0f, 1f) }
     val vorlesen = kcalStand(s.kcal, ziel, s.vollstaendig) +
         (if (ziel != null && s.kcal > ziel) ", über Ziel" else "") +
-        ": Eiweiß ${s.eiweiss} g, Kohlenhydrate ${s.kohlenhydrate} g, Fett ${s.fett} g"
+        ": " + makroSatz(s.eiweiss, s.kohlenhydrate, s.fett)
     Column(
         Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = vorlesen },
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -200,7 +202,7 @@ private fun DasAuge(t: TagebuchHeute) {
             style = Grauen.text(18f, kursiv = true), color = f.text, textAlign = TextAlign.Center,
         )
         Text(
-            "Eiweiß ${s.eiweiss} g · Kohlenhydrate ${s.kohlenhydrate} g · Fett ${s.fett} g",
+            makroSatz(s.eiweiss, s.kohlenhydrate, s.fett, " · "),
             style = Grauen.text(15f), color = f.nebentext, textAlign = TextAlign.Center,
         )
     }
@@ -364,8 +366,7 @@ private fun Tafel(ueber: String, titel: String, zeile: String, onTitel: () -> Un
             Text(ueber, style = Grauen.titel(15f, 0.06f), color = glut)
             Text(
                 "$titel ›",
-                Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onTitel)
-                    .semantics { contentDescription = "$titel, Rezept öffnen" }.padding(vertical = 4.dp),
+                Modifier.rezeptLink(titel, onTitel).padding(vertical = 4.dp),
                 style = Grauen.name(25f), color = f.text,
             )
             if (zeile.isNotEmpty()) Text(zeile, style = Grauen.maschine(13f), color = f.nebentext)

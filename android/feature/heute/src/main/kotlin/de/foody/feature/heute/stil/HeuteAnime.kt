@@ -88,9 +88,11 @@ import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.MahlzeitAbschnitt
 import de.foody.feature.heute.TagebuchHeute
 import de.foody.feature.heute.anzeigename
+import de.foody.feature.heute.gericht
 import de.foody.feature.heute.kcal
 import de.foody.feature.heute.kcalVollstaendig
 import de.foody.feature.heute.kcalZahl
+import de.foody.feature.heute.rezeptLink
 import java.time.LocalDate
 import java.util.Locale
 import kotlin.math.min
@@ -260,8 +262,8 @@ private fun Mahlzeitkarte(zustand: HeuteZustand, aktionen: HeuteAktionen) {
     val r = zustand.inspiration
     if (n == null && r == null) return
     val form = RoundedCornerShape(topStart = 6.dp, topEnd = 26.dp, bottomEnd = 6.dp, bottomStart = 26.dp)
-    val titel = n?.mahlzeit?.titel ?: requireNotNull(r).titel
-    val rezeptId = n?.mahlzeit?.rezeptId ?: requireNotNull(r).id
+    val g = requireNotNull(zustand.gericht())
+    val (titel, rezeptId) = g
     val schild = n?.let { (if (it.morgen) "MORGEN · " else "") + Mahlzeit.ausText(it.mahlzeit.slot)?.anzeigename().orEmpty().ifEmpty { it.mahlzeit.slot } }
         ?: "INSPIRATION"
     Column(
@@ -281,14 +283,10 @@ private fun Mahlzeitkarte(zustand: HeuteZustand, aktionen: HeuteAktionen) {
         )
         Text(
             "$titel ›",
-            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button) { aktionen.onRezept(rezeptId) }
-                .semantics { contentDescription = "$titel, Rezept öffnen" }.padding(vertical = 2.dp),
+            Modifier.rezeptLink(titel) { aktionen.onRezept(rezeptId) }.padding(vertical = 2.dp),
             style = Anime.titel(25f, 0f), color = f.text,
         )
-        val angaben = n?.mahlzeit?.let {
-            listOfNotNull("${it.portionen} Port.", it.kcalJePortion?.let { k -> "$k kcal" }, it.zeitMinuten?.let { m -> "$m Min." })
-        }
-            ?: r?.let { listOfNotNull(it.kcalJePortion?.let { k -> "$k kcal" }, it.zeitMinuten?.let { m -> "$m Min." }) }.orEmpty()
+        val angaben = listOfNotNull(g.portionen?.let { "$it Port." }, g.kcalJePortion?.let { "$it kcal" }, g.zeitMinuten?.let { "$it Min." })
         if (angaben.isNotEmpty()) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 angaben.forEach { AnimePille(it) }

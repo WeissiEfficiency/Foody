@@ -39,6 +39,7 @@ import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.kcalZahl
+import de.foody.core.designsystem.komponenten.makroSatz
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
@@ -54,7 +55,7 @@ internal fun TagBilanz(kcal: Int, ziel: Int?, eiweiss: Int, kh: Int, fett: Int, 
     val hatZiel = ziel != null && ziel > 0
     val anteil = if (hatZiel) (kcal.toFloat() / ziel).coerceIn(0f, 1f) else if (kcal > 0) 1f else 0f
     val beschreibung = kcalStand(kcal, ziel, vollstaendig) +
-        ": Eiweiß $eiweiss g, Kohlenhydrate $kh g, Fett $fett g"
+        ": " + makroSatz(eiweiss, kh, fett)
     val energie = (eiweiss * 4 + kh * 4 + fett * 9).coerceAtLeast(1)
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
         Row(
