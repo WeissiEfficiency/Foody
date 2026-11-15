@@ -281,8 +281,9 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   je Tag – Abendessen vor Mittag, Frühstück, Snack –, Tipp `foody://woche`).
   `WidgetDatenQuelle` liest nur aus den Repositories (`HeuteRepository`, `TagebuchRepository`, `TageszielSpeicher`,
   Plan- und Rezept-DAO); die Empfänger holen sie über den Hilt-`@EntryPoint` `WidgetEinstieg` und laden in `onUpdate`
-  mit `goAsync` (`imHintergrund`). Solange der Prozess lebt, sammelt `WidgetBeobachter` (gestartet in `FoodyApp`) die
-  Flows und zeichnet nur Widgets neu, die auf dem Homescreen liegen; eine Uhr alle fünf Minuten wechselt die nächste
+  mit `goAsync` (`imHintergrund`). Solange der Prozess lebt, sammelt `WidgetBeobachter` die
+  Flows, aber nur für Widget-Arten, die auf dem Homescreen liegen: `sicherstellen` läuft beim Start (`FoodyApp`) und in
+  jedem `onUpdate` (auch beim Hinzufügen); liegt keins mehr, endet der Lauf bei der nächsten Änderung; eine Uhr alle fünf Minuten wechselt die nächste
   Mahlzeit und um Mitternacht den Tag. Sonst gilt das Update des Systems alle 30 Minuten.
   Aussehen: `RemoteViews` kennen keine Szenen. `WidgetStil` (`Flaeche`, `KartenAussehen`) legt Schatten, Rand und Fläche
   als drei eingefärbte, über den Umriss gerundete Ebenen übereinander; Schrift über Spans, Zeilenlinien als Drawables,

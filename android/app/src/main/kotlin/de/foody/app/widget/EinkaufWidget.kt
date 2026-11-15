@@ -23,6 +23,7 @@ class EinkaufWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) = imHintergrund {
         val einkauf = context.widgetDaten().einkaufJetzt()
         manager.frischZeigen(ids, einkaufAnsicht(context, einkauf, DarstellungSpeicher(context).stilAktuell()))
+        context.widgetsBeobachten()
     }
 }
 

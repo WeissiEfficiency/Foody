@@ -26,9 +26,12 @@ import de.foody.domain.Naehrwerte
 import de.foody.domain.Tagebuch
 import de.foody.feature.heute.NaechsteMahlzeit
 import de.foody.feature.heute.naechsteMahlzeit
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -44,6 +47,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
+import javax.inject.Singleton
 
 /** Was „Heute“ und „Kalorien“ zeigen: die nächste geplante Mahlzeit, kcal des Tages und das Tagesziel (`null` = keins). */
 data class HeuteDaten(val datum: LocalDate, val naechste: NaechsteMahlzeit?, val kcal: Int, val ziel: Int?)
@@ -123,10 +127,16 @@ internal fun kcalSumme(eintraege: List<TagebuchEintragEntity>): Int = Tagebuch.b
 @InstallIn(SingletonComponent::class)
 interface WidgetEinstieg {
     fun widgetDaten(): WidgetDatenQuelle
+
+    fun widgetBeobachter(): WidgetBeobachter
 }
 
 internal fun Context.widgetDaten(): WidgetDatenQuelle =
     EntryPointAccessors.fromApplication(applicationContext, WidgetEinstieg::class.java).widgetDaten()
+
+/** Nach dem Zeichnen in `onUpdate`: Ein eben hinzugefügtes Widget wird ab jetzt bei jeder Änderung neu gezeichnet. */
+internal fun Context.widgetsBeobachten() =
+    EntryPointAccessors.fromApplication(applicationContext, WidgetEinstieg::class.java).widgetBeobachter().sicherstellen(this)
 
 /** Die IDs der Widgets von [widget] auf dem Homescreen (leer, wenn keins liegt). */
 internal fun Context.widgetIds(widget: Class<out AppWidgetProvider>): IntArray =
@@ -154,36 +164,65 @@ internal fun AppWidgetProvider.imHintergrund(arbeit: suspend () -> Unit) {
 
 /**
  * Hält die Daten-Widgets aktuell, solange der Prozess lebt: Jede Änderung (in der App oder über den Sync) zeichnet
- * „Einkauf“, „Heute“, „Kalorien“ und „Woche“ neu, nur wenn welche auf dem Homescreen liegen. Sonst gilt das Update des Systems
- * (alle 30 Minuten).
+ * „Einkauf“, „Heute“, „Kalorien“ und „Woche“ neu. Beobachtet wird nur, wofür ein Widget auf dem Homescreen liegt:
+ * [sicherstellen] läuft beim Start der App und in jedem `onUpdate` (also auch beim Hinzufügen eines Widgets); liegt
+ * keins mehr, endet der Lauf bei der nächsten Änderung. Sonst gilt das Update des Systems (alle 30 Minuten).
  */
+@Singleton
 class WidgetBeobachter @Inject constructor(private val quelle: WidgetDatenQuelle, private val darstellung: DarstellungSpeicher) {
-    fun starten(context: Context, bereich: CoroutineScope) {
+    private val bereich = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val laeufe = mutableMapOf<String, Job>()
+
+    /** Namen der Datenquellen, die gerade beobachtet werden. */
+    internal fun laufende(): Set<String> = synchronized(laeufe) { laeufe.filterValues { it.isActive }.keys.toSet() }
+
+    /** Startet die Beobachtung für jede Widget-Art auf dem Homescreen, die noch nicht beobachtet wird. */
+    fun sicherstellen(context: Context) {
         val app = context.applicationContext
         val manager = AppWidgetManager.getInstance(app)
-        bereich.launch {
+        beobachten(app, EINKAUF, EinkaufWidget::class.java) {
             quelle.einkauf().distinctUntilChanged().conflate().collect { einkauf ->
                 val ids = app.widgetIds(EinkaufWidget::class.java)
-                if (ids.isNotEmpty()) manager.frischZeigen(ids, einkaufAnsicht(app, einkauf, darstellung.stilAktuell()))
+                if (ids.isEmpty()) throw CancellationException(KEIN_WIDGET)
+                manager.frischZeigen(ids, einkaufAnsicht(app, einkauf, darstellung.stilAktuell()))
             }
         }
-        bereich.launch {
+        beobachten(app, WOCHE, WocheWidget::class.java) {
             quelle.woche().distinctUntilChanged().conflate().collect { daten ->
                 val ids = app.widgetIds(WocheWidget::class.java)
-                if (ids.isNotEmpty()) manager.frischZeigen(ids, wocheAnsicht(app, daten, darstellung.stilAktuell()))
+                if (ids.isEmpty()) throw CancellationException(KEIN_WIDGET)
+                manager.frischZeigen(ids, wocheAnsicht(app, daten, darstellung.stilAktuell()))
             }
         }
-        bereich.launch {
+        beobachten(app, HEUTE, HeuteWidget::class.java, KalorienWidget::class.java) {
             quelle.heute().distinctUntilChanged().conflate().collect { daten ->
                 val wahl = darstellung.stilAktuell()
+                // Beide Arten teilen die Daten, jede zeichnet ihre eigenen Widgets
                 val heute = app.widgetIds(HeuteWidget::class.java)
-                if (heute.isNotEmpty()) manager.frischZeigen(heute, heuteAnsicht(app, daten, wahl))
                 val kalorien = app.widgetIds(KalorienWidget::class.java)
+                if (heute.isEmpty() && kalorien.isEmpty()) throw CancellationException(KEIN_WIDGET)
+                if (heute.isNotEmpty()) manager.frischZeigen(heute, heuteAnsicht(app, daten, wahl))
                 if (kalorien.isNotEmpty()) manager.frischZeigen(kalorien, kalorienAnsicht(app, daten, wahl))
             }
         }
     }
+
+    /** Startet [sammeln] unter [name], wenn ein Widget der [arten] liegt und noch kein Lauf besteht. */
+    private fun beobachten(app: Context, name: String, vararg arten: Class<out AppWidgetProvider>, sammeln: suspend () -> Unit) {
+        if (arten.all { app.widgetIds(it).isEmpty() }) return
+        synchronized(laeufe) {
+            if (laeufe[name]?.isActive == true) return
+            laeufe[name] = bereich.launch { sammeln() }
+        }
+    }
 }
+
+private const val EINKAUF = "einkauf"
+private const val WOCHE = "woche"
+private const val HEUTE = "heute"
+
+/** Liegt kein Widget mehr, endet der Lauf; beim nächsten startet [WidgetBeobachter.sicherstellen] ihn neu. */
+private const val KEIN_WIDGET = "Kein Widget mehr auf dem Homescreen"
 
 /** Einmal laden, etwa für [AppWidgetProvider.onUpdate]. */
 internal suspend fun WidgetDatenQuelle.einkaufJetzt(): OffenerEinkauf? = einkauf().first()

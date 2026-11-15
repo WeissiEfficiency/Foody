@@ -53,7 +53,7 @@ class FoodyApp : Application(), Configuration.Provider {
             kuechenmasse.nachtragen()
             blsDichte.nachtragen()
         }
-        widgets.starten(this, bereich)
+        widgets.sicherstellen(this)
         ProcessLifecycleOwner.get().lifecycle.addObserver(
             object : DefaultLifecycleObserver {
                 override fun onStart(owner: LifecycleOwner) {
