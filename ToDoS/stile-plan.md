@@ -128,7 +128,7 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Pilot festgelegt (Nutzer, 2026-11-11): **Q · Düstere Sage**. Dunkel, lateinische Schriften (Cinzel,
       EB Garamond), kantige Formen.
 - [ ] Festlegen, welche Stile außer Q in die App kommen und in welcher Reihenfolge.
-- [ ] ADR 0020 „Wählbare Stile“ (erweitert ADR 0015, Milchglas bleibt Standard) und Spec in
+- [x] ADR 0020 „Wählbare Stile“ (erweitert ADR 0015, Milchglas bleibt Standard) und Spec in
       `docs/superpowers/specs/`.
 
 ### Phase 1 – Grundgerüst, ohne sichtbare Änderung
@@ -523,4 +523,7 @@ Offen:
 - Schriften der übrigen Entwürfe (Dela Gothic One, M PLUS Rounded 1c, Kaisei Decol, Zen Kaku Gothic
   New, UnifrakturCook, Alegreya, Alegreya Sans, IM Fell English, Special Elite, Exo 2, Share Tech Mono). Bis dahin
   Systemschriften der passenden Art (Serife, Grotesk, Monospace). Download braucht die Freigabe des Nutzers.
-- Szenen und Wörter von Immersiv (Phase 4 bis 6), ADR 0020, Abschnitt in `docs/architecture.md`.
+- Mundart (T) gegenlesen lassen.
+
+**2026-11-13 – ADR 0020 und Doku:** `docs/adr/0020-waehlbare-stile.md`, Abschnitt `stil/` unter „Designsystem“ in
+`docs/architecture.md`.

@@ -184,8 +184,8 @@ Spec: `docs/superpowers/archiv/v3/specs/2026-10-18-v3-phase3-app-daten-sync-desi
 ## Designsystem (`:core:designsystem`, `:katalog`)
 
 ADR 0012, Spec `docs/superpowers/archiv/v3/specs/2026-10-19-v3-phase4-designsystem-design.md`; Farbwelten und Milchglas
-seit ADR 0015 (Spec `docs/superpowers/specs/2026-10-31-farbwelten-milchglas-design.md`, Entwürfe `docs/design/milchglas/`).
-Einzige Quelle für das Aussehen der App.
+seit ADR 0015 (Spec `docs/superpowers/specs/2026-10-31-farbwelten-milchglas-design.md`, Entwürfe `docs/design/milchglas/`);
+wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für das Aussehen der App.
 
 - **`:core:designsystem`** (`de.foody.core.designsystem`, ohne Abhängigkeit zu `:core:data`/`:core:sync`):
   - `token/`: `Farbwelt` (acht wählbare Paletten, Standard Mango; je Modus `FarbweltWerte` = `FoodyFarben`, `Verlauf`,
@@ -216,8 +216,20 @@ Einzige Quelle für das Aussehen der App.
     ganzen 48-dp-Fläche. Zustandslos, nur einfache Werte und Slots;
     Berührflächen ≥ 48 dp; ab Schriftskalierung 1,5 mehr Zeilen und Knöpfe unter dem Text statt Abschneiden.
   - Gemeinsame Texte ohne Oberfläche liegen in `:core:data` (`wochentagKurz`, `datumKurz`, `zahlText`, `zahlAus`).
+  - `stil/` (ADR 0020): `FoodyStil` (Milchglas und die Stile Sage, Anime, Edo, Bayrisch, Grauen, Kreuzer, je vier
+    Akzente), `StilVariante` (Immersiv, Ruhig) und `StilWerte` (Farben als `FoodyFarben`, `FoodyFormen`, Typografie,
+    `Flaechenart.DECKEND`, Hintergrundmuster nur in Immersiv; Farben der Entwürfe rückt `angleichen` auf AA).
+    `FoodyTheme(stil, variante, akzent)` stellt `FoodyTheme.stil` bereit; `FoodyTheme.stil.immersiv(stil)` fragt die Szene ab,
+    `zeilenImStil()` die Zeilen der Stile R bis V. Texte nur in Immersiv über `stilText(standard, sage, anime, edo,
+    bayrisch, grauen, kreuzer)` (`StilTexte`); TalkBack bekommt die normalen Begriffe. Gemeinsame Bausteine:
+    `StilBausteine` (`StilAktion`, `stilTitel`), `StilFelder` (`StilFeld`, `StilAbschnitt`, `StilKarte`) und je Stil
+    `stil/<stil>/…Bausteine.kt` (Seitenkopf, Knöpfe, Zeichnungen). Die Szenen liegen in den Features unter `stil/`
+    und bekommen denselben Zustand und dieselben Aktionen wie der normale Screen. Die Wahl speichert
+    `DarstellungSpeicher` als `StilWahl` (`stil`, `stilVariante`, `stilAkzent`); fehlt sie, gilt Milchglas.
+    Den Modus Hell/Dunkel und die Farbwelten gibt es nur bei Milchglas, die Systemleisten folgen dem Grund des Stils.
 - **Kontrast:** WCAG 2.2 AA (Text 4,5:1, Grafik 3:1) gilt ohne Unschärfe gegen die ungünstigste Stelle des Verlaufs;
-  `KontrastTest` rechnet jedes Paar aus `kontrastPaare` nach, für jede Farbwelt hell und dunkel.
+  `KontrastTest` rechnet jedes Paar aus `kontrastPaare` nach, für jede Farbwelt hell und dunkel und für jeden Stil
+  mit Variante und Akzent.
 - **`:katalog`** (`de.foody.katalog`, nie ausgeliefert): alle Komponenten in allen Zuständen, Umschalter
   hell/dunkel/System, Schrift 200 %, ohne Unschärfe; ab 840 dp zweispaltig.
 - **Tests:** Robolectric-Komponententests mit nativer Grafik (echte Textmessung) und 200-%-Prüfung
