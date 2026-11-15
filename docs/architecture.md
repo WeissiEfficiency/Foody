@@ -219,6 +219,8 @@ wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für 
   - `stil/` (ADR 0020): `FoodyStil` (Milchglas und die Stile Sage, Anime, Edo, Bayrisch, Grauen, Kreuzer, je vier
     Akzente), `StilVariante` (Immersiv, Ruhig) und `StilWerte` (Farben als `FoodyFarben`, `FoodyFormen`, Typografie,
     `Flaechenart.DECKEND`, Hintergrundmuster nur in Immersiv; Farben der Entwürfe rückt `angleichen` auf AA).
+    Schriften je Stil in `token/FoodyTypo.kt` (`DelaGothicFamilie`, `KaiseiDecolFamilie`, `UnifrakturFamilie` …),
+    beschnitten mit `werkzeuge/schriften_beschneiden.py`, Lizenzen in `core/designsystem/lizenzen/`.
     `FoodyTheme(stil, variante, akzent)` stellt `FoodyTheme.stil` bereit; `FoodyTheme.stil.immersiv(stil)` fragt die Szene ab,
     `zeilenImStil()` die Zeilen der Stile R bis V. Texte nur in Immersiv über `stilText(standard, sage, anime, edo,
     bayrisch, grauen, kreuzer)` (`StilTexte`); TalkBack bekommt die normalen Begriffe. Gemeinsame Bausteine:

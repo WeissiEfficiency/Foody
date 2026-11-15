@@ -17,34 +17,38 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.token.ImFellFamilie
+import de.foody.core.designsystem.token.ImFellKapitaelchenFamilie
+import de.foody.core.designsystem.token.SpecialEliteFamilie
 
 /**
  * Bausteine des Kosmischen Grauens (Stil U) in Immersiv. Der Entwurf setzt IM Fell English (Buchschrift) und Special
- * Elite (Schreibmaschine); bis die Schriften geladen werden dürfen, stehen die Serife und die Monospace des Systems
- * dafür. Farben kommen aus dem Theme, die Glut ist `FoodyTheme.stil.zier`.
+ * Elite (Schreibmaschine). Farben kommen aus dem Theme, die Glut ist `FoodyTheme.stil.zier`.
  */
 object Grauen {
-    /** Buchschrift für Titel, mit leichter Laufweite [abstand] (em). */
+    /** Kapitälchen (IM Fell English SC) für Titel, mit leichter Laufweite [abstand] (em). */
     fun titel(groesse: Float, abstand: Float = 0.04f) =
-        TextStyle(fontFamily = FontFamily.Serif, fontSize = groesse.sp, lineHeight = (groesse * 1.15f).sp, letterSpacing = abstand.em)
+        TextStyle(fontFamily = ImFellKapitaelchenFamilie, fontSize = groesse.sp, lineHeight = (groesse * 1.15f).sp, letterSpacing = abstand.em)
+
+    /** Rezeptnamen in der Buchschrift ohne Kapitälchen, sonst wie [titel]. */
+    fun name(groesse: Float, abstand: Float = 0f) = titel(groesse, abstand).copy(fontFamily = ImFellFamilie)
 
     /** Buchschrift für Fließtext, auf Wunsch kursiv. */
     fun text(groesse: Float, kursiv: Boolean = false) = TextStyle(
-        fontFamily = FontFamily.Serif,
+        fontFamily = ImFellFamilie,
         fontSize = groesse.sp,
         lineHeight = (groesse * 1.3f).sp,
         fontStyle = if (kursiv) FontStyle.Italic else FontStyle.Normal,
     )
 
     /** Schreibmaschine für Zeiten, Mengen und Protokollzeilen. */
-    fun maschine(groesse: Float) = TextStyle(fontFamily = FontFamily.Monospace, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp)
+    fun maschine(groesse: Float) = TextStyle(fontFamily = SpecialEliteFamilie, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp)
 }
 
 /** Heller Ton für Knopftexte (im Entwurf #E6F2EA), aus dem Text des Stils. */

@@ -144,8 +144,8 @@ Gemeinsame liegt in `:core:designsystem`.
 - [ ] Auf dem Debug-Build am Handy und Tablet ansehen.
 
 ### Phase 3 – Ruhig für die übrigen Stile
-- [ ] Werkzeug zum Beschneiden der Schriften, danach die Schriften für R, S, T, U, V (APK-Größe vorher und nachher
-      messen).
+- [x] Werkzeug zum Beschneiden der Schriften, danach die Schriften für R, S, T, U, V (APK-Größe vorher und nachher
+      messen), siehe „Ergebnis“ 2026-11-13.
 - [ ] `StilWerte` Ruhig für R, S, T, U, V. Danach sind alle Stile wählbar, Immersiv zeigt bis Phase 6 noch Ruhig.
 - [ ] Danach kann man schon alle Stile im Alltag benutzen. Ab hier könnte man aufhören, falls Immersiv zu viel ist.
 
@@ -519,11 +519,22 @@ Spec `docs/superpowers/specs/2026-11-13-widgets-design.md`, Plan `docs/superpowe
   `WidgetBeobachter` über Hilt.
 
 Offen:
-- Schriften beschneiden (Werkzeug mit fonttools, Installation braucht die Freigabe des Nutzers).
-- Schriften der übrigen Entwürfe (Dela Gothic One, M PLUS Rounded 1c, Kaisei Decol, Zen Kaku Gothic
-  New, UnifrakturCook, Alegreya, Alegreya Sans, IM Fell English, Special Elite, Exo 2, Share Tech Mono). Bis dahin
-  Systemschriften der passenden Art (Serife, Grotesk, Monospace). Download braucht die Freigabe des Nutzers.
 - Mundart (T) gegenlesen lassen.
 
 **2026-11-13 – ADR 0020 und Doku:** `docs/adr/0020-waehlbare-stile.md`, Abschnitt `stil/` unter „Designsystem“ in
 `docs/architecture.md`.
+
+**2026-11-13 – Schriften der Entwürfe** (Branch `claude/stile-schriften`, Download mit Freigabe des Nutzers):
+- `werkzeuge/schriften_beschneiden.py` (fonttools): Latein mit Latin-1 und Latin Extended-A, die übliche Typografie und
+  alle Zeichen aus dem Code der App (済 月 籠 …); variable Schriften nur im genutzten Bereich von `wght`; Standard-Features,
+  ohne Hinting. Schriften, die in ihren Namenseinträgen einen „Reserved Font Name“ nennen (IM Fell English,
+  UnifrakturCook, Share Tech Mono), kopiert es unverändert.
+- Neu in `res/font`: Dela Gothic One, M PLUS Rounded 1c (R), Kaisei Decol, Zen Kaku Gothic New (S), UnifrakturCook,
+  Alegreya, Alegreya Sans (T), IM Fell English mit Kursiv und SC, Special Elite (U), Exo 2, Share Tech Mono (V);
+  Cinzel und EB Garamond jetzt beschnitten. Zusammen 1,78 MB statt 0,98 MB, also 0,8 MB mehr (Budget 2 MB).
+  Lizenzen in `core/designsystem/lizenzen/`.
+- Familien in `token/FoodyTypo.kt`; `StilWerte` (Ruhig und Immersiv) und die Bausteine je Stil nutzen sie. Schriften mit
+  nur einem Schnitt sind für alle Gewichte eingetragen, damit Android sie nicht künstlich fett rechnet.
+- Bayrisch: Seitentitel in Immersiv in Fraktur (`Bayrisch.fraktur`) wie im Entwurf („Heid“, „’s Standl“, „Eistellunga“),
+  sonst Alegreya und Alegreya Sans.
+- Referenzbilder der Stile neu aufgenommen; Milchglas unverändert. Die Widgets bleiben bei Systemschriften.

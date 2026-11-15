@@ -117,7 +117,7 @@ internal fun GrauenSeite(r: RezeptKarte, onOeffnen: (String) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(grauenBand(r), style = Grauen.titel(12f, 0.14f), color = TINTE_NEBEN)
-            Text(r.name, style = Grauen.titel(22f), color = TINTE)
+            Text(r.name, style = Grauen.name(22f), color = TINTE)
             val werte = listOfNotNull(zeitUndKcal(r)?.let { if (r.kcalJePortion != null) "$it je Portion" else it }, if (r.favorit) "♦ Favorit" else null)
             if (werte.isNotEmpty()) Text(werte.joinToString(" · "), style = Grauen.text(15f), color = TINTE_NEBEN)
             zutatenSatz(r)?.let { Text(it, style = Grauen.text(16f, kursiv = true), color = TINTE) }

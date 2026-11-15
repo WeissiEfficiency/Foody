@@ -131,7 +131,7 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
                     heading()
                     contentDescription = "Einkauf"
                 },
-                style = Bayrisch.titel(32f * min(k, 1.3f) / k, FontWeight.ExtraBold), color = f.grund,
+                style = Bayrisch.fraktur(32f * min(k, 1.3f) / k), color = f.grund,
             )
             if (ansicht != null) {
                 Column(

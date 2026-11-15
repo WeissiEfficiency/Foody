@@ -26,9 +26,11 @@ Einstellungen und auf den Widgets.
   Wert oder ist er unbekannt, gilt Milchglas. Kein Sync zwischen den Geräten, kein Server-Rebuild.
 - **Kontrast hat Vorrang vor dem Entwurf:** Farben der Entwürfe, die WCAG 2.2 AA verfehlen, werden beim Ableiten
   verschoben, bis sie halten (`angleichen`). `KontrastTest` prüft alle Stile, Varianten und Akzente.
-- **Schriften:** Q nutzt Cinzel und EB Garamond (eingebettet, OFL). R bis V nutzen vorerst Systemschriften der
-  passenden Art (Serife, Grotesk, Monospace). Die Schriften der Entwürfe brauchen einen Download und einen Beschnitt,
-  beides erst mit Freigabe des Nutzers. Budget: höchstens 2 MB mehr APK, nichts wird nachgeladen.
+- **Schriften:** Jeder Stil bringt die Schriften seines Entwurfs eingebettet mit (Google Fonts, OFL; Special Elite
+  Apache 2.0), beschnitten auf Latein und die Zeichen der App mit `werkzeuge/schriften_beschneiden.py`. Schriften mit
+  „Reserved Font Name“ liegen unverändert bei. Budget: höchstens 2 MB mehr APK, nichts wird nachgeladen. Symbole, die
+  einer Schrift fehlen (✓, ▶, Emojis), zeichnet Android in der Systemschrift. Die Widgets bleiben bei Systemschriften
+  (`RemoteViews` können keine Schriften der App laden).
 - **Tablet:** Die Entwürfe gibt es nur für das Handy. Auf dem Tablet bleibt das zweispaltige Layout mit Farben,
   Schrift und Formen des Stils.
 - **Widgets:** Die `RemoteViews` übernehmen Farbe, Form, Schrift und die Wörter des Stils. Zeichnungen kommen als
@@ -50,4 +52,5 @@ Einstellungen und auf den Widgets.
   bei Immersiv nicht. Die Screen-Tests prüfen die Szenen. Roborazzi hat je Stil ein Bild jedes Screens in Immersiv,
   „Heute“ auch in Ruhig.
 - Die Referenzbilder von Milchglas sind gleich geblieben. Nur bei den Einstellungen kam die Stilwahl dazu.
-- Offen: die Schriften der Entwürfe R bis V (Download und Beschnitt mit Freigabe) und das Gegenlesen der Mundart (T).
+- Alle Schriften der Stile zusammen 1,78 MB in `res/font` (vorher 0,98 MB für Cinzel und EB Garamond unbeschnitten).
+- Offen: das Gegenlesen der Mundart (T).

@@ -18,17 +18,17 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.token.KaiseiDecolFamilie
+import de.foody.core.designsystem.token.ZenKakuFamilie
 
 /**
- * Bausteine des Edo-Stils (S) in Immersiv. Der Entwurf setzt Kaisei Decol (Titel) und Zen Kaku Gothic New; bis die
- * Schriften geladen werden dürfen, stehen Serife und Grotesk des Systems dafür. Das Zinnober („Shu“) ist der gewählte
+ * Bausteine des Edo-Stils (S) in Immersiv. Der Entwurf setzt Kaisei Decol (Titel) und Zen Kaku Gothic New. Das Zinnober („Shu“) ist der gewählte
  * Akzent (auch Indigo, Moos oder Ocker), Papier, Holz und Montierung kommen aus dem Entwurf.
  */
 object Edo {
@@ -52,11 +52,11 @@ object Edo {
 
     /** Serife für Titel. */
     fun titel(groesse: Float) =
-        TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = groesse.sp, lineHeight = (groesse * 1.25f).sp)
+        TextStyle(fontFamily = KaiseiDecolFamilie, fontWeight = FontWeight.Bold, fontSize = groesse.sp, lineHeight = (groesse * 1.25f).sp)
 
     /** Grotesk für Text und Angaben. */
     fun text(groesse: Float, gewicht: FontWeight = FontWeight.Normal) =
-        TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp)
+        TextStyle(fontFamily = ZenKakuFamilie, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp)
 
     /** Gesperrte Kopfzeile („HEUTE ABEND · 24. OKTOBER“). */
     fun kopf(groesse: Float = 11.5f) = text(groesse, FontWeight.Bold).copy(letterSpacing = 0.14.em)
