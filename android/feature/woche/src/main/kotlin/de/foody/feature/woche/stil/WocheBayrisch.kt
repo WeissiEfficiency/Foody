@@ -208,8 +208,8 @@ private fun Tageskarte(t: WochenTag, heute: Boolean, aktionen: WocheSageAktionen
             tagKcal(t)?.let { Text(it, style = Bayrisch.text(14f), color = f.nebentext) }
         }
         Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            BayrischKnopf("+ Essn planen", { aktionen.onPlus(t.datum) }, Modifier.weight(1f), voll = false, beschreibung = "Mahlzeit hinzufügen")
-            BayrischKnopf("Leere Tag füllen", aktionen.onFuellen, Modifier.weight(1f), voll = false, beschreibung = "Leere Tage füllen")
+            BayrischKnopf("+ Essn plana", { aktionen.onPlus(t.datum) }, Modifier.weight(1f), voll = false, beschreibung = "Mahlzeit hinzufügen")
+            BayrischKnopf("Freie Tag fülln", aktionen.onFuellen, Modifier.weight(1f), voll = false, beschreibung = "Leere Tage füllen")
         }
     }
 }

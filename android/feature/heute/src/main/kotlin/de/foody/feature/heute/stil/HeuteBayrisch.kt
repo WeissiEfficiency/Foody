@@ -124,7 +124,7 @@ internal fun HeuteBayrisch(zustand: HeuteZustand?, aktionen: HeuteAktionen, modi
                     Bilanz(zustand.tagebuch, aktionen.onAlleEintraege)
                     Eintragen(zustand.tagebuch, aktionen)
                     zustand.einkauf?.let { e ->
-                        Verweis("Eikaufszettl · ${e.anzahl} offen ›", "Einkauf, ${e.anzahl} offen") { aktionen.onEinkauf(e.listeId) }
+                        Verweis("Eikaufszettl · no ${e.anzahl} offn ›", "Einkauf, ${e.anzahl} offen") { aktionen.onEinkauf(e.listeId) }
                     }
                 }
             }
