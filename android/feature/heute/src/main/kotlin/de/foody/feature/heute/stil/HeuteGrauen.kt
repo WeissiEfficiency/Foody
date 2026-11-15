@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
@@ -47,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -57,6 +59,7 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -241,37 +244,37 @@ private fun Auge(anteil: Float?, glut: Color, modifier: Modifier) {
         remember { mutableFloatStateOf(1f) }
     }
     val pfade = remember { AugenPfade() }
-    Canvas(modifier) {
-        val s = size.width / AUGE_BREITE
-        translate(0f, -4.dp.toPx() * schweben) {
-            scale(s, Offset.Zero) {
-                drawOval(
-                    Brush.radialGradient(listOf(glut.copy(alpha = 0.35f), glut.copy(alpha = 0f)), Offset(150f, 85f), 150f),
-                    Offset.Zero, Size(300f, 170f),
-                )
-                withTransform({ scale(1f, lid, Offset(150f, 85f)) }) {
-                    drawPath(pfade.lid, Color(0xFFC9C4A8).copy(alpha = 0.12f))
-                    drawPath(pfade.lid, Color(0xFF7F948A), style = Stroke(1.5f))
-                    clipPath(pfade.lid) {
-                        drawPath(pfade.adern, Color(0xFF6A2430).copy(alpha = 0.45f), style = Stroke(1f))
-                        drawCircle(
-                            Brush.radialGradient(
-                                0f to Color(0xFF1B3A2C), 0.7f to Color(0xFF0E2019), 1f to Color(0xFF06100C),
-                                center = Offset(150f, 85f), radius = 56f,
-                            ),
-                            56f, Offset(150f, 85f),
-                        )
-                        drawCircle(Color(0xFF24382F), 50f, Offset(150f, 85f), style = Stroke(8f))
-                        if (anteil != null && anteil > 0f) {
-                            drawArc(glut, -90f, 360f * anteil, false, Offset(100f, 35f), Size(100f, 100f), style = Stroke(8f))
+    // Das Schweben verschiebt nur die Ebene, ohne neu zu zeichnen; Verläufe entstehen einmal je Größe. Neu gezeichnet
+    // wird nur, solange das Lid sich bewegt (Blinzeln, gut 0,4 s alle 7 s).
+    Spacer(
+        modifier.graphicsLayer { translationY = -4.dp.toPx() * schweben }.drawWithCache {
+            val s = size.width / AUGE_BREITE
+            val schein = Brush.radialGradient(listOf(glut.copy(alpha = 0.35f), glut.copy(alpha = 0f)), Offset(150f, 85f), 150f)
+            val iris = Brush.radialGradient(
+                0f to Color(0xFF1B3A2C), 0.7f to Color(0xFF0E2019), 1f to Color(0xFF06100C),
+                center = Offset(150f, 85f), radius = 56f,
+            )
+            onDrawBehind {
+                scale(s, Offset.Zero) {
+                    drawOval(schein, Offset.Zero, Size(300f, 170f))
+                    withTransform({ scale(1f, lid, Offset(150f, 85f)) }) {
+                        drawPath(pfade.lid, Color(0xFFC9C4A8).copy(alpha = 0.12f))
+                        drawPath(pfade.lid, Color(0xFF7F948A), style = Stroke(1.5f))
+                        clipPath(pfade.lid) {
+                            drawPath(pfade.adern, Color(0xFF6A2430).copy(alpha = 0.45f), style = Stroke(1f))
+                            drawCircle(iris, 56f, Offset(150f, 85f))
+                            drawCircle(Color(0xFF24382F), 50f, Offset(150f, 85f), style = Stroke(8f))
+                            if (anteil != null && anteil > 0f) {
+                                drawArc(glut, -90f, 360f * anteil, false, Offset(100f, 35f), Size(100f, 100f), style = Stroke(8f))
+                            }
+                            drawOval(Color(0xFF020403), Offset(141f, 51f), Size(18f, 68f))
+                            drawCircle(Color.White.copy(alpha = 0.5f), 5f, Offset(166f, 66f))
                         }
-                        drawOval(Color(0xFF020403), Offset(141f, 51f), Size(18f, 68f))
-                        drawCircle(Color.White.copy(alpha = 0.5f), 5f, Offset(166f, 66f))
                     }
                 }
             }
-        }
-    }
+        },
+    )
 }
 
 /** Pfade aus dem SVG des Entwurfs (Maß 300 × 170 für das Auge, 390 breit für die Tiefe). */

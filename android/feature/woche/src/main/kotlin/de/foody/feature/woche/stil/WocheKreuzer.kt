@@ -25,7 +25,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -167,15 +170,17 @@ private fun Raute(t: WochenTag, heute: LocalDate, an: Boolean, modifier: Modifie
     val vorbei = t.datum.isBefore(heute)
     val leer = t.eintraege.isEmpty()
     val k = LocalDensity.current.fontScale
-    val puls = if (istHeute && animationenErlaubt()) {
-        rememberInfiniteTransition(label = "puls").animateFloat(0f, 1f, infiniteRepeatable(tween(2000)), label = "puls").value
+    // Der Puls wird erst beim Zeichnen gelesen: Jedes Bild zeichnet nur die Raute neu, ohne Recomposition.
+    val puls: State<Float> = if (istHeute && animationenErlaubt()) {
+        rememberInfiniteTransition(label = "puls").animateFloat(0f, 1f, infiniteRepeatable(tween(2000)), label = "puls")
     } else {
-        0f
+        remember { mutableFloatStateOf(0f) }
     }
     Column(modifier.tagWahl(t, istHeute, an, onKlick), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Canvas(Modifier.size(44.dp)) {
             val s = 18.dp.toPx()
-            if (puls > 0f) drawCircle(amber.copy(alpha = 0.55f * (1f - puls)), s * 0.7f + 8.dp.toPx() * puls)
+            val p = puls.value
+            if (p > 0f) drawCircle(amber.copy(alpha = 0.55f * (1f - p)), s * 0.7f + 8.dp.toPx() * p)
             rotate(45f) {
                 val oben = Offset(center.x - s / 2, center.y - s / 2)
                 when {
