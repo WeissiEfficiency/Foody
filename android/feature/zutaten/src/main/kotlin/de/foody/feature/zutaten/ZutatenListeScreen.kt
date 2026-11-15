@@ -49,8 +49,10 @@ import de.foody.core.designsystem.komponenten.FoodyFab
 import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.Suchfeld
+import de.foody.core.designsystem.komponenten.WahlZeile
 import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.ueberLeiste
+import de.foody.core.designsystem.komponenten.zeilenImStil
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
@@ -168,6 +170,13 @@ private fun Kopf(onZurueck: () -> Unit, onVereinheitlichen: () -> Unit) {
 
 @Composable
 private fun ZutatZeile(z: ZutatKurz, onKlick: () -> Unit) {
+    if (zeilenImStil()) {
+        WahlZeile(
+            z.name, gewaehlt = false, onKlick, Modifier.padding(horizontal = FoodyAbstaende.s4),
+            info = listOfNotNull(z.kategorie, verwendungText(z.rezepte)).joinToString(" · "), wert = kcalText(z.kcal), knopf = true,
+        )
+        return
+    }
     Column(
         Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.Button, onClick = onKlick)
             .padding(horizontal = FoodyAbstaende.s4, vertical = 10.dp),

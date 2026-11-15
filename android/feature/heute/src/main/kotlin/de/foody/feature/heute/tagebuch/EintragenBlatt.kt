@@ -1,22 +1,18 @@
 package de.foody.feature.heute.tagebuch
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -42,6 +37,7 @@ import de.foody.core.designsystem.komponenten.BlattTitel
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.FoodyTextfeld
+import de.foody.core.designsystem.komponenten.WahlZeile
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.komponenten.vorausgefuelltFarben
 import de.foody.core.designsystem.stil.stilText
@@ -98,6 +94,7 @@ fun EintragenBlatt(auftrag: BlattAuftrag, onFertig: () -> Unit, vm: EintragenVie
             BlattTitel(
                 stilText("Eintragen", sage = "Mahl eintragen", anime = "Eintragen!", bayrisch = "Eitragn", grauen = "Notieren"),
                 beschreibung = "Eintragen",
+                zeichen = "記",
             )
             FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 MAHLZEITEN.forEach { m ->
@@ -128,16 +125,10 @@ private fun Suche(text: String, beschriftung: String, onText: (String) -> Unit) 
     FoodyTextfeld(beschriftung, text, onWert = onText)
 }
 
-/** Auswählbare Trefferzeile mit Haken, mindestens 48 dp hoch. */
+/** Auswählbare Trefferzeile mit Haken (im Stil R–V wie im Entwurf), mindestens 48 dp hoch. */
 @Composable
 private fun Treffer(text: String, gewaehlt: Boolean, onWahl: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(gewaehlt, onClick = onWahl, role = Role.RadioButton),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
-        if (gewaehlt) Icon(Icons.Outlined.Check, contentDescription = null, tint = FoodyTheme.farben.primaer)
-    }
+    WahlZeile(text, gewaehlt, onWahl)
 }
 
 @Composable
@@ -147,7 +138,7 @@ private fun RezeptWahl(z: EintragenZustand, vm: EintragenViewModel) {
     // Gescannte Produkte zur Suche: Antippen wechselt zu „Zutat“ mit dem Produkt
     if (z.produkte.isNotEmpty()) {
         Text("Gescannte Produkte", style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.nebentext)
-        z.produkte.forEach { p -> Treffer(p.name, gewaehlt = false) { vm.produktWaehlen(p) } }
+        z.produkte.forEach { p -> WahlZeile(p.name, gewaehlt = false, { vm.produktWaehlen(p) }, knopf = true) }
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = { vm.portionenSchritt(mehr = false) }) { Icon(Icons.Outlined.Remove, contentDescription = "Weniger Portionen") }
@@ -184,20 +175,12 @@ private fun ZutatWahl(z: EintragenZustand, vm: EintragenViewModel) {
 @Composable
 private fun BlsZeile(t: BlsTreffer, onWahl: () -> Unit) {
     val kcal = t.lebensmittel.werte[Nutrient.ENERGY_KJ]?.let(NutritionResult::kcal)
-    Column(
-        Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onWahl).padding(vertical = FoodyAbstaende.s1),
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(t.vorschlagName, style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
-        val details = listOfNotNull(
-            t.lebensmittel.name.takeIf { it != t.vorschlagName },
-            kcal?.let { "$it kcal je 100 g" },
-            t.stueckG?.let { "Stück ≈ ${it.toPlainString()} g" },
-        )
-        if (details.isNotEmpty()) {
-            Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = FoodyTheme.farben.nebentext)
-        }
-    }
+    val details = listOfNotNull(
+        t.lebensmittel.name.takeIf { it != t.vorschlagName },
+        kcal?.let { "$it kcal je 100 g" },
+        t.stueckG?.let { "Stück ≈ ${it.toPlainString()} g" },
+    )
+    WahlZeile(t.vorschlagName, gewaehlt = false, onWahl, info = details.joinToString(" · ").ifEmpty { null }, knopf = true)
 }
 
 @Composable
