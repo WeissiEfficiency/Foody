@@ -164,7 +164,7 @@ Gemeinsame liegt in `:core:designsystem`.
 ### Phase 6 – Immersiv für die übrigen Stile
 - [ ] Ein Stil nach dem anderen, je Stil zwei bis drei PRs (Hauptscreens, dann Rest). Die Reihenfolge legt der Nutzer
       fest.
-- [ ] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen.
+- [x] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen, siehe „Ergebnis“ 2026-11-15.
 - Erledigt: Wörter R–V (Navigation, Titel, Knöpfe) und die Heute-Szenen aller Stile (U „Das Auge“, V
   „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Alle Hauptscreens haben in R–V ihre Szene
   (Heute, Einkauf, Woche, Rezeptliste, Rezept, Tagebuch, Kochen), so weit wie bei der Sage. Editor, Einstellungen,
@@ -368,7 +368,7 @@ gleich, nicht nur der Pilot):
 - V „Flugplan“: Sprungroute aus Rauten (vergangen Holo, heute Amber pulsierend), Sprungkarte, Liste mit Status.
 - Tests `WocheStileTest` (Tag wählen, Eintrag, + Mahlzeit, Füllen, Blättern, 200 % Schrift, Texte); Bilder
   `stil_*_woche_handy`. Robolectric hängt mit `w411dp` und offenem Dialog; der Test nimmt deshalb die Standardbreite.
-- Mundart: „Wochn“, „plana“, „heid“, „Sunda“, „no frei“, „Noch nix gplant“, „+ Essn planen“, „Leere Tag füllen“.
+- Mundart: „Wochn“, „plana“, „heid“, „Sunda“, „no frei“, „Noch nix gplant“, „+ Essn plana“, „Freie Tag fülln“ (angeglichen 2026-11-15).
 
 **2026-11-12 – Rezeptliste R–V** (Branch `claude/stile-rezepte`):
 - Wie beim Grimoire der Sage dieselbe Suche, dieselben Filter und Ziele (öffnen, neu, importieren). Die Treffer
@@ -519,7 +519,6 @@ Spec `docs/superpowers/specs/2026-11-13-widgets-design.md`, Plan `docs/superpowe
   `WidgetBeobachter` über Hilt.
 
 Offen:
-- Mundart (T) gegenlesen lassen.
 
 **2026-11-13 – ADR 0020 und Doku:** `docs/adr/0020-waehlbare-stile.md`, Abschnitt `stil/` unter „Designsystem“ in
 `docs/architecture.md`.
@@ -538,3 +537,11 @@ Offen:
 - Bayrisch: Seitentitel in Immersiv in Fraktur (`Bayrisch.fraktur`) wie im Entwurf („Heid“, „’s Standl“, „Eistellunga“),
   sonst Alegreya und Alegreya Sans.
 - Referenzbilder der Stile neu aufgenommen; Milchglas unverändert. Die Widgets bleiben bei Systemschriften.
+
+**2026-11-15 – Mundart durchgesehen** (Branch `claude/stile-mundart`):
+- Alle bayrischen Texte als Liste je Datei dem Nutzer vorgelegt und mit den Entwürfen abgeglichen. Was im Entwurf so
+  steht, bleibt, auch wo es uneinheitlich wirkt („Zuadaten“ im Rezept, „Zuadatn“ im Zutatenkatalog; „Löschen“,
+  „Nährwerte“ auf Hochdeutsch).
+- Angeglichen, wo der Entwurf nichts vorgibt: „+ Essn plana“ (wie „plana ›“), „Freie Tag fülln“ (wie „die freien Tag“),
+  „Eikaufszettl · no 3 offn ›“ (wie „no 3 offn“ im Einkauf).
+- TalkBack-Texte bleiben Hochdeutsch.

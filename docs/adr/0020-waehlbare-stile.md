@@ -53,4 +53,4 @@ Einstellungen und auf den Widgets.
   „Heute“ auch in Ruhig.
 - Die Referenzbilder von Milchglas sind gleich geblieben. Nur bei den Einstellungen kam die Stilwahl dazu.
 - Alle Schriften der Stile zusammen 1,78 MB in `res/font` (vorher 0,98 MB für Cinzel und EB Garamond unbeschnitten).
-- Offen: das Gegenlesen der Mundart (T).
+- Die Mundart (T) folgt den Texten des Entwurfs; der Nutzer hat die Liste aller Texte durchgesehen (2026-11-15).
