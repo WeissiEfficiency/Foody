@@ -6,12 +6,14 @@ import android.content.res.ColorStateList
 import android.graphics.Outline
 import android.view.View
 import android.widget.TextView
+import androidx.core.graphics.ColorUtils
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.app.R
 import de.foody.core.data.DarstellungSpeicher
 import de.foody.core.data.StilWahl
 import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.StilVariante
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
@@ -20,6 +22,7 @@ import org.robolectric.annotation.GraphicsMode
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * Knopf-Widgets im gewählten Stil: Milchglas bleibt wie bisher, die Stile setzen Fläche, Schrift, Rand, Schatten und in
@@ -108,5 +111,31 @@ class WidgetStilTest {
         waehlen(FoodyStil.ANIME)
         alleAktualisieren(kontext)
         assertEquals("SCAN!", manager.getViewFor(id).text())
+    }
+
+    @Test
+    fun kartenSchriftHaeltKontrastAufDerFlaeche() {
+        for (stil in FoodyStil.entries - FoodyStil.MILCHGLAS) {
+            for (variante in StilVariante.entries) {
+                for (akzent in stil.akzente) {
+                    for (zettel in listOf(false, true)) {
+                        val k = kartenAussehen(kontext, StilWahl(stil.name, variante.name, akzent.name), zettel)
+                        val f = k.flaeche.farbe
+                        val name = "${stil.name} ${variante.name} ${akzent.name} Zettel=$zettel"
+                        assertTrue(ColorUtils.calculateContrast(k.text, f) >= 4.5, "$name: Schrift")
+                        assertTrue(ColorUtils.calculateContrast(ColorUtils.compositeColors(k.neben, f), f) >= 4.5, "$name: Nebentext")
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun grauenZettelFolgtDemAkzent() {
+        val akzente = FoodyStil.GRAUEN.akzente.map {
+            kartenAussehen(kontext, StilWahl(FoodyStil.GRAUEN.name, "IMMERSIV", it.name), zettel = true).akzent
+        }
+        assertEquals(akzente.size, akzente.toSet().size, "jeder Akzent eine eigene Tinte")
+        akzente.forEach { assertTrue(ColorUtils.calculateContrast(it, ZETTEL) >= 4.5, "Akzent als Text auf dem Zettel") }
     }
 }

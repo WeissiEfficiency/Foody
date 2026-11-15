@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.util.TypedValue
 import android.widget.RemoteViews
 import androidx.annotation.ColorInt
@@ -38,8 +39,6 @@ internal data class EintragenAussehen(
     val schrift: String?,
 )
 
-private const val TINTE = 0xFF1B1A2E.toInt()
-
 internal fun eintragenAussehen(context: Context, wahl: StilWahl): EintragenAussehen {
     val k = kartenAussehen(context, wahl)
     val imm = k.immersiv
@@ -52,23 +51,23 @@ internal fun eintragenAussehen(context: Context, wahl: StilWahl): EintragenAusse
             k.flaeche, k.text, k.neben, k.akzent, 1.5f, k.flaeche.farbe, k.akzent, false, titel("EINTRAGEN"), fuss, "serif",
         )
         FoodyStil.ANIME -> EintragenAussehen(
-            k.flaeche.copy(farbe = 0xFFFFE45C.toInt()), TINTE, TINTE, TINTE, 2.5f, 0xFFFFFFFF.toInt(), TINTE, false,
+            k.flaeche.copy(farbe = ANIME_GELB), TINTE, TINTE, TINTE, 2.5f, Color.WHITE, TINTE, false,
             titel("EINTRAGEN!"), fuss, "sans-serif-black",
         )
         FoodyStil.EDO -> EintragenAussehen(
-            Flaeche(0xFF231F1A.toInt(), null, 0f, 18f, false), 0xFFF6EFDF.toInt(), 0xFFB5A88E.toInt(), null, 0f, k.akzent,
-            0xFFFFFFFF.toInt(), false, "Eintragen", fuss, "serif",
+            Flaeche(Entwuerfe.edo.text, null, 0f, 18f, false), Entwuerfe.edo.glas, 0xFFB5A88E.toInt(), null, 0f, k.akzent,
+            Color.WHITE, false, "Eintragen", fuss, "serif",
         )
         FoodyStil.BAYRISCH -> EintragenAussehen(
-            Flaeche(k.akzent, 0xFF2B1E14.toInt(), 2f, 22f, false), 0xFFFFFFFF.toInt(), 0xE6FFFFFF.toInt(), 0xFF2B1E14.toInt(), 2f,
-            0xFFFFFFFF.toInt(), k.akzent, false, titel("Eitragn"), fuss, "serif",
+            Flaeche(k.akzent, Entwuerfe.bayrisch.text, 2f, 22f, false), Color.WHITE, 0xE6FFFFFF.toInt(), Entwuerfe.bayrisch.text, 2f,
+            Color.WHITE, k.akzent, false, titel("Eitragn"), fuss, "serif",
         )
         FoodyStil.GRAUEN -> EintragenAussehen(
             k.flaeche, k.text, k.neben, k.akzent, 1f, k.flaeche.farbe, k.akzent, false, titel("Notieren"), fuss, "serif",
         )
         FoodyStil.KREUZER -> EintragenAussehen(
-            Flaeche(k.akzent, null, 0f, 22f, false), 0xFF1A1206.toInt(), 0xFF1A1206.toInt(), 0xFF1A1206.toInt(), 2f, k.akzent,
-            0xFF1A1206.toInt(), true, titel("Proviant erfassen"), if (imm) fuss.uppercase() else fuss, "sans-serif-condensed",
+            Flaeche(k.akzent, null, 0f, 22f, false), AUF_AMBER, AUF_AMBER, AUF_AMBER, 2f, k.akzent,
+            AUF_AMBER, true, titel("Proviant erfassen"), if (imm) fuss.uppercase() else fuss, "sans-serif-condensed",
         )
     }
 }

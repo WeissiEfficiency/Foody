@@ -14,7 +14,8 @@ import androidx.core.graphics.createBitmap
  * und der Rautenstreifen (Bayrisch). Maße in dp, gezeichnet in der Dichte des Geräts.
  */
 
-private fun Context.px(dp: Float) = dp * resources.displayMetrics.density
+/** [dp] in Pixel des Geräts. */
+internal fun Context.px(dp: Float) = dp * resources.displayMetrics.density
 
 /** Ring mit [anteil] (0 bis 1, darüber voll) auf der [spur]; [breite] ist die Strichstärke. */
 internal fun ringBild(context: Context, groesse: Float, anteil: Float, @ColorInt spur: Int, @ColorInt farbe: Int, breite: Float): Bitmap {

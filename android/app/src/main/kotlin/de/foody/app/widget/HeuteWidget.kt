@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
@@ -99,19 +100,15 @@ internal fun kalorienRest(d: HeuteDaten): Pair<String, String> {
 /** Ring je Stil: Spur, Farbe und Strichstärke wie in den Entwürfen. */
 private data class RingFarben(@ColorInt val spur: Int, @ColorInt val farbe: Int, val breite: Float)
 
-private val HOLO = 0xFF5CE1FF.toInt()
-
 private fun ringFarben(k: KartenAussehen): RingFarben = when (k.stil) {
     FoodyStil.MILCHGLAS -> RingFarben(ColorUtils.setAlphaComponent(k.text, 0x33), k.text, 10f)
-    FoodyStil.SAGE -> RingFarben(0xFF5A4F38.toInt(), k.akzent, 5f)
-    FoodyStil.ANIME -> RingFarben(0xFFF2EEF4.toInt(), k.akzent, 12f)
+    FoodyStil.SAGE -> RingFarben(Entwuerfe.sage.kante, k.akzent, 5f)
+    FoodyStil.ANIME -> RingFarben(ANIME_SPUR, k.akzent, 12f)
     FoodyStil.EDO -> RingFarben(0xFFE2D6BC.toInt(), k.akzent, 9f)
     FoodyStil.BAYRISCH -> RingFarben(0xFFEDE4D0.toInt(), k.akzent, 10f)
     FoodyStil.GRAUEN -> RingFarben(k.linie, k.akzent, 6f)
     FoodyStil.KREUZER -> RingFarben(k.linie, HOLO, 8f)
 }
-
-private fun Context.px(dp: Float) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, resources.displayMetrics).toInt()
 
 /** Ring mit Zahl und Wort darunter. */
 private fun RemoteViews.ring(context: Context, k: KartenAussehen, groesse: Float, anteil: Float, zahl: String, unter: String) {
@@ -141,7 +138,7 @@ private fun RemoteViews.knopf(
     setTextColor(name, schrift)
     setColorStateList(rahmen, "setBackgroundTintList", ColorStateList.valueOf(rand ?: fuellung))
     setColorStateList(name, "setBackgroundTintList", ColorStateList.valueOf(fuellung))
-    val r = if (rand != null) context.px(breite) else 0
+    val r = if (rand != null) context.px(breite).toInt() else 0
     setViewPadding(rahmen, r, r, r, r)
     setViewOutlinePreferredRadius(rahmen, radius, dp)
     setViewOutlinePreferredRadius(name, (radius - if (rand != null) breite else 0f).coerceAtLeast(0f), dp)
@@ -206,15 +203,15 @@ fun heuteAnsicht(context: Context, d: HeuteDaten, wahl: StilWahl): RemoteViews =
             setTextViewText(R.id.widget_info, listOfNotNull(zeile, n?.mahlzeit?.zeitMinuten?.let { "$it Min." }).joinToString(" · "))
             if (k.stil != FoodyStil.ANIME) {
                 setViewVisibility(R.id.widget_balken, View.VISIBLE)
-                val (spur, rand) = if (k.stil == FoodyStil.SAGE) k.flaeche.farbe to 0xFF5A4F38.toInt() else ColorUtils.setAlphaComponent(k.text, 0x33) to null
+                val (spur, rand) = if (k.stil == FoodyStil.SAGE) k.flaeche.farbe to Entwuerfe.sage.kante else ColorUtils.setAlphaComponent(k.text, 0x33) to null
                 setImageViewBitmap(R.id.widget_balken, balkenBild(context, 240f, 6f, zielAnteil(d), spur, k.akzent, rand))
             } else {
                 // Anime: Marke als schwarze Pille
                 setInt(R.id.widget_marke, "setBackgroundResource", R.drawable.widget_form)
                 setColorStateList(R.id.widget_marke, "setBackgroundTintList", ColorStateList.valueOf(k.text))
                 setViewOutlinePreferredRadius(R.id.widget_marke, 99f, TypedValue.COMPLEX_UNIT_DIP)
-                setViewPadding(R.id.widget_marke, context.px(10f), context.px(2f), context.px(10f), context.px(2f))
-                setTextColor(R.id.widget_marke, 0xFFFFFFFF.toInt())
+                setViewPadding(R.id.widget_marke, context.px(10f).toInt(), context.px(2f).toInt(), context.px(10f).toInt(), context.px(2f).toInt())
+                setTextColor(R.id.widget_marke, Color.WHITE)
             }
             knoepfe(context, k, n)
         }
@@ -243,15 +240,14 @@ private data class Art(
 private fun RemoteViews.knoepfe(context: Context, k: KartenAussehen, n: NaechsteMahlzeit?) {
     setViewVisibility(R.id.widget_knoepfe, View.VISIBLE)
     val imm = k.immersiv
-    val tinte = 0xFF1B1A2E.toInt()
     val a = when (k.stil) {
         FoodyStil.SAGE -> Art(
             if (imm) "KOCHEN" else "Kochen", if (imm) "EINTRAGEN" else "Eintragen", k.flaeche.farbe, k.flaeche.farbe, k.text,
-            k.akzent, 0xFF5A4F38.toInt(), 1f, 0f,
+            k.akzent, Entwuerfe.sage.kante, 1f, 0f,
         )
         FoodyStil.ANIME -> Art(
-            if (imm) "Kochen ▶" else "Kochen", if (imm) "+ Eintragen" else "Eintragen", 0xFFFFE45C.toInt(), 0xFFFFFFFF.toInt(), tinte,
-            tinte, tinte, 2.5f, 18f,
+            if (imm) "Kochen ▶" else "Kochen", if (imm) "+ Eintragen" else "Eintragen", ANIME_GELB, Color.WHITE, TINTE,
+            TINTE, TINTE, 2.5f, 18f,
         )
         else -> Art("Kochen", "Eintragen", k.text, k.text, k.flaeche.farbe, null, null, 0f, 18f)
     }
