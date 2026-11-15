@@ -39,8 +39,10 @@ import de.foody.core.designsystem.komponenten.RezeptkarteGross
 import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.komponenten.SyncAnzeige
 import de.foody.core.designsystem.komponenten.SyncStatus
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.kcalText
 import de.foody.core.designsystem.komponenten.rezeptBild
+import de.foody.core.designsystem.komponenten.slotName
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende

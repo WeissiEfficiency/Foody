@@ -22,6 +22,7 @@ import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.Suchfeld
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.domain.Diet
@@ -32,10 +33,7 @@ private val DIAETEN = listOf(
     Diet.LOW_CARB to "Low Carb", Diet.LIGHT to "Leicht",
 )
 
-private val MAHLZEITEN = listOf(
-    Mahlzeit.FRUEHSTUECK to "Frühstück", Mahlzeit.MITTAGESSEN to "Mittagessen", Mahlzeit.ABENDESSEN to "Abendessen",
-    Mahlzeit.SNACK to "Snack",
-)
+private val MAHLZEITEN = listOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.ABENDESSEN, Mahlzeit.SNACK).map { it to it.anzeigename() }
 
 /** Kopf wie im Entwurf: Überzeile mit der Anzahl, Titel, runder „+“ (neues Rezept oder Markdown importieren). */
 @Composable

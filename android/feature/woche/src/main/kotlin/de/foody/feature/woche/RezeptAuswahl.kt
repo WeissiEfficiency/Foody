@@ -26,6 +26,7 @@ import de.foody.core.designsystem.komponenten.BlattTitel
 import de.foody.core.designsystem.komponenten.FoodyTextfeld
 import de.foody.core.designsystem.komponenten.WahlZeile
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.slotName
 import de.foody.core.designsystem.komponenten.zeilenImStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.domain.Mahlzeit
@@ -51,7 +52,7 @@ internal fun RezeptAuswahlBlatt(mahlzeit: String, karten: List<RezeptKarte>, onW
             Modifier.padding(horizontal = FoodyAbstaende.s4).padding(bottom = FoodyAbstaende.s4),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
         ) {
-            val titel = "${mahlzeitAnzeige(mahlzeit)}: Rezept wählen"
+            val titel = "${slotName(mahlzeit)}: Rezept wählen"
             val imStil = zeilenImStil()
             if (imStil) BlattTitel(titel) else Text(titel, style = MaterialTheme.typography.titleLarge, color = FoodyTheme.farben.text)
             FoodyTextfeld("Rezept suchen", suche) { suche = it }

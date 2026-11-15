@@ -22,10 +22,10 @@ import de.foody.core.data.StilWahl
 import de.foody.core.designsystem.komponenten.kcalRest
 import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalZahl
+import de.foody.core.designsystem.komponenten.slotName
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.NaechsteMahlzeit
-import de.foody.feature.heute.slotName
 import java.util.Locale
 
 /** Widget „Heute“ (4×2): nächste geplante Mahlzeit und kcal des Tages; Fläche öffnet die App. */

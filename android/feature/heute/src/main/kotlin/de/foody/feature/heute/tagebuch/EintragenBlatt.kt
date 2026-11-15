@@ -38,6 +38,8 @@ import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.FoodyTextfeld
 import de.foody.core.designsystem.komponenten.WahlZeile
+import de.foody.core.designsystem.komponenten.anzeigename
+import de.foody.core.designsystem.komponenten.slotName
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.komponenten.vorausgefuelltFarben
 import de.foody.core.designsystem.stil.stilText
@@ -49,8 +51,6 @@ import de.foody.domain.FotoPortion
 import de.foody.domain.Mahlzeit
 import de.foody.domain.Nutrient
 import de.foody.domain.NutritionResult
-import de.foody.feature.heute.anzeigename
-import de.foody.feature.heute.slotName
 import kotlinx.coroutines.launch
 
 /** Test-Tag des Speichern-Knopfs (die Überschrift heißt auch „Eintragen“). */

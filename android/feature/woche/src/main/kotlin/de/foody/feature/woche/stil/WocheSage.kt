@@ -52,6 +52,7 @@ import de.foody.core.data.woche.WochenTag
 import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.slotName
 import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.SageKopf
 import de.foody.core.designsystem.stil.sage.SageNebenknopf
@@ -59,7 +60,6 @@ import de.foody.core.designsystem.stil.sage.SageRaute
 import de.foody.core.designsystem.stil.sage.sageHell
 import de.foody.core.designsystem.stil.sage.sageLinieUnten
 import de.foody.core.designsystem.token.FoodyBreiten
-import de.foody.feature.woche.mahlzeitAnzeige
 import de.foody.feature.woche.wochenTitel
 import java.time.LocalDate
 import java.util.Locale
@@ -235,7 +235,7 @@ private fun Gericht(e: PlanEintrag, onKlick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Column(Modifier.weight(1f)) {
-            Text(mahlzeitAnzeige(e.mahlzeit).uppercase(Locale.GERMAN), style = Sage.titel(10.5f, 0.14f), color = f.nebentext)
+            Text(slotName(e.mahlzeit).uppercase(Locale.GERMAN), style = Sage.titel(10.5f, 0.14f), color = f.nebentext)
             Text(e.rezeptName, style = Sage.text(19f), color = f.text)
         }
         Text(if (e.gekocht) "✓ gekocht" else "${e.portionen} P.", style = Sage.text(15f), color = if (e.gekocht) f.oliv else f.text)

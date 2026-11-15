@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
@@ -66,7 +67,6 @@ import de.foody.domain.Quantity
 import de.foody.domain.QuantityFormatter
 import de.foody.domain.TagebuchArt
 import de.foody.feature.heute.TAGEBUCH_INHALT
-import de.foody.feature.heute.anzeigename
 import de.foody.feature.heute.tagebuch.TagAbschnitt
 import de.foody.feature.heute.tagebuch.TagZustand
 import de.foody.feature.heute.tagebuch.werte

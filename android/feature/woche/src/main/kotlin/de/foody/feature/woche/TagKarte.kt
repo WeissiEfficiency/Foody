@@ -33,7 +33,9 @@ import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.Naehrwertbalken
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.slotName
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.domain.Mahlzeit
@@ -97,7 +99,7 @@ internal fun TagKarte(
                 Platz("Mahlzeit planen", onPlus)
             } else {
                 val belegt = tag.eintraege.mapNotNull { Mahlzeit.ausText(it.mahlzeit) }.toSet()
-                TAGES_MAHLZEITEN.filter { it !in belegt }.forEach { m -> Platz("${mahlzeitAnzeige(m)} planen") { onPlatz(m) } }
+                TAGES_MAHLZEITEN.filter { it !in belegt }.forEach { m -> Platz("${m.anzeigename()} planen") { onPlatz(m) } }
                 FoodyKnopf("+ Mahlzeit", onPlus, art = KnopfArt.TEXT)
             }
         }
@@ -112,7 +114,7 @@ private fun EintragZeile(e: PlanEintrag, onKlick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
     ) {
         Column(Modifier.weight(1f)) {
-            Augenbraue(mahlzeitAnzeige(e.mahlzeit))
+            Augenbraue(slotName(e.mahlzeit))
             Text(e.rezeptName, style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.text)
         }
         if (e.gekocht) {

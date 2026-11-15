@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.anime.animeSchatten
@@ -47,7 +48,6 @@ import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
 import de.foody.domain.Nutrient
 import de.foody.domain.NutritionResult
 import de.foody.feature.rezepte.detail.DetailZustand
-import de.foody.feature.rezepte.detail.mahlzeitName
 import de.foody.feature.rezepte.detail.naehrwertZeilen
 import de.foody.feature.rezepte.detail.zeit
 import java.util.Locale
@@ -236,7 +236,7 @@ internal fun KreuzerHeld(z: DetailZustand.Da) {
 /** „SYSTEM · ABENDESSEN · FAVORIT“: die Kopfzeile der Karte. */
 internal fun kreuzerSektor(z: DetailZustand.Da): String =
     listOfNotNull(
-        "SYSTEM", z.voll.einordnung.mahlzeiten.minByOrNull { it.ordinal }?.let(::mahlzeitName), if (z.voll.rezept.favorite) "FAVORIT" else null,
+        "SYSTEM", z.voll.einordnung.mahlzeiten.minByOrNull { it.ordinal }?.anzeigename(), if (z.voll.rezept.favorite) "FAVORIT" else null,
     ).joinToString(" · ").uppercase(Locale.GERMAN)
 
 @Composable

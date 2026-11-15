@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.domain.Mahlzeit
 
@@ -38,7 +39,7 @@ internal fun MahlzeitWahl(titel: String, onWahl: (String) -> Unit, onAbbrechen: 
                     verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
                 ) {
                     listOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.SNACK, Mahlzeit.ABENDESSEN).forEach { m ->
-                        FoodyChip(mahlzeitAnzeige(m), ausgewaehlt = false, onKlick = { onWahl(m.name) })
+                        FoodyChip(m.anzeigename(), ausgewaehlt = false, onKlick = { onWahl(m.name) })
                     }
                 }
                 OutlinedTextField(

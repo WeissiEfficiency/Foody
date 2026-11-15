@@ -35,6 +35,7 @@ import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.LeererZustandZeile
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.kcalStand
 import de.foody.core.designsystem.komponenten.kcalText
@@ -43,7 +44,6 @@ import de.foody.core.designsystem.komponenten.makroSatz
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
-import de.foody.feature.heute.anzeigename
 
 /**
  * Tagesbilanz wie im Entwurf: Ring mit den kcal (mit Tagesziel als Anteil, sonst voll), daneben Eiweiß, KH und Fett

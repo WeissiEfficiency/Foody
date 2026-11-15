@@ -81,6 +81,7 @@ import de.foody.core.designsystem.komponenten.FoodyFrage
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncAnzeige
 import de.foody.core.designsystem.komponenten.SyncStatus
+import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.balkenanteile
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.kcalStand
@@ -98,7 +99,6 @@ import de.foody.feature.heute.HeuteAktionen
 import de.foody.feature.heute.HeuteRahmen
 import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.TagebuchHeute
-import de.foody.feature.heute.anzeigename
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
