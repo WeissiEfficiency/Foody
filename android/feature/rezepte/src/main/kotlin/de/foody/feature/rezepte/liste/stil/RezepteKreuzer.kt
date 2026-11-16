@@ -35,6 +35,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.KreuzerKnopf
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
+import de.foody.core.designsystem.stil.titelGroesse
 import java.util.Locale
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -55,12 +56,11 @@ private val LAGE = listOf(0.18f to 0.24f, 0.5f to 0.16f, 0.84f to 0.33f, 0.65f t
 @Composable
 internal fun KreuzerKopf(n: Int, neu: @Composable () -> Unit) {
     val f = FoodyTheme.farben
-    val k = LocalDensity.current.fontScale
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Column(Modifier.align(Alignment.Bottom).padding(end = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(if (n > 0) "NAVIGATIONSARCHIV · $n SYSTEME" else "NAVIGATIONSARCHIV", style = Kreuzer.mono(12f, 0.08f), color = f.nebentext)
             // Der Titel wächst mit der Systemschrift nur bis 130 %
-            Text("Sternkarte", Modifier.semantics { heading() }, style = Kreuzer.titel(28f * min(k, 1.3f) / k), color = f.text)
+            Text("Sternkarte", Modifier.semantics { heading() }, style = Kreuzer.titel(titelGroesse(28f)), color = f.text)
         }
         Box(Modifier.align(Alignment.Bottom)) { neu() }
     }

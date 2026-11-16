@@ -70,6 +70,7 @@ import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
+import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
 import de.foody.domain.zielAnteil
@@ -248,11 +249,9 @@ internal fun TagebuchStil(
 private fun Kopf(stil: FoodyStil, art: TagebuchArt) {
     val f = FoodyTheme.farben
     val d = LocalDensity.current
-    val k = d.fontScale
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         art.unter?.let { Text(it, style = art.klein(12.5f), color = f.nebentext) }
-        // Der Titel wächst mit der Systemschrift nur bis 130 %
-        val groesse = (if (stil == FoodyStil.ANIME) 36f else 30f) * min(k, 1.3f) / k
+        val groesse = titelGroesse(if (stil == FoodyStil.ANIME) 36f else 30f)
         Text(
             art.titel,
             Modifier.semantics {

@@ -40,6 +40,7 @@ import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.anime.animeSchatten
+import de.foody.core.designsystem.stil.titelGroesse
 import kotlin.math.min
 
 /*
@@ -56,7 +57,6 @@ private val KOEPFE = listOf(Color(0xFFFFE45C), Color(0xFF3EC6E0), Color(0xFFFFB2
 internal fun AnimeKopf(n: Int, neu: @Composable () -> Unit) {
     val f = FoodyTheme.farben
     val d = LocalDensity.current
-    val k = d.fontScale
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(Modifier.align(Alignment.CenterVertically).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             // Der große Titel wächst mit der Systemschrift nur bis 130 %
@@ -66,7 +66,7 @@ internal fun AnimeKopf(n: Int, neu: @Composable () -> Unit) {
                     heading()
                     contentDescription = "Rezepte"
                 },
-                style = Anime.titel(36f * min(k, 1.3f) / k, 0f).copy(
+                style = Anime.titel(titelGroesse(36f), 0f).copy(
                     textGeometricTransform = TextGeometricTransform(skewX = -0.14f),
                     shadow = Shadow(FoodyTheme.stil.zier, Offset(3f * d.density, 3f * d.density), 0f),
                 ),

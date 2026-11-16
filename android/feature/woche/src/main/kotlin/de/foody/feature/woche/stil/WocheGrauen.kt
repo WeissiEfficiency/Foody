@@ -48,6 +48,7 @@ import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
+import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.domain.Mahlzeit
 import kotlin.math.PI
 import kotlin.math.min
@@ -94,7 +95,6 @@ private val TAFEL = listOf(Color(0xFF121B18), Color(0xFF0C1210))
 @Composable
 private fun Kopf(w: WocheDaten, onFuellen: () -> Unit) {
     val f = FoodyTheme.farben
-    val k = LocalDensity.current.fontScale
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Column(Modifier.align(Alignment.Bottom).padding(end = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             w.woche?.let { Text(kwText(it.montag), style = Grauen.maschine(12.5f), color = f.nebentext) }
@@ -105,7 +105,7 @@ private fun Kopf(w: WocheDaten, onFuellen: () -> Unit) {
                     heading()
                     contentDescription = "Woche"
                 },
-                style = Grauen.titel(34f * min(k, 1.3f) / k, 0.02f), color = f.text,
+                style = Grauen.titel(titelGroesse(34f), 0.02f), color = f.text,
             )
         }
         if (w.tage.isNotEmpty()) {
@@ -157,7 +157,6 @@ private fun Mond(t: WochenTag, heute: Boolean, an: Boolean, modifier: Modifier, 
     val glut = FoodyTheme.stil.zier
     val leer = t.eintraege.isEmpty()
     val anteil = mondAnteil(t)
-    val k = LocalDensity.current.fontScale
     Column(modifier.tagWahl(t, heute, an, onKlick), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Canvas(Modifier.size(44.dp)) {
             val r = 18.dp.toPx()
@@ -180,7 +179,7 @@ private fun Mond(t: WochenTag, heute: Boolean, an: Boolean, modifier: Modifier, 
             }
         }
         // Das Kürzel wächst nur bis 130 %, der Bogen hat feste Maße
-        Text(wochentagKurz(t.datum), style = Grauen.titel(13f * min(k, 1.3f) / k, 0.06f), color = if (an) f.text else f.nebentext)
+        Text(wochentagKurz(t.datum), style = Grauen.titel(titelGroesse(13f), 0.06f), color = if (an) f.text else f.nebentext)
     }
 }
 

@@ -35,6 +35,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.EdoKnopf
 import de.foody.core.designsystem.stil.edo.edoShu
+import de.foody.core.designsystem.stil.titelGroesse
 import kotlin.math.min
 
 /*
@@ -47,12 +48,11 @@ import kotlin.math.min
 @Composable
 internal fun EdoKopf(n: Int, neu: @Composable () -> Unit) {
     val f = FoodyTheme.farben
-    val k = LocalDensity.current.fontScale
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Column(Modifier.align(Alignment.Bottom).padding(end = 8.dp)) {
             Text(if (n > 0) "FÄCHER · $n REZEPTE" else "FÄCHER", style = Edo.kopf(), color = f.nebentext)
             // Der Titel wächst mit der Systemschrift nur bis 130 %
-            Text("Rezepte", Modifier.semantics { heading() }, style = Edo.titel(32f * min(k, 1.3f) / k), color = f.text)
+            Text("Rezepte", Modifier.semantics { heading() }, style = Edo.titel(titelGroesse(32f)), color = f.text)
         }
         Box(Modifier.align(Alignment.Bottom)) { neu() }
     }

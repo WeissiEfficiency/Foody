@@ -45,6 +45,7 @@ import de.foody.core.designsystem.stil.edo.edoShu
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
+import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.domain.Nutrient
 import de.foody.domain.NutritionResult
 import de.foody.feature.rezepte.detail.DetailZustand
@@ -67,13 +68,6 @@ internal fun minuten(z: DetailZustand.Da): Int? =
     listOfNotNull(z.voll.rezept.prepMinutes, z.voll.rezept.cookMinutes).takeIf { it.isNotEmpty() }?.sum()
 
 private fun anfang(z: DetailZustand.Da) = z.voll.rezept.name.trim().firstOrNull()?.uppercase() ?: "?"
-
-/** Titelgröße, die mit der Systemschrift nur bis 130 % wächst. */
-@Composable
-private fun begrenzt(groesse: Float): Float {
-    val k = LocalDensity.current.fontScale
-    return groesse * min(k, 1.3f) / k
-}
 
 /** R: Comic-Panel mit Speedlines und Anfangsbuchstabe, Pille mit Einordnung, schräger Name, Werte als Abzeichen. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -107,7 +101,7 @@ internal fun AnimeHeld(z: DetailZustand.Da) {
         }
         Text(
             r.name, Modifier.semantics { heading() },
-            style = Anime.titel(begrenzt(26f), 0f).copy(textGeometricTransform = TextGeometricTransform(skewX = -0.1f)), color = f.text,
+            style = Anime.titel(titelGroesse(26f), 0f).copy(textGeometricTransform = TextGeometricTransform(skewX = -0.1f)), color = f.text,
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             minuten(z)?.let { Abzeichen("ZEIT", "$it′", Anime.gelb) }
@@ -141,7 +135,7 @@ internal fun EdoHeld(z: DetailZustand.Da) {
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             einordnungGross(z)?.let { Text(it, style = Edo.kopf(), color = f.nebentext) }
-            Text(r.name, Modifier.semantics { heading() }, style = Edo.titel(begrenzt(26f)), color = f.text)
+            Text(r.name, Modifier.semantics { heading() }, style = Edo.titel(titelGroesse(26f)), color = f.text)
             val angaben = listOfNotNull(angabenZeile(z), if (r.favorite) "Favorit" else null).joinToString(" · ")
             if (angaben.isNotEmpty()) Text(angaben, style = Edo.text(14f), color = f.nebentext)
         }
@@ -184,7 +178,7 @@ internal fun BayrischHeld(z: DetailZustand.Da) {
             )
             if (r.favorite) Text("♥", Modifier.clearAndSetSemantics { }, style = Bayrisch.titel(22f), color = Color(0xFFB8322A))
         }
-        Text(r.name, Modifier.semantics { heading() }, style = Bayrisch.titel(begrenzt(28f)), color = f.text)
+        Text(r.name, Modifier.semantics { heading() }, style = Bayrisch.titel(titelGroesse(28f)), color = f.text)
         angabenZeile(z)?.let { Text(it, style = Bayrisch.text(15f), color = f.nebentext) }
     }
 }
@@ -206,7 +200,7 @@ internal fun GrauenHeld(z: DetailZustand.Da) {
     ) {
         val band = listOfNotNull(einordnungZeile(z), if (r.favorite) "♦ Favorit" else null).joinToString(" · ")
         if (band.isNotEmpty()) Text(band, style = Grauen.text(14f, kursiv = true), color = TINTE_NEBEN)
-        Text(r.name, Modifier.semantics { heading() }, style = Grauen.name(begrenzt(26f)), color = TINTE)
+        Text(r.name, Modifier.semantics { heading() }, style = Grauen.name(titelGroesse(26f)), color = TINTE)
         angabenZeile(z)?.let { Text(it, style = Grauen.text(15f), color = TINTE_NEBEN) }
     }
 }
@@ -224,7 +218,7 @@ internal fun KreuzerHeld(z: DetailZustand.Da) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(kreuzerSektor(z), style = Kreuzer.mono(11.5f, 0.1f), color = f.primaer)
-        Text(r.name, Modifier.semantics { heading() }, style = Kreuzer.titel(begrenzt(24f)), color = f.text)
+        Text(r.name, Modifier.semantics { heading() }, style = Kreuzer.titel(titelGroesse(24f)), color = f.text)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Kennwert("FLUGZEIT", zeit(r.prepMinutes, r.cookMinutes) ?: "–", Modifier.weight(1f))
             Kennwert("ENERGIE", kcalZahl(z)?.let { "$it kcal" } ?: "–", Modifier.weight(1f))

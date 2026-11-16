@@ -51,6 +51,7 @@ import de.foody.core.designsystem.animationenErlaubt
 import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.anime.AnimeKnopf
 import de.foody.core.designsystem.stil.anime.animeSchatten
+import de.foody.core.designsystem.stil.titelGroesse
 import kotlin.math.min
 
 /**
@@ -79,7 +80,6 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
     val f = FoodyTheme.farben
     val akzent = FoodyTheme.stil.zier
     val d = LocalDensity.current
-    val k = d.fontScale
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             // Der große Titel wächst mit der Systemschrift nur bis 130 %
@@ -89,7 +89,7 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
                     heading()
                     contentDescription = "Einkauf"
                 },
-                style = Anime.titel(38f * min(k, 1.3f) / k, 0f).copy(
+                style = Anime.titel(titelGroesse(38f), 0f).copy(
                     textGeometricTransform = TextGeometricTransform(skewX = -0.14f),
                     shadow = Shadow(akzent, Offset(3f * d.density, 3f * d.density), 0f),
                 ),

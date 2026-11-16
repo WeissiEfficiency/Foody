@@ -33,6 +33,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
 import de.foody.core.designsystem.stil.grauen.grauenHell
+import de.foody.core.designsystem.stil.titelGroesse
 import kotlin.math.min
 
 /*
@@ -54,14 +55,13 @@ private val BRETT = Color(0xFF2B2117)
 @Composable
 internal fun GrauenKopf(n: Int, neu: @Composable () -> Unit) {
     val f = FoodyTheme.farben
-    val k = LocalDensity.current.fontScale
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Column(Modifier.align(Alignment.Bottom).padding(end = 8.dp)) {
             Text("Ein Regal, das niemand aufgestellt hat", style = Grauen.text(14f, kursiv = true), color = f.nebentext)
             // Der Titel wächst mit der Systemschrift nur bis 130 %
             Text(
                 "Die Bibliothek", Modifier.semantics { heading() },
-                style = Grauen.titel(30f * min(k, 1.3f) / k), color = grauenHell(),
+                style = Grauen.titel(titelGroesse(30f)), color = grauenHell(),
             )
             if (n > 0) Text("$n Bände", style = Grauen.text(14f), color = f.nebentext)
         }

@@ -42,6 +42,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.animationenErlaubt
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
+import de.foody.core.designsystem.stil.titelGroesse
 import java.time.temporal.IsoFields
 import kotlin.math.min
 
@@ -91,7 +92,6 @@ private val PERGAMENT_RAND = Color(0xFF8C7A4E)
 @Composable
 private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
     val f = FoodyTheme.farben
-    val k = LocalDensity.current.fontScale
     val gesamt = ansicht.gesamt
     val erledigt = ansicht.erledigt
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -104,7 +104,7 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
                     heading()
                     contentDescription = "Einkauf"
                 },
-                style = Grauen.titel(32f * min(k, 1.3f) / k, 0.02f), color = f.text,
+                style = Grauen.titel(titelGroesse(32f), 0.02f), color = f.text,
             )
         }
         Row(Modifier.align(Alignment.Bottom), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
