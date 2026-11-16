@@ -32,6 +32,7 @@ import de.foody.core.designsystem.komponenten.BlattTitel
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.portionenText
 import de.foody.core.designsystem.komponenten.slotName
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.komponenten.zeilenImStil
@@ -113,7 +114,7 @@ private fun PortionenStil(portionen: Int, onPortionen: (Int) -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
         StilAktion("−", { onPortionen(portionen - 1) }, Modifier.widthIn(min = 48.dp), beschreibung = "Weniger Portionen")
         Text(
-            if (portionen == 1) "1 Portion" else "$portionen Portionen", Modifier.weight(1f),
+            portionenText(portionen), Modifier.weight(1f),
             style = MaterialTheme.typography.titleMedium, color = FoodyTheme.farben.text, textAlign = TextAlign.Center,
         )
         StilAktion("+", { onPortionen(portionen + 1) }, Modifier.widthIn(min = 48.dp), beschreibung = "Mehr Portionen")

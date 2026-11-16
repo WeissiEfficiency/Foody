@@ -41,6 +41,7 @@ import de.foody.core.designsystem.stil.bayrisch.BayrischKnopf
 import de.foody.core.designsystem.stil.edo.EdoKnopf
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
 import de.foody.core.designsystem.stil.kreuzer.KreuzerKnopf
+import de.foody.core.designsystem.stil.szenenStil
 import de.foody.core.designsystem.token.FoodyBreiten
 import java.time.LocalDate
 import java.time.temporal.WeekFields
@@ -55,11 +56,7 @@ import java.time.format.TextStyle as DatumsStil
 internal object WocheSzene {
     /** Der Stil R–V, dessen Szene die Woche zeigt; `null` = keiner (Milchglas, Ruhig, Sage hat ihre eigene). */
     @Composable
-    fun aktuell(): FoodyStil? {
-        val s = FoodyTheme.stil
-        if (s.variante != StilVariante.IMMERSIV) return null
-        return s.stil.takeIf { it != FoodyStil.MILCHGLAS && it != FoodyStil.SAGE }
-    }
+    fun aktuell(): FoodyStil? = szenenStil()
 }
 
 /** Die Szene des Stils [stil] (R–V). */

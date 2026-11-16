@@ -71,7 +71,7 @@ private const val SEGMENTE_HOECHSTENS = 24
 private val KISTE_OFFEN = listOf(Color(0xFF13203A), Color(0xFF0B1426))
 private val KISTE_GELADEN = listOf(Color(0xFF1A1A14), Color(0xFF0E0E0A))
 private val KISTE_RAND = Color(0xFF2A3A58)
-private val SEGMENT_LEER = Color(0xFF1C2A44)
+private val SEGMENT_LEER = Kreuzer.linie
 private val GELADEN_TEXT = Color(0xFF8A8470)
 private val MENGE = Color(0xFF8A97AD)
 

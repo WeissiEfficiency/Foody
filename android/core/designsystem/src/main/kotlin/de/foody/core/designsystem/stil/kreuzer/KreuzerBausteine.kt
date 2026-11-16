@@ -38,6 +38,9 @@ import de.foody.core.designsystem.token.ShareTechMonoFamilie
  * Akzent) für Handlungen, Holo-Blau (`FoodyTheme.stil.zier`) für Anzeigen.
  */
 object Kreuzer {
+    /** Linien und leere Segmente (im Entwurf #1C2A44). */
+    val linie = Color(0xFF1C2A44)
+
     /** Grotesk für Titel und Knöpfe. */
     fun titel(groesse: Float, gewicht: FontWeight = FontWeight.ExtraBold, abstand: Float = 0.02f) = TextStyle(
         fontFamily = Exo2Familie,

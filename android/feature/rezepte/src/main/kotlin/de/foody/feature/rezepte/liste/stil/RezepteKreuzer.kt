@@ -47,7 +47,7 @@ import kotlin.math.roundToInt
  * „Kurs setzen“.
  */
 
-private val LINIE = Color(0xFF1C2A44)
+private val LINIE = Kreuzer.linie
 
 /** Lage der Systeme auf der Karte (Anteil an Breite und Höhe) wie im Entwurf. */
 private val LAGE = listOf(0.18f to 0.24f, 0.5f to 0.16f, 0.84f to 0.33f, 0.65f to 0.6f, 0.26f to 0.68f, 0.85f to 0.88f)

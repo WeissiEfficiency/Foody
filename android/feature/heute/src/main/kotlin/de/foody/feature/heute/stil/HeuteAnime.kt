@@ -65,6 +65,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncStatus
@@ -79,6 +80,7 @@ import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.anime.AnimeKnopf
 import de.foody.core.designsystem.stil.anime.AnimePille
 import de.foody.core.designsystem.stil.anime.animeSchatten
+import de.foody.core.designsystem.stil.svgPfad
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
@@ -168,7 +170,7 @@ private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
 
 /** „Sa · 24.10.“ für das gelbe Abzeichen. */
 internal fun animeDatum(d: LocalDate): String =
-    d.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.GERMAN).removeSuffix(".") + " · ${d.dayOfMonth}.${d.monthValue}."
+    wochentagKurz(d) + " · ${d.dayOfMonth}.${d.monthValue}."
 
 /** Kurzname eines Gerichts für die Sprechblase: „Ofengemüse mit Feta …“ → „Ofengemüse“. */
 internal fun kurzname(titel: String): String = titel.substringBefore(" mit ").substringBefore(" und ").substringBefore(",").trim()
@@ -206,7 +208,7 @@ private fun Reisbaellchen(text: String) {
     val f = FoodyTheme.farben
     val akzent = FoodyTheme.stil.zier
     val pfade = androidx.compose.runtime.remember {
-        val p = { d: String -> PathParser().parsePathString(d).toPath() }
+        val p = ::svgPfad
         Triple(
             p("M46 8C56 8 84 58 84 70c0 10-8 14-38 14S8 80 8 70C8 58 36 8 46 8z"),
             p("M41 57q5 5 10 0"),

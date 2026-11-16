@@ -69,7 +69,7 @@ internal fun WocheAnime(w: WocheDaten, aktionen: WocheSageAktionen, unten: Dp) {
 }
 
 /** Füllfarben der Panels Montag bis Sonntag wie im Entwurf; heute nimmt den Akzent. */
-private val PANEL = listOf(Color.White, Color(0xFF7EE0A8), Color.White, Color(0xFFA98BFF), Color(0xFFFFB23E), Color.White, Color.White)
+private val PANEL = listOf(Color.White, Anime.mint, Color.White, Anime.lila, Anime.orange, Color.White, Color.White)
 private val DREHUNG = listOf(-1f, 1f, -0.5f, 0.5f, -1f, -0.5f, 1.5f)
 
 @OptIn(ExperimentalLayoutApi::class)

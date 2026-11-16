@@ -32,6 +32,9 @@ import de.foody.core.designsystem.token.ZenKakuFamilie
  * Akzent (auch Indigo, Moos oder Ocker), Papier, Holz und Montierung kommen aus dem Entwurf.
  */
 object Edo {
+    /** Linie zwischen den Zeilen (im Entwurf #D8CBAE). */
+    val zeilenLinie = Color(0xFFD8CBAE)
+
     /** Papier des Rollbilds. */
     val papier = Color(0xFFF6EFDF)
 

@@ -86,8 +86,8 @@ internal fun bayrischTagTitel(t: WochenTag, heute: Boolean): String = when {
 /** Wie tief jeder Wimpel an der Kette hängt (dp), Montag bis Sonntag. */
 private val DURCHHANG = listOf(6, 14, 19, 21, 19, 14, 6)
 private val ROT = Color(0xFFB8322A)
-private val CREME = Color(0xFFFBF6EA)
-private val LINIE = Color(0xFFCDBB9C)
+private val CREME = Bayrisch.creme
+private val LINIE = Bayrisch.linie
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

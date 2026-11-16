@@ -32,6 +32,10 @@ import de.foody.core.designsystem.token.UnifrakturFamilie
  * Alegreya Sans. Das Blau ist der gewählte Akzent (auch Grün, Rot oder Braun), Text und Linien das dunkle Braun des Stils.
  */
 object Bayrisch {
+    /** Creme des Papiers (im Entwurf #FBF6EA) und die Linie darauf (#CDBB9C). */
+    val creme = Color(0xFFFBF6EA)
+    val linie = Color(0xFFCDBB9C)
+
     /** Alegreya für Titel, Überschriften und Knöpfe. */
     fun titel(groesse: Float, gewicht: FontWeight = FontWeight.Bold) =
         TextStyle(fontFamily = AlegreyaFamilie, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.15f).sp)

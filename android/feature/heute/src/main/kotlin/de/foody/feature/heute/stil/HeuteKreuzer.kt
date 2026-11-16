@@ -86,6 +86,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.foody.core.data.heute.GeplanteMahlzeit
+import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.animationenErlaubt
 import de.foody.core.designsystem.komponenten.FoodyFrage
@@ -182,7 +183,7 @@ private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
 
 /** „SA 24.10. · LOGBUCH 297“: Wochentag, Datum und der Tag im Jahr als Logbuchnummer. */
 internal fun logbuchZeile(d: LocalDate): String {
-    val tag = d.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.GERMAN).removeSuffix(".").uppercase(Locale.GERMAN)
+    val tag = wochentagKurz(d).uppercase(Locale.GERMAN)
     return "$tag ${d.dayOfMonth}.${d.monthValue}. · LOGBUCH ${d.dayOfYear}"
 }
 

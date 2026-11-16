@@ -59,6 +59,7 @@ import de.foody.core.designsystem.stil.sage.SageNebenknopf
 import de.foody.core.designsystem.stil.sage.SageRaute
 import de.foody.core.designsystem.stil.sage.sageHell
 import de.foody.core.designsystem.stil.sage.sageLinieUnten
+import de.foody.core.designsystem.stil.svgPfad
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.woche.wochenTitel
 import java.time.LocalDate
@@ -242,12 +243,11 @@ private fun Gericht(e: PlanEintrag, onKlick: () -> Unit) {
     }
 }
 
-private val FEUER = Color(0xFFF59E0B)
+private val FEUER = Sage.feuer
 
 private class KartenPfade {
-    private fun pfad(d: String) = PathParser().parsePathString(d).toPath()
-    val fluss = pfad("M0 120c40 10 60-10 100 0s70 30 120 20 80-30 128-20")
-    val berge = pfad("M22 60l10-14 10 14M36 64l8-11 8 11M280 300l12-16 12 16M298 306l9-12 9 12M180 330l10-13 10 13M120 40l9-12 9 12")
-    val weg = pfad("M44 344C70 330 96 318 112 302S80 240 72 224 130 190 160 182 236 226 252 222 290 160 302 142 250 80 222 62")
-    val nadel = pfad("M316 338l3 12-3 12-3-12z")
+    val fluss = svgPfad("M0 120c40 10 60-10 100 0s70 30 120 20 80-30 128-20")
+    val berge = svgPfad("M22 60l10-14 10 14M36 64l8-11 8 11M280 300l12-16 12 16M298 306l9-12 9 12M180 330l10-13 10 13M120 40l9-12 9 12")
+    val weg = svgPfad("M44 344C70 330 96 318 112 302S80 240 72 224 130 190 160 182 236 226 252 222 290 160 302 142 250 80 222 62")
+    val nadel = svgPfad("M316 338l3 12-3 12-3-12z")
 }

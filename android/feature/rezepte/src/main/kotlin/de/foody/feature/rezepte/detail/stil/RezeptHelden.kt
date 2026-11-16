@@ -183,9 +183,9 @@ internal fun BayrischHeld(z: DetailZustand.Da) {
     }
 }
 
-private val PERGAMENT = Color(0xFFD9CDAE)
-private val TINTE = Color(0xFF2A2418)
-private val TINTE_NEBEN = Color(0xFF4A4030)
+private val PERGAMENT = Grauen.pergament
+private val TINTE = Grauen.tinte
+private val TINTE_NEBEN = Grauen.tinteNeben
 
 /** U: eine Pergamentseite, die im Dunkel glüht: Band, Name, Angaben. */
 @Composable

@@ -54,6 +54,7 @@ import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.RezeptPlatzhalter
 import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.komponenten.anzeigename
+import de.foody.core.designsystem.komponenten.portionenText
 import de.foody.core.designsystem.komponenten.rezeptBild
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
@@ -204,7 +205,7 @@ private fun Schritt(nummer: Int, text: String) {
 private fun Portionen(n: Int, onSchritt: (Boolean) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = { onSchritt(false) }) { Icon(Icons.Outlined.Remove, contentDescription = "Weniger Portionen", tint = FoodyTheme.farben.text) }
-        Text(if (n == 1) "1 Portion" else "$n Portionen", style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.text)
+        Text(portionenText(n), style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.text)
         IconButton(onClick = { onSchritt(true) }) { Icon(Icons.Outlined.Add, contentDescription = "Mehr Portionen", tint = FoodyTheme.farben.text) }
     }
 }

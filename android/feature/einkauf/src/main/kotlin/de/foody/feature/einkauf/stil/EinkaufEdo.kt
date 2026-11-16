@@ -41,6 +41,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.EdoKnopf
 import de.foody.core.designsystem.stil.edo.edoShu
+import de.foody.core.designsystem.stil.svgPfad
 import de.foody.core.designsystem.stil.titelGroesse
 import kotlin.math.min
 
@@ -70,7 +71,7 @@ internal fun edoAbteilung(name: String): String = when (name) {
 }
 
 /** Linie zwischen den Zeilen (Papierfaser). */
-private val ZEILENLINIE = Color(0xFFD8CBAE)
+private val ZEILENLINIE = Edo.zeilenLinie
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -158,7 +159,7 @@ private fun Enso(gekauft: Boolean, shu: Color) {
     Canvas(Modifier.size(26.dp)) {
         val s = size.width / 26f
         if (gekauft) {
-            val pfad = PathParser().parsePathString("M21 8c-3-5-12-5-16 1-3 6 1 13 8 13 6 0 10-5 9-10").toPath()
+            val pfad = svgPfad("M21 8c-3-5-12-5-16 1-3 6 1 13 8 13 6 0 10-5 9-10")
             scale(s, Offset.Zero) {
                 drawPath(pfad, shu, style = Stroke(3.2f, cap = StrokeCap.Round))
             }

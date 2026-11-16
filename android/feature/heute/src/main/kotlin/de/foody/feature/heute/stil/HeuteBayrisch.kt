@@ -74,6 +74,7 @@ import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.bayrisch.BayrischKnopf
 import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
+import de.foody.core.designsystem.stil.svgPfad
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
@@ -244,7 +245,7 @@ private fun Maibaum(t: TagebuchHeute, modifier: Modifier) {
         content = {
             Text(
                 ziel?.let { "Ziel ${ganzzahlDeutsch(it)}" } ?: "Ziel –",
-                Modifier.background(Color(0xFFFBF6EA).copy(alpha = 0.9f), RoundedCornerShape(4.dp)).padding(horizontal = 4.dp),
+                Modifier.background(Bayrisch.creme.copy(alpha = 0.9f), RoundedCornerShape(4.dp)).padding(horizontal = 4.dp),
                 style = Bayrisch.titel(12f, FontWeight.ExtraBold), color = f.text, textAlign = TextAlign.Center,
             )
             abschnitte.forEach { Schild(it, blau) }
@@ -252,7 +253,7 @@ private fun Maibaum(t: TagebuchHeute, modifier: Modifier) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     kcalText(t.summe.kcal, t.summe.vollstaendig),
-                    Modifier.fillMaxWidth().background(Color(0xFFFBF6EA), RoundedCornerShape(6.dp)).border(1.5.dp, f.text, RoundedCornerShape(6.dp))
+                    Modifier.fillMaxWidth().background(Bayrisch.creme, RoundedCornerShape(6.dp)).border(1.5.dp, f.text, RoundedCornerShape(6.dp))
                         .padding(vertical = 1.dp),
                     style = Bayrisch.titel(15f, FontWeight.ExtraBold), color = f.text, textAlign = TextAlign.Center,
                 )
@@ -465,7 +466,7 @@ private fun Verweis(text: String, beschreibung: String, onKlick: () -> Unit) {
 @Composable
 private fun Landschaft(modifier: Modifier) {
     val pfade = remember {
-        val p = { d: String -> PathParser().parsePathString(d).toPath() }
+        val p = ::svgPfad
         listOf(
             p("M0 640L50 590 80 610 130 540 170 580 210 530 260 590 300 560 340 600 390 570V844H0z"),
             p("M126 548l4-8 6 9-5-2zM206 538l4-8 6 9-5-2z"),
@@ -475,7 +476,7 @@ private fun Landschaft(modifier: Modifier) {
     }
     val dunkel = FoodyTheme.farben.text
     Canvas(modifier.clearAndSetSemantics { }) {
-        drawRect(Brush.verticalGradient(0f to Color(0xFFDCEBF7), 0.6f to Color(0xFFFBF6EA)))
+        drawRect(Brush.verticalGradient(0f to Color(0xFFDCEBF7), 0.6f to Bayrisch.creme))
         val s = size.width / 390f
         translate(0f, size.height - 844f * s) {
             scale(s, Offset.Zero) {
@@ -483,7 +484,7 @@ private fun Landschaft(modifier: Modifier) {
                 drawPath(pfade[1], Color.White)
                 drawPath(pfade[2], Color(0xFF9CBF7A))
                 translate(300f, 616f) {
-                    drawRect(Color(0xFFFBF6EA), Offset(0f, 40f), Size(34f, 52f))
+                    drawRect(Bayrisch.creme, Offset(0f, 40f), Size(34f, 52f))
                     drawRect(dunkel, Offset(0f, 40f), Size(34f, 52f), style = Stroke(1.5f))
                     drawPath(pfade[3], Color(0xFF6E7F45))
                     drawPath(pfade[3], dunkel, style = Stroke(1.5f))

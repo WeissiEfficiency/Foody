@@ -16,6 +16,7 @@ import de.foody.core.data.einkauf.EinkaufsArtikel
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
+import de.foody.core.designsystem.stil.szenenStil
 
 /**
  * Gemeinsames der Einkaufs-Szenen in Immersiv (Sage und R–V): Welche Szene gilt, die Posten nach Abteilung und das
@@ -25,10 +26,7 @@ import de.foody.core.designsystem.stil.StilVariante
 internal object EinkaufSzene {
     /** Der Stil, dessen Szene der Einkauf zeigt; `null` = die normale Ansicht (Milchglas, Ruhig). */
     @Composable
-    fun aktuell(): FoodyStil? {
-        val s = FoodyTheme.stil
-        return s.stil.takeIf { s.variante == StilVariante.IMMERSIV && it != FoodyStil.MILCHGLAS }
-    }
+    fun aktuell(): FoodyStil? = szenenStil(mitSage = true)
 }
 
 /** Eine Abteilung mit ihren Posten: erst die offenen, dann die schon gekauften. */
