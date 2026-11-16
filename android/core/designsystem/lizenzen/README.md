@@ -30,4 +30,8 @@ Quelle: github.com/google/fonts (`ofl/<name>`, Special Elite `apache/specialelit
 **Beschnitt** (`werkzeuge/schriften_beschneiden.py`, außer Fraunces und Figtree): Latein mit Latin-1 und Latin
 Extended-A, die übliche Typografie und die Zeichen aus dem Code der App; variable Schriften nur im genutzten Bereich der
 Achse `wght`. Schriften, die in ihren Namenseinträgen einen „Reserved Font Name“ nennen (IM Fell English, UnifrakturCook,
-Share Tech Mono), liegen **unverändert** bei: Eine veränderte Fassung dürfte diesen Namen nicht tragen.
+Share Tech Mono), sind ebenso beschnitten, tragen dafür aber einen eigenen Namen, denn eine veränderte Fassung darf
+den reservierten Namen nicht tragen (OFL, Abschnitt 3): IM Fell English heißt „Foody Antiqua“ (die Kapitälchen
+„Foody Antiqua SC“), UnifrakturCook „Foody Fraktur“, Share Tech Mono „Foody Mono“. Copyright, Lizenz und die
+Beschreibung der Herkunft bleiben in den Dateien, die Schriften bleiben unter der OFL. Das Werkzeug liest dafür die
+Originale wie die übrigen; die Dateien vom 2026-11-13 lagen bis dahin unverändert in `res/font`.

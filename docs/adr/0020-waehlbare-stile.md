@@ -28,7 +28,8 @@ Einstellungen und auf den Widgets.
   verschoben, bis sie halten (`angleichen`). `KontrastTest` prüft alle Stile, Varianten und Akzente.
 - **Schriften:** Jeder Stil bringt die Schriften seines Entwurfs eingebettet mit (Google Fonts, OFL; Special Elite
   Apache 2.0), beschnitten auf Latein und die Zeichen der App mit `werkzeuge/schriften_beschneiden.py`. Schriften mit
-  „Reserved Font Name“ liegen unverändert bei. Budget: höchstens 2 MB mehr APK, nichts wird nachgeladen. Symbole, die
+  „Reserved Font Name“ sind ebenso beschnitten und dafür umbenannt (seit 2026-11-16, Review N1: „Foody Antiqua“,
+  „Foody Fraktur“, „Foody Mono“). Budget: höchstens 2 MB mehr APK, nichts wird nachgeladen. Symbole, die
   einer Schrift fehlen (✓, ▶, Emojis), zeichnet Android in der Systemschrift. Die Widgets bleiben bei Systemschriften
   (`RemoteViews` können keine Schriften der App laden).
 - **Tablet:** Die Entwürfe gibt es nur für das Handy. Auf dem Tablet bleibt das zweispaltige Layout mit Farben,
@@ -52,5 +53,6 @@ Einstellungen und auf den Widgets.
   bei Immersiv nicht. Die Screen-Tests prüfen die Szenen. Roborazzi hat je Stil ein Bild jedes Screens in Immersiv,
   „Heute“ auch in Ruhig.
 - Die Referenzbilder von Milchglas sind gleich geblieben. Nur bei den Einstellungen kam die Stilwahl dazu.
-- Alle Schriften der Stile zusammen 1,78 MB in `res/font` (vorher 0,98 MB für Cinzel und EB Garamond unbeschnitten).
+- Alle Schriften der Stile zusammen 1,78 MB in `res/font` (vorher 0,98 MB für Cinzel und EB Garamond unbeschnitten);
+  der Beschnitt der umbenannten Schriften (2026-11-16) spart davon 167 KB.
 - Die Mundart (T) folgt den Texten des Entwurfs; der Nutzer hat die Liste aller Texte durchgesehen (2026-11-15).

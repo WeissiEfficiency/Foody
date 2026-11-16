@@ -5,7 +5,8 @@ Quelle: github.com/google/fonts (Ordner `ofl/…`, Special Elite unter `apache/s
 geladen und mit ihrem Originalnamen in einen Ordner gelegt, Liste unten (QUELLEN).
 
 Aufruf (braucht fonttools, `pip install fonttools`):
-    python werkzeuge/schriften_beschneiden.py <ordner-mit-den-originalen>
+    python werkzeuge/schriften_beschneiden.py <ordner-mit-den-originalen> [zieldatei.ttf …]
+Mit Zieldateien entstehen nur diese neu.
 
 Was bleibt:
 - Latein mit Latin-1 und Latin Extended-A (Namen wie „Crème brûlée“ oder „Łódź“), die übliche Typografie (– „“ › · …)
@@ -15,11 +16,12 @@ Was bleibt:
 - Die Standard-Features von fonttools (Kerning, Ligaturen, Zeichenzusammensetzung); Kapitälchen, Ziffernvarianten
   und senkrechte Formen fallen weg, die App nutzt sie nicht. Hinting fällt weg (Android rendert ohne).
 
-Ausnahme: Nennt eine Schrift in ihren Namenseinträgen einen „Reserved Font Name“ (OFL), darf eine veränderte Fassung
-diesen Namen nicht tragen. Solche Schriften (IM Fell English, UnifrakturCook, Share Tech Mono) kopiert das Werkzeug
-unverändert.
+Nennt eine Schrift in ihren Namenseinträgen einen „Reserved Font Name“ (OFL), darf die beschnittene Fassung diesen
+Namen nicht tragen. Das Werkzeug benennt solche Schriften deshalb um (NEUE_NAMEN: IM Fell English → „Foody Antiqua“,
+UnifrakturCook → „Foody Fraktur“, Share Tech Mono → „Foody Mono“). Copyright und Lizenz bleiben, die Schrift bleibt
+unter der OFL, ihr Hinting bleibt. Die App lädt die Dateien über `R.font`, der Name in der Datei spielt für sie keine
+Rolle.
 """
-import shutil
 import re
 import sys
 from pathlib import Path
@@ -63,6 +65,15 @@ QUELLEN = {
     "share_tech_mono.ttf": ("ShareTechMono-Regular.ttf", None),
 }
 
+# Neuer Familienname für Schriften mit „Reserved Font Name“; er darf den reservierten Namen nicht enthalten
+NEUE_NAMEN = {
+    "im_fell_english.ttf": "Foody Antiqua",
+    "im_fell_english_kursiv.ttf": "Foody Antiqua",
+    "im_fell_english_sc.ttf": "Foody Antiqua SC",
+    "unifraktur_cook.ttf": "Foody Fraktur",
+    "share_tech_mono.ttf": "Foody Mono",
+}
+
 GRUNDZEICHEN = [
     *range(0x20, 0x7F),  # ASCII
     *range(0xA0, 0x180),  # Latin-1 und Latin Extended-A
@@ -88,15 +99,34 @@ def reservierter_name(schrift: TTFont) -> bool:
     return any("reserved font name" in t.lower() for t in texte)
 
 
+def umbenennen(schrift: TTFont, familie: str) -> None:
+    """Setzt Familie, vollen Namen, PostScript-Namen und Kennung auf [familie]; Copyright und Lizenz bleiben."""
+    namen = schrift["name"]
+    stil = namen.getDebugName(2) or "Regular"
+    voll = familie if stil == "Regular" else f"{familie} {stil}"
+    neu = {
+        1: familie, 16: familie, 4: voll, 6: f"{familie}-{stil}".replace(" ", ""),
+        3: f"{voll}; beschnitten für Foody", 17: stil,
+    }
+    for eintrag in list(namen.names):
+        if eintrag.nameID in (18, 21, 22):
+            namen.removeNames(nameID=eintrag.nameID)
+        elif eintrag.nameID in neu:
+            namen.setName(neu[eintrag.nameID], eintrag.nameID, eintrag.platformID, eintrag.platEncID, eintrag.langID)
+
+
 def beschneiden(quelle: Path, ziel: Path, achse, zeichen: set[int]) -> bool:
-    """Legt [quelle] beschnitten nach [ziel]; `False`, wenn sie wegen eines reservierten Namens unverändert bleibt."""
+    """Legt [quelle] beschnitten nach [ziel]; `False`, wenn sie dabei wegen eines reservierten Namens umbenannt wurde."""
     # Erst beschneiden, dann die Achse einschränken (umgekehrt stolpert fonttools über die Variationen)
     schrift = TTFont(quelle)
-    if reservierter_name(schrift):
-        shutil.copyfile(quelle, ziel)
-        return False
+    reserviert = reservierter_name(schrift)
+    if reserviert:
+        familie = NEUE_NAMEN.get(ziel.name)
+        if familie is None:
+            sys.exit(f"{ziel.name} nennt einen Reserved Font Name, aber NEUE_NAMEN hat keinen neuen Namen dafür")
     optionen = subset.Options()
-    optionen.hinting = False
+    # Die umbenannten Schriften lagen vorher unverändert bei; mit Hinting zeichnen sie genau wie vorher
+    optionen.hinting = reserviert
     optionen.name_IDs = ["*"]  # Copyright und Lizenz bleiben in der Datei
     optionen.name_languages = ["*"]
     optionen.notdef_outline = True
@@ -105,17 +135,24 @@ def beschneiden(quelle: Path, ziel: Path, achse, zeichen: set[int]) -> bool:
     beschnitt.subset(schrift)
     if achse is not None:
         schrift = instancer.instantiateVariableFont(schrift, {"wght": achse})
+    if reserviert:
+        umbenennen(schrift, familie)
     schrift.save(ziel)
-    return True
+    return not reserviert
 
 
 def main() -> None:
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         sys.exit(__doc__)
     ordner = Path(sys.argv[1])
+    nur = set(sys.argv[2:])
+    if nur - QUELLEN.keys():
+        sys.exit(f"Unbekannt: {', '.join(sorted(nur - QUELLEN.keys()))}")
     zeichen = set(GRUNDZEICHEN) | zeichen_der_app()
     vorher = nachher = 0
     for ziel, (name, achse) in QUELLEN.items():
+        if nur and ziel not in nur:
+            continue
         quelle = ordner / name
         if not quelle.exists():
             sys.exit(f"Fehlt: {quelle}")
@@ -123,7 +160,7 @@ def main() -> None:
         a, b = quelle.stat().st_size, (ZIEL / ziel).stat().st_size
         vorher += a
         nachher += b
-        hinweis = "" if beschnitten else "  (unverändert, Reserved Font Name)"
+        hinweis = "" if beschnitten else f"  (umbenannt in „{NEUE_NAMEN[ziel]}“, Reserved Font Name)"
         print(f"{ziel:32} {a / 1024:8.0f} KB → {b / 1024:6.0f} KB{hinweis}")
     print(f"{'zusammen':32} {vorher / 1024:8.0f} KB → {nachher / 1024:6.0f} KB")
     fremd = sorted(c for c in zeichen_der_app() if c > 0x2E80)
