@@ -2,12 +2,14 @@ package de.foody.feature.rezepte.editor.stil
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
@@ -18,6 +20,7 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.LEISTE_REGELHOEHE
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.testing.ViewModelHalter
@@ -42,6 +45,7 @@ import org.robolectric.annotation.GraphicsMode
 import java.math.BigDecimal
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * Editor der Stile R–V in Immersiv: Felder mit Etikett (TalkBack liest das Etikett), erkannte Zutatenzeilen, Speichern
@@ -110,6 +114,14 @@ class EditorStileTest {
         assertEquals(0, zurueck)
     }
 
+    /** „Speichern“ liegt über der schwebenden Navigation; in Edo lag die Leiste darunter (Gerätetest 2026-11-16). */
+    private fun ueberNavigation(stil: FoodyStil) {
+        zeigen(stil, null)
+        val ende = compose.onRoot().getBoundsInRoot().bottom - LEISTE_REGELHOEHE
+        val knopf = compose.onNodeWithContentDescription("Speichern").getBoundsInRoot()
+        assertTrue(knopf.bottom <= ende, "$stil: Speichern endet bei ${knopf.bottom}, die Navigation beginnt bei $ende")
+    }
+
     private fun gross(stil: FoodyStil) {
         zeigen(stil, "r1", schrift200 = true)
         compose.warteAufText("Reispfanne")
@@ -126,6 +138,16 @@ class EditorStileTest {
     @Test fun grauen() = neuSpeichern(FoodyStil.GRAUEN)
 
     @Test fun kreuzer() = neuSpeichern(FoodyStil.KREUZER)
+
+    @Test fun animeUeberNavigation() = ueberNavigation(FoodyStil.ANIME)
+
+    @Test fun edoUeberNavigation() = ueberNavigation(FoodyStil.EDO)
+
+    @Test fun bayrischUeberNavigation() = ueberNavigation(FoodyStil.BAYRISCH)
+
+    @Test fun grauenUeberNavigation() = ueberNavigation(FoodyStil.GRAUEN)
+
+    @Test fun kreuzerUeberNavigation() = ueberNavigation(FoodyStil.KREUZER)
 
     @Test fun animeVerwerfen() = verwerfen(FoodyStil.ANIME)
 

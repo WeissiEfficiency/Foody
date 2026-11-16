@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.token.KaiseiDecolFamilie
+import de.foody.core.designsystem.token.UMBRUCH_ZEN_KAKU
 import de.foody.core.designsystem.token.ZenKakuFamilie
 import de.foody.core.designsystem.token.mitSilbentrennung
 
@@ -60,7 +61,8 @@ object Edo {
 
     /** Grotesk für Text und Angaben. */
     fun text(groesse: Float, gewicht: FontWeight = FontWeight.Normal) =
-        TextStyle(fontFamily = ZenKakuFamilie, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp).mitSilbentrennung()
+        TextStyle(fontFamily = ZenKakuFamilie, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp)
+            .mitSilbentrennung().copy(lineBreak = UMBRUCH_ZEN_KAKU)
 
     /** Gesperrte Kopfzeile („HEUTE ABEND · 24. OKTOBER“). */
     fun kopf(groesse: Float = 11.5f) = text(groesse, FontWeight.Bold).copy(letterSpacing = 0.14.em)
