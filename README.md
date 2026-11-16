@@ -98,7 +98,7 @@ Umstieg von der v1: [`docs/installation.md`](docs/installation.md). Sync gegen e
 [`server/README.md`](server/README.md), Abschnitt „Test-Server“.
 
 **Baseline-Profil** (schnellerer App-Start): Der Generator `:baselineprofile` geht einmal durch Heute, Rezepte, Woche,
-Einkauf und Einstellungen; das Ergebnis liegt eingecheckt unter
+Einkauf und Einstellungen, in Milchglas und in jedem Stil; das Ergebnis liegt eingecheckt unter
 `android/app/src/release/generated/baselineProfiles/baseline-prof.txt` und kommt automatisch in jeden Release-Build.
 Neu erzeugen nach größeren UI-Änderungen: Befehle im Kopf von `android/baselineprofile/build.gradle.kts` (nur auf
 einem Emulator ohne echte Daten).

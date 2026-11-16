@@ -6,9 +6,14 @@
 //     -Pandroid.testInstrumentationRunnerArguments.class=de.foody.baselineprofile.BaselineProfileGenerator
 //     -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile
 //     -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true
-//   adb pull /sdcard/Android/media/de.foody.baselineprofile/additional_test_output/BaselineProfileGenerator_generate-startup-prof.txt
-//     android/app/src/release/generated/baselineProfiles/baseline-prof.txt
+//   adb pull /sdcard/Android/media/de.foody.baselineprofile/additional_test_output/ profil/
+//   awk 1 profil/BaselineProfileGenerator_generate-startup-prof.txt profil/BaselineProfileGenerator_stile-baseline-prof.txt
+//     | LC_ALL=C sort -u > android/app/src/release/generated/baselineProfiles/baseline-prof.txt
+//   (`awk 1`, weil die Dateien ohne Zeilenende aufhören; sonst kleben zwei Zeilen zusammen.)
 //   adb uninstall de.foody.baselineprofile
+// `generate` ist der Weg in Milchglas (auch Startprofil), `stile` derselbe Weg in jedem Stil (Szenen, ~5 min).
+// Vorher `adb shell pm clear de.foody.app`, sonst beginnt `generate` im zuletzt gewählten Stil. Scheitert `stile`,
+// liegen `fehler.png` und `fehler.xml` (UI-Baum) neben den Profilen.
 // (`:app:generateReleaseBaselineProfile` meldet zwar Erfolg, mit Benchmark 1.5 und AGP 9.4 wird die Datei aber vor
 // dem Abholen mit der Test-App gelöscht.) Die Datei wird eingecheckt; normale Builds und die CI brauchen kein Gerät.
 plugins {
