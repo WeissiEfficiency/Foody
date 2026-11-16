@@ -76,6 +76,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.foody.core.data.heute.GeplanteMahlzeit
+import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.animationenErlaubt
 import de.foody.core.designsystem.komponenten.FoodyFrage
@@ -91,6 +92,7 @@ import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
 import de.foody.core.designsystem.stil.grauen.GrauenNotizknopf
+import de.foody.core.designsystem.stil.svgPfad
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
 import de.foody.domain.zielAnteil
@@ -164,7 +166,7 @@ private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
 
 /** „Sa · 24. Oktober“ wie im Entwurf: Wochentag kurz ohne Punkt, Tag und Monat. */
 internal fun grauenDatum(d: LocalDate): String =
-    d.dayOfWeek.getDisplayName(Wochentagform.SHORT, Locale.GERMAN).removeSuffix(".") + " · ${d.dayOfMonth}. " +
+    wochentagKurz(d) + " · ${d.dayOfMonth}. " +
         d.month.getDisplayName(Wochentagform.FULL, Locale.GERMAN)
 
 /** Satz unter dem Auge: was es gesehen hat, gegen das Ziel. Ohne Ziel nur die Summe. */
@@ -274,11 +276,9 @@ private fun Auge(anteil: Float?, glut: Color, modifier: Modifier) {
 
 /** Pfade aus dem SVG des Entwurfs (Maß 300 × 170 für das Auge, 390 breit für die Tiefe). */
 private class AugenPfade {
-    val lid: Path = pfad("M10 85C60 15 240 15 290 85 240 155 60 155 10 85z")
-    val adern: Path = pfad("M40 70c30 4 50 10 70 14M260 70c-30 4-50 10-70 14M60 110c24-6 40-10 56-12M240 110c-24-6-40-10-56-12")
+    val lid: Path = svgPfad("M10 85C60 15 240 15 290 85 240 155 60 155 10 85z")
+    val adern: Path = svgPfad("M40 70c30 4 50 10 70 14M260 70c-30 4-50 10-70 14M60 110c24-6 40-10 56-12M240 110c-24-6-40-10-56-12")
 }
-
-private fun pfad(d: String): Path = PathParser().parsePathString(d).toPath()
 
 /** Fangarme aus der Tiefe an beiden Rändern unten und ein paar glimmende Punkte; reine Zierde. */
 @Composable
@@ -286,11 +286,11 @@ private fun Tiefe(modifier: Modifier) {
     val glut = FoodyTheme.stil.zier
     val arme = remember {
         listOf(
-            pfad(
+            svgPfad(
                 "M0 600c40 6 66 40 60 82-4 30-28 46-48 38-14-6-12-24 2-24 10 0 12 12 4 14 12-4 14-20 0-24" +
                     "-20-6-36 18-22 40 18 26 64 10 70-34 8-50-26-90-66-92z",
             ),
-            pfad(
+            svgPfad(
                 "M390 560c-44 4-74 44-66 90 6 34 34 52 56 40 16-8 12-28-4-26-10 2-10 14-2 16-12-2-12-20 4-24" +
                     " 22-4 36 24 18 46-22 26-68 4-70-46-2-56 38-92 64-96z",
             ),

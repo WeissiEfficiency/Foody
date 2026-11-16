@@ -70,6 +70,7 @@ import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
+import de.foody.core.designsystem.stil.szenenStil
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
@@ -96,11 +97,7 @@ private val TAG_LANG = DateTimeFormatter.ofPattern("EEEE, d. MMMM yyyy", Locale.
 internal object TagebuchSzene {
     /** Der Stil R–V, dessen Szene das Tagebuch zeigt; `null` = keiner (Milchglas, Ruhig, Sage hat ihre eigene). */
     @Composable
-    fun aktuell(): FoodyStil? {
-        val s = FoodyTheme.stil
-        if (s.variante != StilVariante.IMMERSIV) return null
-        return s.stil.takeIf { it != FoodyStil.MILCHGLAS && it != FoodyStil.SAGE }
-    }
+    fun aktuell(): FoodyStil? = szenenStil()
 }
 
 /** Wörter und Schriften eines Stils für das Tagebuch. */
@@ -171,7 +168,7 @@ internal fun tagebuchArt(stil: FoodyStil): TagebuchArt = when (stil) {
 /** Anime: die Gruppen als Pillen in den Farben des Entwurfs. */
 private fun animeFarbe(m: Mahlzeit, akzent: Color): Color = when (m) {
     Mahlzeit.FRUEHSTUECK -> Anime.gelb
-    Mahlzeit.MITTAGESSEN -> Color(0xFF7EE0A8)
+    Mahlzeit.MITTAGESSEN -> Anime.mint
     Mahlzeit.ABENDESSEN -> akzent
     Mahlzeit.SNACK -> Anime.tuerkis
 }

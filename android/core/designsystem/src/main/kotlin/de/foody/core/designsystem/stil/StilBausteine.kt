@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.graphics.vector.toPath
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
@@ -307,3 +309,17 @@ fun titelGroesse(groesse: Float): Float {
     val k = LocalDensity.current.fontScale
     return groesse * min(k, TITEL_GROESSTE_SKALA) / k
 }
+
+/**
+ * Der Stil, dessen Szene ein Bereich zeigt: nur in Immersiv, nie Milchglas; Sage nur mit [mitSage] (die meisten Bereiche
+ * haben für Sage eine eigene Ansicht). `null` = die normale Ansicht.
+ */
+@Composable
+fun szenenStil(mitSage: Boolean = false): FoodyStil? {
+    val s = FoodyTheme.stil
+    if (s.variante != StilVariante.IMMERSIV) return null
+    return s.stil.takeIf { it != FoodyStil.MILCHGLAS && (mitSage || it != FoodyStil.SAGE) }
+}
+
+/** Pfad aus SVG-Pfaddaten (`M… c…`), wie sie in den Entwürfen stehen. */
+fun svgPfad(daten: String): Path = PathParser().parsePathString(daten).toPath()

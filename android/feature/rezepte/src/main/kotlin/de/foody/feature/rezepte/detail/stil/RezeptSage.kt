@@ -60,6 +60,8 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LEISTE_REGELHOEHE
+import de.foody.core.designsystem.komponenten.portionenText
+import de.foody.core.designsystem.komponenten.roemisch
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.SageHauptknopf
@@ -201,7 +203,7 @@ private fun Portionen(n: Int, onSchritt: (Boolean) -> Unit) {
     ) {
         SageNebenknopf("−", "Weniger Portionen", { onSchritt(false) }, Modifier.width(52.dp), schrift = Sage.titel(20f, 0f))
         Text(
-            if (n == 1) "1 Portion" else "$n Portionen",
+            portionenText(n),
             Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
             style = Sage.titel(16f, 0.08f), color = f.text, textAlign = TextAlign.Center,
         )
@@ -264,7 +266,7 @@ private fun Ritual(schritte: List<String>) {
         schritte.forEachIndexed { i, s ->
             Row(Modifier.semantics(mergeDescendants = true) { }, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    Sage.roemisch(i + 1), Modifier.width(34.dp).clearAndSetSemantics { contentDescription = "Schritt ${i + 1}" },
+                    roemisch(i + 1), Modifier.width(34.dp).clearAndSetSemantics { contentDescription = "Schritt ${i + 1}" },
                     style = Sage.titel(15f, 0f), color = FoodyTheme.stil.zier,
                 )
                 Text(s, Modifier.weight(1f), style = Sage.text(16f), color = f.text)

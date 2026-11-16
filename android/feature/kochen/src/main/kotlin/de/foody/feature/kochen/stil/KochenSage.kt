@@ -37,12 +37,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.portionenText
+import de.foody.core.designsystem.komponenten.roemisch
 import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.SageHauptknopf
 import de.foody.core.designsystem.stil.sage.SageNebenknopf
 import de.foody.core.designsystem.stil.sage.SageRaute
 import de.foody.core.designsystem.stil.sage.sageHell
 import de.foody.core.designsystem.stil.sage.sageLinieUnten
+import de.foody.core.designsystem.stil.svgPfad
 import de.foody.domain.StepTimer
 import de.foody.feature.kochen.KochAktionen
 import de.foody.feature.kochen.KochSchritt
@@ -96,7 +99,7 @@ internal fun BereitlegenSage(z: KochZustand.Da, a: KochAktionen) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SageNebenknopf("−", "Weniger Portionen", { a.onPortionen(false) }, Modifier.width(52.dp), schrift = Sage.titel(20f, 0f))
             Text(
-                if (z.portionen == 1) "1 Portion" else "${z.portionen} Portionen", Modifier.weight(1f),
+                portionenText(z.portionen), Modifier.weight(1f),
                 style = Sage.titel(16f, 0.08f), color = f.text, textAlign = TextAlign.Center,
             )
             SageNebenknopf("+", "Mehr Portionen", { a.onPortionen(true) }, Modifier.width(52.dp), schrift = Sage.titel(20f, 0f))
@@ -134,7 +137,7 @@ internal fun SchrittSage(s: KochSchritt, nummer: Int, gesamt: Int, abgehakt: Set
     val glut = FoodyTheme.stil.zier
     Column(Modifier.padding(top = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text(
-            Sage.roemisch(nummer), Modifier.clearAndSetSemantics { },
+            roemisch(nummer), Modifier.clearAndSetSemantics { },
             style = Sage.titel(64f, 0f).copy(shadow = Shadow(glut.copy(alpha = 0.5f), Offset.Zero, 24f)), color = glut,
         )
         Text("SCHRITT $nummer VON $gesamt", Modifier.semantics { heading() }, style = Sage.titel(12f, 0.2f), color = f.nebentext)
@@ -200,9 +203,8 @@ private fun Sanduhr(t: StepTimer, onStart: () -> Unit) {
 }
 
 private class SanduhrPfade {
-    private fun pfad(d: String) = PathParser().parsePathString(d).toPath()
-    val glas = pfad("M3 2h20M3 32h20M5 2c0 10 16 10 16 15S5 22 5 32M21 2c0 10-16 10-16 15s16 5 16 15")
-    val sand = pfad("M9 28h8l-4-5z")
+    val glas = svgPfad("M3 2h20M3 32h20M5 2c0 10 16 10 16 15S5 22 5 32M21 2c0 10-16 10-16 15s16 5 16 15")
+    val sand = svgPfad("M9 28h8l-4-5z")
 }
 
 /** Unten: „‹“ zurück und der Hauptknopf „Beginnen“, „Weiter“ oder „Vollenden“. */

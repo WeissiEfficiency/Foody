@@ -46,9 +46,9 @@ import kotlin.math.min
 /** Einbände und Höhen der Bände wie im Entwurf. */
 private val EINBAND = listOf(Color(0xFF2E3B2C), Color(0xFF4A2228), Color(0xFF24324A), Color(0xFF5A3A1C), Color(0xFF3A2A48), Color(0xFF1E3A36))
 private val HOEHE = listOf(128, 118, 134, 112, 124, 132)
-private val PERGAMENT = Color(0xFFD9CDAE)
-private val TINTE = Color(0xFF2A2418)
-private val TINTE_NEBEN = Color(0xFF4A4030)
+private val PERGAMENT = Grauen.pergament
+private val TINTE = Grauen.tinte
+private val TINTE_NEBEN = Grauen.tinteNeben
 private val BRETT = Color(0xFF2B2117)
 
 @OptIn(ExperimentalLayoutApi::class)

@@ -68,7 +68,7 @@ internal fun LazyGridScope.animePosten(ansicht: EinkaufsAnsicht?, onUmschalten: 
 }
 
 /** Farben der Abteilungs-Abzeichen wie im Entwurf (Grün, Türkis, Orange, Lila, Rosa). */
-private val ABZEICHEN = listOf(Color(0xFF7EE0A8), Anime.tuerkis, Color(0xFFFFB23E), Color(0xFFA98BFF), Color(0xFFFF7AAE))
+private val ABZEICHEN = listOf(Anime.mint, Anime.tuerkis, Anime.orange, Anime.lila, Anime.rosa)
 
 /** Schrift gekaufter Posten auf hellem Grau (AA). */
 private val GEKAUFT_TEXT = Color(0xFF5E5974)

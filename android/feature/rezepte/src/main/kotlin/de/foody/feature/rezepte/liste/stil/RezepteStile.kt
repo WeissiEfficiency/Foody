@@ -47,6 +47,7 @@ import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
+import de.foody.core.designsystem.stil.szenenStil
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.rezepte.liste.FilterChips
 import de.foody.feature.rezepte.liste.ListeFilter
@@ -61,11 +62,7 @@ import de.foody.feature.rezepte.liste.ListeZustand
 internal object RezepteSzene {
     /** Der Stil R–V, dessen Szene die Rezeptliste zeigt; `null` = keiner (Milchglas, Ruhig, Sage hat ihre eigene). */
     @Composable
-    fun aktuell(): FoodyStil? {
-        val s = FoodyTheme.stil
-        if (s.variante != StilVariante.IMMERSIV) return null
-        return s.stil.takeIf { it != FoodyStil.MILCHGLAS && it != FoodyStil.SAGE }
-    }
+    fun aktuell(): FoodyStil? = szenenStil()
 }
 
 /** So viele Rezepte zeigt eine Seite der Wahl. */

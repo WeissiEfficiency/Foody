@@ -41,6 +41,7 @@ import de.foody.core.designsystem.komponenten.SyncAnzeige
 import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.kcalText
+import de.foody.core.designsystem.komponenten.portionenText
 import de.foody.core.designsystem.komponenten.rezeptBild
 import de.foody.core.designsystem.komponenten.slotName
 import de.foody.core.designsystem.komponenten.ueberschrift
@@ -102,7 +103,7 @@ internal fun InspirationKarte(r: RezeptKurz, onRezept: (String) -> Unit) {
 
 /** „2 Portionen · 717 kcal je Portion · 30 Min.“ – fehlende Angaben entfallen. */
 internal fun meta(portionen: Int?, kcal: Int?, minuten: Int?): String = listOfNotNull(
-    portionen?.let { if (it == 1) "1 Portion" else "$it Portionen" },
+    portionen?.let(::portionenText),
     kcal?.let { "$it kcal je Portion" },
     minuten?.let { "$it Min." },
 ).joinToString(" · ")

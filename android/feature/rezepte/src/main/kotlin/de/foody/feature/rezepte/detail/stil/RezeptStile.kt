@@ -59,6 +59,8 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LEISTE_REGELHOEHE
 import de.foody.core.designsystem.komponenten.anzeigename
+import de.foody.core.designsystem.komponenten.portionenText
+import de.foody.core.designsystem.komponenten.roemisch
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilAktion
@@ -68,6 +70,7 @@ import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
+import de.foody.core.designsystem.stil.szenenStil
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.rezepte.detail.DetailAktionen
 import de.foody.feature.rezepte.detail.DetailZustand
@@ -88,11 +91,7 @@ import java.util.Locale
 internal object RezeptSzene {
     /** Der Stil R–V, dessen Szene das Rezept zeigt; `null` = keiner (Milchglas, Ruhig, Sage hat ihre eigene). */
     @Composable
-    fun aktuell(): FoodyStil? {
-        val s = FoodyTheme.stil
-        if (s.variante != StilVariante.IMMERSIV) return null
-        return s.stil.takeIf { it != FoodyStil.MILCHGLAS && it != FoodyStil.SAGE }
-    }
+    fun aktuell(): FoodyStil? = szenenStil()
 }
 
 /** Wörter und Schriften eines Stils für das Rezept. */
@@ -117,8 +116,6 @@ internal class RezeptArt(
 
 /** Die normalen Begriffe der Reiter für TalkBack. */
 private val REITER = listOf("Zutaten", "Zubereitung", "Nährwerte")
-
-private fun portionenText(n: Int) = if (n == 1) "1 Portion" else "$n Portionen"
 
 internal fun rezeptArt(stil: FoodyStil): RezeptArt = when (stil) {
     FoodyStil.ANIME -> RezeptArt(
@@ -154,12 +151,6 @@ internal fun rezeptArt(stil: FoodyStil): RezeptArt = when (stil) {
         nummer = { it.toString().padStart(2, '0') }, werteKopf = listOf("WERT", "PORTION", "GESAMT"),
         titel = { Kreuzer.titel(it) }, text = { Kreuzer.titel(it, FontWeight.Normal, 0f) }, klein = { Kreuzer.mono(it) },
     )
-}
-
-/** „I“, „II“ … „XXXIX“; darüber die Zahl. */
-internal fun roemisch(zahl: Int): String {
-    if (zahl !in 1..39) return zahl.toString()
-    return "X".repeat(zahl / 10) + listOf("", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX")[zahl % 10]
 }
 
 /** „Abendessen · Hauptspeise · vegetarisch“: Mahlzeiten, Gänge und der erste Tag; `null` ohne Einordnung. */

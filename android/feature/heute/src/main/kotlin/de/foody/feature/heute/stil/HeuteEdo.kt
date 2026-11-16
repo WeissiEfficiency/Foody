@@ -86,6 +86,7 @@ import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.EdoKnopf
 import de.foody.core.designsystem.stil.edo.edoShu
+import de.foody.core.designsystem.stil.svgPfad
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.DatenbankLeerHinweis
@@ -197,7 +198,7 @@ private fun Landschaft(datum: LocalDate?, shu: Color) {
     val tinte = FoodyTheme.farben.text
     val messer = rememberTextMeasurer()
     val pfade = remember {
-        val p = { d: String -> PathParser().parsePathString(d).toPath() }
+        val p = ::svgPfad
         listOf(
             p("M0 132L52 70 74 88 118 34 160 92 182 76 236 124 286 104V168H0z"),
             p("M0 150L40 116 84 132 132 96 176 128 220 108 286 140V168H0z"),

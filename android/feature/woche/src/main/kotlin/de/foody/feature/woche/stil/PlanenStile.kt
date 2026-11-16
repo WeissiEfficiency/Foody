@@ -45,7 +45,7 @@ private val EDO_TAGE = mapOf(
 )
 
 /** Farben der Tagkästchen im Anime-Entwurf, der Reihe nach. */
-private val ANIME_TAGE = listOf(Anime.gelb, Color(0xFF7EE0A8), Anime.tuerkis)
+private val ANIME_TAGE = listOf(Anime.gelb, Anime.mint, Anime.tuerkis)
 
 /** Wochentag eines Vorschlags in der Art des Stils: „月“ (Edo), „MO“ (Kreuzer), sonst „Mo“. */
 internal fun planenTag(stil: FoodyStil, tag: LocalDate): String = when (stil) {

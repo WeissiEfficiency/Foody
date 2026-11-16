@@ -50,7 +50,7 @@ import kotlin.math.min
  */
 
 /** Kopffarben der Karten wie im Entwurf; die erste nimmt den Akzent. */
-private val KOEPFE = listOf(Color(0xFFFFE45C), Color(0xFF3EC6E0), Color(0xFFFFB23E), Color(0xFFA98BFF), Color(0xFF7EE0A8))
+private val KOEPFE = listOf(Anime.gelb, Anime.tuerkis, Anime.orange, Anime.lila, Anime.mint)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

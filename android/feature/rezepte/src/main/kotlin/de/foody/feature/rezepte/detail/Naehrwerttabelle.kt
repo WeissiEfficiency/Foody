@@ -16,6 +16,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.Abschnittskopf
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
+import de.foody.core.designsystem.komponenten.portionenText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 import de.foody.domain.Nutrient
@@ -51,7 +52,7 @@ internal fun Naehrwerttabelle(v: RezeptVoll, portionen: Int) {
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth()) {
         Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             kcalJePortion(v)?.let { Text(it, style = MaterialTheme.typography.titleMedium, color = FoodyTheme.farben.text) }
-            Zeile("", "je Portion", if (portionen == 1) "1 Portion" else "$portionen Portionen", kopf = true)
+            Zeile("", "je Portion", portionenText(portionen), kopf = true)
             naehrwertZeilen(v, portionen).forEach { Zeile(it.name, it.jePortion, it.gesamt) }
             fehlendeWerte(v)?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext) }
         }

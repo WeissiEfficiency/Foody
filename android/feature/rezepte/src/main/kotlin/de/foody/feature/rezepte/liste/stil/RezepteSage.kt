@@ -61,6 +61,7 @@ import de.foody.core.designsystem.stil.sage.SageHauptknopf
 import de.foody.core.designsystem.stil.sage.SageKopf
 import de.foody.core.designsystem.stil.sage.SageRaute
 import de.foody.core.designsystem.stil.sage.sageHell
+import de.foody.core.designsystem.stil.svgPfad
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.rezepte.liste.FilterChips
 import de.foody.feature.rezepte.liste.ListeFilter
@@ -229,10 +230,9 @@ private fun Emblem(zeichen: String) {
 }
 
 private class EmblemPfade {
-    private fun pfad(d: String) = PathParser().parsePathString(d).toPath()
-    val rauten = pfad("M84 12l5 8-5 8-5-8zM84 140l5 8-5 8-5-8zM12 84l8-5 8 5-8 5zM140 84l8-5 8 5-8 5z")
-    val schale = pfad("M46 92h76c0 22-17 36-38 36S46 114 46 92z")
-    val dampf = pfad("M70 80c-6-8 6-12 0-22M86 78c-6-9 6-13 0-24M102 80c-6-8 6-12 0-22")
+    val rauten = svgPfad("M84 12l5 8-5 8-5-8zM84 140l5 8-5 8-5-8zM12 84l8-5 8 5-8 5zM140 84l8-5 8 5-8 5z")
+    val schale = svgPfad("M46 92h76c0 22-17 36-38 36S46 114 46 92z")
+    val dampf = svgPfad("M70 80c-6-8 6-12 0-22M86 78c-6-9 6-13 0-24M102 80c-6-8 6-12 0-22")
 }
 
 @Composable

@@ -49,6 +49,7 @@ import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.SageKopf
 import de.foody.core.designsystem.stil.sage.SageNebenknopf
 import de.foody.core.designsystem.stil.sage.SageRaute
+import de.foody.core.designsystem.stil.svgPfad
 import java.util.Locale
 
 /**
@@ -151,7 +152,7 @@ private fun Laden(offen: Int) {
         Canvas(Modifier.matchParentSize().clearAndSetSemantics { }) {
             drawRect(
                 Brush.radialGradient(
-                    listOf(Color(0xFFF59E0B).copy(alpha = 0.22f), Color.Transparent),
+                    listOf(Sage.feuer.copy(alpha = 0.22f), Color.Transparent),
                     center = Offset(size.width * 0.22f, size.height * 0.4f), radius = size.width * 0.55f,
                 ),
             )
@@ -170,8 +171,8 @@ private fun Laden(offen: Int) {
                 drawCircle(glut, 1.8f, Offset(139f, 78f))
                 drawCircle(glut, 1.8f, Offset(153f, 78f))
                 drawLine(Color(0xFF3A3428), Offset(76f, 40f), Offset(76f, 54f), 1f)
-                drawPath(pfade.laterne, Color(0xFFF59E0B).copy(alpha = 0.85f))
-                drawCircle(Color(0xFFF59E0B).copy(alpha = 0.15f), 14f, Offset(76f, 62f))
+                drawPath(pfade.laterne, Sage.feuer.copy(alpha = 0.85f))
+                drawCircle(Sage.feuer.copy(alpha = 0.15f), 14f, Offset(76f, 62f))
             }
         }
         Row(Modifier.fillMaxSize()) {
@@ -187,9 +188,8 @@ private fun Laden(offen: Int) {
 }
 
 private class LadenPfade {
-    private fun pfad(d: String) = PathParser().parsePathString(d).toPath()
-    val dach = pfad("M0 40L60 14h120l60 26z")
-    val bogen = pfad("M120 140v-50c0-24 12-40 26-40s26 16 26 40v50z")
-    val kapuze = pfad("M126 70c4-14 12-20 20-20s16 6 20 20c-8-6-32-6-40 0z")
-    val laterne = pfad("M70 54h12l-2 16h-8z")
+    val dach = svgPfad("M0 40L60 14h120l60 26z")
+    val bogen = svgPfad("M120 140v-50c0-24 12-40 26-40s26 16 26 40v50z")
+    val kapuze = svgPfad("M126 70c4-14 12-20 20-20s16 6 20 20c-8-6-32-6-40 0z")
+    val laterne = svgPfad("M70 54h12l-2 16h-8z")
 }

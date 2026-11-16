@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.portionenText
 import de.foody.core.designsystem.token.FoodyAbstaende
 
 /** Seite „Bereitlegen“: alle Zutaten zum Abhaken, Portionen-Stepper; ändern skaliert alle Mengen. */
@@ -43,7 +44,7 @@ internal fun BereitlegenSeite(z: KochZustand.Da, a: KochAktionen) {
                 Icon(Icons.Outlined.Remove, contentDescription = "Weniger Portionen", tint = FoodyTheme.farben.text)
             }
             Text(
-                if (z.portionen == 1) "1 Portion" else "${z.portionen} Portionen",
+                portionenText(z.portionen),
                 style = MaterialTheme.typography.titleMedium, color = FoodyTheme.farben.text,
             )
             IconButton(onClick = { a.onPortionen(true) }) {

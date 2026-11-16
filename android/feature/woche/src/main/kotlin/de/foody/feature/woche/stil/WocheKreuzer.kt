@@ -97,7 +97,7 @@ internal fun sprungStatus(t: WochenTag, heute: LocalDate): String {
     }
 }
 
-private val LINIE = Color(0xFF1C2A44)
+private val LINIE = Kreuzer.linie
 private val NEBEN = Color(0xFF8A97AD)
 
 @OptIn(ExperimentalLayoutApi::class)

@@ -32,6 +32,11 @@ import de.foody.core.designsystem.token.SpecialEliteFamilie
  * Elite (Schreibmaschine). Farben kommen aus dem Theme, die Glut ist `FoodyTheme.stil.zier`.
  */
 object Grauen {
+    /** Pergament der Zettel und Rezeptblätter (im Entwurf #D9CDAE), mit Tinte und blasser Tinte darauf. */
+    val pergament = Color(0xFFD9CDAE)
+    val tinte = Color(0xFF2A2418)
+    val tinteNeben = Color(0xFF4A4030)
+
     /** Kapitälchen (IM Fell English SC) für Titel, mit leichter Laufweite [abstand] (em). */
     fun titel(groesse: Float, abstand: Float = 0.04f) =
         TextStyle(fontFamily = ImFellKapitaelchenFamilie, fontSize = groesse.sp, lineHeight = (groesse * 1.15f).sp, letterSpacing = abstand.em)

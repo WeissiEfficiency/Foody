@@ -43,6 +43,12 @@ object Anime {
     /** Türkis der Eintragen-Kachel (im Entwurf #3EC6E0). */
     val tuerkis = Color(0xFF3EC6E0)
 
+    // Weitere Farben der bunten Abzeichen, Köpfe und Felder
+    val mint = Color(0xFF7EE0A8)
+    val orange = Color(0xFFFFB23E)
+    val lila = Color(0xFFA98BFF)
+    val rosa = Color(0xFFFF7AAE)
+
     /** Plakative Titelschrift (sehr fett). */
     fun titel(groesse: Float, abstand: Float = 0.02f) = TextStyle(
         fontFamily = DelaGothicFamilie,

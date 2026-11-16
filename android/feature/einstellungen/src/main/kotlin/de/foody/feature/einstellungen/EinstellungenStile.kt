@@ -122,7 +122,7 @@ internal fun StilRahmen(titel: String?, beschreibung: String?, sync: Boolean, in
 /** Linie zwischen Abschnitten (Edo, Grauen, Kreuzer). */
 @Composable
 private fun trennlinie(): Color = when (FoodyTheme.stil.stil) {
-    FoodyStil.EDO -> Color(0xFFD8CBAE)
+    FoodyStil.EDO -> Edo.zeilenLinie
     FoodyStil.GRAUEN -> FoodyTheme.stil.zier.copy(alpha = 0.22f)
     else -> FoodyTheme.farben.nebentext.copy(alpha = 0.3f)
 }
@@ -145,7 +145,7 @@ private fun Modifier.zeilenLinie(): Modifier {
     val (farbe, breite, muster) = when (s.stil) {
         FoodyStil.ANIME -> Triple(f.text.copy(alpha = 0.16f), 2.dp, floatArrayOf(0.1f, 6f))
         FoodyStil.EDO -> Triple(Edo.papierRand, 1.dp, floatArrayOf(0.1f, 4f))
-        FoodyStil.BAYRISCH -> Triple(Color(0xFFCDBB9C), 1.dp, floatArrayOf(6f, 4f))
+        FoodyStil.BAYRISCH -> Triple(Bayrisch.linie, 1.dp, floatArrayOf(6f, 4f))
         FoodyStil.GRAUEN -> Triple(s.zier.copy(alpha = 0.22f), 1.dp, null)
         else -> Triple(f.nebentext.copy(alpha = 0.3f), 1.dp, null)
     }

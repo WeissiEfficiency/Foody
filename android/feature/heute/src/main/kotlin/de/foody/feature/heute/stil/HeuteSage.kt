@@ -91,6 +91,7 @@ import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.SageHauptknopf
 import de.foody.core.designsystem.stil.sage.sageHell
+import de.foody.core.designsystem.stil.svgPfad
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.zielAnteil
 import de.foody.feature.heute.DatenbankLeerHinweis
@@ -231,7 +232,7 @@ private fun Lagerfeuer(glut: Color, modifier: Modifier) {
     }
 }
 
-private val FLAMMENFARBE = Brush.verticalGradient(0f to Color(0xFFFDE68A), 0.5f to Color(0xFFF59E0B), 1f to Color(0xFFC2410C), startY = 196f, endY = 268f)
+private val FLAMMENFARBE = Brush.verticalGradient(0f to Color(0xFFFDE68A), 0.5f to Sage.feuer, 1f to Color(0xFFC2410C), startY = 196f, endY = 268f)
 
 private fun DrawScope.feuer(pfade: SzenePfade, flamme: Float) {
     withTransform({ scale(1f, 1f + 0.06f * flamme, Offset(195f, 268f)); translate(0f, -2f * flamme) }) {
@@ -249,17 +250,16 @@ private fun DrawScope.glutFunken(glut: Color, t: Float) {
 
 /** Pfade aus dem SVG des Entwurfs (Maß 390 × 318). */
 private class SzenePfade {
-    private fun pfad(d: String) = PathParser().parsePathString(d).toPath()
-    val huegel = pfad("M0 236L60 214 96 222 150 196 210 208 260 186 330 210 390 200V318H0z")
+    val huegel = svgPfad("M0 236L60 214 96 222 150 196 210 208 260 186 330 210 390 200V318H0z")
     val ruinen = listOf(
-        pfad("M70 250V128l8-10h22l6 12v120z"),
-        pfad("M62 128h52v10H62z"),
-        pfad("M276 250V150l6-8 10 4 4-14 12 6v112z"),
-        pfad("M106 150q84-90 170 0v14q-86-76-170 0z"),
-        pfad("M150 250v-60h12v60zM228 250v-48h12v48z"),
+        svgPfad("M70 250V128l8-10h22l6 12v120z"),
+        svgPfad("M62 128h52v10H62z"),
+        svgPfad("M276 250V150l6-8 10 4 4-14 12 6v112z"),
+        svgPfad("M106 150q84-90 170 0v14q-86-76-170 0z"),
+        svgPfad("M150 250v-60h12v60zM228 250v-48h12v48z"),
     )
-    val flamme = pfad("M195 268c-22 0-30-16-24-32 4-10 12-14 12-26 8 6 10 14 10 20 4-8 10-14 8-26 14 10 22 26 20 40-2 16-12 24-26 24z")
-    val kern = pfad("M195 268c-9 0-13-7-10-14 2-5 6-7 6-12 4 3 5 7 5 9 2-4 5-6 4-12 6 5 9 12 8 18-1 7-6 11-13 11z")
+    val flamme = svgPfad("M195 268c-22 0-30-16-24-32 4-10 12-14 12-26 8 6 10 14 10 20 4-8 10-14 8-26 14 10 22 26 20 40-2 16-12 24-26 24z")
+    val kern = svgPfad("M195 268c-9 0-13-7-10-14 2-5 6-7 6-12 4 3 5 7 5 9 2-4 5-6 4-12 6 5 9 12 8 18-1 7-6 11-13 11z")
 }
 
 /** kcal gegen das Ziel als Balken in Gold, darunter Eiweiß, Kohlenhydrate und Fett; TalkBack liest einen Satz. */

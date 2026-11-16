@@ -34,6 +34,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.portionenText
+import de.foody.core.designsystem.komponenten.roemisch
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilAktion
 import de.foody.core.designsystem.stil.StilVariante
@@ -42,6 +44,7 @@ import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
+import de.foody.core.designsystem.stil.szenenStil
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.domain.StepTimer
 import de.foody.feature.kochen.KochAktionen
@@ -61,11 +64,7 @@ import kotlin.math.min
 internal object KochSzene {
     /** Der Stil R–V, dessen Szene den Kochmodus zeigt; `null` = keiner (Milchglas, Ruhig, Sage hat ihre eigene). */
     @Composable
-    fun aktuell(): FoodyStil? {
-        val s = FoodyTheme.stil
-        if (s.variante != StilVariante.IMMERSIV) return null
-        return s.stil.takeIf { it != FoodyStil.MILCHGLAS && it != FoodyStil.SAGE }
-    }
+    fun aktuell(): FoodyStil? = szenenStil()
 }
 
 /** Wörter und Schriften eines Stils für den Kochmodus. */
@@ -88,14 +87,6 @@ internal class KochArt(
     val text: (Float) -> TextStyle,
     val klein: (Float) -> TextStyle,
 )
-
-private fun portionenText(n: Int) = if (n == 1) "1 Portion" else "$n Portionen"
-
-/** „I“, „II“ … „XXXIX“; darüber die Zahl. */
-internal fun roemisch(zahl: Int): String {
-    if (zahl !in 1..39) return zahl.toString()
-    return "X".repeat(zahl / 10) + listOf("", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX")[zahl % 10]
-}
 
 internal fun kochArt(stil: FoodyStil): KochArt = when (stil) {
     FoodyStil.ANIME -> KochArt(

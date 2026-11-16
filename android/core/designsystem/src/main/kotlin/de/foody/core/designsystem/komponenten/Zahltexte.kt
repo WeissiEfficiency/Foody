@@ -25,3 +25,12 @@ fun kcalStand(kcal: Int, ziel: Int?, vollstaendig: Boolean = true): String =
 /** „Eiweiß 42 g, Kohlenhydrate 96 g, Fett 31 g“ – so liest TalkBack die Nährwerte überall; [trenner] für sichtbaren Text. */
 fun makroSatz(eiweiss: Int, kohlenhydrate: Int, fett: Int, trenner: String = ", "): String =
     "Eiweiß $eiweiss g${trenner}Kohlenhydrate $kohlenhydrate g${trenner}Fett $fett g"
+
+/** „1 Portion“, „4 Portionen“. */
+fun portionenText(n: Int): String = if (n == 1) "1 Portion" else "$n Portionen"
+
+/** Römische Zahl für Schritte und Kapitel (I … XXXIX), ab 40 und unter 1 die arabische. */
+fun roemisch(n: Int): String {
+    if (n !in 1..39) return n.toString()
+    return "X".repeat(n / 10) + listOf("", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX")[n % 10]
+}

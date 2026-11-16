@@ -12,6 +12,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.foody.core.designsystem.stil.bayrisch.Bayrisch
+import de.foody.core.designsystem.stil.edo.Edo
+import de.foody.core.designsystem.stil.grauen.Grauen
+import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.token.AlegreyaFamilie
 import de.foody.core.designsystem.token.AlegreyaSansFamilie
 import de.foody.core.designsystem.token.AugenbraueStil
@@ -174,26 +178,26 @@ fun stilGrundlage(stil: FoodyStil, immersiv: Boolean, akzent: Color): StilGrundl
     FoodyStil.EDO -> if (immersiv) {
         StilGrundlage(
             dunkel = false, grund = Color(0xFFE6DCC4), text = Color(0xFF231F1A), neben = Color(0xFF5A5145),
-            glas = Color(0xFFF6EFDF), linie = Color(0xFFD8CBAE), kante = Color(0xFFC9B98F),
+            glas = Edo.papier, linie = Edo.zeilenLinie, kante = Edo.papierRand,
             oben = Color(0xFFF6EFDF).copy(alpha = 0.7f), unten = akzent.copy(alpha = 0.10f),
         )
     } else {
         StilGrundlage(
             dunkel = false, grund = Color(0xFFEFE6D2), text = Color(0xFF231F1A), neben = Color(0xFF5A5145),
-            glas = Color(0xFFF6EFDF), linie = Color(0xFFD8CBAE), kante = Color(0xFFD8CBAE),
+            glas = Edo.papier, linie = Edo.zeilenLinie, kante = Edo.zeilenLinie,
         )
     }
     FoodyStil.BAYRISCH -> if (immersiv) {
         StilGrundlage(
-            dunkel = false, grund = Color(0xFFFBF6EA), text = Color(0xFF2B1E14), neben = Color(0xFF5C4A3A),
-            glas = Color(0xFFFFFFFF), linie = Color(0xFFCDBB9C), kante = akzent,
+            dunkel = false, grund = Bayrisch.creme, text = Color(0xFF2B1E14), neben = Color(0xFF5C4A3A),
+            glas = Color(0xFFFFFFFF), linie = Bayrisch.linie, kante = akzent,
             // Himmel oben, der in Papier übergeht
             oben = Color(0xFFCFE3F3).copy(alpha = 0.9f),
         )
     } else {
         StilGrundlage(
-            dunkel = false, grund = Color(0xFFFBF6EA), text = Color(0xFF2B1E14), neben = Color(0xFF5C4A3A),
-            glas = Color(0xFFFFFFFF), linie = Color(0xFFCDBB9C), kante = Color(0xFFCDBB9C),
+            dunkel = false, grund = Bayrisch.creme, text = Color(0xFF2B1E14), neben = Color(0xFF5C4A3A),
+            glas = Color(0xFFFFFFFF), linie = Bayrisch.linie, kante = Bayrisch.linie,
         )
     }
     FoodyStil.GRAUEN -> if (immersiv) {
@@ -205,15 +209,15 @@ fun stilGrundlage(stil: FoodyStil, immersiv: Boolean, akzent: Color): StilGrundl
     } else {
         // Pergament
         StilGrundlage(
-            dunkel = false, grund = Color(0xFFC9BB96), text = Color(0xFF2A2418), neben = Color(0xFF4A4030),
-            glas = Color(0xFFD9CDAE), linie = Color(0xFFB9AA86), kante = Color(0xFFA89A76),
+            dunkel = false, grund = Color(0xFFC9BB96), text = Grauen.tinte, neben = Grauen.tinteNeben,
+            glas = Grauen.pergament, linie = Color(0xFFB9AA86), kante = Color(0xFFA89A76),
             oben = Color(0xFFE2D8BC), unten = Color(0xFFB9AA86).copy(alpha = 0.9f),
         )
     }
     FoodyStil.KREUZER -> if (immersiv) {
         StilGrundlage(
             dunkel = true, grund = Color(0xFF050913), text = Color(0xFFE9EEF2), neben = Color(0xFF8A97AD),
-            glas = Color(0xFF0A1222), linie = Color(0xFF1C2A44), kante = HoloBlau.copy(alpha = 0.35f),
+            glas = Color(0xFF0A1222), linie = Kreuzer.linie, kante = HoloBlau.copy(alpha = 0.35f),
             oben = Color(0xFF0E1A33), unten = HoloBlau.copy(alpha = 0.07f),
         )
     } else {

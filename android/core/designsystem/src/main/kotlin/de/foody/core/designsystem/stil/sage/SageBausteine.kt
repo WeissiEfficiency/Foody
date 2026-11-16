@@ -59,11 +59,8 @@ object Sage {
         fontStyle = if (kursiv) FontStyle.Italic else FontStyle.Normal,
     )
 
-    /** Römische Zahl für Schritte und Kapitel (I … XXXIX), ab 40 die arabische. */
-    fun roemisch(n: Int): String {
-        if (n !in 1..39) return n.toString()
-        return "X".repeat(n / 10) + listOf("", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX")[n % 10]
-    }
+    /** Feuer der Laternen, Glut und Flammen (im Entwurf #F59E0B). */
+    val feuer = Color(0xFFF59E0B)
 }
 
 /** Heller Ton für Titel und Zahlen (im Entwurf #F4EEDD), aus dem Text des Stils. */

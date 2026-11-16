@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.portionenText
 
 /** „Auf die Einkaufsliste“: Portionen wählen (1–99), dann „Hinzufügen“. */
 @Composable
@@ -27,7 +28,7 @@ internal fun EinkaufsDialog(portionen: Int, onPortionen: (Int) -> Unit, onHinzuf
                     Icon(Icons.Outlined.Remove, contentDescription = "Eine Portion weniger", tint = FoodyTheme.farben.text)
                 }
                 Text(
-                    if (portionen == 1) "1 Portion" else "$portionen Portionen",
+                    portionenText(portionen),
                     style = MaterialTheme.typography.titleMedium, color = FoodyTheme.farben.text,
                 )
                 IconButton(onClick = { onPortionen((portionen + 1).coerceAtMost(99)) }) {

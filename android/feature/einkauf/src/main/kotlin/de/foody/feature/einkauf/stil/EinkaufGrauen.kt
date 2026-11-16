@@ -81,7 +81,7 @@ internal fun grauenFluestern(offen: Int): String = when (offen) {
     else -> "Noch $offen Posten. Man sagt, der Markt schließe vor Einbruch der Dunkelheit."
 }
 
-private val TINTE = Color(0xFF2A2418)
+private val TINTE = Grauen.tinte
 private val TINTE_BLASS = Color(0xFF4A3E2A)
 private val MOOS = Color(0xFF24473A)
 private val STEMPEL = Color(0xFF8E2A22)
