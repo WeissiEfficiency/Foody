@@ -93,6 +93,7 @@ import de.foody.core.designsystem.stil.grauen.GrauenKnopf
 import de.foody.core.designsystem.stil.grauen.GrauenNotizknopf
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
+import de.foody.domain.zielAnteil
 import de.foody.feature.heute.DatenbankLeerHinweis
 import de.foody.feature.heute.GegessenFrage
 import de.foody.feature.heute.HEUTE_INHALT
@@ -180,7 +181,7 @@ private fun DasAuge(t: TagebuchHeute) {
     val glut = FoodyTheme.stil.zier
     val s = t.summe
     val ziel = t.ziel?.takeIf { it > 0 }
-    val anteil = ziel?.let { (s.kcal.toFloat() / it).coerceIn(0f, 1f) }
+    val anteil = zielAnteil(s.kcal, ziel)
     val vorlesen = kcalStand(s.kcal, ziel, s.vollstaendig) +
         (if (ziel != null && s.kcal > ziel) ", über Ziel" else "") +
         ": " + makroSatz(s.eiweiss, s.kohlenhydrate, s.fett)

@@ -103,6 +103,7 @@ import de.foody.core.designsystem.stil.kreuzer.KreuzerVerweis
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
+import de.foody.domain.zielAnteil
 import de.foody.feature.heute.DatenbankLeerHinweis
 import de.foody.feature.heute.GegessenFrage
 import de.foody.feature.heute.HEUTE_INHALT
@@ -385,7 +386,7 @@ private fun Planetenknopf(p: Planet, groesse: Float, an: Boolean, onKlick: () ->
 private fun Treibstoff(kcal: Int, ziel: Int?, vollstaendig: Boolean, modifier: Modifier) {
     val f = FoodyTheme.farben
     val holo = FoodyTheme.stil.zier
-    val anteil = ziel?.takeIf { it > 0 }?.let { (kcal.toFloat() / it).coerceIn(0f, 1f) } ?: 0f
+    val anteil = zielAnteil(kcal, ziel) ?: 0f
     val vorlesen = kcalStand(kcal, ziel, vollstaendig)
     Column(
         modifier.clearAndSetSemantics { contentDescription = vorlesen },

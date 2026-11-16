@@ -30,12 +30,15 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.Darstellung
+import de.foody.core.data.TAGESZIEL_MAX
+import de.foody.core.data.TAGESZIEL_MIN
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.zeilenImStil
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilAkzent
@@ -209,7 +212,10 @@ internal fun DarstellungAbschnitt(
     }
 }
 
-/** Tagesziel als Zahlenfeld; [fehler] zeigt „500 bis 10.000 kcal“ am Feld. */
+/** Hinweis bei ungültigem Tagesziel: „500 bis 10.000 kcal“, aus den Grenzen des Speichers. */
+internal val ZIEL_HINWEIS = "${ganzzahlDeutsch(TAGESZIEL_MIN)} bis ${ganzzahlDeutsch(TAGESZIEL_MAX)} kcal"
+
+/** Tagesziel als Zahlenfeld; [fehler] zeigt [ZIEL_HINWEIS] am Feld. */
 @Composable
 internal fun TageszielAbschnitt(text: String, fehler: Boolean, onFertig: () -> Unit, onText: (String) -> Unit) = Abschnitt(
     "Tagesziel",
@@ -226,7 +232,7 @@ internal fun TageszielAbschnitt(text: String, fehler: Boolean, onFertig: () -> U
         suffix = { Text("kcal") },
         singleLine = true,
         isError = fehler,
-        supportingText = { Text(if (fehler) "500 bis 10.000 kcal" else "Leer lassen = kein Ziel") },
+        supportingText = { Text(if (fehler) ZIEL_HINWEIS else "Leer lassen = kein Ziel") },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { onFertig() }),
     )

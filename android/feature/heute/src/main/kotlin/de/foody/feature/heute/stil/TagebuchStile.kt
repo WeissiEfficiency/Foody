@@ -72,6 +72,7 @@ import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
+import de.foody.domain.zielAnteil
 import de.foody.feature.heute.TAGEBUCH_INHALT
 import de.foody.feature.heute.tagebuch.TagAbschnitt
 import de.foody.feature.heute.tagebuch.TagZustand
@@ -306,7 +307,7 @@ private fun bilanzSatz(z: TagZustand): String {
 
 private fun anteil(z: TagZustand): Float {
     val ziel = z.ziel?.takeIf { it > 0 }
-    return if (ziel != null) (z.summe.kcal.toFloat() / ziel).coerceIn(0f, 1f) else if (z.summe.kcal > 0) 1f else 0f
+    return zielAnteil(z.summe.kcal, ziel) ?: if (z.summe.kcal > 0) 1f else 0f
 }
 
 /** Ring mit den kcal gegen das Ziel, daneben die Makros. */

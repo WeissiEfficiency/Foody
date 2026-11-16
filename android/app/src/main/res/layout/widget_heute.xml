@@ -54,8 +54,8 @@
 
             <FrameLayout
                 android:id="@+id/widget_ring_rahmen"
-                android:layout_width="104dp"
-                android:layout_height="104dp"
+                android:layout_width="@dimen/widget_ring"
+                android:layout_height="@dimen/widget_ring"
                 android:importantForAccessibility="no">
 
                 <ImageView
