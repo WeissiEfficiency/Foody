@@ -66,6 +66,7 @@ import de.foody.domain.Mahlzeit
 import de.foody.domain.Quantity
 import de.foody.domain.QuantityFormatter
 import de.foody.domain.TagebuchArt
+import de.foody.domain.zielAnteil
 import de.foody.feature.heute.TAGEBUCH_INHALT
 import de.foody.feature.heute.tagebuch.TagAbschnitt
 import de.foody.feature.heute.tagebuch.TagZustand
@@ -210,7 +211,7 @@ private fun Bilanz(z: TagZustand) {
     val glut = FoodyTheme.stil.zier
     val s = z.summe
     val ziel = z.ziel?.takeIf { it > 0 }
-    val anteil = if (ziel != null) (s.kcal.toFloat() / ziel).coerceIn(0f, 1f) else if (s.kcal > 0) 1f else 0f
+    val anteil = zielAnteil(s.kcal, ziel) ?: if (s.kcal > 0) 1f else 0f
     val satz = kcalStand(s.kcal, ziel, s.vollstaendig) +
         ": " + makroSatz(s.eiweiss, s.kohlenhydrate, s.fett)
     val energie = (s.eiweiss * 4 + s.kohlenhydrate * 4 + s.fett * 9).coerceAtLeast(1)

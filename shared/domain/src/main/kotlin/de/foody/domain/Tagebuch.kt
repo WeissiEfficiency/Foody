@@ -23,6 +23,9 @@ data class EintragWerte(val mahlzeit: Mahlzeit, val werte: Naehrwerte)
 
 data class Summe(val kcal: Int, val eiweiss: Int, val kohlenhydrate: Int, val fett: Int, val vollstaendig: Boolean)
 
+/** Wie weit [kcal] das Tagesziel [ziel] füllt, von 0 bis 1 (darüber 1); `null` ohne sinnvolles Ziel (fehlt oder ≤ 0). */
+fun zielAnteil(kcal: Int, ziel: Int?): Float? = ziel?.takeIf { it > 0 }?.let { (kcal.toFloat() / it).coerceIn(0f, 1f) }
+
 /** Tagessumme und Summen je Mahlzeit (nur Mahlzeiten mit Einträgen). */
 data class TagesBilanz(val tag: Summe, val jeMahlzeit: Map<Mahlzeit, Summe>)
 

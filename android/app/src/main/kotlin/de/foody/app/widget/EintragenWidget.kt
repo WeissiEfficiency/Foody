@@ -43,10 +43,11 @@ internal fun eintragenAussehen(context: Context, wahl: StilWahl): EintragenAusse
     val k = kartenAussehen(context, wahl)
     val imm = k.immersiv
     // Schmale Leerzeichen um den Punkt: In engen 2×2-Zellen (etwa 123 dp) passt die Zeile so noch in eine Zeile
-    val fuss = "Suchen · Scannen · Foto"
-    fun titel(wort: String) = if (imm) wort else "Eintragen"
+    val fuss = context.getString(R.string.widget_eintragen_fuss)
+    val eintragen = context.getString(R.string.widget_eintragen_titel)
+    fun titel(wort: String) = if (imm) wort else eintragen
     return when (k.stil) {
-        FoodyStil.MILCHGLAS -> EintragenAussehen(null, k.text, k.neben, null, 0f, k.text, k.flaeche.farbe, false, "Eintragen", fuss, null)
+        FoodyStil.MILCHGLAS -> EintragenAussehen(null, k.text, k.neben, null, 0f, k.text, k.flaeche.farbe, false, eintragen, fuss, null)
         FoodyStil.SAGE -> EintragenAussehen(
             k.flaeche, k.text, k.neben, k.akzent, 1.5f, k.flaeche.farbe, k.akzent, false, titel("EINTRAGEN"), fuss, "serif",
         )
@@ -56,7 +57,7 @@ internal fun eintragenAussehen(context: Context, wahl: StilWahl): EintragenAusse
         )
         FoodyStil.EDO -> EintragenAussehen(
             Flaeche(Entwuerfe.edo.text, null, 0f, 18f, false), Entwuerfe.edo.glas, 0xFFB5A88E.toInt(), null, 0f, k.akzent,
-            Color.WHITE, false, "Eintragen", fuss, "serif",
+            Color.WHITE, false, eintragen, fuss, "serif",
         )
         FoodyStil.BAYRISCH -> EintragenAussehen(
             Flaeche(k.akzent, Entwuerfe.bayrisch.text, 2f, 22f, false), Color.WHITE, 0xE6FFFFFF.toInt(), Entwuerfe.bayrisch.text, 2f,

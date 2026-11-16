@@ -44,6 +44,7 @@ import de.foody.core.designsystem.komponenten.makroSatz
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
+import de.foody.domain.zielAnteil
 
 /**
  * Tagesbilanz wie im Entwurf: Ring mit den kcal (mit Tagesziel als Anteil, sonst voll), daneben Eiweiß, KH und Fett
@@ -53,7 +54,7 @@ import de.foody.core.designsystem.token.GlasStufe
 internal fun TagBilanz(kcal: Int, ziel: Int?, eiweiss: Int, kh: Int, fett: Int, vollstaendig: Boolean = true) {
     val f = FoodyTheme.farben
     val hatZiel = ziel != null && ziel > 0
-    val anteil = if (hatZiel) (kcal.toFloat() / ziel).coerceIn(0f, 1f) else if (kcal > 0) 1f else 0f
+    val anteil = zielAnteil(kcal, ziel) ?: if (kcal > 0) 1f else 0f
     val beschreibung = kcalStand(kcal, ziel, vollstaendig) +
         ": " + makroSatz(eiweiss, kh, fett)
     val energie = (eiweiss * 4 + kh * 4 + fett * 9).coerceAtLeast(1)

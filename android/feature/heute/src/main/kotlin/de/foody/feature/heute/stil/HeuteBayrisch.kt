@@ -76,6 +76,7 @@ import de.foody.core.designsystem.stil.bayrisch.BayrischKnopf
 import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
+import de.foody.domain.zielAnteil
 import de.foody.feature.heute.DatenbankLeerHinweis
 import de.foody.feature.heute.HEUTE_INHALT
 import de.foody.feature.heute.HeuteAktionen
@@ -238,7 +239,7 @@ private fun Maibaum(t: TagebuchHeute, modifier: Modifier) {
     val blau = bayrischBlau()
     val gruen = Color(0xFF4E7A3A)
     val ziel = t.ziel?.takeIf { it > 0 }
-    val stand = ziel?.let { (t.summe.kcal.toFloat() / it).coerceIn(0f, 1f) } ?: 0f
+    val stand = zielAnteil(t.summe.kcal, ziel) ?: 0f
     val abschnitte = t.mahlzeiten.sortedBy { it.mahlzeit.hoehe() }
     Layout(
         content = {

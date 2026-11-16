@@ -48,6 +48,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import de.foody.core.data.TAGESZIEL_MAX
+import de.foody.core.data.TAGESZIEL_MIN
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilAbschnitt
@@ -71,14 +73,13 @@ import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
  * Tagesziel mit − und +.
  */
 
-/** Grenzen des Tagesziels wie im ViewModel; − und + gehen in Schritten von [ZIEL_SCHRITT]. */
-internal const val ZIEL_MIN = 500
-internal const val ZIEL_MAX = 10_000
+/** − und + am Tagesziel gehen in Schritten von [ZIEL_SCHRITT], innerhalb von [TAGESZIEL_MIN]–[TAGESZIEL_MAX]. */
 internal const val ZIEL_SCHRITT = 50
 private const val ZIEL_START = 2000
 
 /** Neues Ziel nach − oder + ([richtung] −1 oder 1); ohne gültige Eingabe beginnt es bei 2.000 kcal. */
-internal fun zielSchritt(text: String, richtung: Int): Int = ((text.trim().toIntOrNull() ?: ZIEL_START) + richtung * ZIEL_SCHRITT).coerceIn(ZIEL_MIN, ZIEL_MAX)
+internal fun zielSchritt(text: String, richtung: Int): Int =
+    ((text.trim().toIntOrNull() ?: ZIEL_START) + richtung * ZIEL_SCHRITT).coerceIn(TAGESZIEL_MIN, TAGESZIEL_MAX)
 
 /** Ein Abschnitt im Stil: [titel] als Überschrift (TalkBack liest [beschreibung]), [sync] = die Karte des Abgleichs. */
 @Composable
@@ -414,7 +415,7 @@ internal fun ZielStil(text: String, fehler: Boolean, onText: (String) -> Unit, o
         }
     }
     if (fehler) {
-        Text("500 bis 10.000 kcal", style = zeilenSchrift().second, color = MaterialTheme.colorScheme.error)
+        Text(ZIEL_HINWEIS, style = zeilenSchrift().second, color = MaterialTheme.colorScheme.error)
     } else if (text.isBlank()) {
         Text("Kein Ziel gesetzt", style = zeilenSchrift().second, color = FoodyTheme.farben.nebentext)
     }

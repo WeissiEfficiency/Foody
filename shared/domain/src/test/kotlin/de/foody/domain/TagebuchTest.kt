@@ -134,4 +134,19 @@ class TagebuchTest {
         assertBd("732", werte.energieKj)
         assertBd("1.35", werte.eiweiss)
     }
+
+    @Test
+    fun zielAnteilVonNullBisEins() {
+        assertEquals(0.5f, zielAnteil(1000, 2000))
+        assertEquals(1f, zielAnteil(2500, 2000), "über dem Ziel bleibt es voll")
+        assertEquals(0f, zielAnteil(0, 2000))
+    }
+
+    @Test
+    fun zielAnteilOhneSinnvollesZiel() {
+        assertNull(zielAnteil(800, null))
+        assertNull(zielAnteil(800, 0), "kein Teilen durch 0")
+        assertNull(zielAnteil(0, 0), "kein NaN")
+        assertNull(zielAnteil(800, -5))
+    }
 }

@@ -92,6 +92,7 @@ import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.SageHauptknopf
 import de.foody.core.designsystem.stil.sage.sageHell
 import de.foody.core.designsystem.token.FoodyBreiten
+import de.foody.domain.zielAnteil
 import de.foody.feature.heute.DatenbankLeerHinweis
 import de.foody.feature.heute.GegessenFrage
 import de.foody.feature.heute.HEUTE_INHALT
@@ -281,7 +282,7 @@ private fun Vitalitaet(t: TagebuchHeute) {
             )
         }
         if (ziel != null) {
-            val anteil = (s.kcal.toFloat() / ziel).coerceIn(0f, 1f)
+            val anteil = zielAnteil(s.kcal, ziel) ?: 0f
             Box(
                 Modifier.fillMaxWidth().height(10.dp).background(FoodyTheme.werte.glas).border(1.dp, f.lichtkante)
                     .drawBehind {

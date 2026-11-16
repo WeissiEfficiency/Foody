@@ -18,6 +18,8 @@ import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import de.foody.core.data.TAGESZIEL_MAX
+import de.foody.core.data.TAGESZIEL_MIN
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
@@ -134,7 +136,7 @@ class EinstellungenStileTest {
     fun schritte() {
         assertEquals(2050, zielSchritt("2000", 1))
         assertEquals(1950, zielSchritt("", -1))
-        assertEquals(ZIEL_MIN, zielSchritt("520", -1))
-        assertEquals(ZIEL_MAX, zielSchritt("10000", 1))
+        assertEquals(TAGESZIEL_MIN, zielSchritt("520", -1))
+        assertEquals(TAGESZIEL_MAX, zielSchritt("10000", 1))
     }
 }

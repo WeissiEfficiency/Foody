@@ -26,6 +26,7 @@ import de.foody.core.designsystem.komponenten.kcalZahl
 import de.foody.core.designsystem.komponenten.slotName
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.domain.Mahlzeit
+import de.foody.domain.zielAnteil
 import de.foody.feature.heute.NaechsteMahlzeit
 import java.util.Locale
 
@@ -60,7 +61,7 @@ internal fun kcalText(d: HeuteDaten): String = d.ziel?.let { "${d.kcalZahl()} / 
 internal fun HeuteDaten.kcalZahl(): String = kcalZahl(kcal, vollstaendig)
 
 /** Anteil am Ziel für Ring, Balken und Tank; ohne Ziel leer. */
-internal fun zielAnteil(d: HeuteDaten): Float = d.ziel?.takeIf { it > 0 }?.let { d.kcal.toFloat() / it } ?: 0f
+internal fun zielAnteil(d: HeuteDaten): Float = zielAnteil(d.kcal, d.ziel) ?: 0f
 
 /** Marke über dem Gericht: „HEUTE · ABENDESSEN“, in Immersiv das Wort des Stils („ABENDMAHL“, „NÄCHSTE MISSION“ …). */
 internal fun heuteMarke(stil: FoodyStil, immersiv: Boolean, n: NaechsteMahlzeit?): String {
@@ -164,7 +165,8 @@ fun heuteAnsicht(context: Context, d: HeuteDaten, wahl: StilWahl): RemoteViews =
     val info = gerichtInfo(n)
     when (k.stil) {
         FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN -> {
-            ring(context, k, 104f, zielAnteil(d), d.kcalZahl(), d.ziel?.let { "/ ${zahl(it)}" } ?: "kcal")
+            val ringDp = context.resources.getDimension(R.dimen.widget_ring) / context.resources.displayMetrics.density
+            ring(context, k, ringDp, zielAnteil(d), d.kcalZahl(), d.ziel?.let { "/ ${zahl(it)}" } ?: "kcal")
             setTextColor(R.id.widget_marke, lesbarAuf(k.akzent, k.flaeche.farbe))
             setTextViewText(R.id.widget_info, schrift(info.orEmpty(), k.nebenSchrift))
             if (k.stil == FoodyStil.BAYRISCH && imm) {
