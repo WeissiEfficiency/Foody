@@ -1,6 +1,7 @@
 # Foody – wählbare Stile Q bis V
 
-Stand: 2026-11-11, Phase 1 und der Kern von Phase 2/3 umgesetzt (Branch `claude/stile-q-v`), siehe „Ergebnis“. Grundlage sind die Entwürfe im Design-Canvas
+Stand: 2026-11-16, alle Phasen umgesetzt und in `main` (PRs #216–#249, Review-Funde #250–#268). Offen sind nur die
+Abnahme auf dem Handy und Tablet, siehe „Offen“ unten. Grundlage sind die Entwürfe im Design-Canvas
 „Foody Design“ (privat, https://claude.ai/artifact/4GQ6pcboqoVPJCfJmyFdHj). Q bis V haben dort je 14 Screens als
 „Version 1“, jeder Screen mit den Varianten **Immersiv** und **Ruhig**. Die Phasen werden der Reihe nach abgearbeitet.
 Die nächste beginnt, wenn die vorige abgehakt ist.
@@ -59,8 +60,8 @@ Die 14 Entwürfe je Stil decken alle Bildschirme der App ab:
   Standardtexte.
 - **Barrierefreiheit:** Kontrast WCAG 2.2 AA wie bisher, auch auf den Szenen. Animationen (Flamme, Auge, Orbits)
   ruhen, wenn das System Animationen abschaltet, wie heute schon die Unschärfe (`animationenErlaubt()`). Fraktur und
-  Schreibmaschine nur für Titel und kurze Zeilen, Fließtext in der lesbaren Schrift des Stils. Ziele mindestens 48 dp,
-  große Schrift (200 %) darf nichts abschneiden.
+  Schreibmaschine nur für Titel und kurze Zeilen, Fließtext in der lesbaren Schrift des Stils. Ziele mindestens 48 dp.
+  Große Schrift (200 %) prüfen wir nicht mehr (Nutzer, 2026-11-15); die vorhandenen Tests dazu bleiben.
 - **Keine fremden Marken.** Q und V bleiben allgemeines Genre (dunkle Fantasy, Raumschiff), ohne Namen, Logos oder
   Motive aus Spielen oder Filmen, so wie in den Entwürfen.
 - **Kein Sync der Wahl**, wie bei der Farbwelt (ADR 0015). Server-Rebuild: nein.
@@ -123,47 +124,50 @@ Gemeinsame liegt in `:core:designsystem`.
 
 ### Phase 0 – Entscheidungen und Entwurf prüfen
 - [ ] Mit dem Nutzer die Entwürfe im Canvas durchsehen. Sie sind nie gerendert geprüft worden, Abstände und frei
-      platzierte Elemente können danebenliegen.
-- [ ] Rahmen oben bestätigen (fester Grund je Stil, Wörter in Immersiv, Tablet).
+      platzierte Elemente können danebenliegen. Stattdessen gilt seit 2026-11-13: Die Entwürfe sind der Soll-Zustand.
+      Der Abgleich der fertigen App mit dem Canvas steht mit der Abnahme auf dem Handy aus (Phase 5).
+- [x] Rahmen oben: so umgesetzt (fester Grund je Stil, Wörter in Immersiv, Tablet mit zweispaltigem Layout).
 - [x] Pilot festgelegt (Nutzer, 2026-11-11): **Q · Düstere Sage**. Dunkel, lateinische Schriften (Cinzel,
       EB Garamond), kantige Formen.
-- [ ] Festlegen, welche Stile außer Q in die App kommen und in welcher Reihenfolge.
+- [x] Welche Stile: alle Q bis V gleich, nicht nur der Pilot (Nutzer, 2026-11-11).
 - [x] ADR 0020 „Wählbare Stile“ (erweitert ADR 0015, Milchglas bleibt Standard) und Spec in
       `docs/superpowers/specs/`.
 
 ### Phase 1 – Grundgerüst, ohne sichtbare Änderung
-- [ ] `FoodyStil`, `StilVariante` und `StilWerte`. Milchglas wird zu einem Stil mit den heutigen Werten.
-- [ ] `FoodyFormen` und Typografie über das Theme, Speicher, Weitergabe in `MainActivity`.
-- [ ] Einstellungen: Auswahl „Stil“, vorerst nur Milchglas freigeschaltet (oder hinter dem Debug-Build).
-- [ ] Beweis: Alle Roborazzi-Bilder bleiben gleich (`verifyRoborazziDebug`), `./gradlew check` ist grün.
+- [x] `FoodyStil`, `StilVariante` und `StilWerte`. Milchglas wird zu einem Stil mit den heutigen Werten.
+- [x] `FoodyFormen` und Typografie über das Theme, Speicher, Weitergabe in `MainActivity`.
+- [x] Einstellungen: Auswahl „Stil“. Alle Stile waren gleich wählbar, nicht erst nur Milchglas.
+- [x] Beweis: Die Milchglas-Bilder bleiben gleich, außer den Einstellungen (Stilwahl dazu); `./gradlew check` ist grün.
 
 ### Phase 2 – Komponenten stilfähig, Pilot Ruhig
-- [ ] Die Komponenten aus „Aufbau“ Punkt 4 lesen die Stilwerte. Feste Ecken in den Features werden umgestellt.
-- [ ] Schriften des Pilots einbinden (Cinzel, EB Garamond).
-- [ ] Q in **Ruhig** auf allen Screens. `KontrastTest` und Roborazzi bekommen den Pilot dazu.
-- [ ] Auf dem Debug-Build am Handy und Tablet ansehen.
+- [x] Die Komponenten aus „Aufbau“ Punkt 4 lesen die Stilwerte. Feste Ecken in den Features werden umgestellt.
+- [x] Schriften des Pilots einbinden (Cinzel, EB Garamond).
+- [x] Q in **Ruhig** auf allen Screens. `KontrastTest` und Roborazzi bekommen den Pilot dazu.
+- [ ] Auf dem Debug-Build am Handy und Tablet ansehen. Offen, siehe „Offen“.
 
 ### Phase 3 – Ruhig für die übrigen Stile
 - [x] Werkzeug zum Beschneiden der Schriften, danach die Schriften für R, S, T, U, V (APK-Größe vorher und nachher
       messen), siehe „Ergebnis“ 2026-11-13.
-- [ ] `StilWerte` Ruhig für R, S, T, U, V. Danach sind alle Stile wählbar, Immersiv zeigt bis Phase 6 noch Ruhig.
-- [ ] Danach kann man schon alle Stile im Alltag benutzen. Ab hier könnte man aufhören, falls Immersiv zu viel ist.
+- [x] `StilWerte` Ruhig für R, S, T, U, V. Danach sind alle Stile wählbar, Immersiv zeigt bis Phase 6 noch Ruhig.
+- Danach kann man schon alle Stile im Alltag benutzen. Ab hier könnte man aufhören, falls Immersiv zu viel ist.
 
 ### Phase 4 – Immersiv Pilot, Hauptscreens
 - [x] Zustand und Anzeige trennen: war nicht nötig, die Szenen hängen sich in die bestehenden Routen ein.
-- [ ] Die Szenen-Plätze (erledigt: `StilWerte.immersiv`) und `StilTexte` einführen.
+- [x] Die Szenen-Plätze (`StilWerte.immersiv`) und `StilTexte`/`stilText` einführen.
 - [x] Q Immersiv für Heute (Rast am Feuer), Rezepte (Grimoire), Woche (Karte der Woche) und Einkauf (Händler), 2026-11-11.
       Flamme und Glut ruhen, wenn Animationen aus sind.
-- [ ] Leistung: In Listen keine Unschärfe oder teuren Zeichnungen pro Zeile. Baseline-Profil prüfen.
+- [x] Leistung: Listen der Stile blättern in Seiten zu sechs, Animationen zeichnen nur den bewegten Teil (#258).
+      Baseline-Profil mit allen Stilen neu erzeugt, siehe „Ergebnis“ 2026-11-16.
 
 ### Phase 5 – Immersiv Pilot, restliche Screens
-- [ ] Eintragen, Tagebuch, Rezept, Editor, Kochen, Planen, Listen, Einstellungen, Zutaten. Erledigt: Rezept, Kochen,
-      Tagebuch; die übrigen über Bausteine und Wörter (2026-11-12).
-- [ ] Abnahme des Pilots auf dem Handy. Erst danach geht es mit den nächsten Stilen weiter.
+- [x] Eintragen, Tagebuch, Rezept, Editor, Kochen, Planen, Listen, Einstellungen, Zutaten. Rezept, Kochen, Tagebuch,
+      Editor und Einstellungen als Szene; die übrigen über Bausteine und Wörter.
+- [ ] Abnahme auf dem Handy. Der Nutzer wollte alle Stile ohne Abnahme des Pilots (2026-11-11); die Abnahme gilt
+      jetzt für alle Stile, siehe „Offen“.
 
 ### Phase 6 – Immersiv für die übrigen Stile
-- [ ] Ein Stil nach dem anderen, je Stil zwei bis drei PRs (Hauptscreens, dann Rest). Die Reihenfolge legt der Nutzer
-      fest.
+- [x] Ein Stil nach dem anderen, je Stil zwei bis drei PRs (Hauptscreens, dann Rest). Umgesetzt je Bildschirm für
+      alle fünf Stile R bis V zugleich.
 - [x] Mundart (T) und die Texte der Szenen einmal vom Nutzer gegenlesen lassen, siehe „Ergebnis“ 2026-11-15.
 - Erledigt: Wörter R–V (Navigation, Titel, Knöpfe) und die Heute-Szenen aller Stile (U „Das Auge“, V
   „Tagessystem“, T „Maibaum“, R „HEUTE!“, S „Rollbild“). Alle Hauptscreens haben in R–V ihre Szene
@@ -178,6 +182,19 @@ Gemeinsame liegt in `:core:designsystem`.
       (`docs/superpowers/plans/2026-11-13-widgets.md`).
 - [x] Doku: `docs/architecture.md` (Navigation und Widgets), „Ergebnis“ hier. In `docs/design/` gibt es keine Tabelle
       der Widgets.
+
+### Offen (Stand 2026-11-16)
+- [x] Silbentrennung in den Szenen (Gerätetest 2026-11-16, siehe „Ergebnis“): behoben mit `mitSilbentrennung()`.
+- [x] Rezeptliste der Szenen: Nach dem Antippen rollt die Karte mit „Öffnen“ über die schwebende Navigation.
+- [x] Händler (Sage): Unterzeilen der Posten zweizeilig statt abgeschnitten.
+- [ ] Abnahme auf dem Handy, Rest: Kochen, Editor, Eintragen, Planen, Listen und Zutaten in allen Stilen; Ruhig außer
+      Kreuzer; ein genauer Abgleich Bild für Bild mit dem Canvas. Die Hauptscreens in Immersiv sind geprüft.
+- [ ] Tablet ansehen (zweispaltiges Layout mit Farben, Schrift und Formen des Stils).
+- [ ] Widgets auf einem zweiten Launcher (bisher nur ColorOS).
+- Bewusst nicht gemacht (Funktion fehlt in der App): „In die Woche“ auf Rezeptkarte und Rezept, Uhrzeiten in Heute und
+  Tagebuch, die Reiter „Selbst · Link · Foto · Text“ im Editor, Timer-Bogen (V), „Jetzt abgleichen“/„Trennen“ auf der
+  Karte in den Einstellungen.
+- Aus dem Review offen: benannte Schriftskala je Stil (N2, Aufwand L), sechs Lint-Hinweise.
 
 ## Aufwand und Risiken
 
@@ -518,8 +535,6 @@ Spec `docs/superpowers/specs/2026-11-13-widgets-design.md`, Plan `docs/superpowe
 - Nicht prüfbar ohne Gerät: das Abrunden über den Umriss im Launcher (Robolectric zeichnet ohne) und der
   `WidgetBeobachter` über Hilt. Am 2026-11-15 auf dem Gerät nachgeholt, siehe „Ergebnis“.
 
-Offen:
-
 **2026-11-13 – ADR 0020 und Doku:** `docs/adr/0020-waehlbare-stile.md`, Abschnitt `stil/` unter „Designsystem“ in
 `docs/architecture.md`.
 
@@ -566,3 +581,26 @@ Handy des Nutzers, ColorOS-Launcher, 2×2-Zelle etwa 123 dp breit):
 - Die Bilder kommen aus dem neuen Bildtest `WidgetBildTest` in `:app` (Roborazzi, Milchglas mit Beispieldaten, volle
   Auflösung, Ecken gerundet). Erste Referenzbilder für Widgets überhaupt; `vorschauGleichReferenz` hält Vorschau und
   Referenz gleich.
+
+**2026-11-16 – Gerätetest der Stile und Baseline-Profil** (Debug-Variante per WLAN-Debugging auf dem Handy des Nutzers,
+ColorOS, 1264 × 2780 px; erfundene Testdaten aus einer Sicherung: 8 Rezepte, Wochenplan mit leeren Tagen, Einkauf mit
+abgehakten Posten, Tagebuch mit einem Eintrag ohne vollständige Werte, Tagesziel 2.000 kcal):
+- Geprüft: in allen sechs Stilen (Immersiv) Heute (oben und unten), Tagebuch, Rezepte, Rezept, Woche, Einkauf und
+  Einstellungen, dazu Kreuzer in Ruhig. Kein Absturz, Daten und Rechnung stimmen in allen Stilen: „≥ 1.268“ bei
+  unvollständigem Eintrag, „≤ 732 frei“ für den Rest, „≥ 63 % ERREICHT“ (Kreuzer).
+- Fehler: In den Szenen fehlt die deutsche Silbentrennung. `Anime.titel/text`, `Kreuzer.titel/mono` usw. bauen einen
+  eigenen `TextStyle` ohne `localeList = de-DE` und `hyphens = Hyphens.Auto` (anders als `FoodyTypo.kt`). Folge in
+  schmalen Kacheln: „Kokosmilc|h“, „Ofengem|üse“ (Woche Anime), „Hähnchen-Cur|ry“ (Zettel auf Heute, Anime),
+  „Rote-Linsen-S|uppe“ (Woche Edo), „Hähnchenbru|st“ (Frachtraum Kreuzer). Ruhig trennt richtig („Hähnchen-|brust“).
+- Auffällig: In den Rezeptlisten von Edo, Bayrisch, Grauen und Kreuzer liegt die Karte des gewählten Rezepts mit dem
+  Öffnen-Knopf beim ersten Blick unter der schwebenden Navigation. Im Händler (Sage) sind die Unterzeilen der Posten
+  abgeschnitten („500 G · OBST & GEM…“). Unter der schwebenden Navigation scheint Inhalt bis in die Systemleiste durch.
+- Hinweis: Solange Auge (Grauen) oder Sternensystem (Kreuzer) laufen, liefert UiAutomator keinen UI-Baum, weil die
+  Oberfläche nie zur Ruhe kommt. Ob das Bedienhilfen wie TalkBack stört, ist nicht geprüft.
+- Baseline-Profil neu erzeugt (Emulator): Der Generator geht neben dem Weg in Milchglas (`generate`, auch
+  Startprofil) einmal durch jeden Stil (`stile`). Vorher stand kein Code der Stile im Profil; jetzt 33.377 statt
+  26.217 Zeilen, Einträge aus Foody 5.124 statt 2.610. Start und Ruckeln sind nicht gemessen.
+- Behoben am selben Tag: `TextStyle.mitSilbentrennung()` in `token/FoodyTypo.kt` für alle Schriften der Stile (Test
+  `StilSchriftTest`); in der Rezeptliste rollt die Karte des gewählten Rezepts samt Platz für die Leiste ins Bild
+  (`RezepteStileTest`, `…KarteInsBild` auf 360 × 640 dp); im Händler zweizeilige Unterzeilen bei gleich hohen Feldern.
+  Auf dem Handy nachgeprüft (Edo, Kreuzer, Sage); sechs Referenzbilder der Stile neu, Milchglas unverändert.

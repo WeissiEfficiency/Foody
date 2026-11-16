@@ -122,6 +122,12 @@ private val basis = Typography()
 // Foody ist deutschsprachig: Silbentrennung nach deutschen Regeln, statt Wörter ohne Strich zu zerreißen.
 private val Deutsch = LocaleList("de-DE")
 
+/**
+ * Deutsche Silbentrennung für Textstile, die nicht aus dem Theme kommen (die Schriften der Stile in den Szenen). Ohne
+ * sie brechen lange Wörter in schmalen Kacheln ohne Strich mitten im Wort um („Kokosmilc|h“).
+ */
+fun TextStyle.mitSilbentrennung(): TextStyle = copy(localeList = Deutsch, hyphens = Hyphens.Auto)
+
 /** Überschrift: [familie] im Schnitt [gewicht], [abstand] als Laufweite (nicht angegeben = die von Material). */
 private fun TextStyle.titel(familie: FontFamily, gewicht: FontWeight, abstand: TextUnit) = copy(
     fontFamily = familie,

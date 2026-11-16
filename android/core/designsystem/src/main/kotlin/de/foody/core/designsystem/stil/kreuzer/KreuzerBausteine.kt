@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.token.Exo2Familie
 import de.foody.core.designsystem.token.ShareTechMonoFamilie
+import de.foody.core.designsystem.token.mitSilbentrennung
 
 /**
  * Bausteine des Sternenkreuzers (Stil V) in Immersiv. Der Entwurf setzt Exo 2 und Share Tech Mono. Zwei Farben: Amber (der gewählte
@@ -48,11 +49,11 @@ object Kreuzer {
         fontSize = groesse.sp,
         lineHeight = (groesse * 1.2f).sp,
         letterSpacing = abstand.em,
-    )
+    ).mitSilbentrennung()
 
     /** Monospace für Anzeigen, Kennungen und Kopfzeilen. */
     fun mono(groesse: Float, abstand: Float = 0.06f) =
-        TextStyle(fontFamily = ShareTechMonoFamilie, fontSize = groesse.sp, lineHeight = (groesse * 1.3f).sp, letterSpacing = abstand.em)
+        TextStyle(fontFamily = ShareTechMonoFamilie, fontSize = groesse.sp, lineHeight = (groesse * 1.3f).sp, letterSpacing = abstand.em).mitSilbentrennung()
 
     /** Text auf Amber (im Entwurf #1A1206). */
     val aufAmber = Color(0xFF1A1206)

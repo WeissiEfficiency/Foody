@@ -26,6 +26,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.token.ImFellFamilie
 import de.foody.core.designsystem.token.ImFellKapitaelchenFamilie
 import de.foody.core.designsystem.token.SpecialEliteFamilie
+import de.foody.core.designsystem.token.mitSilbentrennung
 
 /**
  * Bausteine des Kosmischen Grauens (Stil U) in Immersiv. Der Entwurf setzt IM Fell English (Buchschrift) und Special
@@ -38,8 +39,12 @@ object Grauen {
     val tinteNeben = Color(0xFF4A4030)
 
     /** Kapitälchen (IM Fell English SC) für Titel, mit leichter Laufweite [abstand] (em). */
-    fun titel(groesse: Float, abstand: Float = 0.04f) =
-        TextStyle(fontFamily = ImFellKapitaelchenFamilie, fontSize = groesse.sp, lineHeight = (groesse * 1.15f).sp, letterSpacing = abstand.em)
+    fun titel(groesse: Float, abstand: Float = 0.04f) = TextStyle(
+        fontFamily = ImFellKapitaelchenFamilie,
+        fontSize = groesse.sp,
+        lineHeight = (groesse * 1.15f).sp,
+        letterSpacing = abstand.em,
+    ).mitSilbentrennung()
 
     /** Rezeptnamen in der Buchschrift ohne Kapitälchen, sonst wie [titel]. */
     fun name(groesse: Float, abstand: Float = 0f) = titel(groesse, abstand).copy(fontFamily = ImFellFamilie)
@@ -50,10 +55,10 @@ object Grauen {
         fontSize = groesse.sp,
         lineHeight = (groesse * 1.3f).sp,
         fontStyle = if (kursiv) FontStyle.Italic else FontStyle.Normal,
-    )
+    ).mitSilbentrennung()
 
     /** Schreibmaschine für Zeiten, Mengen und Protokollzeilen. */
-    fun maschine(groesse: Float) = TextStyle(fontFamily = SpecialEliteFamilie, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp)
+    fun maschine(groesse: Float) = TextStyle(fontFamily = SpecialEliteFamilie, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp).mitSilbentrennung()
 }
 
 /** Heller Ton für Knopftexte (im Entwurf #E6F2EA), aus dem Text des Stils. */

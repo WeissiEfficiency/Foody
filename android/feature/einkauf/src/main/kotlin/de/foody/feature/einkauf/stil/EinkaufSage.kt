@@ -8,10 +8,13 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -89,8 +92,9 @@ internal fun LazyGridScope.haendlerPosten(ansicht: EinkaufsAnsicht?, onUmschalte
     val offen = ansicht?.offen.orEmpty().flatMap { it.artikel }
     val gekauft = ansicht?.alle.orEmpty().filter { it.gekauft }
     items((offen + gekauft).chunked(2), key = { "posten-${it.first().id}" }, span = { GridItemSpan(maxLineSpan) }) { reihe ->
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            reihe.forEach { a -> Posten(a, Modifier.weight(1f), onKlick = { onUmschalten(a.id, !a.gekauft) }, onLang = { onDetails(a.id) }) }
+        // Gleich hohe Felder je Reihe, auch wenn eine Unterzeile zweizeilig wird
+        Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            reihe.forEach { a -> Posten(a, Modifier.weight(1f).fillMaxHeight(), onKlick = { onUmschalten(a.id, !a.gekauft) }, onLang = { onDetails(a.id) }) }
             if (reihe.size == 1) Spacer(Modifier.weight(1f))
         }
     }
@@ -122,7 +126,8 @@ private fun Posten(a: EinkaufsArtikel, modifier: Modifier, onKlick: () -> Unit, 
                 a.name, style = Sage.text(16.5f).copy(textDecoration = if (a.gekauft) TextDecoration.LineThrough else null),
                 color = if (a.gekauft) f.nebentext else f.text, maxLines = 2, overflow = TextOverflow.Ellipsis,
             )
-            if (zeile.isNotEmpty()) Text(zeile, style = Sage.titel(10.5f, 0.1f), color = f.nebentext, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            // Zwei Zeilen: „500 G · OBST & GEMÜSE“ passt in Großbuchstaben nicht in ein halbes Handy (Gerätetest 2026-11-16)
+            if (zeile.isNotEmpty()) Text(zeile, style = Sage.titel(10.5f, 0.1f), color = f.nebentext, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }

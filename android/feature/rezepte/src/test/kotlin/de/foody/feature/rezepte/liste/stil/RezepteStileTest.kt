@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.isSelected
@@ -153,6 +154,31 @@ class RezepteStileTest {
         compose.waitForIdle()
         compose.pruefeNichtsAbgeschnitten()
     }
+
+    /**
+     * Kleiner Bildschirm: Nach dem Antippen eines Rezepts ist „Öffnen“ ohne Scrollen zu sehen. Auf dem Handy lag die
+     * Karte vorher unter der schwebenden Leiste (Gerätetest 2026-11-16).
+     */
+    private fun karteInsBild(stil: FoodyStil) {
+        rezepte(7)
+        zeigen(stil)
+        warteAufBeschreibung("Shakshuka")
+        compose.onNode(hasContentDescription("Shakshuka", substring = true) and tab).performClick()
+        compose.waitForIdle()
+        compose.onAllNodes(hasContentDescription("Öffnen: Shakshuka", substring = true)).onFirst().assertIsDisplayed()
+    }
+
+    @Config(qualifiers = "w360dp-h640dp")
+    @Test fun edoKarteInsBild() = karteInsBild(FoodyStil.EDO)
+
+    @Config(qualifiers = "w360dp-h640dp")
+    @Test fun bayrischKarteInsBild() = karteInsBild(FoodyStil.BAYRISCH)
+
+    @Config(qualifiers = "w360dp-h640dp")
+    @Test fun grauenKarteInsBild() = karteInsBild(FoodyStil.GRAUEN)
+
+    @Config(qualifiers = "w360dp-h640dp")
+    @Test fun kreuzerKarteInsBild() = karteInsBild(FoodyStil.KREUZER)
 
     @Test fun anime() = pruefen(FoodyStil.ANIME)
 

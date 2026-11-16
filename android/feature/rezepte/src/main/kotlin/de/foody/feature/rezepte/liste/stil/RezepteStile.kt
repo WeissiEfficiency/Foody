@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -19,6 +21,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -27,12 +30,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.designsystem.FoodyTheme
@@ -88,9 +95,19 @@ internal fun RezepteStil(
     val aufSeite = z.treffer.drop(s * SEITE).take(SEITE)
     val r = aufSeite.firstOrNull { it.id == gewaehlt } ?: aufSeite.firstOrNull()
     val neu = @Composable { NeuMenue(stil, onNeu, onImport) }
+    // Antippen wählt nur; die Karte mit „Öffnen“ liegt auf dem Handy oft unter der schwebenden Leiste. Nach der Wahl
+    // rollt sie deshalb samt Platz für die Leiste ins Bild (Gerätetest 2026-11-16).
+    val karte = remember { BringIntoViewRequester() }
+    var kartenGroesse by remember { mutableStateOf(IntSize.Zero) }
+    val leiste = with(LocalDensity.current) { PLATZ_FUER_LEISTE.toPx() }
+    LaunchedEffect(gewaehlt) {
+        if (gewaehlt != null && kartenGroesse != IntSize.Zero) {
+            karte.bringIntoView(Rect(0f, 0f, kartenGroesse.width.toFloat(), kartenGroesse.height + leiste))
+        }
+    }
     Box(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         Column(
-            Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().padding(top = 16.dp, bottom = ueberLeiste(104.dp)),
+            Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().padding(top = 16.dp, bottom = ueberLeiste(PLATZ_FUER_LEISTE)),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             // FilterChips bringen ihren Rand selbst mit, alles andere bekommt ihn hier
@@ -140,7 +157,7 @@ internal fun RezepteStil(
             }
             // Anime öffnet direkt aus dem Raster; die anderen zeigen das gewählte Rezept als Karte
             if (stil != FoodyStil.ANIME) {
-                Box(rand) {
+                Box(rand.bringIntoViewRequester(karte).onSizeChanged { kartenGroesse = it }) {
                     when (stil) {
                         FoodyStil.EDO -> EdoBlatt(r, onOeffnen)
                         FoodyStil.BAYRISCH -> BayrischKarte(r, onOeffnen)
@@ -152,6 +169,9 @@ internal fun RezepteStil(
         }
     }
 }
+
+/** Platz unter dem Inhalt für die schwebende Navigationsleiste. */
+private val PLATZ_FUER_LEISTE = 104.dp
 
 /** Platzhalter der Suche wie im Entwurf. */
 private fun suchText(stil: FoodyStil) = when (stil) {
