@@ -26,6 +26,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.token.AlegreyaFamilie
 import de.foody.core.designsystem.token.AlegreyaSansFamilie
 import de.foody.core.designsystem.token.UnifrakturFamilie
+import de.foody.core.designsystem.token.mitSilbentrennung
 
 /**
  * Bausteine des Bayrischen Stils (T) in Immersiv. Der Entwurf setzt UnifrakturCook (Seitentitel), Alegreya und
@@ -38,15 +39,15 @@ object Bayrisch {
 
     /** Alegreya für Titel, Überschriften und Knöpfe. */
     fun titel(groesse: Float, gewicht: FontWeight = FontWeight.Bold) =
-        TextStyle(fontFamily = AlegreyaFamilie, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.15f).sp)
+        TextStyle(fontFamily = AlegreyaFamilie, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.15f).sp).mitSilbentrennung()
 
     /** Fraktur (UnifrakturCook) nur für den Seitentitel („Heid“, „’s Standl“, „Eistellunga“). */
     fun fraktur(groesse: Float) =
-        TextStyle(fontFamily = UnifrakturFamilie, fontWeight = FontWeight.Bold, fontSize = groesse.sp, lineHeight = (groesse * 1.1f).sp)
+        TextStyle(fontFamily = UnifrakturFamilie, fontWeight = FontWeight.Bold, fontSize = groesse.sp, lineHeight = (groesse * 1.1f).sp).mitSilbentrennung()
 
     /** Alegreya Sans für Fließtext und Angaben. */
     fun text(groesse: Float, gewicht: FontWeight = FontWeight.Normal) =
-        TextStyle(fontFamily = AlegreyaSansFamilie, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.3f).sp)
+        TextStyle(fontFamily = AlegreyaSansFamilie, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.3f).sp).mitSilbentrennung()
 
     /** Form der Knöpfe (10 dp) und der Karten (14 dp) wie im Entwurf. */
     val knopfForm = RoundedCornerShape(10.dp)

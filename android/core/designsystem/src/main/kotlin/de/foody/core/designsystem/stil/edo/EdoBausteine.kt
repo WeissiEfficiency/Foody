@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.token.KaiseiDecolFamilie
 import de.foody.core.designsystem.token.ZenKakuFamilie
+import de.foody.core.designsystem.token.mitSilbentrennung
 
 /**
  * Bausteine des Edo-Stils (S) in Immersiv. Der Entwurf setzt Kaisei Decol (Titel) und Zen Kaku Gothic New. Das Zinnober („Shu“) ist der gewählte
@@ -55,11 +56,11 @@ object Edo {
 
     /** Serife für Titel. */
     fun titel(groesse: Float) =
-        TextStyle(fontFamily = KaiseiDecolFamilie, fontWeight = FontWeight.Bold, fontSize = groesse.sp, lineHeight = (groesse * 1.25f).sp)
+        TextStyle(fontFamily = KaiseiDecolFamilie, fontWeight = FontWeight.Bold, fontSize = groesse.sp, lineHeight = (groesse * 1.25f).sp).mitSilbentrennung()
 
     /** Grotesk für Text und Angaben. */
     fun text(groesse: Float, gewicht: FontWeight = FontWeight.Normal) =
-        TextStyle(fontFamily = ZenKakuFamilie, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp)
+        TextStyle(fontFamily = ZenKakuFamilie, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp).mitSilbentrennung()
 
     /** Gesperrte Kopfzeile („HEUTE ABEND · 24. OKTOBER“). */
     fun kopf(groesse: Float = 11.5f) = text(groesse, FontWeight.Bold).copy(letterSpacing = 0.14.em)

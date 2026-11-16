@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.token.DelaGothicFamilie
 import de.foody.core.designsystem.token.MPlusRundFamilie
+import de.foody.core.designsystem.token.mitSilbentrennung
 
 /**
  * Bausteine des Anime-Stils (R) in Immersiv. Der Entwurf setzt Dela Gothic One (Titel) und M PLUS Rounded 1c. Kanten und
@@ -56,11 +57,11 @@ object Anime {
         fontSize = groesse.sp,
         lineHeight = (groesse * 1.12f).sp,
         letterSpacing = abstand.em,
-    )
+    ).mitSilbentrennung()
 
     /** Runde, fette Textschrift. */
     fun text(groesse: Float, gewicht: FontWeight = FontWeight.Bold) =
-        TextStyle(fontFamily = MPlusRundFamilie, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp)
+        TextStyle(fontFamily = MPlusRundFamilie, fontWeight = gewicht, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp).mitSilbentrennung()
 
     /** Pille für Knöpfe und Abzeichen. */
     val pille = RoundedCornerShape(999.dp)

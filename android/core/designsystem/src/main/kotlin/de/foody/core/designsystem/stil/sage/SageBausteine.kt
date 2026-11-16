@@ -40,6 +40,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.token.CinzelFamilie
 import de.foody.core.designsystem.token.EbGaramondFamilie
+import de.foody.core.designsystem.token.mitSilbentrennung
 
 /**
  * Bausteine der Düsteren Sage (Stil Q), die mehrere Screens in Immersiv teilen: Schriften in den Größen des Entwurfs,
@@ -49,7 +50,7 @@ import de.foody.core.designsystem.token.EbGaramondFamilie
 object Sage {
     /** Cinzel in [groesse] sp mit Laufweite [abstand] (em), wie im Entwurf. */
     fun titel(groesse: Float, abstand: Float, gewicht: FontWeight = FontWeight.SemiBold) =
-        TextStyle(fontFamily = CinzelFamilie, fontWeight = gewicht, fontSize = groesse.sp, letterSpacing = abstand.em)
+        TextStyle(fontFamily = CinzelFamilie, fontWeight = gewicht, fontSize = groesse.sp, letterSpacing = abstand.em).mitSilbentrennung()
 
     /** EB Garamond in [groesse] sp. */
     fun text(groesse: Float, kursiv: Boolean = false) = TextStyle(
@@ -57,7 +58,7 @@ object Sage {
         fontSize = groesse.sp,
         lineHeight = (groesse * 1.3f).sp,
         fontStyle = if (kursiv) FontStyle.Italic else FontStyle.Normal,
-    )
+    ).mitSilbentrennung()
 
     /** Feuer der Laternen, Glut und Flammen (im Entwurf #F59E0B). */
     val feuer = Color(0xFFF59E0B)
