@@ -42,6 +42,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.EdoKnopf
 import de.foody.core.designsystem.stil.edo.edoShu
+import de.foody.core.designsystem.stil.titelGroesse
 import java.util.Locale
 import kotlin.math.min
 
@@ -88,7 +89,6 @@ private val TAFEL_LEER = Color(0xFFEFE6D2)
 @Composable
 private fun Kopf(w: WocheDaten) {
     val f = FoodyTheme.farben
-    val k = LocalDensity.current.fontScale
     FlowRow(
         Modifier.fillMaxWidth().drawBehind { drawLine(f.text, Offset(0f, size.height), Offset(size.width, size.height), 2.dp.toPx()) }
             .padding(bottom = 8.dp),
@@ -98,7 +98,7 @@ private fun Kopf(w: WocheDaten) {
         Column(Modifier.align(Alignment.Bottom).padding(end = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             w.woche?.let { Text(kwText(it.montag).uppercase(Locale.GERMAN), style = Edo.kopf(12.5f), color = f.nebentext) }
             // Der Titel wächst mit der Systemschrift nur bis 130 %
-            Text("Woche", Modifier.semantics { heading() }, style = Edo.titel(34f * min(k, 1.3f) / k), color = f.text)
+            Text("Woche", Modifier.semantics { heading() }, style = Edo.titel(titelGroesse(34f)), color = f.text)
         }
         if (w.tage.isNotEmpty()) {
             Text(

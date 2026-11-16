@@ -45,6 +45,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.bayrisch.BayrischKnopf
 import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
+import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.core.designsystem.token.FoodyAbstaende
 import kotlin.math.min
 
@@ -114,7 +115,6 @@ private fun Markise(rand: Dp) {
 @Composable
 private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
     val f = FoodyTheme.farben
-    val k = LocalDensity.current.fontScale
     val gesamt = ansicht.gesamt
     val erledigt = ansicht.erledigt
     val form = RoundedCornerShape(10.dp)
@@ -131,7 +131,7 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
                     heading()
                     contentDescription = "Einkauf"
                 },
-                style = Bayrisch.fraktur(32f * min(k, 1.3f) / k), color = f.grund,
+                style = Bayrisch.fraktur(titelGroesse(32f)), color = f.grund,
             )
             if (ansicht != null) {
                 Column(

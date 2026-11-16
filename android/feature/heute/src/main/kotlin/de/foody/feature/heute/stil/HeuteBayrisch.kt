@@ -74,6 +74,7 @@ import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.bayrisch.BayrischKnopf
 import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
+import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.DatenbankLeerHinweis
@@ -135,7 +136,6 @@ internal fun HeuteBayrisch(zustand: HeuteZustand?, aktionen: HeuteAktionen, modi
 @Composable
 private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
     val f = FoodyTheme.farben
-    val k = LocalDensity.current.fontScale
     Box(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(end = 48.dp)) {
             Text("Griaß di!", style = Bayrisch.titel(16f), color = bayrischBlau())
@@ -146,7 +146,7 @@ private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
                     heading()
                     contentDescription = "Heute"
                 },
-                style = Bayrisch.fraktur(54f * min(k, 1.3f) / k), color = f.text, maxLines = 1,
+                style = Bayrisch.fraktur(titelGroesse(54f)), color = f.text, maxLines = 1,
             )
             zustand?.datum?.let { Text(DATUM.format(it), style = Bayrisch.text(14.5f, FontWeight.Medium), color = f.text) }
             zustand?.sync?.let { SyncStatus(it, Modifier.padding(top = 4.dp)) }

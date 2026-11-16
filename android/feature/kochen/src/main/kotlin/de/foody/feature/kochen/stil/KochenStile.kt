@@ -42,6 +42,7 @@ import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
+import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.domain.StepTimer
 import de.foody.feature.kochen.KochAktionen
 import de.foody.feature.kochen.KochSchritt
@@ -169,12 +170,11 @@ private fun Haken(an: Boolean) {
 @Composable
 internal fun BereitlegenStil(art: KochArt, z: KochZustand.Da, a: KochAktionen) {
     val f = FoodyTheme.farben
-    val k = LocalDensity.current.fontScale
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // Der Titel wächst mit der Systemschrift nur bis 130 %
         Text(
             art.bereit, Modifier.semantics { heading(); contentDescription = "Bereitlegen" },
-            style = art.titel(28f * min(k, 1.3f) / k), color = f.text,
+            style = art.titel(titelGroesse(28f)), color = f.text,
         )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("${z.abgehakt.size} von ${z.bereit.size} bereit", Modifier.weight(1f), style = art.text(16f), color = f.nebentext)

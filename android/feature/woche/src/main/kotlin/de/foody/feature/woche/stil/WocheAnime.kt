@@ -47,6 +47,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.anime.AnimeKnopf
 import de.foody.core.designsystem.stil.anime.animeSchatten
+import de.foody.core.designsystem.stil.titelGroesse
 import java.time.temporal.WeekFields
 import java.util.Locale
 import kotlin.math.min
@@ -76,7 +77,6 @@ private val DREHUNG = listOf(-1f, 1f, -0.5f, 0.5f, -1f, -0.5f, 1.5f)
 private fun Kopf(w: WocheDaten) {
     val f = FoodyTheme.farben
     val d = LocalDensity.current
-    val k = d.fontScale
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         // Der große Titel wächst mit der Systemschrift nur bis 130 %
         Text(
@@ -85,7 +85,7 @@ private fun Kopf(w: WocheDaten) {
                 heading()
                 contentDescription = "Woche"
             },
-            style = Anime.titel(40f * min(k, 1.3f) / k, 0f).copy(
+            style = Anime.titel(titelGroesse(40f), 0f).copy(
                 textGeometricTransform = TextGeometricTransform(skewX = -0.14f),
                 shadow = Shadow(FoodyTheme.stil.zier, Offset(3f * d.density, 3f * d.density), 0f),
             ),

@@ -41,6 +41,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.KreuzerKnopf
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
+import de.foody.core.designsystem.stil.titelGroesse
 import java.util.Locale
 import kotlin.math.min
 
@@ -79,7 +80,6 @@ private val MENGE = Color(0xFF8A97AD)
 private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
     val f = FoodyTheme.farben
     val holo = FoodyTheme.stil.zier
-    val k = LocalDensity.current.fontScale
     val gesamt = ansicht.gesamt
     val erledigt = ansicht.erledigt
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -96,7 +96,7 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
                         heading()
                         contentDescription = "Einkauf"
                     },
-                    style = Kreuzer.titel(28f * min(k, 1.3f) / k), color = f.text,
+                    style = Kreuzer.titel(titelGroesse(28f)), color = f.text,
                 )
             }
             Row(Modifier.align(Alignment.Bottom), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

@@ -47,6 +47,7 @@ import de.foody.core.designsystem.stil.grauen.grauenHell
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.KreuzerKnopf
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
+import kotlin.math.min
 
 /** Wo ein Titel steht: Seitenkopf (mit oder ohne Zurück) oder Blatt. */
 enum class TitelArt { SEITE, SEITE_ZURUECK, BLATT }
@@ -295,4 +296,14 @@ fun StilAktion(
         FoodyStil.GRAUEN -> GrauenKnopf(text, onKlick, modifier, beschreibung, umriss = !voll, aktiv = aktiv)
         else -> KreuzerKnopf(text, onKlick, modifier, voll = voll, beschreibung = beschreibung, aktiv = aktiv)
     }
+}
+
+/** Höchste Vergrößerung großer Titel durch die Systemschrift (130 %); darüber bleiben sie gleich groß. */
+const val TITEL_GROESSTE_SKALA = 1.3f
+
+/** Titelgröße [groesse] in sp, die mit der Systemschrift nur bis [TITEL_GROESSTE_SKALA] wächst. */
+@Composable
+fun titelGroesse(groesse: Float): Float {
+    val k = LocalDensity.current.fontScale
+    return groesse * min(k, TITEL_GROESSTE_SKALA) / k
 }

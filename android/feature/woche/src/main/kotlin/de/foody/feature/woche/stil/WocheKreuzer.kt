@@ -58,6 +58,7 @@ import de.foody.core.designsystem.animationenErlaubt
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.KreuzerKnopf
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
+import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.feature.woche.wochenTitel
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -104,7 +105,6 @@ private val NEBEN = Color(0xFF8A97AD)
 private fun Kopf(w: WocheDaten, onFuellen: () -> Unit) {
     val f = FoodyTheme.farben
     val holo = FoodyTheme.stil.zier
-    val k = LocalDensity.current.fontScale
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Column(Modifier.align(Alignment.Bottom).padding(end = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             w.woche?.let { Text(wochenTitel(it.montag), style = Kreuzer.mono(12.5f, 0.08f), color = f.nebentext) }
@@ -115,7 +115,7 @@ private fun Kopf(w: WocheDaten, onFuellen: () -> Unit) {
                     heading()
                     contentDescription = "Woche"
                 },
-                style = Kreuzer.titel(28f * min(k, 1.3f) / k), color = f.text,
+                style = Kreuzer.titel(titelGroesse(28f)), color = f.text,
             )
         }
         if (w.tage.isNotEmpty()) {
@@ -169,7 +169,6 @@ private fun Raute(t: WochenTag, heute: LocalDate, an: Boolean, modifier: Modifie
     val istHeute = t.datum == heute
     val vorbei = t.datum.isBefore(heute)
     val leer = t.eintraege.isEmpty()
-    val k = LocalDensity.current.fontScale
     // Der Puls wird erst beim Zeichnen gelesen: Jedes Bild zeichnet nur die Raute neu, ohne Recomposition.
     val puls: State<Float> = if (istHeute && animationenErlaubt()) {
         rememberInfiniteTransition(label = "puls").animateFloat(0f, 1f, infiniteRepeatable(tween(2000)), label = "puls")
@@ -200,7 +199,7 @@ private fun Raute(t: WochenTag, heute: LocalDate, an: Boolean, modifier: Modifie
         // Das Kürzel wächst nur bis 130 %, die Route hat feste Maße
         Text(
             wochentagKurz(t.datum).uppercase(Locale.GERMAN),
-            style = Kreuzer.mono(12f * min(k, 1.3f) / k), color = if (an) f.text else f.nebentext,
+            style = Kreuzer.mono(titelGroesse(12f)), color = if (an) f.text else f.nebentext,
         )
     }
 }

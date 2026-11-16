@@ -79,6 +79,7 @@ import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.anime.AnimeKnopf
 import de.foody.core.designsystem.stil.anime.AnimePille
 import de.foody.core.designsystem.stil.anime.animeSchatten
+import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.DatenbankLeerHinweis
@@ -132,7 +133,6 @@ internal fun HeuteAnime(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifie
 private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
     val f = FoodyTheme.farben
     val akzent = FoodyTheme.stil.zier
-    val k = LocalDensity.current.fontScale
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             // Der große Titel wächst mit der Systemschrift nur bis 130 %, wie große Schrift unter Android 14
@@ -142,7 +142,7 @@ private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
                     heading()
                     contentDescription = "Heute"
                 },
-                style = Anime.titel(44f * min(k, 1.3f) / k, 0f).copy(
+                style = Anime.titel(titelGroesse(44f), 0f).copy(
                     textGeometricTransform = TextGeometricTransform(skewX = -0.14f),
                     shadow = Shadow(akzent, Offset(3f * LocalDensity.current.density, 3f * LocalDensity.current.density), 0f),
                 ),

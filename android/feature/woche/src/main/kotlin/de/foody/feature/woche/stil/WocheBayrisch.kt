@@ -51,6 +51,7 @@ import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.bayrisch.BayrischKnopf
 import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
+import de.foody.core.designsystem.stil.titelGroesse
 import java.time.DayOfWeek
 import java.util.Locale
 import kotlin.math.min
@@ -92,7 +93,6 @@ private val LINIE = Color(0xFFCDBB9C)
 @Composable
 private fun Kopf(w: WocheDaten, onFuellen: () -> Unit) {
     val f = FoodyTheme.farben
-    val k = LocalDensity.current.fontScale
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Column(Modifier.align(Alignment.Bottom).padding(end = 8.dp)) {
             w.woche?.let { Text(kwText(it.montag), style = Bayrisch.titel(15f), color = f.primaer) }
@@ -103,7 +103,7 @@ private fun Kopf(w: WocheDaten, onFuellen: () -> Unit) {
                     heading()
                     contentDescription = "Woche"
                 },
-                style = Bayrisch.fraktur(50f * min(k, 1.3f) / k), color = f.text,
+                style = Bayrisch.fraktur(titelGroesse(50f)), color = f.text,
             )
         }
         if (w.tage.isNotEmpty()) {
@@ -170,7 +170,6 @@ private fun Wimpel(t: WochenTag, i: Int, heute: Boolean, an: Boolean, modifier: 
         else -> Color.White
     }
     val schrift = if (heute || (!leer && i % 2 == 0)) Color.White else f.text
-    val k = LocalDensity.current.fontScale
     Box(
         modifier.tagWahl(t, heute, an, onKlick).background(f.text, WIMPEL).padding(start = 2.dp, end = 2.dp, top = 2.dp, bottom = 3.dp)
             .background(stoff, WIMPEL),
@@ -179,7 +178,7 @@ private fun Wimpel(t: WochenTag, i: Int, heute: Boolean, an: Boolean, modifier: 
         // Das Kürzel wächst nur bis 130 %, das Dreieck hat feste Maße
         Text(
             wochentagKurz(t.datum), Modifier.padding(top = 6.dp),
-            style = Bayrisch.titel(15f * min(k, 1.3f) / k, FontWeight.ExtraBold), color = schrift,
+            style = Bayrisch.titel(titelGroesse(15f), FontWeight.ExtraBold), color = schrift,
         )
     }
 }

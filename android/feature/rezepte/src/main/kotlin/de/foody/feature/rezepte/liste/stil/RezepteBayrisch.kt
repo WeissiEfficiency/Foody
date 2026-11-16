@@ -36,6 +36,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.bayrisch.BayrischKnopf
 import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
+import de.foody.core.designsystem.stil.titelGroesse
 import kotlin.math.min
 
 /*
@@ -53,11 +54,10 @@ private val ROT = Color(0xFFE04A5A)
 @Composable
 internal fun BayrischKopf(n: Int, neu: @Composable () -> Unit) {
     val f = FoodyTheme.farben
-    val k = LocalDensity.current.fontScale
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Column(Modifier.align(Alignment.Bottom).padding(end = 8.dp)) {
             // Der Titel wächst mit der Systemschrift nur bis 130 %
-            Text("Rezepte", Modifier.semantics { heading() }, style = Bayrisch.fraktur(32f * min(k, 1.3f) / k), color = f.text)
+            Text("Rezepte", Modifier.semantics { heading() }, style = Bayrisch.fraktur(titelGroesse(32f)), color = f.text)
             Text(if (n > 0) "Vom Lebkuchenstand · $n Herzen" else "Vom Lebkuchenstand", style = Bayrisch.text(15f), color = f.nebentext)
         }
         Box(Modifier.align(Alignment.Bottom)) { neu() }

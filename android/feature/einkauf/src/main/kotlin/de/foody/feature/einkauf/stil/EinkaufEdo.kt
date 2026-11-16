@@ -41,6 +41,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.EdoKnopf
 import de.foody.core.designsystem.stil.edo.edoShu
+import de.foody.core.designsystem.stil.titelGroesse
 import kotlin.math.min
 
 /**
@@ -75,7 +76,6 @@ private val ZEILENLINIE = Color(0xFFD8CBAE)
 @Composable
 private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
     val f = FoodyTheme.farben
-    val k = LocalDensity.current.fontScale
     val gesamt = ansicht.gesamt
     val erledigt = ansicht.erledigt
     FlowRow(
@@ -89,7 +89,7 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
             // Der Titel wächst mit der Systemschrift nur bis 130 %
             Text(
                 "Einkauf", Modifier.semantics { heading() },
-                style = Edo.titel(34f * min(k, 1.3f) / k), color = f.text,
+                style = Edo.titel(titelGroesse(34f)), color = f.text,
             )
         }
         Row(Modifier.align(Alignment.Bottom), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
