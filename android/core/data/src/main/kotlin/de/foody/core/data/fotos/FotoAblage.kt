@@ -7,6 +7,7 @@ import android.graphics.Matrix
 import android.net.Uri
 import android.util.Log
 import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
 import de.foody.core.data.Einstellungsschluessel
 import kotlinx.coroutines.Dispatchers
@@ -117,7 +118,7 @@ class FotoAblage(context: Context) {
      */
     fun datei(link: String): File? {
         if (!link.startsWith("file:")) return null
-        val pfad = runCatching { Uri.parse(link).path }.getOrNull() ?: return null
+        val pfad = runCatching { link.toUri().path }.getOrNull() ?: return null
         val datei = runCatching { File(pfad).canonicalFile }.getOrNull() ?: return null
         return datei.takeIf { it.parentFile == ordner.canonicalFile }
     }

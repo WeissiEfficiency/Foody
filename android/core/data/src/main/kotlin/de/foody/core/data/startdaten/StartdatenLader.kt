@@ -1,6 +1,7 @@
 package de.foody.core.data.startdaten
 
 import android.content.Context
+import androidx.core.content.edit
 import androidx.room.withTransaction
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.foody.core.data.Einstellungsschluessel
@@ -50,7 +51,7 @@ class StartdatenLader @Inject constructor(
                 }
             }
         }
-        prefs.edit().putInt(SEED_VERSION, Startdaten.VERSION).apply()
+        prefs.edit { putInt(SEED_VERSION, Startdaten.VERSION) }
         return geaendert
     }
 
@@ -61,12 +62,12 @@ class StartdatenLader @Inject constructor(
     fun versionZuruecksetzen(): Int {
         val prefs = kontext.getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE)
         val vorher = prefs.getInt(SEED_VERSION, 0)
-        prefs.edit().putInt(SEED_VERSION, 0).commit()
+        prefs.edit(commit = true) { putInt(SEED_VERSION, 0) }
         return vorher
     }
 
     /** Setzt die Version zurück auf [vorher] (Löschen war gesperrt, es wurde nichts geleert). */
     fun versionWiederherstellen(vorher: Int) {
-        kontext.getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE).edit().putInt(SEED_VERSION, vorher).commit()
+        kontext.getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE).edit(commit = true) { putInt(SEED_VERSION, vorher) }
     }
 }

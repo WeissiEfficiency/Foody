@@ -2,6 +2,7 @@
 <!-- Widget „Schnell eintragen“ (EintragenWidget): Titel, großes „+“ im Kreis, darunter „Suchen · Scannen · Foto“.
      Der ganze Knopf öffnet das Eintragen-Blatt; Farben, Rand und Kreis im Stil (eintragenAnsicht). -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -58,8 +59,10 @@
             android:layout_weight="1"
             android:importantForAccessibility="no">
 
+            <!-- Rand und Kreis sind zwei Ebenen (der Code färbt beide); die äußere Ebene mittet im freien Platz -->
             <FrameLayout
                 android:id="@+id/widget_kreis_rand"
+                tools:ignore="UselessParent"
                 android:layout_width="62dp"
                 android:layout_height="62dp"
                 android:layout_gravity="center"
@@ -76,6 +79,7 @@
                     android:gravity="center"
                     android:importantForAccessibility="no"
                     android:text="+"
+                    tools:ignore="HardcodedText"
                     android:textColor="@color/widget_flaeche"
                     android:textSize="32sp"
                     android:textStyle="bold" />

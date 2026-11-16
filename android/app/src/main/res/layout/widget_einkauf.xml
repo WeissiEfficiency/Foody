@@ -2,6 +2,7 @@
 <!-- Widget „Einkauf“ (EinkaufWidget): Kopf mit Titel und Anzahl, bis zu vier offene Artikel, unten der Rest.
      Schatten, Rand und Stempel nur in den Stilen (einkaufAnsicht). -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -130,11 +131,13 @@
             android:textSize="13sp"
             android:visibility="gone" />
 
+        <!-- Schiebt den Fuß nach unten; RemoteViews kennen kein Space -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:importantForAccessibility="no" />
+            android:importantForAccessibility="no"
+            tools:ignore="UselessLeaf" />
 
         <TextView
             android:id="@+id/widget_fuss"

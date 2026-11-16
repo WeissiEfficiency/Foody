@@ -2,6 +2,7 @@ package de.foody.core.data.bls
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import androidx.room.withTransaction
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.foody.core.data.Einstellungsschluessel
@@ -57,7 +58,7 @@ class BlsDichteNachtragen(
     /** Merkt sich genau die [ohneErgebnis] geprüften Zeilen; Gelöschtes und Geändertes fällt so heraus. */
     private fun merken(ohneErgebnis: List<ZutatEntity>, vorher: Set<String>) {
         val neu = ohneErgebnis.mapTo(HashSet(), ::schluessel)
-        if (neu != vorher) prefs.edit().putStringSet(Einstellungsschluessel.BLS_DICHTE_GEPRUEFT, neu).apply()
+        if (neu != vorher) prefs.edit { putStringSet(Einstellungsschluessel.BLS_DICHTE_GEPRUEFT, neu) }
     }
 
     // Mit [STAND]: Erkennt BlsDichte später mehr, wird alles einmal neu geprüft (STAND erhöhen)

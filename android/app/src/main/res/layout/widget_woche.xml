@@ -2,6 +2,7 @@
 <!-- Widget „Woche“ (WocheWidget, 4×1): sieben Tage ab Montag, je Tag Kürzel, Marke und erstes Gericht; heute
      hervorgehoben. Marken als Bitmap in der Form des Stils (wocheAnsicht). -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -24,6 +25,7 @@
         android:importantForAccessibility="no"
         android:visibility="gone" />
 
+    <!-- Sieben Tage nebeneinander passen in 4×2 Zellen nur mit 10 sp (SmallSp) -->
     <LinearLayout
         android:id="@+id/widget_knopf"
         android:layout_width="match_parent"
@@ -33,7 +35,9 @@
         android:importantForAccessibility="no"
         android:orientation="horizontal"
         android:paddingHorizontal="8dp"
-        android:paddingVertical="8dp">
+        android:paddingVertical="8dp"
+        android:baselineAligned="false"
+        tools:ignore="SmallSp">
 
         <LinearLayout
             android:layout_width="0dp"
