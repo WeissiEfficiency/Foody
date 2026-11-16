@@ -3,6 +3,7 @@
      Angaben, Balken und die Knöpfe „Kochen“/„Eintragen“ (Milchglas, Sage, Anime). Was sichtbar ist, legt heuteAnsicht
      je Stil fest. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -109,7 +110,8 @@
                 android:layout_weight="1"
                 android:gravity="center_vertical"
                 android:importantForAccessibility="no"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                tools:ignore="NestedWeights">
 
                 <TextView
                     android:id="@+id/widget_gross"
@@ -174,6 +176,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
+                    android:baselineAligned="false"
                     android:orientation="horizontal"
                     android:visibility="gone">
 
@@ -199,13 +202,9 @@
                     </FrameLayout>
 
                     <FrameLayout
-                        android:layout_width="8dp"
-                        android:layout_height="1dp"
-                        android:importantForAccessibility="no" />
-
-                    <FrameLayout
                         android:id="@+id/widget_eintragen_rand"
                         android:layout_width="0dp"
+                        android:layout_marginStart="8dp"
                         android:layout_height="36dp"
                         android:layout_weight="1"
                         android:background="@drawable/widget_form"

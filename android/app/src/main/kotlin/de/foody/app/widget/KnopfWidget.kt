@@ -9,6 +9,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.RemoteViews
 import androidx.annotation.LayoutRes
+import androidx.core.net.toUri
 import de.foody.app.MainActivity
 import de.foody.app.R
 import de.foody.app.navigation.FOTO_LINK
@@ -34,7 +35,7 @@ abstract class KnopfWidget(@param:LayoutRes private val layout: Int, private val
     private fun oeffnen(context: Context): PendingIntent = PendingIntent.getActivity(
         context,
         0,
-        Intent(Intent.ACTION_VIEW, Uri.parse(link), context, MainActivity::class.java),
+        Intent(Intent.ACTION_VIEW, link.toUri(), context, MainActivity::class.java),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 }

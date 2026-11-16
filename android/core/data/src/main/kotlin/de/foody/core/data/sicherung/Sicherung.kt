@@ -4,6 +4,7 @@ import android.content.Context
 import android.database.SQLException
 import android.net.Uri
 import android.util.Log
+import androidx.core.net.toUri
 import androidx.room.withTransaction
 import de.foody.api.protocol.ZahlGrenzen
 import de.foody.core.data.db.ArbeitsschrittEntity
@@ -123,7 +124,7 @@ class Sicherung(
         val datei = ablage.datei(bild)
         when {
             datei != null -> datei.takeIf { it.isFile && it.length() <= MAX_FOTO_BYTES }?.readBytes()
-            bild.startsWith(GALERIE) -> context.contentResolver.openInputStream(Uri.parse(bild))?.use { it.begrenztLesen(MAX_FOTO_BYTES) }
+            bild.startsWith(GALERIE) -> context.contentResolver.openInputStream(bild.toUri())?.use { it.begrenztLesen(MAX_FOTO_BYTES) }
             else -> null
         }
     } catch (_: Exception) {

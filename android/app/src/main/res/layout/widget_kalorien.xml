@@ -2,6 +2,7 @@
 <!-- Widget „Kalorien“ (KalorienWidget, 2×2): Ring mit dem, was vom Tagesziel übrig ist (kalorienAnsicht). Der Ring füllt
      die Fläche quadratisch aus (fitCenter), auch wenn der Launcher die Zelle schmaler macht als 110 dp. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -35,8 +36,10 @@
         android:orientation="vertical"
         android:padding="10dp">
 
+            <!-- Gleiche Kennung wie im Heute-Widget: ring() setzt hier Bild und Zahl -->
             <FrameLayout
                 android:id="@+id/widget_ring_rahmen"
+                tools:ignore="UselessParent"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:importantForAccessibility="no">

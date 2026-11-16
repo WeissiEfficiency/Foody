@@ -40,6 +40,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -173,12 +174,12 @@ private fun Lagerfeuer(glut: Color, modifier: Modifier) {
     val flamme by if (bewegt) {
         zeit.animateFloat(0f, 1f, infiniteRepeatable(tween(800, easing = LinearEasing), RepeatMode.Reverse), label = "Flamme")
     } else {
-        remember { mutableStateOf(0f) }
+        remember { mutableFloatStateOf(0f) }
     }
     val funken by if (bewegt) {
         zeit.animateFloat(0f, 1f, infiniteRepeatable(tween(2700, easing = LinearEasing)), label = "Glut")
     } else {
-        remember { mutableStateOf(0.35f) }
+        remember { mutableFloatStateOf(0.35f) }
     }
     val pfade = remember { SzenePfade() }
     // Die ruhende Szene entsteht einmal je Größe (Verläufe inklusive); Flamme und Glut liegen in einer eigenen Ebene,

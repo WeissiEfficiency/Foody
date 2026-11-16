@@ -2,6 +2,7 @@ package de.foody.core.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -33,10 +34,10 @@ class TageszielSpeicher @Inject constructor(@ApplicationContext kontext: Context
     /** `null` entfernt das Ziel; [TAGESZIEL_MIN]–[TAGESZIEL_MAX] wird gespeichert, alles andere abgelehnt. */
     fun setzen(kcal: Int?) {
         if (kcal == null) {
-            prefs.edit().remove(Einstellungsschluessel.TAGESZIEL).apply()
+            prefs.edit { remove(Einstellungsschluessel.TAGESZIEL) }
             return
         }
         require(kcal in TAGESZIEL_MIN..TAGESZIEL_MAX) { "Tagesziel muss $TAGESZIEL_MIN–$TAGESZIEL_MAX kcal sein" }
-        prefs.edit().putInt(Einstellungsschluessel.TAGESZIEL, kcal).apply()
+        prefs.edit { putInt(Einstellungsschluessel.TAGESZIEL, kcal) }
     }
 }

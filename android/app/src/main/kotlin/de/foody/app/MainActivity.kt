@@ -53,9 +53,9 @@ class MainActivity : ComponentActivity() {
                 onDispose { removeOnNewIntentListener(weiter) }
             }
             // Startwert sofort aus den Prefs: kein Aufblitzen der falschen Darstellung beim Start
-            val d by remember { darstellung.darstellung() }.collectAsStateWithLifecycle(darstellung.aktuell())
-            val farbwelt by remember { darstellung.farbwelt() }.collectAsStateWithLifecycle(darstellung.farbweltAktuell())
-            val wahl by remember { darstellung.stil() }.collectAsStateWithLifecycle(darstellung.stilAktuell())
+            val d by remember { darstellung.darstellung() }.collectAsStateWithLifecycle(remember { darstellung.aktuell() })
+            val farbwelt by remember { darstellung.farbwelt() }.collectAsStateWithLifecycle(remember { darstellung.farbweltAktuell() })
+            val wahl by remember { darstellung.stil() }.collectAsStateWithLifecycle(remember { darstellung.stilAktuell() })
             val stil = FoodyStil.ausName(wahl.stil)
             // Knopf-Widgets tragen Farbe und Wort des Stils: nach jedem Wechsel neu zeichnen
             LaunchedEffect(wahl) { alleAktualisieren(applicationContext) }

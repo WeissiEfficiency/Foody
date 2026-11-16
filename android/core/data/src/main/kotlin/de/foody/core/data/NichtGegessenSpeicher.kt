@@ -2,6 +2,7 @@ package de.foody.core.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -38,7 +39,7 @@ class NichtGegessenSpeicher @Inject constructor(@ApplicationContext kontext: Con
             val tag = runCatching { LocalDate.parse(eintrag.substringBefore(TRENNER)) }.getOrNull()
             tag != null && !tag.isBefore(datum)
         }.toSet()
-        prefs.edit().putStringSet(Einstellungsschluessel.NICHT_GEGESSEN, behalten + "$datum$TRENNER$planEintragId").apply()
+        prefs.edit { putStringSet(Einstellungsschluessel.NICHT_GEGESSEN, behalten + "$datum$TRENNER$planEintragId") }
     }
 }
 

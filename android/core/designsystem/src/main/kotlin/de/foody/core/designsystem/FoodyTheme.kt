@@ -53,16 +53,18 @@ fun FoodyTheme(
     // Gegenstück für inversePrimary: bei Milchglas der andere Modus, Stile haben nur einen Grund
     val gegenstueck = if (stil == FoodyStil.MILCHGLAS) farbwelt.werte(!dunkel).farben else farben
     val formen = werte.formen
+    val schema = remember(farben, gegenstueck, werte.dunkel) { farbschema(farben, gegenstueck, werte.dunkel) }
+    // extraSmall: Material zeichnet damit die Eingabefelder; rund wie im Entwurf statt fast eckig
+    val shapes = remember(formen) { Shapes(extraSmall = formen.klein, small = formen.klein, medium = formen.mittel, large = formen.gross) }
     CompositionLocalProvider(
         LocalStil provides werte,
         LocalFarbwelt provides farbwelt,
         LocalUnschaerfe provides (unschaerfe && werte.flaeche == Flaechenart.GLAS),
     ) {
         MaterialTheme(
-            colorScheme = farbschema(farben, gegenstueck, werte.dunkel),
+            colorScheme = schema,
             typography = werte.typografie,
-            // extraSmall: Material zeichnet damit die Eingabefelder; rund wie im Entwurf statt fast eckig
-            shapes = Shapes(extraSmall = formen.klein, small = formen.klein, medium = formen.mittel, large = formen.gross),
+            shapes = shapes,
             content = inhalt,
         )
     }

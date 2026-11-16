@@ -2,6 +2,7 @@ package de.foody.core.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -34,7 +35,7 @@ class DarstellungSpeicher @Inject constructor(@ApplicationContext kontext: Conte
             Darstellung.HELL -> "LIGHT"
             Darstellung.DUNKEL -> "DARK"
         }
-        prefs.edit().putString(Einstellungsschluessel.DARSTELLUNG, wert).apply()
+        prefs.edit { putString(Einstellungsschluessel.DARSTELLUNG, wert) }
     }
 
     /** Name der gewählten Farbwelt; `null`, solange keine gewählt ist. */
@@ -43,7 +44,7 @@ class DarstellungSpeicher @Inject constructor(@ApplicationContext kontext: Conte
     fun farbweltAktuell(): String? = prefs.getString(Einstellungsschluessel.FARBWELT, null)
 
     fun farbweltSetzen(name: String) {
-        prefs.edit().putString(Einstellungsschluessel.FARBWELT, name).apply()
+        prefs.edit { putString(Einstellungsschluessel.FARBWELT, name) }
     }
 
     /** Gewählter Stil, Variante und Akzent als Namen; `null` = nichts gewählt. Was sie bedeuten, weiß das Designsystem. */
@@ -62,7 +63,7 @@ class DarstellungSpeicher @Inject constructor(@ApplicationContext kontext: Conte
     fun stilAkzentSetzen(name: String) = schreiben(Einstellungsschluessel.STIL_AKZENT, name)
 
     private fun schreiben(schluessel: String, wert: String) {
-        prefs.edit().putString(schluessel, wert).apply()
+        prefs.edit { putString(schluessel, wert) }
     }
 
     private fun <T> beobachten(schluessel: String, lesen: () -> T): Flow<T> = beobachten(setOf(schluessel), lesen)

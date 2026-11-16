@@ -1,6 +1,7 @@
 package de.foody.core.data.einkauf
 
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -26,13 +27,13 @@ class IgnorierteSchluessel(private val prefs: SharedPreferences) {
     fun entfernen(listeId: String, schluessel: String) = schreiben(listeId, lesen(listeId) - schluessel)
 
     fun vergessen(listeId: String) {
-        prefs.edit().remove(schluessel(listeId)).commit()
+        prefs.edit(commit = true) { remove(schluessel(listeId)) }
         stand.value++
     }
 
     private fun schreiben(listeId: String, neu: Set<String>) {
         // Eine neue Menge schreiben: SharedPreferences verlangt, die gelesene Menge nicht zu verändern
-        prefs.edit().putStringSet(schluessel(listeId), HashSet(neu)).commit()
+        prefs.edit(commit = true) { putStringSet(schluessel(listeId), HashSet(neu)) }
         stand.value++
     }
 
