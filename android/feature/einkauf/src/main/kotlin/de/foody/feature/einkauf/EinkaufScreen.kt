@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.LeererZustandZeile
 import de.foody.core.designsystem.komponenten.ueberLeiste
@@ -69,6 +70,9 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
     val snackbar = remember { SnackbarHostState() }
     val umschalten = { name: String -> aufgeklappt = if (name in aufgeklappt) aufgeklappt - name else aufgeklappt + name }
     val alle = z.ansicht?.alle.orEmpty()
+    // Stile Q–V: Neue Liste, Abgleich und Frühere als Seite mit Reitern wie in den Entwürfen; Milchglas behält die Blätter
+    val blatt by vm.blatt.collectAsStateWithLifecycle()
+    val seitenBlatt = blatt.takeIf { FoodyTheme.stil.stil != FoodyStil.MILCHGLAS && it in LISTEN_REITER }
 
     // Immersiv: Kopf und Posten als Szene des Stils (Sage „Der Händler“, R–V), sonst die normale Ansicht
     val szene = EinkaufSzene.aktuell()
@@ -118,6 +122,9 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
         val breit = maxWidth >= FoodyBreiten.zweispaltig
         val raster = Modifier.widthIn(max = FoodyBreiten.zweiBereiche).fillMaxSize()
         when {
+            seitenBlatt != null -> ListenSeite(seitenBlatt, z.ansicht?.von != null, vm::blattOeffnen, vm::blattSchliessen) {
+                EinkaufBlaetter(vm, z, snackbar, onListe)
+            }
             z.listeFehlt -> LeererZustandFlaeche(
                 Icons.Outlined.RemoveShoppingCart, "Diese Liste gibt es nicht mehr", "Sie wurde gelöscht.",
                 aktionText = "Zur aktuellen Liste", onAktion = onAktuelle, modifier = Modifier.padding(FoodyAbstaende.s4),
@@ -133,7 +140,7 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = ueberLeiste(LISTE_UNTEN)))
     }
-    EinkaufBlaetter(vm, z, snackbar, onListe)
+    if (seitenBlatt == null) EinkaufBlaetter(vm, z, snackbar, onListe)
     z.ansicht?.takeIf { loeschenFrage }?.let { a ->
         LoeschenFrage(a.name, onLoeschen = { loeschenFrage = false; vm.listeLoeschen() }, onAbbrechen = { loeschenFrage = false })
     }

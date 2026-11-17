@@ -198,6 +198,7 @@ Gemeinsame liegt in `:core:designsystem`.
       (Nutzer 2026-11-17: alle angehen, in dieser Reihenfolge).
 - [x] Reihenfolge in den Einstellungen wie im Entwurf (Abgleich unten), 2026-11-17, siehe „Ergebnis“.
 - [x] Planen als Seite mit Reitern „Selbst wählen · Vorschlagen lassen“ (Q–V), 2026-11-17, siehe „Ergebnis“.
+- [x] Listen als Seite mit Reitern „Neue Liste · Abgleich · Frühere“ (Q–V), 2026-11-17, siehe „Ergebnis“.
 - [x] Rezeptfilter wie im Entwurf: „Alle · Favoriten · ≤ 30 Min.“ mit den Wörtern des Stils, 2026-11-17, siehe „Ergebnis“.
 - [x] Editor der Sage wie im Entwurf (Reiter „Grundlagen · Zutaten · Ritual“), 2026-11-17, siehe „Ergebnis“.
 - [x] Tagebuch: „‹“ im Kopf zurück zu Heute in allen Stilen (Immersiv und Ruhig), 2026-11-17, siehe „Ergebnis“.
@@ -767,3 +768,18 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
   neue Referenzbilder `stil_*_planen_handy`, sechs `*_fuellen_handy` neu (jetzt die Seite).
 - Im Emulator mit den Maßen des Handys nachgeprüft (Sage, Kreuzer): beide Reiter, Einplanen trägt ein und schließt,
   Portionen unten über dem Knopf, Zurück schließt ohne Eintrag.
+
+**2026-11-17 – Listen als Seite mit Reitern** (Branch `claude/listen-seite`, Entscheidung des Nutzers aus dem Canvas-Abgleich):
+- In den Stilen Q–V (Immersiv und Ruhig) sind Vorschau, Abgleich und Frühere Listen wie in den Entwürfen eine eigene
+  Seite statt drei Blättern (`ListenSeite.kt`): Kopf mit Zurück und Titel des Stils („Listen des Händlers“,
+  „Listen!“, „Eikaufszettl“, Grauen „Listen“ unter „Das Archiv der Expeditionen“, Kreuzer „Ladelisten“ unter
+  „Fracht · Dock 7“), Reiter „Neue Liste · Abgleich · Frühere“ (Edo, Bayrisch, Grauen, Kreuzer „Vorschau“). Jeder
+  Weg in eines der drei Blätter öffnet die Seite auf diesem Reiter; „Liste anlegen“ und „Übernehmen“ schließen sie.
+  Der Inhalt ist der der Blätter (`BlattRahmen` zeichnet ihn auf der Seite ohne Blatt und Titel, Knopf fest unten).
+- Ohne Zeitraum (Liste nicht aus dem Plan) sagt der Reiter „Abgleich“, warum es nichts abzugleichen gibt. Milchglas
+  behält die Blätter (kein Entwurf). Bayrisch: weiße Schrift auf dem gewählten blauen Reiter (auch Planen).
+- Tests: `ListenSeiteTest` (alle sechs Stile und Ruhig wechseln die Reiter und schließen mit Zurück, Liste anlegen,
+  ohne Zeitraum, Frühere öffnet eine Liste, Milchglas bleibt Blatt), `EinkaufStileTest.…Frueher` angepasst. Sechs
+  Referenzbilder `*_listen_handy` neu (jetzt die Seite), `stil_bayrisch_{fuellen,planen}_handy` neu (weiße Schrift).
+- Im Emulator mit den Maßen des Handys nachgeprüft (Kreuzer): alle drei Reiter, Knopf fest unten über der Leiste,
+  Zurück schließt die Seite.

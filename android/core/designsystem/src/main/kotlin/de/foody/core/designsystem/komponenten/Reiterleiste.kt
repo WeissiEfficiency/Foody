@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -96,7 +97,12 @@ fun Reiterleiste(
                     if (versal) wort.uppercase(Locale.GERMAN) else wort,
                     Modifier.clearAndSetSemantics {},
                     style = schrift,
-                    color = if (an || pillen) f.text else f.nebentext,
+                    // Bayrisch: weiße Schrift auf dem blauen Reiter wie im Entwurf
+                    color = when {
+                        pillen && an && s.stil == FoodyStil.BAYRISCH -> Color.White
+                        an || pillen -> f.text
+                        else -> f.nebentext
+                    },
                     textAlign = TextAlign.Center,
                 )
             }

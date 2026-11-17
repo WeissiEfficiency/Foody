@@ -4,9 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -109,7 +111,9 @@ class EinkaufStileTest {
     private fun frueher(stil: FoodyStil) {
         zeigen(stil)
         compose.onNodeWithContentDescription("Frühere Listen").performClick()
-        compose.waitUntil(5_000) { compose.onAllNodesWithContentDescription("Ziehgriff").fetchSemanticsNodes().isNotEmpty() }
+        // Wie im Entwurf: die Listen-Seite mit dem Reiter „Frühere“, kein Blatt
+        compose.waitUntil(5_000) { compose.onAllNodes(hasContentDescription("Einkaufslisten") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasContentDescription("Frühere Listen") and isSelectable()).assertIsSelected()
     }
 
     private fun gross(stil: FoodyStil) {
