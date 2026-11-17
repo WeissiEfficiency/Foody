@@ -3,7 +3,9 @@ package de.foody.feature.woche
 import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -303,8 +305,9 @@ class WocheScreenTest {
     fun karteDerWocheHinzufuegenUndFuellen() {
         zeigen(stil = FoodyStil.SAGE)
         compose.warteAufText("KARTE DER WOCHE")
+        // Die Sage plant wie im Entwurf auf einer eigenen Seite („Den Weg planen“) statt in Mahlzeitwahl und Blatt
         compose.onNodeWithText("+ MAHL HINZUFÜGEN").performScrollTo().performClick()
-        compose.warteAufText("Mahlzeit wählen")
+        compose.waitUntil(5_000) { compose.onAllNodes(hasContentDescription("Selbst wählen") and isSelectable()).fetchSemanticsNodes().isNotEmpty() }
         Espresso.pressBack()
         compose.onNodeWithText("LEERE TAGE FÜLLEN").performScrollTo().performClick()
         compose.warteAufText("Neu mischen")

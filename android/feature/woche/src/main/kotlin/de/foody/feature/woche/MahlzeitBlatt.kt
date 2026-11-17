@@ -96,7 +96,7 @@ internal fun MahlzeitBlatt(e: PlanEintrag, montag: LocalDate, a: MahlzeitAktione
 }
 
 @Composable
-private fun PortionenNormal(portionen: Int, onPortionen: (Int) -> Unit) {
+internal fun PortionenNormal(portionen: Int, onPortionen: (Int) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = { onPortionen(portionen - 1) }) {
             Icon(Icons.Outlined.Remove, contentDescription = "Weniger Portionen", tint = FoodyTheme.farben.text)
@@ -110,7 +110,7 @@ private fun PortionenNormal(portionen: Int, onPortionen: (Int) -> Unit) {
 
 /** Portionen in R–V wie im Entwurf: „−“ und „+“ als Knöpfe des Stils, dazwischen „2 Portionen“. */
 @Composable
-private fun PortionenStil(portionen: Int, onPortionen: (Int) -> Unit) {
+internal fun PortionenStil(portionen: Int, onPortionen: (Int) -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
         StilAktion("−", { onPortionen(portionen - 1) }, Modifier.widthIn(min = 48.dp), beschreibung = "Weniger Portionen")
         Text(

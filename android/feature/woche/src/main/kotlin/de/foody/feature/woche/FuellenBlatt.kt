@@ -54,12 +54,10 @@ internal fun tagKurz(d: LocalDate): String = datumKurz(d).uppercase()
 
 /**
  * „Leere Tage füllen“: Mahlzeit wählen, je Tag ein Vorschlag (abwählbar, „↻“ zieht neu), „Neu mischen“ und
- * „Übernehmen (n)“. [namen] = Rezept-ID → Name.
+ * „Übernehmen (n)“. [namen] = Rezept-ID → Name. Die Stile Q–V zeigen denselben Inhalt auf der Planen-Seite.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun FuellenBlatt(z: FuellenZustand, namen: Map<String, String>, a: FuellenAktionen, onSchliessen: () -> Unit) {
-    val anzahl = (z.vorschlag.keys - z.abgewaehlt).size
     // Ganz geöffnet und scrollbar: die Knöpfe unten sollen ohne Ziehen erreichbar sein
     GlasBlatt(onSchliessen, ganzOffen = true) {
         Column(
@@ -71,43 +69,61 @@ internal fun FuellenBlatt(z: FuellenZustand, namen: Map<String, String>, a: Fuel
                 stilText("Leere Tage füllen", sage = "Leere Tage bestücken", anime = "Planen!", bayrisch = "Wochn plana", kreuzer = "Kurs plotten"),
                 beschreibung = "Leere Tage füllen",
             )
-            if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
-                Text(
-                    "Für jeden leeren Tag wählt das Grimoire ein Mahl, das du länger nicht hattest.",
-                    style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.nebentext,
-                )
-            }
-            planenEinleitung()?.let { (satz, schrift) -> Text(satz, style = schrift, color = FoodyTheme.farben.nebentext) }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-                listOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.SNACK, Mahlzeit.ABENDESSEN).forEach { m ->
-                    FoodyChip(m.anzeigename(), ausgewaehlt = m == z.mahlzeit, onKlick = { a.onMahlzeit(m) })
-                }
-            }
-            z.hinweis?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext) }
-            val imStil = zeilenImStil()
-            z.tage.forEachIndexed { nr, tag ->
-                val name = z.vorschlag[tag]?.let { namen[it] }
-                if (imStil) {
-                    VorschlagStil(tag, tagKurz(tag), name, tag !in z.abgewaehlt, nr, { a.onAbwaehlen(tag) }, { a.onTagNeu(tag) })
-                } else {
-                    VorschlagZeile(tag, name, tag !in z.abgewaehlt, a)
-                }
-            }
-            z.meldung?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext) }
-            Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
-                FoodyKnopf("Neu mischen", a.onNeuMischen, Modifier.weight(1f), art = KnopfArt.UMRISS, aktiv = z.hinweis == null)
-                val bestuecken = if (anzahl == 1) "1 Tag bestücken" else "$anzahl Tage bestücken"
-                FoodyKnopf(
-                    stilText(
-                        "Übernehmen ($anzahl)",
-                        sage = bestuecken,
-                        bayrisch = "Olle nehma ($anzahl)",
-                        grauen = "Den Sternen folgen ($anzahl)",
-                        kreuzer = "Route übernehmen ($anzahl)",
-                    ),
-                    a.onUebernehmen, Modifier.weight(1f), aktiv = anzahl > 0)
-            }
+            FuellenInhalt(z, namen, a)
+            FuellenKnoepfe(z, a)
         }
+    }
+}
+
+/** Einleitung, Mahlzeit, Hinweis, die Vorschläge je Tag und die Meldung (im Blatt und auf der Planen-Seite). */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun FuellenInhalt(z: FuellenZustand, namen: Map<String, String>, a: FuellenAktionen) {
+    if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
+        Text(
+            "Für jeden leeren Tag wählt das Grimoire ein Mahl, das du länger nicht hattest.",
+            style = MaterialTheme.typography.bodyLarge, color = FoodyTheme.farben.nebentext,
+        )
+    }
+    planenEinleitung()?.let { (satz, schrift) -> Text(satz, style = schrift, color = FoodyTheme.farben.nebentext) }
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
+        listOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.SNACK, Mahlzeit.ABENDESSEN).forEach { m ->
+            FoodyChip(m.anzeigename(), ausgewaehlt = m == z.mahlzeit, onKlick = { a.onMahlzeit(m) })
+        }
+    }
+    z.hinweis?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext) }
+    val imStil = zeilenImStil()
+    z.tage.forEachIndexed { nr, tag ->
+        val name = z.vorschlag[tag]?.let { namen[it] }
+        if (imStil) {
+            VorschlagStil(tag, tagKurz(tag), name, tag !in z.abgewaehlt, nr, { a.onAbwaehlen(tag) }, { a.onTagNeu(tag) })
+        } else {
+            VorschlagZeile(tag, name, tag !in z.abgewaehlt, a)
+        }
+    }
+    z.meldung?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext) }
+}
+
+/** Anzahl der Tage, die „Übernehmen“ füllt. */
+internal fun FuellenZustand.anzahl(): Int = (vorschlag.keys - abgewaehlt).size
+
+/** „Neu mischen“ und „Übernehmen (n)“ mit den Wörtern des Stils. */
+@Composable
+internal fun FuellenKnoepfe(z: FuellenZustand, a: FuellenAktionen) {
+    val anzahl = z.anzahl()
+    Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
+        FoodyKnopf("Neu mischen", a.onNeuMischen, Modifier.weight(1f), art = KnopfArt.UMRISS, aktiv = z.hinweis == null)
+        val bestuecken = if (anzahl == 1) "1 Tag bestücken" else "$anzahl Tage bestücken"
+        FoodyKnopf(
+            stilText(
+                "Übernehmen ($anzahl)",
+                sage = bestuecken,
+                bayrisch = "Olle nehma ($anzahl)",
+                grauen = "Den Sternen folgen ($anzahl)",
+                kreuzer = "Route übernehmen ($anzahl)",
+            ),
+            a.onUebernehmen, Modifier.weight(1f), aktiv = anzahl > 0,
+        )
     }
 }
 

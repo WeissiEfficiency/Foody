@@ -5,9 +5,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -107,7 +109,9 @@ class WocheStileTest {
     private fun plus(stil: FoodyStil) {
         zeigen(stil)
         compose.onAllNodes(hasContentDescription("Mahlzeit hinzufügen")).onFirst().performClick()
-        compose.warteAufText("Mahlzeit wählen")
+        // Wie im Entwurf öffnet „+“ die Planen-Seite mit „Selbst wählen“
+        compose.waitUntil(5_000) { compose.onAllNodes(hasContentDescription("Selbst wählen") and isSelectable()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasContentDescription("Selbst wählen") and isSelectable()).assertIsSelected()
     }
 
     private fun fuellen(stil: FoodyStil) {

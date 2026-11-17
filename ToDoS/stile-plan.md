@@ -197,6 +197,7 @@ Gemeinsame liegt in `:core:designsystem`.
       schlichte Szenen statt normaler Ansicht, Eintragen/Planen/Listen als Seiten mit Reitern statt Blättern
       (Nutzer 2026-11-17: alle angehen, in dieser Reihenfolge).
 - [x] Reihenfolge in den Einstellungen wie im Entwurf (Abgleich unten), 2026-11-17, siehe „Ergebnis“.
+- [x] Planen als Seite mit Reitern „Selbst wählen · Vorschlagen lassen“ (Q–V), 2026-11-17, siehe „Ergebnis“.
 - [x] Rezeptfilter wie im Entwurf: „Alle · Favoriten · ≤ 30 Min.“ mit den Wörtern des Stils, 2026-11-17, siehe „Ergebnis“.
 - [x] Editor der Sage wie im Entwurf (Reiter „Grundlagen · Zutaten · Ritual“), 2026-11-17, siehe „Ergebnis“.
 - [x] Tagebuch: „‹“ im Kopf zurück zu Heute in allen Stilen (Immersiv und Ruhig), 2026-11-17, siehe „Ergebnis“.
@@ -743,3 +744,26 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
 - Tests: `EinstellungenStileTest.…AbgleichUnten` für alle sechs Stile und Ruhig (vorher rot), `milchglasAbgleichOben`.
   Sechs Referenzbilder neu (Sage, R–V), Milchglas unverändert.
 - Im Emulator mit den Maßen des Handys nachgeprüft (Sage: „Botendienst“ nach der Seherin, vor der Abschrift).
+
+**2026-11-17 – Planen als Seite mit Reitern** (Branch `claude/planen-seite`, Entscheidung des Nutzers aus dem Canvas-Abgleich):
+- In den Stilen Q–V (Immersiv und Ruhig) ist Planen wie in den Entwürfen eine eigene Seite statt Mahlzeitwahl,
+  Rezeptwahl und Füllen-Blatt (`PlanenSeite.kt`): Kopf mit Zurück und Titel des Stils („Den Weg planen“, „Planen!“,
+  „Wochn plana“, „Kurs plotten“ mit Überzeile „Navigation · KW 47“, Grauen „Die Sterne befragen“), Reiter „Selbst
+  wählen · Vorschlagen lassen“ (Sage „Mahl wählen · Leere Tage füllen“, Anime „Rezept wählen · Tage füllen“,
+  Bayrisch „Selber aussuacha · Vorschlagn lassn“, Grauen „… · Die Sterne fragen“, Kreuzer „Manuell · Navcomputer“).
+- „Selbst wählen“: Tag der Woche, Mahlzeit oder eigener Name, Gericht mit Suche; fest unten Portionen (Vorgabe aus
+  dem Rezept), die Zusammenfassung „Dienstag, 17.11. · Abendessen · Kartoffelsuppe“ und „Einplanen“ (Sage „Auf die
+  Karte setzen“, Anime „In die Woche! ▶“, Bayrisch „Eiplana“, Grauen „Es sei beschlossen“, Kreuzer „Kurs
+  bestätigen“). „Vorschlagen lassen“ zeigt den Inhalt von „Leere Tage füllen“ (Mahlzeit, Vorschläge mit ↻, „Neu
+  mischen“, „Übernehmen“). „+“ und ein freier Platz öffnen „Selbst wählen“ mit Tag und Mahlzeit, „Leere Tage
+  füllen“ den zweiten Reiter. Milchglas behält die Blätter (kein Entwurf).
+- Neuer Baustein `Reiterleiste` im Designsystem (Anime und Bayrisch als Pillen, sonst Linie mit Strich im Akzent;
+  TalkBack liest das normale Wort und „ausgewählt“), auch für Listen und Eintragen gedacht. `RezeptKarte.portionen`.
+- Bewusst anders als im Entwurf: Gerichte als Liste mit Suche statt Kacheln (die App hat mehr Rezepte als sechs),
+  kein „Von/Bis“ beim Füllen (die App füllt die leeren Tage der gezeigten Woche ab heute), Kreuzer-Strich im Akzent
+  des Stils.
+- Tests: `PlanenSeiteTest` (alle sechs Stile und Ruhig planen über „Selbst wählen“, Platz mit Portionen, Zurück,
+  Übernehmen, Milchglas bleibt Blatt), `WocheStileTest.…Plus` und `WocheScreenTest.karteDerWoche…` angepasst. Sechs
+  neue Referenzbilder `stil_*_planen_handy`, sechs `*_fuellen_handy` neu (jetzt die Seite).
+- Im Emulator mit den Maßen des Handys nachgeprüft (Sage, Kreuzer): beide Reiter, Einplanen trägt ein und schließt,
+  Portionen unten über dem Knopf, Zurück schließt ohne Eintrag.

@@ -27,6 +27,8 @@ data class RezeptKarte(
     val zutatNamen: List<String>,
     val archiviert: Boolean,
     val angelegt: Long,
+    /** Portionen des Rezepts (Vorgabe beim Einplanen). */
+    val portionen: Int = 2,
 )
 
 /** Eine Zutatzeile mit Namen; [hatNaehrwerte] für die Vollständigkeitsanzeige. */
