@@ -21,7 +21,7 @@ internal fun ZeilenVorschau(zeilen: List<ZeilenStatus>) {
             when {
                 fehler != null -> Text("${s.zeile}: $fehler", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                 erkannt != null -> Text(
-                    beschreibung(erkannt) + if (s.imKatalog) " · im Katalog" else " · neu",
+                    zeilenText(erkannt) + if (s.imKatalog) " · im Katalog" else " · neu",
                     style = MaterialTheme.typography.bodySmall, color = FoodyTheme.farben.nebentext,
                 )
             }
@@ -29,7 +29,8 @@ internal fun ZeilenVorschau(zeilen: List<ZeilenStatus>) {
     }
 }
 
-private fun beschreibung(z: ImportedIngredient): String {
+/** „200 g · Reis · gesiebt“: Menge, Name, Notiz, optional. */
+internal fun zeilenText(z: ImportedIngredient): String {
     val menge = z.amount?.let { m ->
         val zahl = m.stripTrailingZeros().toPlainString().replace('.', ',')
         if (z.unit == null || z.unit == MeasureUnit.PIECE) zahl else "$zahl ${z.unit?.symbol}"

@@ -3,10 +3,12 @@ package de.foody.feature.rezepte.editor.stil
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.isHeading
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -50,8 +52,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Editor der Stile R–V in Immersiv: Felder mit Etikett (TalkBack liest das Etikett), erkannte Zutatenzeilen, Speichern
- * unten (gesperrt ohne Namen), Verwerfen fragt nach; bei 200 % Schrift wird nichts abgeschnitten.
+ * Editor der Stile Q–V in Immersiv: Felder mit Etikett (TalkBack liest das Etikett), erkannte Zutatenzeilen, Speichern
+ * unten (gesperrt ohne Namen), Verwerfen fragt nach; bei 200 % Schrift wird nichts abgeschnitten (R–V). Die Sage hat
+ * eigene Reiter.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -177,6 +180,45 @@ class EditorStileTest {
     @Test fun grauenSchrift200() = gross(FoodyStil.GRAUEN)
 
     @Test fun kreuzerSchrift200() = gross(FoodyStil.KREUZER)
+
+    /**
+     * Sage: Kopf „Neue Seite“ (TalkBack „Neues Rezept“), Reiter Grundlagen · Zutaten · Ritual, die erkannten Zeilen unter
+     * „Was die Schrift verrät“, Speichern mit „Ins Grimoire schreiben“ (gesperrt ohne Namen).
+     */
+    @Test
+    fun sage() {
+        zeigen(FoodyStil.SAGE, null)
+        compose.onNodeWithText("NEUE SEITE").assertExists()
+        compose.onNodeWithText("INS GRIMOIRE SCHREIBEN").assertExists()
+        compose.onNodeWithContentDescription("Speichern").assertIsNotEnabled()
+        feld("Name").performTextInput("Bowl")
+        assertTrue(compose.onAllNodes(hasContentDescription("Eine Zutat je Zeile, Menge zuerst")).fetchSemanticsNodes().isEmpty())
+        compose.onNode(hasContentDescription("Zutaten") and isSelectable()).performClick()
+        compose.onNode(hasContentDescription("Zutaten") and isSelectable()).assertIsSelected()
+        feld("Eine Zutat je Zeile, Menge zuerst").performTextInput("200 g Reis")
+        compose.warteAufText("200 g · Reis · im Katalog")
+        compose.onNodeWithText("WAS DIE SCHRIFT VERRÄT").assertExists()
+        compose.onNode(hasContentDescription("Zubereitung") and isSelectable()).performClick()
+        feld("Ein Schritt je Zeile").performTextInput("Reis kochen")
+        compose.onNodeWithContentDescription("Speichern").performClick()
+        compose.waitUntil(5_000) { fertig.isNotEmpty() }
+        val gespeichert = runBlocking { db.rezeptDao().nachId(fertig.single()) }
+        assertEquals("Bowl", gespeichert?.name)
+    }
+
+    /** Sage beim Bearbeiten: „Neu niederschreiben“ (TalkBack „Bearbeiten“), ✕ fragt bei Änderungen nach. */
+    @Test
+    fun sageVerwerfen() {
+        zeigen(FoodyStil.SAGE, "r1")
+        compose.warteAufText("Reispfanne")
+        compose.onNodeWithText("NEU NIEDERSCHREIBEN").assertExists()
+        feld("Name").performTextReplacement("Reispfanne scharf")
+        compose.onNodeWithContentDescription("Abbrechen").performClick()
+        compose.warteAufText("Änderungen verwerfen?")
+        assertEquals(0, zurueck)
+    }
+
+    @Test fun sageUeberNavigation() = ueberNavigation(FoodyStil.SAGE)
 
     @Test
     fun texte() {

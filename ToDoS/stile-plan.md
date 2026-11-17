@@ -195,7 +195,8 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Ein genauer Abgleich Bild für Bild mit dem Canvas, 2026-11-17, siehe „Ergebnis“.
 - [ ] Abweichungen vom Canvas, die der Nutzer entscheidet (Liste im „Ergebnis“ Canvas-Abgleich): Ruhig als
       schlichte Szenen statt normaler Ansicht, Eintragen/Planen/Listen als Seiten mit Reitern statt Blättern,
-      Rezeptfilter je Stil, Editor der Sage, Reihenfolge in den Einstellungen.
+      Rezeptfilter je Stil, Reihenfolge in den Einstellungen.
+- [x] Editor der Sage wie im Entwurf (Reiter „Grundlagen · Zutaten · Ritual“), 2026-11-17, siehe „Ergebnis“.
 - [x] Tagebuch: „‹“ im Kopf zurück zu Heute in allen Stilen (Immersiv und Ruhig), 2026-11-17, siehe „Ergebnis“.
 - [x] Tablet ansehen (zweispaltiges Layout mit Farben, Schrift und Formen des Stils), 2026-11-17, siehe „Ergebnis“.
 - [x] Tablet: Rezeptliste der Szenen R–V öffnet das Rezept rechts; Knopfleisten von Editor und Rezept unten am Rand.
@@ -687,8 +688,8 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
     Entwürfe ordnen Frühstück, Mittag, Abend, Snack; die App Frühstück, Mittag, Snack, Abend.
   - **Rezeptfilter:** Die Entwürfe haben drei Filter mit Wörtern je Stil (Sage „♦“ und „≤ 30′“, Bayrisch „Olle“,
     „♥ Leibgerichte“, „G’schwind“); die App hat überall „Alle · Favoriten · Oft gekocht · Vegetarisch“.
-  - **Editor der Sage:** Entwurf „Neu niederschreiben“ mit Reitern „Grundlagen · Zutaten · Ritual“; die App zeigt die
-    Sage noch mit den Bausteinen („Neue Seite“), R–V sind wie im Entwurf.
+  - **Editor der Sage:** Entwurf „Neu niederschreiben“ mit Reitern „Grundlagen · Zutaten · Ritual“ (am selben Tag
+    nachgezogen, siehe unten).
   - **Einstellungen:** In den Entwürfen steht der Abgleich unten, in der App oben (dazu die Stilwahl, die die
     Entwürfe nicht zeigen).
   - Kleinigkeiten: Edo-Rezeptliste als Fächer aus Buchstabenkarten statt beschrifteter Fächerblätter; Grauen-Widget
@@ -703,3 +704,18 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
 - Tests: `TagebuchStileTest` (`…Zurueck` für alle sechs Stile und Ruhig, `milchglasOhneZurueck`); ohne den Knopf
   sind alle sieben rot. Sechs Referenzbilder neu (Tagebuch der Sage und R–V), Milchglas unverändert. Im Emulator mit
   den Maßen des Handys nachgeprüft (Edo, Sage: „‹“ führt zu Heute).
+
+**2026-11-17 – Editor der Sage** (Branch `claude/sage-editor`, Entscheidung des Nutzers aus dem Canvas-Abgleich):
+- Die Sage hat im Editor jetzt eine eigene Szene wie im Entwurf (`EditorSage.kt`, aus `EditorRoute` in Sage Immersiv):
+  Kopf mit ✕ und Titel in Gold („Neue Seite“, beim Bearbeiten „Neu niederschreiben“; TalkBack „Neues Rezept“ bzw.
+  „Bearbeiten“), Reiter „Grundlagen · Zutaten · Ritual“ mit goldenem Strich unter dem gewählten, unten „Ins Grimoire
+  schreiben“ über der schwebenden Navigation und über der Tastatur.
+- Grundlagen: Bild (eckig), Name, Portionen, Vorbereitung und Kochzeit, Tags, Einordnung. Zutaten: Feld und darunter
+  „Was die Schrift verrät“ mit ✓ (erkannt) oder ! (Fehler). Ritual: Schritte, Notizen, Quelle, Hinweis auf die
+  Sanduhren im Kochmodus. Felder mit Etikett in Cinzel darüber: `StilFeld` kennt dafür jetzt auch die Sage.
+- Bewusst anders als im Entwurf: kein „Abschrift“-Import im Kopf (wie in R–V), Vorbereitung und Kochzeit getrennt statt
+  eines Felds „Minuten“, „Ein Schritt je Zeile“ statt „je Absatz“ (so liest die App die Schritte).
+- Tests: `EditorStileTest.sage`, `sageVerwerfen`, `sageUeberNavigation`, vorher rot. Referenzbild `sage_editor_handy`
+  neu. Die Reiter liest TalkBack nur einmal mit dem normalen Namen („Zutaten“, „Zubereitung“).
+- Im Emulator mit den Maßen des Handys nachgeprüft: alle drei Reiter, „Ins Grimoire schreiben“ über der Leiste und
+  direkt über der Tastatur, ✓ und ! unter „Was die Schrift verrät“, ✕ fragt nach dem Verwerfen.

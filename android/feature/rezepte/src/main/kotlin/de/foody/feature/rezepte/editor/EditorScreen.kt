@@ -33,9 +33,11 @@ import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.komponenten.zeilenImStil
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
+import de.foody.feature.rezepte.editor.stil.EditorSage
 import de.foody.feature.rezepte.editor.stil.EditorStil
 import kotlinx.coroutines.launch
 
@@ -71,9 +73,14 @@ fun EditorRoute(
         null
     }
 
-    if (zeilenImStil()) {
+    val sage = FoodyTheme.stil.immersiv(FoodyStil.SAGE)
+    if (sage || zeilenImStil()) {
         val hinweise = listOfNotNull(z.hinweis?.let { it to true }, portionenHinweis?.let { it to false })
-        EditorStil(id == null, z, hinweise, moeglich, zurueck, speichern, vm)
+        if (sage) {
+            EditorSage(id == null, z, hinweise, moeglich, zurueck, speichern, vm)
+        } else {
+            EditorStil(id == null, z, hinweise, moeglich, zurueck, speichern, vm)
+        }
         if (fragen) VerwerfenFrage(onVerwerfen = { fragen = false; onZurueck() }, onWeiter = { fragen = false })
         return
     }

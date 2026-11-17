@@ -51,14 +51,15 @@ import de.foody.core.designsystem.stil.edo.edoShu
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
+import de.foody.core.designsystem.stil.sage.Sage
 
 /**
- * Eingabefeld der Stile R–V wie in den Entwürfen: das [etikett] klein darüber (Versalien außer Bayrisch), das Feld im
+ * Eingabefeld der Stile Q–V wie in den Entwürfen: das [etikett] klein darüber (Versalien außer Bayrisch), das Feld im
  * Aussehen des Stils – weiße Fläche mit Tintenrand (Anime, Bayrisch), Unterstrich (Edo), dünne Linie (Grauen, Kreuzer,
- * beim Tippen im Akzent). TalkBack liest das Feld mit dem Etikett. Mindestens 48 dp hoch; mehrzeilig ([einzeilig]
+ * beim Tippen im Akzent), dunkle Fläche mit feinem Rahmen (Sage). TalkBack liest das Feld mit dem Etikett. Mindestens 48 dp hoch; mehrzeilig ([einzeilig]
  * `false`) mindestens [zeilen] Zeilen. Mit [etikettZeigen] = `false` steht das Etikett nur für TalkBack da (etwa
  * neben einem Feld, das schon beschriftet ist), mit [zentriert] steht der Text mittig. [onFertig] läuft bei „Fertig“
- * auf der Tastatur und wenn das Feld den Fokus verliert. Nur in Szenen der Stile R–V verwenden.
+ * auf der Tastatur und wenn das Feld den Fokus verliert. Nur in Szenen der Stile Q–V verwenden.
  */
 @Composable
 fun StilFeld(
@@ -139,6 +140,10 @@ private fun feldAussehen(stil: FoodyStil, fokus: Boolean): FeldAussehen {
                 12.dp, Bayrisch.text(16f), Bayrisch.text(13f, FontWeight.Bold),
             )
         }
+        FoodyStil.SAGE -> FeldAussehen(
+            Modifier.background(Color.Black.copy(alpha = 0.28f)).border(1.dp, if (fokus) FoodyTheme.stil.zier else f.lichtkante),
+            12.dp, Sage.text(17f), Sage.titel(10.5f, 0.16f, FontWeight.Medium),
+        )
         FoodyStil.GRAUEN -> {
             val glut = FoodyTheme.stil.zier
             FeldAussehen(

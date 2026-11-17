@@ -20,7 +20,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.fotos.KameraDatei
 import de.foody.core.designsystem.komponenten.FoodyKnopf
@@ -37,7 +39,7 @@ import java.io.File
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun FotoWahl(bild: String?, vm: EditorViewModel) {
+internal fun FotoWahl(bild: String?, vm: EditorViewModel, form: Shape = RoundedCornerShape(20.dp), hoehe: Dp = 180.dp) {
     val kontext = LocalContext.current
     val bereich = rememberCoroutineScope()
     var kameraDatei by rememberSaveable { mutableStateOf<String?>(null) }
@@ -52,7 +54,7 @@ internal fun FotoWahl(bild: String?, vm: EditorViewModel) {
             datei.delete()
         }
     }
-    Box(Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(20.dp))) {
+    Box(Modifier.fillMaxWidth().height(hoehe).clip(form)) {
         rezeptBild(bild)?.invoke() ?: RezeptPlatzhalter(Modifier.fillMaxSize())
     }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
