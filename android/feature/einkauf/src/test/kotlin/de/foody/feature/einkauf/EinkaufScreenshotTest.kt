@@ -169,14 +169,14 @@ class EinkaufScreenshotTest {
         }
     }
 
-    /** Düstere Sage, Immersiv: „Listen des Händlers“ (frühere Listen) als Blatt. */
+    /** Düstere Sage, Immersiv: „Listen des Händlers“ (frühere Listen) auf der Listen-Seite. */
     @Test
     @Config(qualifiers = "w411dp-h891dp")
     fun sageListenHandy() = blatt("sage_listen_handy", dunkel = false, warteAuf = "Listen des Händlers", stil = FoodyStil.SAGE) {
         compose.onNodeWithContentDescription("Frühere Listen").performClick()
     }
 
-    /** Stile R–V, Immersiv: frühere Listen mit den Zeilen des Stils. */
+    /** Stile R–V, Immersiv: frühere Listen mit den Zeilen des Stils, auf der Listen-Seite (Reiter „Frühere“). */
     private fun stilListen(stil: FoodyStil, titel: String) = blatt("stil_${stil.name.lowercase()}_listen_handy", dunkel = false, warteAuf = titel, stil = stil) {
         compose.onNodeWithContentDescription("Frühere Listen").performClick()
     }
@@ -187,7 +187,7 @@ class EinkaufScreenshotTest {
 
     @Test
     @Config(qualifiers = "w411dp-h891dp")
-    fun edoListen() = stilListen(FoodyStil.EDO, "Frühere Listen")
+    fun edoListen() = stilListen(FoodyStil.EDO, "Einkaufslisten")
 
     @Test
     @Config(qualifiers = "w411dp-h891dp")
@@ -195,7 +195,7 @@ class EinkaufScreenshotTest {
 
     @Test
     @Config(qualifiers = "w411dp-h891dp")
-    fun grauenListen() = stilListen(FoodyStil.GRAUEN, "Frühere Listen")
+    fun grauenListen() = stilListen(FoodyStil.GRAUEN, "Listen")
 
     @Test
     @Config(qualifiers = "w411dp-h891dp")
