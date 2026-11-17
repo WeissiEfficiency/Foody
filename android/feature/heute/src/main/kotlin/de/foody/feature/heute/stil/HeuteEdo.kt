@@ -87,6 +87,7 @@ import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.EdoKnopf
 import de.foody.core.designsystem.stil.edo.edoShu
 import de.foody.core.designsystem.stil.svgPfad
+import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.DatenbankLeerHinweis
@@ -119,10 +120,11 @@ private val TAG_MONAT = DateTimeFormatter.ofPattern("d. MMMM", Locale.GERMAN)
 internal fun HeuteEdo(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modifier = Modifier) {
     HeuteRahmen(modifier, innen = PaddingValues(top = 14.dp)) { rahmen ->
         Column(rahmen, horizontalAlignment = Alignment.CenterHorizontally) {
-            Rollbild(zustand, aktionen)
+            val inszeniert = FoodyTheme.stil.inszeniert
+            if (inszeniert) Rollbild(zustand, aktionen) else SchlichterKopf(zustand, aktionen)
             if (zustand == null) return@Column
             Column(
-                Modifier.fillMaxWidth().padding(horizontal = 18.dp).padding(top = 34.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 18.dp).padding(top = if (inszeniert) 34.dp else 20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 zustand.sync?.let { SyncStatus(it) }
@@ -153,6 +155,57 @@ internal fun edoKopf(slot: String, morgen: Boolean, datum: LocalDate): String {
         null -> "$tag · ${slot.uppercase(Locale.GERMAN)}"
     }
     return "$wann · ${TAG_MONAT.format(datum).uppercase(Locale.GERMAN)}"
+}
+
+/**
+ * Ruhig wie im Entwurf: statt des Rollbilds „Heute“ mit dem Datum über einer Tuschelinie, darunter die nächste
+ * Mahlzeit schlicht mit „KOCHEN“.
+ */
+@Composable
+private fun SchlichterKopf(zustand: HeuteZustand?, aktionen: HeuteAktionen) {
+    val f = FoodyTheme.farben
+    val tinte = f.text
+    Column(Modifier.fillMaxWidth().padding(start = 18.dp, end = 18.dp, top = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            Modifier.fillMaxWidth().drawBehind { drawLine(tinte, Offset(0f, size.height), Offset(size.width, size.height), 2.dp.toPx()) }
+                .padding(bottom = 8.dp),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            // Der Titel wächst mit der Systemschrift nur bis 130 %
+            Text("Heute", Modifier.weight(1f).semantics { heading() }, style = Edo.titel(titelGroesse(34f)), color = f.text)
+            zustand?.datum?.let { Text(SCHLICHT_DATUM.format(it), Modifier.padding(bottom = 4.dp), style = Edo.text(14f), color = f.nebentext) }
+        }
+        zustand?.let { SchlichteMahlzeit(it, aktionen) }
+    }
+}
+
+private val SCHLICHT_DATUM = DateTimeFormatter.ofPattern("EEEE, d. MMMM", Locale.GERMAN)
+
+/** Die nächste Mahlzeit in Ruhig: Mahlzeit im Zinnober, Gericht, Angaben und „KOCHEN“ (ohne Plan „ANSEHEN“). */
+@Composable
+private fun SchlichteMahlzeit(zustand: HeuteZustand, aktionen: HeuteAktionen) {
+    val f = FoodyTheme.farben
+    val n = zustand.naechste
+    val kopf = when {
+        n != null -> (Mahlzeit.ausText(n.mahlzeit.slot)?.anzeigename() ?: n.mahlzeit.slot).uppercase(Locale.GERMAN) + if (n.morgen) " · MORGEN" else ""
+        zustand.inspiration != null -> "EMPFEHLUNG"
+        else -> null
+    }
+    kopf?.let { Text(it, Modifier.padding(top = 6.dp), style = Edo.kopf(), color = edoShu()) }
+    val g = zustand.gericht()
+    if (g == null) {
+        Text("Für heute ist nichts vorgesehen.", style = Edo.text(14f), color = f.nebentext)
+        return
+    }
+    val (titel, rezeptId) = g
+    Text("$titel ›", Modifier.rezeptLink(titel) { aktionen.onRezept(rezeptId) }.padding(vertical = 2.dp), style = Edo.titel(23f), color = f.text)
+    val zeile = g.zeile
+    if (zeile.isNotEmpty()) Text(zeile, style = Edo.text(14f), color = f.nebentext)
+    if (n != null) {
+        EdoKnopf("KOCHEN", { aktionen.onKochen(n.mahlzeit.rezeptId, n.mahlzeit.portionen) }, Modifier.padding(top = 4.dp), beschreibung = "Kochen")
+    } else {
+        EdoKnopf("ANSEHEN", { aktionen.onRezept(rezeptId) }, Modifier.padding(top = 4.dp), beschreibung = "Rezept ansehen")
+    }
 }
 
 /** Das Rollbild: Stab, Montierung in Indigo, Papier mit Landschaft und der nächsten Mahlzeit, Stab, zwei Quasten. */

@@ -7,8 +7,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,7 +27,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -35,6 +38,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.EdoKnopf
 import de.foody.core.designsystem.stil.edo.edoShu
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import kotlin.math.min
 
@@ -50,7 +54,13 @@ internal fun EdoKopf(n: Int, neu: @Composable () -> Unit) {
     val f = FoodyTheme.farben
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Column(Modifier.align(Alignment.Bottom).padding(end = 8.dp)) {
-            Text(if (n > 0) "FÄCHER · $n REZEPTE" else "FÄCHER", style = Edo.kopf(), color = f.nebentext)
+            // Ruhig wie im Entwurf ohne den Fächer: „6 REZEPTE“
+            val unter = if (FoodyTheme.stil.inszeniert) "FÄCHER" else "REZEPTE"
+            Text(
+                if (n > 0) szenenWort("FÄCHER · $n REZEPTE", "$n REZEPTE") else unter,
+                style = Edo.kopf(),
+                color = f.nebentext,
+            )
             // Der Titel wächst mit der Systemschrift nur bis 130 %
             Text("Rezepte", Modifier.semantics { heading() }, style = Edo.titel(titelGroesse(32f)), color = f.text)
         }
@@ -61,6 +71,10 @@ internal fun EdoKopf(n: Int, neu: @Composable () -> Unit) {
 /** Die Treffer der Seite als Fächer: Blätter, leicht gegeneinander gedreht, um ihren Fuß; das gewählte in Zinnober. */
 @Composable
 internal fun EdoFaecher(liste: List<RezeptKarte>, gewaehlt: String, onWahl: (String) -> Unit) {
+    if (!FoodyTheme.stil.inszeniert) {
+        EdoListe(liste, gewaehlt, onWahl)
+        return
+    }
     val mitte = (liste.size - 1) / 2f
     Row(
         Modifier.fillMaxWidth().padding(top = 8.dp).drawBehind {
@@ -77,6 +91,39 @@ internal fun EdoFaecher(liste: List<RezeptKarte>, gewaehlt: String, onWahl: (Str
     }
 }
 
+/** Ruhig wie im Entwurf: statt des Fächers die Treffer als Knöpfe zu zweit, das gewählte im Zinnober. */
+@Composable
+private fun EdoListe(liste: List<RezeptKarte>, gewaehlt: String, onWahl: (String) -> Unit) {
+    val f = FoodyTheme.farben
+    val shu = edoShu()
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        liste.chunked(2).forEachIndexed { reihe, paar ->
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                paar.forEachIndexed { j, r ->
+                    val an = r.id == gewaehlt
+                    val grund = when {
+                        an -> shu
+                        (reihe * 2 + j) % 2 == 0 -> Edo.papier
+                        else -> BLATT_DUNKEL
+                    }
+                    Box(
+                        Modifier.weight(1f).fillMaxHeight().heightIn(min = 48.dp).background(grund, Edo.form).border(1.5.dp, f.text, Edo.form)
+                            .rezeptWahl(r, an) { onWahl(r.id) }.padding(horizontal = 10.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(edoKurz(r.name), style = Edo.text(15f), color = if (an) Color.White else f.text, textAlign = TextAlign.Center)
+                    }
+                }
+                if (paar.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/** Kurzname eines Rezepts für die Knöpfe: „Ofengemüse mit Feta …“ → „Ofengemüse“. */
+internal fun edoKurz(name: String): String =
+    name.substringBefore(" mit ").substringBefore(" und ").substringBefore(",").trim().ifEmpty { name }
+
 /** Ein Fächerblatt: oben breiter als unten, mit Anfangsbuchstabe und Punkt für Favoriten. */
 private val BLATT = GenericShape { s, _ ->
     val schmal = s.width * 0.18f
@@ -87,6 +134,9 @@ private val BLATT = GenericShape { s, _ ->
     close()
 }
 
+/** Das dunklere Papier jedes zweiten Blatts. */
+private val BLATT_DUNKEL = Color(0xFFEADFC4)
+
 @Composable
 private fun Blatt(r: RezeptKarte, i: Int, an: Boolean, drehung: Float, modifier: Modifier, onKlick: () -> Unit) {
     val f = FoodyTheme.farben
@@ -94,7 +144,7 @@ private fun Blatt(r: RezeptKarte, i: Int, an: Boolean, drehung: Float, modifier:
     val grund = when {
         an -> shu
         i % 2 == 0 -> Edo.papier
-        else -> Color(0xFFEADFC4)
+        else -> BLATT_DUNKEL
     }
     Column(
         modifier.heightIn(min = 128.dp)
