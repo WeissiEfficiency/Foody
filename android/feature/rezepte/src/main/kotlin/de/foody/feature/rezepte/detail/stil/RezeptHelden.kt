@@ -141,11 +141,14 @@ internal fun EdoHeld(z: DetailZustand.Da) {
             val angaben = listOfNotNull(angabenZeile(z), if (r.favorite) "Favorit" else null).joinToString(" · ")
             if (angaben.isNotEmpty()) Text(angaben, style = Edo.text(14f), color = f.nebentext)
         }
-        Box(
-            Modifier.size(56.dp).rotate(-4f).background(shu, Edo.form).border(2.dp, Color.White.copy(alpha = 0.5f), Edo.form)
-                .clearAndSetSemantics { },
-            contentAlignment = Alignment.Center,
-        ) { Text(anfang(z), style = Edo.titel(26f), color = Color.White) }
+        // Ruhig wie im Entwurf ohne den Stempel
+        if (FoodyTheme.stil.inszeniert) {
+            Box(
+                Modifier.size(56.dp).rotate(-4f).background(shu, Edo.form).border(2.dp, Color.White.copy(alpha = 0.5f), Edo.form)
+                    .clearAndSetSemantics { },
+                contentAlignment = Alignment.Center,
+            ) { Text(anfang(z), style = Edo.titel(26f), color = Color.White) }
+        }
     }
 }
 

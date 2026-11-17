@@ -72,9 +72,15 @@ class HeuteEdoTest {
     }
 
     @Test
-    fun ruhigZeigtNormaleAnsicht() {
+    fun ruhigZeigtSzeneSchlicht() {
         zeigen(StilVariante.RUHIG)
-        compose.onNodeWithText("Speisefolge ›").assertDoesNotExist()
+        // Wie im Entwurf: statt des Rollbilds „Heute“ mit Datum und die nächste Mahlzeit schlicht, die Speisefolge bleibt
+        compose.onNodeWithText("HEUTE ABEND · 24. OKTOBER").assertDoesNotExist()
+        compose.onNodeWithText("Heute").assertExists()
+        compose.onNodeWithText("Samstag, 24. Oktober").assertExists()
+        compose.onNodeWithText("ABENDESSEN").assertExists()
+        compose.onNodeWithContentDescription("Kochen").assertExists()
+        compose.onNodeWithText("Speisefolge ›").performScrollTo().assertExists()
     }
 
     @Test

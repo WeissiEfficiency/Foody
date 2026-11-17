@@ -120,11 +120,15 @@ class PlanenSeiteTest {
 
     @Test fun ruhig() = selbst(FoodyStil.EDO, StilVariante.RUHIG)
 
-    /** Ein freier Platz („Abendessen planen“) öffnet „Selbst wählen“ mit Tag und Mahlzeit; Portionen ± wirken. */
+    /**
+     * Ein freier Platz („Abendessen planen“) öffnet „Selbst wählen“ mit Tag und Mahlzeit; Portionen ± wirken. Freie
+     * Plätze zeigt nur die normale Ansicht in einem Stil mit Planen-Seite, also Ruhig eines Stils, der noch nicht in
+     * `RUHIG_ALS_SZENE` steht (Kreuzer kommt zuletzt).
+     */
     @Test
     fun platzMitPortionen() {
         runBlocking { db.planen("p1", MONTAG, "MITTAGESSEN") }
-        zeigen(FoodyStil.EDO, StilVariante.RUHIG)
+        zeigen(FoodyStil.KREUZER, StilVariante.RUHIG)
         compose.onAllNodes(hasText("Abendessen planen", substring = true)).onFirst().performScrollTo().performClick()
         compose.waitUntil(5_000) { seiteDa() }
         reiter("Selbst wählen").assertIsSelected()

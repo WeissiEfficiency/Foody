@@ -28,7 +28,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.vector.PathParser
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -94,7 +93,8 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
             )
         }
         Row(Modifier.align(Alignment.Bottom), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            if (gesamt > 0) Ring(erledigt, gesamt)
+            // Ruhig wie im Entwurf ohne den Tuschering; die Zahlen stehen über dem Titel
+            if (gesamt > 0 && FoodyTheme.stil.inszeniert) Ring(erledigt, gesamt)
             EdoKnopf("Listen", onListen, voll = false, beschreibung = "Frühere Listen")
             menue()
         }

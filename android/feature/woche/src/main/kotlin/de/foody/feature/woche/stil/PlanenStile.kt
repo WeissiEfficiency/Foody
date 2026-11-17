@@ -47,9 +47,12 @@ private val EDO_TAGE = mapOf(
 /** Farben der Tagkästchen im Anime-Entwurf, der Reihe nach. */
 private val ANIME_TAGE = listOf(Anime.gelb, Anime.mint, Anime.tuerkis)
 
-/** Wochentag eines Vorschlags in der Art des Stils: „月“ (Edo), „MO“ (Kreuzer), sonst „Mo“. */
-internal fun planenTag(stil: FoodyStil, tag: LocalDate): String = when (stil) {
-    FoodyStil.EDO -> EDO_TAGE.getValue(tag.dayOfWeek)
+/**
+ * Wochentag eines Vorschlags in der Art des Stils: „月“ (Edo, nur [inszeniert]; in Ruhig wie im Entwurf „Mo“), „MO“
+ * (Kreuzer), sonst „Mo“.
+ */
+internal fun planenTag(stil: FoodyStil, tag: LocalDate, inszeniert: Boolean = true): String = when (stil) {
+    FoodyStil.EDO -> if (inszeniert) EDO_TAGE.getValue(tag.dayOfWeek) else wochentagKurz(tag)
     FoodyStil.KREUZER -> wochentagKurz(tag).uppercase()
     else -> wochentagKurz(tag)
 }
@@ -93,7 +96,7 @@ internal fun VorschlagStil(
         Modifier.semantics { contentDescription = "$tagText übernehmen" },
         haken = true,
         aktiv = name != null,
-        anfang = { TagMarke(stil, planenTag(stil, tag), nr) },
+        anfang = { TagMarke(stil, planenTag(stil, tag, FoodyTheme.stil.inszeniert), nr) },
         ende = {
             IconButton(onClick = onNeu) {
                 val farbe = if (stil == FoodyStil.KREUZER) FoodyTheme.stil.zier else FoodyTheme.farben.text

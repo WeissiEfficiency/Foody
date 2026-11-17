@@ -27,7 +27,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -42,6 +41,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.EdoKnopf
 import de.foody.core.designsystem.stil.edo.edoShu
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import java.util.Locale
 import kotlin.math.min
@@ -58,7 +58,10 @@ internal fun WocheEdo(w: WocheDaten, aktionen: WocheSageAktionen, unten: Dp) {
     WocheRahmen(unten, abstand = 14.dp) {
         Kopf(w)
         Blaettern(w, aktionen, Edo.text(14f))
-        if (w.tage.size == 7) Tafeln(w, gewaehlt) { gewaehlt = it }
+        if (w.tage.size == 7) {
+            // Ruhig wie im Entwurf: statt der Votivtafeln sieben Tageschips
+            if (FoodyTheme.stil.inszeniert) Tafeln(w, gewaehlt) { gewaehlt = it } else TagChips(w, gewaehlt) { gewaehlt = it }
+        }
         w.tage.getOrNull(gewaehlt)?.let { Tagespapier(it, it.datum == w.heute, aktionen) }
         FuellenLink(aktionen.onFuellen)
     }
@@ -78,7 +81,10 @@ private fun FuellenLink(onKlick: () -> Unit) {
             .padding(horizontal = 12.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text("絵馬 · Leere Tage vorschlagen lassen", style = Edo.text(14f, FontWeight.Bold), color = farbe, textAlign = TextAlign.Center)
+        Text(
+            szenenWort("絵馬 · Leere Tage vorschlagen lassen", "Leere Tage vorschlagen lassen"),
+            style = Edo.text(14f, FontWeight.Bold), color = farbe, textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -136,6 +142,31 @@ private fun Tafeln(w: WocheDaten, gewaehlt: Int, onWahl: (Int) -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
             ) {
                 reihe.forEach { i -> Tafel(w.tage[i], heute = i == w.heuteIndex, an = i == gewaehlt) { onWahl(i) } }
+            }
+        }
+    }
+}
+
+/** Ruhig: die sieben Tage als Chips in einer Reihe, heute im Zinnober, der gewählte in Tusche. */
+@Composable
+private fun TagChips(w: WocheDaten, gewaehlt: Int, onWahl: (Int) -> Unit) {
+    val f = FoodyTheme.farben
+    val shu = edoShu()
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        w.tage.forEachIndexed { i, t ->
+            val heute = i == w.heuteIndex
+            val an = i == gewaehlt
+            val grund = when {
+                heute -> shu
+                an -> f.text
+                else -> Edo.papier
+            }
+            Box(
+                Modifier.weight(1f).heightIn(min = 54.dp).background(grund, Edo.form).border(1.5.dp, f.text, Edo.form)
+                    .tagWahl(t, heute, an) { onWahl(i) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(wochentagKurz(t.datum), style = Edo.titel(15f), color = if (heute || an) Color.White else f.text)
             }
         }
     }

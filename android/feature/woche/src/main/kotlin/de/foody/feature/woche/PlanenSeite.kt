@@ -186,7 +186,7 @@ private fun SelbstWaehlen(
     FlowRow(horizontalArrangement = abstand, verticalArrangement = abstand) {
         (0L..6L).forEach { i ->
             val d = montag.plusDays(i)
-            FoodyChip("${planenTag(stil, d)} ${d.dayOfMonth}.", d == w.tag, { onTag(d) }, beschreibung = tagLang(d))
+            FoodyChip("${planenTag(stil, d, FoodyTheme.stil.inszeniert)} ${d.dayOfMonth}.", d == w.tag, { onTag(d) }, beschreibung = tagLang(d))
         }
     }
     Augenbraue(stilText("Mahlzeit", bayrisch = "Wann?", kreuzer = "Orbit"))

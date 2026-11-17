@@ -178,7 +178,7 @@ private fun Kopf(neu: Boolean, a: EditorArt, onZurueck: () -> Unit) {
                 color = f.text,
             )
         }
-        if (neu && stil == FoodyStil.EDO) {
+        if (neu && stil == FoodyStil.EDO && FoodyTheme.stil.inszeniert) {
             Box(Modifier.size(34.dp).rotate(-6f).background(edoShu(), Edo.form).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
                 Text("新", style = Edo.titel(17f), color = Color.White)
             }

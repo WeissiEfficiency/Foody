@@ -200,8 +200,8 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Planen als Seite mit Reitern „Selbst wählen · Vorschlagen lassen“ (Q–V), 2026-11-17, siehe „Ergebnis“.
 - [x] Listen als Seite mit Reitern „Neue Liste · Abgleich · Frühere“ (Q–V), 2026-11-17, siehe „Ergebnis“.
 - [x] Eintragen mit Reitern „Suchen · Scannen · Foto · Geplant“ (Q–V; T–V als Seite), 2026-11-17, siehe „Ergebnis“.
-- [ ] Ruhig als schlichte Szenen wie in den Entwürfen, Stil für Stil (`RUHIG_ALS_SZENE`): Sage und Anime
-      erledigt 2026-11-17 (siehe „Ergebnis“); offen Edo, Bayrisch, Grauen, Kreuzer.
+- [ ] Ruhig als schlichte Szenen wie in den Entwürfen, Stil für Stil (`RUHIG_ALS_SZENE`): Sage, Anime und
+      Edo erledigt 2026-11-17 (siehe „Ergebnis“); offen Bayrisch, Grauen, Kreuzer.
 - [x] Rezeptfilter wie im Entwurf: „Alle · Favoriten · ≤ 30 Min.“ mit den Wörtern des Stils, 2026-11-17, siehe „Ergebnis“.
 - [x] Editor der Sage wie im Entwurf (Reiter „Grundlagen · Zutaten · Ritual“), 2026-11-17, siehe „Ergebnis“.
 - [x] Tagebuch: „‹“ im Kopf zurück zu Heute in allen Stilen (Immersiv und Ruhig), 2026-11-17, siehe „Ergebnis“.
@@ -833,3 +833,15 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
 - Tests: `HeuteAnimeTest.ruhigZeigtSzeneSchlicht` (vorher normale Ansicht), `WocheStileTest.animeRuhigSchlicht`.
   Referenzbild `stil_anime_ruhig` neu.
 - Im Emulator mit den Maßen des Handys nachgeprüft: Heute, Rezepte, Rezept, Woche, Einkauf, Tagebuch in Anime Ruhig.
+
+**2026-11-17 – Ruhig als schlichte Szene: Edo** (Branch `claude/ruhig-szenen-edo`, auf Anime aufgesetzt):
+- Edo steht in `RUHIG_ALS_SZENE` und zeigt in Ruhig wie im Entwurf `S-*`: Heute statt des Rollbilds „Heute“ mit
+  Datum über einer Tuschelinie, darunter die nächste Mahlzeit schlicht („ABENDESSEN“, Gericht, Angaben, „KOCHEN“);
+  Speisefolge und Stempel bleiben. Rezepte statt des Fächers die Treffer als Knöpfe zu zweit (Kurzname, das gewählte
+  im Zinnober), darüber „8 REZEPTE“. Woche statt der Votivtafeln sieben Tageschips (heute im Zinnober, der gewählte in
+  Tusche), „Leere Tage vorschlagen lassen“ ohne 絵馬. Einkauf ohne den Tuschering, Rezept ohne den Stempel mit dem
+  Anfangsbuchstaben, Editor ohne „新“; Planen nennt die Tage „Mo“ statt „月“ (`planenTag(…, inszeniert)`).
+- Tests: `HeuteEdoTest.ruhigZeigtSzeneSchlicht` (vorher normale Ansicht), `WocheStileTest.edoRuhigTageschips`.
+  Referenzbild `stil_edo_ruhig` neu. `PlanenSeiteTest.platzMitPortionen` läuft jetzt in Kreuzer Ruhig: freie Plätze
+  („Abendessen planen“) zeigt nur die normale Ansicht; wenn Kreuzer zur Szene wird, braucht der Test einen neuen Weg.
+- Im Emulator mit den Maßen des Handys nachgeprüft: Heute, Tagebuch, Rezepte, Rezept, Woche, Einkauf in Edo Ruhig.

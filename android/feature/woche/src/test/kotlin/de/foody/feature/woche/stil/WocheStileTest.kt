@@ -161,6 +161,17 @@ class WocheStileTest {
 
     @Test fun anime() = pruefen(FoodyStil.ANIME)
 
+    /** Edo in Ruhig wie im Entwurf: sieben Tageschips statt der Votivtafeln, „Leere Tage vorschlagen lassen“ ohne 絵馬. */
+    @Test
+    fun edoRuhigTageschips() {
+        zeigen(FoodyStil.EDO, variante = StilVariante.RUHIG)
+        compose.onNodeWithText("Woche").assertExists()
+        val mittwoch = compose.onNode(hasContentDescription("Mittwoch, 28.10.", substring = true) and isSelectable())
+        mittwoch.performClick()
+        mittwoch.assertIsSelected()
+        compose.onNodeWithText("Leere Tage vorschlagen lassen").performScrollTo().assertExists()
+    }
+
     @Test fun edo() = pruefen(FoodyStil.EDO)
 
     @Test fun bayrisch() = pruefen(FoodyStil.BAYRISCH)
