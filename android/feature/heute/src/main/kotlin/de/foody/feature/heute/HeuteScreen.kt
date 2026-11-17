@@ -93,12 +93,12 @@ fun HeuteRoute(
 fun HeuteScreen(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modifier = Modifier) {
     // Szenen der Stile in Immersiv; sonst die normale Ansicht
     when {
-        FoodyTheme.stil.immersiv(FoodyStil.SAGE) -> return HeuteSage(zustand, aktionen, modifier)
-        FoodyTheme.stil.immersiv(FoodyStil.GRAUEN) -> return HeuteGrauen(zustand, aktionen, modifier)
-        FoodyTheme.stil.immersiv(FoodyStil.KREUZER) -> return HeuteKreuzer(zustand, aktionen, modifier)
-        FoodyTheme.stil.immersiv(FoodyStil.BAYRISCH) -> return HeuteBayrisch(zustand, aktionen, modifier)
-        FoodyTheme.stil.immersiv(FoodyStil.ANIME) -> return HeuteAnime(zustand, aktionen, modifier)
-        FoodyTheme.stil.immersiv(FoodyStil.EDO) -> return HeuteEdo(zustand, aktionen, modifier)
+        FoodyTheme.stil.szene(FoodyStil.SAGE) -> return HeuteSage(zustand, aktionen, modifier)
+        FoodyTheme.stil.szene(FoodyStil.GRAUEN) -> return HeuteGrauen(zustand, aktionen, modifier)
+        FoodyTheme.stil.szene(FoodyStil.KREUZER) -> return HeuteKreuzer(zustand, aktionen, modifier)
+        FoodyTheme.stil.szene(FoodyStil.BAYRISCH) -> return HeuteBayrisch(zustand, aktionen, modifier)
+        FoodyTheme.stil.szene(FoodyStil.ANIME) -> return HeuteAnime(zustand, aktionen, modifier)
+        FoodyTheme.stil.szene(FoodyStil.EDO) -> return HeuteEdo(zustand, aktionen, modifier)
     }
     Box(modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         HeuteInhalt(zustand, aktionen)

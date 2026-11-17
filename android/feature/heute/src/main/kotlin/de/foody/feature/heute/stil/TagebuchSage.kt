@@ -61,6 +61,7 @@ import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.SageNebenknopf
 import de.foody.core.designsystem.stil.sage.sageHell
 import de.foody.core.designsystem.stil.sage.sageLinieUnten
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
 import de.foody.domain.Quantity
@@ -109,7 +110,7 @@ internal fun TagebuchSage(
                 Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (onZurueck != null) Pfeil("‹", "Zurück", onZurueck) else Box(Modifier.size(52.dp, 48.dp))
                     Text(
-                        "CHRONIK", Modifier.weight(1f).semantics { heading(); contentDescription = "Tagebuch" },
+                        szenenWort("CHRONIK", "TAGEBUCH"), Modifier.weight(1f).semantics { heading(); contentDescription = "Tagebuch" },
                         style = Sage.titel(22f, 0.12f), color = FoodyTheme.farben.primaer, textAlign = TextAlign.Center,
                     )
                     Box(Modifier.size(52.dp, 48.dp))
@@ -139,20 +140,21 @@ internal fun TagebuchSage(
 }
 
 /** „der heutige Tag“, „gestern“, „vor zwei Tagen“ … wie im Entwurf; für ferne Tage und die Zukunft leer. */
-internal fun tagZusatz(datum: LocalDate, heute: LocalDate): String? = when (val tage = ChronoUnit.DAYS.between(datum, heute)) {
-    0L -> "der heutige Tag"
-    1L -> "gestern"
-    -1L -> "morgen"
-    in 2L..6L -> "vor ${listOf("", "", "zwei", "drei", "vier", "fünf", "sechs")[tage.toInt()]} Tagen"
-    else -> null
-}
+internal fun tagZusatz(datum: LocalDate, heute: LocalDate, ruhig: Boolean = false): String? =
+    when (val tage = ChronoUnit.DAYS.between(datum, heute)) {
+        0L -> if (ruhig) "heute" else "der heutige Tag"
+        1L -> "gestern"
+        -1L -> "morgen"
+        in 2L..6L -> if (ruhig) "vor $tage Tagen" else "vor ${listOf("", "", "zwei", "drei", "vier", "fünf", "sechs")[tage.toInt()]} Tagen"
+        else -> null
+    }
 
-/** Gruppenname der Sage: „DES MORGENS“, „ZU MITTAG“, „DES ABENDS“, „ZWISCHENMAHL“. */
-internal fun Mahlzeit.chronikName(): String = when (this) {
-    Mahlzeit.FRUEHSTUECK -> "DES MORGENS"
-    Mahlzeit.MITTAGESSEN -> "ZU MITTAG"
-    Mahlzeit.ABENDESSEN -> "DES ABENDS"
-    Mahlzeit.SNACK -> "ZWISCHENMAHL"
+/** Gruppenname der Sage: „DES MORGENS“, „ZU MITTAG“, „DES ABENDS“, „ZWISCHENMAHL“; in Ruhig „FRÜHSTÜCK“ … „SNACK“. */
+internal fun Mahlzeit.chronikName(ruhig: Boolean = false): String = when (this) {
+    Mahlzeit.FRUEHSTUECK -> if (ruhig) "FRÜHSTÜCK" else "DES MORGENS"
+    Mahlzeit.MITTAGESSEN -> if (ruhig) "MITTAG" else "ZU MITTAG"
+    Mahlzeit.ABENDESSEN -> if (ruhig) "ABEND" else "DES ABENDS"
+    Mahlzeit.SNACK -> if (ruhig) "SNACK" else "ZWISCHENMAHL"
 }
 
 /** Menge eines Eintrags für die Zeile: „1 Port.“, „½ Port.“ bei Rezepten, sonst „350 g“; `null` ohne Menge. */
@@ -196,7 +198,7 @@ private fun Tageswahl(datum: LocalDate, heute: LocalDate, onDatum: (LocalDate) -
             verticalArrangement = Arrangement.Center,
         ) {
             Text(TAG_KOPF.format(datum).uppercase(Locale.GERMAN), style = Sage.titel(16f, 0.1f), color = sageHell(), textAlign = TextAlign.Center)
-            tagZusatz(datum, heute)?.let { Text(it, style = Sage.text(14f), color = f.nebentext) }
+            tagZusatz(datum, heute, !FoodyTheme.stil.inszeniert)?.let { Text(it, style = Sage.text(14f), color = f.nebentext) }
         }
         Pfeil("›", "Nächster Tag") { onDatum(datum.plusDays(1)) }
     }
@@ -269,7 +271,7 @@ private fun Gruppe(a: TagAbschnitt, offenId: String?, onWahl: (TagebuchEintragEn
     val vollstaendig = a.eintraege.all { it.vollstaendig && it.werte().kcal != null }
     Column(Modifier.fillMaxWidth().drawBehind { drawLine(f.lichtkante, Offset.Zero, Offset(size.width, 0f), 1.dp.toPx()) }.padding(vertical = 6.dp)) {
         Row(Modifier.semantics(mergeDescendants = true) { heading(); contentDescription = a.mahlzeit.anzeigename() }) {
-            Text(a.mahlzeit.chronikName(), Modifier.weight(1f), style = Sage.titel(12f, 0.18f), color = f.nebentext)
+            Text(a.mahlzeit.chronikName(!FoodyTheme.stil.inszeniert), Modifier.weight(1f), style = Sage.titel(12f, 0.18f), color = f.nebentext)
             Text(if (a.eintraege.isEmpty()) "–" else kcalText(summe, vollstaendig), style = Sage.text(14f), color = f.nebentext)
         }
         a.eintraege.forEach { e -> Eintrag(e, an = e.id == offenId) { onWahl(e) } }
@@ -278,7 +280,7 @@ private fun Gruppe(a: TagAbschnitt, offenId: String?, onWahl: (TagebuchEintragEn
                 Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable(role = Role.Button, onClick = onEintragen)
                     .semantics { contentDescription = "Noch nichts eingetragen. ${a.mahlzeit.anzeigename()} eintragen" }.padding(horizontal = 6.dp),
                 contentAlignment = Alignment.CenterStart,
-            ) { Text("nichts verzeichnet", style = Sage.text(17f).copy(fontStyle = FontStyle.Italic), color = f.nebentext) }
+            ) { Text(szenenWort("nichts verzeichnet", "kein Eintrag"), style = Sage.text(17f).copy(fontStyle = FontStyle.Italic), color = f.nebentext) }
         }
     }
 }
@@ -329,7 +331,7 @@ private fun Berichtigen(e: TagebuchEintragEntity, onAendern: () -> Unit, onTilge
         Text(listOfNotNull(e.name, eintragMenge(e)).joinToString(" · "), style = Sage.text(18f), color = f.text)
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             SageNebenknopf("ÄNDERN", "${e.name} ändern", onAendern, Modifier.weight(1f))
-            SageNebenknopf("TILGEN", "${e.name} löschen", onTilgen, Modifier.weight(1f), farbe = TILGEN)
+            SageNebenknopf(szenenWort("TILGEN", "LÖSCHEN"), "${e.name} löschen", onTilgen, Modifier.weight(1f), farbe = TILGEN)
         }
     }
 }

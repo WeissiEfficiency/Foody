@@ -117,7 +117,12 @@ private val DATUM = DateTimeFormatter.ofPattern("EEEE · d. MMMM", Locale.GERMAN
 internal fun HeuteSage(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modifier = Modifier) {
     HeuteRahmen(modifier, statusLeiste = false) { rahmen ->
         Column(rahmen) {
-            RastAmFeuer(zustand?.datum, zustand?.sync, aktionen.onEinstellungen)
+            // Ruhig: die Szene schlicht, ohne Lagerfeuer (Entwurf `Q-Heute`, Ruhig)
+            if (FoodyTheme.stil.inszeniert) {
+                RastAmFeuer(zustand?.datum, zustand?.sync, aktionen.onEinstellungen)
+            } else {
+                SchlichterKopf(zustand?.datum, zustand?.sync, aktionen.onEinstellungen)
+            }
             if (zustand == null) return@Column
             Column(Modifier.padding(horizontal = 20.dp).padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 if (zustand.datenbankLeer) DatenbankLeerHinweis(aktionen.onEinstellungen)
@@ -127,6 +132,35 @@ internal fun HeuteSage(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier
         }
     }
 }
+
+/** Ruhig: statt der Szene der Kopf „HEUTE“ mit dem Datum und einer Linie darunter. */
+@Composable
+private fun SchlichterKopf(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: () -> Unit) {
+    val f = FoodyTheme.farben
+    val linie = f.balkenSpur
+    Column(
+        Modifier.fillMaxWidth().statusBarsPadding()
+            .drawBehind { drawLine(linie, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx()) }
+            .padding(start = 20.dp, end = 4.dp, top = 18.dp, bottom = 12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "HEUTE",
+                Modifier.weight(1f).semantics {
+                    heading()
+                    contentDescription = "Heute"
+                },
+                style = Sage.titel(30f, 0.1f),
+                color = FoodyTheme.stil.zier,
+            )
+            datum?.let { Text(SCHLICHT_DATUM.format(it), style = Sage.text(16f), color = f.nebentext) }
+            IconButton(onEinstellungen) { Icon(Icons.Outlined.Settings, contentDescription = "Einstellungen", tint = f.nebentext) }
+        }
+        sync?.let { SyncStatus(it) }
+    }
+}
+
+private val SCHLICHT_DATUM = DateTimeFormatter.ofPattern("EEEE, d. MMMM", Locale.GERMAN)
 
 @Composable
 private fun RastAmFeuer(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: () -> Unit) {

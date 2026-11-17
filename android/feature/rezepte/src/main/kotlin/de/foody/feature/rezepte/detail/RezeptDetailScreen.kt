@@ -91,7 +91,7 @@ fun RezeptDetailRoute(
         onPortionen = vm::portionenSchritt,
         onZurueck = onZurueck,
     )
-    val sage = FoodyTheme.stil.immersiv(FoodyStil.SAGE)
+    val sage = FoodyTheme.stil.szene(FoodyStil.SAGE)
     val szene = RezeptSzene.aktuell()
     Box(Modifier.fillMaxSize()) {
         when (val z = zustand) {

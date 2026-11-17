@@ -48,7 +48,7 @@ fun RezeptListeRoute(
 ) {
     val z by vm.zustand.collectAsStateWithLifecycle()
     // Düstere Sage in Immersiv: das Grimoire mit derselben Liste und denselben Filtern
-    if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
+    if (FoodyTheme.stil.szene(FoodyStil.SAGE)) {
         RezepteSage(z, vm::filter, vm::zuruecksetzen, onOeffnen, onNeu, onImport)
         return
     }

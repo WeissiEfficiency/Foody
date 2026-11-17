@@ -53,6 +53,7 @@ import de.foody.core.designsystem.stil.sage.SageKopf
 import de.foody.core.designsystem.stil.sage.SageNebenknopf
 import de.foody.core.designsystem.stil.sage.SageRaute
 import de.foody.core.designsystem.stil.svgPfad
+import de.foody.core.designsystem.stil.szenenWort
 import java.util.Locale
 
 /**
@@ -67,7 +68,7 @@ internal fun LazyGridScope.haendlerKopf(ansicht: EinkaufsAnsicht?, onListen: () 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SageKopf(
                 unter = (ansicht?.name ?: "Einkaufsliste").uppercase(Locale.GERMAN),
-                titel = "DER HÄNDLER",
+                titel = szenenWort("DER HÄNDLER", "EINKAUF"),
                 beschreibung = "Einkauf",
             ) {
                 if (gesamt > 0) {
@@ -79,7 +80,8 @@ internal fun LazyGridScope.haendlerKopf(ansicht: EinkaufsAnsicht?, onListen: () 
                 SageNebenknopf("LISTEN", "Frühere Listen", onListen, akzent = true)
                 menue()
             }
-            Laden(offen)
+            // Ruhig: ohne den Laden und den Spruch des Händlers (Entwurf `Q-Einkauf`, Ruhig)
+            if (FoodyTheme.stil.inszeniert) Laden(offen)
         }
     }
 }

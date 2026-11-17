@@ -58,6 +58,7 @@ import de.foody.core.designsystem.stil.StilFeld
 import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.SageHauptknopf
 import de.foody.core.designsystem.stil.sage.sageHell
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.rezepte.editor.EditorViewModel
@@ -68,10 +69,10 @@ import de.foody.feature.rezepte.editor.ZeilenStatus
 import de.foody.feature.rezepte.editor.zeilenText
 
 /** Reiter des Editors der Sage: Titel wie im Entwurf, für TalkBack der normale Name. */
-private enum class SageReiter(val titel: String, val beschreibung: String) {
-    GRUNDLAGEN("GRUNDLAGEN", "Grundlagen"),
-    ZUTATEN("ZUTATEN", "Zutaten"),
-    RITUAL("RITUAL", "Zubereitung"),
+private enum class SageReiter(val titel: String, val beschreibung: String, val ruhig: String) {
+    GRUNDLAGEN("GRUNDLAGEN", "Grundlagen", "ALLGEMEIN"),
+    ZUTATEN("ZUTATEN", "Zutaten", "ZUTATEN"),
+    RITUAL("RITUAL", "Zubereitung", "SCHRITTE"),
 }
 
 /**
@@ -124,7 +125,7 @@ internal fun EditorSage(
                 .padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s3),
         ) {
             SageHauptknopf(
-                "INS GRIMOIRE SCHREIBEN",
+                szenenWort("INS GRIMOIRE SCHREIBEN", "SPEICHERN"),
                 "Speichern",
                 onSpeichern,
                 Modifier.heightIn(min = 52.dp),
@@ -142,7 +143,7 @@ private fun Kopf(neu: Boolean, onZurueck: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onZurueck) { Icon(Icons.Outlined.Close, contentDescription = "Abbrechen", tint = f.nebentext) }
         Text(
-            if (neu) "NEUE SEITE" else "NEU NIEDERSCHREIBEN",
+            if (neu) szenenWort("NEUE SEITE", "NEUES REZEPT") else szenenWort("NEU NIEDERSCHREIBEN", "REZEPT BEARBEITEN"),
             Modifier.weight(1f).semantics {
                 heading()
                 contentDescription = if (neu) "Neues Rezept" else "Bearbeiten"
@@ -178,7 +179,7 @@ private fun Reiter(gewaehlt: SageReiter, onWahl: (SageReiter) -> Unit) {
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    r.titel,
+                    szenenWort(r.titel, r.ruhig),
                     Modifier.clearAndSetSemantics {},
                     style = Sage.titel(12f, 0.12f),
                     color = if (an) sageHell() else f.nebentext,
@@ -206,7 +207,7 @@ private fun Grundlagen(z: EditorZustand, vm: EditorViewModel) {
 @Composable
 private fun Zutaten(z: EditorZustand, vm: EditorViewModel) {
     val e = z.eingaben
-    Hinweis("Eine Zutat je Zeile, Menge zuerst.")
+    Hinweis(szenenWort("Eine Zutat je Zeile, Menge zuerst.", "Eine Zutat pro Zeile, Menge zuerst."))
     StilFeld(
         "Eine Zutat je Zeile, Menge zuerst",
         e.zutatenText,
@@ -217,7 +218,7 @@ private fun Zutaten(z: EditorZustand, vm: EditorViewModel) {
     )
     if (z.zeilen.isNotEmpty()) {
         Text(
-            "WAS DIE SCHRIFT VERRÄT",
+            szenenWort("WAS DIE SCHRIFT VERRÄT", "VORSCHAU"),
             Modifier.semantics {
                 heading()
                 contentDescription = "Erkannte Zutaten"
@@ -250,7 +251,7 @@ private fun Zeile(s: ZeilenStatus) {
 @Composable
 private fun Ritual(z: EditorZustand, vm: EditorViewModel) {
     val e = z.eingaben
-    Hinweis("Ein Schritt je Zeile.")
+    Hinweis(szenenWort("Ein Schritt je Zeile.", "Ein Schritt pro Zeile."))
     StilFeld(
         "Ein Schritt je Zeile",
         e.schritteText,
@@ -261,7 +262,7 @@ private fun Ritual(z: EditorZustand, vm: EditorViewModel) {
     )
     StilFeld("Notizen", e.notizen, { v -> vm.aendern { it.copy(notizen = v) } }, einzeilig = false, zeilen = 2)
     StilFeld("Quelle (Link)", e.quelle, { v -> vm.aendern { it.copy(quelle = v) } }, tastatur = KeyboardType.Uri)
-    Hinweis("Zeitangaben wie „30 Minuten“ werden im Kochmodus zu Sanduhren.")
+    Hinweis(szenenWort("Zeitangaben wie „30 Minuten“ werden im Kochmodus zu Sanduhren.", "Zeitangaben wie „30 Minuten“ werden im Kochmodus zu Timern."))
 }
 
 @Composable

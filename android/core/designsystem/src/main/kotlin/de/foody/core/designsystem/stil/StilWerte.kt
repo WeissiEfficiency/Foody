@@ -82,9 +82,25 @@ data class StilWerte(
 ) {
     val farben: FoodyFarben get() = werte.farben
 
-    /** `true`, wenn [stil] in der Variante Immersiv gewählt ist: Dann zeigt ein Screen seine Szene für diesen Stil. */
+    /** `true`, wenn [stil] in der Variante Immersiv gewählt ist (Bausteine und Wörter in voller Inszenierung). */
     fun immersiv(stil: FoodyStil): Boolean = this.stil == stil && variante == StilVariante.IMMERSIV
+
+    /**
+     * `true`, wenn ein Screen die Szene von [stil] zeigt: in Immersiv und, für die Stile in [RUHIG_ALS_SZENE], auch in
+     * Ruhig (dann schlicht, siehe [inszeniert]).
+     */
+    fun szene(stil: FoodyStil): Boolean = this.stil == stil && (variante == StilVariante.IMMERSIV || stil in RUHIG_ALS_SZENE)
+
+    /** Bilder, Schrägen, harte Schatten und Animationen der Szenen: nur in Immersiv; Ruhig zeigt die Szene schlicht. */
+    val inszeniert: Boolean get() = variante == StilVariante.IMMERSIV
 }
+
+/**
+ * Stile, deren Szenen auch in Ruhig gelten, wie in den Entwürfen: dasselbe Layout ohne Bilder, Schrägen, harte Schatten
+ * und Animationen, mit den normalen Wörtern. Die übrigen zeigen in Ruhig die normale Ansicht in Farben und Schrift des
+ * Stils.
+ */
+val RUHIG_ALS_SZENE: Set<FoodyStil> = setOf(FoodyStil.SAGE)
 
 /** Milchglas mit der [farbwelt] im Modus [dunkel]: dieselben Werte wie vor den Stilen. */
 fun milchglasWerte(farbwelt: Farbwelt, dunkel: Boolean): StilWerte {

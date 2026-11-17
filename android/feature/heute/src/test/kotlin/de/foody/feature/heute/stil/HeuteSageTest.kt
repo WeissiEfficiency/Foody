@@ -65,11 +65,14 @@ class HeuteSageTest {
         compose.onNodeWithContentDescription("860 von 2.000 kcal: Eiweiß 42 g, Kohlenhydrate 96 g, Fett 31 g").assertExists()
     }
 
+    /** Ruhig wie im Entwurf: die Szene schlicht, statt des Lagerfeuers der Kopf „HEUTE“, das Menü bleibt. */
     @Test
-    fun ruhigZeigtNormaleAnsicht() {
+    fun ruhigZeigtSzeneSchlicht() {
         zeigen(StilVariante.RUHIG)
         compose.onNodeWithText("RAST AM FEUER").assertDoesNotExist()
-        compose.onNodeWithText("Heute").assertExists()
+        compose.onNodeWithText("HEUTE").assertExists()
+        compose.onNodeWithText("AM FEUER KOCHEN").performScrollTo().performClick()
+        assertEquals(listOf("kochen r1 2"), ausgeloest)
     }
 
     @Test

@@ -129,7 +129,7 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
                     fuellen = fuellenAktionen,
                 ),
             )
-        } else if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
+        } else if (FoodyTheme.stil.szene(FoodyStil.SAGE)) {
             WocheSage(woche, vm.heuteDatum, zeigtHeute, szenenAktionen, unten = ueberLeiste(LISTE_UNTEN))
         } else if (szene != null) {
             WocheStil(szene, woche, vm.heuteDatum, zeigtHeute, szenenAktionen, unten = ueberLeiste(LISTE_UNTEN))

@@ -135,7 +135,7 @@ fun TagebuchTagRoute(
         val zurueck = onZurueck.takeIf { FoodyTheme.stil.stil != FoodyStil.MILCHGLAS }
         if (blatt != null && eintragenAlsSeite()) {
             // Bayrisch, Grauen und Kreuzer: Eintragen ist eine eigene Seite statt des Tages (unten)
-        } else if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
+        } else if (FoodyTheme.stil.szene(FoodyStil.SAGE)) {
             TagebuchSage(
                 datum, LocalDate.now(), zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeitenId = it.id },
                 onLoeschen = loeschen, onEintragen = { blatt = BlattAuftrag(it, datum) }, onZurueck = zurueck,

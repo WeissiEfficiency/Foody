@@ -178,7 +178,7 @@ private fun KochInhalt(
     val pager = rememberPagerState(initialPage = z.seite) { z.seitenzahl }
     LaunchedEffect(pager) { snapshotFlow { pager.settledPage }.collect(onSeite) }
     LaunchedEffect(z.seite) { if (pager.currentPage != z.seite) pager.animateScrollToPage(z.seite) }
-    val sage = FoodyTheme.stil.immersiv(FoodyStil.SAGE)
+    val sage = FoodyTheme.stil.szene(FoodyStil.SAGE)
     val art = KochSzene.aktuell()?.let(::kochArt)
     Column(modifier) {
         when {

@@ -46,6 +46,7 @@ import de.foody.core.designsystem.stil.sage.SageRaute
 import de.foody.core.designsystem.stil.sage.sageHell
 import de.foody.core.designsystem.stil.sage.sageLinieUnten
 import de.foody.core.designsystem.stil.svgPfad
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.domain.StepTimer
 import de.foody.feature.kochen.KochAktionen
 import de.foody.feature.kochen.KochSchritt
@@ -65,7 +66,7 @@ internal fun KochKopfSage(z: KochZustand.Da, seite: Int, onSchliessen: () -> Uni
     val f = FoodyTheme.farben
     val glut = FoodyTheme.stil.zier
     val nummer = seite - if (z.hatBereitlegen) 1 else 0
-    val ueber = if (z.schritt(seite) == null) "VORBEREITUNG" else "SCHRITT ${nummer + 1} / ${z.schritte.size}"
+    val ueber = if (z.schritt(seite) == null) szenenWort("VORBEREITUNG", "BEREITLEGEN") else "SCHRITT ${nummer + 1} / ${z.schritte.size}"
     Column(Modifier.padding(start = 12.dp, end = 20.dp, top = 6.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -195,8 +196,8 @@ private fun Sanduhr(t: StepTimer, onStart: () -> Unit) {
             }
         }
         Column(Modifier.weight(1f)) {
-            Text("Sanduhr: ${t.label}", style = Sage.text(17f), color = f.text)
-            Text("Tippen, um die Sanduhr zu drehen", style = Sage.text(14f), color = f.nebentext)
+            Text(szenenWort("Sanduhr: ${t.label}", "Timer: ${t.label}"), style = Sage.text(17f), color = f.text)
+            Text(szenenWort("Tippen, um die Sanduhr zu drehen", "Tippen zum Starten"), style = Sage.text(14f), color = f.nebentext)
         }
         Text(restzeit(t.duration.toMillis()), style = Sage.titel(24f, 0f), color = sageHell())
     }
@@ -212,8 +213,8 @@ private class SanduhrPfade {
 internal fun KochKnoepfeSage(seite: Int, seitenzahl: Int, onSeite: (Int) -> Unit, onFertig: () -> Unit) {
     val letzte = seite >= seitenzahl - 1
     val text = when {
-        letzte -> "VOLLENDEN"
-        seite == 0 -> "BEGINNEN"
+        letzte -> szenenWort("VOLLENDEN", "FERTIG")
+        seite == 0 -> szenenWort("BEGINNEN", "LOS GEHT’S")
         else -> "WEITER"
     }
     val begriff = if (letzte) "Fertig" else "Weiter"

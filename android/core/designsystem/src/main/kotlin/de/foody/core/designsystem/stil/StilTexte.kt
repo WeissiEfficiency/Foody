@@ -32,3 +32,10 @@ fun stilText(
         FoodyStil.KREUZER -> kreuzer
     } ?: standard
 }
+
+/**
+ * Ein festes Wort einer Szene: [immersiv] in voller Inszenierung, [ruhig] in Ruhig (dort zeigt die Szene die normalen
+ * Wörter wie in den Entwürfen, siehe [StilWerte.inszeniert]).
+ */
+@Composable
+fun szenenWort(immersiv: String, ruhig: String): String = if (FoodyTheme.stil.inszeniert) immersiv else ruhig
