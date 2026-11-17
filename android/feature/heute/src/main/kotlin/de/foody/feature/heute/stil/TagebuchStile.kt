@@ -142,6 +142,28 @@ internal fun mahlzeitBayrisch(m: Mahlzeit): String = when (m) {
     else -> m.kurzname()
 }
 
+/** Grauen: die Gruppen der Entwürfe („Bei Tagesanbruch“, „Zur Mittagsstunde“, „Nach Einbruch der Nacht“, „Zwischendurch“). */
+internal fun mahlzeitGrauen(m: Mahlzeit): String = when (m) {
+    Mahlzeit.FRUEHSTUECK -> "Bei Tagesanbruch"
+    Mahlzeit.MITTAGESSEN -> "Zur Mittagsstunde"
+    Mahlzeit.ABENDESSEN -> "Nach Einbruch der Nacht"
+    Mahlzeit.SNACK -> "Zwischendurch"
+}
+
+/** Sternenkreuzer: die Bahn wie auf der Brücke, „ORBIT 1“ (Frühstück) bis „ORBIT 4“ (Snack). */
+internal fun mahlzeitKreuzer(m: Mahlzeit): String = "ORBIT ${m.bahnKreuzer()}"
+
+private fun Mahlzeit.bahnKreuzer(): Int = when (this) {
+    Mahlzeit.FRUEHSTUECK -> 1
+    Mahlzeit.MITTAGESSEN -> 2
+    Mahlzeit.ABENDESSEN -> 3
+    Mahlzeit.SNACK -> 4
+}
+
+/** Reihenfolge der Gruppen: im Sternenkreuzer nach Bahn wie im Entwurf (sonst stünde „ORBIT 4“ vor „ORBIT 3“), sonst wie geliefert. */
+internal fun gruppenFolge(stil: FoodyStil, abschnitte: List<TagAbschnitt>): List<TagAbschnitt> =
+    if (stil == FoodyStil.KREUZER) abschnitte.sortedBy { it.mahlzeit.bahnKreuzer() } else abschnitte
+
 internal fun tagebuchArt(stil: FoodyStil): TagebuchArt = when (stil) {
     FoodyStil.ANIME -> TagebuchArt(
         "TAGEBUCH!", null, Mahlzeit::kurzname, "Noch leer – tippe auf +", "Löschen", ::tagZusatzKurz,
@@ -156,11 +178,11 @@ internal fun tagebuchArt(stil: FoodyStil): TagebuchArt = when (stil) {
         { Bayrisch.titel(it) }, { Bayrisch.text(it) }, { Bayrisch.text(it, FontWeight.Bold) },
     )
     FoodyStil.GRAUEN -> TagebuchArt(
-        "Logbuch", "Aufzeichnungen eines Hungrigen", { it.anzeigename() }, "nichts verzeichnet", "Tilgen", ::tagZusatzKurz,
+        "Logbuch", "Aufzeichnungen eines Hungrigen", ::mahlzeitGrauen, "nichts verzeichnet", "Tilgen", ::tagZusatzKurz,
         { Grauen.titel(it) }, { Grauen.text(it) }, { Grauen.titel(it, 0.1f) },
     )
     else -> TagebuchArt(
-        "Bordbuch", "LOGBUCH · VERSORGUNG", { it.anzeigename().uppercase(Locale.GERMAN) }, "kein Kontakt", "Löschen", ::logbuchZusatz,
+        "Bordbuch", "LOGBUCH · VERSORGUNG", ::mahlzeitKreuzer, "kein Kontakt", "Löschen", ::logbuchZusatz,
         { Kreuzer.titel(it) }, { Kreuzer.titel(it, FontWeight.Normal, 0f) }, { Kreuzer.mono(it) },
     )
 }
@@ -222,7 +244,7 @@ internal fun TagebuchStil(
                     FoodyStil.GRAUEN -> Text(grauenNotiz(z, heute), style = Grauen.text(16f, kursiv = true), color = FoodyTheme.farben.nebentext)
                     else -> Unit
                 }
-                z.abschnitte.forEach { a ->
+                gruppenFolge(stil, z.abschnitte).forEach { a ->
                     Gruppe(
                         stil, art, a, offenId,
                         onWahl = { e -> offenId = if (offenId == e.id) null else e.id },
