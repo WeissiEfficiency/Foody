@@ -32,10 +32,8 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -49,7 +47,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.db.TagebuchEintragEntity
 import de.foody.core.designsystem.FoodyTheme
@@ -66,11 +63,13 @@ import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilAktion
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.stil.anime.Anime
+import de.foody.core.designsystem.stil.anime.animeSzenenTitel
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.szenenStil
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
@@ -279,24 +278,16 @@ private fun Kopf(stil: FoodyStil, art: TagebuchArt, onZurueck: (() -> Unit)?) {
 @Composable
 private fun KopfText(stil: FoodyStil, art: TagebuchArt) {
     val f = FoodyTheme.farben
-    val d = LocalDensity.current
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         art.unter?.let { Text(it, style = art.klein(12.5f), color = f.nebentext) }
         val groesse = titelGroesse(if (stil == FoodyStil.ANIME) 36f else 30f)
         Text(
-            art.titel,
+            if (stil == FoodyStil.ANIME) szenenWort(art.titel, "Tagebuch") else art.titel,
             Modifier.semantics {
                 heading()
                 contentDescription = "Tagebuch"
             },
-            style = if (stil == FoodyStil.ANIME) {
-                Anime.titel(groesse, 0f).copy(
-                    textGeometricTransform = TextGeometricTransform(skewX = -0.14f),
-                    shadow = Shadow(FoodyTheme.stil.zier, Offset(3f * d.density, 3f * d.density), 0f),
-                )
-            } else {
-                art.titelSchrift(groesse)
-            },
+            style = if (stil == FoodyStil.ANIME) animeSzenenTitel(groesse) else art.titelSchrift(groesse),
             color = f.text,
         )
     }

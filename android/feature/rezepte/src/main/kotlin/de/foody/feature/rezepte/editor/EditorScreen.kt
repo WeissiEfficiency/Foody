@@ -103,7 +103,11 @@ fun EditorRoute(
                         kreuzer = "Rezept anlegen",
                     )
                 } else {
-                    stilText(titel, sage = "Berichtigen", anime = "Rezept-Edit!")
+                    if (FoodyTheme.stil.szene(FoodyStil.ANIME) && !FoodyTheme.stil.inszeniert) {
+                        "Rezept bearbeiten"
+                    } else {
+                        stilText(titel, sage = "Berichtigen", anime = "Rezept-Edit!")
+                    }
                 },
                 ueberzeile = stilText("Rezept", sage = "Grimoire"),
                 onZurueck = zurueck,

@@ -22,7 +22,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -45,6 +44,7 @@ import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.szenenStil
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.domain.StepTimer
 import de.foody.feature.kochen.KochAktionen
@@ -164,7 +164,8 @@ internal fun BereitlegenStil(art: KochArt, z: KochZustand.Da, a: KochAktionen) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // Der Titel wächst mit der Systemschrift nur bis 130 %
         Text(
-            art.bereit, Modifier.semantics { heading(); contentDescription = "Bereitlegen" },
+            if (FoodyTheme.stil.stil == FoodyStil.ANIME) szenenWort(art.bereit, "Bereitlegen") else art.bereit,
+            Modifier.semantics { heading(); contentDescription = "Bereitlegen" },
             style = art.titel(titelGroesse(28f)), color = f.text,
         )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

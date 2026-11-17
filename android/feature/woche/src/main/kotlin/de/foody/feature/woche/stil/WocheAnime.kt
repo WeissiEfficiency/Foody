@@ -27,18 +27,17 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.woche.WochenTag
@@ -47,6 +46,8 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.anime.AnimeKnopf
 import de.foody.core.designsystem.stil.anime.animeSchatten
+import de.foody.core.designsystem.stil.anime.animeSzenenTitel
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import java.time.temporal.WeekFields
 import java.util.Locale
@@ -76,19 +77,15 @@ private val DREHUNG = listOf(-1f, 1f, -0.5f, 0.5f, -1f, -0.5f, 1.5f)
 @Composable
 private fun Kopf(w: WocheDaten) {
     val f = FoodyTheme.farben
-    val d = LocalDensity.current
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         // Der große Titel wächst mit der Systemschrift nur bis 130 %
         Text(
-            "WOCHE!",
+            szenenWort("WOCHE!", "Woche"),
             Modifier.align(Alignment.CenterVertically).padding(end = 8.dp).semantics {
                 heading()
                 contentDescription = "Woche"
             },
-            style = Anime.titel(titelGroesse(40f), 0f).copy(
-                textGeometricTransform = TextGeometricTransform(skewX = -0.14f),
-                shadow = Shadow(FoodyTheme.stil.zier, Offset(3f * d.density, 3f * d.density), 0f),
-            ),
+            style = animeSzenenTitel(titelGroesse(40f)),
             color = f.text,
         )
         w.woche?.let { woche ->
@@ -135,8 +132,7 @@ private fun Panel(t: WochenTag, i: Int, heute: Boolean, an: Boolean, modifier: M
         else -> PANEL[i]
     }
     Box(
-        modifier.padding(end = 6.dp, bottom = 6.dp).rotate(DREHUNG[i])
-            .animeSchatten(form, f.text, if (an) 6.dp else 3.dp)
+        modifier.padding(end = 6.dp, bottom = 6.dp).then(panelRahmen(i, an, form))
             .clip(form).background(grund)
             .then(
                 if (leer && !an) {
@@ -168,6 +164,22 @@ private fun Panel(t: WochenTag, i: Int, heute: Boolean, an: Boolean, modifier: M
     }
 }
 
+/**
+ * Schräge und harter Schatten des Panels (gewählt größer); in Ruhig wie im Entwurf gerade, ohne Schatten und das
+ * gewählte mit einem Ring im Akzent.
+ */
+@Composable
+private fun panelRahmen(i: Int, an: Boolean, form: Shape): Modifier {
+    val s = FoodyTheme.stil
+    if (s.inszeniert) return Modifier.rotate(DREHUNG[i]).animeSchatten(form, FoodyTheme.farben.text, if (an) 6.dp else 3.dp)
+    if (!an) return Modifier
+    val ring = s.zier
+    return Modifier.drawBehind {
+        val r = 3.dp.toPx()
+        drawRoundRect(ring, Offset(-r, -r), Size(size.width + 2 * r, size.height + 2 * r), CornerRadius(4.dp.toPx() + r))
+    }
+}
+
 /** Weiße Speedlines hinter dem Panel von heute; stumm. */
 @Composable
 private fun Speedlines() {
@@ -185,7 +197,8 @@ private fun Tageskarte(t: WochenTag, heute: Boolean, aktionen: WocheSageAktionen
     val f = FoodyTheme.farben
     val form = RoundedCornerShape(20.dp)
     Column(
-        Modifier.fillMaxWidth().padding(end = 4.dp, bottom = 4.dp).animeSchatten(form, f.text, 4.dp)
+        Modifier.fillMaxWidth().padding(end = 4.dp, bottom = 4.dp)
+            .then(if (FoodyTheme.stil.inszeniert) Modifier.animeSchatten(form, f.text, 4.dp) else Modifier)
             .background(Color.White, form).border(2.5.dp, f.text, form).padding(horizontal = 14.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
