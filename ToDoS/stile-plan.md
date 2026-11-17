@@ -194,8 +194,9 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Edo: kurze Wörter brechen nicht mehr ohne Not um („Al-le“, „Vari-ante“).
 - [x] Ein genauer Abgleich Bild für Bild mit dem Canvas, 2026-11-17, siehe „Ergebnis“.
 - [ ] Abweichungen vom Canvas, die der Nutzer entscheidet (Liste im „Ergebnis“ Canvas-Abgleich): Ruhig als
-      schlichte Szenen statt normaler Ansicht, Eintragen/Planen/Listen als Seiten mit Reitern statt Blättern,
-      Reihenfolge in den Einstellungen.
+      schlichte Szenen statt normaler Ansicht, Eintragen/Planen/Listen als Seiten mit Reitern statt Blättern
+      (Nutzer 2026-11-17: alle angehen, in dieser Reihenfolge).
+- [x] Reihenfolge in den Einstellungen wie im Entwurf (Abgleich unten), 2026-11-17, siehe „Ergebnis“.
 - [x] Rezeptfilter wie im Entwurf: „Alle · Favoriten · ≤ 30 Min.“ mit den Wörtern des Stils, 2026-11-17, siehe „Ergebnis“.
 - [x] Editor der Sage wie im Entwurf (Reiter „Grundlagen · Zutaten · Ritual“), 2026-11-17, siehe „Ergebnis“.
 - [x] Tagebuch: „‹“ im Kopf zurück zu Heute in allen Stilen (Immersiv und Ruhig), 2026-11-17, siehe „Ergebnis“.
@@ -734,3 +735,11 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
   Zehn Referenzbilder der Rezeptliste neu (alle Stile, Milchglas hell/dunkel, Handy/Tablet).
 - Im Emulator mit den Maßen des Handys nachgeprüft (Bayrisch): „Olle · ♥ Leibgerichte · G’schwind“, „G’schwind“
   lässt von acht Herzen die vier bis 30 Minuten hängen.
+
+**2026-11-17 – Reihenfolge in den Einstellungen** (Branch `claude/einstellungen-reihenfolge`, Entscheidung des Nutzers aus dem Canvas-Abgleich):
+- In den Stilen Q–V (Immersiv und Ruhig) steht der Abgleich wie in den Entwürfen nach Darstellung, Tagesziel,
+  Zutatenkatalog und Fotoerkennung; danach folgen Sicherung, Löschen und Hinweise, die die Entwürfe nicht zeigen.
+  Milchglas behält das Konto oben (kein Entwurf).
+- Tests: `EinstellungenStileTest.…AbgleichUnten` für alle sechs Stile und Ruhig (vorher rot), `milchglasAbgleichOben`.
+  Sechs Referenzbilder neu (Sage, R–V), Milchglas unverändert.
+- Im Emulator mit den Maßen des Handys nachgeprüft (Sage: „Botendienst“ nach der Seherin, vor der Abschrift).

@@ -8,7 +8,7 @@ import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
-import androidx.compose.ui.test.isHeading
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -59,19 +59,20 @@ class EinstellungenStileTest {
 
     private val keineDateien: @Composable ((Uri) -> Unit, (Uri) -> Unit) -> Dateiwahl = { _, _ -> remember { Dateiwahl({}, {}) } }
 
-    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false): EinstellungenViewModel {
+    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false, variante: StilVariante = StilVariante.IMMERSIV): EinstellungenViewModel {
         u.darstellung.stilSetzen(stil.name)
-        u.darstellung.stilVarianteSetzen(StilVariante.IMMERSIV.name)
+        u.darstellung.stilVarianteSetzen(variante.name)
         u.ziel.setzen(2000)
         u.verbinden()
         val vm = u.vm()
         compose.setContent {
-            FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV, unschaerfe = false) {
+            FoodyTheme(stil = stil, variante = variante, unschaerfe = false) {
                 val inhalt = @Composable { EinstellungenRoute(onServer = { server++ }, onZutaten = {}, onZurueck = {}, vm = vm, dateiwahl = keineDateien) }
                 if (schrift200) MitSchrift200(inhalt) else inhalt()
             }
         }
-        compose.waitUntil(5_000) { compose.onAllNodes(hasContentDescription("Darstellung") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
+        // Milchglas und die Sage zeigen die Überschrift nicht als Stil-Zeile; die Zeile der Produktsuche haben alle
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Online-Produktsuche"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         return vm
     }
 
@@ -131,6 +132,33 @@ class EinstellungenStileTest {
     @Test fun grauenSchrift200() = gross(FoodyStil.GRAUEN)
 
     @Test fun kreuzerSchrift200() = gross(FoodyStil.KREUZER)
+
+    /** Wie in den Entwürfen steht der Abgleich nach Darstellung, Tagesziel und Daten; nur Milchglas behält ihn oben. */
+    private fun abgleichUnten(stil: FoodyStil, variante: StilVariante = StilVariante.IMMERSIV, unten: Boolean = true) {
+        zeigen(stil, variante = variante)
+        val kreuzer = stil == FoodyStil.KREUZER && variante == StilVariante.IMMERSIV
+        val verbunden = if (kreuzer) "VERBUNDEN · HTTP://10.0.2.2:8081" else "Verbunden mit http://10.0.2.2:8081"
+        // Lage ohne Zuschnitt: unten liegt der Abgleich außerhalb des Bildschirms
+        val abgleich = compose.onNodeWithText(verbunden, useUnmergedTree = true).fetchSemanticsNode().positionInRoot.y
+        val daten = compose.onNodeWithText("Online-Produktsuche", useUnmergedTree = true).fetchSemanticsNode().positionInRoot.y
+        assertEquals(unten, abgleich > daten, "$stil $variante: Abgleich bei $abgleich, Online-Produktsuche bei $daten")
+    }
+
+    @Test fun sageAbgleichUnten() = abgleichUnten(FoodyStil.SAGE)
+
+    @Test fun animeAbgleichUnten() = abgleichUnten(FoodyStil.ANIME)
+
+    @Test fun edoAbgleichUnten() = abgleichUnten(FoodyStil.EDO)
+
+    @Test fun bayrischAbgleichUnten() = abgleichUnten(FoodyStil.BAYRISCH)
+
+    @Test fun grauenAbgleichUnten() = abgleichUnten(FoodyStil.GRAUEN)
+
+    @Test fun kreuzerAbgleichUnten() = abgleichUnten(FoodyStil.KREUZER)
+
+    @Test fun ruhigAbgleichUnten() = abgleichUnten(FoodyStil.EDO, StilVariante.RUHIG)
+
+    @Test fun milchglasAbgleichOben() = abgleichUnten(FoodyStil.MILCHGLAS, unten = false)
 
     @Test
     fun schritte() {
