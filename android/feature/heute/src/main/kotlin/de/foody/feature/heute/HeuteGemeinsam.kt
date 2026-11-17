@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -39,8 +40,10 @@ internal val PLATZ_FUER_LEISTE = 104.dp
 
 /**
  * Rahmen der Stil-Szenen auf „Heute“: scrollt, mittig bis zur Inhaltsbreite, seitlich frei von Kamera und Gesten,
- * oben (außer [statusLeiste] = false) unter der Statusleiste und unten mit Platz für die Leiste. [inhalt] bekommt den
- * Modifier für seine Spalte oder Zeile; [innen] ist der Rand des Stils.
+ * oben (außer [statusLeiste] = false) unter der Statusleiste und unten mit Platz für die Leiste. Die schwebende Leiste
+ * sitzt über der Systemleiste; deren Höhe kommt unten dazu, sonst lag das Ende bei Drei-Tasten-Navigation halb unter
+ * der Leiste (Gerätetest 2026-11-16). [inhalt] bekommt den Modifier für seine Spalte oder Zeile; [innen] ist der Rand
+ * des Stils.
  */
 @Composable
 internal fun HeuteRahmen(
@@ -54,6 +57,7 @@ internal fun HeuteRahmen(
             Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
                 .then(if (statusLeiste) Modifier.statusBarsPadding() else Modifier)
+                .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
                 .padding(innen)
                 .padding(bottom = ueberLeiste(PLATZ_FUER_LEISTE))
                 .testTag(HEUTE_INHALT),

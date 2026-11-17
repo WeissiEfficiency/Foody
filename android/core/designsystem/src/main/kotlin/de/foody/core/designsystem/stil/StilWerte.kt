@@ -37,6 +37,7 @@ import de.foody.core.designsystem.token.MPlusRundFamilie
 import de.foody.core.designsystem.token.MakroFarben
 import de.foody.core.designsystem.token.ShareTechMonoFamilie
 import de.foody.core.designsystem.token.SpecialEliteFamilie
+import de.foody.core.designsystem.token.UMBRUCH_ZEN_KAKU
 import de.foody.core.designsystem.token.Verlauf
 import de.foody.core.designsystem.token.ZenKakuFamilie
 import de.foody.core.designsystem.token.augenbraue
@@ -327,7 +328,10 @@ private val SCHRIFTEN: Map<FoodyStil, Schrift> = mapOf(
         augenbraue(CinzelFamilie),
     ),
     FoodyStil.ANIME to Schrift(foodyTypografie(DelaGothicFamilie, MPlusRundFamilie, FontWeight.Black), augenbraue(MPlusRundFamilie)),
-    FoodyStil.EDO to Schrift(foodyTypografie(KaiseiDecolFamilie, ZenKakuFamilie), augenbraue(ZenKakuFamilie)),
+    FoodyStil.EDO to Schrift(
+        foodyTypografie(KaiseiDecolFamilie, ZenKakuFamilie, textUmbruch = UMBRUCH_ZEN_KAKU),
+        augenbraue(ZenKakuFamilie),
+    ),
     FoodyStil.BAYRISCH to Schrift(foodyTypografie(AlegreyaFamilie, AlegreyaSansFamilie, FontWeight.ExtraBold), augenbraue(AlegreyaFamilie)),
     FoodyStil.GRAUEN to Schrift(foodyTypografie(ImFellKapitaelchenFamilie, ImFellFamilie, FontWeight.Normal), augenbraue(SpecialEliteFamilie)),
     FoodyStil.KREUZER to Schrift(

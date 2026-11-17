@@ -128,6 +128,13 @@ private val Deutsch = LocaleList("de-DE")
  */
 fun TextStyle.mitSilbentrennung(): TextStyle = copy(localeList = Deutsch, hyphens = Hyphens.Auto)
 
+/**
+ * Umbruch für Zen Kaku (Text von Edo): Mit deutscher Silbentrennung und dem Umbruch für Absätze (`LineBreak.Paragraph`)
+ * brachen in dieser Schrift auch kurze Wörter um, die genau passten („Al-le“ im gewählten Filter, „Vari-ante“,
+ * Gerätetest 2026-11-17). Der einfache Umbruch trennt weiter, bricht aber nur, wenn ein Wort wirklich nicht passt.
+ */
+val UMBRUCH_ZEN_KAKU = LineBreak.Simple
+
 /** Überschrift: [familie] im Schnitt [gewicht], [abstand] als Laufweite (nicht angegeben = die von Material). */
 private fun TextStyle.titel(familie: FontFamily, gewicht: FontWeight, abstand: TextUnit) = copy(
     fontFamily = familie,
@@ -138,25 +145,27 @@ private fun TextStyle.titel(familie: FontFamily, gewicht: FontWeight, abstand: T
     lineBreak = LineBreak.Heading,
 )
 
-private fun TextStyle.fliesstext(familie: FontFamily, gewicht: FontWeight) = copy(
+private fun TextStyle.fliesstext(familie: FontFamily, gewicht: FontWeight, umbruch: LineBreak) = copy(
     fontFamily = familie,
     fontWeight = gewicht,
     localeList = Deutsch,
     hyphens = Hyphens.Auto,
-    lineBreak = LineBreak.Paragraph,
+    lineBreak = umbruch,
 )
 
 /**
  * Material-3-Größen (in sp, skalieren mit der Systemschrift): [titel] bis `titleLarge`, darunter [text]. Jeder Stil
- * bringt seine Schriften mit; Milchglas ist [FoodyTypografie].
+ * bringt seine Schriften mit; Milchglas ist [FoodyTypografie]. [textUmbruch] gilt für [text]; siehe [UMBRUCH_ZEN_KAKU].
  */
 fun foodyTypografie(
     titel: FontFamily,
     text: FontFamily,
     titelGewicht: FontWeight = FontWeight.Bold,
     titelAbstand: TextUnit = TextUnit.Unspecified,
+    textUmbruch: LineBreak = LineBreak.Paragraph,
 ): Typography {
     fun TextStyle.t() = titel(titel, titelGewicht, titelAbstand)
+    fun TextStyle.f(gewicht: FontWeight) = fliesstext(text, gewicht, textUmbruch)
     return Typography(
         displayLarge = basis.displayLarge.t(),
         displayMedium = basis.displayMedium.t(),
@@ -165,14 +174,14 @@ fun foodyTypografie(
         headlineMedium = basis.headlineMedium.t(),
         headlineSmall = basis.headlineSmall.t(),
         titleLarge = basis.titleLarge.t(),
-        titleMedium = basis.titleMedium.fliesstext(text, FontWeight.Bold),
-        titleSmall = basis.titleSmall.fliesstext(text, FontWeight.Bold),
-        bodyLarge = basis.bodyLarge.fliesstext(text, FontWeight.Normal),
-        bodyMedium = basis.bodyMedium.fliesstext(text, FontWeight.Normal),
-        bodySmall = basis.bodySmall.fliesstext(text, FontWeight.Normal),
-        labelLarge = basis.labelLarge.fliesstext(text, FontWeight.Bold),
-        labelMedium = basis.labelMedium.fliesstext(text, FontWeight.SemiBold),
-        labelSmall = basis.labelSmall.fliesstext(text, FontWeight.SemiBold),
+        titleMedium = basis.titleMedium.f(FontWeight.Bold),
+        titleSmall = basis.titleSmall.f(FontWeight.Bold),
+        bodyLarge = basis.bodyLarge.f(FontWeight.Normal),
+        bodyMedium = basis.bodyMedium.f(FontWeight.Normal),
+        bodySmall = basis.bodySmall.f(FontWeight.Normal),
+        labelLarge = basis.labelLarge.f(FontWeight.Bold),
+        labelMedium = basis.labelMedium.f(FontWeight.SemiBold),
+        labelSmall = basis.labelSmall.f(FontWeight.SemiBold),
     )
 }
 

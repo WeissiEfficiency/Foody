@@ -187,8 +187,12 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Silbentrennung in den Szenen (Gerätetest 2026-11-16, siehe „Ergebnis“): behoben mit `mitSilbentrennung()`.
 - [x] Rezeptliste der Szenen: Nach dem Antippen rollt die Karte mit „Öffnen“ über die schwebende Navigation.
 - [x] Händler (Sage): Unterzeilen der Posten zweizeilig statt abgeschnitten.
-- [ ] Abnahme auf dem Handy, Rest: Kochen, Editor, Eintragen, Planen, Listen und Zutaten in allen Stilen; Ruhig außer
-      Kreuzer; ein genauer Abgleich Bild für Bild mit dem Canvas. Die Hauptscreens in Immersiv sind geprüft.
+- [x] Abnahme auf dem Handy, Rest: Kochen, Editor, Eintragen, Planen, Listen und Zutaten in allen Stilen, Ruhig für
+      alle Stile (2026-11-17, siehe „Ergebnis“).
+- [x] Editor der Stile R–V: „Verwerfen“ und „Speichern“ über der schwebenden Navigation statt darunter.
+- [x] Heute-Szenen: Ende über der Leiste auch bei Drei-Tasten-Navigation.
+- [x] Edo: kurze Wörter brechen nicht mehr ohne Not um („Al-le“, „Vari-ante“).
+- [ ] Ein genauer Abgleich Bild für Bild mit dem Canvas.
 - [ ] Tablet ansehen (zweispaltiges Layout mit Farben, Schrift und Formen des Stils).
 - [ ] Widgets auf einem zweiten Launcher (bisher nur ColorOS).
 - Bewusst nicht gemacht (Funktion fehlt in der App): „In die Woche“ auf Rezeptkarte und Rezept, Uhrzeiten in Heute und
@@ -604,3 +608,31 @@ abgehakten Posten, Tagebuch mit einem Eintrag ohne vollständige Werte, Tageszie
   `StilSchriftTest`); in der Rezeptliste rollt die Karte des gewählten Rezepts samt Platz für die Leiste ins Bild
   (`RezepteStileTest`, `…KarteInsBild` auf 360 × 640 dp); im Händler zweizeilige Unterzeilen bei gleich hohen Feldern.
   Auf dem Handy nachgeprüft (Edo, Kreuzer, Sage); sechs Referenzbilder der Stile neu, Milchglas unverändert.
+
+**2026-11-17 – Gerätetest, zweiter Teil** (gleiches Handy und gleiche Testdaten; das Handy nutzt die
+Drei-Tasten-Navigation, die Systemleiste ist 48 dp hoch):
+- Geprüft in allen sechs Stilen (Immersiv): Planen („Leere Tage füllen“ und „Mahlzeit wählen“), frühere Listen,
+  Kochmodus (Bereitlegen und ein Schritt), „Rezept hinzufügen“ und Editor (oben und unten), Eintragen von Heute aus,
+  Zutatenkatalog und Zutat. Kein Absturz, die Wörter der Stile stimmen.
+- Fehler: Im Editor der Stile R–V lag die feste Leiste „Verwerfen | Speichern“ genau unter der schwebenden Navigation;
+  in Edo, Bayrisch, Grauen und Kreuzer scheint sie durch, in Anime deckt die Leiste sie ganz zu. „Speichern“ war nur
+  über den Kopf (Edo „新“) oder gar nicht zu erreichen. Die Leiste rechnete nur die Systemleiste ein.
+- Fehler: Der Rahmen der Heute-Szenen (`HeuteRahmen`) ließ unten Platz für die schwebende Leiste, aber nicht für die
+  Systemleiste darunter. Bei Drei-Tasten-Navigation lag das Ende 48 dp unter der Leiste: in der Sage „Rezept ansehen“
+  und „+ Scannen · Foto“, in Edo „＋ Eintragen“ (in der Systemleiste, ein Tipp traf „Zurück“), in Grauen die Zeile
+  „Abend · Gegessen?“. Die anderen Bildschirme liegen in `safeDrawingPadding` und waren richtig.
+- Ruhig geprüft für Sage, Anime, Edo, Bayrisch und Grauen (Heute, Rezepte, Rezept, Woche, Einkauf, Einstellungen):
+  Farben und Schriften des Stils, sonst die normale Ansicht; kein Absturz.
+- Fehler (Edo, Ruhig und Immersiv): Kurze Wörter in Zen Kaku brachen um, obwohl sie passten: „Al-le“ im gewählten
+  Filter, „Vari-ante“ in den Einstellungen. Ursache ist die Schrift zusammen mit Silbentrennung und dem Umbruch für
+  Absätze (`LineBreak.Paragraph`); ohne Trennung oder mit dem einfachen Umbruch bleibt das Wort einzeilig. Alle
+  anderen Schriften sind davon frei (geprüft für alle Stile).
+- Klein, nicht geändert: Bei leerem Vorschlag bricht „Übernehmen (0)“ (Anime) bzw. „0 Tage bestücken“ (Sage) in zwei
+  Zeilen um; der Knopf ist dann ohnehin gesperrt.
+- Behoben: `HeuteRahmen` mit `WindowInsets.navigationBars` unten (`HeuteRahmenTest` mit 48 dp Systemleiste, vorher
+  104 dp statt 152 dp Abstand); der Editor der Stile hebt seine Leiste um `ueberLeiste(LEISTE_REGELHOEHE)` über die
+  Navigation, bei offener Tastatur über diese (`EditorStileTest`, `…UeberNavigation` für R–V, vorher alle fünf rot);
+  Zen Kaku bricht mit `LineBreak.Simple` um (`UMBRUCH_ZEN_KAKU` in `FoodyTypo.kt`, im Theme und in `Edo.text`), die
+  Silbentrennung bleibt (`KurzeWoerterTest` für alle Stile, vorher Edo und Edo Immersiv rot). Acht Referenzbilder neu
+  (Editor R–V, Edo Ruhig, Edo Zutaten; die alten Edo-Bilder enthielten „Fe-ta“ und „Zu-cchini“), Milchglas unverändert.
+  Auf dem Handy nachgeprüft: Edo Ruhig (Filter, Einstellungen), Edo Immersiv (Ende von Heute, Editor).

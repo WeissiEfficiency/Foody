@@ -5,15 +5,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -43,6 +48,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.LEISTE_REGELHOEHE
+import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilAbschnitt
@@ -109,8 +116,9 @@ internal fun mengeText(z: ImportedIngredient): String? = z.amount?.let { m ->
 /**
  * Editor der Stile R–V in Immersiv wie in den Entwürfen: Kopf mit ✕, Überzeile und Titel des Stils (Edo mit Stempel
  * „新“ bei neuen Rezepten), Grunddaten auf einer Karte mit Etiketten über den Feldern, Foto und Einordnung, Abschnitte
- * „Zutaten“ (mit den erkannten Zeilen) und „Zubereitung“, Notizen und Quelle; unten „Verwerfen“ und „Speichern“.
- * Dieselben Felder und Prüfungen wie sonst; TalkBack hört die normalen Begriffe.
+ * „Zutaten“ (mit den erkannten Zeilen) und „Zubereitung“, Notizen und Quelle; unten „Verwerfen“ und „Speichern“ über
+ * der schwebenden Navigation (lagen sie darunter, war „Speichern“ nicht zu erreichen, Gerätetest 2026-11-16), bei
+ * offener Tastatur über dieser. Dieselben Felder und Prüfungen wie sonst; TalkBack hört die normalen Begriffe.
  */
 @Composable
 internal fun EditorStil(
@@ -127,11 +135,12 @@ internal fun EditorStil(
     val f = FoodyTheme.farben
     val dichte = LocalDensity.current
     var leiste by remember { mutableIntStateOf(0) }
+    val ueberNavigation = ueberLeiste(LEISTE_REGELHOEHE)
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).safeDrawingPadding().imePadding()
                 .widthIn(max = FoodyBreiten.inhalt).padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2)
-                .padding(bottom = with(dichte) { leiste.toDp() } + FoodyAbstaende.s4),
+                .padding(bottom = with(dichte) { leiste.toDp() } + ueberNavigation + FoodyAbstaende.s4),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Kopf(neu, a, onZurueck)
@@ -141,7 +150,8 @@ internal fun EditorStil(
             if (z.geladen) Felder(z, a, vm)
         }
         Row(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(f.grund).navigationBarsPadding().imePadding()
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(f.grund)
+                .windowInsetsPadding(WindowInsets.navigationBars.add(WindowInsets(bottom = ueberNavigation)).union(WindowInsets.ime))
                 .onSizeChanged { leiste = it.height }.widthIn(max = FoodyBreiten.inhalt)
                 .padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s3),
             horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
