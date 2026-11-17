@@ -46,7 +46,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -54,7 +53,6 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.vector.PathParser
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -62,7 +60,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import de.foody.core.data.wochentagKurz
@@ -80,7 +77,9 @@ import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.anime.AnimeKnopf
 import de.foody.core.designsystem.stil.anime.AnimePille
 import de.foody.core.designsystem.stil.anime.animeSchatten
+import de.foody.core.designsystem.stil.anime.animeSzenenTitel
 import de.foody.core.designsystem.stil.svgPfad
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
@@ -113,7 +112,8 @@ internal fun HeuteAnime(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifie
             Kopf(zustand, aktionen.onEinstellungen)
             if (zustand == null) return@Column
             if (zustand.datenbankLeer) DatenbankLeerHinweis(aktionen.onEinstellungen)
-            Reisbaellchen(sprechblase(zustand))
+            // Ruhig wie im Entwurf ohne Foody das Reisbällchen
+            if (FoodyTheme.stil.inszeniert) Reisbaellchen(sprechblase(zustand))
             Mahlzeitkarte(zustand, aktionen)
             Energie(zustand.tagebuch, aktionen.onAlleEintraege)
             Zettel(zustand.tagebuch, aktionen)
@@ -134,20 +134,16 @@ internal fun HeuteAnime(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifie
 @Composable
 private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
     val f = FoodyTheme.farben
-    val akzent = FoodyTheme.stil.zier
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             // Der große Titel wächst mit der Systemschrift nur bis 130 %, wie große Schrift unter Android 14
             Text(
-                "HEUTE!",
+                szenenWort("HEUTE!", "Heute"),
                 Modifier.align(Alignment.CenterVertically).padding(end = 8.dp).semantics {
                     heading()
                     contentDescription = "Heute"
                 },
-                style = Anime.titel(titelGroesse(44f), 0f).copy(
-                    textGeometricTransform = TextGeometricTransform(skewX = -0.14f),
-                    shadow = Shadow(akzent, Offset(3f * LocalDensity.current.density, 3f * LocalDensity.current.density), 0f),
-                ),
+                style = animeSzenenTitel(titelGroesse(44f)),
                 color = f.text, maxLines = 1,
             )
             Row(Modifier.align(Alignment.CenterVertically), verticalAlignment = Alignment.CenterVertically) {

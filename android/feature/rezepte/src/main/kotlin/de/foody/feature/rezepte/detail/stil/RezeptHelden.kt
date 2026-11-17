@@ -26,7 +26,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -82,15 +81,18 @@ internal fun AnimeHeld(z: DetailZustand.Da) {
                 .clip(form).background(FoodyTheme.stil.zier).border(2.5.dp, f.text, form).clearAndSetSemantics { },
             contentAlignment = Alignment.Center,
         ) {
-            Canvas(Modifier.fillMaxSize()) {
-                val mitte = Offset(size.width / 2, size.height / 2)
-                for (i in 0 until 16) {
-                    val w = Math.toRadians(i * 22.5).toFloat()
-                    val ende = Offset(mitte.x + kotlin.math.cos(w) * size.width, mitte.y + kotlin.math.sin(w) * size.width)
-                    drawLine(Color.White.copy(alpha = 0.3f), mitte, ende, 3.dp.toPx(), StrokeCap.Round)
+            // Ruhig wie im Entwurf ohne Strahlen und Anfangsbuchstabe
+            if (FoodyTheme.stil.inszeniert) {
+                Canvas(Modifier.fillMaxSize()) {
+                    val mitte = Offset(size.width / 2, size.height / 2)
+                    for (i in 0 until 16) {
+                        val w = Math.toRadians(i * 22.5).toFloat()
+                        val ende = Offset(mitte.x + kotlin.math.cos(w) * size.width, mitte.y + kotlin.math.sin(w) * size.width)
+                        drawLine(Color.White.copy(alpha = 0.3f), mitte, ende, 3.dp.toPx(), StrokeCap.Round)
+                    }
                 }
+                Text(anfang(z), style = Anime.titel(72f, 0f), color = f.text)
             }
-            Text(anfang(z), style = Anime.titel(72f, 0f), color = f.text)
         }
         val pille = listOfNotNull(if (r.favorite) "★ FAVORIT" else null, einordnungGross(z)).joinToString(" · ")
         if (pille.isNotEmpty()) {

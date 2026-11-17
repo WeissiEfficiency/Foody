@@ -14,16 +14,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -65,6 +69,19 @@ object Anime {
 
     /** Pille für Knöpfe und Abzeichen. */
     val pille = RoundedCornerShape(999.dp)
+}
+
+/**
+ * Der große Titel einer Anime-Szene: in Immersiv schräg und mit Schatten im Akzent, in Ruhig gerade und ohne Schatten
+ * wie in den Entwürfen `R-*`.
+ */
+@Composable
+fun animeSzenenTitel(groesse: Float): TextStyle {
+    val s = FoodyTheme.stil
+    val basis = Anime.titel(groesse, 0f)
+    if (!s.inszeniert) return basis
+    val d = LocalDensity.current.density
+    return basis.copy(textGeometricTransform = TextGeometricTransform(skewX = -0.14f), shadow = Shadow(s.zier, Offset(3f * d, 3f * d), 0f))
 }
 
 /** Harter Schatten wie im Comic: die [form] in der Tintenfarbe, um [versatz] nach rechts unten verschoben. */

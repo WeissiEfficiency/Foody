@@ -200,8 +200,8 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Planen als Seite mit Reitern „Selbst wählen · Vorschlagen lassen“ (Q–V), 2026-11-17, siehe „Ergebnis“.
 - [x] Listen als Seite mit Reitern „Neue Liste · Abgleich · Frühere“ (Q–V), 2026-11-17, siehe „Ergebnis“.
 - [x] Eintragen mit Reitern „Suchen · Scannen · Foto · Geplant“ (Q–V; T–V als Seite), 2026-11-17, siehe „Ergebnis“.
-- [ ] Ruhig als schlichte Szenen wie in den Entwürfen, Stil für Stil (`RUHIG_ALS_SZENE`): Sage erledigt
-      2026-11-17 (siehe „Ergebnis“); offen Anime, Edo, Bayrisch, Grauen, Kreuzer.
+- [ ] Ruhig als schlichte Szenen wie in den Entwürfen, Stil für Stil (`RUHIG_ALS_SZENE`): Sage und Anime
+      erledigt 2026-11-17 (siehe „Ergebnis“); offen Edo, Bayrisch, Grauen, Kreuzer.
 - [x] Rezeptfilter wie im Entwurf: „Alle · Favoriten · ≤ 30 Min.“ mit den Wörtern des Stils, 2026-11-17, siehe „Ergebnis“.
 - [x] Editor der Sage wie im Entwurf (Reiter „Grundlagen · Zutaten · Ritual“), 2026-11-17, siehe „Ergebnis“.
 - [x] Tagebuch: „‹“ im Kopf zurück zu Heute in allen Stilen (Immersiv und Ruhig), 2026-11-17, siehe „Ergebnis“.
@@ -820,3 +820,16 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
 - Tests: `HeuteSageTest.ruhigZeigtSzeneSchlicht` (vorher normale Ansicht), `WocheStileTest.sageRuhigTageschips`.
   Referenzbild `stil_sage_ruhig` neu.
 - Im Emulator mit den Maßen des Handys nachgeprüft: Heute, Rezepte, Rezept, Woche, Einkauf, Tagebuch in Sage Ruhig.
+
+**2026-11-17 – Ruhig als schlichte Szene: Anime** (Branch `claude/ruhig-szenen-anime`, auf Sage aufgesetzt):
+- Anime steht in `RUHIG_ALS_SZENE`. Neu `animeSzenenTitel(groesse)`: der große Titel der Szenen in Immersiv schräg mit
+  Schatten im Akzent, in Ruhig gerade ohne Schatten. `stilTitel` gibt für Anime in Ruhig die Titelschrift ohne Schräge
+  und Schatten (Seitenköpfe wie Einstellungen, Listen, Planen, Editor; so zeigen es die Entwürfe).
+- Anime in Ruhig wie im Entwurf: Heute „Heute“ ohne Foody das Reisbällchen und die Sprechblase; Rezepte „Rezepte“;
+  Woche „Woche“, die Panels gerade und ohne harten Schatten, das gewählte mit einem Ring im Akzent, die Tageskarte ohne
+  Schatten; Einkauf „Einkauf“ ohne „XP“ und ohne Kartenschatten; Tagebuch „Tagebuch“; Rezept ohne Strahlen und
+  Anfangsbuchstabe im Bild; Editor „Rezept bearbeiten“; Kochen „Bereitlegen“. Zettel, Abzeichen und Knöpfe bleiben,
+  die Entwürfe zeigen sie in beiden Varianten gleich.
+- Tests: `HeuteAnimeTest.ruhigZeigtSzeneSchlicht` (vorher normale Ansicht), `WocheStileTest.animeRuhigSchlicht`.
+  Referenzbild `stil_anime_ruhig` neu.
+- Im Emulator mit den Maßen des Handys nachgeprüft: Heute, Rezepte, Rezept, Woche, Einkauf, Tagebuch in Anime Ruhig.

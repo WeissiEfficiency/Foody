@@ -30,10 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -41,7 +39,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.foody.core.data.einkauf.EinkaufsAnsicht
@@ -51,6 +48,8 @@ import de.foody.core.designsystem.animationenErlaubt
 import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.anime.AnimeKnopf
 import de.foody.core.designsystem.stil.anime.animeSchatten
+import de.foody.core.designsystem.stil.anime.animeSzenenTitel
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import kotlin.math.min
 
@@ -78,21 +77,16 @@ private val GEKAUFT_GRUND = Color(0xFFF2EEF4)
 @Composable
 private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
     val f = FoodyTheme.farben
-    val akzent = FoodyTheme.stil.zier
-    val d = LocalDensity.current
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             // Der große Titel wächst mit der Systemschrift nur bis 130 %
             Text(
-                "QUEST!",
+                szenenWort("QUEST!", "Einkauf"),
                 Modifier.align(Alignment.CenterVertically).padding(end = 8.dp).semantics {
                     heading()
                     contentDescription = "Einkauf"
                 },
-                style = Anime.titel(titelGroesse(38f), 0f).copy(
-                    textGeometricTransform = TextGeometricTransform(skewX = -0.14f),
-                    shadow = Shadow(akzent, Offset(3f * d.density, 3f * d.density), 0f),
-                ),
+                style = animeSzenenTitel(titelGroesse(38f)),
                 color = f.text,
             )
             Row(Modifier.align(Alignment.CenterVertically), verticalAlignment = Alignment.CenterVertically) {
@@ -115,7 +109,8 @@ private fun Fortschritt(erledigt: Int, gesamt: Int) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("XP", style = Anime.titel(15f, 0f), color = f.text)
+        // Ruhig wie im Entwurf ohne „XP“
+        if (FoodyTheme.stil.inszeniert) Text("XP", style = Anime.titel(15f, 0f), color = f.text)
         Box(Modifier.weight(1f).height(16.dp).clip(Anime.pille).background(Color.White).border(2.5.dp, f.text, Anime.pille)) {
             if (erledigt > 0) {
                 Box(
@@ -133,7 +128,8 @@ private fun Karte(g: PostenGruppe, farbe: Color, onUmschalten: (String, Boolean)
     val f = FoodyTheme.farben
     val form = RoundedCornerShape(16.dp)
     Column(
-        Modifier.fillMaxWidth().padding(end = 4.dp, bottom = 4.dp).animeSchatten(form, f.text, 4.dp)
+        Modifier.fillMaxWidth().padding(end = 4.dp, bottom = 4.dp)
+            .then(if (FoodyTheme.stil.inszeniert) Modifier.animeSchatten(form, f.text, 4.dp) else Modifier)
             .background(Color.White, form).border(2.5.dp, f.text, form).padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 10.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {

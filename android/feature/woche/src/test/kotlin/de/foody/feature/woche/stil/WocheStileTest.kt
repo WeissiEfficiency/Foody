@@ -148,6 +148,17 @@ class WocheStileTest {
         compose.onNodeWithText("TAGE FÜLLEN").assertExists()
     }
 
+    /** Anime in Ruhig wie im Entwurf: dieselben Panels, aber „Woche“ statt „WOCHE!“; Wählen geht weiter. */
+    @Test
+    fun animeRuhigSchlicht() {
+        zeigen(FoodyStil.ANIME, variante = StilVariante.RUHIG)
+        compose.onNodeWithText("WOCHE!").assertDoesNotExist()
+        compose.onNodeWithText("Woche").assertExists()
+        val mittwoch = compose.onNode(hasContentDescription("Mittwoch, 28.10.", substring = true) and isSelectable())
+        mittwoch.performClick()
+        mittwoch.assertIsSelected()
+    }
+
     @Test fun anime() = pruefen(FoodyStil.ANIME)
 
     @Test fun edo() = pruefen(FoodyStil.EDO)

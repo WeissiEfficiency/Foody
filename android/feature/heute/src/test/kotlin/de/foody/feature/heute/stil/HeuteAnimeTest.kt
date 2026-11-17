@@ -70,9 +70,14 @@ class HeuteAnimeTest {
     }
 
     @Test
-    fun ruhigZeigtNormaleAnsicht() {
+    fun ruhigZeigtSzeneSchlicht() {
         zeigen(StilVariante.RUHIG)
+        // Wie im Entwurf: dieselbe Szene, aber „Heute“ statt „HEUTE!“ und ohne Foody das Reisbällchen
         compose.onNodeWithText("HEUTE!").assertDoesNotExist()
+        compose.onNodeWithText("Heute").assertExists()
+        compose.onNodeWithText("Heute Abend gibt's Ofengemüse! Noch 1.140 kcal frei – das passt perfekt.").assertDoesNotExist()
+        compose.onNodeWithContentDescription("860 von 2.000 kcal").assertExists()
+        compose.onNodeWithContentDescription("Frühstück: Haferflocken mit Apfel, 380 kcal").assertExists()
     }
 
     @Test
