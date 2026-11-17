@@ -83,7 +83,7 @@ private val TAG_LANG = DateTimeFormatter.ofPattern("EEEE, d. MMMM yyyy", Locale.
 /**
  * Tagebuch der Düsteren Sage in Immersiv (Entwurf `Q-Tagebuch`): „Chronik“ mit Tageswahl, Ring und Makros, je Mahlzeit
  * eine Gruppe („Des Morgens“ …). Antippen eines Eintrags öffnet „Eintrag berichtigen“ mit Ändern und Tilgen; die
- * Raute unten rechts trägt ein. Dieselben Aktionen wie die normale Ansicht, TalkBack liest die normalen Begriffe.
+ * Raute unten rechts trägt ein, „‹“ im Kopf führt zurück ([onZurueck]). Dieselben Aktionen wie die normale Ansicht, TalkBack liest die normalen Begriffe.
  */
 @Composable
 internal fun TagebuchSage(
@@ -95,6 +95,7 @@ internal fun TagebuchSage(
     onAendern: (TagebuchEintragEntity) -> Unit,
     onLoeschen: (TagebuchEintragEntity) -> Unit,
     onEintragen: (Mahlzeit?) -> Unit,
+    onZurueck: (() -> Unit)? = null,
 ) {
     var offenId by rememberSaveable(datum) { mutableStateOf<String?>(null) }
     Box(Modifier.fillMaxSize()) {
@@ -104,10 +105,15 @@ internal fun TagebuchSage(
                     .padding(start = 20.dp, end = 20.dp, top = 6.dp, bottom = ueberLeiste(168.dp)).testTag(TAGEBUCH_INHALT),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(
-                    "CHRONIK", Modifier.fillMaxWidth().padding(top = 8.dp).semantics { heading(); contentDescription = "Tagebuch" },
-                    style = Sage.titel(22f, 0.12f), color = FoodyTheme.farben.primaer, textAlign = TextAlign.Center,
-                )
+                // Wie im Entwurf: „‹“ links zurück zu Heute, „Chronik“ mittig
+                Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (onZurueck != null) Pfeil("‹", "Zurück", onZurueck) else Box(Modifier.size(52.dp, 48.dp))
+                    Text(
+                        "CHRONIK", Modifier.weight(1f).semantics { heading(); contentDescription = "Tagebuch" },
+                        style = Sage.titel(22f, 0.12f), color = FoodyTheme.farben.primaer, textAlign = TextAlign.Center,
+                    )
+                    Box(Modifier.size(52.dp, 48.dp))
+                }
                 Tageswahl(datum, heute, onDatum, onWahl)
                 val z = zustand?.takeIf { it.datum == datum } ?: return@Column
                 Bilanz(z)

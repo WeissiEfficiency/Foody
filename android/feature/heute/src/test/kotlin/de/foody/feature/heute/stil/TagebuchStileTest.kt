@@ -72,6 +72,7 @@ class TagebuchStileTest {
     private lateinit var db: FoodyDatenbank
     private lateinit var tagebuch: TagebuchRepository
     private var aktuell = heute
+    private var zurueck = 0
 
     @Before
     fun setUp() {
@@ -86,7 +87,7 @@ class TagebuchStileTest {
         db.close()
     }
 
-    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false) {
+    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false, variante: StilVariante = StilVariante.IMMERSIV) {
         val kontext = RuntimeEnvironment.getApplication()
         val vm = halter.behalten(TagebuchTagViewModel(tagebuch, TageszielSpeicher(kontext)))
         val eintragen = halter.behalten(
@@ -96,9 +97,11 @@ class TagebuchStileTest {
             ),
         )
         compose.setContent {
-            FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV) {
+            FoodyTheme(stil = stil, variante = variante) {
                 var datum by remember { mutableStateOf(heute) }
-                val inhalt = @Composable { TagebuchTagRoute(datum, onDatum = { datum = it; aktuell = it }, vm = vm, eintragenVm = eintragen) }
+                val inhalt = @Composable {
+                    TagebuchTagRoute(datum, onDatum = { datum = it; aktuell = it }, onZurueck = { zurueck++ }, vm = vm, eintragenVm = eintragen)
+                }
                 if (schrift200) MitSchrift200(inhalt) else inhalt()
             }
         }
@@ -135,6 +138,34 @@ class TagebuchStileTest {
         zeigen(stil, schrift200 = true)
         compose.waitForIdle()
         compose.pruefeNichtsAbgeschnitten()
+    }
+
+    /** Wie in den Entwürfen: „‹“ im Kopf führt zurück zu Heute (Canvas-Abgleich 2026-11-17). */
+    private fun zurueckImKopf(stil: FoodyStil, variante: StilVariante = StilVariante.IMMERSIV) {
+        zeigen(stil, variante = variante)
+        compose.onNodeWithContentDescription("Zurück").performClick()
+        compose.waitForIdle()
+        assertEquals(1, zurueck)
+    }
+
+    @Test fun sageZurueck() = zurueckImKopf(FoodyStil.SAGE)
+
+    @Test fun animeZurueck() = zurueckImKopf(FoodyStil.ANIME)
+
+    @Test fun edoZurueck() = zurueckImKopf(FoodyStil.EDO)
+
+    @Test fun bayrischZurueck() = zurueckImKopf(FoodyStil.BAYRISCH)
+
+    @Test fun grauenZurueck() = zurueckImKopf(FoodyStil.GRAUEN)
+
+    @Test fun kreuzerZurueck() = zurueckImKopf(FoodyStil.KREUZER)
+
+    @Test fun ruhigZurueck() = zurueckImKopf(FoodyStil.EDO, StilVariante.RUHIG)
+
+    @Test
+    fun milchglasOhneZurueck() {
+        zeigen(FoodyStil.MILCHGLAS)
+        compose.onNodeWithContentDescription("Zurück").assertDoesNotExist()
     }
 
     @Test fun anime() = oeffnenUndLoeschen(FoodyStil.ANIME)

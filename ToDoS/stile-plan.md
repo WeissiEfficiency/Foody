@@ -195,7 +195,8 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Ein genauer Abgleich Bild für Bild mit dem Canvas, 2026-11-17, siehe „Ergebnis“.
 - [ ] Abweichungen vom Canvas, die der Nutzer entscheidet (Liste im „Ergebnis“ Canvas-Abgleich): Ruhig als
       schlichte Szenen statt normaler Ansicht, Eintragen/Planen/Listen als Seiten mit Reitern statt Blättern,
-      Zurück im Kopf des Tagebuchs, Rezeptfilter je Stil, Editor der Sage, Reihenfolge in den Einstellungen.
+      Rezeptfilter je Stil, Editor der Sage, Reihenfolge in den Einstellungen.
+- [x] Tagebuch: „‹“ im Kopf zurück zu Heute in allen Stilen (Immersiv und Ruhig), 2026-11-17, siehe „Ergebnis“.
 - [x] Tablet ansehen (zweispaltiges Layout mit Farben, Schrift und Formen des Stils), 2026-11-17, siehe „Ergebnis“.
 - [x] Tablet: Rezeptliste der Szenen R–V öffnet das Rezept rechts; Knopfleisten von Editor und Rezept unten am Rand.
 - [x] Widgets auf einem zweiten Launcher (Pixel-Launcher im Emulator), 2026-11-17, siehe „Ergebnis“.
@@ -682,8 +683,8 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
   - **Eintragen, Planen, Listen:** In den Entwürfen eigene Seiten mit Reitern (Eintragen „Suchen · Scannen · Foto ·
     Geplant“, Planen „Rezept wählen · Tage füllen“, Listen „Neue Liste · Abgleich · Frühere“). Die App nutzt ihre
     Blätter mit den Wörtern des Stils (wie im Plan: „Bausteine und Wörter“).
-  - **Tagebuch:** Die Entwürfe haben im Kopf ein „‹“ zurück zu Heute; die App hat in keinem Stil einen Zurück-Knopf
-    (nur die Systemgeste). Die Entwürfe ordnen Frühstück, Mittag, Abend, Snack; die App Frühstück, Mittag, Snack, Abend.
+  - **Tagebuch:** Die Entwürfe haben im Kopf ein „‹“ zurück zu Heute (am selben Tag nachgezogen, siehe unten). Die
+    Entwürfe ordnen Frühstück, Mittag, Abend, Snack; die App Frühstück, Mittag, Snack, Abend.
   - **Rezeptfilter:** Die Entwürfe haben drei Filter mit Wörtern je Stil (Sage „♦“ und „≤ 30′“, Bayrisch „Olle“,
     „♥ Leibgerichte“, „G’schwind“); die App hat überall „Alle · Favoriten · Oft gekocht · Vegetarisch“.
   - **Editor der Sage:** Entwurf „Neu niederschreiben“ mit Reitern „Grundlagen · Zutaten · Ritual“; die App zeigt die
@@ -694,3 +695,11 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
     „Heute“ mit Ring statt Auge.
 - Hinweis zum Werkzeug: Die Entwürfe ließen sich mit einer kleinen eigenen Laufzeit für `x-dc` (Platzhalter,
   `sc-if`, `sc-for`, `renderVals`) im Browser rendern; sie liegt nicht im Repo.
+
+**2026-11-17 – Tagebuch mit Zurück** (Branch `claude/tagebuch-zurueck`, Entscheidung des Nutzers aus dem Canvas-Abgleich):
+- Wie in den Entwürfen steht im Kopf des Tagebuchs links ein „‹“, das zurück zu Heute führt: in der Sage neben
+  „Chronik“ (`Pfeil`), in R–V als `StilAktion` vor Überzeile und Titel, in Ruhig der runde Zurück-Knopf des
+  `Seitenkopf`. Milchglas bleibt ohne (kein Entwurf). `TagebuchTagRoute(onZurueck)`, im NavHost `popBackStack()`.
+- Tests: `TagebuchStileTest` (`…Zurueck` für alle sechs Stile und Ruhig, `milchglasOhneZurueck`); ohne den Knopf
+  sind alle sieben rot. Sechs Referenzbilder neu (Tagebuch der Sage und R–V), Milchglas unverändert. Im Emulator mit
+  den Maßen des Handys nachgeprüft (Edo, Sage: „‹“ führt zu Heute).
