@@ -204,5 +204,6 @@ private fun RezeptEntity.karte(zeilen: List<RezeptZutatEntity>, katalog: Map<Str
         zutatNamen = zeilen.mapNotNull { katalog[it.ingredientId]?.name },
         archiviert = archivedAt != null,
         angelegt = createdAt,
+        portionen = defaultServings,
     )
 }

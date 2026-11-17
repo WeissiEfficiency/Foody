@@ -22,6 +22,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -87,6 +88,26 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
     var umbenennen by rememberSaveable { mutableStateOf<String?>(null) }
     val snackbar = remember { SnackbarHostState() }
     val bereich = rememberCoroutineScope()
+    // Stile Q–V: Planen als eigene Seite mit Reitern wie in den Entwürfen; Milchglas behält die Blätter
+    val planenSeite = FoodyTheme.stil.stil != FoodyStil.MILCHGLAS
+    var planen by rememberSaveable { mutableStateOf<String?>(null) }
+    val start = planen?.takeIf { planenSeite }?.let(PlanenStart::ausText)
+    LaunchedEffect(planen) { if (start?.reiter == PlanenReiter.VORSCHLAG && vm.fuellen.value == null) vm.fuellenOeffnen() }
+    val montag = woche?.montag ?: montagVon(vm.heuteDatum)
+    val plus = { d: LocalDate ->
+        if (planenSeite) planen = PlanenStart(PlanenReiter.SELBST, d, Mahlzeit.ABENDESSEN.name).alsText() else neuAm = d.toString()
+    }
+    val fuellenAuf = {
+        val tag = vm.heuteDatum.takeIf { !it.isBefore(montag) && it.isBefore(montag.plusDays(7)) } ?: montag
+        if (planenSeite) planen = PlanenStart(PlanenReiter.VORSCHLAG, tag, Mahlzeit.ABENDESSEN.name).alsText() else vm.fuellenOeffnen()
+    }
+    val fuellenAktionen = FuellenAktionen(
+        onMahlzeit = { vm.fuellenOeffnen(it) },
+        onAbwaehlen = vm::abwaehlen,
+        onTagNeu = { vm.tagNeu(it) },
+        onNeuMischen = { vm.neuMischen() },
+        onUebernehmen = { bereich.launch { if (vm.uebernehmen() != null) planen = null } },
+    )
 
     val scroll = rememberScrollState()
     // Lage der Tageskarten in der Liste, für den Sprung aus der Tagesleiste
@@ -95,10 +116,20 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
         // Immersiv: die Szene des Stils (Sage „Karte der Woche“, R–V); die Blätter unten bleiben dieselben
         val szenenAktionen = WocheSageAktionen(
             onBlaettern = vm::blaettern, onHeute = vm::heute, onEintrag = { offen = it.id },
-            onPlus = { neuAm = it.toString() }, onFuellen = { vm.fuellenOeffnen() },
+            onPlus = plus, onFuellen = fuellenAuf,
         )
         val szene = WocheSzene.aktuell()
-        if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
+        if (start != null) {
+            PlanenSeite(
+                start, karten, fuellen,
+                PlanenAktionen(
+                    onReiter = { planen = start.copy(reiter = it).alsText() },
+                    onEinplanen = { d, m, id, n -> vm.hinzufuegen(d, m, id, n); planen = null; vm.fuellenSchliessen() },
+                    onZurueck = { planen = null; vm.fuellenSchliessen() },
+                    fuellen = fuellenAktionen,
+                ),
+            )
+        } else if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
             WocheSage(woche, vm.heuteDatum, zeigtHeute, szenenAktionen, unten = ueberLeiste(LISTE_UNTEN))
         } else if (szene != null) {
             WocheStil(szene, woche, vm.heuteDatum, zeigtHeute, szenenAktionen, unten = ueberLeiste(LISTE_UNTEN))
@@ -123,9 +154,15 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
                     TagKarte(
                         tag, tag.datum == vm.heuteDatum, ziel,
                         onEintrag = { offen = it.id },
-                        onPlus = { neuAm = tag.datum.toString() },
+                        onPlus = { plus(tag.datum) },
                         modifier = Modifier.onPlaced { lagen[i] = it.positionInParent().y.toInt() },
-                        onPlatz = { m -> auswahlFuer = "${tag.datum}|${m.name}" },
+                        onPlatz = { m ->
+                            if (planenSeite) {
+                                planen = PlanenStart(PlanenReiter.SELBST, tag.datum, m.name).alsText()
+                            } else {
+                                auswahlFuer = "${tag.datum}|${m.name}"
+                            }
+                        },
                     )
                 }
                 if (zweispaltig) {
@@ -140,7 +177,7 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
                 } else {
                     tage.forEachIndexed { i, t -> karte(i, t) }
                 }
-                if (tage.isNotEmpty()) Fuss(tage) { vm.fuellenOeffnen() }
+                if (tage.isNotEmpty()) Fuss(tage) { fuellenAuf() }
             }
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = ueberLeiste(UEBER_LEISTE)))
@@ -183,18 +220,8 @@ fun WocheRoute(onKochen: (String, Int) -> Unit, onRezept: (String) -> Unit, vm: 
     umbenennen?.let { id ->
         MahlzeitWahl("Umbenennen", onWahl = { m -> vm.umbenennen(id, m); umbenennen = null }, onAbbrechen = { umbenennen = null })
     }
-    fuellen?.let { z ->
-        FuellenBlatt(
-            z, karten.associate { it.id to it.name },
-            FuellenAktionen(
-                onMahlzeit = { vm.fuellenOeffnen(it) },
-                onAbwaehlen = vm::abwaehlen,
-                onTagNeu = { vm.tagNeu(it) },
-                onNeuMischen = { vm.neuMischen() },
-                onUebernehmen = { bereich.launch { vm.uebernehmen() } },
-            ),
-            onSchliessen = vm::fuellenSchliessen,
-        )
+    if (!planenSeite) {
+        fuellen?.let { z -> FuellenBlatt(z, karten.associate { it.id to it.name }, fuellenAktionen, onSchliessen = vm::fuellenSchliessen) }
     }
 }
 

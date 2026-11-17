@@ -48,7 +48,7 @@ import org.robolectric.annotation.GraphicsMode
 import kotlin.test.assertEquals
 
 /**
- * Planen-Blätter der Stile R–V in Immersiv: „Leere Tage füllen“ mit Vorschlagszeilen des Stils (abwählen, neu ziehen),
+ * Planen der Stile R–V in Immersiv: „Leere Tage füllen“ (Reiter der Planen-Seite) mit Vorschlagszeilen des Stils (abwählen, neu ziehen),
  * Portionen im Mahlzeit-Blatt mit den Knöpfen des Stils; bei 200 % Schrift wird nichts abgeschnitten. Bilder
  * `stil_*_fuellen_handy` und `stil_*_mahlzeit_handy`.
  */
@@ -199,6 +199,32 @@ class PlanenStileTest {
 
     @Test @Config(qualifiers = "w411dp-h891dp")
     fun kreuzerFuellenBild() = fuellenBild(FoodyStil.KREUZER)
+
+    /** „+“ öffnet die Planen-Seite mit „Selbst wählen“ (Tag, Mahlzeit, Gericht) wie in den Entwürfen. */
+    private fun planenBild(stil: FoodyStil) {
+        zeigen(stil)
+        compose.onAllNodes(hasContentDescription("Mahlzeit hinzufügen")).onFirst().performClick()
+        compose.warteAufText("Gemüsecurry")
+        bild("stil_${stil.name.lowercase()}_planen_handy")
+    }
+
+    @Test @Config(qualifiers = "w411dp-h891dp")
+    fun sagePlanenBild() = planenBild(FoodyStil.SAGE)
+
+    @Test @Config(qualifiers = "w411dp-h891dp")
+    fun animePlanenBild() = planenBild(FoodyStil.ANIME)
+
+    @Test @Config(qualifiers = "w411dp-h891dp")
+    fun edoPlanenBild() = planenBild(FoodyStil.EDO)
+
+    @Test @Config(qualifiers = "w411dp-h891dp")
+    fun bayrischPlanenBild() = planenBild(FoodyStil.BAYRISCH)
+
+    @Test @Config(qualifiers = "w411dp-h891dp")
+    fun grauenPlanenBild() = planenBild(FoodyStil.GRAUEN)
+
+    @Test @Config(qualifiers = "w411dp-h891dp")
+    fun kreuzerPlanenBild() = planenBild(FoodyStil.KREUZER)
 
     @Test @Config(qualifiers = "w411dp-h891dp")
     fun animeMahlzeitBild() = mahlzeitBild(FoodyStil.ANIME)
