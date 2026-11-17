@@ -36,6 +36,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyFrage
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.ueberLeiste
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
@@ -66,8 +67,8 @@ fun rememberModellwahl(onGewaehlt: (List<Uri>) -> Unit): () -> Unit {
 
 /**
  * Einstellungen: Konto (→ „Server verbinden“), Darstellung mit Stil und Farbwelt, Tagesziel, Zutatenkatalog und Online-Produktsuche,
- * Fotoerkennung, Sicherung,
- * alle Daten löschen, Hinweise.
+ * Fotoerkennung, Sicherung, alle Daten löschen, Hinweise. In den Stilen Q–V steht das Konto (der Abgleich) wie in den
+ * Entwürfen erst nach der Fotoerkennung.
  * Wiederherstellen, Löschen und „Modell entfernen“ fragen nach; bei verbundenem Sync sind die ersten beiden gesperrt.
  */
 @Composable
@@ -113,7 +114,9 @@ fun EinstellungenRoute(
                     // Grauen und Kreuzer: Überzeile wie im Entwurf
                     ueberzeile = stilText("", grauen = "Die Instrumente justieren", kreuzer = "Bordsysteme").ifEmpty { null },
                 )
-                KontoAbschnitt(z.konto, System.currentTimeMillis(), onServer)
+                // Milchglas: Konto zuerst; die Stile Q–V wie in den Entwürfen nach Darstellung, Tagesziel und Daten
+                val kontoOben = FoodyTheme.stil.stil == FoodyStil.MILCHGLAS
+                if (kontoOben) KontoAbschnitt(z.konto, System.currentTimeMillis(), onServer)
                 DarstellungAbschnitt(
                     z, vm::darstellungSetzen, vm::farbweltSetzen, vm::stilSetzen, vm::stilVarianteSetzen, vm::stilAkzentSetzen,
                 )
@@ -130,6 +133,7 @@ fun EinstellungenRoute(
                 }
                 ZutatenAbschnitt(z.zutaten, z.onlineSuche, onZutaten, vm::onlineSucheSetzen)
                 FotoErkennungAbschnitt(z, vm::fotoErkennungSetzen, onInstallieren = modellDialog, onEntfernen = { modellEntfernen = true })
+                if (!kontoOben) KontoAbschnitt(z.konto, System.currentTimeMillis(), onServer)
                 SicherungAbschnitt(z, onErstellen = dateien.erstellen, onWiederherstellen = dateien.oeffnen)
                 DatenAbschnitt(z, onLoeschen = { loeschen = true })
                 HinweiseAbschnitt()
