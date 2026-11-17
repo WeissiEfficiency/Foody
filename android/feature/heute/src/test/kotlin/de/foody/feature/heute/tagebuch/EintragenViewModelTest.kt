@@ -6,6 +6,7 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
+import de.foody.core.data.zutaten.Packungswerte
 import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
@@ -233,12 +234,42 @@ class EintragenViewModelTest {
         assertEquals(1, db.zutatDao().alle().size)
     }
 
+    /** Die eine Suche der Stile Q–V läuft im Weg „Rezept“ und findet auch BLS-Treffer. */
     @Test
-    fun blsNurImWegZutat() = runTest {
+    fun blsAuchImWegRezept() = runTest {
         val vm = mitBls("B723000	Laugengebäck mit Hagelsalz	1191						")
         vm.weg(EintragenWeg.REZEPT)
         vm.suche("Breze")
+        assertTrue(vm.zustand.first { it.bls.isNotEmpty() }.bls.isNotEmpty())
+    }
+
+    @Test
+    fun blsNichtInFrei() = runTest {
+        val vm = mitBls("B723000	Laugengebäck mit Hagelsalz	1191						")
+        vm.weg(EintragenWeg.FREI)
+        vm.suche("Breze")
         assertTrue(vm.zustand.first().bls.isEmpty())
+    }
+
+    /** Reiter der Stile Q–V: „Suchen“ behält Rezept oder Zutat, „Foto“ verwirft eine Packung, die Wahl setzt den Weg. */
+    @Test
+    fun reiterUndWahlSetzenDenWeg() = runTest {
+        vm.oeffnen(LocalDate.of(2026, 10, 24), Mahlzeit.ABENDESSEN)
+        vm.reiter(EintragenReiter.GEPLANT)
+        assertEquals(EintragenWeg.PLAN, vm.zustand.first { it.eingaben.weg == EintragenWeg.PLAN }.eingaben.weg)
+        vm.reiter(EintragenReiter.SUCHEN)
+        assertEquals(EintragenWeg.REZEPT, vm.zustand.first { it.eingaben.weg != EintragenWeg.PLAN }.eingaben.weg)
+        vm.zutatWaehlen("z1")
+        vm.reiter(EintragenReiter.SUCHEN)
+        assertEquals(EintragenWeg.ZUTAT, vm.zustand.first { it.eingaben.zutatId == "z1" }.eingaben.weg)
+        vm.rezeptWaehlen("r1")
+        assertEquals(EintragenWeg.REZEPT, vm.zustand.first { it.eingaben.rezeptId == "r1" }.eingaben.weg)
+        vm.reiter(EintragenReiter.SCANNEN)
+        vm.packungUebernehmen(Packungswerte("Skyr", null, emptyMap(), null, "Test"))
+        assertEquals("Skyr", vm.zustand.first { it.eingaben.packung != null }.eingaben.pName)
+        vm.reiter(EintragenReiter.FOTO)
+        val frei = vm.zustand.first { it.eingaben.packung == null }.eingaben
+        assertEquals(EintragenWeg.FREI, frei.weg)
     }
 
     @Test

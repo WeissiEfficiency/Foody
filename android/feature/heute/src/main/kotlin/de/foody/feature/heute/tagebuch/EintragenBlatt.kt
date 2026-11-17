@@ -1,13 +1,19 @@
 package de.foody.feature.heute.tagebuch
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -22,8 +28,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -37,13 +46,18 @@ import de.foody.core.designsystem.komponenten.BlattTitel
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.FoodyTextfeld
+import de.foody.core.designsystem.komponenten.Reiterleiste
+import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.WahlZeile
 import de.foody.core.designsystem.komponenten.anzeigename
+import de.foody.core.designsystem.komponenten.platzFuerLeiste
 import de.foody.core.designsystem.komponenten.slotName
-import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.komponenten.vorausgefuelltFarben
+import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.core.erkennung.ErkennungTexte
 import de.foody.core.scan.PackungScanKnopf
 import de.foody.domain.BlsTreffer
@@ -51,6 +65,7 @@ import de.foody.domain.FotoPortion
 import de.foody.domain.Mahlzeit
 import de.foody.domain.Nutrient
 import de.foody.domain.NutritionResult
+import de.foody.feature.heute.Schnellstart
 import kotlinx.coroutines.launch
 
 /** Test-Tag des Speichern-Knopfs (die Überschrift heißt auch „Eintragen“). */
@@ -77,30 +92,108 @@ private fun Mahlzeit.sageKurz(): String = when (this) {
     Mahlzeit.ABENDESSEN -> "Abend"
 }
 
-/** Blatt von unten zum Eintragen (siehe [BlattAuftrag]). Schließt nach erfolgreichem Speichern. */
-@OptIn(ExperimentalLayoutApi::class)
+/** Reiter beim Eintragen in den Stilen Q–V, wie in den Entwürfen. */
+enum class EintragenReiter { SUCHEN, SCANNEN, FOTO, GEPLANT }
+
+/** Bayrisch, Grauen und Kreuzer zeigen Eintragen in den Entwürfen als eigene Seite, Sage, Anime und Edo als Blatt. */
+private val ALS_SEITE = setOf(FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)
+
+/** Eintragen als eigene Seite statt Blatt: Der Gastgeber blendet dann seinen Inhalt aus. */
+@Composable
+fun eintragenAlsSeite(): Boolean = FoodyTheme.stil.stil in ALS_SEITE
+
+/** Erster Reiter nach dem Schnellstart des Widgets. */
+private fun startReiter(start: Schnellstart.Art?) = when (start) {
+    Schnellstart.Art.SCANNEN -> EintragenReiter.SCANNEN
+    Schnellstart.Art.FOTO -> EintragenReiter.FOTO
+    else -> EintragenReiter.SUCHEN
+}
+
+/**
+ * Eintragen (siehe [BlattAuftrag]); schließt nach erfolgreichem Speichern. Milchglas: Blatt von unten mit den Wegen
+ * als Chips. Stile Q–V wie in den Entwürfen mit den Reitern „Suchen · Scannen · Foto · Geplant“ ([EintragenReiter]);
+ * Bayrisch, Grauen und Kreuzer als eigene Seite ([eintragenAlsSeite]) mit Auswahl und Knopf fest unten.
+ */
 @Composable
 fun EintragenBlatt(auftrag: BlattAuftrag, onFertig: () -> Unit, vm: EintragenViewModel) {
     LaunchedEffect(auftrag.id) { vm.oeffnen(auftrag.datum, auftrag.mahlzeit, auftrag = auftrag.id, start = auftrag.start) }
     val z by vm.zustand.collectAsStateWithLifecycle()
     val moeglich by vm.speichernMoeglich.collectAsStateWithLifecycle()
     val bereich = rememberCoroutineScope()
+    val speichern = { bereich.launch { if (vm.speichern() != null) onFertig() } }
+    if (FoodyTheme.stil.stil == FoodyStil.MILCHGLAS) return MitWegen(z, vm, moeglich, onFertig) { speichern() }
+
+    var reiter by rememberSaveable(auftrag.id) { mutableStateOf(startReiter(auftrag.start)) }
+    val wahl = { r: EintragenReiter ->
+        if (r != reiter) {
+            reiter = r
+            vm.reiter(r)
+        }
+    }
+    val knopf = @Composable {
+        SpeichernKnopf(reiter, moeglich) { speichern() }
+    }
+    if (eintragenAlsSeite()) {
+        BackHandler(onBack = onFertig)
+        Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
+            Column(Modifier.fillMaxSize().widthIn(max = FoodyBreiten.inhalt)) {
+                Column(
+                    Modifier.fillMaxWidth().padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s2),
+                    verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
+                ) {
+                    val immersiv = FoodyTheme.stil.variante == StilVariante.IMMERSIV
+                    // Grauen und Kreuzer: Überzeile wie im Entwurf (Immersiv)
+                    val ueberzeile = if (immersiv) stilText("", grauen = "Was dargebracht wird", kreuzer = "Proviant erfassen").ifEmpty { null } else null
+                    Seitenkopf(eintragenTitel(), ueberzeile = ueberzeile, onZurueck = onFertig, beschreibung = "Eintragen")
+                    MahlzeitChips(z.eingaben, vm)
+                    ReiterKopf(reiter, vm, wahl)
+                }
+                Column(
+                    Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+                        .padding(horizontal = FoodyAbstaende.s4).padding(top = FoodyAbstaende.s3, bottom = FoodyAbstaende.s3),
+                    verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
+                ) { ReiterInhalt(reiter, z, vm) }
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = FoodyAbstaende.s4).padding(bottom = platzFuerLeiste() + FoodyAbstaende.s3),
+                    verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
+                ) {
+                    Auswahl(z, vm)
+                    knopf()
+                }
+            }
+        }
+    } else {
+        GlasBlatt(onFertig) {
+            Column(
+                Modifier.verticalScroll(rememberScrollState()).padding(horizontal = FoodyAbstaende.s4).padding(bottom = FoodyAbstaende.s6),
+                verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
+            ) {
+                BlattTitel(eintragenTitel(), beschreibung = "Eintragen", zeichen = "記")
+                MahlzeitChips(z.eingaben, vm)
+                ReiterKopf(reiter, vm, wahl)
+                ReiterInhalt(reiter, z, vm)
+                Auswahl(z, vm)
+                knopf()
+            }
+        }
+    }
+}
+
+@Composable
+private fun eintragenTitel() = stilText("Eintragen", sage = "Mahl eintragen", anime = "Eintragen!", bayrisch = "Eitragn", grauen = "Notieren")
+
+/** Milchglas: das Blatt mit den Wegen als Chips (kein Entwurf mit Reitern). */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MitWegen(z: EintragenZustand, vm: EintragenViewModel, moeglich: Boolean, onFertig: () -> Unit, onSpeichern: () -> Unit) {
     val e = z.eingaben
     GlasBlatt(onFertig) {
         Column(
             Modifier.verticalScroll(rememberScrollState()).padding(horizontal = FoodyAbstaende.s4).padding(bottom = FoodyAbstaende.s6),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3),
         ) {
-            BlattTitel(
-                stilText("Eintragen", sage = "Mahl eintragen", anime = "Eintragen!", bayrisch = "Eitragn", grauen = "Notieren"),
-                beschreibung = "Eintragen",
-                zeichen = "記",
-            )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-                MAHLZEITEN.forEach { m ->
-                    FoodyChip(stilText(m.anzeigename(), sage = m.sageKurz()), m == e.mahlzeit, { vm.mahlzeit(m) }, beschreibung = m.anzeigename())
-                }
-            }
+            BlattTitel(eintragenTitel(), beschreibung = "Eintragen", zeichen = "記")
+            MahlzeitChips(e, vm)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
                 WEGE.forEach { (w, text) -> FoodyChip(stilText(text, sage = SAGE_WEGE[w]), w == e.weg, { vm.weg(w) }, beschreibung = text) }
             }
@@ -110,13 +203,105 @@ fun EintragenBlatt(auftrag: BlattAuftrag, onFertig: () -> Unit, vm: EintragenVie
                 EintragenWeg.PLAN -> PlanWahl(z, vm)
                 EintragenWeg.FREI -> FreiEingabe(z, vm)
             }
-            FoodyKnopf(
-                stilText("Eintragen", sage = "In die Chronik", anime = "Eintragen! ✓", bayrisch = "Eitragn", grauen = "Ins Logbuch", kreuzer = "Ins Bordbuch"),
-                { bereich.launch { if (vm.speichern() != null) onFertig() } },
-                Modifier.fillMaxWidth().testTag(EINTRAGEN_SPEICHERN),
-                aktiv = moeglich,
-            )
+            FoodyKnopf(speichernText(), onSpeichern, Modifier.fillMaxWidth().testTag(EINTRAGEN_SPEICHERN), aktiv = moeglich)
         }
+    }
+}
+
+@Composable
+private fun speichernText() =
+    stilText("Eintragen", sage = "In die Chronik", anime = "Eintragen! ✓", bayrisch = "Eitragn", grauen = "Ins Logbuch", kreuzer = "Ins Bordbuch")
+
+/** Speichern; unter „Geplant“ mit den Wörtern der Entwürfe fürs Gegessene. */
+@Composable
+private fun SpeichernKnopf(reiter: EintragenReiter, moeglich: Boolean, onKlick: () -> Unit) {
+    val text = if (reiter == EintragenReiter.GEPLANT) {
+        stilText(
+            "Eintragen", sage = "Als verzehrt eintragen", anime = "Gegessen!", edo = "Als gegessen eintragen", bayrisch = "Eitragn",
+            grauen = "Ins Logbuch", kreuzer = "Ins Bordbuch",
+        )
+    } else {
+        speichernText()
+    }
+    FoodyKnopf(text, onKlick, Modifier.fillMaxWidth().testTag(EINTRAGEN_SPEICHERN), aktiv = moeglich)
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MahlzeitChips(e: Eingaben, vm: EintragenViewModel) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
+        MAHLZEITEN.forEach { m ->
+            FoodyChip(stilText(m.anzeigename(), sage = m.sageKurz()), m == e.mahlzeit, { vm.mahlzeit(m) }, beschreibung = m.anzeigename())
+        }
+    }
+}
+
+/** „Suchen · Scannen · Foto · Geplant“ (Sage „Suchen · Siegel · Deuten · Geplant“); ohne Erkennungsmodell „Frei“ statt „Foto“. */
+@Composable
+private fun ReiterKopf(reiter: EintragenReiter, vm: EintragenViewModel, onWahl: (EintragenReiter) -> Unit) {
+    val fotoKnopf by vm.fotoKnopf.collectAsStateWithLifecycle()
+    val foto = if (fotoKnopf) "Foto" else "Frei"
+    Reiterleiste(
+        listOf("Suchen", stilText("Scannen", sage = "Siegel"), if (fotoKnopf) stilText("Foto", sage = "Deuten") else "Frei", "Geplant"),
+        reiter.ordinal,
+        { onWahl(EintragenReiter.entries[it]) },
+        beschreibungen = listOf("Suchen", "Scannen", foto, "Geplant"),
+    )
+}
+
+@Composable
+private fun ColumnScope.ReiterInhalt(reiter: EintragenReiter, z: EintragenZustand, vm: EintragenViewModel) {
+    when (reiter) {
+        EintragenReiter.SUCHEN -> SuchenReiter(z, vm)
+        EintragenReiter.SCANNEN -> ScannenReiter(z, vm)
+        EintragenReiter.FOTO -> FotoUndFelder(z, vm, mitScan = false)
+        EintragenReiter.GEPLANT -> PlanWahl(z, vm)
+    }
+}
+
+/** Eine Suche über Rezepte, Zutaten und den BLS wie im Entwurf; die Quelle steht unter dem Namen. */
+@Composable
+private fun SuchenReiter(z: EintragenZustand, vm: EintragenViewModel) {
+    val e = z.eingaben
+    Suche(e.suche, stilText("Rezept oder Zutat suchen", sage = "Im Verzeichnis suchen"), vm::suche)
+    val rezept = stilText("Rezept", sage = "Eigenes Rezept")
+    z.rezepte.forEach { r -> WahlZeile(r.titel, e.weg == EintragenWeg.REZEPT && r.id == e.rezeptId, { vm.rezeptWaehlen(r.id) }, info = rezept) }
+    if (e.suche.isBlank()) return
+    z.zutaten.forEach { t -> WahlZeile(t.name, e.weg == EintragenWeg.ZUTAT && t.id == e.zutatId, { vm.zutatWaehlen(t.id) }, info = "Zutat") }
+    if (z.bls.isNotEmpty()) {
+        Text(
+            stilText("Aus dem Bundeslebensmittelschlüssel", sage = "Aus dem großen Verzeichnis"),
+            style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.nebentext,
+        )
+        z.bls.forEach { t -> BlsZeile(t) { vm.blsWaehlen(t) } }
+    }
+}
+
+/** Scan-Knopf und die schon gescannten Produkte; nach einem Scan die Packung ([PackungEingabe]). */
+@Composable
+private fun ScannenReiter(z: EintragenZustand, vm: EintragenViewModel) {
+    val e = z.eingaben
+    if (e.packung != null && e.weg == EintragenWeg.FREI) {
+        PackungEingabe(e, z.vorhandeneZutat, vm)
+        return
+    }
+    PackungScanKnopf(vm.scanLauf)
+    if (z.gescannt.isNotEmpty()) {
+        Text(
+            stilText("Gescannte Produkte", sage = "Bereits entzifferte Waren"),
+            style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.nebentext,
+        )
+        z.gescannt.forEach { p -> WahlZeile(p.name, e.weg == EintragenWeg.ZUTAT && p.id == e.zutatId, { vm.produktWaehlen(p) }) }
+    }
+}
+
+/** Unter den Reitern: Portionen des gewählten Rezepts oder Menge der gewählten Zutat. */
+@Composable
+private fun Auswahl(z: EintragenZustand, vm: EintragenViewModel) {
+    val e = z.eingaben
+    when {
+        e.weg == EintragenWeg.REZEPT && e.rezeptId != null -> PortionenZeile(e, vm)
+        e.weg == EintragenWeg.ZUTAT && e.zutatId != null -> MengeEingabe(e, vm)
     }
 }
 
@@ -140,17 +325,23 @@ private fun RezeptWahl(z: EintragenZustand, vm: EintragenViewModel) {
         Text("Gescannte Produkte", style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.nebentext)
         z.produkte.forEach { p -> WahlZeile(p.name, gewaehlt = false, { vm.produktWaehlen(p) }, knopf = true) }
     }
+    PortionenZeile(z.eingaben, vm)
+}
+
+@Composable
+private fun PortionenZeile(e: Eingaben, vm: EintragenViewModel) {
+    // Zeichen in der Textfarbe: Auf den dunklen Seiten der Stile wären sie sonst schwarz
+    val farbe = FoodyTheme.farben.text
     Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = { vm.portionenSchritt(mehr = false) }) { Icon(Icons.Outlined.Remove, contentDescription = "Weniger Portionen") }
+        IconButton(onClick = { vm.portionenSchritt(mehr = false) }) { Icon(Icons.Outlined.Remove, contentDescription = "Weniger Portionen", tint = farbe) }
         OutlinedTextField(
-            z.eingaben.portionen, vm::portionen, Modifier.width(120.dp), label = { Text("Portionen") }, singleLine = true,
+            e.portionen, vm::portionen, Modifier.width(120.dp), label = { Text("Portionen") }, singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         )
-        IconButton(onClick = { vm.portionenSchritt(mehr = true) }) { Icon(Icons.Outlined.Add, contentDescription = "Mehr Portionen") }
+        IconButton(onClick = { vm.portionenSchritt(mehr = true) }) { Icon(Icons.Outlined.Add, contentDescription = "Mehr Portionen", tint = farbe) }
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ZutatWahl(z: EintragenZustand, vm: EintragenViewModel) {
     Suche(z.eingaben.suche, "Zutat suchen", vm::suche)
@@ -162,12 +353,18 @@ private fun ZutatWahl(z: EintragenZustand, vm: EintragenViewModel) {
         )
         z.bls.forEach { t -> BlsZeile(t) { vm.blsWaehlen(t) } }
     }
-    // Nach „im Katalog“ (Scan in „Frei“) geht der Fokus auf die Menge
+    MengeEingabe(z.eingaben, vm)
+}
+
+/** Menge und Einheit einer Zutat; nach „im Katalog“ (Scan) geht der Fokus auf die Menge. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MengeEingabe(e: Eingaben, vm: EintragenViewModel) {
     val mengeFokus = remember { FocusRequester() }
     LaunchedEffect(vm) { vm.mengeFokus.collect { mengeFokus.requestFocus() } }
-    Zahlfeld("Menge", z.eingaben.menge, focusRequester = mengeFokus, onWert = vm::menge)
+    Zahlfeld("Menge", e.menge, focusRequester = mengeFokus, onWert = vm::menge)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-        EINTRAGEN_EINHEITEN.forEach { u -> FoodyChip(u.symbol, u == z.eingaben.einheit, { vm.einheit(u) }) }
+        EINTRAGEN_EINHEITEN.forEach { u -> FoodyChip(u.symbol, u == e.einheit, { vm.einheit(u) }) }
     }
 }
 
@@ -200,7 +397,6 @@ private fun PlanWahl(z: EintragenZustand, vm: EintragenViewModel) {
  * „Frei“: oben der Scan-Knopf und (mit Modell) „Foto erkennen“; nach einem Scan die Packung ([PackungEingabe]) statt der
  * freien Felder. Werte aus dem Foto sind markiert, solange sie dem Vorschlag gleichen.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FreiEingabe(z: EintragenZustand, vm: EintragenViewModel) {
     val e = z.eingaben
@@ -208,10 +404,20 @@ private fun FreiEingabe(z: EintragenZustand, vm: EintragenViewModel) {
         PackungEingabe(e, z.vorhandeneZutat, vm)
         return
     }
+    FotoUndFelder(z, vm, mitScan = true)
+}
+
+/** Knöpfe (Scan nur in „Frei“ von Milchglas, Foto mit Modell), Vorschlag aus dem Foto und die freien Felder. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FotoUndFelder(z: EintragenZustand, vm: EintragenViewModel, mitScan: Boolean) {
+    val e = z.eingaben
     val fotoKnopf by vm.fotoKnopf.collectAsStateWithLifecycle()
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-        PackungScanKnopf(vm.scanLauf)
-        if (fotoKnopf) FotoErkennungKnopf(vm.fotoLauf)
+    if (mitScan || fotoKnopf) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
+            if (mitScan) PackungScanKnopf(vm.scanLauf)
+            if (fotoKnopf) FotoErkennungKnopf(vm.fotoLauf)
+        }
     }
     if (fotoKnopf) FotoErkennungStand(vm.fotoLauf)
     e.foto?.let { stand ->

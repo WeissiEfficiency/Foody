@@ -41,6 +41,7 @@ import de.foody.feature.heute.stil.HeuteSage
 import de.foody.feature.heute.tagebuch.BlattAuftrag
 import de.foody.feature.heute.tagebuch.EintragenBlatt
 import de.foody.feature.heute.tagebuch.EintragenViewModel
+import de.foody.feature.heute.tagebuch.eintragenAlsSeite
 import java.time.LocalDate
 
 /** Was „Heute“ auslösen kann; die Navigation liegt in der App. */
@@ -79,7 +80,8 @@ fun HeuteRoute(
         onKochen, onRezept, onEinkauf, onAlleEintraege, onEinstellungen,
         { blatt = BlattAuftrag(it, zustand?.datum ?: LocalDate.now()) }, vm::gegessen, vm::nichtGegessen,
     )
-    HeuteScreen(zustand, aktionen)
+    // Bayrisch, Grauen und Kreuzer: Eintragen ist eine eigene Seite statt des Inhalts
+    if (blatt == null || !eintragenAlsSeite()) HeuteScreen(zustand, aktionen)
     blatt?.let { b -> EintragenBlatt(b, onFertig = { blatt = null }, vm = eintragenVm ?: hiltViewModel()) }
 }
 
