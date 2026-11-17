@@ -177,6 +177,17 @@ class TagebuchStileTest {
         assertEquals("HEUTE · LOGBUCH 297", logbuchZusatz(heute, heute))
         assertEquals("LOGBUCH 296", logbuchZusatz(heute.minusDays(1), heute))
         assertEquals("Brotzeit", mahlzeitBayrisch(Mahlzeit.SNACK))
+        // Gruppen wie in den Entwürfen (Canvas-Abgleich 2026-11-17)
+        assertEquals("Bei Tagesanbruch", tagebuchArt(FoodyStil.GRAUEN).mahlzeit(Mahlzeit.FRUEHSTUECK))
+        assertEquals("Nach Einbruch der Nacht", tagebuchArt(FoodyStil.GRAUEN).mahlzeit(Mahlzeit.ABENDESSEN))
+        assertEquals("ORBIT 1", tagebuchArt(FoodyStil.KREUZER).mahlzeit(Mahlzeit.FRUEHSTUECK))
+        assertEquals("ORBIT 4", tagebuchArt(FoodyStil.KREUZER).mahlzeit(Mahlzeit.SNACK))
+        val folge = listOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.SNACK, Mahlzeit.ABENDESSEN).map { TagAbschnitt(it, emptyList()) }
+        assertEquals(
+            listOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.ABENDESSEN, Mahlzeit.SNACK),
+            gruppenFolge(FoodyStil.KREUZER, folge).map { it.mahlzeit },
+        )
+        assertEquals(folge, gruppenFolge(FoodyStil.GRAUEN, folge))
         assertEquals("Mittag", Mahlzeit.MITTAGESSEN.kurzname())
         val tag = { kcal: Int, ziel: Int?, voll: Int ->
             TagZustand(

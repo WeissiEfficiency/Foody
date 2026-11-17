@@ -192,10 +192,13 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Editor der Stile R–V: „Verwerfen“ und „Speichern“ über der schwebenden Navigation statt darunter.
 - [x] Heute-Szenen: Ende über der Leiste auch bei Drei-Tasten-Navigation.
 - [x] Edo: kurze Wörter brechen nicht mehr ohne Not um („Al-le“, „Vari-ante“).
-- [ ] Ein genauer Abgleich Bild für Bild mit dem Canvas.
+- [x] Ein genauer Abgleich Bild für Bild mit dem Canvas, 2026-11-17, siehe „Ergebnis“.
+- [ ] Abweichungen vom Canvas, die der Nutzer entscheidet (Liste im „Ergebnis“ Canvas-Abgleich): Ruhig als
+      schlichte Szenen statt normaler Ansicht, Eintragen/Planen/Listen als Seiten mit Reitern statt Blättern,
+      Zurück im Kopf des Tagebuchs, Rezeptfilter je Stil, Editor der Sage, Reihenfolge in den Einstellungen.
 - [x] Tablet ansehen (zweispaltiges Layout mit Farben, Schrift und Formen des Stils), 2026-11-17, siehe „Ergebnis“.
 - [x] Tablet: Rezeptliste der Szenen R–V öffnet das Rezept rechts; Knopfleisten von Editor und Rezept unten am Rand.
-- [ ] Widgets auf einem zweiten Launcher (bisher nur ColorOS).
+- [x] Widgets auf einem zweiten Launcher (Pixel-Launcher im Emulator), 2026-11-17, siehe „Ergebnis“.
 - Bewusst nicht gemacht (Funktion fehlt in der App): „In die Woche“ auf Rezeptkarte und Rezept, Uhrzeiten in Heute und
   Tagebuch, die Reiter „Selbst · Link · Foto · Text“ im Editor, Timer-Bogen (V), „Jetzt abgleichen“/„Trennen“ auf der
   Karte in den Einstellungen.
@@ -655,3 +658,39 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
   Tests rot). Auf dem Tablet nachgeprüft (Edo: Rezept rechts, Leisten unten).
 - Hinweis: Der halbe Kreis mit Stift am rechten Rand ist ein Fenster des Systems (Lenovo, `FloatingCollapseView`),
   nicht von Foody.
+
+**2026-11-17 – Abgleich mit dem Canvas, Widgets im Pixel-Launcher** (Branch `claude/canvas-abgleich`):
+- Vorgehen: Die 85 Entwürfe (Q–V je 14 Screens, dazu T-Maibaum) lokal gerendert und je Screen neben ein Bild der App
+  gelegt. Die App-Bilder stammen aus dem Emulator mit den Maßen des Handys (OnePlus 13R: 1264 × 2780 px, Dichte 560,
+  also 361 × 794 dp, Drei-Tasten-Navigation, Schrift 0,9, gleiche Testdaten); die Entwürfe sind 390 dp breit.
+  Alle sechs Stile in Immersiv und Ruhig, alle 14 Screens.
+- Hauptscreens in Immersiv (Heute, Tagebuch, Rezepte, Rezept, Woche, Einkauf, Kochen) entsprechen den Entwürfen in
+  Aufbau, Szene, Farben und Wörtern. Bekannte, bewusste Lücken wie bisher: „In die Woche“, Uhrzeiten, Timer-Bogen.
+- Behoben: Im Tagebuch nannten Grauen und Kreuzer die Mahlzeiten „Frühstück“ … statt wie im Entwurf „Bei
+  Tagesanbruch“, „Zur Mittagsstunde“, „Nach Einbruch der Nacht“, „Zwischendurch“ bzw. „ORBIT 1“ bis „ORBIT 4“ (gleiche
+  Bahnen wie auf der Brücke); im Kreuzer stehen die Gruppen nach Bahn (sonst „ORBIT 4“ vor „ORBIT 3“). TalkBack liest
+  weiter die normalen Namen (`mahlzeitGrauen`, `mahlzeitKreuzer`, `gruppenFolge` in `TagebuchStile.kt`,
+  `TagebuchStileTest.texte`, vorher rot); vier Referenzbilder neu (Tagebuch und Eintragen, Grauen und Kreuzer).
+- Widgets im Pixel-Launcher (zweiter Launcher nach ColorOS): alle sieben Widgets lassen sich hinzufügen, zeigen Daten
+  und folgen dem Stilwechsel in allen Stilen. Fehler: „Woche“ kam mit 80 dp Mindesthöhe als 4 × 2 und ließ sich nicht
+  auf eine Zeile ziehen. Behoben mit 40 dp (`woche_widget_info.xml`); `WidgetGroesseTest` prüft für alle Widgets, dass
+  die Mindestgröße in die Zielzellen passt (70 × n − 30 dp), vorher rot. Im Emulator nachgeprüft: 4 × 1.
+- Abweichungen, offen zur Entscheidung (nicht geändert):
+  - **Ruhig:** Die Entwürfe zeigen in Ruhig die Szenen-Layouts ohne Bilder (Menü in Heute, eine Rezeptkarte mit
+    Blättern, Tageschips in der Woche, Posten als Felder im Einkauf). Die App zeigt in Ruhig wie geplant die normale
+    Ansicht in Farben und Schrift des Stils (oben festgelegt: „schlichtes Layout“).
+  - **Eintragen, Planen, Listen:** In den Entwürfen eigene Seiten mit Reitern (Eintragen „Suchen · Scannen · Foto ·
+    Geplant“, Planen „Rezept wählen · Tage füllen“, Listen „Neue Liste · Abgleich · Frühere“). Die App nutzt ihre
+    Blätter mit den Wörtern des Stils (wie im Plan: „Bausteine und Wörter“).
+  - **Tagebuch:** Die Entwürfe haben im Kopf ein „‹“ zurück zu Heute; die App hat in keinem Stil einen Zurück-Knopf
+    (nur die Systemgeste). Die Entwürfe ordnen Frühstück, Mittag, Abend, Snack; die App Frühstück, Mittag, Snack, Abend.
+  - **Rezeptfilter:** Die Entwürfe haben drei Filter mit Wörtern je Stil (Sage „♦“ und „≤ 30′“, Bayrisch „Olle“,
+    „♥ Leibgerichte“, „G’schwind“); die App hat überall „Alle · Favoriten · Oft gekocht · Vegetarisch“.
+  - **Editor der Sage:** Entwurf „Neu niederschreiben“ mit Reitern „Grundlagen · Zutaten · Ritual“; die App zeigt die
+    Sage noch mit den Bausteinen („Neue Seite“), R–V sind wie im Entwurf.
+  - **Einstellungen:** In den Entwürfen steht der Abgleich unten, in der App oben (dazu die Stilwahl, die die
+    Entwürfe nicht zeigen).
+  - Kleinigkeiten: Edo-Rezeptliste als Fächer aus Buchstabenkarten statt beschrifteter Fächerblätter; Grauen-Widget
+    „Heute“ mit Ring statt Auge.
+- Hinweis zum Werkzeug: Die Entwürfe ließen sich mit einer kleinen eigenen Laufzeit für `x-dc` (Platzhalter,
+  `sc-if`, `sc-for`, `renderVals`) im Browser rendern; sie liegt nicht im Repo.
