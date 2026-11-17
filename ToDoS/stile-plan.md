@@ -195,7 +195,8 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Ein genauer Abgleich Bild für Bild mit dem Canvas, 2026-11-17, siehe „Ergebnis“.
 - [ ] Abweichungen vom Canvas, die der Nutzer entscheidet (Liste im „Ergebnis“ Canvas-Abgleich): Ruhig als
       schlichte Szenen statt normaler Ansicht, Eintragen/Planen/Listen als Seiten mit Reitern statt Blättern,
-      Rezeptfilter je Stil, Reihenfolge in den Einstellungen.
+      Reihenfolge in den Einstellungen.
+- [x] Rezeptfilter wie im Entwurf: „Alle · Favoriten · ≤ 30 Min.“ mit den Wörtern des Stils, 2026-11-17, siehe „Ergebnis“.
 - [x] Editor der Sage wie im Entwurf (Reiter „Grundlagen · Zutaten · Ritual“), 2026-11-17, siehe „Ergebnis“.
 - [x] Tagebuch: „‹“ im Kopf zurück zu Heute in allen Stilen (Immersiv und Ruhig), 2026-11-17, siehe „Ergebnis“.
 - [x] Tablet ansehen (zweispaltiges Layout mit Farben, Schrift und Formen des Stils), 2026-11-17, siehe „Ergebnis“.
@@ -687,7 +688,7 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
   - **Tagebuch:** Die Entwürfe haben im Kopf ein „‹“ zurück zu Heute (am selben Tag nachgezogen, siehe unten). Die
     Entwürfe ordnen Frühstück, Mittag, Abend, Snack; die App Frühstück, Mittag, Snack, Abend.
   - **Rezeptfilter:** Die Entwürfe haben drei Filter mit Wörtern je Stil (Sage „♦“ und „≤ 30′“, Bayrisch „Olle“,
-    „♥ Leibgerichte“, „G’schwind“); die App hat überall „Alle · Favoriten · Oft gekocht · Vegetarisch“.
+    „♥ Leibgerichte“, „G’schwind“); am selben Tag nachgezogen, siehe unten.
   - **Editor der Sage:** Entwurf „Neu niederschreiben“ mit Reitern „Grundlagen · Zutaten · Ritual“ (am selben Tag
     nachgezogen, siehe unten).
   - **Einstellungen:** In den Entwürfen steht der Abgleich unten, in der App oben (dazu die Stilwahl, die die
@@ -719,3 +720,17 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
   neu. Die Reiter liest TalkBack nur einmal mit dem normalen Namen („Zutaten“, „Zubereitung“).
 - Im Emulator mit den Maßen des Handys nachgeprüft: alle drei Reiter, „Ins Grimoire schreiben“ über der Leiste und
   direkt über der Tastatur, ✓ und ! unter „Was die Schrift verrät“, ✕ fragt nach dem Verwerfen.
+
+**2026-11-17 – Rezeptfilter je Stil** (Branch `claude/rezeptfilter-stil`, Entscheidung des Nutzers aus dem Canvas-Abgleich):
+- Neuer Filter „≤ 30 Min.“ (`ListeFilter.schnell`): Vorbereitung und Kochzeit zusammen höchstens 30 Minuten, Rezepte
+  ohne Zeitangabe fallen heraus. Er steht in allen Stilen als dritter Chip nach „Alle“ und „Favoriten“, wie in den
+  Entwürfen (auch in Milchglas, damit der Filter überall gleich funktioniert).
+- Die ersten drei Chips tragen in Immersiv die Wörter des Entwurfs: Sage „Alle · ♦ · ≤ 30′“, Anime „Schnell“,
+  Bayrisch „Olle · ♥ Leibgerichte · G’schwind“, Grauen „♦ Favoriten“, Kreuzer „ALLE · ★ FAVORITEN · ≤ 30 MIN.“, Edo
+  wie normal. TalkBack hört immer „Alle“, „Favoriten“, „Höchstens 30 Minuten“. Ruhig bleibt bei den normalen Wörtern.
+- Bewusst nicht wie im Entwurf: Die übrigen Filter der App (Oft gekocht, Ernährung, Mahlzeit, Tags, Archiv,
+  Sortierung) bleiben dahinter in der Reihe; die Entwürfe zeigen nur die drei.
+- Tests: `ListeFilterTest.schnell`, `RezepteStileTest.…Filter` für alle sechs Stile (Wörter, Beschreibung, Wirkung).
+  Zehn Referenzbilder der Rezeptliste neu (alle Stile, Milchglas hell/dunkel, Handy/Tablet).
+- Im Emulator mit den Maßen des Handys nachgeprüft (Bayrisch): „Olle · ♥ Leibgerichte · G’schwind“, „G’schwind“
+  lässt von acht Herzen die vier bis 30 Minuten hängen.

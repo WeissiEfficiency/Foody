@@ -10,9 +10,9 @@ class ListeFilterTest {
     private fun karte(
         id: String, name: String = id, kcal: Int? = null, eiweiss: Int? = null, favorit: Boolean = false, gekocht: Int = 0,
         diaeten: Set<Diet> = emptySet(), tags: List<String> = emptyList(), zutaten: List<String> = emptyList(),
-        archiviert: Boolean = false, angelegt: Long = 0,
+        archiviert: Boolean = false, angelegt: Long = 0, zeit: Int? = null,
     ) = RezeptKarte(
-        id = id, name = name, bild = null, kcalJePortion = kcal, eiweissJePortion = eiweiss, zeitMinuten = null,
+        id = id, name = name, bild = null, kcalJePortion = kcal, eiweissJePortion = eiweiss, zeitMinuten = zeit,
         favorit = favorit, gekocht = gekocht, diaeten = diaeten, einordnung = Einordnung(emptySet(), emptySet(), true, true),
         tags = tags, zutatNamen = zutaten, archiviert = archiviert, angelegt = angelegt,
     )
@@ -23,6 +23,14 @@ class ListeFilterTest {
     fun sucheInZutaten() {
         val k = listOf(karte("a", "Pfanne", zutaten = listOf("Reis")), karte("b", "Salat", tags = listOf("Reisgericht")), karte("c", "Suppe"))
         assertEquals(listOf("a", "b"), ids(k, ListeFilter(suche = "REIS")))
+    }
+
+    /** „≤ 30 Min.“ wie in den Entwürfen: Gesamtzeit höchstens 30 Minuten; ohne Zeitangabe nicht dabei. */
+    @Test
+    fun schnell() {
+        val k = listOf(karte("a", zeit = 25), karte("b", zeit = 30), karte("c", zeit = 31), karte("d"))
+        assertEquals(listOf("a", "b"), ids(k, ListeFilter(schnell = true)))
+        assertEquals(false, ListeFilter(schnell = true).ohneFilter)
     }
 
     @Test
