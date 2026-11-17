@@ -34,7 +34,7 @@ import de.foody.feature.rezepte.liste.stil.RezepteSzene
 
 /**
  * Rezeptliste: Kopf mit Menü, Suche, Filterchips, Bildraster. [ausgewaehlt] hebt auf dem Tablet das rechts offene
- * Rezept hervor. Die Düstere Sage zeigt in Immersiv das Grimoire (`stil/RezepteSage.kt`),
+ * Rezept hervor; [nebenDetail] heißt, rechts daneben steht das Detail (Tablet), ein Tipp in einer Szene öffnet dann. Die Düstere Sage zeigt in Immersiv das Grimoire (`stil/RezepteSage.kt`),
  * die Stile R–V ihre Szenen (`stil/RezepteStile.kt`).
  */
 @Composable
@@ -43,6 +43,7 @@ fun RezeptListeRoute(
     onNeu: () -> Unit,
     onImport: () -> Unit,
     ausgewaehlt: String? = null,
+    nebenDetail: Boolean = false,
     vm: RezeptListeViewModel = hiltViewModel(),
 ) {
     val z by vm.zustand.collectAsStateWithLifecycle()
@@ -53,7 +54,7 @@ fun RezeptListeRoute(
     }
     // Stile R–V in Immersiv: ihre Szene mit derselben Liste, denselben Filtern und Zielen
     RezepteSzene.aktuell()?.let { stil ->
-        RezepteStil(stil, z, vm::filter, vm::zuruecksetzen, onOeffnen, onNeu, onImport)
+        RezepteStil(stil, z, vm::filter, vm::zuruecksetzen, onOeffnen, onNeu, onImport, offen = ausgewaehlt, nebenDetail = nebenDetail)
         return
     }
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {

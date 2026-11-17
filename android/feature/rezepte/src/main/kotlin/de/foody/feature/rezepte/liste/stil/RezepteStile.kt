@@ -75,7 +75,11 @@ internal object RezepteSzene {
 /** So viele Rezepte zeigt eine Seite der Wahl. */
 internal const val SEITE = 6
 
-/** Die Szene des Stils [stil] (R–V) mit derselben Liste, denselben Filtern und Zielen wie die normale Liste. */
+/**
+ * Die Szene des Stils [stil] (R–V) mit derselben Liste, denselben Filtern und Zielen wie die normale Liste. Steht das
+ * Detail daneben ([nebenDetail], Tablet), öffnet schon die Wahl das Rezept rechts; sonst blieb dort „Wähle ein
+ * Rezept“ stehen, bis man unter der Wahl „Öffnen“ fand (Gerätetest Tablet 2026-11-17). [offen] ist das rechts offene.
+ */
 @Composable
 internal fun RezepteStil(
     stil: FoodyStil,
@@ -85,6 +89,8 @@ internal fun RezepteStil(
     onOeffnen: (String) -> Unit,
     onNeu: () -> Unit,
     onImport: () -> Unit,
+    offen: String? = null,
+    nebenDetail: Boolean = false,
 ) {
     // Seite und Wahl beginnen bei jeder neuen Suche oder jedem Filter wieder vorn
     var seite by rememberSaveable(z.filter) { mutableIntStateOf(0) }
@@ -93,7 +99,7 @@ internal fun RezepteStil(
     val seiten = (n + SEITE - 1) / SEITE
     val s = if (seiten == 0) 0 else seite.coerceIn(0, seiten - 1)
     val aufSeite = z.treffer.drop(s * SEITE).take(SEITE)
-    val r = aufSeite.firstOrNull { it.id == gewaehlt } ?: aufSeite.firstOrNull()
+    val r = aufSeite.firstOrNull { it.id == gewaehlt } ?: aufSeite.firstOrNull { it.id == offen } ?: aufSeite.firstOrNull()
     val neu = @Composable { NeuMenue(stil, onNeu, onImport) }
     // Antippen wählt nur; die Karte mit „Öffnen“ liegt auf dem Handy oft unter der schwebenden Leiste. Nach der Wahl
     // rollt sie deshalb samt Platz für die Leiste ins Bild (Gerätetest 2026-11-16).
@@ -139,7 +145,10 @@ internal fun RezepteStil(
                 }
                 return@Column
             }
-            val waehlen = { id: String -> gewaehlt = id }
+            val waehlen = { id: String ->
+                gewaehlt = id
+                if (nebenDetail) onOeffnen(id)
+            }
             Box(rand) {
                 when (stil) {
                     FoodyStil.ANIME -> AnimeRaster(aufSeite, onOeffnen)
