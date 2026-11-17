@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -179,6 +180,48 @@ class RezepteStileTest {
 
     @Config(qualifiers = "w360dp-h640dp")
     @Test fun kreuzerKarteInsBild() = karteInsBild(FoodyStil.KREUZER)
+
+    /**
+     * Die ersten Filter wie in den Entwürfen mit den Wörtern des Stils; TalkBack hört „Alle“, „Favoriten“, „Höchstens
+     * 30 Minuten“. Der schnelle Filter lässt nur Rezepte bis 30 Minuten stehen.
+     */
+    private fun filterWoerter(stil: FoodyStil, alle: String, favoriten: String, schnell: String) {
+        rezepte(2)
+        runBlocking {
+            db.rezeptDao().upsert(
+                RezeptEntity(
+                    id = "r9", name = "Schmorbraten", defaultServings = 4, prepMinutes = 30, cookMinutes = 120, imageUri = null,
+                    notes = null, tags = "", archivedAt = null, createdAt = 1, updatedAt = 1,
+                ),
+            )
+        }
+        zeigen(stil)
+        // Die Sage zeigt ein Rezept nach dem anderen („1 / 4“), die Szenen R–V alle in der Wahl
+        val sage = stil == FoodyStil.SAGE
+        if (sage) compose.warteAufText("1 / 4") else warteAufBeschreibung("Schmorbraten")
+        compose.onNode(hasText(alle) and hasContentDescription("Alle") and isSelected()).assertExists()
+        compose.onNode(hasText(favoriten) and hasContentDescription("Favoriten")).assertExists()
+        compose.onNode(hasText(schnell) and hasContentDescription("Höchstens 30 Minuten")).performClick()
+        compose.onNode(hasContentDescription("Höchstens 30 Minuten") and isSelected()).assertExists()
+        if (sage) {
+            compose.warteAufText("1 / 3")
+        } else {
+            compose.waitUntil(5_000) { compose.onAllNodesWithContentDescription("Schmorbraten", substring = true).fetchSemanticsNodes().isEmpty() }
+            warteAufBeschreibung("Shakshuka")
+        }
+    }
+
+    @Test fun sageFilter() = filterWoerter(FoodyStil.SAGE, "Alle", "♦", "≤ 30′")
+
+    @Test fun animeFilter() = filterWoerter(FoodyStil.ANIME, "Alle", "Favoriten", "Schnell")
+
+    @Test fun edoFilter() = filterWoerter(FoodyStil.EDO, "Alle", "Favoriten", "≤ 30 Min.")
+
+    @Test fun bayrischFilter() = filterWoerter(FoodyStil.BAYRISCH, "Olle", "♥ Leibgerichte", "G’schwind")
+
+    @Test fun grauenFilter() = filterWoerter(FoodyStil.GRAUEN, "Alle", "♦ Favoriten", "≤ 30 Min.")
+
+    @Test fun kreuzerFilter() = filterWoerter(FoodyStil.KREUZER, "ALLE", "★ FAVORITEN", "≤ 30 MIN.")
 
     @Test fun anime() = pruefen(FoodyStil.ANIME)
 

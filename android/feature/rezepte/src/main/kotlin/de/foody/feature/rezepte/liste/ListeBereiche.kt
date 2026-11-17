@@ -61,15 +61,44 @@ internal fun Suche(text: String, onText: (String) -> Unit) {
 }
 
 /**
- * Eine waagerecht scrollende Reihe: „Alle“ (kein Filter), Favoriten, Oft gekocht, Ernährung, Mahlzeit, Tags, Archiv,
- * zuletzt die Sortierung.
+ * Eine waagerecht scrollende Reihe: „Alle“ (kein Filter), Favoriten, „≤ 30 Min.“, Oft gekocht, Ernährung, Mahlzeit,
+ * Tags, Archiv, zuletzt die Sortierung. Die ersten drei wie in den Entwürfen mit den Wörtern des Stils (Immersiv), etwa
+ * Bayrisch „Olle · ♥ Leibgerichte · G’schwind“; TalkBack hört immer die normalen Begriffe.
  */
 @Composable
 internal fun FilterChips(f: ListeFilter, tags: List<String>, aendern: ((ListeFilter) -> ListeFilter) -> Unit) {
     var sortierMenu by remember { mutableStateOf(false) }
     LazyRow(contentPadding = PaddingValues(horizontal = FoodyAbstaende.s4), horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-        item { FoodyChip("Alle", f.ohneFilter, { aendern { ListeFilter(suche = it.suche, sortierung = it.sortierung) } }) }
-        item { FoodyChip("Favoriten", f.favoriten, { aendern { it.copy(favoriten = !it.favoriten) } }) }
+        item {
+            FoodyChip(
+                stilText("Alle", bayrisch = "Olle", kreuzer = "ALLE"),
+                f.ohneFilter,
+                { aendern { ListeFilter(suche = it.suche, sortierung = it.sortierung) } },
+                beschreibung = "Alle",
+            )
+        }
+        item {
+            FoodyChip(
+                stilText("Favoriten", sage = "♦", bayrisch = "♥ Leibgerichte", grauen = "♦ Favoriten", kreuzer = "★ FAVORITEN"),
+                f.favoriten,
+                { aendern { it.copy(favoriten = !it.favoriten) } },
+                beschreibung = "Favoriten",
+            )
+        }
+        item {
+            FoodyChip(
+                stilText(
+                    "≤ $SCHNELL_MINUTEN Min.",
+                    sage = "≤ $SCHNELL_MINUTEN′",
+                    anime = "Schnell",
+                    bayrisch = "G’schwind",
+                    kreuzer = "≤ $SCHNELL_MINUTEN MIN.",
+                ),
+                f.schnell,
+                { aendern { it.copy(schnell = !it.schnell) } },
+                beschreibung = "Höchstens $SCHNELL_MINUTEN Minuten",
+            )
+        }
         item { FoodyChip("Oft gekocht", f.oftGekocht, { aendern { it.copy(oftGekocht = !it.oftGekocht) } }) }
         items(DIAETEN) { (d, text) ->
             FoodyChip(text, d in f.diaeten, { aendern { it.copy(diaeten = if (d in it.diaeten) it.diaeten - d else it.diaeten + d) } })

@@ -16,6 +16,8 @@ enum class Sortierung(val text: String) {
 data class ListeFilter(
     val suche: String = "",
     val favoriten: Boolean = false,
+    /** Nur schnelle Rezepte: Gesamtzeit höchstens [SCHNELL_MINUTEN] (wie „≤ 30 Min.“ in den Entwürfen). */
+    val schnell: Boolean = false,
     val oftGekocht: Boolean = false,
     val diaeten: Set<Diet> = emptySet(),
     val mahlzeit: Mahlzeit? = null,
@@ -27,11 +29,14 @@ data class ListeFilter(
     val ohneFilter: Boolean get() = this == ListeFilter(suche = suche, sortierung = sortierung)
 }
 
+/** Grenze für „≤ 30 Min.“: Vorbereitung und Kochzeit zusammen. */
+const val SCHNELL_MINUTEN = 30
+
 private val nachName = compareBy<RezeptKarte, String>(String.CASE_INSENSITIVE_ORDER) { it.name }
 
 /**
  * Suche als Teilstring ohne Groß/klein in Name, Tags und Zutaten; ohne Archiv-Chip nur nicht archivierte, mit ihm nur
- * archivierte; „Oft gekocht“ = mindestens einmal gekocht. Gleichstand nach Name; kcal aufsteigend, ohne kcal zuletzt.
+ * archivierte; „Oft gekocht“ = mindestens einmal gekocht; „≤ 30 Min.“ = Gesamtzeit bekannt und höchstens 30 Minuten. Gleichstand nach Name; kcal aufsteigend, ohne kcal zuletzt.
  */
 fun filtern(karten: List<RezeptKarte>, f: ListeFilter): List<RezeptKarte> {
     val s = f.suche.trim()
@@ -39,6 +44,7 @@ fun filtern(karten: List<RezeptKarte>, f: ListeFilter): List<RezeptKarte> {
         k.archiviert == f.archiv &&
             (s.isEmpty() || k.name.contains(s, true) || k.tags.any { it.contains(s, true) } || k.zutatNamen.any { it.contains(s, true) }) &&
             (!f.favoriten || k.favorit) &&
+            (!f.schnell || (k.zeitMinuten ?: Int.MAX_VALUE) <= SCHNELL_MINUTEN) &&
             (!f.oftGekocht || k.gekocht > 0) &&
             k.diaeten.containsAll(f.diaeten) &&
             (f.mahlzeit == null || k.einordnung.passtZu(f.mahlzeit)) &&
