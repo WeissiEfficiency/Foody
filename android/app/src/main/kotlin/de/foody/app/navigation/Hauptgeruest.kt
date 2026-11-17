@@ -34,6 +34,7 @@ import de.foody.core.designsystem.komponenten.FoodyNavigationsRail
 import de.foody.core.designsystem.komponenten.FoodyNavigationsleiste
 import de.foody.core.designsystem.komponenten.LEISTE_REGELHOEHE
 import de.foody.core.designsystem.komponenten.LocalLeistenZuwachs
+import de.foody.core.designsystem.komponenten.LocalMitLeiste
 import de.foody.core.designsystem.komponenten.NavZiel
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyBreiten
@@ -102,7 +103,7 @@ fun Hauptgeruest(
                     FoodyNavigationsRail(ziele, aktiv, waehlen, Modifier.wrapContentHeight().testTag(Hauptgeruest.RAIL))
                 }
             }
-            CompositionLocalProvider(LocalLeistenZuwachs provides zuwachs) {
+            CompositionLocalProvider(LocalLeistenZuwachs provides zuwachs, LocalMitLeiste provides mitLeiste) {
                 FoodyNavHost(navController, bildschirme, Modifier.weight(1f))
             }
         }

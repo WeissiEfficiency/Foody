@@ -80,7 +80,7 @@ fun RezepteBereich(
                     RezeptListeRoute(
                         onOeffnen = { neu -> wechseln { ausgewaehlt = neu; rechts = Rechts.DETAIL } },
                         onNeu = { wechseln { auftrag++; rechts = Rechts.NEU } },
-                        onImport = { importOffen = true }, ausgewaehlt = ausgewaehlt, vm = listeVm,
+                        onImport = { importOffen = true }, ausgewaehlt = ausgewaehlt, nebenDetail = true, vm = listeVm,
                     )
                 }
                 Box(Modifier.weight(1f).fillMaxHeight()) {

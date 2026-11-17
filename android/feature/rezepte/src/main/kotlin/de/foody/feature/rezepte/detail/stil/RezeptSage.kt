@@ -60,6 +60,7 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LEISTE_REGELHOEHE
+import de.foody.core.designsystem.komponenten.platzFuerLeiste
 import de.foody.core.designsystem.komponenten.portionenText
 import de.foody.core.designsystem.komponenten.roemisch
 import de.foody.core.designsystem.komponenten.ueberLeiste
@@ -332,7 +333,7 @@ private fun BoxScope.Knopfleiste(z: DetailZustand.Da, a: DetailAktionen) {
         Modifier.align(Alignment.BottomCenter).fillMaxWidth()
             .background(Brush.verticalGradient(listOf(Color.Transparent, f.grund.copy(alpha = 0.92f), f.grund)))
             .safeDrawingPadding()
-            .padding(top = 16.dp, bottom = ueberLeiste(LEISTE_REGELHOEHE)),
+            .padding(top = 16.dp, bottom = platzFuerLeiste()),
         contentAlignment = Alignment.Center,
     ) {
         Row(

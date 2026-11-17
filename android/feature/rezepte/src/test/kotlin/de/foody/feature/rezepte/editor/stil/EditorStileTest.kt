@@ -1,6 +1,7 @@
 package de.foody.feature.rezepte.editor.stil
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasContentDescription
@@ -21,6 +22,7 @@ import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LEISTE_REGELHOEHE
+import de.foody.core.designsystem.komponenten.LocalMitLeiste
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.testing.ViewModelHalter
@@ -76,13 +78,15 @@ class EditorStileTest {
         db.close()
     }
 
-    private fun zeigen(stil: FoodyStil, id: String?, schrift200: Boolean = false) {
+    private fun zeigen(stil: FoodyStil, id: String?, schrift200: Boolean = false, mitLeiste: Boolean = true) {
         val ablage = FotoAblage(RuntimeEnvironment.getApplication())
         val vm = halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage, EmptyCoroutineContext) { 1_000L }, db, ablage))
         compose.setContent {
             FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV) {
                 val inhalt = @Composable { EditorRoute(id, onFertig = { fertig += it }, onZurueck = { zurueck++ }, vm = vm) }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                CompositionLocalProvider(LocalMitLeiste provides mitLeiste) {
+                    if (schrift200) MitSchrift200(inhalt) else inhalt()
+                }
             }
         }
         val titel = if (id == null) "Neues Rezept" else "Bearbeiten"
@@ -120,6 +124,15 @@ class EditorStileTest {
         val ende = compose.onRoot().getBoundsInRoot().bottom - LEISTE_REGELHOEHE
         val knopf = compose.onNodeWithContentDescription("Speichern").getBoundsInRoot()
         assertTrue(knopf.bottom <= ende, "$stil: Speichern endet bei ${knopf.bottom}, die Navigation beginnt bei $ende")
+    }
+
+    /** Ohne schwebende Navigation (Tablet) steht die Leiste unten am Rand, nicht 88 dp darüber. */
+    @Test
+    fun ohneLeisteUntenAmRand() {
+        zeigen(FoodyStil.EDO, null, mitLeiste = false)
+        val ende = compose.onRoot().getBoundsInRoot().bottom
+        val knopf = compose.onNodeWithContentDescription("Speichern").getBoundsInRoot()
+        assertTrue(ende - knopf.bottom < LEISTE_REGELHOEHE, "Speichern endet bei ${knopf.bottom}, der Rand liegt bei $ende")
     }
 
     private fun gross(stil: FoodyStil) {

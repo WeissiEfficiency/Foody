@@ -193,7 +193,8 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Heute-Szenen: Ende über der Leiste auch bei Drei-Tasten-Navigation.
 - [x] Edo: kurze Wörter brechen nicht mehr ohne Not um („Al-le“, „Vari-ante“).
 - [ ] Ein genauer Abgleich Bild für Bild mit dem Canvas.
-- [ ] Tablet ansehen (zweispaltiges Layout mit Farben, Schrift und Formen des Stils).
+- [x] Tablet ansehen (zweispaltiges Layout mit Farben, Schrift und Formen des Stils), 2026-11-17, siehe „Ergebnis“.
+- [x] Tablet: Rezeptliste der Szenen R–V öffnet das Rezept rechts; Knopfleisten von Editor und Rezept unten am Rand.
 - [ ] Widgets auf einem zweiten Launcher (bisher nur ColorOS).
 - Bewusst nicht gemacht (Funktion fehlt in der App): „In die Woche“ auf Rezeptkarte und Rezept, Uhrzeiten in Heute und
   Tagebuch, die Reiter „Selbst · Link · Foto · Text“ im Editor, Timer-Bogen (V), „Jetzt abgleichen“/„Trennen“ auf der
@@ -636,3 +637,21 @@ Drei-Tasten-Navigation, die Systemleiste ist 48 dp hoch):
   Silbentrennung bleibt (`KurzeWoerterTest` für alle Stile, vorher Edo und Edo Immersiv rot). Acht Referenzbilder neu
   (Editor R–V, Edo Ruhig, Edo Zutaten; die alten Edo-Bilder enthielten „Fe-ta“ und „Zu-cchini“), Milchglas unverändert.
   Auf dem Handy nachgeprüft: Edo Ruhig (Filter, Einstellungen), Edo Immersiv (Ende von Heute, Editor).
+
+**2026-11-17 – Gerätetest Tablet** (Lenovo TB336FU per WLAN-Debugging, quer 2560 × 1600 px, etwa 1170 × 731 dp,
+Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`):
+- Geprüft in allen sechs Stilen, Immersiv und Ruhig: Heute, Tagebuch, Rezepte mit Rezept, Woche, Einkauf,
+  Einstellungen; in Immersiv dazu Planen, frühere Listen, Kochmodus, Editor, Eintragen und Zutaten. Navigationsschiene
+  links, zweispaltig ab 840 dp. Die Szenen stehen in Inhaltsbreite mittig, Sheets und Dialoge passen; kein Absturz.
+  Ruhig ist die normale zweispaltige Ansicht in Farben und Schrift des Stils.
+- Fehler: In den Rezeptlisten der Szenen R–V wählte ein Tipp nur das Rezept in der Szene; rechts blieb „Wähle ein
+  Rezept“, erst „Öffnen“ zeigte es. Die Sage (Q) öffnete schon direkt.
+- Fehler: Die festen Knopfleisten von Editor und Rezept hielten unten 88 dp für die schwebende Navigation frei, die es
+  auf dem Tablet nicht gibt (dort ist die Schiene); die Leiste stand mitten über dem Rand.
+- Behoben: `LocalMitLeiste` in `FoodyNavigation.kt` (das Hauptgerüst setzt es, ohne Leiste `false`) und
+  `platzFuerLeiste()` für Editor (`EditorStile.kt`) und Rezept (`RezeptStile.kt`, `RezeptSage.kt`)
+  (`EditorStileTest.ohneLeisteUntenAmRand`); die Rezeptliste öffnet neben dem Detail beim Wählen
+  (`nebenDetail`, `RezepteBereichTest` mit 1280 × 800 dp für Edo, Bayrisch, Grauen und Kreuzer, vorher alle fünf
+  Tests rot). Auf dem Tablet nachgeprüft (Edo: Rezept rechts, Leisten unten).
+- Hinweis: Der halbe Kreis mit Stift am rechten Rand ist ein Fenster des Systems (Lenovo, `FloatingCollapseView`),
+  nicht von Foody.

@@ -52,6 +52,19 @@ val LocalLeistenZuwachs = compositionLocalOf { 0.dp }
 @Composable
 fun ueberLeiste(abstand: Dp): Dp = abstand + LocalLeistenZuwachs.current
 
+/**
+ * Ob unten die schwebende [FoodyNavigationsleiste] liegt. Das Hauptgerüst setzt es; ohne Leiste (Tablet mit Schiene,
+ * Kochmodus) ist es `false`. Ohne Hauptgerüst (Tests einzelner Bildschirme) gilt das Handy.
+ */
+val LocalMitLeiste = compositionLocalOf { true }
+
+/**
+ * Platz unter einer festen Knopfleiste für die schwebende Navigation: ihre Höhe samt Zuwachs, ohne Leiste nichts.
+ * Auf dem Tablet stand die Leiste von Editor und Rezept sonst 88 dp über dem Rand (Gerätetest Tablet 2026-11-17).
+ */
+@Composable
+fun platzFuerLeiste(): Dp = if (LocalMitLeiste.current) ueberLeiste(LEISTE_REGELHOEHE) else 0.dp
+
 /** Ein Ziel der Hauptnavigation; [beschreibung] liest TalkBack, wenn [text] ein Stilwort ist (Bayrisch „Heid“ für Heute). */
 data class NavZiel(val text: String, val symbol: ImageVector, val beschreibung: String? = null)
 

@@ -57,11 +57,10 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.komponenten.LEISTE_REGELHOEHE
 import de.foody.core.designsystem.komponenten.anzeigename
+import de.foody.core.designsystem.komponenten.platzFuerLeiste
 import de.foody.core.designsystem.komponenten.portionenText
 import de.foody.core.designsystem.komponenten.roemisch
-import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilAktion
 import de.foody.core.designsystem.stil.StilVariante
@@ -402,7 +401,7 @@ private fun BoxScope.Knopfleiste(art: RezeptArt, z: DetailZustand.Da, a: DetailA
             .onSizeChanged { onHoehe(with(d) { it.height.toDp() }) }
             .background(Brush.verticalGradient(listOf(Color.Transparent, f.grund.copy(alpha = 0.92f), f.grund)))
             .safeDrawingPadding()
-            .padding(top = 16.dp, bottom = ueberLeiste(LEISTE_REGELHOEHE)),
+            .padding(top = 16.dp, bottom = platzFuerLeiste()),
         contentAlignment = Alignment.Center,
     ) {
         Row(

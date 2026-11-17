@@ -48,8 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.komponenten.LEISTE_REGELHOEHE
-import de.foody.core.designsystem.komponenten.ueberLeiste
+import de.foody.core.designsystem.komponenten.platzFuerLeiste
 import de.foody.core.designsystem.komponenten.ueberschrift
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilAbschnitt
@@ -135,7 +134,7 @@ internal fun EditorStil(
     val f = FoodyTheme.farben
     val dichte = LocalDensity.current
     var leiste by remember { mutableIntStateOf(0) }
-    val ueberNavigation = ueberLeiste(LEISTE_REGELHOEHE)
+    val ueberNavigation = platzFuerLeiste()
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).safeDrawingPadding().imePadding()
