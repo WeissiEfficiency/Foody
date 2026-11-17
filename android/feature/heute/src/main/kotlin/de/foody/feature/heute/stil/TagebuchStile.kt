@@ -225,6 +225,7 @@ internal fun TagebuchStil(
     onAendern: (TagebuchEintragEntity) -> Unit,
     onLoeschen: (TagebuchEintragEntity) -> Unit,
     onEintragen: (Mahlzeit?) -> Unit,
+    onZurueck: (() -> Unit)? = null,
 ) {
     val art = tagebuchArt(stil)
     var offenId by rememberSaveable(datum) { mutableStateOf<String?>(null) }
@@ -235,7 +236,7 @@ internal fun TagebuchStil(
                     .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = ueberLeiste(168.dp)).testTag(TAGEBUCH_INHALT),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Kopf(stil, art)
+                Kopf(stil, art, onZurueck)
                 Tageswahl(art, datum, heute, onDatum, onWahl)
                 val z = zustand?.takeIf { it.datum == datum } ?: return@Column
                 if (stil == FoodyStil.KREUZER) Balken(art, z) else Ring(art, z)
@@ -265,7 +266,18 @@ internal fun TagebuchStil(
 }
 
 @Composable
-private fun Kopf(stil: FoodyStil, art: TagebuchArt) {
+private fun Kopf(stil: FoodyStil, art: TagebuchArt, onZurueck: (() -> Unit)?) {
+    // Wie in den Entwürfen: „‹“ links neben Überzeile und Titel führt zurück zu Heute
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (onZurueck != null) {
+            StilAktion("‹", onZurueck, Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp), beschreibung = "Zurück")
+        }
+        KopfText(stil, art)
+    }
+}
+
+@Composable
+private fun KopfText(stil: FoodyStil, art: TagebuchArt) {
     val f = FoodyTheme.farben
     val d = LocalDensity.current
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {

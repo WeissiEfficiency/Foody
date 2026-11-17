@@ -83,7 +83,7 @@ class HeuteScreenshotTest {
     fun sageChronik() {
         captureRoboImage("src/test/screenshots/sage_tagebuch_handy.png", roborazziOptions = vergleich) {
             FoodyTheme(stil = FoodyStil.SAGE, unschaerfe = false) {
-                FoodyHintergrund { TagebuchSage(BEISPIEL_TAG, BEISPIEL_TAG, beispielTag(), {}, {}, {}, {}, {}) }
+                FoodyHintergrund { TagebuchSage(BEISPIEL_TAG, BEISPIEL_TAG, beispielTag(), {}, {}, {}, {}, {}, onZurueck = {}) }
             }
         }
     }
@@ -95,7 +95,7 @@ class HeuteScreenshotTest {
         for (stil in listOf(FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)) {
             captureRoboImage("src/test/screenshots/stil_${stil.name.lowercase()}_tagebuch_handy.png", roborazziOptions = vergleich) {
                 FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV, unschaerfe = false) {
-                    FoodyHintergrund { TagebuchStil(stil, BEISPIEL_TAG, BEISPIEL_TAG, beispielTag(), {}, {}, {}, {}, {}) }
+                    FoodyHintergrund { TagebuchStil(stil, BEISPIEL_TAG, BEISPIEL_TAG, beispielTag(), {}, {}, {}, {}, {}, onZurueck = {}) }
                 }
             }
         }

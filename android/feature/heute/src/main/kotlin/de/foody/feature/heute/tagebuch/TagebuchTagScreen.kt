@@ -100,7 +100,8 @@ data class BlattAuftrag(
 }
 
 /**
- * „Alle Einträge“ eines Tages wie im Entwurf: Kopf mit Vor/Zurück und Datumsauswahl, Tagesleiste ([onDatum] wechselt
+ * „Alle Einträge“ eines Tages wie im Entwurf: Kopf mit Vor/Zurück und Datumsauswahl (in den Stilen wie in deren
+ * Entwürfen dazu „‹“ zurück zu Heute über [onZurueck]; Milchglas bleibt ohne), Tagesleiste ([onDatum] wechselt
  * das Ziel), Ring mit Makros, je Mahlzeit eine Karte mit Ändern und Löschen, „+ Eintragen“ unten rechts („Rückgängig“ stellt den Eintrag mit derselben ID wieder her), Eintragen-Blatt.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -108,6 +109,7 @@ data class BlattAuftrag(
 fun TagebuchTagRoute(
     datum: LocalDate,
     onDatum: (LocalDate) -> Unit,
+    onZurueck: (() -> Unit)? = null,
     vm: TagebuchTagViewModel = hiltViewModel(),
     eintragenVm: EintragenViewModel? = null,
 ) {
@@ -130,20 +132,21 @@ fun TagebuchTagRoute(
 
     Box(Modifier.fillMaxSize()) {
         val szene = TagebuchSzene.aktuell()
+        val zurueck = onZurueck.takeIf { FoodyTheme.stil.stil != FoodyStil.MILCHGLAS }
         if (FoodyTheme.stil.immersiv(FoodyStil.SAGE)) {
             TagebuchSage(
                 datum, LocalDate.now(), zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeitenId = it.id },
-                onLoeschen = loeschen, onEintragen = { blatt = BlattAuftrag(it, datum) },
+                onLoeschen = loeschen, onEintragen = { blatt = BlattAuftrag(it, datum) }, onZurueck = zurueck,
             )
         } else if (szene != null) {
             TagebuchStil(
                 szene, datum, LocalDate.now(), zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeitenId = it.id },
-                onLoeschen = loeschen, onEintragen = { blatt = BlattAuftrag(it, datum) },
+                onLoeschen = loeschen, onEintragen = { blatt = BlattAuftrag(it, datum) }, onZurueck = zurueck,
             )
         } else {
             TagebuchTagInhalt(
                 datum, zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeitenId = it.id }, onLoeschen = loeschen,
-                onEintragen = { blatt = BlattAuftrag(it, datum) },
+                onEintragen = { blatt = BlattAuftrag(it, datum) }, onZurueck = zurueck,
             )
             Fab { blatt = BlattAuftrag(null, datum) }
         }
@@ -179,13 +182,14 @@ fun TagebuchTagInhalt(
     onAendern: (TagebuchEintragEntity) -> Unit,
     onLoeschen: (TagebuchEintragEntity) -> Unit,
     onEintragen: (Mahlzeit?) -> Unit,
+    onZurueck: (() -> Unit)? = null,
 ) {
     Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         Column(
             Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().safeDrawingPadding()
                 .padding(start = FoodyAbstaende.s4, end = FoodyAbstaende.s4, top = FoodyAbstaende.s3, bottom = ueberLeiste(168.dp)).testTag(TAGEBUCH_INHALT),
             verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s4),
-        ) { TagInhalt(datum, zustand, onDatum, onWahl, onAendern, onLoeschen, onEintragen) }
+        ) { TagInhalt(datum, zustand, onDatum, onWahl, onAendern, onLoeschen, onEintragen, onZurueck) }
     }
 }
 
@@ -198,8 +202,9 @@ private fun TagInhalt(
     onAendern: (TagebuchEintragEntity) -> Unit,
     onLoeschen: (TagebuchEintragEntity) -> Unit,
     onEintragen: (Mahlzeit?) -> Unit,
+    onZurueck: (() -> Unit)?,
 ) {
-    TagKopf(datum, onDatum, onWahl)
+    TagKopf(datum, onDatum, onWahl, onZurueck)
     val montag = datum.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     Tagesleiste(
         (0L..6L).map { i -> montag.plusDays(i) }.map { d ->
@@ -215,10 +220,11 @@ private fun TagInhalt(
 
 /** Kopf wie im Entwurf: Datum als Überzeile, Titel „Tagebuch“, rechts runde Knöpfe für Vortag, Kalender und Folgetag. */
 @Composable
-private fun TagKopf(datum: LocalDate, onDatum: (LocalDate) -> Unit, onWahl: () -> Unit) {
+private fun TagKopf(datum: LocalDate, onDatum: (LocalDate) -> Unit, onWahl: () -> Unit, onZurueck: (() -> Unit)?) {
     Seitenkopf(
         stilText("Tagebuch", anime = "Tagebuch!", bayrisch = "Tagebiachl", grauen = "Logbuch", kreuzer = "Bordbuch"),
         ueberzeile = TAG_LANG.format(datum),
+        onZurueck = onZurueck,
         beschreibung = "Tagebuch",
     ) {
         RunderKnopf(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, "Vorheriger Tag", { onDatum(datum.minusDays(1)) })

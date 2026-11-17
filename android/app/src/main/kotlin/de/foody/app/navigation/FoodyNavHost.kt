@@ -65,7 +65,7 @@ class Bildschirme(
                 // Blättern ersetzt den Tag, statt ihn auf den Stapel zu legen: „Zurück“ führt zu „Heute“
                 TagebuchTagRoute(datum, onDatum = { neu ->
                     nav.navigate(TagebuchTag(neu.toString())) { popUpTo<TagebuchTag> { inclusive = true } }
-                })
+                }, onZurueck = { nav.popBackStack() })
             },
             einstellungen = { nav ->
                 EinstellungenRoute(
