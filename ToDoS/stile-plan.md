@@ -199,6 +199,9 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Reihenfolge in den Einstellungen wie im Entwurf (Abgleich unten), 2026-11-17, siehe „Ergebnis“.
 - [x] Planen als Seite mit Reitern „Selbst wählen · Vorschlagen lassen“ (Q–V), 2026-11-17, siehe „Ergebnis“.
 - [x] Listen als Seite mit Reitern „Neue Liste · Abgleich · Frühere“ (Q–V), 2026-11-17, siehe „Ergebnis“.
+- [x] Eintragen mit Reitern „Suchen · Scannen · Foto · Geplant“ (Q–V; T–V als Seite), 2026-11-17, siehe „Ergebnis“.
+- [ ] Ruhig als schlichte Szenen wie in den Entwürfen, Stil für Stil (`RUHIG_ALS_SZENE`): Sage erledigt
+      2026-11-17 (siehe „Ergebnis“); offen Anime, Edo, Bayrisch, Grauen, Kreuzer.
 - [x] Rezeptfilter wie im Entwurf: „Alle · Favoriten · ≤ 30 Min.“ mit den Wörtern des Stils, 2026-11-17, siehe „Ergebnis“.
 - [x] Editor der Sage wie im Entwurf (Reiter „Grundlagen · Zutaten · Ritual“), 2026-11-17, siehe „Ergebnis“.
 - [x] Tagebuch: „‹“ im Kopf zurück zu Heute in allen Stilen (Immersiv und Ruhig), 2026-11-17, siehe „Ergebnis“.
@@ -783,3 +786,37 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
   Referenzbilder `*_listen_handy` neu (jetzt die Seite), `stil_bayrisch_{fuellen,planen}_handy` neu (weiße Schrift).
 - Im Emulator mit den Maßen des Handys nachgeprüft (Kreuzer): alle drei Reiter, Knopf fest unten über der Leiste,
   Zurück schließt die Seite.
+
+**2026-11-17 – Eintragen mit Reitern** (Branch `claude/eintragen-reiter`, Entscheidung des Nutzers aus dem Canvas-Abgleich):
+- In den Stilen Q–V (Immersiv und Ruhig) hat Eintragen wie in den Entwürfen die Reiter „Suchen · Scannen · Foto ·
+  Geplant“ (Sage „Suchen · Siegel · Deuten · Geplant“; ohne Erkennungsmodell „Frei“ statt „Foto“) statt der Wege
+  „Rezept · Zutat · Aus dem Plan · Frei“. Sage, Anime und Edo bleiben ein Blatt wie im Entwurf; Bayrisch, Grauen und
+  Kreuzer sind eine eigene Seite mit Zurück (Grauen „Notieren“ unter „Was dargebracht wird“, Kreuzer unter „Proviant
+  erfassen“), Portionen oder Menge und Knopf fest unten. Milchglas behält das Blatt mit den Wegen (kein Entwurf).
+- „Suchen“ ist eine Suche über Rezepte, Zutaten und den BLS, die Quelle steht unter dem Namen („Rezept“, „Zutat“).
+  „Scannen“: Scan-Knopf und die gescannten Produkte, nach dem Scan die Packung. „Foto“: Fotoerkennung und die freien
+  Felder. „Geplant“: der offene Plan des Tages, Knopf „Als verzehrt eintragen“ (Sage), „Gegessen!“ (Anime), „Als
+  gegessen eintragen“ (Edo). Die Widgets „Scannen“ und „KI-Foto“ öffnen den passenden Reiter.
+- Bewusst anders als im Entwurf: kein Kamerabild im Reiter „Scannen“ (der Scan öffnet die Kamera wie bisher), keine
+  kcal-Vorschau neben der Menge, Mahlzeiten mit den bisherigen Wörtern (Sage „Morgen · Mittag · Abend · Zwischen“).
+- Tests: `EintragenStileTest` (alle sechs Stile und Ruhig suchen und wählen, Kreuzer wechselt Reiter und Zurück, Grauen
+  trägt eine Zutat ein, Anime bleibt Blatt), `EintragenViewModelTest` (Reiter setzen den Weg, BLS auch bei Rezept).
+  Fünf Referenzbilder `stil_*_eintragen_handy` neu (Reiter, Seiten mit Hintergrund).
+
+**2026-11-17 – Ruhig als schlichte Szene: Sage** (Branch `claude/ruhig-szenen-q-r`, Entscheidung des Nutzers aus dem Canvas-Abgleich):
+- Neu im Designsystem: `StilWerte.szene(stil)` (Szene in Immersiv und, für die Stile in `RUHIG_ALS_SZENE`, auch in
+  Ruhig), `StilWerte.inszeniert` (Bilder, Schrägen, harte Schatten, Animationen nur in Immersiv) und
+  `szenenWort(immersiv, ruhig)` für feste Wörter der Szenen. `szenenStil()` und die Weichen der Screens (Heute,
+  Tagebuch, Rezepte, Rezept, Editor, Kochen, Woche) fragen `szene(…)`; Stil für Stil kommt in `RUHIG_ALS_SZENE`.
+- Sage in Ruhig zeigt jetzt wie im Entwurf ihre Szenen schlicht: Heute mit dem Kopf „HEUTE“ und Datum statt „Rast
+  am Feuer“, das Menü bleibt; Rezepte „SAMMLUNG · REZEPTE“, „Suchen“; Woche „WOCHE“ mit sieben Tageschips statt der
+  Karte, „+ REZEPT WÄHLEN“, „TAGE FÜLLEN“; Einkauf „EINKAUF“ ohne den Laden und den Spruch des Händlers; Tagebuch
+  „TAGEBUCH“, „FRÜHSTÜCK · MITTAG · ABEND · SNACK“, „heute“, „vor 2 Tagen“, „kein Eintrag“, „LÖSCHEN“; Rezept
+  „REZEPT“, Reiter „ZUTATEN · ZUBEREITUNG · NÄHRWERTE“, „KOCHEN“, Menü „Bearbeiten · Duplizieren · Archivieren“,
+  „Notiz: …“; Editor „ALLGEMEIN · ZUTATEN · SCHRITTE“, „SPEICHERN“, „VORSCHAU“, „pro Zeile“; Kochen „BEREITLEGEN“,
+  „Timer: …“, „LOS GEHT’S“, „FERTIG“. Wo die Szenen schon `stilText` nutzen, kommen die normalen Wörter von selbst.
+- Bewusst wie im Entwurf: Die Einträge des Menüs in Heute behalten in Ruhig ihre Wörter („ABENDMAHL BEREITEN“, „AM
+  FEUER KOCHEN“), die Entwürfe zeigen sie in beiden Varianten gleich.
+- Tests: `HeuteSageTest.ruhigZeigtSzeneSchlicht` (vorher normale Ansicht), `WocheStileTest.sageRuhigTageschips`.
+  Referenzbild `stil_sage_ruhig` neu.
+- Im Emulator mit den Maßen des Handys nachgeprüft: Heute, Rezepte, Rezept, Woche, Einkauf, Tagebuch in Sage Ruhig.

@@ -14,6 +14,7 @@ import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -79,10 +80,10 @@ class WocheStileTest {
         db.close()
     }
 
-    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false) {
+    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false, variante: StilVariante = StilVariante.IMMERSIV) {
         val vm = u.vm()
         compose.setContent {
-            FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV) {
+            FoodyTheme(stil = stil, variante = variante) {
                 val inhalt = @Composable { WocheRoute({ _, _ -> }, {}, vm = vm) }
                 if (schrift200) MitSchrift200(inhalt) else inhalt()
             }
@@ -133,6 +134,18 @@ class WocheStileTest {
         zeigen(stil, schrift200 = true)
         compose.waitForIdle()
         compose.pruefeNichtsAbgeschnitten()
+    }
+
+    /** Sage in Ruhig wie im Entwurf: die Szene schlicht, „WOCHE“ mit Tageschips statt der Karte. */
+    @Test
+    fun sageRuhigTageschips() {
+        zeigen(FoodyStil.SAGE, variante = StilVariante.RUHIG)
+        compose.onNodeWithText("WOCHE").assertExists()
+        compose.onNodeWithText("KARTE DER WOCHE").assertDoesNotExist()
+        val mittwoch = compose.onNode(hasContentDescription("Mittwoch, 28.10.", substring = true) and isSelectable())
+        mittwoch.performClick()
+        mittwoch.assertIsSelected()
+        compose.onNodeWithText("TAGE FÜLLEN").assertExists()
     }
 
     @Test fun anime() = pruefen(FoodyStil.ANIME)

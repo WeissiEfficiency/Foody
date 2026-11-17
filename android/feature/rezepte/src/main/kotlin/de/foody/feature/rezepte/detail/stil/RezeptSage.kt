@@ -69,6 +69,7 @@ import de.foody.core.designsystem.stil.sage.SageHauptknopf
 import de.foody.core.designsystem.stil.sage.SageNebenknopf
 import de.foody.core.designsystem.stil.sage.sageHell
 import de.foody.core.designsystem.stil.sage.sageLinieUnten
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.rezepte.detail.DetailAktionen
 import de.foody.feature.rezepte.detail.DetailZustand
@@ -79,10 +80,10 @@ import de.foody.feature.rezepte.detail.naehrwertZeilen
 import de.foody.feature.rezepte.detail.zeit
 
 /** Die drei Reiter des Entwurfs: Wort der Sage und der normale Begriff für TalkBack. */
-private enum class Reiter(val wort: String, val begriff: String) {
-    ZUTATEN("ZUTATEN", "Zutaten"),
-    RITUAL("RITUAL", "Zubereitung"),
-    WERTE("WERTE", "Nährwerte"),
+private enum class Reiter(val wort: String, val begriff: String, val ruhig: String) {
+    ZUTATEN("ZUTATEN", "Zutaten", "ZUTATEN"),
+    RITUAL("RITUAL", "Zubereitung", "ZUBEREITUNG"),
+    WERTE("WERTE", "Nährwerte", "NÄHRWERTE"),
 }
 
 /**
@@ -124,16 +125,16 @@ private fun Kopf(z: DetailZustand.Da, a: DetailAktionen) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Zeichenknopf("‹", "Zurück", a.onZurueck)
         Text(
-            "AUS DEM GRIMOIRE", Modifier.weight(1f), style = Sage.titel(11f, 0.24f, FontWeight.Medium),
+            szenenWort("AUS DEM GRIMOIRE", "REZEPT"), Modifier.weight(1f), style = Sage.titel(11f, 0.24f, FontWeight.Medium),
             color = FoodyTheme.farben.nebentext, textAlign = TextAlign.Center,
         )
         Box {
             Zeichenknopf("⋯", "Weitere Aktionen") { menue = true }
             DropdownMenu(menue, onDismissRequest = { menue = false }) {
-                Eintrag("Neu niederschreiben", "Bearbeiten") { menue = false; a.onBearbeiten() }
-                Eintrag("Abschrift anfertigen", "Duplizieren") { menue = false; a.onDuplizieren() }
+                Eintrag(szenenWort("Neu niederschreiben", "Bearbeiten"), "Bearbeiten") { menue = false; a.onBearbeiten() }
+                Eintrag(szenenWort("Abschrift anfertigen", "Duplizieren"), "Duplizieren") { menue = false; a.onDuplizieren() }
                 if (z.voll.rezept.archivedAt == null) {
-                    Eintrag("Ins Archiv verbannen", "Archivieren", farbe = WARNROT) { menue = false; a.onArchivieren(true) }
+                    Eintrag(szenenWort("Ins Archiv verbannen", "Archivieren"), "Archivieren", farbe = WARNROT) { menue = false; a.onArchivieren(true) }
                 }
             }
         }
@@ -165,12 +166,12 @@ private fun Archiviert(onZurueckholen: () -> Unit) {
         Modifier.fillMaxWidth().border(1.dp, WARNROT.copy(alpha = 0.6f)).padding(start = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("Dieses Rezept ruht im Archiv.", Modifier.weight(1f), style = Sage.text(15f), color = WARNROT)
+        Text(szenenWort("Dieses Rezept ruht im Archiv.", "Dieses Rezept ist archiviert."), Modifier.weight(1f), style = Sage.text(15f), color = WARNROT)
         Box(
             Modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onZurueckholen)
                 .semantics { contentDescription = "Wiederherstellen" }.padding(horizontal = 12.dp),
             contentAlignment = Alignment.Center,
-        ) { Text("ZURÜCKHOLEN", style = Sage.titel(12f, 0.1f), color = FoodyTheme.farben.primaer) }
+        ) { Text(szenenWort("ZURÜCKHOLEN", "WIEDERHERSTELLEN"), style = Sage.titel(12f, 0.1f), color = FoodyTheme.farben.primaer) }
     }
 }
 
@@ -227,7 +228,7 @@ private fun Reiterleiste(aktiv: Reiter, onWahl: (Reiter) -> Unit) {
                     .padding(horizontal = 4.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(r.wort, style = Sage.titel(12f, 0.12f), color = if (an) sageHell() else f.nebentext, textAlign = TextAlign.Center)
+                Text(szenenWort(r.wort, r.ruhig), style = Sage.titel(12f, 0.12f), color = if (an) sageHell() else f.nebentext, textAlign = TextAlign.Center)
             }
         }
     }
@@ -256,7 +257,9 @@ private fun Zutaten(z: DetailZustand.Da) {
                 Text(mengeText(z, zeile), style = Sage.text(16.5f), color = f.nebentext, textAlign = TextAlign.End)
             }
         }
-        if (z.voll.zeilen.isEmpty()) Text("Noch keine Zutaten verzeichnet.", style = Sage.text(16f, kursiv = true), color = f.nebentext)
+        if (z.voll.zeilen.isEmpty()) {
+            Text(szenenWort("Noch keine Zutaten verzeichnet.", "Noch keine Zutaten hinterlegt."), style = Sage.text(16f, kursiv = true), color = f.nebentext)
+        }
     }
 }
 
@@ -273,7 +276,12 @@ private fun Ritual(schritte: List<String>) {
                 Text(s, Modifier.weight(1f), style = Sage.text(16f), color = f.text)
             }
         }
-        if (schritte.isEmpty()) Text("Für dieses Rezept ist kein Ritual verzeichnet.", style = Sage.text(16f, kursiv = true), color = f.nebentext)
+        if (schritte.isEmpty()) {
+            Text(
+                szenenWort("Für dieses Rezept ist kein Ritual verzeichnet.", "Für dieses Rezept sind keine Schritte hinterlegt."),
+                style = Sage.text(16f, kursiv = true), color = f.nebentext,
+            )
+        }
     }
 }
 
@@ -283,13 +291,19 @@ private fun Werte(z: DetailZustand.Da) {
     val zeilen = naehrwertZeilen(z.voll, z.portionen)
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         if (zeilen.isEmpty()) {
-            Text("Für dieses Rezept sind keine Werte bekannt.", style = Sage.text(16f, kursiv = true), color = f.nebentext)
+            Text(
+                szenenWort("Für dieses Rezept sind keine Werte bekannt.", "Für dieses Rezept sind keine Nährwerte bekannt."),
+                style = Sage.text(16f, kursiv = true), color = f.nebentext,
+            )
         } else {
-            WertZeile("WERT", "JE PORTION", if (z.portionen == 1) "1 PORTION" else "${z.portionen} PORTIONEN", kopf = true)
+            WertZeile(szenenWort("WERT", "NÄHRWERT"), "JE PORTION", if (z.portionen == 1) "1 PORTION" else "${z.portionen} PORTIONEN", kopf = true)
             zeilen.forEach { WertZeile(it.name, it.jePortion, it.gesamt) }
         }
         fehlendeWerte(z.voll)?.let { Text(it, Modifier.padding(top = 6.dp), style = Sage.text(14.5f), color = f.nebentext) }
-        z.voll.rezept.notes?.let { Text("„$it“", Modifier.padding(top = 8.dp), style = Sage.text(14.5f, kursiv = true), color = f.nebentext) }
+        val notiz = FoodyTheme.stil.inszeniert
+        z.voll.rezept.notes?.let {
+            Text(if (notiz) "„$it“" else "Notiz: $it", Modifier.padding(top = 8.dp), style = Sage.text(14.5f, kursiv = true), color = f.nebentext)
+        }
         z.voll.rezept.sourceUrl?.let { Quelle(it) }
     }
 }
@@ -341,7 +355,10 @@ private fun BoxScope.Knopfleiste(z: DetailZustand.Da, a: DetailAktionen) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SageHauptknopf("AM FEUER KOCHEN", "Kochen", { a.onKochen(z.portionen) }, Modifier.weight(1.4f), schrift = Sage.titel(13f, 0.12f))
+            SageHauptknopf(
+                szenenWort("AM FEUER KOCHEN", "KOCHEN"), "Kochen", { a.onKochen(z.portionen) }, Modifier.weight(1.4f),
+                schrift = Sage.titel(13f, 0.12f),
+            )
             SageNebenknopf(
                 "AUF DIE LISTE", "Auf die Einkaufsliste", { a.onEinkauf(z.portionen) }, Modifier.weight(1f).heightIn(min = 52.dp),
                 schrift = Sage.titel(12f, 0.1f),

@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,6 +62,7 @@ import de.foody.core.designsystem.stil.sage.SageRaute
 import de.foody.core.designsystem.stil.sage.sageHell
 import de.foody.core.designsystem.stil.sage.sageLinieUnten
 import de.foody.core.designsystem.stil.svgPfad
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.woche.wochenTitel
 import java.time.LocalDate
@@ -90,7 +93,7 @@ internal fun WocheSage(woche: WochenAnsicht?, heute: LocalDate, zeigtHeute: Bool
             Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 22.dp, bottom = unten),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            SageKopf(woche?.let { wochenTitel(it.montag).uppercase(Locale.GERMAN) } ?: "", "KARTE DER WOCHE", "Woche") {
+            SageKopf(woche?.let { wochenTitel(it.montag).uppercase(Locale.GERMAN) } ?: "", szenenWort("KARTE DER WOCHE", "WOCHE"), "Woche") {
                 if (tage.isNotEmpty()) {
                     Text(
                         "${tage.count { it.eintraege.isNotEmpty() }} / ${tage.size}", Modifier.padding(bottom = 12.dp),
@@ -107,7 +110,10 @@ internal fun WocheSage(woche: WochenAnsicht?, heute: LocalDate, zeigtHeute: Bool
                 if (!zeigtHeute) SageNebenknopf("HEUTE", "Heute", aktionen.onHeute, akzent = true)
                 SageNebenknopf("›", "Nächste Woche", { aktionen.onBlaettern(1) }, Modifier.size(48.dp), akzent = true, schrift = Sage.titel(22f, 0f))
             }
-            if (tage.size == ORTE.size) {
+            // Ruhig: Tageschips statt der Karte (Entwurf `Q-Woche`, Ruhig)
+            if (!FoodyTheme.stil.inszeniert) {
+                TagChips(tage, heuteIndex, gewaehlt) { gewaehlt = it }
+            } else if (tage.size == ORTE.size) {
                 Karte(tage, heuteIndex, gewaehlt) { gewaehlt = it }
             }
             tage.getOrNull(gewaehlt)?.let { TagSeite(it, it.datum == heute, aktionen) }
@@ -167,6 +173,35 @@ private fun Karte(tage: List<WochenTag>, heuteIndex: Int, gewaehlt: Int, onWahl:
     }
 }
 
+/** Ruhig: die sieben Tage als Chips in einer Reihe, der gewählte gefüllt, heute mit Rand im Akzent. */
+@Composable
+private fun TagChips(tage: List<WochenTag>, heuteIndex: Int, gewaehlt: Int, onWahl: (Int) -> Unit) {
+    val f = FoodyTheme.farben
+    val glut = FoodyTheme.stil.zier
+    Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        tage.forEachIndexed { i, t ->
+            val an = i == gewaehlt
+            val heute = i == heuteIndex
+            Box(
+                Modifier.weight(1f).height(56.dp)
+                    .border(1.dp, if (an || heute) glut else f.balkenSpur)
+                    .background(if (an) glut.copy(alpha = 0.16f) else Color.Transparent)
+                    .selectable(an, role = Role.Tab) { onWahl(i) }
+                    .semantics {
+                        contentDescription = tagLangText(t.datum) + (if (heute) ", heute" else "") + ": " +
+                            (if (t.eintraege.isEmpty()) "nichts geplant" else t.eintraege.joinToString(", ") { it.rezeptName })
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    wochentagKurz(t.datum).uppercase(Locale.GERMAN), Modifier.clearAndSetSemantics { },
+                    style = Sage.titel(13f, 0.04f), color = if (an) sageHell() else f.nebentext,
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun TagMarke(t: WochenTag, heute: Boolean, an: Boolean, modifier: Modifier, onKlick: () -> Unit) {
     val leer = t.eintraege.isEmpty()
@@ -220,8 +255,8 @@ private fun TagSeite(t: WochenTag, heute: Boolean, aktionen: WocheSageAktionen) 
             n?.let { Text((if (it.complete) "" else "mind. ") + "${ganzzahlDeutsch(it.kcal)} kcal geplant", style = Sage.text(15f), color = f.nebentext) }
         }
         Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            SageNebenknopf("+ MAHL HINZUFÜGEN", "Mahlzeit hinzufügen", { aktionen.onPlus(t.datum) }, Modifier.weight(1f))
-            SageNebenknopf("LEERE TAGE FÜLLEN", "Leere Tage füllen", aktionen.onFuellen, Modifier.weight(1f))
+            SageNebenknopf(szenenWort("+ MAHL HINZUFÜGEN", "+ REZEPT WÄHLEN"), "Mahlzeit hinzufügen", { aktionen.onPlus(t.datum) }, Modifier.weight(1f))
+            SageNebenknopf(szenenWort("LEERE TAGE FÜLLEN", "TAGE FÜLLEN"), "Leere Tage füllen", aktionen.onFuellen, Modifier.weight(1f))
         }
     }
 }

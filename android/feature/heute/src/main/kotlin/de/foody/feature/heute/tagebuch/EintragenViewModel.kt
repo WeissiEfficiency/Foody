@@ -143,6 +143,8 @@ data class EintragenZustand(
     val bls: List<BlsTreffer> = emptyList(),
     /** Gescannte Produkte zur Rezeptsuche (nur mit Suchtext), höchstens [MAX_PRODUKTE]; unter „Zutat“ stehen sie ohnehin. */
     val produkte: List<ProduktKurz> = emptyList(),
+    /** Gescannte Produkte für den Reiter „Scannen“ der Stile Q–V, höchstens [MAX_PRODUKTE]. */
+    val gescannt: List<ProduktKurz> = emptyList(),
 ) {
     val mahlzeit: Mahlzeit get() = eingaben.mahlzeit
 }
@@ -209,8 +211,9 @@ class EintragenViewModel @Inject constructor(
         )
     }
 
-    /** BLS-Treffer, nur im Weg „Zutat“; die Suche läuft im Speicher und bricht bei neuer Eingabe ab. */
-    private val blsTreffer = eingaben.map { if (it.weg == EintragenWeg.ZUTAT) it.suche.trim() else "" }.distinctUntilChanged()
+    /** BLS-Treffer zur Suche nach Zutat (in den Stilen Q–V auch nach Rezept); läuft im Speicher, bricht bei neuer Eingabe ab. */
+    private val blsTreffer = eingaben.map { if (it.weg == EintragenWeg.ZUTAT || it.weg == EintragenWeg.REZEPT) it.suche.trim() else "" }
+        .distinctUntilChanged()
         .mapLatest { s -> bls.suchen(s) }
 
     val zustand: StateFlow<EintragenZustand> =
@@ -227,6 +230,7 @@ class EintragenViewModel @Inject constructor(
                 vorhandeneZutat = e.packung?.let { vorhandene(e.pName) },
                 bls = bls.filterNot { it.vorschlagName.lowercase() in namen },
                 produkte = produkte,
+                gescannt = k.produkte.take(MAX_PRODUKTE),
             )
         }.stateIn(viewModelScope, SolangeAppOffen, EintragenZustand(Eingaben(), emptyList(), emptyList(), emptyList()))
 
@@ -263,9 +267,22 @@ class EintragenViewModel @Inject constructor(
     }
 
     fun weg(w: EintragenWeg) = eingaben.update { it.copy(weg = w, suche = "") }
+
+    /**
+     * Reiter der Stile Q–V: „Suchen“ bleibt bei Rezept oder Zutat (je nach Wahl), „Scannen“ und „Foto“ sind „Frei“ („Foto“
+     * ohne gescannte Packung), „Geplant“ ist der Plan.
+     */
+    fun reiter(r: EintragenReiter) = eingaben.update {
+        when (r) {
+            EintragenReiter.SUCHEN -> if (it.weg == EintragenWeg.REZEPT || it.weg == EintragenWeg.ZUTAT) it else it.copy(weg = EintragenWeg.REZEPT, suche = "")
+            EintragenReiter.SCANNEN -> it.copy(weg = EintragenWeg.FREI, suche = "")
+            EintragenReiter.FOTO -> it.copy(weg = EintragenWeg.FREI, suche = "", packung = null)
+            EintragenReiter.GEPLANT -> it.copy(weg = EintragenWeg.PLAN, suche = "")
+        }
+    }
     fun mahlzeit(m: Mahlzeit) = eingaben.update { it.copy(mahlzeit = m) }
     fun suche(text: String) = eingaben.update { it.copy(suche = text) }
-    fun rezeptWaehlen(id: String) = eingaben.update { it.copy(rezeptId = id) }
+    fun rezeptWaehlen(id: String) = eingaben.update { it.copy(rezeptId = id, weg = EintragenWeg.REZEPT) }
     fun portionen(text: String) = eingaben.update { it.copy(portionen = text) }
 
     /** − / + in Schritten von 0,5; nie unter 0,5. */
@@ -274,7 +291,7 @@ class EintragenViewModel @Inject constructor(
         it.copy(portionen = zahlText((if (mehr) alt + SCHRITT else alt - SCHRITT).max(SCHRITT)))
     }
 
-    fun zutatWaehlen(id: String) = eingaben.update { it.copy(zutatId = id) }
+    fun zutatWaehlen(id: String) = eingaben.update { it.copy(zutatId = id, weg = EintragenWeg.ZUTAT) }
 
     /**
      * BLS-Treffer gewählt: in den Katalog übernehmen (heißt schon eine Zutat so, diese nehmen), auswählen, mit
@@ -293,7 +310,7 @@ class EintragenViewModel @Inject constructor(
                 BlsDichte.gProMl(t.lebensmittel) != null -> MeasureUnit.MILLILITER
                 else -> MeasureUnit.GRAM
             }
-            it.copy(zutatId = id, suche = t.vorschlagName, einheit = einheit)
+            it.copy(zutatId = id, suche = t.vorschlagName, einheit = einheit, weg = EintragenWeg.ZUTAT)
         }
         fokus.trySend(Unit)
     }

@@ -311,13 +311,13 @@ fun titelGroesse(groesse: Float): Float {
 }
 
 /**
- * Der Stil, dessen Szene ein Bereich zeigt: nur in Immersiv, nie Milchglas; Sage nur mit [mitSage] (die meisten Bereiche
- * haben für Sage eine eigene Ansicht). `null` = die normale Ansicht.
+ * Der Stil, dessen Szene ein Bereich zeigt: in Immersiv, in Ruhig nur für [RUHIG_ALS_SZENE], nie Milchglas; Sage nur mit
+ * [mitSage] (die meisten Bereiche haben für Sage eine eigene Ansicht). `null` = die normale Ansicht.
  */
 @Composable
 fun szenenStil(mitSage: Boolean = false): FoodyStil? {
     val s = FoodyTheme.stil
-    if (s.variante != StilVariante.IMMERSIV) return null
+    if (!s.szene(s.stil)) return null
     return s.stil.takeIf { it != FoodyStil.MILCHGLAS && (mitSage || it != FoodyStil.SAGE) }
 }
 

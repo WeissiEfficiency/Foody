@@ -32,9 +32,9 @@ import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
 import de.foody.core.designsystem.komponenten.ueberLeiste
-import de.foody.core.designsystem.komponenten.zeilenImStil
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.stilText
+import de.foody.core.designsystem.stil.szenenStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.rezepte.editor.stil.EditorSage
@@ -73,8 +73,8 @@ fun EditorRoute(
         null
     }
 
-    val sage = FoodyTheme.stil.immersiv(FoodyStil.SAGE)
-    if (sage || zeilenImStil()) {
+    val sage = FoodyTheme.stil.szene(FoodyStil.SAGE)
+    if (sage || szenenStil() != null) {
         val hinweise = listOfNotNull(z.hinweis?.let { it to true }, portionenHinweis?.let { it to false })
         if (sage) {
             EditorSage(id == null, z, hinweise, moeglich, zurueck, speichern, vm)

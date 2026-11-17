@@ -62,6 +62,7 @@ import de.foody.core.designsystem.stil.sage.SageKopf
 import de.foody.core.designsystem.stil.sage.SageRaute
 import de.foody.core.designsystem.stil.sage.sageHell
 import de.foody.core.designsystem.stil.svgPfad
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.rezepte.liste.FilterChips
 import de.foody.feature.rezepte.liste.ListeFilter
@@ -92,7 +93,7 @@ internal fun RezepteSage(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             val rand = Modifier.padding(horizontal = 20.dp)
-            SageKopf("GESAMMELTE REZEPTE", "GRIMOIRE", "Rezepte", rand) {
+            SageKopf(szenenWort("GESAMMELTE REZEPTE", "SAMMLUNG"), szenenWort("GRIMOIRE", "REZEPTE"), "Rezepte", rand) {
                 if (n > 0) Text("${index + 1} / $n", Modifier.padding(bottom = 12.dp), style = Sage.titel(15f, 0.04f), color = FoodyTheme.farben.text)
                 NeuKnopf(onNeu, onImport)
             }
@@ -103,7 +104,7 @@ internal fun RezepteSage(
                 )
                 return@Column
             }
-            Suchfeld(z.filter.suche, { s -> aendern { it.copy(suche = s) } }, "Im Grimoire suchen", rand)
+            Suchfeld(z.filter.suche, { s -> aendern { it.copy(suche = s) } }, szenenWort("Im Grimoire suchen", "Suchen"), rand)
             FilterChips(z.filter, z.tags, aendern)
             val r = z.treffer.getOrNull(index)
             if (r == null) {
