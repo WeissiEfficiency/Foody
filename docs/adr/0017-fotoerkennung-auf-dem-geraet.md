@@ -9,7 +9,9 @@ Gerät verlassen. ADR 0011 sieht KI dagegen nur über den eigenen Server vor (`P
 KI-Hilfe (`ToDoS/ki-plan.md`), nicht für die Fotoerkennung. Es kamen nur auf Essen trainierte Modelle in Frage.
 Gemessen wurde mit öffentlichen Daten, weil es keine eigenen Fotos mit Sollwerten gibt: 100 Testbilder aus Nutrition5k
 (gewogene Zutaten und kcal) und 22 frei lizenzierte Fotos deutscher Gerichte (Wikimedia Commons). Messskripte,
-Rohantworten und Protokolle liegen außerhalb des Repos (`E:\foody-messung`).
+Rohantworten und Protokolle liegen außerhalb des Repos im Archiv
+(`OpenCloud\Persönlich (2)\Dev\Backup\archiv\foody-messung`: `ergebnisse\`, `daten\`, `werkzeuge\`). Die Modelle und
+llama.cpp wurden am 18.11.2026 gelöscht, sie lassen sich neu herunterladen.
 
 **Messung (PC, gleiche 4-Bit-Dateien wie auf dem Handy):**
 
@@ -95,4 +97,4 @@ falsches Gericht, englische Namen, kcal weit daneben. Neu gemessen mit denselben
   Die Gewichte liegen per mmap im Dateicache.
 - Spezialitäten bleiben schwach (Leberkäse → „Schinkenbrötchen“, Currywurst → „Würstchen mit Pommes“). Dafür gibt es
   das Gedächtnis eigener Korrekturen (Phase 6). Ein Modell mit 8B wäre auf dem Handy zu langsam und zu groß.
-- Die Messung liegt in `E:\foody-messung\ergebnisse\qwen3-4b-*` und `handy-4b-frei-de-512.json`.
+- Die Messung liegt im Archiv unter `foody-messung\ergebnisse\qwen3-4b-*` und `handy-4b-frei-de-512.json`.
