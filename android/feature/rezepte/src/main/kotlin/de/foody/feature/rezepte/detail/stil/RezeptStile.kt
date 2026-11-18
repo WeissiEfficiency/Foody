@@ -147,6 +147,12 @@ internal fun rezeptArt(stil: FoodyStil, inszeniert: Boolean = true): RezeptArt =
         titel = { Bayrisch.titel(it) }, text = { Bayrisch.text(it) }, klein = { Bayrisch.text(it, FontWeight.Bold) },
         pillen = true, favorit = "♥" to "♡",
     )
+    FoodyStil.GRAUEN if !inszeniert -> RezeptArt(
+        kopf = "Rezept", reiter = REITER, kochen = "Kochen", liste = "Liste",
+        duplizieren = "Duplizieren", archiviert = "ARCHIVIERT", zurueckholen = "wiederherstellen", portionen = ::portionenText,
+        nummer = { "$it." }, werteKopf = listOf("Nährwert", "Portion", "Gesamt"),
+        titel = { Grauen.titel(it) }, text = { Grauen.text(it) }, klein = { Grauen.titel(it, 0.1f) }, favorit = "♦" to "◇",
+    )
     FoodyStil.GRAUEN -> RezeptArt(
         kopf = "Aus der Bibliothek", reiter = REITER, kochen = "Das Ritual beginnen", liste = "Liste",
         duplizieren = "Abschrift anfertigen", archiviert = "VERSIEGELT", zurueckholen = "öffnen", portionen = ::portionenText,

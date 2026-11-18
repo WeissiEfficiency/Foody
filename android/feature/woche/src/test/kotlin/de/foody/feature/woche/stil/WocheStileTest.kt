@@ -186,6 +186,18 @@ class WocheStileTest {
 
     @Test fun bayrisch() = pruefen(FoodyStil.BAYRISCH)
 
+    /** Grauen in Ruhig wie im Entwurf: „Woche“, sieben Tageschips statt des Mondbogens, „Leere Tage vorschlagen lassen“. */
+    @Test
+    fun grauenRuhigTageschips() {
+        zeigen(FoodyStil.GRAUEN, variante = StilVariante.RUHIG)
+        compose.onNodeWithText("Woche").assertExists()
+        compose.onNodeWithText("Mondphasen").assertDoesNotExist()
+        val mittwoch = compose.onNode(hasContentDescription("Mittwoch, 28.10.", substring = true) and isSelectable())
+        mittwoch.performClick()
+        mittwoch.assertIsSelected()
+        compose.onNodeWithText("Leere Tage vorschlagen lassen").performScrollTo().assertExists()
+    }
+
     @Test fun grauen() = pruefen(FoodyStil.GRAUEN)
 
     @Test fun kreuzer() = pruefen(FoodyStil.KREUZER)

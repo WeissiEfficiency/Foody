@@ -205,8 +205,14 @@ internal fun GrauenHeld(z: DetailZustand.Da) {
     val glut = FoodyTheme.stil.zier
     val r = z.voll.rezept
     val form = RoundedCornerShape(2.dp)
+    // Ruhig wie im Entwurf: eine helle Seite ohne den Schein der Glut
+    val blatt = if (FoodyTheme.stil.inszeniert) {
+        Modifier.shadow(18.dp, form, ambientColor = glut, spotColor = glut).background(PERGAMENT, form)
+    } else {
+        Modifier.background(Color.White.copy(alpha = 0.45f), form).border(1.dp, FoodyTheme.farben.lichtkante, form)
+    }
     Column(
-        Modifier.fillMaxWidth().shadow(18.dp, form, ambientColor = glut, spotColor = glut).background(PERGAMENT, form)
+        Modifier.fillMaxWidth().then(blatt)
             .padding(horizontal = 18.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {

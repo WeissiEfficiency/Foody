@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,9 +33,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -48,6 +49,7 @@ import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.domain.Mahlzeit
 import kotlin.math.PI
@@ -58,7 +60,8 @@ import kotlin.math.sin
  * „Woche“ im Kosmischen Grauen (U) in Immersiv (Entwurf `U-Woche`): „Mondphasen“ mit „6 / 7 · planen ›“, darunter
  * die sieben Tage als Monde auf einem Bogen – je mehr Mahlzeiten geplant sind, desto voller der Mond, leere Tage sind
  * Neumond mit gestricheltem Rand, heute leuchtet. Darunter die Tafel des gewählten Tages mit einer Notiz und ganz
- * unten „Die dunklen Nächte füllen lassen“.
+ * unten „Die dunklen Nächte füllen lassen“. In Ruhig wie im Entwurf auf Pergament: „Woche“, sieben Tageschips statt
+ * des Bogens, eine helle Tafel ohne Notiz, „Leere Tage vorschlagen lassen“.
  */
 @Composable
 internal fun WocheGrauen(w: WocheDaten, aktionen: WocheSageAktionen, unten: Dp) {
@@ -66,7 +69,9 @@ internal fun WocheGrauen(w: WocheDaten, aktionen: WocheSageAktionen, unten: Dp) 
     WocheRahmen(unten) {
         Kopf(w, aktionen.onFuellen)
         Blaettern(w, aktionen, Grauen.maschine(13f))
-        if (w.tage.size == 7) Mondbogen(w, gewaehlt) { gewaehlt = it }
+        if (w.tage.size == 7) {
+            if (FoodyTheme.stil.inszeniert) Mondbogen(w, gewaehlt) { gewaehlt = it } else TagChips(w, gewaehlt) { gewaehlt = it }
+        }
         w.tage.getOrNull(gewaehlt)?.let { Tafel(it, it.datum == w.heute, aktionen) }
         Naechte(aktionen.onFuellen)
     }
@@ -91,6 +96,10 @@ private val MOND_HEUTE = Color(0xFFF2F6E8)
 private val LINIE = Color(0xFF24352E)
 private val TAFEL = listOf(Color(0xFF121B18), Color(0xFF0C1210))
 
+/** Rahmenlinie: das dunkle Grün in Immersiv, auf dem Pergament (Ruhig) die Kante des Stils. */
+@Composable
+private fun linie(): Color = if (FoodyTheme.stil.inszeniert) LINIE else FoodyTheme.farben.lichtkante
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Kopf(w: WocheDaten, onFuellen: () -> Unit) {
@@ -100,7 +109,7 @@ private fun Kopf(w: WocheDaten, onFuellen: () -> Unit) {
             w.woche?.let { Text(kwText(it.montag), style = Grauen.maschine(12.5f), color = f.nebentext) }
             // Der Titel wächst mit der Systemschrift nur bis 130 %
             Text(
-                "Mondphasen",
+                szenenWort("Mondphasen", "Woche"),
                 Modifier.semantics {
                     heading()
                     contentDescription = "Woche"
@@ -110,7 +119,7 @@ private fun Kopf(w: WocheDaten, onFuellen: () -> Unit) {
         }
         if (w.tage.isNotEmpty()) {
             Column(
-                Modifier.align(Alignment.Bottom).heightIn(min = 48.dp).border(1.dp, LINIE)
+                Modifier.align(Alignment.Bottom).heightIn(min = 48.dp).border(1.dp, linie())
                     .clickable(role = Role.Button, onClick = onFuellen)
                     .semantics(mergeDescendants = true) {
                         contentDescription = "${w.geplant} von ${w.tage.size} Tagen geplant, leere Tage füllen"
@@ -151,6 +160,30 @@ private fun Mondbogen(w: WocheDaten, gewaehlt: Int, onWahl: (Int) -> Unit) {
     }
 }
 
+/** Ruhig: die sieben Tage als Chips in einer Reihe, der gewählte in Tinte, heute in der Akzentfarbe. */
+@Composable
+private fun TagChips(w: WocheDaten, gewaehlt: Int, onWahl: (Int) -> Unit) {
+    val f = FoodyTheme.farben
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        w.tage.forEachIndexed { i, t ->
+            val heute = i == w.heuteIndex
+            val an = i == gewaehlt
+            val schrift = when {
+                an -> Grauen.papierHell
+                heute -> f.primaer
+                else -> f.text
+            }
+            Box(
+                Modifier.weight(1f).heightIn(min = 52.dp).background(if (an) f.text else Color.Transparent).border(1.dp, f.lichtkante)
+                    .tagWahl(t, heute, an) { onWahl(i) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(wochentagKurz(t.datum), style = Grauen.titel(15f), color = schrift)
+            }
+        }
+    }
+}
+
 @Composable
 private fun Mond(t: WochenTag, heute: Boolean, an: Boolean, modifier: Modifier, onKlick: () -> Unit) {
     val f = FoodyTheme.farben
@@ -186,20 +219,22 @@ private fun Mond(t: WochenTag, heute: Boolean, an: Boolean, modifier: Modifier, 
 @Composable
 private fun Tafel(t: WochenTag, heute: Boolean, aktionen: WocheSageAktionen) {
     val f = FoodyTheme.farben
+    val linie = linie()
+    val grund = if (FoodyTheme.stil.inszeniert) Brush.verticalGradient(TAFEL) else SolidColor(Color.White.copy(alpha = 0.35f))
     Column(
-        Modifier.fillMaxWidth().border(1.dp, LINIE).padding(4.dp).background(Brush.verticalGradient(TAFEL)).border(1.dp, LINIE)
+        Modifier.fillMaxWidth().border(1.dp, linie).padding(4.dp).background(grund).border(1.dp, linie)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(tagLangText(t.datum) + if (heute) " · heute" else "", style = Grauen.titel(15f, 0.04f), color = f.primaer)
         if (t.eintraege.isEmpty()) {
-            Text("Neumond. Nichts ist geplant.", style = Grauen.text(22f), color = f.text)
+            Text(szenenWort("Neumond. Nichts ist geplant.", "Noch nichts geplant"), style = Grauen.text(22f), color = f.text)
         } else {
             t.eintraege.forEach { e ->
                 Eintragszeile(e, { aktionen.onEintrag(e) }, oben = Grauen.maschine(12f), gericht = Grauen.text(20f), stand = Grauen.maschine(13f))
             }
             tagKcal(t)?.let { Text(it, style = Grauen.maschine(13f), color = f.nebentext) }
-            Text(mondNotiz(t, heute), style = Grauen.text(15.5f, kursiv = true), color = f.nebentext)
+            if (FoodyTheme.stil.inszeniert) Text(mondNotiz(t, heute), style = Grauen.text(15.5f, kursiv = true), color = f.nebentext)
         }
         GrauenKnopf(
             "+ Mahlzeit", { aktionen.onPlus(t.datum) }, Modifier.fillMaxWidth().padding(top = 6.dp),
@@ -211,7 +246,7 @@ private fun Tafel(t: WochenTag, heute: Boolean, aktionen: WocheSageAktionen) {
 /** „Die dunklen Nächte füllen lassen“: gestrichelt in der Glut. */
 @Composable
 private fun Naechte(onKlick: () -> Unit) {
-    val glut = FoodyTheme.stil.zier
+    val glut = if (FoodyTheme.stil.inszeniert) FoodyTheme.stil.zier else FoodyTheme.farben.primaer
     Box(
         Modifier.fillMaxWidth().heightIn(min = 48.dp)
             .drawBehind {
@@ -222,6 +257,7 @@ private fun Naechte(onKlick: () -> Unit) {
             .padding(horizontal = 12.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text("Die dunklen Nächte füllen lassen", style = Grauen.maschine(14f), color = FoodyTheme.farben.text, textAlign = TextAlign.Center)
+        val text = szenenWort("Die dunklen Nächte füllen lassen", "Leere Tage vorschlagen lassen")
+        Text(text, style = Grauen.maschine(14f), color = FoodyTheme.farben.text, textAlign = TextAlign.Center)
     }
 }
