@@ -128,6 +128,13 @@ internal fun kochArt(stil: FoodyStil, inszeniert: Boolean = true): KochArt = whe
         zurueck = "Zurück", timer = "Die Zeit beginnen", portionen = ::portionenText, kopf = { name, p -> "$name · ${portionenText(p)}" },
         titel = { Grauen.titel(it) }, text = { Grauen.text(it) }, klein = { Grauen.titel(it, 0.1f) },
     )
+    FoodyStil.KREUZER if !inszeniert -> KochArt(
+        bereit = "BEREITLEGEN", ueberSchritt = { n, g -> "SCHRITT $n / $g" }, ueberBereit = "VORBEREITUNG",
+        nummer = { n, _ -> n.toString().padStart(2, '0') }, brauchst = "ZUTATEN", naechstes = "DANACH", beginnen = "Beginnen",
+        weiter = "Weiter", fertig = "Fertig", zurueck = "Zurück", timer = "Timer starten", portionen = ::portionenText,
+        kopf = { name, p -> "${name.uppercase(Locale.GERMAN)} · ${portionenText(p).uppercase(Locale.GERMAN)}" },
+        titel = { Kreuzer.titel(it) }, text = { Kreuzer.titel(it, FontWeight.Normal, 0f) }, klein = { Kreuzer.mono(it) },
+    )
     else -> KochArt(
         bereit = "LADELISTE", ueberSchritt = { n, g -> "PHASE $n / $g" }, ueberBereit = "STARTVORBEREITUNG",
         nummer = { n, g -> "T-" + (g - n + 1).toString().padStart(2, '0') }, brauchst = "FRACHT", naechstes = "NÄCHSTE PHASE", beginnen = "Mission starten",

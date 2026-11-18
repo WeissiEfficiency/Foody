@@ -63,6 +63,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -102,6 +103,8 @@ import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.KreuzerKnopf
 import de.foody.core.designsystem.stil.kreuzer.KreuzerVerweis
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
+import de.foody.core.designsystem.stil.kreuzer.kreuzerForm
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
 import de.foody.domain.zielAnteil
@@ -126,6 +129,8 @@ import kotlin.math.roundToInt
  * Mahlzeit ein Planet auf ihrer Bahn (gelandet = gegessen, gestrichelt in Amber = geplant, grau = frei). Antippen
  * wählt einen Planeten, darunter stehen seine Daten. Rechts der Treibstoff (kcal gegen das Ziel), darunter Makros und
  * die nächste Mission. Bahn und Korona ruhen ohne Animationen. TalkBack hört die normalen Begriffe.
+ * In Ruhig wie im Entwurf: „Heute“ mit „1.140 übrig“, statt des Systems die Summe groß mit Balken und die Mahlzeiten
+ * als Liste, die Karte ohne abgeschnittene Ecken mit „Abendessen“ und „Kochen“.
  */
 @Composable
 internal fun HeuteKreuzer(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modifier = Modifier) {
@@ -137,12 +142,18 @@ internal fun HeuteKreuzer(zustand: HeuteZustand?, aktionen: HeuteAktionen, modif
                 if (zustand.datenbankLeer) DatenbankLeerHinweis(aktionen.onEinstellungen)
                 val planeten = planeten(zustand.tagebuch)
                 var wahl by rememberSaveable { mutableIntStateOf(startWahl(planeten)) }
-                Tagessystem(zustand.tagebuch, planeten, wahl.coerceIn(planeten.indices)) { wahl = it }
-                planeten.getOrNull(wahl)?.let { Planetendaten(it, aktionen) }
+                if (FoodyTheme.stil.inszeniert) {
+                    Tagessystem(zustand.tagebuch, planeten, wahl.coerceIn(planeten.indices)) { wahl = it }
+                    planeten.getOrNull(wahl)?.let { Planetendaten(it, aktionen) }
+                } else {
+                    Tagesbilanz(zustand.tagebuch)
+                    Planetenliste(planeten, aktionen)
+                }
                 Makros(zustand.tagebuch)
                 Mission(zustand, aktionen)
                 zustand.einkauf?.let { e ->
-                    KreuzerVerweis("FRACHTRAUM · ${e.anzahl} OFFEN ›", { aktionen.onEinkauf(e.listeId) }, beschreibung = "Einkauf, ${e.anzahl} offen")
+                    val text = szenenWort("FRACHTRAUM · ${e.anzahl} OFFEN ›", "EINKAUF · ${e.anzahl} OFFEN ›")
+                    KreuzerVerweis(text, { aktionen.onEinkauf(e.listeId) }, beschreibung = "Einkauf, ${e.anzahl} offen")
                 }
             }
         }
@@ -156,11 +167,11 @@ private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                zustand?.datum?.let { Text(logbuchZeile(it), style = Kreuzer.mono(12.5f, 0.08f), color = f.nebentext) }
+                zustand?.datum?.let { Text(szenenWort(logbuchZeile(it), langesDatum(it)), style = Kreuzer.mono(12.5f, 0.08f), color = f.nebentext) }
                 // Titel und Anteil am Ziel nebeneinander; bei großer Schrift rückt der Anteil unter den Titel
                 FlowRow(horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
-                        "Tagessystem",
+                        szenenWort("Tagessystem", "Heute"),
                         Modifier.align(Alignment.Bottom).padding(end = 8.dp).semantics {
                             heading()
                             contentDescription = "Heute"
@@ -168,8 +179,13 @@ private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
                         style = Kreuzer.titel(28f), color = f.text, maxLines = 1,
                     )
                     zustand?.let { z ->
+                        val s = z.tagebuch.summe
                         Text(
-                            kreuzerStatus(z.tagebuch.summe.kcal, z.tagebuch.ziel, z.tagebuch.summe.vollstaendig),
+                            if (FoodyTheme.stil.inszeniert) {
+                                kreuzerStatus(s.kcal, z.tagebuch.ziel, s.vollstaendig)
+                            } else {
+                                ruhigStatus(s.kcal, z.tagebuch.ziel, s.vollstaendig)
+                            },
                             Modifier.align(Alignment.Bottom).clearAndSetSemantics { },
                             style = Kreuzer.mono(13f, 0.04f), color = FoodyTheme.stil.zier,
                         )
@@ -196,6 +212,25 @@ internal fun kreuzerStatus(kcal: Int, ziel: Int?, vollstaendig: Boolean = true):
         kcal > ziel -> "$mindestens${kcal * 100 / ziel} % · ÜBER ZIEL"
         else -> "$mindestens${kcal * 100 / ziel} % ERREICHT"
     }
+}
+
+/** „Samstag, 24. Oktober“: das Datum in Ruhig. */
+internal fun langesDatum(d: LocalDate): String =
+    d.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, Locale.GERMAN) + ", ${d.dayOfMonth}. " +
+        d.month.getDisplayName(java.time.format.TextStyle.FULL, Locale.GERMAN)
+
+/** Anzeige oben rechts in Ruhig: was bis zum Ziel übrig ist („1.140 übrig“), darüber „300 über Ziel“, ohne Ziel die Summe. */
+internal fun ruhigStatus(kcal: Int, ziel: Int?, vollstaendig: Boolean = true): String = when {
+    ziel == null || ziel <= 0 -> "${kcalZahl(kcal, vollstaendig)} kcal"
+    kcal > ziel -> (if (vollstaendig) "" else "≥ ") + "${ganzzahlDeutsch(kcal - ziel)} über Ziel"
+    else -> (if (vollstaendig) "" else "≤ ") + "${ganzzahlDeutsch(ziel - kcal)} übrig"
+}
+
+/** kcal einer Zeile in Ruhig: gegessen die Summe, geplant die des Vorschlags, frei „–“. */
+internal fun planetKcal(p: Planet): String = when (p.art) {
+    Planetenart.GELANDET -> p.info.substringBefore(" kcal")
+    Planetenart.KURS -> p.vorschlag?.kcalJePortion?.let { ganzzahlDeutsch(it) } ?: "–"
+    Planetenart.FREI -> "–"
 }
 
 /** Zustand eines Planeten: gegessen (gelandet), geplant (Kurs gesetzt) oder frei. */
@@ -417,6 +452,81 @@ private fun Treibstoff(kcal: Int, ziel: Int?, vollstaendig: Boolean, modifier: M
     }
 }
 
+/** Ruhig wie im Entwurf: die Summe groß, daneben „/ 2.000 kcal“, darunter ein Balken in Holo-Blau. */
+@Composable
+private fun Tagesbilanz(t: TagebuchHeute) {
+    val f = FoodyTheme.farben
+    val holo = FoodyTheme.stil.zier
+    val s = t.summe
+    val ziel = t.ziel?.takeIf { it > 0 }
+    val anteil = (zielAnteil(s.kcal, ziel) ?: 0f).coerceIn(0f, 1f)
+    Column(
+        Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = kcalStand(s.kcal, ziel, s.vollstaendig) },
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(kcalZahl(s.kcal, s.vollstaendig), style = Kreuzer.titel(46f, FontWeight.ExtraBold, 0f), color = f.text)
+            Text(
+                if (ziel != null) "/ ${ganzzahlDeutsch(ziel)} kcal" else "kcal", Modifier.padding(bottom = 8.dp),
+                style = Kreuzer.mono(14f, 0f), color = f.nebentext,
+            )
+        }
+        Box(
+            Modifier.fillMaxWidth().height(6.dp).background(f.lichtkante)
+                .drawBehind { drawRect(holo, size = Size(size.width * anteil, size.height)) },
+        )
+    }
+}
+
+/**
+ * Ruhig wie im Entwurf: die Mahlzeiten als Liste (Name, Gericht, kcal); Antippen führt zum Tagebuch, Rezept oder Eintragen.
+ * Geplantes trägt darunter „Gegessen?“ wie die Planetendaten in Immersiv.
+ */
+@Composable
+private fun Planetenliste(planeten: List<Planet>, aktionen: HeuteAktionen) {
+    val f = FoodyTheme.farben
+    val k = LocalDensity.current.fontScale
+    // Geplante Mahlzeit, zu der gerade „Gegessen?“ gefragt wird; übersteht Drehen
+    var frage by rememberSaveable { mutableStateOf<String?>(null) }
+    Column(Modifier.fillMaxWidth().drawBehind { drawLine(f.lichtkante, Offset.Zero, Offset(size.width, 0f), 1.dp.toPx()) }) {
+        planeten.forEach { p ->
+            val ziel: () -> Unit = when (p.art) {
+                Planetenart.GELANDET -> aktionen.onAlleEintraege
+                Planetenart.KURS -> {
+                    { aktionen.onRezept(requireNotNull(p.vorschlag).rezeptId) }
+                }
+                Planetenart.FREI -> {
+                    { aktionen.onEintragen(p.mahlzeit) }
+                }
+            }
+            val frei = p.art == Planetenart.FREI
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                    .drawBehind { drawLine(f.lichtkante, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx()) }
+                    .clickable(role = Role.Button, onClick = ziel)
+                    .semantics { contentDescription = planetBeschreibung(p) }
+                    .padding(horizontal = 4.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(p.mahlzeit.kreuzerName(), Modifier.width(88.dp * k).clearAndSetSemantics { }, style = Kreuzer.mono(12.5f, 0f), color = f.nebentext)
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        if (frei) "noch frei" else p.gericht, Modifier.clearAndSetSemantics { },
+                        style = Kreuzer.titel(15f, FontWeight.Medium, 0f), color = if (frei) f.nebentext else f.text,
+                    )
+                    p.vorschlag?.takeIf { p.art == Planetenart.KURS }?.let { v ->
+                        KreuzerVerweis("Gegessen?", { frage = v.planEintragId }, beschreibung = "Gegessen?")
+                    }
+                }
+                Text(planetKcal(p), Modifier.clearAndSetSemantics { }, style = Kreuzer.mono(13f, 0f), color = f.text, textAlign = TextAlign.End)
+            }
+        }
+    }
+    val offen = frage?.let { id -> planeten.firstOrNull { it.vorschlag?.planEintragId == id } }
+    offen?.let { p -> GegessenFrage(p.mahlzeit, requireNotNull(p.vorschlag), aktionen) { frage = null } }
+}
+
 /** Daten des gewählten Planeten unter dem System, mit dem passenden Weg weiter. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -492,17 +602,20 @@ private fun Makros(t: TagebuchHeute) {
 private fun Mission(zustand: HeuteZustand, aktionen: HeuteAktionen) {
     val f = FoodyTheme.farben
     val amber = kreuzerAmber()
-    val form = Kreuzer.ecke()
+    val form = kreuzerForm()
     val n = zustand.naechste
     val r = zustand.inspiration
+    val inszeniert = FoodyTheme.stil.inszeniert
+    val grund = if (inszeniert) Brush.linearGradient(listOf(amber.copy(alpha = 0.10f), amber.copy(alpha = 0.02f))) else SolidColor(Kreuzer.karteRuhig)
     Column(
         Modifier.fillMaxWidth().clip(form)
-            .background(Brush.linearGradient(listOf(amber.copy(alpha = 0.10f), amber.copy(alpha = 0.02f))))
-            .border(1.dp, amber.copy(alpha = 0.45f), form)
+            .background(grund)
+            .border(1.dp, if (inszeniert) amber.copy(alpha = 0.45f) else Kreuzer.randRuhig, form)
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         val kopf = when {
+            !inszeniert -> missionKopfRuhig(n?.mahlzeit?.slot, n?.morgen == true, r != null)
             n != null -> if (n.morgen) "NÄCHSTE MISSION · MORGEN" else "NÄCHSTE MISSION"
             r != null -> "MISSIONSVORSCHLAG"
             else -> "KEINE MISSION GEPLANT"
@@ -522,14 +635,29 @@ private fun Mission(zustand: HeuteZustand, aktionen: HeuteAktionen) {
         Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             when {
                 n != null -> KreuzerKnopf(
-                    "Mission starten", { aktionen.onKochen(n.mahlzeit.rezeptId, n.mahlzeit.portionen) }, Modifier.weight(1.4f), beschreibung = "Kochen",
+                    szenenWort("Mission starten", "Kochen"),
+                    { aktionen.onKochen(n.mahlzeit.rezeptId, n.mahlzeit.portionen) },
+                    Modifier.weight(1.4f),
+                    beschreibung = "Kochen",
                 )
-                r != null -> KreuzerKnopf("Daten ansehen", { aktionen.onRezept(r.id) }, Modifier.weight(1.4f), beschreibung = "Rezept ansehen")
+                r != null -> KreuzerKnopf(
+                    szenenWort("Daten ansehen", "Rezept ansehen"),
+                    { aktionen.onRezept(r.id) },
+                    Modifier.weight(1.4f),
+                    beschreibung = "Rezept ansehen",
+                )
             }
             KreuzerKnopf("+ Eintragen", { aktionen.onEintragen(null) }, Modifier.weight(1f), voll = n == null && r == null)
         }
     }
     Spacer(Modifier.height(2.dp))
+}
+
+/** Kopf der Karte in Ruhig: die Mahlzeit beim Namen („ABENDESSEN“), sonst „VORSCHLAG“ oder „NICHTS GEPLANT“. */
+internal fun missionKopfRuhig(slot: String?, morgen: Boolean, vorschlag: Boolean): String = when {
+    slot != null -> (Mahlzeit.ausText(slot)?.anzeigename() ?: slot).uppercase(Locale.GERMAN) + if (morgen) " · MORGEN" else ""
+    vorschlag -> "VORSCHLAG"
+    else -> "NICHTS GEPLANT"
 }
 
 private const val SYSTEM_BREITE = 280f

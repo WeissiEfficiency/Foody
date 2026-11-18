@@ -44,6 +44,7 @@ import de.foody.core.designsystem.stil.edo.edoShu
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
+import de.foody.core.designsystem.stil.kreuzer.kreuzerForm
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.domain.Nutrient
 import de.foody.domain.NutritionResult
@@ -229,26 +230,31 @@ internal fun KreuzerHeld(z: DetailZustand.Da) {
     val f = FoodyTheme.farben
     val r = z.voll.rezept
     val amber = kreuzerAmber()
-    val form = Kreuzer.ecke()
+    val form = kreuzerForm()
+    // Ruhig wie im Entwurf: eine schlichte Karte ohne Amber, „REZEPT“ statt „SYSTEM“, ZEIT und KCAL
+    val inszeniert = FoodyTheme.stil.inszeniert
     Column(
-        Modifier.fillMaxWidth().background(amber.copy(alpha = 0.07f), form).border(1.dp, amber.copy(alpha = 0.45f), form)
+        Modifier.fillMaxWidth().background(if (inszeniert) amber.copy(alpha = 0.07f) else Kreuzer.karteRuhig, form)
+            .border(1.dp, if (inszeniert) amber.copy(alpha = 0.45f) else Kreuzer.randRuhig, form)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(kreuzerSektor(z), style = Kreuzer.mono(11.5f, 0.1f), color = f.primaer)
+        Text(kreuzerSektor(z, inszeniert), style = Kreuzer.mono(11.5f, 0.1f), color = f.primaer)
         Text(r.name, Modifier.semantics { heading() }, style = Kreuzer.titel(titelGroesse(24f)), color = f.text)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Kennwert("FLUGZEIT", zeit(r.prepMinutes, r.cookMinutes) ?: "–", Modifier.weight(1f))
-            Kennwert("ENERGIE", kcalZahl(z)?.let { "$it kcal" } ?: "–", Modifier.weight(1f))
+            Kennwert(if (inszeniert) "FLUGZEIT" else "ZEIT", zeit(r.prepMinutes, r.cookMinutes) ?: "–", Modifier.weight(1f))
+            Kennwert(if (inszeniert) "ENERGIE" else "KCAL", kcalZahl(z)?.let { "$it kcal" } ?: "–", Modifier.weight(1f))
             Kennwert("EIWEISS", naehrwertZeilen(z.voll, 1).firstOrNull { it.name == "Eiweiß" }?.jePortion ?: "–", Modifier.weight(1f))
         }
     }
 }
 
 /** „SYSTEM · ABENDESSEN · FAVORIT“: die Kopfzeile der Karte. */
-internal fun kreuzerSektor(z: DetailZustand.Da): String =
+internal fun kreuzerSektor(z: DetailZustand.Da, inszeniert: Boolean = true): String =
     listOfNotNull(
-        "SYSTEM", z.voll.einordnung.mahlzeiten.minByOrNull { it.ordinal }?.anzeigename(), if (z.voll.rezept.favorite) "FAVORIT" else null,
+        if (inszeniert) "SYSTEM" else "REZEPT",
+        z.voll.einordnung.mahlzeiten.minByOrNull { it.ordinal }?.anzeigename(),
+        if (z.voll.rezept.favorite) "FAVORIT" else null,
     ).joinToString(" · ").uppercase(Locale.GERMAN)
 
 @Composable

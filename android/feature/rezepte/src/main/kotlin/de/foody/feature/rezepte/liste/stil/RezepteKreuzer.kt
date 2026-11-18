@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,12 +23,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
@@ -35,6 +39,8 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.KreuzerKnopf
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
+import de.foody.core.designsystem.stil.kreuzer.kreuzerForm
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import java.util.Locale
 import kotlin.math.min
@@ -44,7 +50,8 @@ import kotlin.math.roundToInt
  * „Rezepte“ im Sternenkreuzer (V) in Immersiv (Entwurf `V-Rezepte`): „NAVIGATIONSARCHIV · 6 SYSTEME“ über
  * „Sternkarte“, die Treffer der Seite als Sternsysteme auf einem Raster (Größe nach kcal, Favoriten in Amber, das
  * gewählte mit gestricheltem Ring), darunter seine Karte mit abgeschnittenen Ecken, FLUGZEIT, ENERGIE, BESUCHE und
- * „Kurs setzen“.
+ * „Kurs setzen“. In Ruhig wie im Entwurf: „Rezepte“, die Treffer als Zeilen mit Name, Zeit und kcal (das gewählte mit
+ * Amber am Rand), darunter eine schlichte Karte mit ZEIT, KCAL, GEKOCHT und „Öffnen“.
  */
 
 private val LINIE = Kreuzer.linie
@@ -58,9 +65,14 @@ internal fun KreuzerKopf(n: Int, neu: @Composable () -> Unit) {
     val f = FoodyTheme.farben
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Column(Modifier.align(Alignment.Bottom).padding(end = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(if (n > 0) "NAVIGATIONSARCHIV · $n SYSTEME" else "NAVIGATIONSARCHIV", style = Kreuzer.mono(12f, 0.08f), color = f.nebentext)
+            val unter = if (FoodyTheme.stil.inszeniert) {
+                if (n > 0) "NAVIGATIONSARCHIV · $n SYSTEME" else "NAVIGATIONSARCHIV"
+            } else {
+                if (n > 0) "$n Rezepte" else null
+            }
+            unter?.let { Text(it, style = Kreuzer.mono(12f, 0.08f), color = f.nebentext) }
             // Der Titel wächst mit der Systemschrift nur bis 130 %
-            Text("Sternkarte", Modifier.semantics { heading() }, style = Kreuzer.titel(titelGroesse(28f)), color = f.text)
+            Text(szenenWort("Sternkarte", "Rezepte"), Modifier.semantics { heading() }, style = Kreuzer.titel(titelGroesse(28f)), color = f.text)
         }
         Box(Modifier.align(Alignment.Bottom)) { neu() }
     }
@@ -76,6 +88,10 @@ internal fun sternGroesse(kcal: Int?): Int = (7 + (kcal ?: 300) / 70).coerceIn(7
 /** Die Treffer der Seite als Systeme auf der Sternkarte; jedes ist mindestens 48 dp groß zu treffen. */
 @Composable
 internal fun KreuzerKarte(liste: List<RezeptKarte>, gewaehlt: String, onWahl: (String) -> Unit) {
+    if (!FoodyTheme.stil.inszeniert) {
+        KreuzerListe(liste, gewaehlt, onWahl)
+        return
+    }
     val holo = FoodyTheme.stil.zier
     val form = Kreuzer.ecke()
     Layout(
@@ -110,6 +126,37 @@ internal fun KreuzerKarte(liste: List<RezeptKarte>, gewaehlt: String, onWahl: (S
     }
 }
 
+/** Ruhig wie im Entwurf: die Treffer als Zeilen mit Name, Zeit und kcal; das gewählte mit Amber am linken Rand. */
+@Composable
+private fun KreuzerListe(liste: List<RezeptKarte>, gewaehlt: String, onWahl: (String) -> Unit) {
+    val f = FoodyTheme.farben
+    val amber = kreuzerAmber()
+    val k = LocalDensity.current.fontScale
+    Column(Modifier.fillMaxWidth().drawBehind { drawLine(f.lichtkante, Offset.Zero, Offset(size.width, 0f), 1.dp.toPx()) }) {
+        liste.forEach { r ->
+            val an = r.id == gewaehlt
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 48.dp).background(if (an) Kreuzer.karteRuhig else Color.Transparent)
+                    .drawBehind {
+                        drawLine(f.lichtkante, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx())
+                        if (an) drawLine(amber, Offset(1.dp.toPx(), 0f), Offset(1.dp.toPx(), size.height), 2.dp.toPx())
+                    }
+                    .rezeptWahl(r, an) { onWahl(r.id) }
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(r.name, Modifier.weight(1f), style = Kreuzer.titel(15.5f, FontWeight.Medium, 0f), color = f.text)
+                Text(
+                    r.zeitMinuten?.let { "$it′" } ?: "–", Modifier.width(54.dp * k),
+                    style = Kreuzer.mono(13f, 0f), color = f.nebentext, textAlign = TextAlign.End,
+                )
+                Text(r.kcalJePortion?.toString() ?: "–", Modifier.width(54.dp * k), style = Kreuzer.mono(13f, 0f), color = f.text, textAlign = TextAlign.End)
+            }
+        }
+    }
+}
+
 @Composable
 private fun System(r: RezeptKarte, an: Boolean, onKlick: () -> Unit) {
     val f = FoodyTheme.farben
@@ -139,14 +186,20 @@ private fun System(r: RezeptKarte, an: Boolean, onKlick: () -> Unit) {
 internal fun KreuzerDaten(r: RezeptKarte, onOeffnen: (String) -> Unit) {
     val f = FoodyTheme.farben
     val holo = FoodyTheme.stil.zier
-    val form = Kreuzer.ecke()
+    val form = kreuzerForm()
+    val inszeniert = FoodyTheme.stil.inszeniert
+    val grund = if (inszeniert) Brush.linearGradient(listOf(holo.copy(alpha = 0.08f), holo.copy(alpha = 0.01f))) else SolidColor(Kreuzer.karteRuhig)
     Column(
-        Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(holo.copy(alpha = 0.08f), holo.copy(alpha = 0.01f))), form)
-            .border(1.dp, holo.copy(alpha = 0.35f), form).padding(horizontal = 16.dp, vertical = 14.dp),
+        Modifier.fillMaxWidth().background(grund, form)
+            .border(1.dp, if (inszeniert) holo.copy(alpha = 0.35f) else Kreuzer.randRuhig, form).padding(horizontal = 16.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            listOfNotNull("SYSTEM", r.tags.firstOrNull()?.uppercase(Locale.GERMAN), if (r.favorit) "FAVORIT" else null).joinToString(" · "),
+            listOfNotNull(
+                if (inszeniert) "SYSTEM" else "REZEPT",
+                r.tags.firstOrNull()?.uppercase(Locale.GERMAN),
+                if (r.favorit) "FAVORIT" else null,
+            ).joinToString(" · "),
             style = Kreuzer.mono(11.5f, 0.1f), color = f.primaer,
         )
         Text(r.name, style = Kreuzer.titel(22f), color = f.text)
@@ -157,12 +210,12 @@ internal fun KreuzerDaten(r: RezeptKarte, onOeffnen: (String) -> Unit) {
             }.padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Wert("FLUGZEIT", r.zeitMinuten?.let { "$it MIN" } ?: "–", Modifier.weight(1f))
-            Wert("ENERGIE", r.kcalJePortion?.let { "$it KCAL" } ?: "–", Modifier.weight(1f))
-            Wert("BESUCHE", "${r.gekocht}×", Modifier.weight(1f))
+            Wert(szenenWort("FLUGZEIT", "ZEIT"), r.zeitMinuten?.let { "$it MIN" } ?: "–", Modifier.weight(1f))
+            Wert(szenenWort("ENERGIE", "KCAL"), r.kcalJePortion?.let { "$it KCAL" } ?: "–", Modifier.weight(1f))
+            Wert(szenenWort("BESUCHE", "GEKOCHT"), "${r.gekocht}×", Modifier.weight(1f))
         }
         zutatenSatz(r)?.let { Text(it, style = Kreuzer.titel(15f, androidx.compose.ui.text.font.FontWeight.Normal, 0f), color = f.nebentext) }
-        KreuzerKnopf("Kurs setzen", { onOeffnen(r.id) }, Modifier.fillMaxWidth().padding(top = 4.dp), beschreibung = "Öffnen: ${r.name}")
+        KreuzerKnopf(szenenWort("Kurs setzen", "Öffnen"), { onOeffnen(r.id) }, Modifier.fillMaxWidth().padding(top = 4.dp), beschreibung = "Öffnen: ${r.name}")
     }
 }
 

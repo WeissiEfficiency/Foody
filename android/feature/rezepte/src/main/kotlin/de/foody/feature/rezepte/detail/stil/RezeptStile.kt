@@ -159,6 +159,12 @@ internal fun rezeptArt(stil: FoodyStil, inszeniert: Boolean = true): RezeptArt =
         nummer = { roemisch(it) + "." }, werteKopf = listOf("Nährwert", "Portion", "Gesamt"),
         titel = { Grauen.titel(it) }, text = { Grauen.text(it) }, klein = { Grauen.titel(it, 0.1f) }, favorit = "♦" to "◇",
     )
+    FoodyStil.KREUZER if !inszeniert -> RezeptArt(
+        kopf = "REZEPT", reiter = REITER, kochen = "Kochen", liste = "Einkaufen",
+        duplizieren = "Duplizieren", archiviert = "ARCHIVIERT", zurueckholen = "ZURÜCKHOLEN", portionen = ::portionenText,
+        nummer = { it.toString().padStart(2, '0') }, werteKopf = listOf("WERT", "PORTION", "GESAMT"),
+        titel = { Kreuzer.titel(it) }, text = { Kreuzer.titel(it, FontWeight.Normal, 0f) }, klein = { Kreuzer.mono(it) },
+    )
     else -> RezeptArt(
         kopf = "SYSTEMDATEN", reiter = listOf("Zutaten", "Ablauf", "Nährwerte"), kochen = "Kurs setzen", liste = "Ladeliste",
         duplizieren = "Duplizieren", archiviert = "ARCHIVIERT", zurueckholen = "ZURÜCKHOLEN", portionen = { "CREW $it" },

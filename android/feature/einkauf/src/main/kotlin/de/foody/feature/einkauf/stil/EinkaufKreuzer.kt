@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material3.Text
@@ -33,6 +34,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.einkauf.EinkaufsAnsicht
@@ -41,6 +43,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.KreuzerKnopf
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import java.util.Locale
 import kotlin.math.min
@@ -49,16 +52,20 @@ import kotlin.math.min
  * „Einkauf“ im Sternenkreuzer (V) in Immersiv (Entwurf `V-Einkauf`): „LADELISTE · …“ über dem „Frachtraum“, rechts
  * „9 / 12 GELADEN“ und „3 KISTEN OFFEN“, daneben „Ladelisten“ (frühere Listen); darunter die Ladeanzeige in Segmenten.
  * Im Frachtraum steht jeder Posten als Kiste mit Code der Abteilung („OBS 01“), Name und Menge; geladene tragen ein
- * schräges Band „GELADEN“ in Amber.
+ * schräges Band „GELADEN“ in Amber. In Ruhig wie im Entwurf: „Diese Woche“ über „Einkauf“, „Listen“, statt der Kisten
+ * eine Liste je Abteilung mit Kästchen, erledigte durchgestrichen.
  */
 internal fun LazyGridScope.kreuzerKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
     ganzeBreite("kreuzer-kopf") { Kopf(ansicht, onListen, menue) }
 }
 
 internal fun LazyGridScope.kreuzerPosten(ansicht: EinkaufsAnsicht?, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {
-    val kisten = ansicht.gruppiert().flatMap { it.artikel }
+    val gruppen = ansicht.gruppiert()
+    val kisten = gruppen.flatMap { it.artikel }
     if (kisten.isEmpty()) return
-    ganzeBreite("kreuzer-frachtraum") { Frachtraum(kisten, onUmschalten, onDetails) }
+    ganzeBreite("kreuzer-frachtraum") {
+        if (FoodyTheme.stil.inszeniert) Frachtraum(kisten, onUmschalten, onDetails) else Liste(gruppen, onUmschalten, onDetails)
+    }
 }
 
 /** Code der Abteilung auf der Kiste: die ersten drei Buchstaben, groß („OBS“, „KÜH“). */
@@ -86,12 +93,12 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Column(Modifier.align(Alignment.Bottom).padding(end = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    "LADELISTE · ${(ansicht?.name ?: "Einkauf").uppercase(Locale.GERMAN)}",
+                    szenenWort("LADELISTE · ${(ansicht?.name ?: "Einkauf").uppercase(Locale.GERMAN)}", "Diese Woche"),
                     style = Kreuzer.mono(12.5f, 0.08f), color = f.nebentext,
                 )
                 // Der Titel wächst mit der Systemschrift nur bis 130 %
                 Text(
-                    "Frachtraum",
+                    szenenWort("Frachtraum", "Einkauf"),
                     Modifier.semantics {
                         heading()
                         contentDescription = "Einkauf"
@@ -107,14 +114,18 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
                         },
                         horizontalAlignment = Alignment.End,
                     ) {
-                        Text("$erledigt / $gesamt GELADEN", style = Kreuzer.mono(13f), color = holo, textAlign = TextAlign.End)
+                        Text("$erledigt / $gesamt " + szenenWort("GELADEN", "erledigt"), style = Kreuzer.mono(13f), color = holo, textAlign = TextAlign.End)
                         Text(
-                            if (gesamt == erledigt) "STARTKLAR" else "${gesamt - erledigt} KISTEN OFFEN",
+                            when {
+                                FoodyTheme.stil.inszeniert -> if (gesamt == erledigt) "STARTKLAR" else "${gesamt - erledigt} KISTEN OFFEN"
+                                gesamt == erledigt -> "alles erledigt"
+                                else -> "noch ${gesamt - erledigt} offen"
+                            },
                             style = Kreuzer.mono(13f), color = f.nebentext, textAlign = TextAlign.End,
                         )
                     }
                 }
-                KreuzerKnopf("Ladelisten", onListen, voll = false, beschreibung = "Frühere Listen")
+                KreuzerKnopf(szenenWort("Ladelisten", "Listen"), onListen, voll = false, beschreibung = "Frühere Listen")
                 menue()
             }
         }
@@ -167,6 +178,53 @@ private fun Frachtraum(kisten: List<EinkaufsArtikel>, onUmschalten: (String, Boo
         }
     }
 }
+
+/** Ruhig: je Abteilung eine Überschrift und die Posten als Zeilen mit Kästchen; erledigte durchgestrichen. */
+@Composable
+private fun Liste(gruppen: List<PostenGruppe>, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {
+    val f = FoodyTheme.farben
+    val holo = FoodyTheme.stil.zier
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        gruppen.forEach { g ->
+            Column {
+                Text(
+                    g.name.uppercase(Locale.GERMAN),
+                    Modifier.padding(bottom = 4.dp).semantics {
+                        heading()
+                        contentDescription = g.name
+                    },
+                    style = Kreuzer.mono(12.5f, 0.08f), color = f.nebentext,
+                )
+                g.artikel.forEach { a ->
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .drawBehind { drawLine(f.lichtkante, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx()) }
+                            .posten(a, onUmschalten, onDetails).padding(horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Box(
+                            Modifier.size(18.dp).clearAndSetSemantics { }.border(1.5.dp, if (a.gekauft) holo else KASTEN_RAND)
+                                .background(if (a.gekauft) holo else Color.Transparent),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (a.gekauft) Text("✓", style = Kreuzer.mono(12f / LocalDensity.current.fontScale, 0f), color = HAKEN)
+                        }
+                        Text(
+                            a.name, Modifier.weight(1f),
+                            style = Kreuzer.titel(15f, FontWeight.Medium, 0f).copy(textDecoration = if (a.gekauft) TextDecoration.LineThrough else null),
+                            color = if (a.gekauft) f.nebentext else f.text,
+                        )
+                        a.menge?.let { Text(it, style = Kreuzer.mono(12.5f, 0f), color = f.nebentext) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private val KASTEN_RAND = Color(0xFF5B6782)
+private val HAKEN = Color(0xFF0B0F17)
 
 /** Kiste mit abgeschnittener Ecke oben rechts. */
 private val KISTE = GenericShape { g, _ ->

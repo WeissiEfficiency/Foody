@@ -186,6 +186,7 @@ private val PLATZ_FUER_LEISTE = 104.dp
 private fun suchText(stil: FoodyStil, inszeniert: Boolean) = when (stil) {
     FoodyStil.GRAUEN if !inszeniert -> "Rezept oder Zutat suchen"
     FoodyStil.GRAUEN -> "In den Bänden suchen"
+    FoodyStil.KREUZER if !inszeniert -> "Rezept oder Zutat suchen"
     FoodyStil.KREUZER -> "System suchen"
     FoodyStil.BAYRISCH -> "Rezept oder Zutat suacha"
     else -> "Rezept oder Zutat suchen"

@@ -189,6 +189,10 @@ internal fun tagebuchArt(stil: FoodyStil, inszeniert: Boolean = true): TagebuchA
         "Logbuch", "Aufzeichnungen eines Hungrigen", ::mahlzeitGrauen, "nichts verzeichnet", "Tilgen", ::tagZusatzKurz,
         { Grauen.titel(it) }, { Grauen.text(it) }, { Grauen.titel(it, 0.1f) },
     )
+    FoodyStil.KREUZER if !inszeniert -> TagebuchArt(
+        "Tagebuch", "Was du gegessen hast", { it.kurzname().uppercase(Locale.GERMAN) }, "—", "Löschen", ::tagZusatzKurz,
+        { Kreuzer.titel(it) }, { Kreuzer.titel(it, FontWeight.Normal, 0f) }, { Kreuzer.mono(it) },
+    )
     else -> TagebuchArt(
         "Bordbuch", "LOGBUCH · VERSORGUNG", ::mahlzeitKreuzer, "kein Kontakt", "Löschen", ::logbuchZusatz,
         { Kreuzer.titel(it) }, { Kreuzer.titel(it, FontWeight.Normal, 0f) }, { Kreuzer.mono(it) },

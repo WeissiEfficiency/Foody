@@ -16,6 +16,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -55,6 +56,10 @@ object Kreuzer {
     fun mono(groesse: Float, abstand: Float = 0.06f) =
         TextStyle(fontFamily = ShareTechMonoFamilie, fontSize = groesse.sp, lineHeight = (groesse * 1.3f).sp, letterSpacing = abstand.em).mitSilbentrennung()
 
+    /** Karte und ihr Rand in Ruhig (im Entwurf #121826 und #2A3346): eckig, ohne Verlauf. */
+    val karteRuhig = Color(0xFF121826)
+    val randRuhig = Color(0xFF2A3346)
+
     /** Text auf Amber (im Entwurf #1A1206). */
     val aufAmber = Color(0xFF1A1206)
 
@@ -76,6 +81,10 @@ object Kreuzer {
         }
     }
 }
+
+/** Form der Karten: abgeschnittene Ecken in Immersiv, in Ruhig wie im Entwurf ein schlichtes Rechteck. */
+@Composable
+fun kreuzerForm(schnitt: Dp = 16.dp): Shape = if (FoodyTheme.stil.inszeniert) Kreuzer.ecke(schnitt) else RectangleShape
 
 /** Amber des Sternenkreuzers: der gewählte Akzent (Handlungen, Sonne), als Text lesbar ([StilWerte.akzentFarbe]). */
 @Composable
