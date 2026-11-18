@@ -201,7 +201,7 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Listen als Seite mit Reitern „Neue Liste · Abgleich · Frühere“ (Q–V), 2026-11-17, siehe „Ergebnis“.
 - [x] Eintragen mit Reitern „Suchen · Scannen · Foto · Geplant“ (Q–V; T–V als Seite), 2026-11-17, siehe „Ergebnis“.
 - [ ] Ruhig als schlichte Szenen wie in den Entwürfen, Stil für Stil (`RUHIG_ALS_SZENE`): Sage, Anime und
-      Edo erledigt 2026-11-17 (siehe „Ergebnis“); offen Bayrisch, Grauen, Kreuzer.
+      Edo erledigt 2026-11-17, Bayrisch 2026-11-18 (siehe „Ergebnis“); offen Grauen, Kreuzer.
 - [x] Rezeptfilter wie im Entwurf: „Alle · Favoriten · ≤ 30 Min.“ mit den Wörtern des Stils, 2026-11-17, siehe „Ergebnis“.
 - [x] Editor der Sage wie im Entwurf (Reiter „Grundlagen · Zutaten · Ritual“), 2026-11-17, siehe „Ergebnis“.
 - [x] Tagebuch: „‹“ im Kopf zurück zu Heute in allen Stilen (Immersiv und Ruhig), 2026-11-17, siehe „Ergebnis“.
@@ -844,4 +844,17 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
 - Tests: `HeuteEdoTest.ruhigZeigtSzeneSchlicht` (vorher normale Ansicht), `WocheStileTest.edoRuhigTageschips`.
   Referenzbild `stil_edo_ruhig` neu. `PlanenSeiteTest.platzMitPortionen` läuft jetzt in Kreuzer Ruhig: freie Plätze
   („Abendessen planen“) zeigt nur die normale Ansicht; wenn Kreuzer zur Szene wird, braucht der Test einen neuen Weg.
+
+**2026-11-18 – Ruhig als schlichte Szene: Bayrisch** (Branch `claude/ruhig-szenen-bayrisch`):
+- Bayrisch steht in `RUHIG_ALS_SZENE` und zeigt in Ruhig wie die Entwürfe `T-*`: die großen Titel in Alegreya statt
+  Fraktur (`bayrischSzenenTitel`), der Dialekt bleibt („Heid“, „Wochn“, „Kochbiachl“, „Pack ma's!“). Heute behält den
+  Maibaum ohne die Landschaft (der Entwurf `T-Heute` hat keine Ruhig-Fassung, also dieselbe Regel wie die übrigen
+  T-Seiten). Woche ohne Wimpelkette, den Tag wählt man in der Liste. Einkauf ohne Markise und Holzkisten, Kopfschild
+  weiß, „Einkauf“ und „Listen“. Rezepte statt der Lebkuchenherzen weiße Karten zu zweit. Rezept ohne Rautenband, mit
+  „Zutaten / Zubereitung“ und „2 Portionen“; Tagebuch „Tagebuch“ und „X kcal übrig“; Editor in Standardwörtern;
+  Kochen „Weiter“ und „Fertig“ (`tagebuchArt`, `rezeptArt`, `editorArt`, `kochArt` mit `inszeniert`).
+- Tests: `HeuteBayrischTest.ruhigZeigtSzeneSchlicht` (vorher normale Ansicht), `WocheStileTest.bayrischRuhigOhneWimpel`,
+  Wörter in `KochenStileTest` und `TagebuchStileTest`.
+- Im Emulator mit den Maßen des Handys nachgeprüft: Heute, Tagebuch, Rezepte, Rezept, Kochen, Woche, Einkauf in
+  Bayrisch Ruhig.
 - Im Emulator mit den Maßen des Handys nachgeprüft: Heute, Tagebuch, Rezepte, Rezept, Woche, Einkauf in Edo Ruhig.

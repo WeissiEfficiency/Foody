@@ -163,7 +163,12 @@ private fun Mahlzeit.bahnKreuzer(): Int = when (this) {
 internal fun gruppenFolge(stil: FoodyStil, abschnitte: List<TagAbschnitt>): List<TagAbschnitt> =
     if (stil == FoodyStil.KREUZER) abschnitte.sortedBy { it.mahlzeit.bahnKreuzer() } else abschnitte
 
-internal fun tagebuchArt(stil: FoodyStil): TagebuchArt = when (stil) {
+/** Wörter und Schriften des Tagebuchs; Bayrisch in Ruhig ([inszeniert] = false) mit den normalen Wörtern wie im Entwurf. */
+internal fun tagebuchArt(stil: FoodyStil, inszeniert: Boolean = true): TagebuchArt = when (stil) {
+    FoodyStil.BAYRISCH if !inszeniert -> TagebuchArt(
+        "Tagebuch", null, Mahlzeit::kurzname, "—", "Löschen", ::tagZusatzKurz,
+        { Bayrisch.titel(it) }, { Bayrisch.text(it) }, { Bayrisch.text(it, FontWeight.Bold) },
+    )
     FoodyStil.ANIME -> TagebuchArt(
         "TAGEBUCH!", null, Mahlzeit::kurzname, "Noch leer – tippe auf +", "Löschen", ::tagZusatzKurz,
         { Anime.titel(it, 0f) }, { Anime.text(it, FontWeight.Medium) }, { Anime.text(it, FontWeight.ExtraBold) },
@@ -207,10 +212,15 @@ internal fun grauenNotiz(z: TagZustand, heute: LocalDate): String {
 }
 
 /** Bayrisch: „Passt scho · no 1.140 frei“ bzw. „Gnua für heid“; `null` ohne Ziel. */
-internal fun bayrischSpruch(z: TagZustand): String? = z.ziel?.takeIf { it > 0 }?.let { ziel ->
+internal fun bayrischSpruch(z: TagZustand, inszeniert: Boolean = true): String? = z.ziel?.takeIf { it > 0 }?.let { ziel ->
     val rest = ziel - z.summe.kcal
     val voll = z.summe.vollstaendig
-    if (rest >= 0) "Passt scho · no ${kcalRest(rest, voll)} frei" else "Gnua für heid · ${kcalZahl(-rest, voll)} drüber"
+    when {
+        // Ruhig wie im Entwurf: „1.140 kcal übrig“
+        !inszeniert -> if (rest >= 0) "${kcalRest(rest, voll)} kcal übrig" else "${kcalZahl(-rest, voll)} kcal über dem Ziel"
+        rest >= 0 -> "Passt scho · no ${kcalRest(rest, voll)} frei"
+        else -> "Gnua für heid · ${kcalZahl(-rest, voll)} drüber"
+    }
 }
 
 @Composable
@@ -226,7 +236,7 @@ internal fun TagebuchStil(
     onEintragen: (Mahlzeit?) -> Unit,
     onZurueck: (() -> Unit)? = null,
 ) {
-    val art = tagebuchArt(stil)
+    val art = tagebuchArt(stil, FoodyTheme.stil.inszeniert)
     var offenId by rememberSaveable(datum) { mutableStateOf<String?>(null) }
     Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
@@ -240,7 +250,9 @@ internal fun TagebuchStil(
                 val z = zustand?.takeIf { it.datum == datum } ?: return@Column
                 if (stil == FoodyStil.KREUZER) Balken(art, z) else Ring(art, z)
                 when (stil) {
-                    FoodyStil.BAYRISCH -> bayrischSpruch(z)?.let { Text(it, style = art.klein(15f), color = FoodyTheme.farben.primaer) }
+                    FoodyStil.BAYRISCH -> bayrischSpruch(z, FoodyTheme.stil.inszeniert)?.let {
+                        Text(it, style = art.klein(15f), color = FoodyTheme.farben.primaer)
+                    }
                     FoodyStil.GRAUEN -> Text(grauenNotiz(z, heute), style = Grauen.text(16f, kursiv = true), color = FoodyTheme.farben.nebentext)
                     else -> Unit
                 }

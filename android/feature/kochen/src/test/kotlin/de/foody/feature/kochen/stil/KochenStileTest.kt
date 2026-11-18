@@ -140,6 +140,10 @@ class KochenStileTest {
         assertEquals("PHASE 2 / 5", kochArt(FoodyStil.KREUZER).ueberSchritt(2, 5))
         assertEquals("MISSION · REISTOPF · CREW 2", kochArt(FoodyStil.KREUZER).kopf("Reistopf", 2))
         assertEquals("Reistopf · 2 Portiona", kochArt(FoodyStil.BAYRISCH).kopf("Reistopf", 2))
+        // Bayrisch Ruhig wie im Entwurf T-Kochen: „Weiter“ und „Fertig“ statt „Weida“ und „Feddig!“
+        assertEquals("Weiter", kochArt(FoodyStil.BAYRISCH, inszeniert = false).weiter)
+        assertEquals("Fertig", kochArt(FoodyStil.BAYRISCH, inszeniert = false).fertig)
+        assertEquals("Reistopf · 2 Portiona", kochArt(FoodyStil.BAYRISCH, inszeniert = false).kopf("Reistopf", 2))
         assertEquals("3 Port.", kochArt(FoodyStil.ANIME).portionen(3))
     }
 }

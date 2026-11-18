@@ -74,6 +74,7 @@ import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.bayrisch.BayrischKnopf
 import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
+import de.foody.core.designsystem.stil.bayrisch.bayrischSzenenTitel
 import de.foody.core.designsystem.stil.svgPfad
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.core.designsystem.token.FoodyBreiten
@@ -111,7 +112,8 @@ private val DATUM = DateTimeFormatter.ofPattern("EEEE, d. MMMM", Locale.GERMAN)
 internal fun HeuteBayrisch(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modifier = Modifier) {
     val k = LocalDensity.current.fontScale
     Box(modifier.fillMaxSize()) {
-        Landschaft(Modifier.matchParentSize())
+        // Himmel, Berge und Kirchturm nur in Immersiv; Ruhig zeigt den Maibaum auf dem schlichten Grund
+        if (FoodyTheme.stil.inszeniert) Landschaft(Modifier.matchParentSize())
         HeuteRahmen { rahmen ->
             Row(rahmen) {
                 // Bei großer Schrift wird der Baum etwas breiter, damit die Schilder lesbar bleiben
@@ -148,7 +150,7 @@ private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
                     heading()
                     contentDescription = "Heute"
                 },
-                style = Bayrisch.fraktur(titelGroesse(54f)), color = f.text, maxLines = 1,
+                style = bayrischSzenenTitel(titelGroesse(54f)), color = f.text, maxLines = 1,
             )
             zustand?.datum?.let { Text(DATUM.format(it), style = Bayrisch.text(14.5f, FontWeight.Medium), color = f.text) }
             zustand?.sync?.let { SyncStatus(it, Modifier.padding(top = 4.dp)) }

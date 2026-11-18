@@ -7,10 +7,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material3.Text
@@ -25,7 +29,6 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +39,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.bayrisch.BayrischKnopf
 import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
+import de.foody.core.designsystem.stil.bayrisch.bayrischSzenenTitel
 import de.foody.core.designsystem.stil.titelGroesse
 import kotlin.math.min
 
@@ -57,8 +61,10 @@ internal fun BayrischKopf(n: Int, neu: @Composable () -> Unit) {
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Column(Modifier.align(Alignment.Bottom).padding(end = 8.dp)) {
             // Der Titel wächst mit der Systemschrift nur bis 130 %
-            Text("Rezepte", Modifier.semantics { heading() }, style = Bayrisch.fraktur(titelGroesse(32f)), color = f.text)
-            Text(if (n > 0) "Vom Lebkuchenstand · $n Herzen" else "Vom Lebkuchenstand", style = Bayrisch.text(15f), color = f.nebentext)
+            Text("Rezepte", Modifier.semantics { heading() }, style = bayrischSzenenTitel(titelGroesse(32f)), color = f.text)
+            // Ruhig wie im Entwurf: „Kochbiachl“ statt des Lebkuchenstands
+            val unter = if (!FoodyTheme.stil.inszeniert) "Kochbiachl" else if (n > 0) "Vom Lebkuchenstand · $n Herzen" else "Vom Lebkuchenstand"
+            Text(unter, style = Bayrisch.text(15f), color = f.nebentext)
         }
         Box(Modifier.align(Alignment.Bottom)) { neu() }
     }
@@ -79,6 +85,10 @@ private val HERZ = GenericShape { s, _ ->
 /** Die Treffer der Seite als Herzen zu dritt; über jeder Reihe eine Holzstange mit den Schnüren. */
 @Composable
 internal fun BayrischHerzen(liste: List<RezeptKarte>, gewaehlt: String, onWahl: (String) -> Unit) {
+    if (!FoodyTheme.stil.inszeniert) {
+        BayrischListe(liste, gewaehlt, onWahl)
+        return
+    }
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         liste.chunked(3).forEachIndexed { reihe, drei ->
             Row(
@@ -91,6 +101,33 @@ internal fun BayrischHerzen(liste: List<RezeptKarte>, gewaehlt: String, onWahl: 
                     Herz(r, reihe * 3 + spalte, an = r.id == gewaehlt, Modifier.weight(1f)) { onWahl(r.id) }
                 }
                 repeat(3 - drei.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
+/** Ruhig wie im Entwurf: statt der Lebkuchenherzen die Treffer als Karten zu zweit mit Name, Zeit und kcal. */
+@Composable
+private fun BayrischListe(liste: List<RezeptKarte>, gewaehlt: String, onWahl: (String) -> Unit) {
+    val f = FoodyTheme.farben
+    val blau = bayrischBlau()
+    val form = Bayrisch.knopfForm
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        liste.chunked(2).forEach { paar ->
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                paar.forEach { r ->
+                    val an = r.id == gewaehlt
+                    Column(
+                        Modifier.weight(1f).fillMaxHeight().heightIn(min = 56.dp).background(Color.White, form)
+                            .border(2.dp, if (an) blau else Bayrisch.linie, form).rezeptWahl(r, an) { onWahl(r.id) }
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Text(r.name, style = Bayrisch.titel(15f), color = f.text)
+                        zeitUndKcal(r)?.let { Text(it, style = Bayrisch.text(12.5f), color = f.nebentext) }
+                    }
+                }
+                if (paar.size == 1) Spacer(Modifier.weight(1f))
             }
         }
     }

@@ -116,7 +116,16 @@ internal class RezeptArt(
 /** Die normalen Begriffe der Reiter für TalkBack. */
 private val REITER = listOf("Zutaten", "Zubereitung", "Nährwerte")
 
-internal fun rezeptArt(stil: FoodyStil): RezeptArt = when (stil) {
+/** Wörter und Schriften des Rezepts; Bayrisch in Ruhig ([inszeniert] = false) mit Reitern und Portionen wie im Entwurf. */
+internal fun rezeptArt(stil: FoodyStil, inszeniert: Boolean = true): RezeptArt = when (stil) {
+    FoodyStil.BAYRISCH if !inszeniert -> RezeptArt(
+        kopf = "", reiter = REITER, kochen = "Pack ma's!", liste = "Eikaufn",
+        duplizieren = "Duplizieren", archiviert = "archiviert", zurueckholen = "zruckholn",
+        portionen = ::portionenText, nummer = { "$it." },
+        werteKopf = listOf("Nährwert", "Portion", "Gesamt"),
+        titel = { Bayrisch.titel(it) }, text = { Bayrisch.text(it) }, klein = { Bayrisch.text(it, FontWeight.Bold) },
+        pillen = true, favorit = "♥" to "♡",
+    )
     FoodyStil.ANIME -> RezeptArt(
         kopf = "", reiter = listOf("Zutaten", "Schritte", "Nährwerte"), kochen = "KOCHEN ▶", liste = "Einkaufen",
         duplizieren = "Duplizieren", archiviert = "Dieses Rezept ist archiviert.", zurueckholen = "Zurückholen",
@@ -167,7 +176,7 @@ internal fun angabenZeile(z: DetailZustand.Da): String? =
 /** Die Szene des Stils [stil] (R–V). */
 @Composable
 internal fun RezeptStil(stil: FoodyStil, z: DetailZustand.Da, a: DetailAktionen) {
-    val art = rezeptArt(stil)
+    val art = rezeptArt(stil, FoodyTheme.stil.inszeniert)
     var reiter by rememberSaveable { mutableIntStateOf(0) }
     // Die Knopfleiste wächst mit der Schrift; so viel Platz bleibt unten frei
     var leiste by remember { mutableStateOf(140.dp) }

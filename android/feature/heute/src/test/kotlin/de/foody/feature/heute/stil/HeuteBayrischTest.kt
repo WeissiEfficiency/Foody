@@ -72,9 +72,12 @@ class HeuteBayrischTest {
     }
 
     @Test
-    fun ruhigZeigtNormaleAnsicht() {
+    fun ruhigZeigtSzeneSchlicht() {
+        // Wie die übrigen Entwürfe T-* in Ruhig: derselbe Maibaum ohne Landschaft, „Heid“ in Alegreya statt Fraktur
         zeigen(StilVariante.RUHIG)
-        compose.onNodeWithText("Griaß di!").assertDoesNotExist()
+        compose.onNodeWithText("Heid").assertExists()
+        compose.onNodeWithContentDescription("Maibaum: 860 von 2.000 kcal", substring = true).assertExists()
+        compose.onNodeWithText("Heid auf d'Nacht").assertExists()
     }
 
     @Test

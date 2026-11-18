@@ -213,6 +213,7 @@ class TagebuchStileTest {
         assertEquals("Nach Einbruch der Nacht", tagebuchArt(FoodyStil.GRAUEN).mahlzeit(Mahlzeit.ABENDESSEN))
         assertEquals("ORBIT 1", tagebuchArt(FoodyStil.KREUZER).mahlzeit(Mahlzeit.FRUEHSTUECK))
         assertEquals("ORBIT 4", tagebuchArt(FoodyStil.KREUZER).mahlzeit(Mahlzeit.SNACK))
+        assertEquals("Tagebuch", tagebuchArt(FoodyStil.BAYRISCH, inszeniert = false).titel)
         val folge = listOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.SNACK, Mahlzeit.ABENDESSEN).map { TagAbschnitt(it, emptyList()) }
         assertEquals(
             listOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.ABENDESSEN, Mahlzeit.SNACK),
