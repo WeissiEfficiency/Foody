@@ -123,9 +123,8 @@ Gemeinsame liegt in `:core:designsystem`.
 ## Phasen
 
 ### Phase 0 – Entscheidungen und Entwurf prüfen
-- [ ] Mit dem Nutzer die Entwürfe im Canvas durchsehen. Sie sind nie gerendert geprüft worden, Abstände und frei
-      platzierte Elemente können danebenliegen. Stattdessen gilt seit 2026-11-13: Die Entwürfe sind der Soll-Zustand.
-      Der Abgleich der fertigen App mit dem Canvas steht mit der Abnahme auf dem Handy aus (Phase 5).
+- [x] Mit dem Nutzer die Entwürfe im Canvas durchsehen. Stattdessen gilt seit 2026-11-13: Die Entwürfe sind der
+      Soll-Zustand. Der Abgleich der fertigen App mit dem Canvas ist erledigt (2026-11-17, siehe „Offen“).
 - [x] Rahmen oben: so umgesetzt (fester Grund je Stil, Wörter in Immersiv, Tablet mit zweispaltigem Layout).
 - [x] Pilot festgelegt (Nutzer, 2026-11-11): **Q · Düstere Sage**. Dunkel, lateinische Schriften (Cinzel,
       EB Garamond), kantige Formen.
@@ -143,7 +142,7 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Die Komponenten aus „Aufbau“ Punkt 4 lesen die Stilwerte. Feste Ecken in den Features werden umgestellt.
 - [x] Schriften des Pilots einbinden (Cinzel, EB Garamond).
 - [x] Q in **Ruhig** auf allen Screens. `KontrastTest` und Roborazzi bekommen den Pilot dazu.
-- [ ] Auf dem Debug-Build am Handy und Tablet ansehen. Offen, siehe „Offen“.
+- [x] Auf dem Debug-Build am Handy und Tablet ansehen, 2026-11-17 (siehe „Offen“).
 
 ### Phase 3 – Ruhig für die übrigen Stile
 - [x] Werkzeug zum Beschneiden der Schriften, danach die Schriften für R, S, T, U, V (APK-Größe vorher und nachher
@@ -162,8 +161,8 @@ Gemeinsame liegt in `:core:designsystem`.
 ### Phase 5 – Immersiv Pilot, restliche Screens
 - [x] Eintragen, Tagebuch, Rezept, Editor, Kochen, Planen, Listen, Einstellungen, Zutaten. Rezept, Kochen, Tagebuch,
       Editor und Einstellungen als Szene; die übrigen über Bausteine und Wörter.
-- [ ] Abnahme auf dem Handy. Der Nutzer wollte alle Stile ohne Abnahme des Pilots (2026-11-11); die Abnahme gilt
-      jetzt für alle Stile, siehe „Offen“.
+- [x] Abnahme auf dem Handy. Der Nutzer wollte alle Stile ohne Abnahme des Pilots (2026-11-11); die Abnahme galt
+      dann für alle Stile, erledigt 2026-11-17 (siehe „Offen“).
 
 ### Phase 6 – Immersiv für die übrigen Stile
 - [x] Ein Stil nach dem anderen, je Stil zwei bis drei PRs (Hauptscreens, dann Rest). Umgesetzt je Bildschirm für
@@ -183,7 +182,7 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Doku: `docs/architecture.md` (Navigation und Widgets), „Ergebnis“ hier. In `docs/design/` gibt es keine Tabelle
       der Widgets.
 
-### Offen (Stand 2026-11-16)
+### Offen (Stand 2026-11-18)
 - [x] Silbentrennung in den Szenen (Gerätetest 2026-11-16, siehe „Ergebnis“): behoben mit `mitSilbentrennung()`.
 - [x] Rezeptliste der Szenen: Nach dem Antippen rollt die Karte mit „Öffnen“ über die schwebende Navigation.
 - [x] Händler (Sage): Unterzeilen der Posten zweizeilig statt abgeschnitten.
@@ -193,9 +192,9 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Heute-Szenen: Ende über der Leiste auch bei Drei-Tasten-Navigation.
 - [x] Edo: kurze Wörter brechen nicht mehr ohne Not um („Al-le“, „Vari-ante“).
 - [x] Ein genauer Abgleich Bild für Bild mit dem Canvas, 2026-11-17, siehe „Ergebnis“.
-- [ ] Abweichungen vom Canvas, die der Nutzer entscheidet (Liste im „Ergebnis“ Canvas-Abgleich): Ruhig als
+- [x] Abweichungen vom Canvas, die der Nutzer entscheidet (Liste im „Ergebnis“ Canvas-Abgleich): Ruhig als
       schlichte Szenen statt normaler Ansicht, Eintragen/Planen/Listen als Seiten mit Reitern statt Blättern
-      (Nutzer 2026-11-17: alle angehen, in dieser Reihenfolge).
+      (Nutzer 2026-11-17: alle angehen). Alle erledigt bis 2026-11-18, siehe die Punkte darunter.
 - [x] Reihenfolge in den Einstellungen wie im Entwurf (Abgleich unten), 2026-11-17, siehe „Ergebnis“.
 - [x] Planen als Seite mit Reitern „Selbst wählen · Vorschlagen lassen“ (Q–V), 2026-11-17, siehe „Ergebnis“.
 - [x] Listen als Seite mit Reitern „Neue Liste · Abgleich · Frühere“ (Q–V), 2026-11-17, siehe „Ergebnis“.
