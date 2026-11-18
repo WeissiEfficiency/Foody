@@ -101,7 +101,7 @@ data class StilWerte(
  * Stils.
  */
 val RUHIG_ALS_SZENE: Set<FoodyStil> =
-    setOf(FoodyStil.SAGE, FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN)
+    setOf(FoodyStil.SAGE, FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)
 
 /** Milchglas mit der [farbwelt] im Modus [dunkel]: dieselben Werte wie vor den Stilen. */
 fun milchglasWerte(farbwelt: Farbwelt, dunkel: Boolean): StilWerte {

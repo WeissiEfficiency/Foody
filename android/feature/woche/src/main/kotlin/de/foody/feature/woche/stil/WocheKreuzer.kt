@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -38,6 +39,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalDensity
@@ -58,6 +60,8 @@ import de.foody.core.designsystem.animationenErlaubt
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.KreuzerKnopf
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
+import de.foody.core.designsystem.stil.kreuzer.kreuzerForm
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.feature.woche.wochenTitel
 import java.time.LocalDate
@@ -69,7 +73,8 @@ import kotlin.math.min
  * „Woche“ im Sternenkreuzer (V) in Immersiv (Entwurf `V-Woche`): „Flugplan“ mit „6 / 7 SPRÜNGE · KURS PLOTTEN ›“,
  * darunter die Sprungroute: sieben Rauten im Zickzack (vergangene gefüllt in Holo-Blau, heute in Amber und pulsierend,
  * kommende gestrichelt). Darunter die Karte des gewählten Sprungs mit abgeschnittenen Ecken und alle Tage als Liste
- * mit Status („ANGEKOMMEN“, „IM ORBIT“, „ETA 2 TAGE“, „OFFEN“).
+ * mit Status („ANGEKOMMEN“, „IM ORBIT“, „ETA 2 TAGE“, „OFFEN“). In Ruhig wie im Entwurf: „Woche“, sieben Tageschips
+ * statt der Route, eine schlichte Karte und in der Liste kcal statt des Status.
  */
 @Composable
 internal fun WocheKreuzer(w: WocheDaten, aktionen: WocheSageAktionen, unten: Dp) {
@@ -77,12 +82,21 @@ internal fun WocheKreuzer(w: WocheDaten, aktionen: WocheSageAktionen, unten: Dp)
     WocheRahmen(unten) {
         Kopf(w, aktionen.onFuellen)
         Blaettern(w, aktionen, Kreuzer.mono(12.5f))
-        if (w.tage.size == 7) Route(w, gewaehlt) { gewaehlt = it }
+        if (w.tage.size == 7) {
+            if (FoodyTheme.stil.inszeniert) Route(w, gewaehlt) { gewaehlt = it } else TagChips(w, gewaehlt) { gewaehlt = it }
+        }
         w.tage.getOrNull(gewaehlt)?.let { Sprungkarte(it, gewaehlt, it.datum == w.heute, aktionen) }
         Column(Modifier.drawBehind { drawLine(LINIE, Offset.Zero, Offset(size.width, 0f), 1.dp.toPx()) }) {
             w.tage.forEachIndexed { i, t -> Zeile(t, w.heute, an = i == gewaehlt) { gewaehlt = i } }
         }
     }
+}
+
+/** Status eines Tages in Ruhig: „heute“, sonst die kcal des Tages, leer „–“. */
+internal fun ruhigTagStatus(t: WochenTag, heute: LocalDate): String = when {
+    t.datum == heute -> "heute"
+    t.eintraege.isEmpty() -> "–"
+    else -> tagKcal(t) ?: "–"
 }
 
 /** Status eines Tages im Flugplan. */
@@ -110,7 +124,7 @@ private fun Kopf(w: WocheDaten, onFuellen: () -> Unit) {
             w.woche?.let { Text(wochenTitel(it.montag), style = Kreuzer.mono(12.5f, 0.08f), color = f.nebentext) }
             // Der Titel wächst mit der Systemschrift nur bis 130 %
             Text(
-                "Flugplan",
+                szenenWort("Flugplan", "Woche"),
                 Modifier.semantics {
                     heading()
                     contentDescription = "Woche"
@@ -128,8 +142,8 @@ private fun Kopf(w: WocheDaten, onFuellen: () -> Unit) {
                     .padding(horizontal = 8.dp, vertical = 4.dp),
                 horizontalAlignment = Alignment.End,
             ) {
-                Text("${w.geplant} / ${w.tage.size} SPRÜNGE", style = Kreuzer.mono(13f), color = holo)
-                Text("KURS PLOTTEN ›", style = Kreuzer.mono(11f), color = f.primaer)
+                Text("${w.geplant} / ${w.tage.size} " + szenenWort("SPRÜNGE", "geplant"), style = Kreuzer.mono(13f), color = holo)
+                Text(szenenWort("KURS PLOTTEN ›", "planen ›"), style = Kreuzer.mono(11f), color = f.primaer)
             }
         }
     }
@@ -160,6 +174,28 @@ private fun Route(w: WocheDaten, gewaehlt: Int, onWahl: (Int) -> Unit) {
         }
     }
 }
+
+/** Ruhig: die sieben Tage als Chips, der gewählte mit Rahmen in Amber, heute in Amber geschrieben. */
+@Composable
+private fun TagChips(w: WocheDaten, gewaehlt: Int, onWahl: (Int) -> Unit) {
+    val f = FoodyTheme.farben
+    val amber = kreuzerAmber()
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        w.tage.forEachIndexed { i, t ->
+            val heute = i == w.heuteIndex
+            val an = i == gewaehlt
+            Box(
+                Modifier.weight(1f).heightIn(min = 48.dp).background(if (an) CHIP_AN else Color.Transparent)
+                    .border(1.dp, if (an) amber else f.lichtkante).tagWahl(t, heute, an) { onWahl(i) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(wochentagKurz(t.datum), style = Kreuzer.titel(14f, FontWeight.SemiBold, 0f), color = if (heute) amber else f.text)
+            }
+        }
+    }
+}
+
+private val CHIP_AN = Color(0xFF1A2233)
 
 @Composable
 private fun Raute(t: WochenTag, heute: LocalDate, an: Boolean, modifier: Modifier, onKlick: () -> Unit) {
@@ -208,21 +244,24 @@ private fun Raute(t: WochenTag, heute: LocalDate, an: Boolean, modifier: Modifie
 private fun Sprungkarte(t: WochenTag, nr: Int, heute: Boolean, aktionen: WocheSageAktionen) {
     val f = FoodyTheme.farben
     val amber = kreuzerAmber()
-    val form = Kreuzer.ecke(16.dp)
+    val form = kreuzerForm(16.dp)
+    val inszeniert = FoodyTheme.stil.inszeniert
+    val grund = if (inszeniert) Brush.linearGradient(listOf(amber.copy(alpha = 0.10f), amber.copy(alpha = 0.02f))) else SolidColor(Kreuzer.karteRuhig)
     Column(
         Modifier.fillMaxWidth()
-            .background(Brush.linearGradient(listOf(amber.copy(alpha = 0.10f), amber.copy(alpha = 0.02f))), form)
-            .border(1.dp, amber.copy(alpha = 0.45f), form)
+            .background(grund, form)
+            .border(1.dp, if (inszeniert) amber.copy(alpha = 0.45f) else Kreuzer.randRuhig, form)
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(
-            "SPRUNG ${nr + 1} · " + (wochentagLang(t.datum) + if (heute) " · heute" else ", ${t.datum.dayOfMonth}.").uppercase(Locale.GERMAN),
+            (if (inszeniert) "SPRUNG ${nr + 1} · " else "") +
+                (wochentagLang(t.datum) + if (heute) " · heute" else ", ${t.datum.dayOfMonth}.").uppercase(Locale.GERMAN),
             style = Kreuzer.mono(12f, 0.1f), color = f.primaer,
         )
         if (t.eintraege.isEmpty()) {
-            Text("Kein Kurs gesetzt", style = Kreuzer.titel(20f, FontWeight.Bold, 0f), color = f.text)
-            Text("Navigationscomputer wartet auf Kurs.", style = Kreuzer.mono(13f, 0f), color = f.nebentext)
+            Text(szenenWort("Kein Kurs gesetzt", "Noch nichts geplant"), style = Kreuzer.titel(20f, FontWeight.Bold, 0f), color = f.text)
+            if (inszeniert) Text("Navigationscomputer wartet auf Kurs.", style = Kreuzer.mono(13f, 0f), color = f.nebentext)
         } else {
             t.eintraege.forEach { e ->
                 Eintragszeile(
@@ -233,8 +272,14 @@ private fun Sprungkarte(t: WochenTag, nr: Int, heute: Boolean, aktionen: WocheSa
             tagKcal(t)?.let { Text(it, style = Kreuzer.mono(13f, 0f), color = f.nebentext) }
         }
         Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            KreuzerKnopf("+ Kurs setzen", { aktionen.onPlus(t.datum) }, Modifier.weight(1f), beschreibung = "Mahlzeit hinzufügen")
-            KreuzerKnopf("Kurs plotten", aktionen.onFuellen, Modifier.weight(1f), voll = false, beschreibung = "Leere Tage füllen")
+            KreuzerKnopf(szenenWort("+ Kurs setzen", "+ Mahlzeit"), { aktionen.onPlus(t.datum) }, Modifier.weight(1f), beschreibung = "Mahlzeit hinzufügen")
+            KreuzerKnopf(
+                szenenWort("Kurs plotten", "Vorschlagen lassen"),
+                aktionen.onFuellen,
+                Modifier.weight(1f),
+                voll = false,
+                beschreibung = "Leere Tage füllen",
+            )
         }
     }
 }
@@ -248,14 +293,17 @@ private fun Zeile(t: WochenTag, heute: LocalDate, an: Boolean, onKlick: () -> Un
     val istHeute = t.datum == heute
     val leer = t.eintraege.isEmpty()
     val k = LocalDensity.current.fontScale
+    val inszeniert = FoodyTheme.stil.inszeniert
+    val status = if (inszeniert) sprungStatus(t, heute) else ruhigTagStatus(t, heute)
+    val auswahl = if (inszeniert) amber.copy(alpha = 0.07f) else Kreuzer.karteRuhig
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp)
-            .background(if (an) amber.copy(alpha = 0.07f) else Color.Transparent)
+            .background(if (an) auswahl else Color.Transparent)
             .drawBehind { drawLine(LINIE, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx()) }
             .clickable(role = Role.Tab, onClick = onKlick)
             .semantics(mergeDescendants = true) {
                 selected = an
-                contentDescription = tagBeschreibung(t, istHeute) + ", " + sprungStatus(t, heute).lowercase(Locale.GERMAN)
+                contentDescription = tagBeschreibung(t, istHeute) + ", " + status.lowercase(Locale.GERMAN)
             }
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -263,12 +311,12 @@ private fun Zeile(t: WochenTag, heute: LocalDate, an: Boolean, onKlick: () -> Un
     ) {
         Text(
             "${wochentagKurz(t.datum)} ${t.datum.dayOfMonth}.", Modifier.width(52.dp * k),
-            style = Kreuzer.mono(13f, 0f), color = if (istHeute) f.primaer else holo,
+            style = Kreuzer.mono(13f, 0f), color = if (istHeute) f.primaer else if (inszeniert) holo else f.nebentext,
         )
         Text(
-            if (leer) "Kein Kurs gesetzt" else t.eintraege.joinToString(", ") { it.rezeptName },
+            if (leer) szenenWort("Kein Kurs gesetzt", "Noch nichts geplant") else t.eintraege.joinToString(", ") { it.rezeptName },
             Modifier.weight(1f), style = Kreuzer.titel(14.5f, FontWeight.Medium, 0f), color = if (leer) f.nebentext else f.text,
         )
-        Text(sprungStatus(t, heute), style = Kreuzer.mono(12f, 0.04f), color = if (istHeute) f.primaer else f.nebentext, textAlign = TextAlign.End)
+        Text(status, style = Kreuzer.mono(12f, 0.04f), color = if (istHeute) f.primaer else f.nebentext, textAlign = TextAlign.End)
     }
 }

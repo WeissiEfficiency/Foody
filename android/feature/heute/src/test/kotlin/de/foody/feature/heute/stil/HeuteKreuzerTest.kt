@@ -76,10 +76,26 @@ class HeuteKreuzerTest {
     }
 
     @Test
-    fun ruhigZeigtNormaleAnsicht() {
+    fun ruhigZeigtSzeneSchlicht() {
+        // Wie Entwurf V-* in Ruhig: „Heute“, die Summe groß und die Mahlzeiten als Liste statt des Systems
         zeigen(StilVariante.RUHIG)
         compose.onNodeWithText("Tagessystem").assertDoesNotExist()
         compose.onNodeWithText("Heute").assertExists()
+        compose.onNodeWithContentDescription("860 von 2.000 kcal").assertExists()
+        compose.onNodeWithText("ABENDESSEN").assertExists()
+        compose.onNodeWithText("EINKAUF · 9 OFFEN ›").assertExists()
+    }
+
+    @Test
+    fun ruhigAlleWege() {
+        zeigen(StilVariante.RUHIG)
+        compose.onNodeWithContentDescription("Frühstück: Haferflocken mit Apfel, gegessen").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Snack: noch nichts eingetragen").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Abendessen: Ofengemüse mit Feta und Kräuterquark, geplant").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Gegessen?").performScrollTo().performClick()
+        compose.onNodeWithText("Ja").performClick()
+        compose.onNodeWithContentDescription("Kochen").performScrollTo().performClick()
+        assertEquals(listOf("alle", "eintragen ${Mahlzeit.SNACK.name}", "rezept r1", "gegessen p1", "kochen r1 2"), ausgeloest)
     }
 
     @Test
@@ -146,5 +162,15 @@ class HeuteKreuzerTest {
         assertEquals("540 kcal · Kurs gesetzt", p[2].info)
         assertEquals(2, startWahl(p))
         assertEquals("Snack: noch nichts eingetragen", planetBeschreibung(p[3]))
+        assertEquals(listOf("380", "480", "540", "–"), p.map { planetKcal(it) })
+        assertEquals("Samstag, 24. Oktober", langesDatum(LocalDate.of(2026, 10, 24)))
+        assertEquals("1.140 übrig", ruhigStatus(860, 2000))
+        assertEquals("300 über Ziel", ruhigStatus(2300, 2000))
+        assertEquals("860 kcal", ruhigStatus(860, null))
+        assertEquals("≤ 1.140 übrig", ruhigStatus(860, 2000, vollstaendig = false))
+        assertEquals("ABENDESSEN", missionKopfRuhig("ABENDESSEN", morgen = false, vorschlag = false))
+        assertEquals("FRÜHSTÜCK · MORGEN", missionKopfRuhig("FRUEHSTUECK", morgen = true, vorschlag = false))
+        assertEquals("VORSCHLAG", missionKopfRuhig(null, morgen = false, vorschlag = true))
+        assertEquals("NICHTS GEPLANT", missionKopfRuhig(null, morgen = false, vorschlag = false))
     }
 }

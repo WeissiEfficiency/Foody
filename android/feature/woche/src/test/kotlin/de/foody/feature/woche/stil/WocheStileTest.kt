@@ -202,6 +202,18 @@ class WocheStileTest {
 
     @Test fun kreuzer() = pruefen(FoodyStil.KREUZER)
 
+    @Test
+    fun kreuzerRuhigTageschips() {
+        zeigen(FoodyStil.KREUZER, variante = StilVariante.RUHIG)
+        compose.onNodeWithText("Woche").assertExists()
+        compose.onNodeWithText("Flugplan").assertDoesNotExist()
+        // Chips und Liste wählen beide den Tag; der Chip kommt zuerst
+        val mittwoch = compose.onAllNodes(hasContentDescription("Mittwoch, 28.10.", substring = true) and isSelectable()).onFirst()
+        mittwoch.performClick()
+        mittwoch.assertIsSelected()
+        compose.onNodeWithText("Vorschlagen lassen").performScrollTo().assertExists()
+    }
+
     @Test fun animePlus() = plus(FoodyStil.ANIME)
 
     @Test fun edoPlus() = plus(FoodyStil.EDO)

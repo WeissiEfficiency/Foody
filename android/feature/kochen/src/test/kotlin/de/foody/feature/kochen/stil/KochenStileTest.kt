@@ -146,6 +146,9 @@ class KochenStileTest {
         // Grauen Ruhig wie im Entwurf U-Kochen: „Fertig“ statt „Vollenden“, arabische Ziffern statt römischer
         assertEquals("Fertig", kochArt(FoodyStil.GRAUEN, inszeniert = false).fertig)
         assertEquals("3.", kochArt(FoodyStil.GRAUEN, inszeniert = false).nummer(3, 5))
+        assertEquals("03", kochArt(FoodyStil.KREUZER, inszeniert = false).nummer(3, 5))
+        assertEquals("SCHRITT 2 / 5", kochArt(FoodyStil.KREUZER, inszeniert = false).ueberSchritt(2, 5))
+        assertEquals("REISTOPF · 2 PORTIONEN", kochArt(FoodyStil.KREUZER, inszeniert = false).kopf("Reistopf", 2))
         assertEquals("Reistopf · 2 Portiona", kochArt(FoodyStil.BAYRISCH, inszeniert = false).kopf("Reistopf", 2))
         assertEquals("3 Port.", kochArt(FoodyStil.ANIME).portionen(3))
     }

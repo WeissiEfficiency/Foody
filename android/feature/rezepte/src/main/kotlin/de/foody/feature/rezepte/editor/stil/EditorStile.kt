@@ -109,6 +109,10 @@ internal fun editorArt(stil: FoodyStil, inszeniert: Boolean = true): EditorArt =
         "Neue Abschrift", "Abschrift berichtigen", "Ein neuer Band für die Bibliothek", "Zutaten", "Zubereitung", "Portionen",
         "In die Bibliothek stellen", Grauen.maschine(14f), Grauen.maschine(11.5f),
     )
+    FoodyStil.KREUZER if !inszeniert -> EditorArt(
+        "Neues Rezept", "Rezept bearbeiten", "Selbst anlegen oder einlesen", "ZUTATEN", "ZUBEREITUNG", "PORTIONEN", "Speichern",
+        Kreuzer.titel(15f, FontWeight.Medium, 0f), Kreuzer.mono(11.5f, 0.02f),
+    )
     else -> EditorArt(
         "Rezept anlegen", "Rezept bearbeiten", "NEUES SYSTEM KARTIEREN", "Ressourcen", "Missionsablauf", "Crew", "Ins Archiv speichern",
         Kreuzer.titel(15f, FontWeight.Medium, 0f), Kreuzer.mono(11.5f, 0.02f),

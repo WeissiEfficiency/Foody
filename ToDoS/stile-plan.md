@@ -200,8 +200,8 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Planen als Seite mit Reitern „Selbst wählen · Vorschlagen lassen“ (Q–V), 2026-11-17, siehe „Ergebnis“.
 - [x] Listen als Seite mit Reitern „Neue Liste · Abgleich · Frühere“ (Q–V), 2026-11-17, siehe „Ergebnis“.
 - [x] Eintragen mit Reitern „Suchen · Scannen · Foto · Geplant“ (Q–V; T–V als Seite), 2026-11-17, siehe „Ergebnis“.
-- [ ] Ruhig als schlichte Szenen wie in den Entwürfen, Stil für Stil (`RUHIG_ALS_SZENE`): Sage, Anime und
-      Edo erledigt 2026-11-17, Bayrisch und Grauen 2026-11-18 (siehe „Ergebnis“); offen Kreuzer.
+- [x] Ruhig als schlichte Szenen wie in den Entwürfen, Stil für Stil (`RUHIG_ALS_SZENE`): Sage, Anime und
+      Edo 2026-11-17, Bayrisch, Grauen und Kreuzer 2026-11-18, siehe „Ergebnis“.
 - [x] Rezeptfilter wie im Entwurf: „Alle · Favoriten · ≤ 30 Min.“ mit den Wörtern des Stils, 2026-11-17, siehe „Ergebnis“.
 - [x] Editor der Sage wie im Entwurf (Reiter „Grundlagen · Zutaten · Ritual“), 2026-11-17, siehe „Ergebnis“.
 - [x] Tagebuch: „‹“ im Kopf zurück zu Heute in allen Stilen (Immersiv und Ruhig), 2026-11-17, siehe „Ergebnis“.
@@ -872,4 +872,21 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
   Wörter in `KochenStileTest` und `TagebuchStileTest`.
 - Im Emulator mit den Maßen des Handys nachgeprüft: Heute, Tagebuch, Rezepte, Rezept, Kochen, Woche, Einkauf in
   Grauen Ruhig.
+
+**2026-11-18 – Ruhig als schlichte Szene: Kreuzer** (Branch `claude/ruhig-szenen-kreuzer`):
+- Kreuzer steht in `RUHIG_ALS_SZENE`; damit zeigen alle Stile auch in Ruhig ihre Szene. Wie die Entwürfe `V-*` bleibt
+  es dunkel, Karten ohne abgeschnittene Ecken (`kreuzerForm()`, `Kreuzer.karteRuhig` und `randRuhig`) und ohne
+  Verlauf. Heute: „Samstag, 24. Oktober“, „Heute“ mit „1.140 übrig“, statt des Tagessystems die Summe groß mit
+  „/ 2.000 kcal“ und Balken, die Mahlzeiten als Liste (Name, Gericht, kcal; Antippen führt zu Tagebuch, Rezept oder
+  Eintragen, Geplantes mit „Gegessen?“), die Karte „ABENDESSEN“ mit „Kochen“, „Einkauf · n offen ›“. Woche „Woche“
+  mit „x / 7 geplant“, sieben Tageschips statt der Route, „Noch nichts geplant“, „+ Mahlzeit“ und „Vorschlagen
+  lassen“, in der Liste kcal oder „heute“. Einkauf „Diese Woche“ über „Einkauf“, „x / y erledigt“, „Listen“, statt
+  der Kisten eine Liste je Abteilung mit Kästchen, erledigte durchgestrichen. Rezepte „Rezepte“ als Zeilen mit Name,
+  Zeit und kcal, das gewählte mit Amber am Rand, darunter eine Karte mit ZEIT, KCAL, GEKOCHT und „Öffnen“. Rezept
+  „REZEPT“, Kochen „SCHRITT 1 / 3“ mit „01“, Tagebuch, Editor und Planen in Standardwörtern.
+- Tests: `HeuteKreuzerTest.ruhigZeigtSzeneSchlicht` und `ruhigAlleWege` (vorher normale Ansicht),
+  `WocheStileTest.kreuzerRuhigTageschips`, Wörter in `KochenStileTest` und `TagebuchStileTest`.
+  `PlanenSeiteTest.plusMitPortionen` (vorher `platzMitPortionen`) geht über „+ Mahlzeit“ der Szene, denn freie Plätze
+  der normalen Ansicht zeigt jetzt kein Stil mit Planen-Seite mehr.
+- Im Emulator mit den Maßen des Handys nachgeprüft: Heute, Rezepte, Rezept, Kochen, Woche, Einkauf in Kreuzer Ruhig.
 - Im Emulator mit den Maßen des Handys nachgeprüft: Heute, Tagebuch, Rezepte, Rezept, Woche, Einkauf in Edo Ruhig.

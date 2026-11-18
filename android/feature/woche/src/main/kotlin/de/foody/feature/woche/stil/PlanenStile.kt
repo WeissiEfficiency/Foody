@@ -53,7 +53,7 @@ private val ANIME_TAGE = listOf(Anime.gelb, Anime.mint, Anime.tuerkis)
  */
 internal fun planenTag(stil: FoodyStil, tag: LocalDate, inszeniert: Boolean = true): String = when (stil) {
     FoodyStil.EDO -> if (inszeniert) EDO_TAGE.getValue(tag.dayOfWeek) else wochentagKurz(tag)
-    FoodyStil.KREUZER -> wochentagKurz(tag).uppercase()
+    FoodyStil.KREUZER -> if (inszeniert) wochentagKurz(tag).uppercase() else wochentagKurz(tag)
     else -> wochentagKurz(tag)
 }
 
