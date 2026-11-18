@@ -143,6 +143,9 @@ class KochenStileTest {
         // Bayrisch Ruhig wie im Entwurf T-Kochen: „Weiter“ und „Fertig“ statt „Weida“ und „Feddig!“
         assertEquals("Weiter", kochArt(FoodyStil.BAYRISCH, inszeniert = false).weiter)
         assertEquals("Fertig", kochArt(FoodyStil.BAYRISCH, inszeniert = false).fertig)
+        // Grauen Ruhig wie im Entwurf U-Kochen: „Fertig“ statt „Vollenden“, arabische Ziffern statt römischer
+        assertEquals("Fertig", kochArt(FoodyStil.GRAUEN, inszeniert = false).fertig)
+        assertEquals("3.", kochArt(FoodyStil.GRAUEN, inszeniert = false).nummer(3, 5))
         assertEquals("Reistopf · 2 Portiona", kochArt(FoodyStil.BAYRISCH, inszeniert = false).kopf("Reistopf", 2))
         assertEquals("3 Port.", kochArt(FoodyStil.ANIME).portionen(3))
     }

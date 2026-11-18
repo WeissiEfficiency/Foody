@@ -134,7 +134,7 @@ internal fun RezepteStil(
                 )
                 return@Column
             }
-            Suchfeld(z.filter.suche, { text -> aendern { it.copy(suche = text) } }, suchText(stil), rand)
+            Suchfeld(z.filter.suche, { text -> aendern { it.copy(suche = text) } }, suchText(stil, FoodyTheme.stil.inszeniert), rand)
             FilterChips(z.filter, z.tags, aendern)
             if (r == null) {
                 if (z.geladen) {
@@ -183,7 +183,8 @@ internal fun RezepteStil(
 private val PLATZ_FUER_LEISTE = 104.dp
 
 /** Platzhalter der Suche wie im Entwurf. */
-private fun suchText(stil: FoodyStil) = when (stil) {
+private fun suchText(stil: FoodyStil, inszeniert: Boolean) = when (stil) {
+    FoodyStil.GRAUEN if !inszeniert -> "Rezept oder Zutat suchen"
     FoodyStil.GRAUEN -> "In den Bänden suchen"
     FoodyStil.KREUZER -> "System suchen"
     FoodyStil.BAYRISCH -> "Rezept oder Zutat suacha"

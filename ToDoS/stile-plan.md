@@ -201,7 +201,7 @@ Gemeinsame liegt in `:core:designsystem`.
 - [x] Listen als Seite mit Reitern „Neue Liste · Abgleich · Frühere“ (Q–V), 2026-11-17, siehe „Ergebnis“.
 - [x] Eintragen mit Reitern „Suchen · Scannen · Foto · Geplant“ (Q–V; T–V als Seite), 2026-11-17, siehe „Ergebnis“.
 - [ ] Ruhig als schlichte Szenen wie in den Entwürfen, Stil für Stil (`RUHIG_ALS_SZENE`): Sage, Anime und
-      Edo erledigt 2026-11-17, Bayrisch 2026-11-18 (siehe „Ergebnis“); offen Grauen, Kreuzer.
+      Edo erledigt 2026-11-17, Bayrisch und Grauen 2026-11-18 (siehe „Ergebnis“); offen Kreuzer.
 - [x] Rezeptfilter wie im Entwurf: „Alle · Favoriten · ≤ 30 Min.“ mit den Wörtern des Stils, 2026-11-17, siehe „Ergebnis“.
 - [x] Editor der Sage wie im Entwurf (Reiter „Grundlagen · Zutaten · Ritual“), 2026-11-17, siehe „Ergebnis“.
 - [x] Tagebuch: „‹“ im Kopf zurück zu Heute in allen Stilen (Immersiv und Ruhig), 2026-11-17, siehe „Ergebnis“.
@@ -857,4 +857,19 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
   Wörter in `KochenStileTest` und `TagebuchStileTest`.
 - Im Emulator mit den Maßen des Handys nachgeprüft: Heute, Tagebuch, Rezepte, Rezept, Kochen, Woche, Einkauf in
   Bayrisch Ruhig.
+
+**2026-11-18 – Ruhig als schlichte Szene: Grauen** (Branch `claude/ruhig-szenen-grauen`):
+- Grauen steht in `RUHIG_ALS_SZENE` und zeigt in Ruhig wie die Entwürfe `U-*` die Szenen auf dem Pergament mit
+  normalen Wörtern. Heute: „Heute“, statt des Auges ein Ring mit „von 2.000 kcal“ und den Nährwerten, keine
+  Fangarme, die Tafel hell mit der Mahlzeit beim Namen („Abendessen“) und „Kochen“, „Tagebuch ›“, „Einkauf · n offen ›“.
+  Woche „Woche“ mit sieben Tageschips statt des Mondbogens, helle Tafel ohne Notiz, „Leere Tage vorschlagen lassen“.
+  Rezepte „Rezepte“ als Zeilen mit Name und kcal statt des Regals, helle Seite, „Öffnen“; Rezept ohne Schein.
+  Einkauf „Diese Woche“ über „Einkauf“, „Listen“, ein gerades helles Blatt mit Kästchen, gekaufte durchgestrichen,
+  normale Abteilungen, ohne Stempel und Flüstern. Tagebuch, Rezept, Editor und Kochen in Standardwörtern.
+- `GrauenKnopf` in Ruhig voll in Tinte mit hellem Papier (`Grauen.papierHell`), `grauenHell()` dort der Text selbst;
+  Schrift in der Akzentfarbe nimmt in Ruhig `primaer` statt der Glut (die helle Glut ist auf Pergament zu blass).
+- Tests: `HeuteGrauenTest.ruhigZeigtSzeneSchlicht` (vorher normale Ansicht), `WocheStileTest.grauenRuhigTageschips`,
+  Wörter in `KochenStileTest` und `TagebuchStileTest`.
+- Im Emulator mit den Maßen des Handys nachgeprüft: Heute, Tagebuch, Rezepte, Rezept, Kochen, Woche, Einkauf in
+  Grauen Ruhig.
 - Im Emulator mit den Maßen des Handys nachgeprüft: Heute, Tagebuch, Rezepte, Rezept, Woche, Einkauf in Edo Ruhig.

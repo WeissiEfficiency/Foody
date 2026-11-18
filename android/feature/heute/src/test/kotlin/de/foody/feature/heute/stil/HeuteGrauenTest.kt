@@ -74,10 +74,14 @@ class HeuteGrauenTest {
     }
 
     @Test
-    fun ruhigZeigtNormaleAnsicht() {
+    fun ruhigZeigtSzeneSchlicht() {
+        // Wie im Entwurf U-Heute in Ruhig: „Heute“ auf Pergament, statt des Auges ein Ring, die Mahlzeit beim Namen
         zeigen(StilVariante.RUHIG)
         compose.onNodeWithText("Das Auge").assertDoesNotExist()
         compose.onNodeWithText("Heute").assertExists()
+        compose.onNodeWithText("Abendessen").assertExists()
+        compose.onNodeWithContentDescription("860 von 2.000 kcal: Eiweiß 42 g, Kohlenhydrate 96 g, Fett 31 g").assertExists()
+        compose.onNodeWithText("Tagebuch ›").assertExists()
     }
 
     @Test

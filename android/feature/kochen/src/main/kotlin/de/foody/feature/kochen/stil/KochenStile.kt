@@ -116,6 +116,12 @@ internal fun kochArt(stil: FoodyStil, inszeniert: Boolean = true): KochArt = whe
         kopf = { name, p -> "$name · " + if (p == 1) "1 Portion" else "$p Portiona" },
         titel = { Bayrisch.titel(it) }, text = { Bayrisch.text(it) }, klein = { Bayrisch.text(it, FontWeight.Bold) },
     )
+    FoodyStil.GRAUEN if !inszeniert -> KochArt(
+        bereit = "Bereitlegen", ueberSchritt = { n, g -> "Schritt $n von $g" }, ueberBereit = "Vorbereitung", nummer = { n, _ -> "$n." },
+        brauchst = "Du brauchst", naechstes = "Danach", beginnen = "Beginnen", weiter = "Weiter", fertig = "Fertig",
+        zurueck = "Zurück", timer = "Timer starten", portionen = ::portionenText, kopf = { name, p -> "$name · ${portionenText(p)}" },
+        titel = { Grauen.titel(it) }, text = { Grauen.text(it) }, klein = { Grauen.titel(it, 0.1f) },
+    )
     FoodyStil.GRAUEN -> KochArt(
         bereit = "Was das Ritual verlangt", ueberSchritt = { n, g -> "Schritt $n von $g" }, ueberBereit = "Vorbereitung",
         nummer = { n, _ -> roemisch(n) }, brauchst = "Es verlangt", naechstes = "Danach", beginnen = "Beginnen", weiter = "Weiter", fertig = "Vollenden",

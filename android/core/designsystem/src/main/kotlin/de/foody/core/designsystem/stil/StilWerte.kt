@@ -100,7 +100,8 @@ data class StilWerte(
  * und Animationen, mit den normalen Wörtern. Die übrigen zeigen in Ruhig die normale Ansicht in Farben und Schrift des
  * Stils.
  */
-val RUHIG_ALS_SZENE: Set<FoodyStil> = setOf(FoodyStil.SAGE, FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH)
+val RUHIG_ALS_SZENE: Set<FoodyStil> =
+    setOf(FoodyStil.SAGE, FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN)
 
 /** Milchglas mit der [farbwelt] im Modus [dunkel]: dieselben Werte wie vor den Stilen. */
 fun milchglasWerte(farbwelt: Farbwelt, dunkel: Boolean): StilWerte {

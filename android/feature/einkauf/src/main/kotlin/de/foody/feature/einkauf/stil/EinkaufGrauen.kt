@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.material3.Text
@@ -35,6 +36,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.einkauf.EinkaufsAnsicht
 import de.foody.core.data.einkauf.EinkaufsArtikel
@@ -42,6 +44,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.animationenErlaubt
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import java.time.temporal.IsoFields
 import kotlin.math.min
@@ -51,6 +54,8 @@ import kotlin.math.min
  * „Expeditionsliste“, rechts „9 / 12“ und „noch 3 offen“, daneben „Archiv“ (frühere Listen). Die Posten stehen
  * nummeriert in Schreibmaschine auf einem leicht schiefen Pergament, nach Abteilungen („Aus der Erde“); gekaufte
  * tragen den roten Stempel „Besorgt“. Unten flüstert die Liste, wie viel noch fehlt. TalkBack hört die normalen Wörter.
+ * In Ruhig wie im Entwurf: „Diese Woche“ über „Einkauf“, „Listen“, ein gerades helles Blatt mit Kästchen statt der
+ * Nummern, gekaufte durchgestrichen, normale Abteilungen, ohne Kopfzeile, Stempel und Flüstern.
  */
 internal fun LazyGridScope.grauenKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
     ganzeBreite("grauen-kopf") { Kopf(ansicht, onListen, menue) }
@@ -96,10 +101,10 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
     val erledigt = ansicht.erledigt
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Column(Modifier.align(Alignment.Bottom).padding(end = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("Vor dem Aufbruch zu besorgen", style = Grauen.maschine(12.5f), color = f.nebentext)
+            Text(szenenWort("Vor dem Aufbruch zu besorgen", "Diese Woche"), style = Grauen.maschine(12.5f), color = f.nebentext)
             // Der Titel wächst mit der Systemschrift nur bis 130 %
             Text(
-                "Expeditionsliste",
+                szenenWort("Expeditionsliste", "Einkauf"),
                 Modifier.semantics {
                     heading()
                     contentDescription = "Einkauf"
@@ -122,7 +127,7 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
                     )
                 }
             }
-            GrauenKnopf("Archiv", onListen, beschreibung = "Frühere Listen", umriss = true)
+            GrauenKnopf(szenenWort("Archiv", "Listen"), onListen, beschreibung = "Frühere Listen", umriss = true)
             menue()
         }
     }
@@ -131,20 +136,16 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
 @Composable
 private fun Pergament(ansicht: EinkaufsAnsicht?, gruppen: List<PostenGruppe>, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {
     val glut = FoodyTheme.stil.zier
+    val inszeniert = FoodyTheme.stil.inszeniert
     val nummer = ansicht?.von?.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
     var nr = 0
     Column(
-        Modifier.fillMaxWidth().padding(vertical = 6.dp).rotate(-0.6f)
-            .drawBehind {
-                // Schwaches Leuchten der Glut um das Blatt
-                drawRect(Brush.radialGradient(listOf(glut.copy(alpha = 0.12f), Color.Transparent), center, size.maxDimension * 0.7f))
-            }
-            .background(Brush.verticalGradient(PERGAMENT))
-            .border(1.dp, PERGAMENT_RAND)
+        Modifier.fillMaxWidth().padding(vertical = 6.dp)
+            .then(if (inszeniert) Modifier.pergament(glut) else Modifier.background(Color.White.copy(alpha = 0.45f)).border(1.dp, TINTE.copy(alpha = 0.25f)))
             .padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 14.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Row(
+        if (inszeniert) Row(
             Modifier.fillMaxWidth().clearAndSetSemantics { }
                 .drawBehind { drawLine(TINTE.copy(alpha = 0.35f), Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx()) }
                 .padding(bottom = 6.dp),
@@ -155,7 +156,7 @@ private fun Pergament(ansicht: EinkaufsAnsicht?, gruppen: List<PostenGruppe>, on
         gruppen.forEach { g ->
             Column {
                 Text(
-                    grauenAbteilung(g.name),
+                    if (inszeniert) grauenAbteilung(g.name) else g.name,
                     Modifier.padding(top = 4.dp, bottom = 2.dp).semantics {
                         heading()
                         contentDescription = g.name
@@ -168,14 +169,26 @@ private fun Pergament(ansicht: EinkaufsAnsicht?, gruppen: List<PostenGruppe>, on
                 }
             }
         }
-        Text(grauenFluestern(gesamtOffen(ansicht)), Modifier.padding(top = 6.dp), style = Grauen.text(14.5f, kursiv = true), color = TINTE_BLASS)
+        if (inszeniert) {
+            Text(
+                grauenFluestern(gesamtOffen(ansicht)), Modifier.padding(top = 6.dp),
+                style = Grauen.text(14.5f, kursiv = true), color = TINTE_BLASS,
+            )
+        }
     }
 }
+
+/** Das schiefe Pergament mit schwachem Leuchten der Glut (Immersiv). */
+private fun Modifier.pergament(glut: Color): Modifier = rotate(-0.6f)
+    .drawBehind { drawRect(Brush.radialGradient(listOf(glut.copy(alpha = 0.12f), Color.Transparent), center, size.maxDimension * 0.7f)) }
+    .background(Brush.verticalGradient(PERGAMENT))
+    .border(1.dp, PERGAMENT_RAND)
 
 private fun gesamtOffen(ansicht: EinkaufsAnsicht?): Int = ansicht.gesamt - ansicht.erledigt
 
 @Composable
 private fun Zeile(a: EinkaufsArtikel, nr: Int, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {
+    val inszeniert = FoodyTheme.stil.inszeniert
     Box(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 48.dp)
@@ -189,11 +202,30 @@ private fun Zeile(a: EinkaufsArtikel, nr: Int, onUmschalten: (String, Boolean) -
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(nr.toString().padStart(2, '0'), Modifier.width(22.dp * LocalDensity.current.fontScale), style = Grauen.maschine(15f), color = TINTE_BLASS)
-            Text(a.name, Modifier.weight(1f), style = Grauen.maschine(15f), color = if (a.gekauft) TINTE_BLASS else TINTE)
+            if (inszeniert) {
+                Text(nr.toString().padStart(2, '0'), Modifier.width(22.dp * LocalDensity.current.fontScale), style = Grauen.maschine(15f), color = TINTE_BLASS)
+            } else {
+                Kaestchen(a.gekauft)
+            }
+            val strich = if (a.gekauft && !inszeniert) TextDecoration.LineThrough else null
+            Text(
+                a.name, Modifier.weight(1f), style = Grauen.maschine(15f).copy(textDecoration = strich),
+                color = if (a.gekauft) TINTE_BLASS else TINTE,
+            )
             a.menge?.let { Text(it, style = Grauen.maschine(13f), color = TINTE_BLASS) }
         }
-        if (a.gekauft) Stempel(Modifier.align(Alignment.CenterEnd).padding(end = 64.dp))
+        if (a.gekauft && inszeniert) Stempel(Modifier.align(Alignment.CenterEnd).padding(end = 64.dp))
+    }
+}
+
+/** Ruhig: Kästchen statt der Nummer, gekauft in Tinte mit Haken; für TalkBack stumm (die Zeile sagt den Stand). */
+@Composable
+private fun Kaestchen(an: Boolean) {
+    Box(
+        Modifier.size(18.dp).clearAndSetSemantics { }.border(1.5.dp, TINTE).background(if (an) TINTE else Color.Transparent),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (an) Text("✓", style = Grauen.maschine(12f / LocalDensity.current.fontScale), color = Grauen.papierHell)
     }
 }
 

@@ -38,6 +38,9 @@ object Grauen {
     val tinte = Color(0xFF2A2418)
     val tinteNeben = Color(0xFF4A4030)
 
+    /** Helles Papier als Schrift auf Tinte (im Entwurf #E6DCC2): volle Knöpfe und gewählte Chips in Ruhig. */
+    val papierHell = Color(0xFFE6DCC2)
+
     /** Kapitälchen (IM Fell English SC) für Titel, mit leichter Laufweite [abstand] (em). */
     fun titel(groesse: Float, abstand: Float = 0.04f) = TextStyle(
         fontFamily = ImFellKapitaelchenFamilie,
@@ -61,9 +64,9 @@ object Grauen {
     fun maschine(groesse: Float) = TextStyle(fontFamily = SpecialEliteFamilie, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp).mitSilbentrennung()
 }
 
-/** Heller Ton für Knopftexte (im Entwurf #E6F2EA), aus dem Text des Stils. */
+/** Heller Ton für Knopftexte (im Entwurf #E6F2EA), aus dem Text des Stils; in Ruhig (Pergament) der Text selbst. */
 @Composable
-fun grauenHell(): Color = lerp(FoodyTheme.farben.text, Color.White, 0.45f)
+fun grauenHell(): Color = if (FoodyTheme.stil.inszeniert) lerp(FoodyTheme.farben.text, Color.White, 0.45f) else FoodyTheme.farben.text
 
 /**
  * Knopf des Grauens: eckig, Rahmen in der Glut, Fläche mit einem Hauch Glut, Buchschrift; [umriss] = nur ein Rahmen
@@ -79,17 +82,30 @@ fun GrauenKnopf(
     aktiv: Boolean = true,
 ) {
     val glut = FoodyTheme.stil.zier
+    // Ruhig wie in den Entwürfen: voll in Tinte mit hellem Papier als Schrift
+    val ruhig = !FoodyTheme.stil.inszeniert
+    val tinte = FoodyTheme.farben.text
+    val rand = when {
+        umriss -> FoodyTheme.farben.nebentext
+        ruhig -> tinte
+        else -> glut
+    }
+    val flaeche = when {
+        umriss -> Color.Transparent
+        ruhig -> tinte
+        else -> glut.copy(alpha = 0.1f)
+    }
     Box(
         modifier.heightIn(min = 48.dp)
             .alpha(if (aktiv) 1f else 0.38f)
-            .border(1.dp, if (umriss) FoodyTheme.farben.nebentext else glut)
-            .background(if (umriss) Color.Transparent else glut.copy(alpha = 0.1f))
+            .border(1.dp, rand)
+            .background(flaeche)
             .clickable(enabled = aktiv, role = Role.Button, onClick = onKlick)
             .then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier)
             .padding(horizontal = 14.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = Grauen.titel(17f, 0.06f), color = grauenHell(), textAlign = TextAlign.Center)
+        Text(text, style = Grauen.titel(17f, 0.06f), color = if (ruhig && !umriss) Grauen.papierHell else grauenHell(), textAlign = TextAlign.Center)
     }
 }
 

@@ -101,6 +101,10 @@ internal fun editorArt(stil: FoodyStil, inszeniert: Boolean = true): EditorArt =
         "Neis Rezept", "Bearbeiten", "Rezept", "Zuadaten", "So geht’s", "Portiona", "Obacht, speichern!",
         Bayrisch.text(15.5f), Bayrisch.text(12.5f),
     )
+    FoodyStil.GRAUEN if !inszeniert -> EditorArt(
+        "Neues Rezept", "Rezept bearbeiten", "Selbst anlegen oder einlesen", "Zutaten", "Zubereitung", "Portionen",
+        "Speichern", Grauen.maschine(14f), Grauen.maschine(11.5f),
+    )
     FoodyStil.GRAUEN -> EditorArt(
         "Neue Abschrift", "Abschrift berichtigen", "Ein neuer Band für die Bibliothek", "Zutaten", "Zubereitung", "Portionen",
         "In die Bibliothek stellen", Grauen.maschine(14f), Grauen.maschine(11.5f),
