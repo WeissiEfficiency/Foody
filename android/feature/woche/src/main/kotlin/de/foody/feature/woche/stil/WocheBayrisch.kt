@@ -51,6 +51,7 @@ import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.bayrisch.BayrischKnopf
 import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
+import de.foody.core.designsystem.stil.bayrisch.bayrischSzenenTitel
 import de.foody.core.designsystem.stil.titelGroesse
 import java.time.DayOfWeek
 import java.util.Locale
@@ -68,7 +69,8 @@ internal fun WocheBayrisch(w: WocheDaten, aktionen: WocheSageAktionen, unten: Dp
     WocheRahmen(unten) {
         Kopf(w, aktionen.onFuellen)
         Blaettern(w, aktionen, Bayrisch.text(14.5f), heuteText = "Heid")
-        if (w.tage.size == 7) Wimpelkette(w, gewaehlt) { gewaehlt = it }
+        // Die Wimpelkette nur in Immersiv; in Ruhig wählt man den Tag wie im Entwurf in der Liste unten
+        if (w.tage.size == 7 && FoodyTheme.stil.inszeniert) Wimpelkette(w, gewaehlt) { gewaehlt = it }
         w.tage.getOrNull(gewaehlt)?.let { Tageskarte(it, it.datum == w.heute, aktionen) }
         Column {
             w.tage.forEachIndexed { i, t -> Zeile(t, heute = i == w.heuteIndex, an = i == gewaehlt) { gewaehlt = i } }
@@ -103,7 +105,7 @@ private fun Kopf(w: WocheDaten, onFuellen: () -> Unit) {
                     heading()
                     contentDescription = "Woche"
                 },
-                style = Bayrisch.fraktur(titelGroesse(50f)), color = f.text,
+                style = bayrischSzenenTitel(titelGroesse(50f)), color = f.text,
             )
         }
         if (w.tage.isNotEmpty()) {

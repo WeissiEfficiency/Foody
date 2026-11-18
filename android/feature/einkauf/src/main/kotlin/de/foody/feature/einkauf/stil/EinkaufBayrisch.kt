@@ -28,6 +28,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -45,6 +46,8 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.bayrisch.BayrischKnopf
 import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
+import de.foody.core.designsystem.stil.bayrisch.bayrischSzenenTitel
+import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.core.designsystem.token.FoodyAbstaende
 import kotlin.math.min
@@ -86,6 +89,11 @@ private val GEKAUFT_TEXT = Color(0xFF5E5040)
 /** Markise in Streifen mit Zacken; reicht über den Rand des Rasters ([rand]) bis an den Bildschirmrand. Stumm. */
 @Composable
 private fun Markise(rand: Dp) {
+    // Ruhig wie im Entwurf ohne Markise, nur etwas Abstand
+    if (!FoodyTheme.stil.inszeniert) {
+        Spacer(Modifier.height(14.dp))
+        return
+    }
     val blau = bayrischBlau()
     val tinte = FoodyTheme.farben.text
     Canvas(
@@ -118,20 +126,24 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
     val gesamt = ansicht.gesamt
     val erledigt = ansicht.erledigt
     val form = RoundedCornerShape(10.dp)
+    // Das Schild: in Immersiv dunkel mit hellem Text, in Ruhig wie im Entwurf weiß mit Tinte
+    val inszeniert = FoodyTheme.stil.inszeniert
+    val schrift = if (inszeniert) f.grund else f.text
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         FlowRow(
-            Modifier.weight(1f).background(f.text, form).border(2.dp, f.text, form).padding(horizontal = 14.dp, vertical = 6.dp),
+            Modifier.weight(1f).background(if (inszeniert) f.text else Color.White, form).border(2.dp, f.text, form)
+                .padding(horizontal = 14.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             // Der Titel wächst mit der Systemschrift nur bis 130 %
             Text(
-                "'s Standl",
+                szenenWort("'s Standl", "Einkauf"),
                 Modifier.align(Alignment.CenterVertically).padding(end = 8.dp).semantics {
                     heading()
                     contentDescription = "Einkauf"
                 },
-                style = Bayrisch.fraktur(titelGroesse(32f)), color = f.grund,
+                style = bayrischSzenenTitel(titelGroesse(32f)), color = schrift,
             )
             if (ansicht != null) {
                 Column(
@@ -140,12 +152,12 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
                     },
                     horizontalAlignment = Alignment.End,
                 ) {
-                    Text(bayrischOffen(gesamt - erledigt), style = Bayrisch.titel(15f, FontWeight.ExtraBold), color = f.grund, textAlign = TextAlign.End)
-                    Text("$erledigt von $gesamt im Korb", style = Bayrisch.text(13f), color = f.grund, textAlign = TextAlign.End)
+                    Text(bayrischOffen(gesamt - erledigt), style = Bayrisch.titel(15f, FontWeight.ExtraBold), color = schrift, textAlign = TextAlign.End)
+                    Text("$erledigt von $gesamt im Korb", style = Bayrisch.text(13f), color = schrift, textAlign = TextAlign.End)
                 }
             }
         }
-        BayrischKnopf("Zettl", onListen, voll = false, beschreibung = "Frühere Listen")
+        BayrischKnopf(szenenWort("Zettl", "Listen"), onListen, voll = false, beschreibung = "Frühere Listen")
         menue()
     }
 }
@@ -154,21 +166,11 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
 private fun Kiste(g: PostenGruppe, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {
     val f = FoodyTheme.farben
     val form = RoundedCornerShape(6.dp)
+    // Die Holzkiste nur in Immersiv; Ruhig zeigt wie im Entwurf eine weiße Kiste mit blauem Titel
+    val inszeniert = FoodyTheme.stil.inszeniert
     Column(
         Modifier.fillMaxWidth().padding(bottom = 3.dp)
-            .drawBehind {
-                // Schatten unten, dann das Holz mit Fugen
-                drawRoundRect(HOLZ_SCHATTEN, Offset(0f, 3.dp.toPx()), size, CornerRadius(6.dp.toPx()))
-            }
-            .clip(form).background(HOLZ)
-            .drawBehind {
-                val fuge = 16.dp.toPx()
-                var y = fuge - 2.dp.toPx()
-                while (y < size.height) {
-                    drawRect(HOLZ_FUGE, Offset(0f, y), Size(size.width, 2.dp.toPx()))
-                    y += fuge
-                }
-            }
+            .then(if (inszeniert) Modifier.holzkiste(form) else Modifier.clip(form).background(Color.White))
             .border(2.dp, f.text, form).padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 10.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -178,7 +180,7 @@ private fun Kiste(g: PostenGruppe, onUmschalten: (String, Boolean) -> Unit, onDe
                 heading()
                 contentDescription = g.name
             },
-            style = Bayrisch.titel(15f, FontWeight.ExtraBold), color = f.text,
+            style = Bayrisch.titel(15f, FontWeight.ExtraBold), color = if (inszeniert) f.text else bayrischBlau(),
         )
         g.artikel.chunked(2).forEach { reihe ->
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -188,6 +190,19 @@ private fun Kiste(g: PostenGruppe, onUmschalten: (String, Boolean) -> Unit, onDe
         }
     }
 }
+
+/** Holz mit Fugen und Schatten unten. */
+private fun Modifier.holzkiste(form: Shape): Modifier =
+    drawBehind { drawRoundRect(HOLZ_SCHATTEN, Offset(0f, 3.dp.toPx()), size, CornerRadius(6.dp.toPx())) }
+        .clip(form).background(HOLZ)
+        .drawBehind {
+            val fuge = 16.dp.toPx()
+            var y = fuge - 2.dp.toPx()
+            while (y < size.height) {
+                drawRect(HOLZ_FUGE, Offset(0f, y), Size(size.width, 2.dp.toPx()))
+                y += fuge
+            }
+        }
 
 @Composable
 private fun Posten(a: EinkaufsArtikel, modifier: Modifier, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {

@@ -57,7 +57,8 @@ enum class TitelArt { SEITE, SEITE_ZURUECK, BLATT }
 /**
  * Titelschrift der Stile R–V in Immersiv für Seitenköpfe und Blätter, in den Größen der normalen Ansicht (höchstens
  * 30 sp), damit lange Wörter nicht öfter umbrechen. `null` = keine eigene (Milchglas, Ruhig, Sage hat ihre eigene).
- * Anime zeigt in Ruhig ([RUHIG_ALS_SZENE]) die Titelschrift gerade und ohne Schatten wie in den Entwürfen.
+ * Anime zeigt in Ruhig ([RUHIG_ALS_SZENE]) die Titelschrift gerade und ohne Schatten, Bayrisch Alegreya statt Fraktur,
+ * wie in den Entwürfen.
  */
 @Composable
 fun stilTitel(art: TitelArt): TextStyle? {
@@ -71,7 +72,7 @@ fun stilTitel(art: TitelArt): TextStyle? {
     return when (s.stil) {
         FoodyStil.GRAUEN -> Grauen.titel(g, 0.02f)
         FoodyStil.KREUZER -> Kreuzer.titel(g - 2f)
-        FoodyStil.BAYRISCH -> Bayrisch.fraktur(g + 2f)
+        FoodyStil.BAYRISCH -> if (s.inszeniert) Bayrisch.fraktur(g + 2f) else Bayrisch.titel(g)
         FoodyStil.EDO -> Edo.titel(g - 2f)
         FoodyStil.ANIME -> if (!s.inszeniert) {
             Anime.titel(g, 0f)

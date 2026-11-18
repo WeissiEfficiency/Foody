@@ -86,7 +86,12 @@ internal class EditorArt(
     val klein: TextStyle,
 )
 
-internal fun editorArt(stil: FoodyStil): EditorArt = when (stil) {
+/** Wörter und Schriften des Editors; Bayrisch in Ruhig ([inszeniert] = false) mit den normalen Wörtern wie im Entwurf. */
+internal fun editorArt(stil: FoodyStil, inszeniert: Boolean = true): EditorArt = when (stil) {
+    FoodyStil.BAYRISCH if !inszeniert -> EditorArt(
+        "Neues Rezept", "Bearbeiten", "Rezept", "Zutaten", "Zubereitung", "Portionen", "Speichern",
+        Bayrisch.text(15.5f), Bayrisch.text(12.5f),
+    )
     FoodyStil.ANIME -> EditorArt(
         "Rezept-Edit!", "Rezept-Edit!", "Rezept", "Zutaten", "Schritte", "Portionen", "Speichern ✓",
         Anime.text(15f), Anime.text(12f),
@@ -130,7 +135,7 @@ internal fun EditorStil(
     vm: EditorViewModel,
 ) {
     val stil = FoodyTheme.stil.stil
-    val a = editorArt(stil)
+    val a = editorArt(stil, FoodyTheme.stil.inszeniert)
     val f = FoodyTheme.farben
     val dichte = LocalDensity.current
     var leiste by remember { mutableIntStateOf(0) }

@@ -179,7 +179,8 @@ private fun KochInhalt(
     LaunchedEffect(pager) { snapshotFlow { pager.settledPage }.collect(onSeite) }
     LaunchedEffect(z.seite) { if (pager.currentPage != z.seite) pager.animateScrollToPage(z.seite) }
     val sage = FoodyTheme.stil.szene(FoodyStil.SAGE)
-    val art = KochSzene.aktuell()?.let(::kochArt)
+    val inszeniert = FoodyTheme.stil.inszeniert
+    val art = KochSzene.aktuell()?.let { kochArt(it, inszeniert) }
     Column(modifier) {
         when {
             sage -> KochKopfSage(z, pager.currentPage, onSchliessen)

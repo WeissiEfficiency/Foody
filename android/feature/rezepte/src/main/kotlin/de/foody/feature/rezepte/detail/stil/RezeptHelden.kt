@@ -159,23 +159,8 @@ internal fun BayrischHeld(z: DetailZustand.Da) {
     val r = z.voll.rezept
     val blau = bayrischBlau()
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Canvas(Modifier.fillMaxWidth().height(14.dp).clearAndSetSemantics { }) {
-            val b = size.height
-            var x = 0f
-            var i = 0
-            while (x < size.width) {
-                val raute = Path().apply {
-                    moveTo(x + b / 2, 0f)
-                    lineTo(x + b, b / 2)
-                    lineTo(x + b / 2, b)
-                    lineTo(x, b / 2)
-                    close()
-                }
-                drawPath(raute, if (i % 2 == 0) blau else Color.White)
-                x += b * 0.75f
-                i++
-            }
-        }
+        // Das Rautenband nur in Immersiv, wie im Entwurf
+        if (FoodyTheme.stil.inszeniert) Rautenband(blau)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 (einordnungGross(z) ?: "AUS DA KUCHL"), Modifier.weight(1f),
@@ -185,6 +170,28 @@ internal fun BayrischHeld(z: DetailZustand.Da) {
         }
         Text(r.name, Modifier.semantics { heading() }, style = Bayrisch.titel(titelGroesse(28f)), color = f.text)
         angabenZeile(z)?.let { Text(it, style = Bayrisch.text(15f), color = f.nebentext) }
+    }
+}
+
+/** Weiß-blaues Rautenband über dem Rezept. */
+@Composable
+private fun Rautenband(blau: Color) {
+    Canvas(Modifier.fillMaxWidth().height(14.dp).clearAndSetSemantics { }) {
+        val b = size.height
+        var x = 0f
+        var i = 0
+        while (x < size.width) {
+            val raute = Path().apply {
+                moveTo(x + b / 2, 0f)
+                lineTo(x + b, b / 2)
+                lineTo(x + b / 2, b)
+                lineTo(x, b / 2)
+                close()
+            }
+            drawPath(raute, if (i % 2 == 0) blau else Color.White)
+            x += b * 0.75f
+            i++
+        }
     }
 }
 

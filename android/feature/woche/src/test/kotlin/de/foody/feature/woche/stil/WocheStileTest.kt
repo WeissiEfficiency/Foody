@@ -172,6 +172,16 @@ class WocheStileTest {
         compose.onNodeWithText("Leere Tage vorschlagen lassen").performScrollTo().assertExists()
     }
 
+    /** Bayrisch in Ruhig wie im Entwurf: ohne Wimpelkette, den Tag wählt man in der Liste (je Tag ein wählbarer Eintrag). */
+    @Test
+    fun bayrischRuhigOhneWimpel() {
+        zeigen(FoodyStil.BAYRISCH, variante = StilVariante.RUHIG)
+        val mittwoch = hasContentDescription("Mittwoch, 28.10.", substring = true) and isSelectable()
+        assertEquals(1, compose.onAllNodes(mittwoch).fetchSemanticsNodes().size)
+        compose.onNode(mittwoch).performScrollTo().performClick()
+        compose.onNode(mittwoch).assertIsSelected()
+    }
+
     @Test fun edo() = pruefen(FoodyStil.EDO)
 
     @Test fun bayrisch() = pruefen(FoodyStil.BAYRISCH)

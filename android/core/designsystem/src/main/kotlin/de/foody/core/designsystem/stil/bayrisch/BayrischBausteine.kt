@@ -54,6 +54,13 @@ object Bayrisch {
     val kartenForm = RoundedCornerShape(14.dp)
 }
 
+/**
+ * Schrift der großen Titel in den bayrischen Szenen: Fraktur in Immersiv, in Ruhig wie in den Entwürfen `T-*`
+ * Alegreya in derselben Größe.
+ */
+@Composable
+fun bayrischSzenenTitel(groesse: Float): TextStyle = if (FoodyTheme.stil.inszeniert) Bayrisch.fraktur(groesse) else Bayrisch.titel(groesse)
+
 /** Das Blau des Stils: der gewählte Akzent, als Text lesbar ([StilWerte.akzentFarbe]). */
 @Composable
 fun bayrischBlau(): Color = FoodyTheme.stil.akzentFarbe

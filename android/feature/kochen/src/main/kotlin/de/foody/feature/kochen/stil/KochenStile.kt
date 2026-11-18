@@ -88,7 +88,15 @@ internal class KochArt(
     val klein: (Float) -> TextStyle,
 )
 
-internal fun kochArt(stil: FoodyStil): KochArt = when (stil) {
+/** Wörter und Schriften des Kochmodus; Bayrisch in Ruhig ([inszeniert] = false) mit „Weiter“ und „Fertig“ wie im Entwurf. */
+internal fun kochArt(stil: FoodyStil, inszeniert: Boolean = true): KochArt = when (stil) {
+    FoodyStil.BAYRISCH if !inszeniert -> KochArt(
+        bereit = "Herrichten", ueberSchritt = { n, g -> "Schritt $n von $g" }, ueberBereit = "Herrichten", nummer = { n, _ -> "$n." },
+        brauchst = "Des brauchst", naechstes = "Danach", beginnen = "Pack ma's!", weiter = "Weiter", fertig = "Fertig", zurueck = "Zruck",
+        timer = "Uhr aufziehn", portionen = { if (it == 1) "1 Portion" else "$it Portiona" },
+        kopf = { name, p -> "$name · " + if (p == 1) "1 Portion" else "$p Portiona" },
+        titel = { Bayrisch.titel(it) }, text = { Bayrisch.text(it) }, klein = { Bayrisch.text(it, FontWeight.Bold) },
+    )
     FoodyStil.ANIME -> KochArt(
         bereit = "BEREITLEGEN!", ueberSchritt = { n, g -> "SCHRITT $n VON $g" }, ueberBereit = "VORBEREITUNG", nummer = { n, _ -> "$n" },
         brauchst = "DU BRAUCHST", naechstes = "ALS NÄCHSTES", beginnen = "LOS GEHT'S! ▶", weiter = "WEITER ▶", fertig = "FERTIG!",
