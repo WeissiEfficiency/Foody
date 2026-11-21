@@ -212,6 +212,12 @@ Gemeinsame liegt in `:core:designsystem`.
   Karte in den Einstellungen.
 - Aus dem Review offen: benannte Schriftskala je Stil (N2, Aufwand L), sechs Lint-Hinweise.
 
+### Einheitlicher Rahmen (Alltagstest 3.9.0, 2026-11-20)
+- [x] Teil A: Zahnrad, Stilkacheln, Anime-Leiste, Einkauf-Listen, Menüs und Abteilungen (Spec
+      `docs/superpowers/specs/2026-11-20-einheitlicher-rahmen-design.md`), 2026-11-21, siehe „Ergebnis“.
+- [ ] Teil B: Eintragen neu – gleich und „nativ“ in allen Stilen, Mahlzeit wählen, Foto ohne Umweg, Widgets direkt
+      zum Ziel statt erst ins Eintragen-Blatt. Eigener Spec, erst mit dem Nutzer klären.
+
 ## Aufwand und Risiken
 
 - **Grob:**
@@ -889,3 +895,24 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
   der normalen Ansicht zeigt jetzt kein Stil mit Planen-Seite mehr.
 - Im Emulator mit den Maßen des Handys nachgeprüft: Heute, Rezepte, Rezept, Kochen, Woche, Einkauf in Kreuzer Ruhig.
 - Im Emulator mit den Maßen des Handys nachgeprüft: Heute, Tagebuch, Rezepte, Rezept, Woche, Einkauf in Edo Ruhig.
+
+**2026-11-21 – Einheitlicher Rahmen über alle Stile, Teil A** (Spec
+`docs/superpowers/specs/2026-11-20-einheitlicher-rahmen-design.md`, Plan
+`docs/superpowers/plans/2026-11-20-einheitlicher-rahmen.md`; Anlass: Alltagstest von 3.9.0 auf dem Handy):
+- Zahnrad (#290): `EinstellungenKnopf` in allen Stilen und beiden Varianten oben rechts im Kopf von Heute, gleich
+  groß wie die übrigen runden Knöpfe. Milchglas zeigt das Zahnrad statt der Person, Edo hat es aus der Knopfreihe
+  unten nach oben bekommen. Anime bricht den Kopf nicht mehr um: Der Titel wird bis zu einer festen Untergrenze
+  kleiner, sonst rückt das Datum unter den Titel; abgeschnitten wird nichts, auch nicht bei Schrift 200 %. Neue
+  Bilder aller Köpfe bei 360 dp.
+- Stilkacheln und Anime-Leiste (#291): Die Kacheln unter „Stil“ und „Akzent“ ändern beim Umschalten weder Größe noch
+  Lage (feste Zellbreite, höchstens 3 bzw. 4 Spalten, gleicher Innenabstand, Name immer zweizeilig). Die schwebende
+  Navigationsleiste ist bei Anime deckend weiß (`StilWerte.leiste`).
+- Einkauf (#292): In Sage bis Kreuzer ist das ⋮-Menü weg; der Listen-Knopf ist der einzige Weg zur Listen-Seite.
+  „Liste löschen“ ist dort ein Papierkorb im Kopf („Aktuelle Liste löschen“), nur mit aktueller Liste. Milchglas
+  behält sein Menü.
+- Menüs und Abteilungen (#293): `FoodyMenue` ersetzt alle zwölf `DropdownMenu` der App (deckende Fläche, Form, Rand
+  und Schrift des Stils, `KontrastTest` für Text auf der Menüfläche). Die Sortierung der Rezepte zeigt die gewählte
+  mit Haken. Die aufklappbaren Abteilungen im Einkauf haben in jeder Szene Schrift und Farben ihrer
+  Abschnittsköpfe. Bewusst: Im Sage-Rezeptmenü steht „Ins Archiv verbannen“ jetzt in der normalen Textfarbe statt in
+  Rot (Menüpunkte einheitlich).
+- Offen: Teil B (Eintragen neu, siehe oben). Am Handy in allen Stilen ansehen (Debug-Build).
