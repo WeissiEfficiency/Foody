@@ -325,9 +325,12 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   Rückfrage: „Ja“ trägt ein, „Nein“ blendet den Vorschlag für den Tag aus (`NichtGegessenSpeicher` in `:core:data`, Prefs
   `nichtGegessen`, nur auf diesem Gerät; unter „Aus dem Plan“ bleibt er wählbar), Danebentippen ändert nichts; offener
   Einkauf; `syncAnzeige` für den Kopf; leere Datenbank → „Server verbinden“). Jede Szene setzt `EinstellungenKnopf`
-  oben rechts in ihren Kopf (Edo Immersiv in eine Zeile über dem Rollbild); der Anime-Kopf hält Titel, Datum und
-  Zahnrad in einer Zeile, verkleinert den Titel bis zu einer festen Untergrenze und setzt das Datum sonst unter den
-  Titel (`HeuteAnimeTest`, Bildvergleich aller Köpfe auch bei 360 dp: `heute_360_*`). Tagebuch in `tagebuch/`: Eintragen-Blatt
+  oben rechts in ihren Kopf (Edo Immersiv in eine Zeile über dem Rollbild), oben ausgerichtet, auch wenn der Kopf mit
+  großer Schrift mehrzeilig wird; der Anime-Kopf hält Titel, Datum und Zahnrad in einer Zeile, verkleinert den Titel
+  bis zu einer festen Untergrenze und setzt das Datum sonst unter den Titel. In Edo und Sage Ruhig rückt das Datum
+  unter den Titel, sobald es nicht mehr daneben passt (`EinstellungenKnopfLageTest`: alle 14 Kombinationen bei 360 dp,
+  Schrift 100/130/200 %, Zahnrad höchstens 48 dp unter der Oberkante; Bildvergleich aller Köpfe auch bei 360 dp:
+  `heute_360_*`). Tagebuch in `tagebuch/`: Eintragen-Blatt
   (Rezept, Zutat, Aus dem Plan, Frei; Mahlzeit aus der Zeile oder nach Uhrzeit; Suche Teilstring oder Katalogname, höchstens 30 Treffer;
   unter „Zutat“ zusätzlich Treffer aus dem BLS, siehe „BLS nachschlagen“; unter „Rezept“ mit Suchtext zusätzlich bis zu fünf
   gescannte Produkte (Zutaten mit Strichcode, `zustand.produkte`) – antippen wechselt zu „Zutat“ mit dem Produkt, Einheit
@@ -471,12 +474,14 @@ Menge in der Basiseinheit und Herkunft je `NeedSource`, manuelle Artikel ohne He
   der Hinweis „Plan geändert“ erscheint genau dann, wenn „Übernehmen“ etwas ändern würde.
 - **`:feature:einkauf`**: `EinkaufViewModel` (angezeigte Liste, Blatt, Zeitraum und Suchtext im `SavedStateHandle`;
   ein Rechen-Auftrag für die Vorschau; Sperre gegen Doppeltipp bei „Liste anlegen“/„Übernehmen“). `EinkaufRoute`:
-  Kopf mit Menü, Hinweis, „Was willst du einkaufen?“, offene Kacheln je Abteilung (Antippen = gekauft, Langdruck =
-  Details), „Zuletzt verwendet“, Katalog nach Abteilungen; ab 840 dp der Katalog rechts. Blätter: Vorschau (Zeitraum
-  ‹ ›, höchstens 28 Tage), Abgleich, Details mit Herkunft, Frühere Listen; Knopf fest unten.
+  Kopf (Milchglas mit Menü, die Szenen mit Listen-Knopf, siehe unten), Hinweis, „Was willst du einkaufen?“, offene
+  Kacheln je Abteilung (Antippen = gekauft, Langdruck = Details), „Zuletzt verwendet“, Katalog nach Abteilungen; ab
+  840 dp der Katalog rechts. Blätter: Vorschau (Zeitraum ‹ ›, höchstens 28 Tage), Abgleich, Details mit Herkunft,
+  Frühere Listen; Knopf fest unten.
   Das ⋮-Menü (`EinkaufMenue`) hat nur Milchglas. In den Szenen Sage bis Kreuzer führt allein der Listen-Knopf
   (Bedienhilfe „Einkaufslisten“) zur `ListenSeite` mit den Reitern „Neue Liste · Abgleich · Frühere“; „Liste
-  löschen“ ist dort der Papierkorb „Aktuelle Liste löschen“ im Kopf, nur wenn es eine aktuelle Liste gibt. Die
+  löschen“ ist dort der Papierkorb „Diese Liste löschen“ im Kopf, nur wenn eine Liste angezeigt wird (auch eine
+  frühere); er löscht die angezeigte Liste. Die
   aufklappbaren Abteilungen nehmen einen Kopf über den Slot `KlappkopfInhalt` (`zuletztKacheln`, `katalogKacheln`):
   Milchglas `StandardKlappkopf`, jede Szene ihren eigenen (`sageKlappkopf` … `kreuzerKlappkopf`) in Schrift und
   Farben ihrer Abschnittsköpfe; Rolle, „Aufklappen“/„Zuklappen“ und 48 dp sind gemeinsam (`Modifier.klappbar`).
@@ -493,8 +498,11 @@ Menge in der Basiseinheit und Herkunft je `NeedSource`, manuelle Artikel ohne He
 Spec `docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6e1-einstellungen-design.md`. Das Zahnrad (`EinstellungenKnopf`) oben rechts
 im Kopf von Heute öffnet in allen Stilen die Einstellungsseite; „Server verbinden“ ist das eigene Ziel
 `ServerVerbinden`. Keine Schemaänderung. Die Stilwahl (`StilWahl`) legt die Kacheln in ein Raster mit fester
-Zellbreite (Stile 88 dp, höchstens 3 Spalten; Akzente 72 dp, höchstens 4) und gleichem Innenabstand mit und ohne
-Auswahl, der Name hat immer Platz für zwei Zeilen: Beim Umschalten ändern die Kacheln weder Größe noch Lage.
+Zellbreite (Stile 88 dp, Akzente 72 dp, mit der Schrift wachsend) und gleichem Innenabstand mit und ohne Auswahl, der
+Name hat immer Platz für zwei Zeilen. Die Spaltenzahl kommt aus der Breite der Seite abzüglich des größten
+Karteneinzugs aller Stile (Glaskarte, 2 × 16 dp), nicht aus der Karte des gewählten Stils; auf dem Tablet stehen so
+sechs Stile in einer Reihe. Beim Umschalten ändern die Kacheln weder Spalten noch Breite noch Reihe
+(`EinstellungenStileTest`, alle Stile und Varianten bei 360 dp mit Schrift 130 % und 200 % und auf dem Tablet).
 
 - **`:core:data`:** `DarstellungSpeicher` (`themeMode` mit den v1-Werten `SYSTEM`/`LIGHT`/`DARK`, Flow und `aktuell()`
   als Startwert), `TageszielSpeicher.setzen` (500–10.000 kcal, `null` = kein Ziel), `Sicherung.allesLoeschen()`:
