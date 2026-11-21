@@ -57,7 +57,7 @@ import kotlin.test.assertTrue
  * Die Einkaufs-Szenen der Stile R–V in Immersiv: Titel für TalkBack „Einkauf“, Antippen hakt ab, Langdruck öffnet
  * die Details; bei 200 % Schrift wird nichts abgeschnitten. Die Abteilungen des Katalogs klappen in Q–V im Kopf der
  * Szene auf und zu. In Q–V führt nur der Knopf „Listen“ zu den Listen (kein
- * Menü ⋮), dort steht im Kopf auch „Aktuelle Liste löschen“; Milchglas behält das Menü.
+ * Menü ⋮), dort steht im Kopf auch „Diese Liste löschen“; Milchglas behält das Menü.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -213,7 +213,7 @@ class EinkaufStileTest {
         val vm = zeigen(FoodyStil.ANIME)
         compose.onNodeWithContentDescription("Einkaufslisten").performClick()
         compose.waitUntil(5_000) { listenSeiteDa() }
-        compose.onNodeWithContentDescription("Aktuelle Liste löschen").performClick()
+        compose.onNodeWithContentDescription("Diese Liste löschen").performClick()
         compose.warteAufText("Liste löschen?")
         compose.onNodeWithText("Löschen").performClick()
         compose.waitUntil(5_000) { runBlocking { db.einkaufslisteDao().alle() }.isEmpty() }
