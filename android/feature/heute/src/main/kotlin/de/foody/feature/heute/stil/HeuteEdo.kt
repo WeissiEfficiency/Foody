@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -163,8 +165,10 @@ internal fun edoKopf(slot: String, morgen: Boolean, datum: LocalDate): String {
 
 /**
  * Ruhig wie im Entwurf: statt des Rollbilds „Heute“ mit dem Datum über einer Tuschelinie, darunter die nächste
- * Mahlzeit schlicht mit „KOCHEN“.
+ * Mahlzeit schlicht mit „KOCHEN“. Passt das Datum nicht mehr neben den Titel (große Schrift, schmales Handy), rückt es
+ * darunter; das Zahnrad bleibt oben rechts.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SchlichterKopf(zustand: HeuteZustand?, aktionen: HeuteAktionen) {
     val f = FoodyTheme.farben
@@ -175,10 +179,14 @@ private fun SchlichterKopf(zustand: HeuteZustand?, aktionen: HeuteAktionen) {
                 .padding(bottom = 8.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
-            // Der Titel wächst mit der Systemschrift nur bis 130 %
-            Text("Heute", Modifier.weight(1f).semantics { heading() }, style = Edo.titel(titelGroesse(34f)), color = f.text)
-            zustand?.datum?.let { Text(SCHLICHT_DATUM.format(it), Modifier.padding(bottom = 4.dp), style = Edo.text(14f), color = f.nebentext) }
-            EinstellungenKnopf(aktionen.onEinstellungen)
+            FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceBetween) {
+                // Der Titel wächst mit der Systemschrift nur bis 130 %
+                Text("Heute", Modifier.align(Alignment.Bottom).semantics { heading() }, style = Edo.titel(titelGroesse(34f)), color = f.text)
+                zustand?.datum?.let {
+                    Text(SCHLICHT_DATUM.format(it), Modifier.align(Alignment.Bottom).padding(bottom = 4.dp), style = Edo.text(14f), color = f.nebentext)
+                }
+            }
+            EinstellungenKnopf(aktionen.onEinstellungen, Modifier.align(Alignment.Top))
         }
         zustand?.let { SchlichteMahlzeit(it, aktionen) }
     }

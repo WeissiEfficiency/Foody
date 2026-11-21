@@ -13,6 +13,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -129,7 +131,11 @@ internal fun HeuteSage(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier
     }
 }
 
-/** Ruhig: statt der Szene der Kopf „HEUTE“ mit dem Datum und einer Linie darunter. */
+/**
+ * Ruhig: statt der Szene der Kopf „HEUTE“ mit dem Datum und einer Linie darunter. Passt das Datum nicht mehr neben den
+ * Titel (große Schrift, schmales Handy), rückt es darunter; das Zahnrad bleibt oben rechts.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SchlichterKopf(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: () -> Unit) {
     val f = FoodyTheme.farben
@@ -140,17 +146,19 @@ private fun SchlichterKopf(datum: LocalDate?, sync: SyncAnzeige?, onEinstellunge
             .padding(start = 20.dp, end = 4.dp, top = 18.dp, bottom = 12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "HEUTE",
-                Modifier.weight(1f).semantics {
-                    heading()
-                    contentDescription = "Heute"
-                },
-                style = Sage.titel(30f, 0.1f),
-                color = FoodyTheme.stil.zier,
-            )
-            datum?.let { Text(SCHLICHT_DATUM.format(it), style = Sage.text(16f), color = f.nebentext) }
-            EinstellungenKnopf(onEinstellungen)
+            FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(
+                    "HEUTE",
+                    Modifier.align(Alignment.CenterVertically).semantics {
+                        heading()
+                        contentDescription = "Heute"
+                    },
+                    style = Sage.titel(30f, 0.1f),
+                    color = FoodyTheme.stil.zier,
+                )
+                datum?.let { Text(SCHLICHT_DATUM.format(it), Modifier.align(Alignment.CenterVertically), style = Sage.text(16f), color = f.nebentext) }
+            }
+            EinstellungenKnopf(onEinstellungen, Modifier.align(Alignment.Top))
         }
         sync?.let { SyncStatus(it) }
     }

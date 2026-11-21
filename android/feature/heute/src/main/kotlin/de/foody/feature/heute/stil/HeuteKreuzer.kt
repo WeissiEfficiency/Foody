@@ -188,7 +188,8 @@ private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
                     }
                 }
             }
-            EinstellungenKnopf(onEinstellungen)
+            // Oben rechts, auch wenn der Anteil bei großer Schrift unter den Titel rückt
+            EinstellungenKnopf(onEinstellungen, Modifier.align(Alignment.Top))
         }
         zustand?.sync?.let { SyncStatus(it) }
     }
