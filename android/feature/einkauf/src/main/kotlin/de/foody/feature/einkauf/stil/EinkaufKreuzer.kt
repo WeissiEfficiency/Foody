@@ -45,6 +45,7 @@ import de.foody.core.designsystem.stil.kreuzer.KreuzerKnopf
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
 import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
+import de.foody.feature.einkauf.KlappkopfInhalt
 import java.util.Locale
 import kotlin.math.min
 
@@ -65,6 +66,19 @@ internal fun LazyGridScope.kreuzerPosten(ansicht: EinkaufsAnsicht?, onUmschalten
     if (kisten.isEmpty()) return
     ganzeBreite("kreuzer-frachtraum") {
         if (FoodyTheme.stil.inszeniert) Frachtraum(kisten, onUmschalten, onDetails) else Liste(gruppen, onUmschalten, onDetails)
+    }
+}
+
+/**
+ * Klappkopf der Abteilungen (Zuletzt, Katalog) wie die Abteilungen der Liste in Ruhig: Mono in Versalien in der
+ * Nebenfarbe. TalkBack hört den Titel in normaler Schreibung.
+ */
+internal val kreuzerKlappkopf: KlappkopfInhalt = { titel, offen, onKlick ->
+    Klappzeile(offen, onKlick) {
+        Text(
+            titel.uppercase(Locale.GERMAN), Modifier.weight(1f).semantics { contentDescription = titel },
+            style = Kreuzer.mono(12.5f, 0.08f), color = FoodyTheme.farben.nebentext,
+        )
     }
 }
 

@@ -3,14 +3,11 @@ package de.foody.feature.einkauf
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,6 +20,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.data.einkauf.EinkaufsAnsicht
 import de.foody.core.data.einkauf.ListenKopf
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.FoodyMenue
+import de.foody.core.designsystem.komponenten.FoodyMenuePunkt
 import de.foody.core.designsystem.komponenten.RunderKnopf
 import kotlinx.coroutines.launch
 
@@ -35,9 +34,9 @@ internal fun EinkaufMenue(ansicht: EinkaufsAnsicht?, onBlatt: (Blatt) -> Unit, o
     var offen by remember { mutableStateOf(false) }
     Box {
         RunderKnopf(Icons.Outlined.MoreVert, "Weitere Aktionen", { offen = true })
-        DropdownMenu(expanded = offen, onDismissRequest = { offen = false }) {
+        FoodyMenue(offen, onSchliessen = { offen = false }) {
             val punkt = @Composable { text: String, aktion: () -> Unit ->
-                DropdownMenuItem(text = { Text(text) }, onClick = { offen = false; aktion() })
+                FoodyMenuePunkt(text, { offen = false; aktion() })
             }
             punkt("Neue Liste aus dem Plan") { onBlatt(Blatt.Vorschau) }
             if (ansicht?.von != null) punkt("Mit Plan abgleichen") { onBlatt(Blatt.Abgleich) }

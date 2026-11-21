@@ -2,21 +2,28 @@ package de.foody.feature.einkauf.stil
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.unit.dp
 import de.foody.core.data.einkauf.EinkaufsAnsicht
 import de.foody.core.data.einkauf.EinkaufsArtikel
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.stil.szenenStil
+import de.foody.feature.einkauf.KlappPfeil
+import de.foody.feature.einkauf.klappbar
 
 /**
  * Gemeinsames der Einkaufs-Szenen in Immersiv (Sage und R–V): Welche Szene gilt, die Posten nach Abteilung und das
@@ -70,4 +77,20 @@ internal fun LazyGridScope.ganzeBreite(key: String, inhalt: @Composable () -> Un
 /** Jede Abteilung als ein Eintrag über die ganze Breite. */
 internal fun LazyGridScope.jeGruppe(praefix: String, gruppen: List<PostenGruppe>, inhalt: @Composable (Int, PostenGruppe) -> Unit) {
     gruppen.forEachIndexed { i, g -> ganzeBreite("$praefix-${g.name}") { inhalt(i, g) } }
+}
+
+/**
+ * Gerüst der Klappköpfe der Szenen (Zuletzt, Katalog-Abteilungen): links der [titel] im Aussehen der Abteilungen der
+ * Szene, rechts der Pfeil in der Textfarbe; mindestens 48 dp hoch, für TalkBack „Aufklappen“ bzw. „Zuklappen“.
+ */
+@Composable
+internal fun Klappzeile(offen: Boolean, onKlick: () -> Unit, modifier: Modifier = Modifier, titel: @Composable RowScope.() -> Unit) {
+    Row(
+        Modifier.klappbar(offen, onKlick).then(modifier),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        titel()
+        KlappPfeil(offen)
+    }
 }

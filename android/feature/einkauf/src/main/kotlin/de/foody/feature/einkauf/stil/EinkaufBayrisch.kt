@@ -50,6 +50,7 @@ import de.foody.core.designsystem.stil.bayrisch.bayrischSzenenTitel
 import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.feature.einkauf.KlappkopfInhalt
 import kotlin.math.min
 
 /**
@@ -65,6 +66,12 @@ internal fun LazyGridScope.bayrischKopf(ansicht: EinkaufsAnsicht?, onListen: () 
 
 internal fun LazyGridScope.bayrischPosten(ansicht: EinkaufsAnsicht?, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {
     jeGruppe("bayrisch", ansicht.gruppiert()) { _, g -> Kiste(g, onUmschalten, onDetails) }
+}
+
+/** Klappkopf der Abteilungen (Zuletzt, Katalog) in der Titelschrift wie in den Kisten: Tinte in Immersiv, Blau in Ruhig. */
+internal val bayrischKlappkopf: KlappkopfInhalt = { titel, offen, onKlick ->
+    val farbe = if (FoodyTheme.stil.inszeniert) FoodyTheme.farben.text else bayrischBlau()
+    Klappzeile(offen, onKlick) { Text(titel, Modifier.weight(1f), style = Bayrisch.titel(15f, FontWeight.ExtraBold), color = farbe) }
 }
 
 /** Namen der Abteilungen auf Bairisch; andere bleiben, wie sie sind. */

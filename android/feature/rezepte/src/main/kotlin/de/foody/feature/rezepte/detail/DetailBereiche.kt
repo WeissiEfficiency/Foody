@@ -23,8 +23,6 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Remove
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +48,8 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.Augenbraue
 import de.foody.core.designsystem.komponenten.FoodyKnopf
+import de.foody.core.designsystem.komponenten.FoodyMenue
+import de.foody.core.designsystem.komponenten.FoodyMenuePunkt
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.RezeptPlatzhalter
 import de.foody.core.designsystem.komponenten.RunderKnopf
@@ -147,10 +147,10 @@ private fun Kopfbild(z: DetailZustand.Da, a: DetailAktionen) {
             )
             Box {
                 RunderKnopf(Icons.Outlined.MoreVert, "Mehr", { menu = true })
-                DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(text = { Text("Duplizieren") }, onClick = { menu = false; a.onDuplizieren() })
+                FoodyMenue(menu, onSchliessen = { menu = false }) {
+                    FoodyMenuePunkt("Duplizieren", { menu = false; a.onDuplizieren() })
                     if (r.archivedAt == null) {
-                        DropdownMenuItem(text = { Text("Archivieren") }, onClick = { menu = false; a.onArchivieren(true) })
+                        FoodyMenuePunkt("Archivieren", { menu = false; a.onArchivieren(true) })
                     }
                 }
             }

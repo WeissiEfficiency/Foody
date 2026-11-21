@@ -18,8 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -57,6 +55,8 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.FoodyMenue
+import de.foody.core.designsystem.komponenten.FoodyMenuePunkt
 import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.platzFuerLeiste
 import de.foody.core.designsystem.komponenten.portionenText
@@ -229,22 +229,19 @@ private fun Kopf(art: RezeptArt, z: DetailZustand.Da, a: DetailAktionen) {
         Text(art.kopf, Modifier.weight(1f), style = art.klein(12f), color = FoodyTheme.farben.nebentext, textAlign = TextAlign.Center)
         Box {
             StilAktion("⋯", { menue = true }, Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp), beschreibung = "Weitere Aktionen")
-            DropdownMenu(menue, onDismissRequest = { menue = false }) {
-                Eintrag(art, "Bearbeiten", "Bearbeiten") { menue = false; a.onBearbeiten() }
-                Eintrag(art, art.duplizieren, "Duplizieren") { menue = false; a.onDuplizieren() }
-                if (z.voll.rezept.archivedAt == null) Eintrag(art, "Archivieren", "Archivieren") { menue = false; a.onArchivieren(true) }
+            FoodyMenue(menue, onSchliessen = { menue = false }) {
+                Eintrag("Bearbeiten", "Bearbeiten") { menue = false; a.onBearbeiten() }
+                Eintrag(art.duplizieren, "Duplizieren") { menue = false; a.onDuplizieren() }
+                if (z.voll.rezept.archivedAt == null) Eintrag("Archivieren", "Archivieren") { menue = false; a.onArchivieren(true) }
             }
         }
     }
 }
 
+/** Punkt im Menü mit dem Wort des Stils; TalkBack hört den normalen [begriff]. */
 @Composable
-private fun Eintrag(art: RezeptArt, text: String, begriff: String, onKlick: () -> Unit) {
-    DropdownMenuItem(
-        text = { Text(text, style = art.text(16f), color = FoodyTheme.farben.text) },
-        onClick = onKlick,
-        modifier = Modifier.semantics { contentDescription = begriff },
-    )
+private fun Eintrag(text: String, begriff: String, onKlick: () -> Unit) {
+    FoodyMenuePunkt(text, onKlick, Modifier.semantics { contentDescription = begriff })
 }
 
 @Composable

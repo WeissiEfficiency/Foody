@@ -42,6 +42,7 @@ import de.foody.core.designsystem.stil.edo.EdoKnopf
 import de.foody.core.designsystem.stil.edo.edoShu
 import de.foody.core.designsystem.stil.svgPfad
 import de.foody.core.designsystem.stil.titelGroesse
+import de.foody.feature.einkauf.KlappkopfInhalt
 import kotlin.math.min
 
 /**
@@ -56,6 +57,11 @@ internal fun LazyGridScope.edoKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Un
 
 internal fun LazyGridScope.edoPosten(ansicht: EinkaufsAnsicht?, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {
     jeGruppe("edo", ansicht.gruppiert()) { _, g -> Gruppe(g, onUmschalten, onDetails) }
+}
+
+/** Klappkopf der Abteilungen (Zuletzt, Katalog) in der Titelschrift und im Primärton wie die Abteilungen der Posten. */
+internal val edoKlappkopf: KlappkopfInhalt = { titel, offen, onKlick ->
+    Klappzeile(offen, onKlick) { Text(titel, Modifier.weight(1f), style = Edo.titel(17f), color = FoodyTheme.farben.primaer) }
 }
 
 /** Namen der Abteilungen wie auf dem Markt; andere bleiben, wie sie sind. */

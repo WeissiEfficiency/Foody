@@ -5,19 +5,25 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
@@ -49,7 +55,8 @@ import kotlin.test.assertTrue
 
 /**
  * Die Einkaufs-Szenen der Stile R–V in Immersiv: Titel für TalkBack „Einkauf“, Antippen hakt ab, Langdruck öffnet
- * die Details; bei 200 % Schrift wird nichts abgeschnitten. In Q–V führt nur der Knopf „Listen“ zu den Listen (kein
+ * die Details; bei 200 % Schrift wird nichts abgeschnitten. Die Abteilungen des Katalogs klappen in Q–V im Kopf der
+ * Szene auf und zu. In Q–V führt nur der Knopf „Listen“ zu den Listen (kein
  * Menü ⋮), dort steht im Kopf auch „Aktuelle Liste löschen“; Milchglas behält das Menü.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -151,6 +158,34 @@ class EinkaufStileTest {
                 compose.onNodeWithContentDescription("Weitere Aktionen").assertDoesNotExist()
                 compose.onNodeWithContentDescription("Einkaufslisten").assertExists()
             }
+        }
+    }
+
+    /** Kopf einer Katalog-Abteilung: Button mit dem Label [label] („Aufklappen“ oder „Zuklappen“). */
+    private fun abteilung(name: String, label: String) =
+        hasText(name, substring = true, ignoreCase = true) and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button) and
+            SemanticsMatcher("Label „$label“") { it.config.getOrNull(SemanticsActions.OnClick)?.label == label }
+
+    /** Q–V (Immersiv): Die Abteilungen des Katalogs klappen im Kopf der Szene auf und wieder zu. */
+    @Test
+    fun abteilungKlapptAuf() {
+        liste()
+        val vm = u.vm()
+        var stil by mutableStateOf(FoodyStil.SAGE)
+        compose.setContent { FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV) { EinkaufRoute(null, {}, {}, vm = vm) } }
+        compose.warteAufText("Zwiebeln")
+        val raster = compose.onNode(hasScrollToIndexAction())
+        for (s in listOf(FoodyStil.SAGE, FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)) {
+            stil = s
+            compose.waitForIdle()
+            raster.performScrollToNode(abteilung("Obst & Gemüse", "Aufklappen"))
+            compose.onNode(abteilung("Obst & Gemüse", "Aufklappen")).performClick()
+            // „Äpfel“ steht nur im Katalog, nicht auf der Liste
+            raster.performScrollToNode(hasText("Äpfel"))
+            raster.performScrollToNode(abteilung("Obst & Gemüse", "Zuklappen"))
+            compose.onNode(abteilung("Obst & Gemüse", "Zuklappen")).performClick()
+            compose.onNode(abteilung("Obst & Gemüse", "Aufklappen")).assertExists()
+            compose.onAllNodesWithText("Äpfel").assertCountEquals(0)
         }
     }
 

@@ -19,8 +19,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -52,6 +50,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.FoodyMenue
+import de.foody.core.designsystem.komponenten.FoodyMenuePunkt
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.Suchfeld
 import de.foody.core.designsystem.komponenten.ueberLeiste
@@ -260,9 +260,9 @@ private fun NeuKnopf(onNeu: () -> Unit, onImport: () -> Unit) {
                 .semantics { contentDescription = "Rezept hinzufügen" },
             contentAlignment = Alignment.Center,
         ) { Text("+", style = Sage.titel(22f, 0f), color = FoodyTheme.farben.primaer) }
-        DropdownMenu(menue, onDismissRequest = { menue = false }) {
-            DropdownMenuItem(text = { Text("Neues Rezept") }, onClick = { menue = false; onNeu() })
-            DropdownMenuItem(text = { Text("Markdown importieren") }, onClick = { menue = false; onImport() })
+        FoodyMenue(menue, onSchliessen = { menue = false }) {
+            FoodyMenuePunkt("Neues Rezept", { menue = false; onNeu() })
+            FoodyMenuePunkt("Markdown importieren", { menue = false; onImport() })
         }
     }
 }

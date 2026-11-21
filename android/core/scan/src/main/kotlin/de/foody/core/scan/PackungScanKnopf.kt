@@ -19,8 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DocumentScanner
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -36,6 +34,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
+import de.foody.core.designsystem.komponenten.FoodyMenue
+import de.foody.core.designsystem.komponenten.FoodyMenuePunkt
 import de.foody.core.designsystem.komponenten.KnopfArt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -93,18 +93,18 @@ fun PackungScanKnopf(lauf: ScanLauf, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Box {
             ScanMenueKnopf(aktiv = verfuegbar && !zustand.laeuft, laeuft = zustand.laeuft) { menue = true }
-            DropdownMenu(menue, onDismissRequest = { menue = false }) {
-                DropdownMenuItem({ Text(ScanTexte.STRICHCODE) }, {
+            FoodyMenue(menue, onSchliessen = { menue = false }) {
+                FoodyMenuePunkt(ScanTexte.STRICHCODE, {
                     menue = false
                     lauf.strichcode()
                 })
                 // Ein neuer Versuch über das Menü vergisst den Strichcode; nur die angebotenen Foto-Knöpfe hängen ihn an.
-                DropdownMenuItem({ Text(ScanTexte.FOTO) }, {
+                FoodyMenuePunkt(ScanTexte.FOTO, {
                     menue = false
                     zustand.menueVersuch()
                     kameraStarten()
                 })
-                DropdownMenuItem({ Text(ScanTexte.GALERIE) }, {
+                FoodyMenuePunkt(ScanTexte.GALERIE, {
                     menue = false
                     zustand.menueVersuch()
                     galerieStarten()
