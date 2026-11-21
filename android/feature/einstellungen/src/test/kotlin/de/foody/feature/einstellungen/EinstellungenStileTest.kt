@@ -22,6 +22,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.size
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.TAGESZIEL_MAX
@@ -182,15 +183,30 @@ class EinstellungenStileTest {
 
     private fun groesse(name: String) = kachel(name).performScrollTo().getUnclippedBoundsInRoot().size
 
-    /** Bayrisch zeigt die Wahl in einer Karte mit Innenabstand, Grauen nicht: Die Kacheln bleiben trotzdem gleich groß. */
+    /** Lage der Kachel „Edo“ (die vierte) gegenüber „Milchglas“ (der ersten): zeigt, wie die Reihen aufgeteilt sind. */
+    private fun lageEdo(): DpOffset {
+        val milchglas = kachel("Milchglas").performScrollTo().getUnclippedBoundsInRoot()
+        val edo = kachel("Edo").getUnclippedBoundsInRoot()
+        return DpOffset(edo.left - milchglas.left, edo.top - milchglas.top)
+    }
+
+    /**
+     * Bayrisch zeigt die Wahl in einer Karte mit Innenabstand, Grauen nicht: Die Kacheln bleiben trotzdem gleich groß und
+     * die Reihen gleich aufgeteilt. Breite eines üblichen Handys: Dort passten in Grauen vier Kacheln in die Reihe, in
+     * Bayrisch nur drei.
+     */
     @Test
+    @Config(qualifiers = "w411dp-h1600dp")
     fun kachelnBehaltenIhreGroesse() {
         zeigen(FoodyStil.BAYRISCH)
         val bayrisch = groesse("Milchglas")
+        val lageBayrisch = lageEdo()
         wechseln(FoodyStil.GRAUEN)
         val grauen = groesse("Milchglas")
         assertEquals(bayrisch.width, grauen.width, "Breite")
         assertEquals(bayrisch.height, grauen.height, "Höhe")
+        // „Edo“ steht in beiden Stilen gleich weit von „Milchglas“ entfernt, also an derselben Stelle der Reihen
+        assertEquals(lageBayrisch, lageEdo(), "Lage von Edo gegenüber Milchglas")
     }
 
     /**
