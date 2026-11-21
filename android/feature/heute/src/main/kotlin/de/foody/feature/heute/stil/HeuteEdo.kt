@@ -30,10 +30,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -71,6 +67,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.heute.GeplanteMahlzeit
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.EinstellungenKnopf
 import de.foody.core.designsystem.komponenten.FoodyFrage
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncStatus
@@ -121,7 +118,14 @@ internal fun HeuteEdo(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier:
     HeuteRahmen(modifier, innen = PaddingValues(top = 14.dp)) { rahmen ->
         Column(rahmen, horizontalAlignment = Alignment.CenterHorizontally) {
             val inszeniert = FoodyTheme.stil.inszeniert
-            if (inszeniert) Rollbild(zustand, aktionen) else SchlichterKopf(zustand, aktionen)
+            if (inszeniert) {
+                Row(Modifier.fillMaxWidth().padding(end = 12.dp), horizontalArrangement = Arrangement.End) {
+                    EinstellungenKnopf(aktionen.onEinstellungen)
+                }
+                Rollbild(zustand, aktionen)
+            } else {
+                SchlichterKopf(zustand, aktionen)
+            }
             if (zustand == null) return@Column
             Column(
                 Modifier.fillMaxWidth().padding(horizontal = 18.dp).padding(top = if (inszeniert) 34.dp else 20.dp),
@@ -174,6 +178,7 @@ private fun SchlichterKopf(zustand: HeuteZustand?, aktionen: HeuteAktionen) {
             // Der Titel wächst mit der Systemschrift nur bis 130 %
             Text("Heute", Modifier.weight(1f).semantics { heading() }, style = Edo.titel(titelGroesse(34f)), color = f.text)
             zustand?.datum?.let { Text(SCHLICHT_DATUM.format(it), Modifier.padding(bottom = 4.dp), style = Edo.text(14f), color = f.nebentext) }
+            EinstellungenKnopf(aktionen.onEinstellungen)
         }
         zustand?.let { SchlichteMahlzeit(it, aktionen) }
     }
@@ -461,20 +466,11 @@ private fun Stempel(gegessen: Boolean, onKlick: (() -> Unit)?, beschreibung: Str
     }
 }
 
-/** „＋ Eintragen“, „Scannen · Foto“ und die Einstellungen am Ende. */
+/** „＋ Eintragen“ und „Scannen · Foto“; die Einstellungen sitzen oben rechts. */
 @Composable
 private fun Knoepfe(aktionen: HeuteAktionen) {
-    val f = FoodyTheme.farben
     Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         EdoKnopf("＋ Eintragen", { aktionen.onEintragen(null) }, Modifier.weight(1f), voll = false, beschreibung = "Eintragen")
         EdoKnopf("Scannen · Foto", { aktionen.onEintragen(null) }, Modifier.weight(1f), voll = false, beschreibung = "Scannen oder Foto")
-        Box(
-            Modifier.size(48.dp).clip(Edo.form).border(1.5.dp, f.text, Edo.form)
-                .clickable(role = Role.Button, onClick = aktionen.onEinstellungen)
-                .semantics { contentDescription = "Einstellungen" },
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Outlined.Settings, contentDescription = null, tint = f.text)
-        }
     }
 }

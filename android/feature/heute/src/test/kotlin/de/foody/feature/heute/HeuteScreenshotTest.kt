@@ -65,6 +65,19 @@ class HeuteScreenshotTest {
         }
     }
 
+    /** „Heute“ in jedem Stil (Immersiv) auf einem schmalen Handy: Titel, Datum und Zahnrad passen in den Kopf. */
+    @Test
+    @Config(qualifiers = "w360dp-h800dp")
+    fun stileSchmal() {
+        for (stil in FoodyStil.entries) {
+            captureRoboImage("src/test/screenshots/heute_360_${stil.name.lowercase()}.png", roborazziOptions = vergleich) {
+                FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV, unschaerfe = false) {
+                    FoodyHintergrund { HeuteScreen(beispielZustand(), KEINE_AKTIONEN) }
+                }
+            }
+        }
+    }
+
     private val vergleich = FoodyBildvergleich
 
     private fun alle(geraet: String) {

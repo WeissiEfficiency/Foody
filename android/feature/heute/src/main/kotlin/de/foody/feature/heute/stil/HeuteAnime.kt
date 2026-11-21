@@ -29,11 +29,8 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -62,8 +59,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.EinstellungenKnopf
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.anzeigename
@@ -130,35 +129,27 @@ internal fun HeuteAnime(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifie
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
     val f = FoodyTheme.farben
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            // Der große Titel wächst mit der Systemschrift nur bis 130 %, wie große Schrift unter Android 14
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            // Der große Titel wächst mit der Systemschrift nur bis 130 %, wie große Schrift unter Android 14; wird es
+            // eng, schrumpft er, damit Datum und Zahnrad rechts in der Zeile bleiben
+            val groesse = titelGroesse(44f)
             Text(
                 szenenWort("HEUTE!", "Heute"),
-                Modifier.align(Alignment.CenterVertically).padding(end = 8.dp).semantics {
+                Modifier.weight(1f).padding(end = 8.dp).semantics {
                     heading()
                     contentDescription = "Heute"
                 },
-                style = animeSzenenTitel(titelGroesse(44f)),
-                color = f.text, maxLines = 1,
+                style = animeSzenenTitel(groesse),
+                color = f.text, maxLines = 1, softWrap = false,
+                autoSize = TextAutoSize.StepBased(minFontSize = 24.sp, maxFontSize = groesse.sp),
             )
-            Row(Modifier.align(Alignment.CenterVertically), verticalAlignment = Alignment.CenterVertically) {
-                zustand?.datum?.let { AnimePille(animeDatum(it), Modifier.rotate(4f), grund = Anime.gelb) }
-                Spacer(Modifier.width(8.dp))
-                Box(
-                    Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onEinstellungen)
-                        .semantics { contentDescription = "Einstellungen" },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Box(Modifier.size(44.dp).background(Color.White, CircleShape).border(2.5.dp, f.text, CircleShape), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Outlined.Settings, contentDescription = null, tint = f.text)
-                    }
-                }
-            }
+            zustand?.datum?.let { AnimePille(animeDatum(it), Modifier.rotate(4f), grund = Anime.gelb) }
+            Spacer(Modifier.width(8.dp))
+            EinstellungenKnopf(onEinstellungen)
         }
         zustand?.sync?.let { SyncStatus(it) }
     }

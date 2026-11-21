@@ -32,11 +32,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -78,6 +73,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.animationenErlaubt
+import de.foody.core.designsystem.komponenten.EinstellungenKnopf
 import de.foody.core.designsystem.komponenten.FoodyFrage
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncAnzeige
@@ -154,7 +150,7 @@ private fun SchlichterKopf(datum: LocalDate?, sync: SyncAnzeige?, onEinstellunge
                 color = FoodyTheme.stil.zier,
             )
             datum?.let { Text(SCHLICHT_DATUM.format(it), style = Sage.text(16f), color = f.nebentext) }
-            IconButton(onEinstellungen) { Icon(Icons.Outlined.Settings, contentDescription = "Einstellungen", tint = f.nebentext) }
+            EinstellungenKnopf(onEinstellungen)
         }
         sync?.let { SyncStatus(it) }
     }
@@ -190,9 +186,7 @@ private fun RastAmFeuer(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: 
             )
             sync?.let { SyncStatus(it, Modifier.padding(top = 6.dp)) }
         }
-        IconButton(onEinstellungen, Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(4.dp)) {
-            Icon(Icons.Outlined.Settings, contentDescription = "Einstellungen", tint = FoodyTheme.farben.nebentext)
-        }
+        EinstellungenKnopf(onEinstellungen, Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(4.dp))
     }
 }
 

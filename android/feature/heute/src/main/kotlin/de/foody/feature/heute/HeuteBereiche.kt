@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +26,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
 import de.foody.core.designsystem.komponenten.Abschnittskopf
 import de.foody.core.designsystem.komponenten.Augenbraue
+import de.foody.core.designsystem.komponenten.EinstellungenKnopf
 import de.foody.core.designsystem.komponenten.FoodyFrage
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.Kachel
@@ -36,7 +35,6 @@ import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.LeererZustandZeile
 import de.foody.core.designsystem.komponenten.Naehrwertbalken
 import de.foody.core.designsystem.komponenten.RezeptkarteGross
-import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.komponenten.SyncAnzeige
 import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.anzeigename
@@ -55,7 +53,7 @@ import java.util.Locale
 private val DATUM = DateTimeFormatter.ofPattern("EEEE, d. MMMM", Locale.GERMAN)
 
 /**
- * Augenbraue mit Datum, Titel, Sync-Status (nur verbunden) und Profilsymbol für die Einstellungen. Ab 130 % Schrift
+ * Augenbraue mit Datum, Titel, Sync-Status (nur verbunden) und Zahnrad für die Einstellungen. Ab 130 % Schrift
  * steht der Sync-Status unter dem Titel, sonst bliebe für Datum und Titel kaum Breite („He-ute“, V2).
  */
 @Composable
@@ -72,7 +70,7 @@ internal fun HeuteKopf(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: (
             if (syncDarunter) sync?.let { SyncStatus(it, Modifier.padding(top = FoodyAbstaende.s2)) }
         }
         if (!syncDarunter) sync?.let { SyncStatus(it) }
-        RunderKnopf(Icons.Outlined.PersonOutline, "Einstellungen", onEinstellungen)
+        EinstellungenKnopf(onEinstellungen)
     }
 }
 

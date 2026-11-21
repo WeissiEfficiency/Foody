@@ -35,11 +35,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -82,6 +77,7 @@ import de.foody.core.data.heute.GeplanteMahlzeit
 import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.animationenErlaubt
+import de.foody.core.designsystem.komponenten.EinstellungenKnopf
 import de.foody.core.designsystem.komponenten.FoodyFrage
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncStatus
@@ -164,7 +160,7 @@ private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
                     Text(grauenDatum(it), Modifier.align(Alignment.CenterVertically).padding(start = 8.dp), style = Grauen.maschine(12.5f), color = f.nebentext)
                 }
             }
-            IconButton(onEinstellungen) { Icon(Icons.Outlined.Settings, contentDescription = "Einstellungen", tint = f.nebentext) }
+            EinstellungenKnopf(onEinstellungen)
         }
         zustand?.sync?.let { SyncStatus(it) }
     }
