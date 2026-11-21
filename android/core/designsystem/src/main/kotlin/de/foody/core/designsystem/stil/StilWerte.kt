@@ -74,6 +74,8 @@ data class StilWerte(
     val zier: Color,
     /** Herz auf dem hellen Abzeichen über Rezeptbildern (3:1 auf Weiß). */
     val herz: Color,
+    /** Fläche der Navigationsleiste; `null` = Glas wie die übrigen Flächen. */
+    val leiste: Color?,
     /**
      * Der gewählte Akzent, wie ihn die Szenen für Text, Linien und Flächen nutzen (`edoShu()`, `bayrischBlau()`,
      * `kreuzerAmber()`): wie im Entwurf, solange er als Text auf Grund und Karten 4,5:1 hält, sonst angeglichen.
@@ -110,7 +112,7 @@ fun milchglasWerte(farbwelt: Farbwelt, dunkel: Boolean): StilWerte {
         stil = FoodyStil.MILCHGLAS, variante = StilVariante.Standard, akzent = null, dunkel = dunkel, werte = werte,
         formen = FoodyFormen.Rund, typografie = FoodyTypografie, augenbraue = AugenbraueStil, flaeche = Flaechenart.GLAS,
         kante = 1.dp, schatten = null, muster = Hintergrundmuster.KEINS, zier = werte.farben.primaer,
-        herz = farbwelt.werte(dunkel = false).farben.primaer,
+        herz = farbwelt.werte(dunkel = false).farben.primaer, leiste = null,
     )
 }
 
@@ -139,6 +141,8 @@ fun stilWerte(
         muster = if (!immersiv) Hintergrundmuster.KEINS else muster(stil),
         zier = if (stil == FoodyStil.KREUZER) HoloBlau else akzent.farbe,
         herz = angleichen(akzent.farbe, AbzeichenUntergruende, GRAFIK, Color.Black),
+        // Anime: deckend weiß statt Glas über dem rosa Punktmuster
+        leiste = if (stil == FoodyStil.ANIME) Color.White else null,
         akzentFarbe = akzentFarbe,
     )
 }

@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.translate
@@ -41,6 +42,8 @@ internal fun glasModus(unschaerfe: Boolean, hatHaze: Boolean, stufe: GlasStufe):
  * Milchglas: LEICHT/DICHT mit unscharfem, getöntem, leicht gekörntem Hintergrund, BILD als fast deckende Leiste über Fotos; dazu
  * eine Lichtkante. [unschaerfeErlaubt] = false für Flächen in Listen (Leistung).
  * Die Tönung allein hält WCAG AA (Kontrast-Test) – ohne Unschärfe bleibt alles lesbar.
+ * [deckend] füllt die Fläche stattdessen mit dieser Farbe, ohne Tönung und Unschärfe (Anime-Leiste, `StilWerte.leiste`);
+ * Kante und Versatzschatten bleiben.
  */
 @Composable
 fun GlasFlaeche(
@@ -48,11 +51,12 @@ fun GlasFlaeche(
     modifier: Modifier = Modifier,
     form: Shape = FoodyTheme.formen.gross,
     unschaerfeErlaubt: Boolean = true,
+    deckend: Color? = null,
     inhalt: @Composable BoxScope.() -> Unit,
 ) {
     val werte = glasWerte(stufe, FoodyTheme.stil)
     val hazeState = LocalHazeState.current
-    val modus = glasModus(FoodyTheme.unschaerfe && unschaerfeErlaubt, hazeState != null, stufe)
+    val modus = glasModus(FoodyTheme.unschaerfe && unschaerfeErlaubt && deckend == null, hazeState != null, stufe)
     val flaeche = when (modus) {
         GlasModus.UNSCHAERFE -> Modifier.hazeBlur(
             input = HazeInput.Sources(requireNotNull(hazeState)),
@@ -63,7 +67,7 @@ fun GlasFlaeche(
                 fallbackColorEffect(HazeColorEffect.tint(werte.toenung))
             },
         )
-        GlasModus.TOENUNG -> Modifier.background(werte.toenung)
+        GlasModus.TOENUNG -> Modifier.background(deckend ?: werte.toenung)
     }
     val stil = FoodyTheme.stil
     // Harter Versatzschatten (Anime): vor dem Zuschnitt gezeichnet, damit er neben der Fläche liegt
