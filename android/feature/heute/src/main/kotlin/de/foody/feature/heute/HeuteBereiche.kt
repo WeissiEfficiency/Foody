@@ -54,12 +54,16 @@ private val DATUM = DateTimeFormatter.ofPattern("EEEE, d. MMMM", Locale.GERMAN)
 
 /**
  * Augenbraue mit Datum, Titel, Sync-Status (nur verbunden) und Zahnrad für die Einstellungen. Ab 130 % Schrift
- * steht der Sync-Status unter dem Titel, sonst bliebe für Datum und Titel kaum Breite („He-ute“, V2).
+ * steht der Sync-Status unter dem Titel, sonst bliebe für Datum und Titel kaum Breite („He-ute“, V2), und das Zahnrad
+ * sitzt oben statt mittig neben dem dann hohen Kopf.
  */
 @Composable
 internal fun HeuteKopf(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: () -> Unit) {
     val syncDarunter = LocalDensity.current.fontScale > 1.2f
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
+    Row(
+        verticalAlignment = if (syncDarunter) Alignment.Top else Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
+    ) {
         Column(Modifier.weight(1f)) {
             datum?.let { Augenbraue(DATUM.format(it)) }
             val titel = stilText("Heute", anime = "Heute!", bayrisch = "Heid", grauen = "Das Auge", kreuzer = "Tagessystem")

@@ -31,9 +31,9 @@ internal val LISTEN_REITER: List<Blatt> = listOf(Blatt.Vorschau, Blatt.Abgleich,
  * Listen wie in den Entwürfen der Stile Q–V: eine eigene Seite mit Zurück und den Reitern „Neue Liste · Abgleich ·
  * Frühere“ (Edo, Bayrisch, Grauen, Kreuzer „Vorschau“ statt „Neue Liste“). [inhalt] ist das jeweilige Blatt
  * ([VorschauBlatt], [AbgleichBlatt], [FruehereBlatt]), das hier ohne Blatt und Titel erscheint. Ohne Zeitraum (Liste
- * nicht aus dem Plan) erklärt der Reiter „Abgleich“, warum es nichts abzugleichen gibt. Mit [onLoeschen] (es gibt eine
- * aktuelle Liste) steht rechts im Kopf, auf jedem Reiter, der Papierkorb „Aktuelle Liste löschen“; ein Menü ⋮ wie bei
- * Milchglas gibt es in Q–V nicht.
+ * nicht aus dem Plan) erklärt der Reiter „Abgleich“, warum es nichts abzugleichen gibt. Mit [onLoeschen] (eine Liste
+ * wird angezeigt, auch eine frühere) steht rechts im Kopf, auf jedem Reiter, der Papierkorb „Diese Liste löschen“; ein
+ * Menü ⋮ wie bei Milchglas gibt es in Q–V nicht.
  */
 @Composable
 internal fun ListenSeite(
@@ -62,7 +62,7 @@ internal fun ListenSeite(
                 onZurueck = onZurueck,
                 beschreibung = "Einkaufslisten",
             ) {
-                if (onLoeschen != null) RunderKnopf(Icons.Outlined.Delete, "Aktuelle Liste löschen", onLoeschen)
+                if (onLoeschen != null) RunderKnopf(Icons.Outlined.Delete, "Diese Liste löschen", onLoeschen)
             }
             val vorschau = stilText("Neue Liste", edo = "Vorschau", bayrisch = "Vorschau", grauen = "Vorschau", kreuzer = "Vorschau")
             Reiterleiste(

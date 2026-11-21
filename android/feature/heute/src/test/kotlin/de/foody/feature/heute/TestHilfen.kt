@@ -84,9 +84,13 @@ fun ComposeTestRule.warteAufText(text: String) =
 
 /** Inhalt mit doppelter Schriftgröße (Systemschrift 200 %). */
 @Composable
-fun MitSchrift200(inhalt: @Composable () -> Unit) {
+fun MitSchrift200(inhalt: @Composable () -> Unit) = MitSchrift(2f, inhalt)
+
+/** Inhalt mit der Systemschrift [faktor] (1,3 = 130 %). */
+@Composable
+fun MitSchrift(faktor: Float, inhalt: @Composable () -> Unit) {
     val d = LocalDensity.current
-    CompositionLocalProvider(LocalDensity provides Density(d.density, fontScale = 2f)) { inhalt() }
+    CompositionLocalProvider(LocalDensity provides Density(d.density, fontScale = faktor)) { inhalt() }
 }
 
 /**

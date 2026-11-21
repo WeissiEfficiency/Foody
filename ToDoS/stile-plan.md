@@ -903,13 +903,18 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
   groß wie die übrigen runden Knöpfe. Milchglas zeigt das Zahnrad statt der Person, Edo hat es aus der Knopfreihe
   unten nach oben bekommen. Anime bricht den Kopf nicht mehr um: Der Titel wird bis zu einer festen Untergrenze
   kleiner, sonst rückt das Datum unter den Titel; abgeschnitten wird nichts, auch nicht bei Schrift 200 %. Neue
-  Bilder aller Köpfe bei 360 dp.
-- Stilkacheln und Anime-Leiste (#291): Die Kacheln unter „Stil“ und „Akzent“ ändern beim Umschalten weder Größe noch
-  Lage (feste Zellbreite, höchstens 3 bzw. 4 Spalten, gleicher Innenabstand, Name immer zweizeilig). Die schwebende
-  Navigationsleiste ist bei Anime deckend weiß (`StilWerte.leiste`).
+  Bilder aller Köpfe bei 360 dp. Nachgebessert nach dem Abschlussreview: In Edo und Sage Ruhig rückt das Datum unter
+  den Titel, sobald es nicht mehr daneben passt („Heute“ bleibt bei 130 % einzeilig), und das Zahnrad sitzt in allen
+  Köpfen höchstens 48 dp unter der Oberkante, bei 360 dp bis Schrift 200 %.
+- Stilkacheln und Anime-Leiste (#291): Die Kacheln unter „Stil“ und „Akzent“ behalten beim Umschalten Spalte, Breite
+  und Reihe (feste Zellbreite, gleicher Innenabstand, Name immer zweizeilig); die Höhe hängt noch um 1–4 dp an der
+  Schrift des Stils. Die Spalten kommen aus der Seitenbreite abzüglich des
+  größten Karteneinzugs aller Stile, nicht aus der Karte des gewählten Stils: Bei gleicher Breite und Schrift stehen
+  überall gleich viele in einer Reihe, auf dem Tablet sechs Stile (nachgebessert nach dem Abschlussreview). Die
+  schwebende Navigationsleiste ist bei Anime deckend weiß (`StilWerte.leiste`).
 - Einkauf (#292): In Sage bis Kreuzer ist das ⋮-Menü weg; der Listen-Knopf ist der einzige Weg zur Listen-Seite.
-  „Liste löschen“ ist dort ein Papierkorb im Kopf („Aktuelle Liste löschen“), nur mit aktueller Liste. Milchglas
-  behält sein Menü.
+  „Liste löschen“ ist dort ein Papierkorb im Kopf („Diese Liste löschen“, löscht die angezeigte Liste), nur wenn
+  eine Liste angezeigt wird. Milchglas behält sein Menü.
 - Menüs und Abteilungen (#293): `FoodyMenue` ersetzt alle zwölf `DropdownMenu` der App (deckende Fläche, Form, Rand
   und Schrift des Stils, `KontrastTest` für Text auf der Menüfläche). Die Sortierung der Rezepte zeigt die gewählte
   mit Haken. Die aufklappbaren Abteilungen im Einkauf haben in jeder Szene Schrift und Farben ihrer

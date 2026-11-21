@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,37 +41,36 @@ import de.foody.core.designsystem.token.FoodyAbstaende
 
 /**
  * Wahl des Stils: je ein Muster aus Grund, Karte und Akzent des Stils (Milchglas in der aktuellen Farbwelt), darunter
- * der Name. Verhält sich wie Optionsfelder; der gewählte Stil trägt einen Ring und einen Haken. Höchstens drei Spalten,
- * weniger nur bei wenig Breite oder großer Schrift: Die Kacheln sind in jedem Stil gleich groß und gleich auf die Reihen
- * verteilt, damit beim Umschalten nichts springt.
+ * der Name. Verhält sich wie Optionsfelder; der gewählte Stil trägt einen Ring und einen Haken. So viele Spalten, wie
+ * in [breite] passen: Die Kacheln sind in jedem Stil gleich groß und gleich auf die Reihen verteilt, damit beim
+ * Umschalten nichts springt.
  */
 @Composable
-internal fun StilWahl(gewaehlt: FoodyStil, variante: StilVariante, onWahl: (FoodyStil) -> Unit) {
-    Raster(FoodyStil.entries, zelle = 88.dp, hoechstens = 3) { s, modifier -> StilMuster(s, variante, s == gewaehlt, modifier) { onWahl(s) } }
+internal fun StilWahl(gewaehlt: FoodyStil, variante: StilVariante, breite: Dp, onWahl: (FoodyStil) -> Unit) {
+    Raster(FoodyStil.entries, zelle = 88.dp, breite) { s, modifier -> StilMuster(s, variante, s == gewaehlt, modifier) { onWahl(s) } }
 }
 
-/** Die vier Akzente des [stil]s als runde Farbmuster. */
+/** Die vier Akzente des [stil]s als runde Farbmuster, so viele in einer Reihe, wie in [breite] passen. */
 @Composable
-internal fun AkzentWahl(stil: FoodyStil, gewaehlt: StilAkzent, onWahl: (StilAkzent) -> Unit) {
-    Raster(stil.akzente, zelle = 72.dp, hoechstens = 4) { a, modifier -> AkzentMuster(a, a == gewaehlt, modifier) { onWahl(a) } }
+internal fun AkzentWahl(stil: FoodyStil, gewaehlt: StilAkzent, breite: Dp, onWahl: (StilAkzent) -> Unit) {
+    Raster(stil.akzente, zelle = 72.dp, breite) { a, modifier -> AkzentMuster(a, a == gewaehlt, modifier) { onWahl(a) } }
 }
 
 /**
- * Zellen mit fester Breite ([zelle], mit der Schrift wachsend), linksbündig, so viele Spalten wie passen, aber
- * höchstens [hoechstens]. Breite und Spalten hängen kaum vom Platz ab: Ob der Stil die Wahl in eine Karte mit
- * Innenabstand legt oder nicht, die Zellen bleiben gleich groß und gleich auf die Reihen verteilt.
+ * Zellen mit fester Breite ([zelle], mit der Schrift wachsend), linksbündig, so viele Spalten, wie in [breite] passen.
+ * [breite] ist in jedem Stil dieselbe (die der schmalsten Karte, siehe [DarstellungAbschnitt]), nicht der Platz in der
+ * Karte des Stils: Ob der Stil die Wahl in eine Karte mit Innenabstand legt oder nicht, die Zellen bleiben gleich groß
+ * und gleich auf die Reihen verteilt.
  */
 @Composable
-private fun <T> Raster(eintraege: List<T>, zelle: Dp, hoechstens: Int, inhalt: @Composable (T, Modifier) -> Unit) {
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val breite = maxOf(zelle, zelle * LocalDensity.current.fontScale * 0.85f)
-        val abstand = FoodyAbstaende.s2
-        val spalten = ((maxWidth + abstand) / (breite + abstand)).toInt().coerceIn(1, hoechstens)
-        Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
-            eintraege.chunked(spalten).forEach { reihe ->
-                Row(horizontalArrangement = Arrangement.spacedBy(abstand)) {
-                    reihe.forEach { inhalt(it, Modifier.width(breite)) }
-                }
+private fun <T> Raster(eintraege: List<T>, zelle: Dp, breite: Dp, inhalt: @Composable (T, Modifier) -> Unit) {
+    val zellbreite = maxOf(zelle, zelle * LocalDensity.current.fontScale * 0.85f)
+    val abstand = FoodyAbstaende.s2
+    val spalten = ((breite + abstand) / (zellbreite + abstand)).toInt().coerceAtLeast(1)
+    Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
+        eintraege.chunked(spalten).forEach { reihe ->
+            Row(horizontalArrangement = Arrangement.spacedBy(abstand)) {
+                reihe.forEach { inhalt(it, Modifier.width(zellbreite)) }
             }
         }
     }
