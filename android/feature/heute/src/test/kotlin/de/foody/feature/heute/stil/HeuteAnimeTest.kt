@@ -1,11 +1,19 @@
 package de.foody.feature.heute.stil
 
 import android.provider.Settings
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
@@ -24,6 +32,8 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.time.LocalDate
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /** „Heute“ im Anime-Stil (Immersiv): „HEUTE!“ mit Reisbällchen statt normaler Ansicht, mit denselben Aktionen. */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -97,6 +107,55 @@ class HeuteAnimeTest {
         zeigen(schrift200 = true)
         compose.waitForIdle()
         compose.pruefeNichtsAbgeschnitten()
+    }
+
+    /**
+     * Schmales Handy, 200 % Schrift und ein langes Datum: Der Titel wird kleiner statt abgeschnitten, das Zahnrad bleibt
+     * oben rechts.
+     */
+    @Test
+    @Config(qualifiers = "w360dp-h800dp")
+    fun schmalUndSchrift200() = kopfMitSchrift200()
+
+    /** Noch schmaler (320 dp): „HEUTE!“ passt auch klein nicht neben Datum und Zahnrad, das Datum rückt unter den Titel. */
+    @Test
+    @Config(qualifiers = "w320dp-h800dp")
+    fun sehrSchmalDatumDarunter() = kopfMitSchrift200 { v ->
+        if (v != StilVariante.IMMERSIV) return@kopfMitSchrift200
+        val titel = compose.onNodeWithContentDescription("Heute", useUnmergedTree = true).getBoundsInRoot()
+        val datum = compose.onNodeWithText("Mi · 30.12.").getBoundsInRoot()
+        assertTrue(datum.top >= titel.bottom, "Datum (oben ${datum.top}) nicht unter dem Titel (unten ${titel.bottom})")
+    }
+
+    /**
+     * In jeder Variante mit 200 % Schrift und langem Datum (Mittwoch, 30. Dezember): Titel und übrige Texte nicht
+     * abgeschnitten, das Datum da, das Zahnrad oben rechts und 48 dp groß; dazu [auch].
+     */
+    private fun kopfMitSchrift200(auch: (StilVariante) -> Unit = {}) {
+        val zustand = beispielZustand().copy(datum = LocalDate.of(2026, 12, 30))
+        var variante by mutableStateOf(StilVariante.IMMERSIV)
+        compose.setContent {
+            FoodyTheme(stil = FoodyStil.ANIME, variante = variante, unschaerfe = false) {
+                MitSchrift200 { HeuteScreen(zustand, aktionen) }
+            }
+        }
+        for (v in StilVariante.entries) {
+            variante = v
+            compose.waitForIdle()
+            val ergebnisse = mutableListOf<TextLayoutResult>()
+            compose.onNodeWithContentDescription("Heute", useUnmergedTree = true).fetchSemanticsNode()
+                .config[SemanticsActions.GetTextLayoutResult].action?.invoke(ergebnisse)
+            assertFalse(ergebnisse.single().hasVisualOverflow, "$v: Titel abgeschnitten")
+            compose.pruefeNichtsAbgeschnitten()
+            compose.onNodeWithText("Mi · 30.12.").assertExists()
+            val b = compose.onNodeWithContentDescription("Einstellungen").getBoundsInRoot()
+            val breite = compose.onRoot().getBoundsInRoot().right
+            assertTrue(b.right >= breite - 32.dp, "$v: Zahnrad nicht rechts")
+            assertTrue(b.top <= 96.dp, "$v: Zahnrad nicht oben")
+            assertEquals(48.dp, b.right - b.left, "$v: Breite")
+            assertEquals(48.dp, b.bottom - b.top, "$v: Höhe")
+            auch(v)
+        }
     }
 
     @Test

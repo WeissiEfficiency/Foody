@@ -89,7 +89,11 @@ fun MitSchrift200(inhalt: @Composable () -> Unit) {
     CompositionLocalProvider(LocalDensity provides Density(d.density, fontScale = 2f)) { inhalt() }
 }
 
-/** Wie in :core:designsystem: zu viele Zeilen, gekürzte Zeile oder zu wenig Höhe. */
+/**
+ * Wie in :core:designsystem: zu viele Zeilen, gekürzte Zeile oder zu wenig Höhe; dazu bei Text ohne Umbruch zu wenig
+ * Breite (er läuft sonst unbemerkt rechts über). Nur dort ist die Breite des Absatzes die des Textes; mit Umbruch ist
+ * sie die verfügbare Breite.
+ */
 fun ComposeTestRule.pruefeNichtsAbgeschnitten() {
     val abgeschnitten = onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult), useUnmergedTree = true)
         .fetchSemanticsNodes()
@@ -98,7 +102,8 @@ fun ComposeTestRule.pruefeNichtsAbgeschnitten() {
             node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(ergebnisse)
             ergebnisse.firstOrNull()?.takeIf {
                 it.multiParagraph.didExceedMaxLines || (0 until it.lineCount).any(it::isLineEllipsized) ||
-                    it.multiParagraph.height > it.size.height + 0.5f
+                    it.multiParagraph.height > it.size.height + 0.5f ||
+                    (!it.layoutInput.softWrap && it.multiParagraph.width > it.size.width + 0.5f)
             }?.layoutInput?.text?.text
         }
     assertTrue(abgeschnitten.isEmpty(), "abgeschnitten: $abgeschnitten")

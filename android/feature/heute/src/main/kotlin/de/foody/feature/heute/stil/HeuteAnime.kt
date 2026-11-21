@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -50,6 +49,8 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -57,6 +58,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -129,27 +132,58 @@ internal fun HeuteAnime(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifie
     }
 }
 
+/**
+ * „HEUTE!“, das Datum und das Zahnrad oben rechts. Der große Titel wächst mit der Systemschrift nur bis 130 %, wie
+ * große Schrift unter Android 14. Wird es eng, schrumpft er bis auf 24 dp (bei jeder Systemschrift gleich); passt er
+ * auch dann nicht neben Datum und Zahnrad, rückt das Datum unter den Titel. Abgeschnitten wird er nie.
+ */
 @Composable
 private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
     val f = FoodyTheme.farben
+    val titel = szenenWort("HEUTE!", "Heute")
+    val stil = animeSzenenTitel(titelGroesse(44f))
+    val kleinste = (24f / LocalDensity.current.fontScale).sp
+    val messer = rememberTextMeasurer()
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            // Der große Titel wächst mit der Systemschrift nur bis 130 %, wie große Schrift unter Android 14; wird es
-            // eng, schrumpft er, damit Datum und Zahnrad rechts in der Zeile bleiben
-            val groesse = titelGroesse(44f)
-            Text(
-                szenenWort("HEUTE!", "Heute"),
-                Modifier.weight(1f).padding(end = 8.dp).semantics {
-                    heading()
-                    contentDescription = "Heute"
+        Layout(
+            contents = listOf(
+                {
+                    Text(
+                        titel,
+                        Modifier.semantics {
+                            heading()
+                            contentDescription = "Heute"
+                        },
+                        style = stil, color = f.text, maxLines = 1, softWrap = false,
+                        autoSize = TextAutoSize.StepBased(minFontSize = kleinste, maxFontSize = stil.fontSize),
+                    )
                 },
-                style = animeSzenenTitel(groesse),
-                color = f.text, maxLines = 1, softWrap = false,
-                autoSize = TextAutoSize.StepBased(minFontSize = 24.sp, maxFontSize = groesse.sp),
-            )
-            zustand?.datum?.let { AnimePille(animeDatum(it), Modifier.rotate(4f), grund = Anime.gelb) }
-            Spacer(Modifier.width(8.dp))
-            EinstellungenKnopf(onEinstellungen)
+                { zustand?.datum?.let { AnimePille(animeDatum(it), Modifier.rotate(4f), grund = Anime.gelb) } },
+                { EinstellungenKnopf(onEinstellungen) },
+            ),
+            Modifier.fillMaxWidth(),
+        ) { (titelTeil, pillenTeil, knopfTeil), c ->
+            val abstand = 8.dp.roundToPx()
+            val frei = Constraints(maxWidth = c.maxWidth, maxHeight = c.maxHeight)
+            val knopf = knopfTeil.first().measure(frei)
+            val pille = pillenTeil.firstOrNull()?.measure(frei)
+            val nebenKnopf = c.maxWidth - knopf.width - abstand
+            val nebenPille = nebenKnopf - (pille?.let { it.width + abstand } ?: 0)
+            val mindestens = messer.measure(
+                titel, stil.copy(fontSize = kleinste), softWrap = false, maxLines = 1, layoutDirection = layoutDirection, density = this,
+            ).size.width
+            val darunter = pille != null && mindestens > nebenPille
+            val t = titelTeil.first().measure(Constraints.fixedWidth((if (darunter) nebenKnopf else nebenPille).coerceAtLeast(0)))
+            val zeile = maxOf(t.height, knopf.height, if (darunter) 0 else pille?.height ?: 0)
+            val luecke = 6.dp.roundToPx()
+            val mitte = Alignment.CenterVertically
+            layout(c.maxWidth, zeile + if (darunter) luecke + pille.height else 0) {
+                t.placeRelative(0, mitte.align(t.height, zeile))
+                knopf.placeRelative(c.maxWidth - knopf.width, mitte.align(knopf.height, zeile))
+                pille?.let { p ->
+                    if (darunter) p.placeRelative(0, zeile + luecke) else p.placeRelative(nebenPille + abstand, mitte.align(p.height, zeile))
+                }
+            }
         }
         zustand?.sync?.let { SyncStatus(it) }
     }
