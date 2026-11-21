@@ -905,9 +905,10 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
   kleiner, sonst rückt das Datum unter den Titel; abgeschnitten wird nichts, auch nicht bei Schrift 200 %. Neue
   Bilder aller Köpfe bei 360 dp. Nachgebessert nach dem Abschlussreview: In Edo und Sage Ruhig rückt das Datum unter
   den Titel, sobald es nicht mehr daneben passt („Heute“ bleibt bei 130 % einzeilig), und das Zahnrad sitzt in allen
-  Köpfen oben ausgerichtet, bei 360 dp bis Schrift 200 %.
-- Stilkacheln und Anime-Leiste (#291): Die Kacheln unter „Stil“ und „Akzent“ springen beim Umschalten nicht (feste
-  Zellbreite, gleicher Innenabstand, Name immer zweizeilig). Die Spalten kommen aus der Seitenbreite abzüglich des
+  Köpfen höchstens 48 dp unter der Oberkante, bei 360 dp bis Schrift 200 %.
+- Stilkacheln und Anime-Leiste (#291): Die Kacheln unter „Stil“ und „Akzent“ behalten beim Umschalten Spalte, Breite
+  und Reihe (feste Zellbreite, gleicher Innenabstand, Name immer zweizeilig); die Höhe hängt noch um 1–4 dp an der
+  Schrift des Stils. Die Spalten kommen aus der Seitenbreite abzüglich des
   größten Karteneinzugs aller Stile, nicht aus der Karte des gewählten Stils: Bei gleicher Breite und Schrift stehen
   überall gleich viele in einer Reihe, auf dem Tablet sechs Stile (nachgebessert nach dem Abschlussreview). Die
   schwebende Navigationsleiste ist bei Anime deckend weiß (`StilWerte.leiste`).

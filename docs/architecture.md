@@ -325,8 +325,8 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   Rückfrage: „Ja“ trägt ein, „Nein“ blendet den Vorschlag für den Tag aus (`NichtGegessenSpeicher` in `:core:data`, Prefs
   `nichtGegessen`, nur auf diesem Gerät; unter „Aus dem Plan“ bleibt er wählbar), Danebentippen ändert nichts; offener
   Einkauf; `syncAnzeige` für den Kopf; leere Datenbank → „Server verbinden“). Jede Szene setzt `EinstellungenKnopf`
-  oben rechts in ihren Kopf (Edo Immersiv in eine Zeile über dem Rollbild), oben ausgerichtet, auch wenn der Kopf mit
-  großer Schrift mehrzeilig wird; der Anime-Kopf hält Titel, Datum und Zahnrad in einer Zeile, verkleinert den Titel
+  oben rechts in ihren Kopf (Edo Immersiv in eine Zeile über dem Rollbild), höchstens 48 dp unter der Oberkante, auch
+  wenn der Kopf mit großer Schrift mehrzeilig wird; der Anime-Kopf hält Titel, Datum und Zahnrad in einer Zeile, verkleinert den Titel
   bis zu einer festen Untergrenze und setzt das Datum sonst unter den Titel. In Edo und Sage Ruhig rückt das Datum
   unter den Titel, sobald es nicht mehr daneben passt (`EinstellungenKnopfLageTest`: alle 14 Kombinationen bei 360 dp,
   Schrift 100/130/200 %, Zahnrad höchstens 48 dp unter der Oberkante; Bildvergleich aller Köpfe auch bei 360 dp:
