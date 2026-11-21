@@ -1,6 +1,6 @@
 # Spec: Eintragen neu (Teil B)
 
-Stand 2026-11-21. Entwurf, vom Nutzer noch freizugeben. Grundlage: Alltagstest von 3.9.0 auf dem Handy (OnePlus
+Stand 2026-11-21, vom Nutzer freigegeben (samt „Meine Entscheidungen“). Grundlage: Alltagstest von 3.9.0 auf dem Handy (OnePlus
 CPH2645, 361 dp breit, Schrift 90 %) und das Gespräch nach Teil A („Einheitlicher Rahmen“,
 `2026-11-20-einheitlicher-rahmen-design.md`).
 
