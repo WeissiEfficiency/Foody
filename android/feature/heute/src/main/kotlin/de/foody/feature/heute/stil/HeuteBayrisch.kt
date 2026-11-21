@@ -22,13 +22,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.PhotoCamera
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -62,6 +59,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.EinstellungenKnopf
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncStatus
 import de.foody.core.designsystem.komponenten.anzeigename
@@ -155,19 +153,7 @@ private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
             zustand?.datum?.let { Text(DATUM.format(it), style = Bayrisch.text(14.5f, FontWeight.Medium), color = f.text) }
             zustand?.sync?.let { SyncStatus(it, Modifier.padding(top = 4.dp)) }
         }
-        Box(
-            Modifier.align(Alignment.TopEnd).padding(top = 0.dp).size(48.dp).clip(CircleShape)
-                .clickable(role = Role.Button, onClick = onEinstellungen)
-                .semantics { contentDescription = "Einstellungen" },
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(
-                Modifier.size(44.dp).background(Color.White.copy(alpha = 0.75f), CircleShape).border(2.dp, f.text, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Outlined.Settings, contentDescription = null, tint = f.text)
-            }
-        }
+        EinstellungenKnopf(onEinstellungen, Modifier.align(Alignment.TopEnd))
     }
 }
 
