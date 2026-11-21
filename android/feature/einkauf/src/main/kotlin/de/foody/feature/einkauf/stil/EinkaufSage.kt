@@ -61,7 +61,7 @@ import java.util.Locale
  * im Laden mit dem Spruch des Händlers und die Posten als Felder mit Raute. Antippen hakt ab (und wieder auf),
  * Langdruck öffnet die Details – wie die Kacheln der normalen Ansicht. Eingabe, „Zuletzt“ und Katalog bleiben.
  */
-internal fun LazyGridScope.haendlerKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
+internal fun LazyGridScope.haendlerKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit) {
     item(key = "haendler-kopf", span = { GridItemSpan(maxLineSpan) }) {
         val gesamt = ansicht?.alle?.size ?: 0
         val offen = ansicht?.anzahlOffen ?: 0
@@ -77,8 +77,7 @@ internal fun LazyGridScope.haendlerKopf(ansicht: EinkaufsAnsicht?, onListen: () 
                         style = Sage.titel(15f, 0.04f), color = FoodyTheme.farben.text,
                     )
                 }
-                SageNebenknopf("LISTEN", "Frühere Listen", onListen, akzent = true)
-                menue()
+                SageNebenknopf("LISTEN", "Einkaufslisten", onListen, akzent = true)
             }
             // Ruhig: ohne den Laden und den Spruch des Händlers (Entwurf `Q-Einkauf`, Ruhig)
             if (FoodyTheme.stil.inszeniert) Laden(offen)

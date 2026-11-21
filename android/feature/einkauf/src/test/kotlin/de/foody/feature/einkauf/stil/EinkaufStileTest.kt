@@ -1,19 +1,22 @@
 package de.foody.feature.einkauf.stil
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
-import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -23,6 +26,7 @@ import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.feature.einkauf.EinkaufRoute
 import de.foody.feature.einkauf.EinkaufTestUmgebung
+import de.foody.feature.einkauf.EinkaufViewModel
 import de.foody.feature.einkauf.MITTWOCH
 import de.foody.feature.einkauf.MONTAG
 import de.foody.feature.einkauf.MitSchrift200
@@ -40,11 +44,13 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
  * Die Einkaufs-Szenen der Stile R–V in Immersiv: Titel für TalkBack „Einkauf“, Antippen hakt ab, Langdruck öffnet
- * die Details, der Knopf „Frühere Listen“ das Blatt; bei 200 % Schrift wird nichts abgeschnitten.
+ * die Details; bei 200 % Schrift wird nichts abgeschnitten. In Q–V führt nur der Knopf „Listen“ zu den Listen (kein
+ * Menü ⋮), dort steht auch „Liste löschen“; Milchglas behält das Menü.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -77,7 +83,7 @@ class EinkaufStileTest {
         u.repo.abhaken(db.einkaufsartikelDao().nachListe(id).single { it.name == "Reis" }.id, true)
     }
 
-    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false) {
+    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false): EinkaufViewModel {
         liste()
         val vm = u.vm()
         compose.setContent {
@@ -87,6 +93,7 @@ class EinkaufStileTest {
             }
         }
         compose.warteAufText("Zwiebeln")
+        return vm
     }
 
     /** Der Posten (Checkbox) in der Szene, nicht die Kachel im Katalog. */
@@ -108,13 +115,7 @@ class EinkaufStileTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithContentDescription("Ziehgriff").fetchSemanticsNodes().isNotEmpty() }
     }
 
-    private fun frueher(stil: FoodyStil) {
-        zeigen(stil)
-        compose.onNodeWithContentDescription("Frühere Listen").performClick()
-        // Wie im Entwurf: die Listen-Seite mit dem Reiter „Frühere“, kein Blatt
-        compose.waitUntil(5_000) { compose.onAllNodes(hasContentDescription("Einkaufslisten") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNode(hasContentDescription("Frühere Listen") and isSelectable()).assertIsSelected()
-    }
+    private fun listenSeiteDa() = compose.onAllNodes(hasContentDescription("Einkaufslisten") and isHeading()).fetchSemanticsNodes().isNotEmpty()
 
     private fun gross(stil: FoodyStil) {
         zeigen(stil, schrift200 = true)
@@ -132,15 +133,58 @@ class EinkaufStileTest {
 
     @Test fun kreuzer() = pruefen(FoodyStil.KREUZER)
 
-    @Test fun animeFrueher() = frueher(FoodyStil.ANIME)
+    /** Q–V in beiden Varianten: „Listen“ ist der einzige Weg zu den Listen, kein Menü ⋮ daneben. */
+    @Test
+    fun keinMenueInDenStilen() {
+        liste()
+        val vm = u.vm()
+        var auswahl by mutableStateOf(FoodyStil.SAGE to StilVariante.IMMERSIV)
+        compose.setContent {
+            val (stil, variante) = auswahl
+            FoodyTheme(stil = stil, variante = variante) { EinkaufRoute(null, {}, {}, vm = vm) }
+        }
+        compose.warteAufText("Zwiebeln")
+        for (stil in listOf(FoodyStil.SAGE, FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)) {
+            for (variante in listOf(StilVariante.IMMERSIV, StilVariante.RUHIG)) {
+                auswahl = stil to variante
+                compose.waitForIdle()
+                compose.onNodeWithContentDescription("Weitere Aktionen").assertDoesNotExist()
+                compose.onNodeWithContentDescription("Einkaufslisten").assertExists()
+            }
+        }
+    }
 
-    @Test fun edoFrueher() = frueher(FoodyStil.EDO)
+    /** „Listen“ öffnet die Listen-Seite wie im Entwurf auf dem ersten Reiter „Neue Liste“. */
+    @Test
+    fun listenOeffnetNeueListe() {
+        zeigen(FoodyStil.ANIME)
+        compose.onNodeWithContentDescription("Einkaufslisten").performClick()
+        compose.waitUntil(5_000) { listenSeiteDa() }
+        // Die Reiter heißen für TalkBack wie ihr Inhalt; das Wort des Stils („Vorschau“, …) ist nur zu sehen
+        compose.onNode(hasContentDescription("Neue Liste") and isSelected()).assertExists()
+    }
 
-    @Test fun bayrischFrueher() = frueher(FoodyStil.BAYRISCH)
+    /** Milchglas hat keinen Knopf „Listen“ und behält das Menü ⋮. */
+    @Test
+    fun milchglasBehaeltMenue() {
+        zeigen(FoodyStil.MILCHGLAS)
+        compose.onNodeWithContentDescription("Weitere Aktionen").assertExists()
+        compose.onNodeWithContentDescription("Einkaufslisten").assertDoesNotExist()
+    }
 
-    @Test fun grauenFrueher() = frueher(FoodyStil.GRAUEN)
-
-    @Test fun kreuzerFrueher() = frueher(FoodyStil.KREUZER)
+    /** „Liste löschen“ auf der Listen-Seite fragt nach; nach dem Löschen ist die Liste weg und die Seite zu. */
+    @Test
+    fun loeschenAufListenSeite() {
+        val vm = zeigen(FoodyStil.ANIME)
+        compose.onNodeWithContentDescription("Einkaufslisten").performClick()
+        compose.waitUntil(5_000) { listenSeiteDa() }
+        compose.onNodeWithText("Liste löschen").performClick()
+        compose.warteAufText("Liste löschen?")
+        compose.onNodeWithText("Löschen").performClick()
+        compose.waitUntil(5_000) { runBlocking { db.einkaufslisteDao().alle() }.isEmpty() }
+        compose.waitUntil(5_000) { !listenSeiteDa() }
+        assertNull(vm.blatt.value)
+    }
 
     @Test fun animeSchrift200() = gross(FoodyStil.ANIME)
 

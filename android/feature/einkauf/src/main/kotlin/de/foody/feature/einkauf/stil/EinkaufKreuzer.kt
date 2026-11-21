@@ -50,13 +50,13 @@ import kotlin.math.min
 
 /**
  * „Einkauf“ im Sternenkreuzer (V) in Immersiv (Entwurf `V-Einkauf`): „LADELISTE · …“ über dem „Frachtraum“, rechts
- * „9 / 12 GELADEN“ und „3 KISTEN OFFEN“, daneben „Ladelisten“ (frühere Listen); darunter die Ladeanzeige in Segmenten.
+ * „9 / 12 GELADEN“ und „3 KISTEN OFFEN“, daneben „Ladelisten“ (die Listen); darunter die Ladeanzeige in Segmenten.
  * Im Frachtraum steht jeder Posten als Kiste mit Code der Abteilung („OBS 01“), Name und Menge; geladene tragen ein
  * schräges Band „GELADEN“ in Amber. In Ruhig wie im Entwurf: „Diese Woche“ über „Einkauf“, „Listen“, statt der Kisten
  * eine Liste je Abteilung mit Kästchen, erledigte durchgestrichen.
  */
-internal fun LazyGridScope.kreuzerKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
-    ganzeBreite("kreuzer-kopf") { Kopf(ansicht, onListen, menue) }
+internal fun LazyGridScope.kreuzerKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit) {
+    ganzeBreite("kreuzer-kopf") { Kopf(ansicht, onListen) }
 }
 
 internal fun LazyGridScope.kreuzerPosten(ansicht: EinkaufsAnsicht?, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {
@@ -84,7 +84,7 @@ private val MENGE = Color(0xFF8A97AD)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
+private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit) {
     val f = FoodyTheme.farben
     val holo = FoodyTheme.stil.zier
     val gesamt = ansicht.gesamt
@@ -125,8 +125,7 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
                         )
                     }
                 }
-                KreuzerKnopf(szenenWort("Ladelisten", "Listen"), onListen, voll = false, beschreibung = "Frühere Listen")
-                menue()
+                KreuzerKnopf(szenenWort("Ladelisten", "Listen"), onListen, voll = false, beschreibung = "Einkaufslisten")
             }
         }
         if (gesamt > 0) Ladeanzeige(erledigt, gesamt)

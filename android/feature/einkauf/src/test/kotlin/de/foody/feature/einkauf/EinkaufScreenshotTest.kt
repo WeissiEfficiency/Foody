@@ -2,6 +2,8 @@ package de.foody.feature.einkauf
 
 import android.provider.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -169,16 +171,21 @@ class EinkaufScreenshotTest {
         }
     }
 
-    /** Düstere Sage, Immersiv: „Listen des Händlers“ (frühere Listen) auf der Listen-Seite. */
+    /** Düstere Sage, Immersiv: „Listen des Händlers“ (frühere Listen) auf der Listen-Seite, unten „Liste löschen“. */
     @Test
     @Config(qualifiers = "w411dp-h891dp")
-    fun sageListenHandy() = blatt("sage_listen_handy", dunkel = false, warteAuf = "Listen des Händlers", stil = FoodyStil.SAGE) {
-        compose.onNodeWithContentDescription("Frühere Listen").performClick()
-    }
+    fun sageListenHandy() = blatt("sage_listen_handy", dunkel = false, warteAuf = "Listen des Händlers", stil = FoodyStil.SAGE) { fruehereZeigen() }
 
     /** Stile R–V, Immersiv: frühere Listen mit den Zeilen des Stils, auf der Listen-Seite (Reiter „Frühere“). */
-    private fun stilListen(stil: FoodyStil, titel: String) = blatt("stil_${stil.name.lowercase()}_listen_handy", dunkel = false, warteAuf = titel, stil = stil) {
-        compose.onNodeWithContentDescription("Frühere Listen").performClick()
+    private fun stilListen(stil: FoodyStil, titel: String) =
+        blatt("stil_${stil.name.lowercase()}_listen_handy", dunkel = false, warteAuf = titel, stil = stil) { fruehereZeigen() }
+
+    /** „Listen“ öffnet die Seite auf „Neue Liste“; die Bilder zeigen den Reiter „Frühere“. */
+    private fun fruehereZeigen() {
+        compose.onNodeWithContentDescription("Einkaufslisten").performClick()
+        val reiter = hasContentDescription("Frühere Listen") and isSelectable()
+        compose.waitUntil(5_000) { compose.onAllNodes(reiter).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(reiter).performClick()
     }
 
     @Test

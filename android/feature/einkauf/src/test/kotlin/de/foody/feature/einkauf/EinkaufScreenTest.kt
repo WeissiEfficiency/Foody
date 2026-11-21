@@ -360,11 +360,11 @@ class EinkaufScreenTest {
     }
 
     @Test
-    fun haendlerListenOeffnetFruehere() {
+    fun haendlerListenOeffnetListen() {
         planListe()
         zeigen(stil = FoodyStil.SAGE)
         compose.warteAufText("DER HÄNDLER")
-        compose.onNodeWithContentDescription("Frühere Listen").performClick()
+        compose.onNodeWithContentDescription("Einkaufslisten").performClick()
         compose.warteAufText("Listen des Händlers")
     }
 

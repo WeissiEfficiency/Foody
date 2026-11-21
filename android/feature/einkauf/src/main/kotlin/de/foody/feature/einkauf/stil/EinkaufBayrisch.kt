@@ -54,13 +54,13 @@ import kotlin.math.min
 
 /**
  * „Einkauf“ im Bayrischen Stil (T) in Immersiv (Entwurf `T-Einkauf`): oben die weiß-blaue Markise des Standls, darunter
- * das dunkle Schild „'s Standl“ mit „no 3 offn / 9 von 12 im Korb“ und „Zettl“ (frühere Listen). Jede Abteilung ist
+ * das dunkle Schild „'s Standl“ mit „no 3 offn / 9 von 12 im Korb“ und „Zettl“ (die Listen). Jede Abteilung ist
  * eine Holzkiste („Vom Gmiasstandl“), darin die Posten zu zweit mit einem Punkt, der gekauft blau wird. TalkBack hört
  * die normalen Wörter.
  */
-internal fun LazyGridScope.bayrischKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
+internal fun LazyGridScope.bayrischKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit) {
     ganzeBreite("bayrisch-markise") { Markise(FoodyAbstaende.s4) }
-    ganzeBreite("bayrisch-kopf") { Kopf(ansicht, onListen, menue) }
+    ganzeBreite("bayrisch-kopf") { Kopf(ansicht, onListen) }
 }
 
 internal fun LazyGridScope.bayrischPosten(ansicht: EinkaufsAnsicht?, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {
@@ -121,7 +121,7 @@ private fun Markise(rand: Dp) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
+private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit) {
     val f = FoodyTheme.farben
     val gesamt = ansicht.gesamt
     val erledigt = ansicht.erledigt
@@ -157,8 +157,7 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
                 }
             }
         }
-        BayrischKnopf(szenenWort("Zettl", "Listen"), onListen, voll = false, beschreibung = "Frühere Listen")
-        menue()
+        BayrischKnopf(szenenWort("Zettl", "Listen"), onListen, voll = false, beschreibung = "Einkaufslisten")
     }
 }
 

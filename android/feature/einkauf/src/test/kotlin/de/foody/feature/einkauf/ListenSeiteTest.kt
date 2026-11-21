@@ -1,5 +1,8 @@
 package de.foody.feature.einkauf
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -28,7 +31,7 @@ import kotlin.test.assertTrue
 
 /**
  * Listen in den Stilen Q–V wie in den Entwürfen: eine eigene Seite „Einkaufslisten“ mit den Reitern „Neue Liste ·
- * Abgleich · Frühere“ statt drei Blättern; Milchglas behält die Blätter.
+ * Abgleich · Frühere“ statt drei Blättern, unten „Liste löschen“ für die aktuelle Liste; Milchglas behält die Blätter.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -72,32 +75,32 @@ class ListenSeiteTest {
 
     private fun reiter(name: String) = compose.onNode(hasContentDescription(name) and isSelectable())
 
-    /** Szenen haben einen Knopf „Frühere Listen“, die normale Ansicht (Ruhig, Milchglas) das Menü ⋮. */
-    private fun fruehereOeffnen() {
+    /** Szenen (Q–V) haben den Knopf „Listen“, Milchglas das Menü ⋮ mit „Frühere Listen“. */
+    private fun listenOeffnen() {
         compose.waitUntil(5_000) {
-            compose.onAllNodes(hasContentDescription("Frühere Listen") or hasContentDescription("Weitere Aktionen")).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodes(hasContentDescription("Einkaufslisten") or hasContentDescription("Weitere Aktionen")).fetchSemanticsNodes().isNotEmpty()
         }
-        if (compose.onAllNodes(hasContentDescription("Frühere Listen")).fetchSemanticsNodes().isNotEmpty()) {
-            compose.onAllNodes(hasContentDescription("Frühere Listen")).onFirst().performClick()
+        if (compose.onAllNodes(hasContentDescription("Einkaufslisten")).fetchSemanticsNodes().isNotEmpty()) {
+            compose.onAllNodes(hasContentDescription("Einkaufslisten")).onFirst().performClick()
         } else {
             compose.onNodeWithContentDescription("Weitere Aktionen").performClick()
             compose.onNodeWithText("Frühere Listen").performClick()
         }
     }
 
-    /** „Frühere Listen“ öffnet die Seite auf „Frühere“; die Reiter wechseln zu „Neue Liste“ und „Abgleich“; Zurück schließt. */
+    /** „Listen“ öffnet die Seite auf „Neue Liste“; die Reiter wechseln zu „Abgleich“ und „Frühere“; Zurück schließt. */
     private fun reiterWechseln(stil: FoodyStil, variante: StilVariante = StilVariante.IMMERSIV) {
         planListe()
         val vm = zeigen(stil, variante)
-        fruehereOeffnen()
+        listenOeffnen()
         compose.waitUntil(5_000) { seiteDa() }
-        reiter("Frühere Listen").assertIsSelected()
-        reiter("Neue Liste").performClick()
         reiter("Neue Liste").assertIsSelected()
         compose.waitUntil(5_000) { compose.onAllNodes(hasContentDescription("Zwiebeln übernehmen")).fetchSemanticsNodes().isNotEmpty() }
         reiter("Abgleich").performClick()
         reiter("Abgleich").assertIsSelected()
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("Die Liste passt zum", substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        reiter("Frühere Listen").performClick()
+        reiter("Frühere Listen").assertIsSelected()
         compose.onNodeWithContentDescription("Zurück").performClick()
         compose.waitUntil(5_000) { !seiteDa() }
         assertEquals(null, vm.blatt.value)
@@ -122,9 +125,8 @@ class ListenSeiteTest {
     fun neueListeAnlegen() {
         runBlocking { db.planen("s1", MITTWOCH, "c") }
         zeigen(FoodyStil.KREUZER)
-        fruehereOeffnen()
+        listenOeffnen()
         compose.waitUntil(5_000) { seiteDa() }
-        reiter("Neue Liste").performClick()
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("Liste anlegen (2)")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Liste anlegen (2)").performClick()
         compose.waitUntil(5_000) { runBlocking { db.einkaufsartikelDao().alle() }.size == 2 }
@@ -139,7 +141,7 @@ class ListenSeiteTest {
             db.einkaufslisteDao().upsert(liste("neu", 2))
         }
         zeigen(FoodyStil.EDO)
-        fruehereOeffnen()
+        listenOeffnen()
         compose.waitUntil(5_000) { seiteDa() }
         reiter("Abgleich").performClick()
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("nicht aus dem Plan", substring = true)).fetchSemanticsNodes().isNotEmpty() }
@@ -149,12 +151,39 @@ class ListenSeiteTest {
         assertEquals(listOf("alt"), geoeffnet)
     }
 
+    /** „Liste löschen“ steht nur mit einer aktuellen Liste unten auf der Seite und ruft [ListenSeite]s `onLoeschen`. */
+    @Test
+    fun loeschenNurMitListe() {
+        var mitListe by mutableStateOf(false)
+        var geloescht = 0
+        compose.setContent {
+            FoodyTheme(stil = FoodyStil.ANIME, variante = StilVariante.IMMERSIV, unschaerfe = false) {
+                ListenSeite(Blatt.Frueher, mitZeitraum = true, onReiter = {}, onZurueck = {}, onLoeschen = if (mitListe) ({ geloescht++ }) else null) {}
+            }
+        }
+        compose.waitUntil(5_000) { seiteDa() }
+        compose.onNodeWithText("Liste löschen").assertDoesNotExist()
+        mitListe = true
+        compose.onNodeWithText("Liste löschen").performClick()
+        assertEquals(1, geloescht)
+    }
+
+    /** Leerer Einkauf (keine Liste): „Listen“ öffnet die Seite ohne „Liste löschen“. */
+    @Test
+    fun ohneListeKeinLoeschen() {
+        zeigen(FoodyStil.ANIME)
+        listenOeffnen()
+        compose.waitUntil(5_000) { seiteDa() }
+        compose.waitForIdle()
+        compose.onNodeWithText("Liste löschen").assertDoesNotExist()
+    }
+
     /** Milchglas hat keinen Entwurf: „Frühere Listen“ bleibt ein Blatt, keine Seite. */
     @Test
     fun milchglasBlatt() {
         planListe()
         zeigen(FoodyStil.MILCHGLAS)
-        fruehereOeffnen()
+        listenOeffnen()
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("Frühere Listen")).fetchSemanticsNodes().isNotEmpty() }
         assertTrue(!seiteDa())
     }

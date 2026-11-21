@@ -51,14 +51,14 @@ import kotlin.math.min
 
 /**
  * „Einkauf“ im Kosmischen Grauen (U) in Immersiv (Entwurf `U-Einkauf`): „Vor dem Aufbruch zu besorgen“ über der
- * „Expeditionsliste“, rechts „9 / 12“ und „noch 3 offen“, daneben „Archiv“ (frühere Listen). Die Posten stehen
+ * „Expeditionsliste“, rechts „9 / 12“ und „noch 3 offen“, daneben „Archiv“ (die Listen). Die Posten stehen
  * nummeriert in Schreibmaschine auf einem leicht schiefen Pergament, nach Abteilungen („Aus der Erde“); gekaufte
  * tragen den roten Stempel „Besorgt“. Unten flüstert die Liste, wie viel noch fehlt. TalkBack hört die normalen Wörter.
  * In Ruhig wie im Entwurf: „Diese Woche“ über „Einkauf“, „Listen“, ein gerades helles Blatt mit Kästchen statt der
  * Nummern, gekaufte durchgestrichen, normale Abteilungen, ohne Kopfzeile, Stempel und Flüstern.
  */
-internal fun LazyGridScope.grauenKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
-    ganzeBreite("grauen-kopf") { Kopf(ansicht, onListen, menue) }
+internal fun LazyGridScope.grauenKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit) {
+    ganzeBreite("grauen-kopf") { Kopf(ansicht, onListen) }
 }
 
 internal fun LazyGridScope.grauenPosten(ansicht: EinkaufsAnsicht?, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {
@@ -95,7 +95,7 @@ private val PERGAMENT_RAND = Color(0xFF8C7A4E)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
+private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit) {
     val f = FoodyTheme.farben
     val gesamt = ansicht.gesamt
     val erledigt = ansicht.erledigt
@@ -127,8 +127,7 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
                     )
                 }
             }
-            GrauenKnopf(szenenWort("Archiv", "Listen"), onListen, beschreibung = "Frühere Listen", umriss = true)
-            menue()
+            GrauenKnopf(szenenWort("Archiv", "Listen"), onListen, beschreibung = "Einkaufslisten", umriss = true)
         }
     }
 }

@@ -50,8 +50,8 @@ import kotlin.math.min
  * Markt“), die Posten stehen als Zeilen auf dem Papier: offen ein leerer, gestrichelter Kreis, gekauft ein Ensō im
  * Zinnober und ein Pinselstrich durch den Namen.
  */
-internal fun LazyGridScope.edoKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
-    ganzeBreite("edo-kopf") { Kopf(ansicht, onListen, menue) }
+internal fun LazyGridScope.edoKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit) {
+    ganzeBreite("edo-kopf") { Kopf(ansicht, onListen) }
 }
 
 internal fun LazyGridScope.edoPosten(ansicht: EinkaufsAnsicht?, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {
@@ -74,7 +74,7 @@ private val ZEILENLINIE = Edo.zeilenLinie
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
+private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit) {
     val f = FoodyTheme.farben
     val gesamt = ansicht.gesamt
     val erledigt = ansicht.erledigt
@@ -95,8 +95,7 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
         Row(Modifier.align(Alignment.Bottom), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             // Ruhig wie im Entwurf ohne den Tuschering; die Zahlen stehen über dem Titel
             if (gesamt > 0 && FoodyTheme.stil.inszeniert) Ring(erledigt, gesamt)
-            EdoKnopf("Listen", onListen, voll = false, beschreibung = "Frühere Listen")
-            menue()
+            EdoKnopf("Listen", onListen, voll = false, beschreibung = "Einkaufslisten")
         }
     }
 }
