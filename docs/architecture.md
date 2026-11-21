@@ -214,7 +214,12 @@ wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für 
     (48-dp-Fläche, sichtbar Glas- oder Primärkreis), `FoodyFab` (Pille mit Symbol und Text), `Suchfeld` (Glas-Pille
     mit Leeren-Knopf; Tests finden das Feld über den Platzhalter als Beschreibung), `Tagesleiste` (`LeistenTag`, Rolle
     Tab), `Initiale`. Druckeffekte sitzen nur auf der sichtbaren Form (Pille der Leiste, Chip, Kreis), nicht auf der
-    ganzen 48-dp-Fläche. Zustandslos, nur einfache Werte und Slots;
+    ganzen 48-dp-Fläche. Einheitlicher Rahmen über alle Stile (seit 2026-11-21, Spec
+    `docs/superpowers/specs/2026-11-20-einheitlicher-rahmen-design.md`): `EinstellungenKnopf` (Zahnrad auf
+    `RunderKnopf`, in allen Stilen und Varianten oben rechts im Kopf von Heute, gleich groß; der Stil bestimmt nur die
+    Farben) und `FoodyMenue`/`FoodyMenuePunkt` (alle Menüs der App statt `DropdownMenu`: Fläche `stil.werte.glas`
+    deckend, Form `formen.mittel`, Rand `stil.kante` in `lichtkante`, Text `bodyLarge` in der Schrift des Stils;
+    `gewaehlt` zeigt einen Haken und meldet „ausgewählt“). Zustandslos, nur einfache Werte und Slots;
     Berührflächen ≥ 48 dp; ab Schriftskalierung 1,5 mehr Zeilen und Knöpfe unter dem Text statt Abschneiden.
   - Gemeinsame Texte ohne Oberfläche liegen in `:core:data` (`wochentagKurz`, `datumKurz`, `zahlText`, `zahlAus`).
   - `stil/` (ADR 0020): `FoodyStil` (Milchglas und die Stile Sage, Anime, Edo, Bayrisch, Grauen, Kreuzer, je vier
@@ -233,6 +238,8 @@ wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für 
     und bekommen denselben Zustand und dieselben Aktionen wie der normale Screen. Die Wahl speichert
     `DarstellungSpeicher` als `StilWahl` (`stil`, `stilVariante`, `stilAkzent`); fehlt sie, gilt Milchglas.
     Den Modus Hell/Dunkel und die Farbwelten gibt es nur bei Milchglas, die Systemleisten folgen dem Grund des Stils.
+    `StilWerte.leiste` ist die deckende Farbe der Navigationsleiste und -Rail (nur Anime: Weiß, sonst `null` = Glas);
+    `GlasFlaeche(…, deckend = farbe)` zeichnet dann ohne Unschärfe, mit Rand und Schatten.
 - **Kontrast:** WCAG 2.2 AA (Text 4,5:1, Grafik 3:1) gilt ohne Unschärfe gegen die ungünstigste Stelle des Verlaufs;
   `KontrastTest` rechnet jedes Paar aus `kontrastPaare` nach, für jede Farbwelt hell und dunkel und für jeden Stil
   mit Variante und Akzent.
@@ -317,7 +324,10 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   23:59; Inspiration per `DailyPicks` nur ohne Plan für heute; Tagebuch des Tages mit Vorschlägen „Gegessen?“ – eine
   Rückfrage: „Ja“ trägt ein, „Nein“ blendet den Vorschlag für den Tag aus (`NichtGegessenSpeicher` in `:core:data`, Prefs
   `nichtGegessen`, nur auf diesem Gerät; unter „Aus dem Plan“ bleibt er wählbar), Danebentippen ändert nichts; offener
-  Einkauf; `syncAnzeige` für den Kopf; leere Datenbank → „Server verbinden“). Tagebuch in `tagebuch/`: Eintragen-Blatt
+  Einkauf; `syncAnzeige` für den Kopf; leere Datenbank → „Server verbinden“). Jede Szene setzt `EinstellungenKnopf`
+  oben rechts in ihren Kopf (Edo Immersiv in eine Zeile über dem Rollbild); der Anime-Kopf hält Titel, Datum und
+  Zahnrad in einer Zeile, verkleinert den Titel bis zu einer festen Untergrenze und setzt das Datum sonst unter den
+  Titel (`HeuteAnimeTest`, Bildvergleich aller Köpfe auch bei 360 dp: `heute_360_*`). Tagebuch in `tagebuch/`: Eintragen-Blatt
   (Rezept, Zutat, Aus dem Plan, Frei; Mahlzeit aus der Zeile oder nach Uhrzeit; Suche Teilstring oder Katalogname, höchstens 30 Treffer;
   unter „Zutat“ zusätzlich Treffer aus dem BLS, siehe „BLS nachschlagen“; unter „Rezept“ mit Suchtext zusätzlich bis zu fünf
   gescannte Produkte (Zutaten mit Strichcode, `zustand.produkte`) – antippen wechselt zu „Zutat“ mit dem Produkt, Einheit
@@ -464,6 +474,12 @@ Menge in der Basiseinheit und Herkunft je `NeedSource`, manuelle Artikel ohne He
   Kopf mit Menü, Hinweis, „Was willst du einkaufen?“, offene Kacheln je Abteilung (Antippen = gekauft, Langdruck =
   Details), „Zuletzt verwendet“, Katalog nach Abteilungen; ab 840 dp der Katalog rechts. Blätter: Vorschau (Zeitraum
   ‹ ›, höchstens 28 Tage), Abgleich, Details mit Herkunft, Frühere Listen; Knopf fest unten.
+  Das ⋮-Menü (`EinkaufMenue`) hat nur Milchglas. In den Szenen Sage bis Kreuzer führt allein der Listen-Knopf
+  (Bedienhilfe „Einkaufslisten“) zur `ListenSeite` mit den Reitern „Neue Liste · Abgleich · Frühere“; „Liste
+  löschen“ ist dort der Papierkorb „Aktuelle Liste löschen“ im Kopf, nur wenn es eine aktuelle Liste gibt. Die
+  aufklappbaren Abteilungen nehmen einen Kopf über den Slot `KlappkopfInhalt` (`zuletztKacheln`, `katalogKacheln`):
+  Milchglas `StandardKlappkopf`, jede Szene ihren eigenen (`sageKlappkopf` … `kreuzerKlappkopf`) in Schrift und
+  Farben ihrer Abschnittsköpfe; Rolle, „Aufklappen“/„Zuklappen“ und 48 dp sind gemeinsam (`Modifier.klappbar`).
 - **`:core:designsystem`**: `Kachel` mit `aufDerListe` (rot), `onLangdruck` („Details“) und `zustandsText`;
   `KachelEmoji` für die Katalog-Emojis.
 - **`:feature:rezepte`**: „Auf die Einkaufsliste“ im Rezeptdetail (Portionen-Dialog, Snackbar mit „Ansehen“ →
@@ -474,8 +490,11 @@ Menge in der Basiseinheit und Herkunft je `NeedSource`, manuelle Artikel ohne He
 
 ## Einstellungen (`:feature:einstellungen`)
 
-Spec `docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6e1-einstellungen-design.md`. Das Profilsymbol in Heute öffnet die
-Einstellungsseite; „Server verbinden“ ist das eigene Ziel `ServerVerbinden`. Keine Schemaänderung.
+Spec `docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6e1-einstellungen-design.md`. Das Zahnrad (`EinstellungenKnopf`) oben rechts
+im Kopf von Heute öffnet in allen Stilen die Einstellungsseite; „Server verbinden“ ist das eigene Ziel
+`ServerVerbinden`. Keine Schemaänderung. Die Stilwahl (`StilWahl`) legt die Kacheln in ein Raster mit fester
+Zellbreite (Stile 88 dp, höchstens 3 Spalten; Akzente 72 dp, höchstens 4) und gleichem Innenabstand mit und ohne
+Auswahl, der Name hat immer Platz für zwei Zeilen: Beim Umschalten ändern die Kacheln weder Größe noch Lage.
 
 - **`:core:data`:** `DarstellungSpeicher` (`themeMode` mit den v1-Werten `SYSTEM`/`LIGHT`/`DARK`, Flow und `aktuell()`
   als Startwert), `TageszielSpeicher.setzen` (500–10.000 kcal, `null` = kein Ziel), `Sicherung.allesLoeschen()`:
