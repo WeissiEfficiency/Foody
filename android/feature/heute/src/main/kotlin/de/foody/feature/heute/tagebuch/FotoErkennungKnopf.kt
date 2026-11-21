@@ -18,8 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -38,6 +36,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.data.fotos.KameraDatei
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
+import de.foody.core.designsystem.komponenten.FoodyMenue
+import de.foody.core.designsystem.komponenten.FoodyMenuePunkt
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.erkennung.ErkennungLauf
 import de.foody.core.erkennung.ErkennungTexte
@@ -101,12 +101,12 @@ internal fun FotoErkennungKnopf(lauf: ErkennungLauf, modifier: Modifier = Modifi
 
     Box(modifier) {
         FotoMenueKnopf(aktiv = !zustand.laeuft, laeuft = zustand.laeuft) { menue = true }
-        DropdownMenu(menue, onDismissRequest = { menue = false }) {
-            DropdownMenuItem({ Text(ErkennungTexte.KAMERA) }, {
+        FoodyMenue(menue, onSchliessen = { menue = false }) {
+            FoodyMenuePunkt(ErkennungTexte.KAMERA, {
                 menue = false
                 kameraStarten()
             })
-            DropdownMenuItem({ Text(ErkennungTexte.GALERIE) }, {
+            FoodyMenuePunkt(ErkennungTexte.GALERIE, {
                 menue = false
                 galerie.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             })

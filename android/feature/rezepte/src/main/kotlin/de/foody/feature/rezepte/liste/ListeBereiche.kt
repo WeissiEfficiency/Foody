@@ -9,9 +9,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +16,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import de.foody.core.designsystem.komponenten.FoodyChip
+import de.foody.core.designsystem.komponenten.FoodyMenue
+import de.foody.core.designsystem.komponenten.FoodyMenuePunkt
 import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.Suchfeld
@@ -47,9 +46,9 @@ internal fun ListeKopf(anzahl: Int?, onNeu: () -> Unit, onImport: () -> Unit) {
     ) {
         Box {
             RunderKnopf(Icons.Outlined.Add, "Rezept hinzufügen", onKlick = { menu = true }, primaer = true)
-            DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                DropdownMenuItem(text = { Text("Neues Rezept") }, onClick = { menu = false; onNeu() })
-                DropdownMenuItem(text = { Text("Markdown importieren") }, onClick = { menu = false; onImport() })
+            FoodyMenue(menu, onSchliessen = { menu = false }) {
+                FoodyMenuePunkt("Neues Rezept", { menu = false; onNeu() })
+                FoodyMenuePunkt("Markdown importieren", { menu = false; onImport() })
             }
         }
     }
@@ -113,9 +112,9 @@ internal fun FilterChips(f: ListeFilter, tags: List<String>, aendern: ((ListeFil
         item {
             Box {
                 FoodyChip("Sortierung: ${f.sortierung.text}", false, { sortierMenu = true })
-                DropdownMenu(sortierMenu, onDismissRequest = { sortierMenu = false }) {
+                FoodyMenue(sortierMenu, onSchliessen = { sortierMenu = false }) {
                     Sortierung.entries.forEach { s ->
-                        DropdownMenuItem(text = { Text(s.text) }, onClick = { sortierMenu = false; aendern { it.copy(sortierung = s) } })
+                        FoodyMenuePunkt(s.text, { sortierMenu = false; aendern { it.copy(sortierung = s) } }, gewaehlt = s == f.sortierung)
                     }
                 }
             }

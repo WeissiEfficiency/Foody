@@ -51,6 +51,7 @@ import de.foody.core.designsystem.stil.anime.animeSchatten
 import de.foody.core.designsystem.stil.anime.animeSzenenTitel
 import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
+import de.foody.feature.einkauf.KlappkopfInhalt
 import kotlin.math.min
 
 /**
@@ -64,6 +65,19 @@ internal fun LazyGridScope.animeKopf(ansicht: EinkaufsAnsicht?, onListen: () -> 
 
 internal fun LazyGridScope.animePosten(ansicht: EinkaufsAnsicht?, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {
     jeGruppe("anime", ansicht.gruppiert()) { i, g -> Karte(g, ABZEICHEN[i % ABZEICHEN.size], onUmschalten, onDetails) }
+}
+
+/** Klappkopf der Abteilungen (Zuletzt, Katalog): der Name im Abzeichen wie über den Karten der Posten. */
+internal val animeKlappkopf: KlappkopfInhalt = { titel, offen, onKlick ->
+    val f = FoodyTheme.farben
+    Klappzeile(offen, onKlick) {
+        Box(Modifier.weight(1f)) {
+            Text(
+                titel, Modifier.background(Anime.mint, Anime.pille).border(2.dp, f.text, Anime.pille).padding(horizontal = 8.dp),
+                style = Anime.text(13f, FontWeight.ExtraBold), color = f.text,
+            )
+        }
+    }
 }
 
 /** Farben der Abteilungs-Abzeichen wie im Entwurf (Grün, Türkis, Orange, Lila, Rosa). */

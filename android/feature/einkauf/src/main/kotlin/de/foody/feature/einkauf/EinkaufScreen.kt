@@ -38,18 +38,24 @@ import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.einkauf.stil.EinkaufSzene
+import de.foody.feature.einkauf.stil.animeKlappkopf
 import de.foody.feature.einkauf.stil.animeKopf
 import de.foody.feature.einkauf.stil.animePosten
+import de.foody.feature.einkauf.stil.bayrischKlappkopf
 import de.foody.feature.einkauf.stil.bayrischKopf
 import de.foody.feature.einkauf.stil.bayrischPosten
+import de.foody.feature.einkauf.stil.edoKlappkopf
 import de.foody.feature.einkauf.stil.edoKopf
 import de.foody.feature.einkauf.stil.edoPosten
+import de.foody.feature.einkauf.stil.grauenKlappkopf
 import de.foody.feature.einkauf.stil.grauenKopf
 import de.foody.feature.einkauf.stil.grauenPosten
 import de.foody.feature.einkauf.stil.haendlerKopf
 import de.foody.feature.einkauf.stil.haendlerPosten
+import de.foody.feature.einkauf.stil.kreuzerKlappkopf
 import de.foody.feature.einkauf.stil.kreuzerKopf
 import de.foody.feature.einkauf.stil.kreuzerPosten
+import de.foody.feature.einkauf.stil.sageKlappkopf
 
 /** Platz unter der Liste für die schwebende Navigationsleiste. */
 private val LISTE_UNTEN = 104.dp
@@ -78,6 +84,16 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
     // „Listen“ der Szenen ist der einzige Weg zu den Listen (erster Reiter „Neue Liste“); nur ohne Szene das Menü ⋮.
     val szene = EinkaufSzene.aktuell()
     val onListen: () -> Unit = { vm.blattOeffnen(Blatt.Vorschau) }
+    // Zuletzt und Katalog: Klappköpfe in Schrift und Farben der Szene
+    val kopf = when (szene) {
+        FoodyStil.SAGE -> sageKlappkopf
+        FoodyStil.ANIME -> animeKlappkopf
+        FoodyStil.EDO -> edoKlappkopf
+        FoodyStil.BAYRISCH -> bayrischKlappkopf
+        FoodyStil.GRAUEN -> grauenKlappkopf
+        FoodyStil.KREUZER -> kreuzerKlappkopf
+        else -> StandardKlappkopf
+    }
     val oben: LazyGridScope.() -> Unit = {
         when (szene) {
             FoodyStil.SAGE -> haendlerKopf(z.ansicht, onListen)
@@ -111,11 +127,11 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
                 FoodyStil.KREUZER -> kreuzerPosten(z.ansicht, umschalten, details)
                 else -> offeneKacheln(z.ansicht?.offen.orEmpty(), onGekauft = { vm.abhaken(it, true) }, onDetails = details)
             }
-            zuletztKacheln(z.zuletzt, alle, ZULETZT in aufgeklappt, { umschalten(ZULETZT) }, { vm.zuletztAntippen(it) })
+            zuletztKacheln(z.zuletzt, alle, ZULETZT in aufgeklappt, { umschalten(ZULETZT) }, { vm.zuletztAntippen(it) }, kopf)
         }
     }
     val katalog: LazyGridScope.() -> Unit = {
-        katalogKacheln(alle, aufgeklappt.toSet(), umschalten) { n, a -> vm.antippen(n, a, null) }
+        katalogKacheln(alle, aufgeklappt.toSet(), umschalten, onTipp = { n, a -> vm.antippen(n, a, null) }, kopf = kopf)
     }
 
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {

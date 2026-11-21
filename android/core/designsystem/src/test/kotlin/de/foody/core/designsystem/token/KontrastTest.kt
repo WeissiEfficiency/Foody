@@ -44,6 +44,20 @@ class KontrastTest {
         },
     )
 
+    /** `FoodyMenue` liegt deckend in der Glasfarbe des Stils über allem; Text darauf hält 4,5:1 (Milchglas je Farbwelt hell und dunkel). */
+    @Test
+    fun menueTextAufGlas() {
+        val milchglas = Farbwelt.entries.flatMap { w ->
+            listOf(false, true).map { dunkel -> "MILCHGLAS/${w.name}/dunkel=$dunkel" to stilWerte(FoodyStil.MILCHGLAS, dunkel = dunkel, farbwelt = w) }
+        }
+        val stile = FoodyStil.entries.filter { it != FoodyStil.MILCHGLAS }.flatMap { stil ->
+            StilVariante.entries.flatMap { v -> stil.akzente.map { a -> "${stil.name}/${v.name}/${a.name}" to stilWerte(stil, v, a.name) } }
+        }
+        val alle = milchglas + stile
+        for ((name, s) in alle) assertEquals(1f, s.werte.glas.alpha, "$name: Menüfläche nicht deckend")
+        pruefe(alle.map { (name, s) -> KontrastPaar("$name: Text im Menü", s.farben.text, s.werte.glas, 4.5) })
+    }
+
     @Test
     fun milchglasUnveraendert() {
         for (w in Farbwelt.entries) {

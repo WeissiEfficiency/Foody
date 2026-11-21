@@ -21,8 +21,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,6 +57,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.FoodyMenue
+import de.foody.core.designsystem.komponenten.FoodyMenuePunkt
 import de.foody.core.designsystem.komponenten.LEISTE_REGELHOEHE
 import de.foody.core.designsystem.komponenten.platzFuerLeiste
 import de.foody.core.designsystem.komponenten.portionenText
@@ -130,11 +130,11 @@ private fun Kopf(z: DetailZustand.Da, a: DetailAktionen) {
         )
         Box {
             Zeichenknopf("⋯", "Weitere Aktionen") { menue = true }
-            DropdownMenu(menue, onDismissRequest = { menue = false }) {
+            FoodyMenue(menue, onSchliessen = { menue = false }) {
                 Eintrag(szenenWort("Neu niederschreiben", "Bearbeiten"), "Bearbeiten") { menue = false; a.onBearbeiten() }
                 Eintrag(szenenWort("Abschrift anfertigen", "Duplizieren"), "Duplizieren") { menue = false; a.onDuplizieren() }
                 if (z.voll.rezept.archivedAt == null) {
-                    Eintrag(szenenWort("Ins Archiv verbannen", "Archivieren"), "Archivieren", farbe = WARNROT) { menue = false; a.onArchivieren(true) }
+                    Eintrag(szenenWort("Ins Archiv verbannen", "Archivieren"), "Archivieren") { menue = false; a.onArchivieren(true) }
                 }
             }
         }
@@ -143,13 +143,10 @@ private fun Kopf(z: DetailZustand.Da, a: DetailAktionen) {
     Box(Modifier.fillMaxWidth().sageLinieUnten(glut.copy(alpha = 0.25f)))
 }
 
+/** Punkt im Menü mit dem Wort der Szene; TalkBack hört den normalen [begriff]. */
 @Composable
-private fun Eintrag(text: String, begriff: String, farbe: Color? = null, onKlick: () -> Unit) {
-    DropdownMenuItem(
-        text = { Text(text, style = Sage.text(17f), color = farbe ?: FoodyTheme.farben.text) },
-        onClick = onKlick,
-        modifier = Modifier.semantics { contentDescription = begriff },
-    )
+private fun Eintrag(text: String, begriff: String, onKlick: () -> Unit) {
+    FoodyMenuePunkt(text, onKlick, Modifier.semantics { contentDescription = begriff })
 }
 
 @Composable

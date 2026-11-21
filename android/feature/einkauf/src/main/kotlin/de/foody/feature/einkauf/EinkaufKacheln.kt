@@ -70,17 +70,28 @@ private fun EinkaufKachel(
 private fun LazyGridScope.ganzeZeile(key: String, inhalt: @Composable () -> Unit) =
     item(key = key, span = { GridItemSpan(maxLineSpan) }) { inhalt() }
 
-/** Aufklappbarer Abschnittskopf (Zuletzt, Katalog-Abteilungen). */
-@Composable
-private fun Klappkopf(titel: String, offen: Boolean, onKlick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button, onClickLabel = if (offen) "Zuklappen" else "Aufklappen", onClick = onKlick)
-            .padding(top = FoodyAbstaende.s2),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+/**
+ * Aufklappbarer Abschnittskopf (Zuletzt, Katalog-Abteilungen) mit [titel]; [offen] sagt, ob der Abschnitt offen ist.
+ * Jede Szene bringt ihren eigenen mit (`sageKlappkopf` …), ohne Szene gilt [StandardKlappkopf].
+ */
+internal typealias KlappkopfInhalt = @Composable (titel: String, offen: Boolean, onKlick: () -> Unit) -> Unit
+
+/** Klappkopf der normalen Ansicht (Milchglas): Titel in der Schrift des Themes, rechts der Pfeil. */
+internal val StandardKlappkopf: KlappkopfInhalt = { titel, offen, onKlick ->
+    Row(Modifier.klappbar(offen, onKlick).padding(top = FoodyAbstaende.s2), verticalAlignment = Alignment.CenterVertically) {
         Text(titel, style = MaterialTheme.typography.titleMedium, color = FoodyTheme.farben.text, modifier = Modifier.weight(1f))
-        Icon(if (offen) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = FoodyTheme.farben.text)
+        KlappPfeil(offen)
     }
+}
+
+/** Ein Klappkopf über die ganze Breite: mindestens 48 dp hoch, für TalkBack ein Knopf „Aufklappen“ bzw. „Zuklappen“. */
+internal fun Modifier.klappbar(offen: Boolean, onKlick: () -> Unit): Modifier =
+    fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button, onClickLabel = if (offen) "Zuklappen" else "Aufklappen", onClick = onKlick)
+
+/** Pfeil am Ende eines Klappkopfs in der Textfarbe: nach oben, wenn [offen]. Für TalkBack stumm (der Kopf sagt es). */
+@Composable
+internal fun KlappPfeil(offen: Boolean) {
+    Icon(if (offen) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = FoodyTheme.farben.text)
 }
 
 /** Offene Artikel je Abteilung; Antippen = gekauft, Langdruck = Details. */
@@ -96,28 +107,33 @@ internal fun LazyGridScope.offeneKacheln(abteilungen: List<Abteilung>, onGekauft
     }
 }
 
-/** „Zuletzt verwendet“: Antippen setzt den Artikel wieder auf die Liste. */
+/** „Zuletzt verwendet“ unter dem Klappkopf [kopf]: Antippen setzt den Artikel wieder auf die Liste. */
 internal fun LazyGridScope.zuletztKacheln(
     zuletzt: List<ZuletztArtikel>,
     alle: List<EinkaufsArtikel>,
     offen: Boolean,
     onUmschalten: () -> Unit,
     onTipp: (ZuletztArtikel) -> Unit,
+    kopf: KlappkopfInhalt = StandardKlappkopf,
 ) {
     if (zuletzt.isEmpty()) return
-    ganzeZeile("zuletzt-kopf") { Klappkopf(ZULETZT, offen, onUmschalten) }
+    ganzeZeile("zuletzt-kopf") { kopf(ZULETZT, offen, onUmschalten) }
     if (offen) items(zuletzt, key = { "zuletzt-${it.name}" }) { z -> EinkaufKachel(z.name, "", z.emoji, stand(z.name, alle), { onTipp(z) }) }
 }
 
-/** Katalog nach Abteilungen in Laufreihenfolge und „Eigene Artikel“ der Liste; Antippen nach der Kachelregel. */
+/**
+ * Katalog nach Abteilungen in Laufreihenfolge und „Eigene Artikel“ der Liste, je Abteilung mit dem Klappkopf [kopf];
+ * Antippen nach der Kachelregel.
+ */
 internal fun LazyGridScope.katalogKacheln(
     alle: List<EinkaufsArtikel>,
     aufgeklappt: Set<String>,
     onUmschalten: (String) -> Unit,
     onTipp: (name: String, abteilung: String) -> Unit,
+    kopf: KlappkopfInhalt = StandardKlappkopf,
 ) {
     for (s in ShoppingCatalog.sections) {
-        ganzeZeile("katalog-kopf-${s.name}") { Klappkopf("${s.emoji} ${s.name}", s.name in aufgeklappt) { onUmschalten(s.name) } }
+        ganzeZeile("katalog-kopf-${s.name}") { kopf("${s.emoji} ${s.name}", s.name in aufgeklappt) { onUmschalten(s.name) } }
         if (s.name in aufgeklappt) {
             items(s.items, key = { "katalog-${s.name}-${it.name}" }) { i ->
                 EinkaufKachel(i.name, "", i.emoji, stand(i.name, alle), { onTipp(i.name, s.name) })
@@ -127,7 +143,7 @@ internal fun LazyGridScope.katalogKacheln(
     val eigene = alle.filter { ShoppingCatalog.find(it.name) == null }.distinctBy { it.name.lowercase() }
     if (eigene.isEmpty()) return
     val name = ShoppingCatalog.OWN_ITEMS
-    ganzeZeile("katalog-kopf-eigene") { Klappkopf("🛒 $name", name in aufgeklappt) { onUmschalten(name) } }
+    ganzeZeile("katalog-kopf-eigene") { kopf("🛒 $name", name in aufgeklappt) { onUmschalten(name) } }
     if (name in aufgeklappt) {
         items(eigene, key = { "eigen-${it.name.lowercase()}" }) { e -> EinkaufKachel(e.name, "", e.emoji, stand(e.name, alle), { onTipp(e.name, name) }) }
     }

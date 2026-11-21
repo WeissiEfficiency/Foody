@@ -13,12 +13,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,6 +31,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
+import de.foody.core.designsystem.komponenten.FoodyMenue
+import de.foody.core.designsystem.komponenten.FoodyMenuePunkt
 import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.VerwerfenFrage
@@ -149,9 +148,9 @@ private fun Kopf(titel: String, onZurueck: () -> Unit, onZusammenfuehren: () -> 
     ) {
         Box {
             RunderKnopf(Icons.Outlined.MoreVert, "Mehr", { menu = true })
-            DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                DropdownMenuItem(text = { Text("Zusammenführen mit …") }, onClick = { menu = false; onZusammenfuehren() })
-                DropdownMenuItem(text = { Text("Löschen") }, onClick = { menu = false; onLoeschen() })
+            FoodyMenue(menu, onSchliessen = { menu = false }) {
+                FoodyMenuePunkt("Zusammenführen mit …", { menu = false; onZusammenfuehren() })
+                FoodyMenuePunkt("Löschen", { menu = false; onLoeschen() })
             }
         }
     }

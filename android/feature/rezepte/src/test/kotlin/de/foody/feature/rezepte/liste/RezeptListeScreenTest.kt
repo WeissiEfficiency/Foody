@@ -1,14 +1,21 @@
 package de.foody.feature.rezepte.liste
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
@@ -111,6 +118,24 @@ class RezeptListeScreenTest {
         compose.onNodeWithContentDescription("Rezept hinzufügen").performClick()
         compose.onNodeWithText("Markdown importieren").performClick()
         assertEquals(1 to 1, neu to importiert)
+    }
+
+    /** Das Menü der Sortierung hakt die gewählte ab. */
+    @Test
+    fun sortierungZeigtDieGewaehlte() {
+        runBlocking { db.bestand() }
+        zeigen()
+        compose.warteAufText("Reispfanne")
+        // Die waagerechte Reihe der Filterchips; die Sortierung steht ganz hinten
+        val chips = compose.onNode(hasScrollToIndexAction() and SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange))
+        chips.performScrollToNode(hasText("Sortierung: Name"))
+        compose.onNodeWithText("Sortierung: Name").performClick()
+        compose.onNodeWithText("Name").assertIsSelected()
+        compose.onAllNodesWithTag("menue-haken", useUnmergedTree = true).assertCountEquals(1)
+        compose.onNodeWithText("Neueste").performClick()
+        compose.onNodeWithText("Sortierung: Neueste").performClick()
+        compose.onNodeWithText("Neueste").assertIsSelected()
+        compose.onAllNodesWithTag("menue-haken", useUnmergedTree = true).assertCountEquals(1)
     }
 
     @Test

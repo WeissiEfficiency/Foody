@@ -28,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -54,6 +55,7 @@ import de.foody.core.designsystem.stil.sage.SageNebenknopf
 import de.foody.core.designsystem.stil.sage.SageRaute
 import de.foody.core.designsystem.stil.svgPfad
 import de.foody.core.designsystem.stil.szenenWort
+import de.foody.feature.einkauf.KlappkopfInhalt
 import java.util.Locale
 
 /**
@@ -98,6 +100,20 @@ internal fun LazyGridScope.haendlerPosten(ansicht: EinkaufsAnsicht?, onUmschalte
             reihe.forEach { a -> Posten(a, Modifier.weight(1f).fillMaxHeight(), onKlick = { onUmschalten(a.id, !a.gekauft) }, onLang = { onDetails(a.id) }) }
             if (reihe.size == 1) Spacer(Modifier.weight(1f))
         }
+    }
+}
+
+/**
+ * Klappkopf der Abteilungen (Zuletzt, Katalog) wie die Abschnitte der Sage: Cinzel in Versalien in der Nebenfarbe wie die
+ * Abteilung auf den Posten, darüber eine feine Linie. TalkBack hört den Titel in normaler Schreibung.
+ */
+internal val sageKlappkopf: KlappkopfInhalt = { titel, offen, onKlick ->
+    val f = FoodyTheme.farben
+    Klappzeile(offen, onKlick, Modifier.drawBehind { drawLine(f.lichtkante, Offset.Zero, Offset(size.width, 0f), 1.dp.toPx()) }) {
+        Text(
+            titel.uppercase(Locale.GERMAN), Modifier.weight(1f).semantics { contentDescription = titel },
+            style = Sage.titel(12f, 0.18f), color = f.nebentext,
+        )
     }
 }
 

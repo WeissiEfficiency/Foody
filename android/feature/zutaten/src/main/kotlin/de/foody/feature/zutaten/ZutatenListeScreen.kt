@@ -18,8 +18,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
@@ -46,6 +44,8 @@ import de.foody.core.data.zutaten.ZutatKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyFab
+import de.foody.core.designsystem.komponenten.FoodyMenue
+import de.foody.core.designsystem.komponenten.FoodyMenuePunkt
 import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.Suchfeld
@@ -161,8 +161,8 @@ private fun Kopf(onZurueck: () -> Unit, onVereinheitlichen: () -> Unit) {
     ) {
         Box {
             RunderKnopf(Icons.Outlined.MoreVert, "Mehr", { menu = true })
-            DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                DropdownMenuItem(text = { Text("Namen vereinheitlichen") }, onClick = { menu = false; onVereinheitlichen() })
+            FoodyMenue(menu, onSchliessen = { menu = false }) {
+                FoodyMenuePunkt("Namen vereinheitlichen", { menu = false; onVereinheitlichen() })
             }
         }
     }
