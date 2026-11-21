@@ -2,10 +2,15 @@ package de.foody.feature.einstellungen
 
 import android.net.Uri
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
@@ -17,6 +22,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.size
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.TAGESZIEL_MAX
 import de.foody.core.data.TAGESZIEL_MIN
@@ -37,7 +44,8 @@ import kotlin.test.assertEquals
 /**
  * Einstellungen der Stile R–V in Immersiv wie in den Entwürfen: Überschriften mit Stilwort (TalkBack liest das
  * normale Wort), Schalter-Zeilen, Tagesziel mit − und + und Feld, Varianten-Leiste und Farbmuster als Optionsfelder,
- * Abgleich öffnet „Server verbinden“; bei 200 % Schrift wird nichts abgeschnitten.
+ * Abgleich öffnet „Server verbinden“; bei 200 % Schrift wird nichts abgeschnitten. Die Kacheln der Stilwahl behalten
+ * beim Wechsel des Stils ihre Größe.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -49,6 +57,9 @@ class EinstellungenStileTest {
     private lateinit var u: EinstellungenTestUmgebung
     private var server = 0
 
+    /** Stil des Themes; [wechseln] stellt ihn um, ohne den Inhalt neu zu setzen. */
+    private var themaStil by mutableStateOf(FoodyStil.MILCHGLAS)
+
     @Before
     fun setUp() {
         u = EinstellungenTestUmgebung()
@@ -59,16 +70,16 @@ class EinstellungenStileTest {
 
     private val keineDateien: @Composable ((Uri) -> Unit, (Uri) -> Unit) -> Dateiwahl = { _, _ -> remember { Dateiwahl({}, {}) } }
 
-    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false, variante: StilVariante = StilVariante.IMMERSIV): EinstellungenViewModel {
+    private fun zeigen(stil: FoodyStil, schrift: Float = 1f, variante: StilVariante = StilVariante.IMMERSIV): EinstellungenViewModel {
         u.darstellung.stilSetzen(stil.name)
         u.darstellung.stilVarianteSetzen(variante.name)
         u.ziel.setzen(2000)
         u.verbinden()
         val vm = u.vm()
+        themaStil = stil
         compose.setContent {
-            FoodyTheme(stil = stil, variante = variante, unschaerfe = false) {
-                val inhalt = @Composable { EinstellungenRoute(onServer = { server++ }, onZutaten = {}, onZurueck = {}, vm = vm, dateiwahl = keineDateien) }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+            FoodyTheme(stil = themaStil, variante = variante, unschaerfe = false) {
+                MitSchrift(schrift) { EinstellungenRoute(onServer = { server++ }, onZutaten = {}, onZurueck = {}, vm = vm, dateiwahl = keineDateien) }
             }
         }
         // Milchglas und die Sage zeigen die Überschrift nicht als Stil-Zeile; die Zeile der Produktsuche haben alle
@@ -82,7 +93,7 @@ class EinstellungenStileTest {
         val vm = zeigen(stil)
         // Abgleich: Marke und Zeile, Tipp öffnet „Server verbinden“
         val verbunden = if (stil == FoodyStil.KREUZER) "VERBUNDEN · HTTP://10.0.2.2:8081" else "Verbunden mit http://10.0.2.2:8081"
-        compose.onNodeWithText(verbunden).performClick()
+        compose.onNodeWithText(verbunden).performScrollTo().performClick()
         assertEquals(1, server)
         // Variante und Farbe als Optionsfelder
         compose.onNode(isSelectable() and hasContentDescription(stil.akzente[1].anzeigename)).performScrollTo().performClick()
@@ -108,7 +119,7 @@ class EinstellungenStileTest {
     }
 
     private fun gross(stil: FoodyStil) {
-        zeigen(stil, schrift200 = true)
+        zeigen(stil, schrift = 2f)
         compose.waitForIdle()
         compose.pruefeNichtsAbgeschnitten()
     }
@@ -159,6 +170,57 @@ class EinstellungenStileTest {
     @Test fun ruhigAbgleichUnten() = abgleichUnten(FoodyStil.EDO, StilVariante.RUHIG)
 
     @Test fun milchglasAbgleichOben() = abgleichUnten(FoodyStil.MILCHGLAS, unten = false)
+
+    /** Wie ein Tipp auf die Kachel: Speicher und Theme zeigen danach [stil]. */
+    private fun wechseln(stil: FoodyStil) {
+        u.darstellung.stilSetzen(stil.name)
+        themaStil = stil
+        compose.waitForIdle()
+    }
+
+    /** Kachel der Stilwahl mit dem Namen [name]. */
+    private fun kachel(name: String) = compose.onNode(hasText(name) and isSelectable())
+
+    private fun groesse(name: String) = kachel(name).performScrollTo().getUnclippedBoundsInRoot().size
+
+    /** Lage der Kachel „Edo“ (die vierte) gegenüber „Milchglas“ (der ersten): zeigt, wie die Reihen aufgeteilt sind. */
+    private fun lageEdo(): DpOffset {
+        val milchglas = kachel("Milchglas").performScrollTo().getUnclippedBoundsInRoot()
+        val edo = kachel("Edo").getUnclippedBoundsInRoot()
+        return DpOffset(edo.left - milchglas.left, edo.top - milchglas.top)
+    }
+
+    /**
+     * Bayrisch zeigt die Wahl in einer Karte mit Innenabstand, Grauen nicht: Die Kacheln bleiben trotzdem gleich groß und
+     * die Reihen gleich aufgeteilt. Breite eines üblichen Handys: Dort passten in Grauen vier Kacheln in die Reihe, in
+     * Bayrisch nur drei.
+     */
+    @Test
+    @Config(qualifiers = "w411dp-h1600dp")
+    fun kachelnBehaltenIhreGroesse() {
+        zeigen(FoodyStil.BAYRISCH)
+        val bayrisch = groesse("Milchglas")
+        val lageBayrisch = lageEdo()
+        wechseln(FoodyStil.GRAUEN)
+        val grauen = groesse("Milchglas")
+        assertEquals(bayrisch.width, grauen.width, "Breite")
+        assertEquals(bayrisch.height, grauen.height, "Höhe")
+        // „Edo“ steht in beiden Stilen gleich weit von „Milchglas“ entfernt, also an derselben Stelle der Reihen
+        assertEquals(lageBayrisch, lageEdo(), "Lage von Edo gegenüber Milchglas")
+    }
+
+    /**
+     * Bei 130 % Schrift sind alle sieben Kacheln gleich groß, auch die mit dem zweizeiligen „Kosmisches Grauen“. Breite
+     * eines üblichen Handys: Dort stehen drei Kacheln in einer Reihe, und der lange Name bricht um.
+     */
+    @Test
+    @Config(qualifiers = "w411dp-h1600dp")
+    fun kachelnBeiGrosserSchrift() {
+        zeigen(FoodyStil.BAYRISCH, schrift = 1.3f)
+        val groessen = FoodyStil.entries.associate { it.anzeigename to groesse(it.anzeigename) }
+        assertEquals(1, groessen.values.toSet().size, "Größen: $groessen")
+        compose.onNodeWithText(FoodyStil.GRAUEN.anzeigename).performScrollTo().assertIsDisplayed()
+    }
 
     @Test
     fun schritte() {

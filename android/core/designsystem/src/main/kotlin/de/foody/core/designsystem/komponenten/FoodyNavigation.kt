@@ -68,10 +68,10 @@ fun platzFuerLeiste(): Dp = if (LocalMitLeiste.current) ueberLeiste(LEISTE_REGEL
 /** Ein Ziel der Hauptnavigation; [beschreibung] liest TalkBack, wenn [text] ein Stilwort ist (Bayrisch „Heid“ für Heute). */
 data class NavZiel(val text: String, val symbol: ImageVector, val beschreibung: String? = null)
 
-/** Schwebende Glas-Leiste unten (Handy), 12 dp vom Rand. */
+/** Schwebende Glas-Leiste unten (Handy), 12 dp vom Rand; deckend, wenn der Stil es will (`StilWerte.leiste`). */
 @Composable
 fun FoodyNavigationsleiste(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Unit, modifier: Modifier = Modifier) {
-    GlasFlaeche(GlasStufe.LEICHT, modifier.padding(FoodyAbstaende.s3), form = FoodyTheme.formen.leiste) {
+    GlasFlaeche(GlasStufe.LEICHT, modifier.padding(FoodyAbstaende.s3), form = FoodyTheme.formen.leiste, deckend = FoodyTheme.stil.leiste) {
         Row(Modifier.padding(horizontal = FoodyAbstaende.s1), verticalAlignment = Alignment.CenterVertically) {
             ziele.forEachIndexed { i, ziel ->
                 NavEintrag(ziel, i == aktiv, { onWahl(i) }, Modifier.weight(1f))
@@ -80,10 +80,10 @@ fun FoodyNavigationsleiste(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Un
     }
 }
 
-/** Senkrechte Glas-Leiste links (Tablet). */
+/** Senkrechte Glas-Leiste links (Tablet); deckend wie die [FoodyNavigationsleiste]. */
 @Composable
 fun FoodyNavigationsRail(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Unit, modifier: Modifier = Modifier) {
-    GlasFlaeche(GlasStufe.LEICHT, modifier.padding(FoodyAbstaende.s3), form = FoodyTheme.formen.leiste) {
+    GlasFlaeche(GlasStufe.LEICHT, modifier.padding(FoodyAbstaende.s3), form = FoodyTheme.formen.leiste, deckend = FoodyTheme.stil.leiste) {
         Column(Modifier.padding(vertical = FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1)) {
             ziele.forEachIndexed { i, ziel ->
                 NavEintrag(ziel, i == aktiv, { onWahl(i) }, Modifier.width(88.dp))

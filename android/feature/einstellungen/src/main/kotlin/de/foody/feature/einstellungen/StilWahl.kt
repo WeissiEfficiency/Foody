@@ -7,11 +7,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilAkzent
@@ -41,31 +42,36 @@ import de.foody.core.designsystem.token.FoodyAbstaende
 
 /**
  * Wahl des Stils: je ein Muster aus Grund, Karte und Akzent des Stils (Milchglas in der aktuellen Farbwelt), darunter
- * der Name. Verhält sich wie Optionsfelder; der gewählte Stil trägt einen Ring und einen Haken. Raster wie bei der
- * Farbwelt, Spalten nach Breite und Schriftgröße.
+ * der Name. Verhält sich wie Optionsfelder; der gewählte Stil trägt einen Ring und einen Haken. Höchstens drei Spalten,
+ * weniger nur bei wenig Breite oder großer Schrift: Die Kacheln sind in jedem Stil gleich groß und gleich auf die Reihen
+ * verteilt, damit beim Umschalten nichts springt.
  */
 @Composable
 internal fun StilWahl(gewaehlt: FoodyStil, variante: StilVariante, onWahl: (FoodyStil) -> Unit) {
-    Raster(FoodyStil.entries, zelle = 96.dp) { s, modifier -> StilMuster(s, variante, s == gewaehlt, modifier) { onWahl(s) } }
+    Raster(FoodyStil.entries, zelle = 88.dp, hoechstens = 3) { s, modifier -> StilMuster(s, variante, s == gewaehlt, modifier) { onWahl(s) } }
 }
 
 /** Die vier Akzente des [stil]s als runde Farbmuster. */
 @Composable
 internal fun AkzentWahl(stil: FoodyStil, gewaehlt: StilAkzent, onWahl: (StilAkzent) -> Unit) {
-    Raster(stil.akzente, zelle = 72.dp) { a, modifier -> AkzentMuster(a, a == gewaehlt, modifier) { onWahl(a) } }
+    Raster(stil.akzente, zelle = 72.dp, hoechstens = 4) { a, modifier -> AkzentMuster(a, a == gewaehlt, modifier) { onWahl(a) } }
 }
 
+/**
+ * Zellen mit fester Breite ([zelle], mit der Schrift wachsend), linksbündig, so viele Spalten wie passen, aber
+ * höchstens [hoechstens]. Breite und Spalten hängen kaum vom Platz ab: Ob der Stil die Wahl in eine Karte mit
+ * Innenabstand legt oder nicht, die Zellen bleiben gleich groß und gleich auf die Reihen verteilt.
+ */
 @Composable
-private fun <T> Raster(eintraege: List<T>, zelle: Dp, inhalt: @Composable (T, Modifier) -> Unit) {
+private fun <T> Raster(eintraege: List<T>, zelle: Dp, hoechstens: Int, inhalt: @Composable (T, Modifier) -> Unit) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val breite = maxOf(zelle, zelle * LocalDensity.current.fontScale * 0.85f)
         val abstand = FoodyAbstaende.s2
-        val spalten = ((maxWidth + abstand) / (breite + abstand)).toInt().coerceIn(1, 4)
+        val spalten = ((maxWidth + abstand) / (breite + abstand)).toInt().coerceIn(1, hoechstens)
         Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
             eintraege.chunked(spalten).forEach { reihe ->
                 Row(horizontalArrangement = Arrangement.spacedBy(abstand)) {
-                    reihe.forEach { inhalt(it, Modifier.weight(1f)) }
-                    repeat(spalten - reihe.size) { Spacer(Modifier.weight(1f)) }
+                    reihe.forEach { inhalt(it, Modifier.width(breite)) }
                 }
             }
         }
@@ -92,7 +98,7 @@ private fun StilMuster(stil: FoodyStil, variante: StilVariante, gewaehlt: Boolea
                 .fillMaxWidth()
                 .height(64.dp)
                 .border(if (gewaehlt) 2.dp else 1.dp, ring, form)
-                .padding(if (gewaehlt) FoodyAbstaende.s1 else 1.dp)
+                .padding(FoodyAbstaende.s1)
                 .clip(form)
                 .background(f.grund),
         ) {
@@ -118,12 +124,15 @@ private fun StilMuster(stil: FoodyStil, variante: StilVariante, gewaehlt: Boolea
                 ) { Icon(Icons.Filled.Check, contentDescription = null, tint = f.aufPrimaer, modifier = Modifier.size(12.dp)) }
             }
         }
+        // Immer Platz für zwei Zeilen in fester Zeilenhöhe: „Kosmisches Grauen“ verschiebt die Reihe in keiner Schrift
         Text(
             stil.anzeigename,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelMedium.copy(lineHeight = 16.sp),
             fontWeight = if (gewaehlt) FontWeight.Bold else FontWeight.Medium,
             color = if (gewaehlt) FoodyTheme.farben.text else FoodyTheme.farben.nebentext,
             textAlign = TextAlign.Center,
+            minLines = 2,
+            maxLines = 2,
             modifier = Modifier.padding(top = 6.dp),
         )
     }
@@ -143,7 +152,7 @@ private fun AkzentMuster(akzent: StilAkzent, gewaehlt: Boolean, modifier: Modifi
             Modifier
                 .size(44.dp)
                 .border(if (gewaehlt) 2.dp else 1.dp, ring, CircleShape)
-                .padding(if (gewaehlt) FoodyAbstaende.s1 else 1.dp)
+                .padding(FoodyAbstaende.s1)
                 .clip(CircleShape)
                 .background(akzent.farbe),
             contentAlignment = Alignment.Center,
