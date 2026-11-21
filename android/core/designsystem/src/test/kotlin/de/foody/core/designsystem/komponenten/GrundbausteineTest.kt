@@ -7,21 +7,32 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.ShoppingBag
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.MitSchrift200
+import de.foody.core.designsystem.glas.FoodyHintergrund
+import de.foody.core.designsystem.glas.GlasModusKey
 import de.foody.core.designsystem.pruefeNichtsAbgeschnitten
+import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.StilVariante
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -111,6 +122,26 @@ class GrundbausteineTest {
         }
         compose.onNodeWithText("Einkauf", useUnmergedTree = true).performClick()
         assertEquals(3, gewaehlt)
+    }
+
+    /** Anime: Die Leiste ist deckend weiß, nicht Glas über dem rosa Punktmuster (Immersiv und Ruhig). */
+    @Test
+    fun animeLeisteDeckendWeiss() {
+        var variante by mutableStateOf(StilVariante.IMMERSIV)
+        compose.setContent {
+            FoodyTheme(stil = FoodyStil.ANIME, variante = variante, unschaerfe = true) {
+                FoodyHintergrund { FoodyNavigationsleiste(ziele, aktiv = 0, onWahl = {}) }
+            }
+        }
+        for (v in StilVariante.entries) {
+            variante = v
+            compose.waitForIdle()
+            // Über dem Symbol des zweiten Ziels, unter der Kante: dort liegt nur die Fläche der Leiste
+            val leiste = compose.onNode(SemanticsMatcher.keyIsDefined(GlasModusKey), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+            val x = leiste.left + leiste.width * 3 / 8
+            val y = leiste.top + with(compose.density) { 5.dp.toPx() }
+            assertEquals(Color.White, compose.onRoot().captureToImage().toPixelMap()[x.toInt(), y.toInt()], v.name)
+        }
     }
 
     @Test

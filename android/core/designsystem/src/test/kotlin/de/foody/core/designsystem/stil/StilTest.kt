@@ -1,5 +1,6 @@
 package de.foody.core.designsystem.stil
 
+import androidx.compose.ui.graphics.Color
 import de.foody.core.designsystem.token.Flaechenart
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.FoodyTypografie
@@ -65,6 +66,18 @@ class StilTest {
             assertEquals(Flaechenart.DECKEND, stilWerte(stil).flaeche)
             assertEquals(Hintergrundmuster.KEINS, stilWerte(stil, StilVariante.RUHIG).muster)
             assertNull(stilWerte(stil, StilVariante.RUHIG).schatten)
+        }
+    }
+
+    @Test
+    fun leisteNurBeiAnimeWeiss() {
+        for (stil in FoodyStil.entries) {
+            for (variante in StilVariante.entries) {
+                for (dunkel in listOf(false, true)) {
+                    val erwartet = if (stil == FoodyStil.ANIME) Color.White else null
+                    assertEquals(erwartet, stilWerte(stil, variante, dunkel = dunkel).leiste, "$stil $variante dunkel=$dunkel")
+                }
+            }
         }
     }
 
