@@ -50,7 +50,7 @@ import kotlin.test.assertTrue
 /**
  * Die Einkaufs-Szenen der Stile R–V in Immersiv: Titel für TalkBack „Einkauf“, Antippen hakt ab, Langdruck öffnet
  * die Details; bei 200 % Schrift wird nichts abgeschnitten. In Q–V führt nur der Knopf „Listen“ zu den Listen (kein
- * Menü ⋮), dort steht auch „Liste löschen“; Milchglas behält das Menü.
+ * Menü ⋮), dort steht im Kopf auch „Aktuelle Liste löschen“; Milchglas behält das Menü.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -172,13 +172,13 @@ class EinkaufStileTest {
         compose.onNodeWithContentDescription("Einkaufslisten").assertDoesNotExist()
     }
 
-    /** „Liste löschen“ auf der Listen-Seite fragt nach; nach dem Löschen ist die Liste weg und die Seite zu. */
+    /** Der Papierkorb im Kopf der Listen-Seite fragt nach; nach dem Löschen ist die Liste weg und die Seite zu. */
     @Test
     fun loeschenAufListenSeite() {
         val vm = zeigen(FoodyStil.ANIME)
         compose.onNodeWithContentDescription("Einkaufslisten").performClick()
         compose.waitUntil(5_000) { listenSeiteDa() }
-        compose.onNodeWithText("Liste löschen").performClick()
+        compose.onNodeWithContentDescription("Aktuelle Liste löschen").performClick()
         compose.warteAufText("Liste löschen?")
         compose.onNodeWithText("Löschen").performClick()
         compose.waitUntil(5_000) { runBlocking { db.einkaufslisteDao().alle() }.isEmpty() }

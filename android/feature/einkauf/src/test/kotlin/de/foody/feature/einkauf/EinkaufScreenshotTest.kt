@@ -171,7 +171,7 @@ class EinkaufScreenshotTest {
         }
     }
 
-    /** Düstere Sage, Immersiv: „Listen des Händlers“ (frühere Listen) auf der Listen-Seite, unten „Liste löschen“. */
+    /** Düstere Sage, Immersiv: „Listen des Händlers“ (frühere Listen) auf der Listen-Seite, im Kopf der Papierkorb. */
     @Test
     @Config(qualifiers = "w411dp-h891dp")
     fun sageListenHandy() = blatt("sage_listen_handy", dunkel = false, warteAuf = "Listen des Händlers", stil = FoodyStil.SAGE) { fruehereZeigen() }

@@ -31,7 +31,7 @@ import kotlin.test.assertTrue
 
 /**
  * Listen in den Stilen Q–V wie in den Entwürfen: eine eigene Seite „Einkaufslisten“ mit den Reitern „Neue Liste ·
- * Abgleich · Frühere“ statt drei Blättern, unten „Liste löschen“ für die aktuelle Liste; Milchglas behält die Blätter.
+ * Abgleich · Frühere“ statt drei Blättern, im Kopf „Aktuelle Liste löschen“; Milchglas behält die Blätter.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -88,7 +88,10 @@ class ListenSeiteTest {
         }
     }
 
-    /** „Listen“ öffnet die Seite auf „Neue Liste“; die Reiter wechseln zu „Abgleich“ und „Frühere“; Zurück schließt. */
+    /**
+     * „Listen“ öffnet die Seite auf „Neue Liste“; die Reiter wechseln zu „Abgleich“ und „Frühere“, der Papierkorb für die
+     * aktuelle Liste steht auf jedem im Kopf; Zurück schließt.
+     */
     private fun reiterWechseln(stil: FoodyStil, variante: StilVariante = StilVariante.IMMERSIV) {
         planListe()
         val vm = zeigen(stil, variante)
@@ -96,11 +99,14 @@ class ListenSeiteTest {
         compose.waitUntil(5_000) { seiteDa() }
         reiter("Neue Liste").assertIsSelected()
         compose.waitUntil(5_000) { compose.onAllNodes(hasContentDescription("Zwiebeln übernehmen")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("Aktuelle Liste löschen").assertExists()
         reiter("Abgleich").performClick()
         reiter("Abgleich").assertIsSelected()
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("Die Liste passt zum", substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("Aktuelle Liste löschen").assertExists()
         reiter("Frühere Listen").performClick()
         reiter("Frühere Listen").assertIsSelected()
+        compose.onNodeWithContentDescription("Aktuelle Liste löschen").assertExists()
         compose.onNodeWithContentDescription("Zurück").performClick()
         compose.waitUntil(5_000) { !seiteDa() }
         assertEquals(null, vm.blatt.value)
@@ -151,7 +157,7 @@ class ListenSeiteTest {
         assertEquals(listOf("alt"), geoeffnet)
     }
 
-    /** „Liste löschen“ steht nur mit einer aktuellen Liste unten auf der Seite und ruft [ListenSeite]s `onLoeschen`. */
+    /** Der Papierkorb „Aktuelle Liste löschen“ steht nur mit einer aktuellen Liste im Kopf und ruft `onLoeschen`. */
     @Test
     fun loeschenNurMitListe() {
         var mitListe by mutableStateOf(false)
@@ -162,20 +168,20 @@ class ListenSeiteTest {
             }
         }
         compose.waitUntil(5_000) { seiteDa() }
-        compose.onNodeWithText("Liste löschen").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Aktuelle Liste löschen").assertDoesNotExist()
         mitListe = true
-        compose.onNodeWithText("Liste löschen").performClick()
+        compose.onNodeWithContentDescription("Aktuelle Liste löschen").performClick()
         assertEquals(1, geloescht)
     }
 
-    /** Leerer Einkauf (keine Liste): „Listen“ öffnet die Seite ohne „Liste löschen“. */
+    /** Leerer Einkauf (keine Liste): „Listen“ öffnet die Seite ohne „Aktuelle Liste löschen“. */
     @Test
     fun ohneListeKeinLoeschen() {
         zeigen(FoodyStil.ANIME)
         listenOeffnen()
         compose.waitUntil(5_000) { seiteDa() }
         compose.waitForIdle()
-        compose.onNodeWithText("Liste löschen").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Aktuelle Liste löschen").assertDoesNotExist()
     }
 
     /** Milchglas hat keinen Entwurf: „Frühere Listen“ bleibt ein Blatt, keine Seite. */
