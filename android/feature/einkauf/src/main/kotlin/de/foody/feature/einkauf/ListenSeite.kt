@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,6 +17,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.Reiterleiste
+import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.stil.stilText
@@ -28,10 +31,19 @@ internal val LISTEN_REITER: List<Blatt> = listOf(Blatt.Vorschau, Blatt.Abgleich,
  * Listen wie in den Entwürfen der Stile Q–V: eine eigene Seite mit Zurück und den Reitern „Neue Liste · Abgleich ·
  * Frühere“ (Edo, Bayrisch, Grauen, Kreuzer „Vorschau“ statt „Neue Liste“). [inhalt] ist das jeweilige Blatt
  * ([VorschauBlatt], [AbgleichBlatt], [FruehereBlatt]), das hier ohne Blatt und Titel erscheint. Ohne Zeitraum (Liste
- * nicht aus dem Plan) erklärt der Reiter „Abgleich“, warum es nichts abzugleichen gibt.
+ * nicht aus dem Plan) erklärt der Reiter „Abgleich“, warum es nichts abzugleichen gibt. Mit [onLoeschen] (es gibt eine
+ * aktuelle Liste) steht rechts im Kopf, auf jedem Reiter, der Papierkorb „Aktuelle Liste löschen“; ein Menü ⋮ wie bei
+ * Milchglas gibt es in Q–V nicht.
  */
 @Composable
-internal fun ListenSeite(blatt: Blatt, mitZeitraum: Boolean, onReiter: (Blatt) -> Unit, onZurueck: () -> Unit, inhalt: @Composable () -> Unit) {
+internal fun ListenSeite(
+    blatt: Blatt,
+    mitZeitraum: Boolean,
+    onReiter: (Blatt) -> Unit,
+    onZurueck: () -> Unit,
+    onLoeschen: (() -> Unit)?,
+    inhalt: @Composable () -> Unit,
+) {
     BackHandler(onBack = onZurueck)
     val immersiv = FoodyTheme.stil.variante == StilVariante.IMMERSIV
     // Grauen und Kreuzer: Überzeile wie im Entwurf (Immersiv)
@@ -49,7 +61,9 @@ internal fun ListenSeite(blatt: Blatt, mitZeitraum: Boolean, onReiter: (Blatt) -
                 ueberzeile = ueberzeile,
                 onZurueck = onZurueck,
                 beschreibung = "Einkaufslisten",
-            )
+            ) {
+                if (onLoeschen != null) RunderKnopf(Icons.Outlined.Delete, "Aktuelle Liste löschen", onLoeschen)
+            }
             val vorschau = stilText("Neue Liste", edo = "Vorschau", bayrisch = "Vorschau", grauen = "Vorschau", kreuzer = "Vorschau")
             Reiterleiste(
                 listOf(vorschau, "Abgleich", "Frühere"),

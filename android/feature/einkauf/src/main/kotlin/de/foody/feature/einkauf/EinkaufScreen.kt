@@ -74,19 +74,19 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
     val blatt by vm.blatt.collectAsStateWithLifecycle()
     val seitenBlatt = blatt.takeIf { FoodyTheme.stil.stil != FoodyStil.MILCHGLAS && it in LISTEN_REITER }
 
-    // Immersiv: Kopf und Posten als Szene des Stils (Sage „Der Händler“, R–V), sonst die normale Ansicht
+    // Immersiv: Kopf und Posten als Szene des Stils (Sage „Der Händler“, R–V), sonst die normale Ansicht. Der Knopf
+    // „Listen“ der Szenen ist der einzige Weg zu den Listen (erster Reiter „Neue Liste“); nur ohne Szene das Menü ⋮.
     val szene = EinkaufSzene.aktuell()
-    val onListen: () -> Unit = { vm.blattOeffnen(Blatt.Frueher) }
-    val menue = @Composable { EinkaufMenue(z.ansicht, vm::blattOeffnen) { loeschenFrage = true } }
+    val onListen: () -> Unit = { vm.blattOeffnen(Blatt.Vorschau) }
     val oben: LazyGridScope.() -> Unit = {
         when (szene) {
-            FoodyStil.SAGE -> haendlerKopf(z.ansicht, onListen, menue)
-            FoodyStil.ANIME -> animeKopf(z.ansicht, onListen, menue)
-            FoodyStil.EDO -> edoKopf(z.ansicht, onListen, menue)
-            FoodyStil.BAYRISCH -> bayrischKopf(z.ansicht, onListen, menue)
-            FoodyStil.GRAUEN -> grauenKopf(z.ansicht, onListen, menue)
-            FoodyStil.KREUZER -> kreuzerKopf(z.ansicht, onListen, menue)
-            else -> ganz("kopf") { EinkaufKopf(z.ansicht) { menue() } }
+            FoodyStil.SAGE -> haendlerKopf(z.ansicht, onListen)
+            FoodyStil.ANIME -> animeKopf(z.ansicht, onListen)
+            FoodyStil.EDO -> edoKopf(z.ansicht, onListen)
+            FoodyStil.BAYRISCH -> bayrischKopf(z.ansicht, onListen)
+            FoodyStil.GRAUEN -> grauenKopf(z.ansicht, onListen)
+            FoodyStil.KREUZER -> kreuzerKopf(z.ansicht, onListen)
+            else -> ganz("kopf") { EinkaufKopf(z.ansicht) { EinkaufMenue(z.ansicht, vm::blattOeffnen) { loeschenFrage = true } } }
         }
         if (z.abgleich.isNotEmpty()) ganz("hinweis") { AbgleichHinweis { vm.blattOeffnen(Blatt.Abgleich) } }
         ganz("eingabe") { EingabeFeld(z.suche, vm::suche, vm::eingeben) }
@@ -122,7 +122,10 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
         val breit = maxWidth >= FoodyBreiten.zweispaltig
         val raster = Modifier.widthIn(max = FoodyBreiten.zweiBereiche).fillMaxSize()
         when {
-            seitenBlatt != null -> ListenSeite(seitenBlatt, z.ansicht?.von != null, vm::blattOeffnen, vm::blattSchliessen) {
+            seitenBlatt != null -> ListenSeite(
+                seitenBlatt, z.ansicht?.von != null, vm::blattOeffnen, vm::blattSchliessen,
+                onLoeschen = if (z.ansicht != null) ({ loeschenFrage = true }) else null,
+            ) {
                 EinkaufBlaetter(vm, z, snackbar, onListe)
             }
             z.listeFehlt -> LeererZustandFlaeche(
@@ -141,8 +144,9 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = ueberLeiste(LISTE_UNTEN)))
     }
     if (seitenBlatt == null) EinkaufBlaetter(vm, z, snackbar, onListe)
+    // Aus dem Menü ⋮ (Milchglas) oder von der Listen-Seite (Q–V); die Seite schließt nach dem Löschen
     z.ansicht?.takeIf { loeschenFrage }?.let { a ->
-        LoeschenFrage(a.name, onLoeschen = { loeschenFrage = false; vm.listeLoeschen() }, onAbbrechen = { loeschenFrage = false })
+        LoeschenFrage(a.name, onLoeschen = { loeschenFrage = false; vm.listeLoeschen(); vm.blattSchliessen() }, onAbbrechen = { loeschenFrage = false })
     }
 }
 

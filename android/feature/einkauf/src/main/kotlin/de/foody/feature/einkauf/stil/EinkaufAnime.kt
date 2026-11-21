@@ -58,8 +58,8 @@ import kotlin.math.min
  * „Listen ▸“, darunter der XP-Balken (erledigt/gesamt). Jede Abteilung ist eine weiße Karte mit hartem Schatten und
  * farbigem Abzeichen, darin die Posten zu zweit; gekaufte sind blass, durchgestrichen und tragen ein „GET!“.
  */
-internal fun LazyGridScope.animeKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
-    ganzeBreite("anime-kopf") { Kopf(ansicht, onListen, menue) }
+internal fun LazyGridScope.animeKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit) {
+    ganzeBreite("anime-kopf") { Kopf(ansicht, onListen) }
 }
 
 internal fun LazyGridScope.animePosten(ansicht: EinkaufsAnsicht?, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {
@@ -75,7 +75,7 @@ private val GEKAUFT_GRUND = Color(0xFFF2EEF4)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Composable () -> Unit) {
+private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit) {
     val f = FoodyTheme.farben
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -90,8 +90,7 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit, menue: @Compos
                 color = f.text,
             )
             Row(Modifier.align(Alignment.CenterVertically), verticalAlignment = Alignment.CenterVertically) {
-                AnimeKnopf("Listen ▸", onListen, beschreibung = "Frühere Listen", voll = false)
-                menue()
+                AnimeKnopf("Listen ▸", onListen, beschreibung = "Einkaufslisten", voll = false)
             }
         }
         val gesamt = ansicht.gesamt

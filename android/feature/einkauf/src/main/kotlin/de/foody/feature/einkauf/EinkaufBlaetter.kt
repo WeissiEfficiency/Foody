@@ -26,7 +26,10 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.RunderKnopf
 import kotlinx.coroutines.launch
 
-/** Menü ⋮ im Kopf: neue Liste, abgleichen (nur mit Zeitraum), frühere Listen, Liste löschen. */
+/**
+ * Menü ⋮ im Kopf der normalen Ansicht (Milchglas): neue Liste, abgleichen (nur mit Zeitraum), frühere Listen, Liste
+ * löschen. Die Szenen Q–V haben dafür nur den Knopf „Listen“ und die [ListenSeite].
+ */
 @Composable
 internal fun EinkaufMenue(ansicht: EinkaufsAnsicht?, onBlatt: (Blatt) -> Unit, onLoeschen: () -> Unit) {
     var offen by remember { mutableStateOf(false) }
