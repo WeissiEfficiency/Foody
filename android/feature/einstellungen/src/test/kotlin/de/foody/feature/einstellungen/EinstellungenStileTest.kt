@@ -22,8 +22,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.size
+import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.TAGESZIEL_MAX
 import de.foody.core.data.TAGESZIEL_MIN
@@ -45,7 +47,8 @@ import kotlin.test.assertEquals
  * Einstellungen der Stile R–V in Immersiv wie in den Entwürfen: Überschriften mit Stilwort (TalkBack liest das
  * normale Wort), Schalter-Zeilen, Tagesziel mit − und + und Feld, Varianten-Leiste und Farbmuster als Optionsfelder,
  * Abgleich öffnet „Server verbinden“; bei 200 % Schrift wird nichts abgeschnitten. Die Kacheln der Stilwahl behalten
- * beim Wechsel des Stils ihre Größe.
+ * beim Wechsel des Stils ihre Größe und stehen in jedem Stil in denselben Spalten und Reihen, auch auf einem schmalen
+ * Handy mit großer Schrift und auf dem Tablet.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -57,8 +60,9 @@ class EinstellungenStileTest {
     private lateinit var u: EinstellungenTestUmgebung
     private var server = 0
 
-    /** Stil des Themes; [wechseln] stellt ihn um, ohne den Inhalt neu zu setzen. */
+    /** Stil und Variante des Themes; [wechseln] stellt sie um, ohne den Inhalt neu zu setzen. */
     private var themaStil by mutableStateOf(FoodyStil.MILCHGLAS)
+    private var themaVariante by mutableStateOf(StilVariante.IMMERSIV)
 
     @Before
     fun setUp() {
@@ -77,8 +81,9 @@ class EinstellungenStileTest {
         u.verbinden()
         val vm = u.vm()
         themaStil = stil
+        themaVariante = variante
         compose.setContent {
-            FoodyTheme(stil = themaStil, variante = variante, unschaerfe = false) {
+            FoodyTheme(stil = themaStil, variante = themaVariante, unschaerfe = false) {
                 MitSchrift(schrift) { EinstellungenRoute(onServer = { server++ }, onZutaten = {}, onZurueck = {}, vm = vm, dateiwahl = keineDateien) }
             }
         }
@@ -171,10 +176,12 @@ class EinstellungenStileTest {
 
     @Test fun milchglasAbgleichOben() = abgleichUnten(FoodyStil.MILCHGLAS, unten = false)
 
-    /** Wie ein Tipp auf die Kachel: Speicher und Theme zeigen danach [stil]. */
-    private fun wechseln(stil: FoodyStil) {
+    /** Wie ein Tipp auf die Kachel (und auf die [variante]): Speicher und Theme zeigen danach [stil]. */
+    private fun wechseln(stil: FoodyStil, variante: StilVariante = themaVariante) {
         u.darstellung.stilSetzen(stil.name)
+        u.darstellung.stilVarianteSetzen(variante.name)
         themaStil = stil
+        themaVariante = variante
         compose.waitForIdle()
     }
 
@@ -220,6 +227,62 @@ class EinstellungenStileTest {
         val groessen = FoodyStil.entries.associate { it.anzeigename to groesse(it.anzeigename) }
         assertEquals(1, groessen.values.toSet().size, "Größen: $groessen")
         compose.onNodeWithText(FoodyStil.GRAUEN.anzeigename).performScrollTo().assertIsDisplayed()
+    }
+
+    /** Platz einer Kachel der Stilwahl: Abstand nach links zu „Milchglas“, Breite und Reihe (0 = erste). */
+    private data class Platz(val links: Dp, val breite: Dp, val reihe: Int)
+
+    /**
+     * Platz jeder Kachel; prüft dabei, dass alle sieben gleich groß sind (auch die letzte einer Reihe hat volle Breite).
+     * Die Höhe steht nicht im Platz: Sie folgt der Schrift des Stils, nicht der Breite.
+     */
+    private fun raster(stil: FoodyStil, variante: StilVariante): List<Platz> {
+        val erste = kachel("Milchglas").performScrollTo().getUnclippedBoundsInRoot()
+        val grenzen = FoodyStil.entries.map { kachel(it.anzeigename).getUnclippedBoundsInRoot() }
+        assertEquals(1, grenzen.map { it.size }.toSet().size, "$stil $variante Größen: $grenzen")
+        val reihen = grenzen.map { it.top }.distinct().sorted()
+        return grenzen.map { Platz(it.left - erste.left, it.width, reihen.indexOf(it.top)) }
+    }
+
+    /**
+     * Die Wahl liegt je Stil in einer anderen Karte: Milchglas, Sage und Ruhig mit 16 dp Innenabstand, Anime und
+     * Bayrisch mit 14 dp, Edo, Grauen und Kreuzer ohne Karte. In jedem Stil und jeder Variante stehen die Kacheln
+     * trotzdem in denselben Spalten und Reihen und sind gleich breit. Gibt das Raster zurück.
+     */
+    private fun rasterUeberallGleich(schrift: Float): List<Platz> {
+        zeigen(FoodyStil.MILCHGLAS, schrift)
+        val bezug = raster(FoodyStil.MILCHGLAS, StilVariante.IMMERSIV)
+        val abweichend = FoodyStil.entries.flatMap { stil -> StilVariante.entries.map { stil to it } }.mapNotNull { (stil, variante) ->
+            wechseln(stil, variante)
+            raster(stil, variante).takeIf { it != bezug }?.let { "$stil $variante: $it" }
+        }
+        assertEquals(emptyList<String>(), abweichend, "Bezug Milchglas: $bezug")
+        return bezug
+    }
+
+    /** Schmales Handy mit 130 % Schrift: Ohne Karte passten drei Kacheln in die Reihe, in der Glaskarte nur zwei. */
+    @Test
+    @Config(qualifiers = "w360dp-h1600dp")
+    fun kachelnSchmalMitGrosserSchrift() {
+        rasterUeberallGleich(1.3f)
+    }
+
+    /** Schmales Handy mit 200 % Schrift: eine Kachel je Reihe, auch ohne Karte. */
+    @Test
+    @Config(qualifiers = "w360dp-h1600dp")
+    fun kachelnSchmalMitSchrift200() {
+        rasterUeberallGleich(2f)
+    }
+
+    /**
+     * Tablet: Die Kacheln nutzen die Breite der Karte. In 656 dp (720 dp Lesebreite ohne Seitenrand und Innenabstand der
+     * Glaskarte) passen sechs Kacheln zu 88 dp mit 8 dp Abstand in die erste Reihe.
+     */
+    @Test
+    @Config(qualifiers = "w1280dp-h1600dp")
+    fun kachelnAufDemTablet() {
+        val raster = rasterUeberallGleich(1f)
+        assertEquals(6, raster.count { it.reihe == 0 }, "Kacheln in der ersten Reihe: $raster")
     }
 
     @Test

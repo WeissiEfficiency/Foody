@@ -2,6 +2,7 @@ package de.foody.feature.einstellungen
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -28,6 +29,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.Darstellung
 import de.foody.core.data.TAGESZIEL_MAX
@@ -47,6 +49,12 @@ import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.Farbwelt
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
+
+/**
+ * Innenabstand der Glasfläche eines [Abschnitt]s, der größte aller Stile: Die Karten von Anime und Bayrisch
+ * ([StilRahmen]) haben 14 dp, Edo, Grauen und Kreuzer legen Darstellung ohne Karte auf die Seite.
+ */
+private val GLAS_INNEN = FoodyAbstaende.s4
 
 /**
  * Ein Abschnitt der Seite: Glasfläche mit Augenbraue. In den Stilen R–V (Immersiv) der Rahmen des Stils ([StilRahmen])
@@ -72,7 +80,7 @@ internal fun Abschnitt(
         return
     }
     GlasFlaeche(GlasStufe.DICHT, Modifier.fillMaxWidth(), form = FoodyTheme.formen.gross) {
-        Column(Modifier.fillMaxWidth().padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
+        Column(Modifier.fillMaxWidth().padding(GLAS_INNEN), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
             Augenbraue(wort, if (wort != titel) Modifier.semantics { contentDescription = titel } else Modifier)
             inhalt()
         }
@@ -158,10 +166,28 @@ internal fun KontoAbschnitt(konto: VerbindungsZustand?, jetzt: Long, onServer: (
 /**
  * Darstellung: zuerst der Stil. Bei Milchglas folgen Farbwelt und Modus wie bisher; bei einem anderen Stil die
  * Variante und dessen vier Akzente. Den Modus gibt es dort nicht, weil jeder Stil einen festen Grund hat.
+ *
+ * Die Kacheln von Stil und Farbe teilen sich die Breite der schmalsten Karte aller Stile (Seitenbreite ohne
+ * [GLAS_INNEN]), nicht die der Karte des Stils: So stehen bei gleicher Fensterbreite und Schrift in jedem Stil gleich
+ * viele in einer Reihe, auch ab 840 dp, wo die Seite schmaler als das Fenster ist.
  */
 @Composable
 internal fun DarstellungAbschnitt(
     z: EinstellungenZustand,
+    onWahl: (Darstellung) -> Unit,
+    onFarbwelt: (Farbwelt) -> Unit,
+    onStil: (FoodyStil) -> Unit,
+    onVariante: (StilVariante) -> Unit,
+    onAkzent: (StilAkzent) -> Unit,
+) = BoxWithConstraints(Modifier.fillMaxWidth()) {
+    DarstellungInhalt(z, maxWidth - GLAS_INNEN * 2, onWahl, onFarbwelt, onStil, onVariante, onAkzent)
+}
+
+/** Inhalt von [DarstellungAbschnitt]; [rasterBreite] ist die Breite für die Kacheln von Stil und Farbe. */
+@Composable
+private fun DarstellungInhalt(
+    z: EinstellungenZustand,
+    rasterBreite: Dp,
     onWahl: (Darstellung) -> Unit,
     onFarbwelt: (Farbwelt) -> Unit,
     onStil: (FoodyStil) -> Unit,
@@ -172,7 +198,7 @@ internal fun DarstellungAbschnitt(
 ) {
     if (zeilenImStil()) {
         Unterkopf("Stil")
-        StilWahl(z.stil, z.variante, onStil)
+        StilWahl(z.stil, z.variante, rasterBreite, onStil)
         Unterkopf("Variante")
         Segmente(StilVariante.entries.map { it to it.anzeigename }, z.variante, onVariante)
         Klein("Mit Muster, Verlauf und kräftigen Kanten.")
@@ -183,7 +209,7 @@ internal fun DarstellungAbschnitt(
         return@Abschnitt
     }
     Text("Stil", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text)
-    StilWahl(z.stil, z.variante, onStil)
+    StilWahl(z.stil, z.variante, rasterBreite, onStil)
     val akzent = z.stil.akzent(z.akzent)
     if (akzent == null) {
         Text("Farbe", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text, modifier = Modifier.padding(top = FoodyAbstaende.s1))
@@ -208,7 +234,7 @@ internal fun DarstellungAbschnitt(
             },
         )
         Text("Farbe", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text, modifier = Modifier.padding(top = FoodyAbstaende.s1))
-        AkzentWahl(z.stil, akzent, onAkzent)
+        AkzentWahl(z.stil, akzent, rasterBreite, onAkzent)
     }
 }
 
