@@ -1,8 +1,5 @@
 package de.foody.feature.heute
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -42,7 +39,6 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -63,9 +59,6 @@ class HeuteScreenTest {
 
     /** Was „Eintragen“ geöffnet hätte (in der App: die Seite Eintragen). */
     private val eintragen = mutableListOf<EintragenStart>()
-
-    /** Offene Anfrage eines Widgets; „Heute“ nimmt sie an und setzt sie zurück. */
-    private var anfrage by mutableStateOf<Schnellstart?>(null)
 
     @Before
     fun setUp() {
@@ -95,7 +88,6 @@ class HeuteScreenTest {
                     HeuteRoute(
                         onKochen = { id, p -> gekocht = id to p }, onRezept = {}, onEinkauf = {}, onAlleEintraege = {},
                         onEinstellungen = { einstellungen++ }, onEintragen = { eintragen += it }, vm = vm,
-                        schnellstart = anfrage, onSchnellstartAngenommen = { anfrage = null },
                     )
                 }
                 if (schrift200) MitSchrift200(inhalt) else inhalt()
@@ -207,23 +199,6 @@ class HeuteScreenTest {
         compose.warteAufText("Noch kein Snack")
         compose.onAllNodesWithText("Eintragen")[2].performScrollTo().performClick()
         compose.runOnIdle { assertEquals(listOf(EintragenStart(heute, Mahlzeit.SNACK)), eintragen) }
-    }
-
-    /** Widgets: „Scannen“ und „KI-Foto“ öffnen Eintragen gleich mit Scanner bzw. Kamera, „Schnell eintragen“ mit Erfassen. */
-    @Test
-    fun schnellstartOeffnetEintragen() {
-        zeigen()
-        for ((art, sofort) in listOf(Schnellstart.Art.SCANNEN to SofortStart.SCANNEN, Schnellstart.Art.FOTO to SofortStart.FOTO, Schnellstart.Art.EINTRAGEN to null)) {
-            compose.runOnIdle { anfrage = Schnellstart(art, "widget-$art") }
-            compose.waitForIdle()
-            compose.runOnIdle {
-                assertNull(anfrage, "angenommen")
-                val start = eintragen.last()
-                assertEquals(sofort, start.sofort, "$art")
-                assertNull(start.mahlzeit, "nach Uhrzeit")
-            }
-        }
-        compose.runOnIdle { assertEquals(3, eintragen.size) }
     }
 
     /**

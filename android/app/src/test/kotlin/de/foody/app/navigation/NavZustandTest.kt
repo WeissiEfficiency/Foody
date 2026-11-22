@@ -37,7 +37,7 @@ class NavZustandTest {
     private var breite by mutableStateOf(411.dp)
 
     /** „Heute“ mit einem Zähler in `rememberSaveable`, sonst die Platzhalter. */
-    private val bildschirme = Bildschirme.platzhalter.mitHeute { _, _, _ ->
+    private val bildschirme = Bildschirme.platzhalter.mitHeute {
         var n by rememberSaveable { mutableStateOf(0) }
         Button(onClick = { n++ }) { Text("Gezählt: $n") }
     }
