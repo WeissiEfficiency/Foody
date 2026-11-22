@@ -50,6 +50,9 @@ object Platzhalter {
     /** Knopf im Heute-Platzhalter: öffnet Eintragen für einen Snack am [TAG], wie die leere Zeile in „Heute“. */
     const val SNACK_EINTRAGEN = "Snack eintragen"
 
+    /** Knopf im Eintragen-Platzhalter: meldet zweimal hintereinander fertig (wie Speichern und Zurück fast zugleich). */
+    const val ZWEIMAL_FERTIG = "Zweimal fertig"
+
     val TAG: LocalDate = LocalDate.of(2026, 10, 24)
 }
 
@@ -70,7 +73,16 @@ val Bildschirme.Companion.platzhalter: Bildschirme
             )
         },
         tagebuch = { datum, _ -> Platzhalter("Tagebuch", "Tagebuch $datum") },
-        eintragen = { ziel, _ -> Platzhalter("Eintragen", "Eintragen ${ziel.datum} ${ziel.mahlzeit}" + ziel.sofort?.let { " $it" }.orEmpty()) },
+        eintragen = { ziel, onFertig ->
+            Platzhalter(
+                "Eintragen", "Eintragen ${ziel.datum} ${ziel.mahlzeit}" + ziel.sofort?.let { " $it" }.orEmpty(),
+                aktionText = Platzhalter.ZWEIMAL_FERTIG,
+                onAktion = {
+                    onFertig()
+                    onFertig()
+                },
+            )
+        },
         einstellungen = { Platzhalter("Einstellungen") },
         serverVerbinden = { Platzhalter("Server verbinden") },
         zutaten = { Platzhalter("Zutatenkatalog") },

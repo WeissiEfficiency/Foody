@@ -255,6 +255,22 @@ class NavigationTest {
         compose.onNodeWithTag(Hauptgeruest.LEISTE).assertExists()
     }
 
+    /** Meldet Eintragen zweimal fertig, schließt es nur sich selbst: „Heute“ bleibt, genau einmal auf dem Stapel. */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun eintragenSchliesstNurEinmal() {
+        starten()
+        compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).performClick()
+        compose.onNodeWithText("Eintragen ${Platzhalter.TAG} SNACK").assertExists()
+        compose.onNodeWithText(Platzhalter.ZWEIMAL_FERTIG).performClick()
+        compose.runOnIdle {
+            assertTrue(nav.currentBackStackEntry?.destination?.hasRoute<Heute>() == true, "jetzt: ${nav.currentBackStackEntry?.destination}")
+            // Unter „Heute“ liegt kein weiteres Ziel (nur der Graph): „Heute“ ist genau einmal da
+            assertNull(nav.previousBackStackEntry)
+        }
+        compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).assertExists()
+    }
+
     @Test
     fun eintragenZielRundreise() {
         val heute = LocalDate.of(2026, 11, 22)

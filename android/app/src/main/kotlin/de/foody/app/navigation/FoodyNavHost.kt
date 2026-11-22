@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -34,8 +35,8 @@ class Bildschirme(
     /** „Heute“; dazu die offene Anfrage eines Widgets (`null` = keine) und der Rückruf, wenn sie angenommen ist. */
     val heute: @Composable (NavHostController, Schnellstart?, () -> Unit) -> Unit,
     val tagebuch: @Composable (LocalDate, NavHostController) -> Unit,
-    /** Eintragen mit seinem Ziel (Datum, Mahlzeit, Sofort-Start, Auftrag). */
-    val eintragen: @Composable (Eintragen, NavHostController) -> Unit,
+    /** Eintragen mit seinem Ziel (Datum, Mahlzeit, Sofort-Start, Auftrag); `onFertig` schließt die Seite (einmal). */
+    val eintragen: @Composable (Eintragen, onFertig: () -> Unit) -> Unit,
     val einstellungen: @Composable (NavHostController) -> Unit,
     val serverVerbinden: @Composable (NavHostController) -> Unit,
     val zutaten: @Composable (NavHostController) -> Unit,
@@ -75,7 +76,7 @@ class Bildschirme(
                 )
             },
             // Speichern und Zurück aus Erfassen führen dorthin, woher man kam
-            eintragen = { ziel, nav -> EintragenRoute(ziel.alsStart(LocalDate.now()), ziel.auftrag, onFertig = { nav.popBackStack() }) },
+            eintragen = { ziel, onFertig -> EintragenRoute(ziel.alsStart(LocalDate.now()), ziel.auftrag, onFertig = onFertig) },
             einstellungen = { nav ->
                 EinstellungenRoute(
                     onServer = { nav.navigate(ServerVerbinden) }, onZutaten = { nav.navigate(Zutaten) }, onZurueck = { nav.popBackStack() },
@@ -197,7 +198,11 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
         composable<TagebuchTag>(deepLinks = listOf(navDeepLink<TagebuchTag>(basePath = "${SCHEMA}tagebuch"))) {
             bildschirme.tagebuch(tagebuchDatum(it.toRoute<TagebuchTag>().datum, LocalDate.now()), nav)
         }
-        composable<Eintragen> { bildschirme.eintragen(it.toRoute<Eintragen>(), nav) }
+        composable<Eintragen> {
+            // Nur solange die Seite vorne ist: Ein zweites „fertig“ (etwa Speichern und Zurück fast zugleich) räumt nicht
+            // auch noch „Heute“ ab
+            bildschirme.eintragen(it.toRoute<Eintragen>(), dropUnlessResumed { nav.popBackStack() })
+        }
     }
 }
 
