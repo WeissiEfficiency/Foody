@@ -149,7 +149,7 @@ const val EINTRAGEN_LINK = "${SCHEMA}eintragen"
  * die Links der Widgets ([WidgetStart]), die [widgetStartOeffnen] behandelt (bei laufender App über [deepLinkOeffnen]).
  *
  * Eintragen mit Sofort-Start kommt ohne Übergang, damit „Heute“ nicht aufblitzt, bevor Kamera bzw. Scanner aufgehen;
- * es geht ohne Ausblenden (darunter blendet „Heute“ wie gewohnt ein).
+ * geschlossen wird es wie jede Seite (Abbrechen wie Speichern).
  */
 @Composable
 fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Modifier = Modifier) {
@@ -182,10 +182,7 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
         composable<TagebuchTag>(deepLinks = listOf(navDeepLink<TagebuchTag>(basePath = "${SCHEMA}tagebuch"))) {
             bildschirme.tagebuch(tagebuchDatum(it.toRoute<TagebuchTag>().datum, LocalDate.now()), nav)
         }
-        composable<Eintragen>(
-            enterTransition = { if (targetState.istSofortZiel()) EnterTransition.None else null },
-            popExitTransition = { if (initialState.istSofortZiel()) ExitTransition.None else null },
-        ) { eintrag ->
+        composable<Eintragen>(enterTransition = { if (targetState.istSofortZiel()) EnterTransition.None else null }) { eintrag ->
             // Nur solange diese Seite oben auf dem Stapel liegt (er ändert sich sofort): Ein zweites „fertig“ (etwa Speichern
             // und Zurück fast zugleich) räumt nicht auch noch „Heute“ ab. Nicht an RESUMED gebunden: Nach einem
             // abgebrochenen Sofort-Scan liegt die Scanner-Activity noch obenauf, in der Einblendung ist die Seite erst STARTED.

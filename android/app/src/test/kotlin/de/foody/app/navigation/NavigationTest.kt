@@ -1,8 +1,12 @@
 package de.foody.app.navigation
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -259,8 +263,9 @@ class NavigationTest {
     }
 
     /**
-     * Eintragen mit Sofort-Start (Widgets, „Scannen“ und „Foto“ in den Szenen) kommt ohne Überblendung: „Heute“ ist
-     * gleich weg, Kamera bzw. Scanner gehen über der leeren Seite auf. Ohne Sofort-Start blendet Eintragen wie gewohnt.
+     * Eintragen mit Sofort-Start (Widgets, „Scannen“ und „Foto“ in den Szenen) öffnet ohne Überblendung: „Heute“ ist
+     * gleich weg, Kamera bzw. Scanner gehen über der leeren Seite auf. Geschlossen (Abbrechen wie Speichern) blendet die
+     * Seite aus wie jede andere. Ohne Sofort-Start blendet Eintragen auch beim Öffnen wie gewohnt.
      */
     @Test
     @Config(qualifiers = "w411dp-h891dp")
@@ -268,13 +273,21 @@ class NavigationTest {
         starten()
         compose.waitForIdle()
         compose.mainClock.autoAdvance = false
+        val sofort = "Eintragen ${Platzhalter.TAG} null SCANNEN"
         compose.runOnUiThread { nav.navigate(EintragenStart(Platzhalter.TAG, null, SofortStart.SCANNEN).alsZiel()) }
         // Ein paar Bilder, weit vor dem Ende einer Überblendung (700 ms)
         repeat(5) { compose.mainClock.advanceTimeByFrame() }
-        compose.onNodeWithText("Eintragen ${Platzhalter.TAG} null SCANNEN").assertExists()
+        compose.onNodeWithText(sofort).assertExists()
         compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).assertDoesNotExist()
-        compose.mainClock.autoAdvance = true
+        // Schließen: Die Seite verblasst (ihr Text verliert Kontrast), statt voll stehen zu bleiben und dann zu verschwinden
         compose.runOnUiThread { nav.popBackStack() }
+        repeat(2) { compose.mainClock.advanceTimeByFrame() }
+        val anfangs = compose.onNodeWithText(sofort).captureToImage().kontrast()
+        repeat(25) { compose.mainClock.advanceTimeByFrame() }
+        val spaeter = compose.onNodeWithText(sofort).captureToImage().kontrast()
+        assertTrue(spaeter < anfangs / 2, "blendet aus: Kontrast $anfangs → $spaeter")
+        compose.mainClock.autoAdvance = true
+        compose.onNodeWithText(sofort).assertDoesNotExist()
         compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).assertExists()
         // Zum Vergleich ohne Sofort-Start: nach denselben Bildern liegt „Heute“ noch unter der Einblendung
         compose.mainClock.autoAdvance = false
@@ -367,5 +380,12 @@ class NavigationTest {
         compose.onNodeWithText("Neues Rezept").assertExists()
         compose.runOnUiThread { nav.navigate(RezeptBearbeiten("r1")) }
         compose.onNodeWithText("Rezept r1 bearbeiten").assertExists()
+    }
+
+    /** Hellster minus dunkelster Bildpunkt: verblasst ein Text, sinkt er. */
+    private fun ImageBitmap.kontrast(): Float {
+        val punkte = toPixelMap()
+        val helligkeiten = (0 until punkte.width).flatMap { x -> (0 until punkte.height).map { y -> punkte[x, y].luminance() } }
+        return helligkeiten.max() - helligkeiten.min()
     }
 }
