@@ -18,12 +18,19 @@ enum class WidgetStart(val sofort: SofortStart?) {
     EINTRAGEN(null),
 }
 
-/** Der Link eines Widgets ([SCAN_LINK], [FOTO_LINK], [EINTRAGEN_LINK]) als [WidgetStart]; andere Links → `null`. */
-fun Intent.widgetStart(): WidgetStart? = when (data?.toString()) {
-    SCAN_LINK -> WidgetStart.SCANNEN
-    FOTO_LINK -> WidgetStart.FOTO
-    EINTRAGEN_LINK -> WidgetStart.EINTRAGEN
-    else -> null
+/**
+ * Der Link eines Widgets ([SCAN_LINK], [FOTO_LINK], [EINTRAGEN_LINK]) als [WidgetStart]; andere Links → `null`. Ebenso
+ * `null` aus „Zuletzt verwendet“ (`FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY`): Hat ein Widget den Task gestartet, ist sein
+ * Link dessen Basis, und das System liefert ihn beim Wiederöffnen erneut – dann öffnet einfach die App, ohne neuen Scan.
+ */
+fun Intent.widgetStart(): WidgetStart? {
+    if (flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return null
+    return when (data?.toString()) {
+        SCAN_LINK -> WidgetStart.SCANNEN
+        FOTO_LINK -> WidgetStart.FOTO
+        EINTRAGEN_LINK -> WidgetStart.EINTRAGEN
+        else -> null
+    }
 }
 
 /**

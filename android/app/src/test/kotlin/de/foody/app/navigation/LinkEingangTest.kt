@@ -96,6 +96,8 @@ class LinkEingangTest {
         links.ankommen(link(EINTRAGEN_LINK))
         links.ankommen(link("foody://rezept/r1"))
         assertFalse(links.sofortWartet())
+        links.ankommen(link(SCAN_LINK).addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY))
+        assertFalse(links.sofortWartet(), "aus „Zuletzt verwendet“ kein Sofort-Start")
         links.ankommen(link(FOTO_LINK))
         assertTrue(links.sofortWartet())
     }

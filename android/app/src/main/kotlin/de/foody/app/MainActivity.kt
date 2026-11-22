@@ -47,8 +47,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        // Kaltstart von einem Widget (nicht nach Drehen/Prozessende: Eintragen liegt dann schon im Stapel; ein neuer Tipp
-        // auf eine im Hintergrund beendete App kommt über `onNewIntent`, noch vor dem ersten Aufbau)
+        // Kaltstart von einem Widget; nicht nach Drehen/Prozessende (Eintragen liegt dann schon im Stapel) und nicht aus
+        // „Zuletzt verwendet“ (siehe widgetStart). Ein neuer Tipp auf eine im Hintergrund beendete App kommt über
+        // `onNewIntent`, noch vor dem ersten Aufbau.
         val widgetBeimStart = if (savedInstanceState == null) intent.widgetStart() else null
         addOnNewIntentListener(links::ankommen)
         setContent {

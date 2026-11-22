@@ -115,6 +115,20 @@ class DeepLinkTest {
         assertEquals(WidgetStart.EINTRAGEN, Intent(Intent.ACTION_VIEW, Uri.parse("foody://eintragen")).widgetStart())
         assertNull(Intent(Intent.ACTION_VIEW, Uri.parse("foody://rezept/r1")).widgetStart())
         assertNull(Intent(Intent.ACTION_MAIN).widgetStart())
+        // Aus „Zuletzt verwendet“ (Task mit dem Widget-Link als Basis): kein neuer Scan, einfach die App
+        assertNull(Intent(Intent.ACTION_VIEW, Uri.parse("foody://scannen")).addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY).widgetStart())
+    }
+
+    /** Ein Widget-Link aus „Zuletzt verwendet“ öffnet bei laufender App nichts: „Heute“ bleibt, wie es ist. */
+    @Test
+    fun widgetLinkAusDemVerlaufOeffnetNichts() {
+        compose.setContent {
+            nav = rememberNavController()
+            FoodyTheme { Hauptgeruest(nav, Bildschirme.platzhalter) }
+        }
+        val ausVerlauf = Intent(Intent.ACTION_VIEW, Uri.parse(SCAN_LINK)).addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)
+        compose.runOnIdle { assertFalse(nav.deepLinkOeffnen(ausVerlauf)) }
+        compose.runOnIdle { assertTrue(nav.currentBackStackEntry!!.destination.hasRoute<Heute>()) }
     }
 
     @Test
