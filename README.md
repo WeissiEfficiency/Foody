@@ -103,8 +103,8 @@ Einkauf und Einstellungen, in Milchglas und in jedem Stil; das Ergebnis liegt ei
 Neu erzeugen nach größeren UI-Änderungen: Befehle im Kopf von `android/baselineprofile/build.gradle.kts` (nur auf
 einem Emulator ohne echte Daten).
 
-**Kurztest der R8-Variante:** `ReleaseStartTest` startet „Foody Vorschau“ mit R8 wie im Release und öffnet „Frei“ im
-Tagebuch – fehlende Keep-Regeln fielen sonst erst auf dem Handy auf (Z1). Die CI führt ihn auf einem Emulator aus
+**Kurztest der R8-Variante:** `ReleaseStartTest` startet „Foody Vorschau“ mit R8 wie im Release und öffnet Eintragen
+(Erfassen lädt die Scan-Module vor) – fehlende Keep-Regeln fielen sonst erst auf dem Handy auf (Z1). Die CI führt ihn auf einem Emulator aus
 (`:baselineprofile:ciDeviceBenchmarkVorschauAndroidTest`).
 
 ## Datenschutz
