@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -198,10 +197,11 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
         composable<TagebuchTag>(deepLinks = listOf(navDeepLink<TagebuchTag>(basePath = "${SCHEMA}tagebuch"))) {
             bildschirme.tagebuch(tagebuchDatum(it.toRoute<TagebuchTag>().datum, LocalDate.now()), nav)
         }
-        composable<Eintragen> {
-            // Nur solange die Seite vorne ist: Ein zweites „fertig“ (etwa Speichern und Zurück fast zugleich) räumt nicht
-            // auch noch „Heute“ ab
-            bildschirme.eintragen(it.toRoute<Eintragen>(), dropUnlessResumed { nav.popBackStack() })
+        composable<Eintragen> { eintrag ->
+            // Nur solange diese Seite oben auf dem Stapel liegt (er ändert sich sofort): Ein zweites „fertig“ (etwa Speichern
+            // und Zurück fast zugleich) räumt nicht auch noch „Heute“ ab. Nicht an RESUMED gebunden: Nach einem
+            // abgebrochenen Sofort-Scan liegt die Scanner-Activity noch obenauf, in der Einblendung ist die Seite erst STARTED.
+            bildschirme.eintragen(eintrag.toRoute<Eintragen>()) { if (nav.currentBackStackEntry?.id == eintrag.id) nav.popBackStack() }
         }
     }
 }

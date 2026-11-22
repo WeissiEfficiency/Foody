@@ -1,6 +1,7 @@
 package de.foody.app.navigation
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
@@ -8,6 +9,8 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
@@ -268,6 +271,35 @@ class NavigationTest {
             // Unter „Heute“ liegt kein weiteres Ziel (nur der Graph): „Heute“ ist genau einmal da
             assertNull(nav.previousBackStackEntry)
         }
+        compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).assertExists()
+    }
+
+    /**
+     * Auch wenn Eintragen nicht vorne (RESUMED) ist, schließt „fertig“ die Seite – etwa nach einem abgebrochenen
+     * Sofort-Scan, solange die Scanner-Activity noch obenauf liegt, oder während der Einblendung. Hier: in der Einblendung
+     * (der Eintrag ist erst STARTED), zweimal gemeldet, einmal zurück.
+     */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun eintragenSchliesstAuchNichtVorne() {
+        starten()
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        compose.runOnUiThread { nav.navigate(EintragenStart(Platzhalter.TAG, Mahlzeit.SNACK).alsZiel()) }
+        // Ein paar Bilder der Einblendung (700 ms), nicht bis zum Ende
+        repeat(3) { compose.mainClock.advanceTimeByFrame() }
+        compose.runOnUiThread {
+            val eintrag = nav.currentBackStackEntry!!
+            assertTrue(eintrag.destination.hasRoute<Eintragen>())
+            assertEquals(Lifecycle.State.STARTED, eintrag.lifecycle.currentState, "Voraussetzung: noch in der Einblendung")
+        }
+        // Semantik statt Tippen: Während der Überblendung liegen beide Seiten übereinander
+        compose.onNodeWithText(Platzhalter.ZWEIMAL_FERTIG).performSemanticsAction(SemanticsActions.OnClick)
+        compose.runOnUiThread {
+            assertTrue(nav.currentBackStackEntry?.destination?.hasRoute<Heute>() == true, "jetzt: ${nav.currentBackStackEntry?.destination}")
+            assertNull(nav.previousBackStackEntry)
+        }
+        compose.mainClock.autoAdvance = true
         compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).assertExists()
     }
 
