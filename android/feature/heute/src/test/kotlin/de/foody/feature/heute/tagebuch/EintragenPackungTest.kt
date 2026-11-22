@@ -67,7 +67,6 @@ class EintragenPackungTest {
         db = testDatenbank()
         vm = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis(), testBls(), ZutatenRepository(db) { 1L })).sichtbar()
         vm.oeffnen(heute, Mahlzeit.FRUEHSTUECK)
-        vm.weg(EintragenWeg.FREI)
     }
 
     @After
@@ -98,7 +97,6 @@ class EintragenPackungTest {
         val h = SavedStateHandle()
         val vor = halter.behalten(EintragenViewModel(h, HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis(), testBls(), ZutatenRepository(db) { 1L })).sichtbar()
         vor.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
-        vor.weg(EintragenWeg.FREI)
         vor.packungUebernehmen(haferflocken())
         vor.pMenge("60")
 
@@ -264,14 +262,6 @@ class EintragenPackungTest {
     }
 
     @Test
-    fun zurueckZuFrei() {
-        vm.packungUebernehmen(haferflocken())
-        vm.packungVerwerfen()
-        assertNull(e.packung)
-        assertEquals(EintragenWeg.FREI, e.weg)
-    }
-
-    @Test
     fun doppeltipp() = runTest {
         vm.packungUebernehmen(haferflocken())
         vm.pMenge("100")
@@ -283,44 +273,23 @@ class EintragenPackungTest {
         assertEquals(1, db.zutatDao().alle().size)
     }
 
+    /** Gescannte Produkte stehen beim nächsten Mal in der Suche wie andere Zutaten, mit der Einheit nach ihrer Basis. */
     @Test
     fun gescanntesProduktBeimNaechstenMalInDerSuche() = runTest {
-        db.bestand()
         vm.packungUebernehmen(haferflocken(name = "Corny Classic", basis = NutrientBasis.PER_100_ML))
         vm.pMenge("25")
         assertNotNull(vm.speichern())
         val produkt = db.zutatDao().alle().single { it.barcode == "4000000000000" }
 
-        // Nächstes Blatt: Es beginnt mit „Rezept“; wer den Namen tippt, findet das Produkt dort
         vm.oeffnen(heute, Mahlzeit.SNACK)
         vm.suche("corn")
-        val z = withTimeout(5_000) { vm.zustand.first { it.produkte.isNotEmpty() } }
-        assertEquals(EintragenWeg.REZEPT, z.eingaben.weg)
-        assertEquals(listOf(produkt.id), z.produkte.map { it.id })
+        val z = withTimeout(5_000) { vm.zustand.first { it.eingaben.suche == "corn" && it.zutaten.isNotEmpty() } }
+        assertEquals(listOf(produkt.id), z.zutaten.map { it.id })
 
-        // Antippen wechselt zu „Zutat“ mit dem Produkt, Einheit nach seiner Basis, Fokus auf die Menge
-        vm.produktWaehlen(z.produkte.single())
+        vm.zutatWaehlen(produkt.id)
+        assertEquals(EintragenSchritt.BESTAETIGEN, e.schritt)
         assertEquals(EintragenWeg.ZUTAT, e.weg)
         assertEquals(produkt.id, e.zutatId)
         assertEquals(MeasureUnit.MILLILITER, e.einheit)
-        withTimeout(1_000) { vm.mengeFokus.first() }
-    }
-
-    @Test
-    fun rezeptsucheZeigtNurGescannteProdukte() = runTest {
-        // Reis hat keinen Strichcode: Er bleibt unter „Zutat“; ohne Suchtext gibt es keine Produkt-Vorschläge
-        db.bestand()
-        db.zutatDao().upsert(ZutatEntity(id = "z-corny", canonicalName = "Corny", barcode = "4011800000000", createdAt = 1, updatedAt = 1))
-        vm.oeffnen(heute, Mahlzeit.SNACK)
-        withTimeout(5_000) { vm.zustand.first { z -> z.rezepte.isNotEmpty() } }
-        assertTrue(vm.zustand.value.produkte.isEmpty())
-        vm.suche("rei")
-        assertTrue(vm.zustand.first { it.eingaben.suche == "rei" }.produkte.isEmpty())
-        vm.suche("cor")
-        assertEquals(listOf("Corny"), withTimeout(5_000) { vm.zustand.first { it.produkte.isNotEmpty() } }.produkte.map { it.name })
-        // Unter „Zutat“ steht es ohnehin in der Liste
-        vm.weg(EintragenWeg.ZUTAT)
-        vm.suche("cor")
-        assertTrue(vm.zustand.first { it.eingaben.weg == EintragenWeg.ZUTAT && it.eingaben.suche == "cor" }.produkte.isEmpty())
     }
 }

@@ -85,7 +85,7 @@ Roborazzi, ktlint.
 
 ---
 
-### Aufgabe 1: ViewModel mit zwei Schritten und allen Quellen
+### Task 1 (Aufgabe 1): ViewModel mit zwei Schritten und allen Quellen
 
 Das alte Blatt muss nach dieser Aufgabe weiter kompilieren: neue Felder und Funktionen kommen dazu, die Reiter-API
 (`reiter`, `weg`, `produktWaehlen`, `gescannt`, `produkte`) bleibt bis Aufgabe 3. Alte Tests, die nur an einer neuen
@@ -232,7 +232,7 @@ Regeln, die die Tests festlegen (der Rest folgt dem heutigen Code):
 - [ ] **Schritt 9: ktlint und Commit**: `.\gradlew ktlintPruefen`, dann
   `git commit -m "Eintragen: ViewModel mit Schritten Erfassen und Bestätigen"`
 
-### Aufgabe 2: Eintragen-Seite (noch nicht verdrahtet)
+### Task 2 (Aufgabe 2): Eintragen-Seite (noch nicht verdrahtet)
 
 **Dateien:**
 - Neu:
@@ -353,7 +353,7 @@ Aufbau, den die Tests prüfen:
 - [ ] **Schritt 4: Laufen lassen**: `.\gradlew :feature:heute:test :core:scan:test` → PASS
 - [ ] **Schritt 5: ktlint und Commit**: `git commit -m "Eintragen: Seite mit Erfassen und Bestätigen"`
 
-### Aufgabe 3: Ziel in der Navigation, altes Blatt weg
+### Task 3 (Aufgabe 3): Ziel in der Navigation, altes Blatt weg
 
 **Dateien:**
 - Ändern:
@@ -420,7 +420,7 @@ Verdrahtung:
 - [ ] **Schritt 7: Commit, dann PR 1 öffnen** („Eintragen: eigenes Ziel mit Erfassen und Bestätigen“, Auto-Merge,
   „Server-Rebuild nötig: nein“)
 
-### Aufgabe 4: Sofort-Wege aus den Heute-Szenen (PR 2)
+### Task 4 (Aufgabe 4): Sofort-Wege aus den Heute-Szenen (PR 2)
 
 **Dateien:**
 - Ändern: `android/feature/heute/src/main/kotlin/de/foody/feature/heute/HeuteViewModel.kt`, `HeuteScreen.kt`,
@@ -461,7 +461,7 @@ Verdrahtung:
 - [ ] **Schritt 5: Laufen lassen**: `.\gradlew check ktlintPruefen` → PASS
 - [ ] **Schritt 6: Commit, PR 2** („Heute: Scannen und Foto starten direkt“)
 
-### Aufgabe 5: Widgets direkt (PR 3)
+### Task 5 (Aufgabe 5): Widgets direkt (PR 3)
 
 **Dateien:**
 - Neu: `android/app/src/main/kotlin/de/foody/app/navigation/WidgetStart.kt`
@@ -517,7 +517,7 @@ Verhalten:
   - „Schnell eintragen“ → Erfassen.
 - [ ] **Schritt 6: Commit, PR 3** („Widgets: Kamera und Scanner ohne Umweg“)
 
-### Aufgabe 6: Doku und ADR (PR 4)
+### Task 6 (Aufgabe 6): Doku und ADR (PR 4)
 
 **Dateien:**
 - Neu: `docs/adr/0021-eintragen-als-eigenes-ziel.md`

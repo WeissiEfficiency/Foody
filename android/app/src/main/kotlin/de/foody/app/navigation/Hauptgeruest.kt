@@ -67,8 +67,8 @@ fun Hauptgeruest(
 ) {
     val eintrag by navController.currentBackStackEntryAsState()
     val aktiv = remember(eintrag) { aktiverTab(navController) }
-    // Der Kochmodus ist ein Vollbild ohne Navigation
-    val vollbild = eintrag?.destination?.hasRoute<Kochen>() == true
+    // Kochmodus und Eintragen sind Vollbilder ohne Navigation
+    val vollbild = eintrag?.destination?.let { it.hasRoute<Kochen>() || it.hasRoute<Eintragen>() } == true
     val waehlen: (Int) -> Unit = { i ->
         when {
             // Heute ist die Wurzel; der aktive Tab erneut: zurück an seinen Anfang

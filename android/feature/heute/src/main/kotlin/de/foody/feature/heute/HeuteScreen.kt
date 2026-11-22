@@ -15,9 +15,6 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -38,10 +35,8 @@ import de.foody.feature.heute.stil.HeuteEdo
 import de.foody.feature.heute.stil.HeuteGrauen
 import de.foody.feature.heute.stil.HeuteKreuzer
 import de.foody.feature.heute.stil.HeuteSage
-import de.foody.feature.heute.tagebuch.BlattAuftrag
-import de.foody.feature.heute.tagebuch.EintragenBlatt
-import de.foody.feature.heute.tagebuch.EintragenViewModel
-import de.foody.feature.heute.tagebuch.eintragenAlsSeite
+import de.foody.feature.heute.tagebuch.EintragenStart
+import de.foody.feature.heute.tagebuch.SofortStart
 import java.time.LocalDate
 
 /** Was „Heute“ auslösen kann; die Navigation liegt in der App. */
@@ -56,6 +51,10 @@ data class HeuteAktionen(
     val onNichtGegessen: (GeplanteMahlzeit) -> Unit,
 )
 
+/**
+ * „Heute“ mit ViewModel. [onEintragen] öffnet die Seite Eintragen (aus einer Zeile mit deren Mahlzeit, sonst nach
+ * Uhrzeit), ebenso eine Anfrage eines Widgets ([schnellstart]); danach meldet sie [onSchnellstartAngenommen].
+ */
 @Composable
 fun HeuteRoute(
     onKochen: (String, Int) -> Unit,
@@ -63,26 +62,30 @@ fun HeuteRoute(
     onEinkauf: (String) -> Unit,
     onAlleEintraege: () -> Unit,
     onEinstellungen: () -> Unit,
+    onEintragen: (EintragenStart) -> Unit,
     vm: HeuteViewModel = hiltViewModel(),
-    eintragenVm: EintragenViewModel? = null,
-    /** Vom Widget „Scannen“ oder „KI-Foto“ (eindeutig je Tipp): öffnet das Blatt damit; danach [onSchnellstartAngenommen]. */
+    /** Vom Widget (eindeutig je Tipp): öffnet Eintragen, bei „Scannen“ und „KI-Foto“ gleich mit Scanner bzw. Kamera. */
     schnellstart: Schnellstart? = null,
     onSchnellstartAngenommen: () -> Unit = {},
 ) {
     val zustand by vm.zustand.collectAsStateWithLifecycle()
-    var blatt by rememberSaveable(stateSaver = BlattAuftrag.Saver) { mutableStateOf(null) }
     LaunchedEffect(schnellstart) {
         if (schnellstart == null) return@LaunchedEffect
-        blatt = BlattAuftrag(null, LocalDate.now(), id = schnellstart.id, start = schnellstart.art)
+        onEintragen(EintragenStart(LocalDate.now(), null, schnellstart.art.alsSofort()))
         onSchnellstartAngenommen()
     }
     val aktionen = HeuteAktionen(
         onKochen, onRezept, onEinkauf, onAlleEintraege, onEinstellungen,
-        { blatt = BlattAuftrag(it, zustand?.datum ?: LocalDate.now()) }, vm::gegessen, vm::nichtGegessen,
+        { onEintragen(EintragenStart(zustand?.datum ?: LocalDate.now(), it)) }, vm::gegessen, vm::nichtGegessen,
     )
-    // Bayrisch, Grauen und Kreuzer: Eintragen ist eine eigene Seite statt des Inhalts
-    if (blatt == null || !eintragenAlsSeite()) HeuteScreen(zustand, aktionen)
-    blatt?.let { b -> EintragenBlatt(b, onFertig = { blatt = null }, vm = eintragenVm ?: hiltViewModel()) }
+    HeuteScreen(zustand, aktionen)
+}
+
+/** Schnellstart des Widgets als Sofort-Start; „Schnell eintragen“ beginnt mit Erfassen. */
+private fun Schnellstart.Art.alsSofort(): SofortStart? = when (this) {
+    Schnellstart.Art.SCANNEN -> SofortStart.SCANNEN
+    Schnellstart.Art.FOTO -> SofortStart.FOTO
+    Schnellstart.Art.EINTRAGEN -> null
 }
 
 /**

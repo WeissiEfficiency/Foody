@@ -8,7 +8,7 @@ fun interface MahlzeitErkenner {
 }
 
 sealed interface ErkennungStatus {
-    /** Freier Eintrag fürs Eintragen-Blatt (Name, kcal, Makros); [dauerMs] vom Laden bis zur Antwort. */
+    /** Freier Eintrag für Eintragen (Name, kcal, Makros); [dauerMs] vom Laden bis zur Antwort. */
     data class Erkannt(val vorschlag: FotoVorschlag, val dauerMs: Long) : ErkennungStatus
 
     /** Kein Modell installiert (z. B. auf dem Tablet): der Knopf bleibt ausgeblendet. */

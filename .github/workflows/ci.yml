@@ -54,7 +54,7 @@ jobs:
         run: >
           ./gradlew ciDeviceDebugAndroidTest
           -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
-      # R8-Variante einmal starten und „Frei“ öffnen (E4): Ein grüner Release-Build fängt fehlende Keep-Regeln nicht ab
+      # R8-Variante einmal starten und Eintragen öffnen (E4): Ein grüner Release-Build fängt fehlende Keep-Regeln nicht ab
       # (Z1 stürzte erst auf dem Handy ab). benchmarkVorschau = „Foody Vorschau“ mit R8 wie im Release, Debug-Schlüssel.
       - name: Release-Kurztest (R8, Managed Device)
         run: >

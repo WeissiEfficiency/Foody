@@ -31,7 +31,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,7 +55,6 @@ import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.domain.Mahlzeit
-import de.foody.feature.heute.Schnellstart
 import de.foody.feature.heute.TAGEBUCH_INHALT
 import de.foody.feature.heute.stil.TagebuchSage
 import de.foody.feature.heute.stil.TagebuchStil
@@ -69,40 +67,15 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
-import java.util.UUID
 
 private val TAG_LANG = DateTimeFormatter.ofPattern("EEEE, d. MMMM yyyy", Locale.GERMAN)
 
 /**
- * Auftrag für das Eintragen-Blatt: [mahlzeit] `null` = nach Uhrzeit, [datum] beim Öffnen festgehalten (ein Wechsel um
- * Mitternacht leert das Blatt nicht), [id] je Öffnen neu – nur ein neuer Auftrag setzt die Eingaben zurück, ein
- * Neuaufbau (Drehen, Dunkelmodus) nicht. Mit [Saver] überlebt er den Neuaufbau.
- */
-data class BlattAuftrag(
-    val mahlzeit: Mahlzeit?,
-    val datum: LocalDate,
-    val id: String = UUID.randomUUID().toString(),
-    /** Vom Widget: gleich in „Frei“ mit dem Strichcode-Scan oder der Kamera beginnen; `null` = normal. */
-    val start: Schnellstart.Art? = null,
-) {
-    companion object {
-        val Saver: Saver<BlattAuftrag?, Any> = Saver(
-            save = { a -> a?.let { arrayListOf(it.mahlzeit?.name.orEmpty(), it.datum.toString(), it.id, it.start?.name.orEmpty()) } },
-            restore = { w ->
-                @Suppress("UNCHECKED_CAST")
-                (w as List<String>).let { (m, d, id, s) ->
-                    val mahlzeit = m.takeIf { it.isNotEmpty() }?.let(Mahlzeit::valueOf)
-                    BlattAuftrag(mahlzeit, LocalDate.parse(d), id, s.takeIf { it.isNotEmpty() }?.let(Schnellstart.Art::valueOf))
-                }
-            },
-        )
-    }
-}
-
-/**
  * „Alle Einträge“ eines Tages wie im Entwurf: Kopf mit Vor/Zurück und Datumsauswahl (in den Stilen wie in deren
  * Entwürfen dazu „‹“ zurück zu Heute über [onZurueck]; Milchglas bleibt ohne), Tagesleiste ([onDatum] wechselt
- * das Ziel), Ring mit Makros, je Mahlzeit eine Karte mit Ändern und Löschen, „+ Eintragen“ unten rechts („Rückgängig“ stellt den Eintrag mit derselben ID wieder her), Eintragen-Blatt.
+ * das Ziel), Ring mit Makros, je Mahlzeit eine Karte mit Ändern und Löschen („Rückgängig“ stellt den Eintrag mit
+ * derselben ID wieder her), „+ Eintragen“ unten rechts. Eintragen öffnet die eigene Seite über [onEintragen] (aus einer
+ * Mahlzeit mit dieser vorbelegt, sonst nach Uhrzeit).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,16 +83,15 @@ fun TagebuchTagRoute(
     datum: LocalDate,
     onDatum: (LocalDate) -> Unit,
     onZurueck: (() -> Unit)? = null,
+    onEintragen: (EintragenStart) -> Unit,
     vm: TagebuchTagViewModel = hiltViewModel(),
-    eintragenVm: EintragenViewModel? = null,
 ) {
     LaunchedEffect(datum) { vm.zeigen(datum) }
     val zustand by vm.zustand.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val bereich = rememberCoroutineScope()
-    // Gespeichert, damit Dialog und Blatt Drehen und Dunkelmodus überstehen
+    // Gespeichert, damit der Dialog Drehen und Dunkelmodus übersteht
     var bearbeitenId by rememberSaveable { mutableStateOf<String?>(null) }
-    var blatt by rememberSaveable(stateSaver = BlattAuftrag.Saver) { mutableStateOf(null) }
     var datumWahl by rememberSaveable { mutableStateOf(false) }
 
     val loeschen: (TagebuchEintragEntity) -> Unit = { e ->
@@ -133,24 +105,23 @@ fun TagebuchTagRoute(
     Box(Modifier.fillMaxSize()) {
         val szene = TagebuchSzene.aktuell()
         val zurueck = onZurueck.takeIf { FoodyTheme.stil.stil != FoodyStil.MILCHGLAS }
-        if (blatt != null && eintragenAlsSeite()) {
-            // Bayrisch, Grauen und Kreuzer: Eintragen ist eine eigene Seite statt des Tages (unten)
-        } else if (FoodyTheme.stil.szene(FoodyStil.SAGE)) {
+        val eintragen = { m: Mahlzeit? -> onEintragen(EintragenStart(datum, m)) }
+        if (FoodyTheme.stil.szene(FoodyStil.SAGE)) {
             TagebuchSage(
                 datum, LocalDate.now(), zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeitenId = it.id },
-                onLoeschen = loeschen, onEintragen = { blatt = BlattAuftrag(it, datum) }, onZurueck = zurueck,
+                onLoeschen = loeschen, onEintragen = eintragen, onZurueck = zurueck,
             )
         } else if (szene != null) {
             TagebuchStil(
                 szene, datum, LocalDate.now(), zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeitenId = it.id },
-                onLoeschen = loeschen, onEintragen = { blatt = BlattAuftrag(it, datum) }, onZurueck = zurueck,
+                onLoeschen = loeschen, onEintragen = eintragen, onZurueck = zurueck,
             )
         } else {
             TagebuchTagInhalt(
                 datum, zustand, onDatum, onWahl = { datumWahl = true }, onAendern = { bearbeitenId = it.id }, onLoeschen = loeschen,
-                onEintragen = { blatt = BlattAuftrag(it, datum) }, onZurueck = zurueck,
+                onEintragen = eintragen, onZurueck = zurueck,
             )
-            Fab { blatt = BlattAuftrag(null, datum) }
+            Fab { eintragen(null) }
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(bottom = ueberLeiste(160.dp)))
     }
@@ -162,7 +133,6 @@ fun TagebuchTagRoute(
             bearbeitenId = null
         }, onAbbrechen = { bearbeitenId = null })
     }
-    blatt?.let { b -> EintragenBlatt(b, onFertig = { blatt = null }, vm = eintragenVm ?: hiltViewModel()) }
     if (datumWahl) DatumWahl(datum, onDatum = { datumWahl = false; onDatum(it) }, onAbbrechen = { datumWahl = false })
 }
 

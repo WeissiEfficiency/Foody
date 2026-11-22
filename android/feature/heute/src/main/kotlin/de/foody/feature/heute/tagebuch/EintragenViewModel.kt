@@ -4,8 +4,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.foody.core.data.alsIngredient
 import de.foody.core.data.bls.BlsNachschlag
 import de.foody.core.data.db.FoodyDatenbank
+import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.heute.GeplanteMahlzeit
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.heute.RezeptKurz
@@ -34,7 +36,7 @@ import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
-import de.foody.feature.heute.Schnellstart
+import de.foody.domain.Tagebuch
 import de.foody.feature.heute.mahlzeitNachUhrzeit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -54,22 +56,34 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.LocalTime
 import javax.inject.Inject
 
 enum class EintragenWeg { REZEPT, ZUTAT, PLAN, FREI }
 
+/** Erfassen: suchen, fotografieren, scannen oder Geplantes wählen. Bestätigen: die Wahl prüfen und eintragen. */
+enum class EintragenSchritt { ERFASSEN, BESTAETIGEN }
+
 data class ZutatKurz(val id: String, val name: String)
 
-/** Gescanntes Produkt (Zutat mit Strichcode) als Vorschlag in der Rezeptsuche; [einheit] nach seiner Nährwert-Basis. */
-data class ProduktKurz(val id: String, val name: String, val einheit: MeasureUnit)
-
-/** Eingaben des Blatts; Zahlen als Text, wie getippt. Serializable: Sie liegen im SavedStateHandle (Prozessende). */
+/** Eingaben der Seite; Zahlen als Text, wie getippt. Serializable: Sie liegen im SavedStateHandle (Prozessende). */
 data class Eingaben(
+    /**
+     * `true`, sobald [EintragenViewModel.oeffnen] lief. Vorher (etwa im Startwert von [EintragenViewModel.zustand],
+     * bevor er rechnet) gelten die Angaben des Ziels.
+     */
+    val geoeffnet: Boolean = false,
+    val schritt: EintragenSchritt = EintragenSchritt.ERFASSEN,
+    /** Kamera bzw. Scanner gleich beim Öffnen; bricht der Nutzer sie ab, geht die Seite zu. `null`, sobald etwas kam. */
+    val sofort: SofortStart? = null,
     val datum: LocalDate = LocalDate.EPOCH,
     val mahlzeit: Mahlzeit = Mahlzeit.ABENDESSEN,
+    /** Mahlzeit beim Öffnen; „Zurück“ aus Geplantem stellt sie wieder her (Geplantes nimmt die des Plans). */
+    val mahlzeitStart: Mahlzeit = Mahlzeit.ABENDESSEN,
     val weg: EintragenWeg = EintragenWeg.REZEPT,
     val suche: String = "",
     val rezeptId: String? = null,
@@ -97,10 +111,14 @@ data class Eingaben(
     val alsZutatVomNutzer: Boolean = false,
     /** Vorschlag der Fotoerkennung; markiert die freien Felder, solange sie dem angezeigten Wert gleichen. */
     val foto: FotoStand? = null,
+    /** Uri des Fotos fürs Vorschaubild in Bestätigen. */
+    val fotoBild: String? = null,
+    /** Datei des Kamerafotos; gelöscht bei „Zurück“ und wenn die Seite endet. */
+    val fotoDatei: String? = null,
 ) : java.io.Serializable
 
 /**
- * Vorschlag der Fotoerkennung im Blatt (Phase 6): [modell] wie erkannt (Schlüssel fürs Gedächtnis), [basis] die
+ * Vorschlag der Fotoerkennung (Phase 6): [modell] wie erkannt (Schlüssel fürs Gedächtnis), [basis] die
  * Ausgangswerte – die eigenen vom letzten Mal, wenn [ausGedaechtnis] –, [portion] die gewählte Portion.
  */
 data class FotoStand(
@@ -141,16 +159,15 @@ data class EintragenZustand(
     val vorhandeneZutat: String? = null,
     /** Treffer im BLS zur Zutatensuche, ohne die, die schon so im Katalog stehen. */
     val bls: List<BlsTreffer> = emptyList(),
-    /** Gescannte Produkte zur Rezeptsuche (nur mit Suchtext), höchstens [MAX_PRODUKTE]; unter „Zutat“ stehen sie ohnehin. */
-    val produkte: List<ProduktKurz> = emptyList(),
-    /** Gescannte Produkte für den Reiter „Scannen“ der Stile Q–V, höchstens [MAX_PRODUKTE]. */
-    val gescannt: List<ProduktKurz> = emptyList(),
+    /** Titel des gewählten Rezepts bzw. Geplanten oder Name der Zutat; `null` bei „Frei“ oder ohne Wahl. */
+    val auswahlName: String? = null,
+    /** kcal, die der Eintrag dazubringt (Rezept × Portionen, Zutat in der Menge, Geplantes je Portion); sonst `null`. */
+    val kcalDazu: Int? = null,
 ) {
     val mahlzeit: Mahlzeit get() = eingaben.mahlzeit
 }
 
 const val MAX_TREFFER = 30
-const val MAX_PRODUKTE = 5
 
 /** Einheiten zur Auswahl beim Eintragen einer Zutat. */
 val EINTRAGEN_EINHEITEN = listOf(MeasureUnit.GRAM, MeasureUnit.MILLILITER, MeasureUnit.PIECE, MeasureUnit.TABLESPOON, MeasureUnit.TEASPOON)
@@ -175,19 +192,31 @@ class EintragenViewModel @Inject constructor(
 ) : ViewModel() {
     private val eingaben = gespeichert.getMutableStateFlow(EINGABEN, Eingaben())
 
-    /** Der Scan-Knopf in „Frei“; Erkennung läuft im viewModelScope weiter, auch wenn gedreht wird. */
-    val scanLauf = ScanLauf(scan, viewModelScope, gespeichert, ::packungUebernehmen, ::imKatalog)
+    init {
+        // Stirbt der Prozess, während der Google-Scanner offen ist, kommt sein Ergebnis nicht mehr an (Rückruf im alten
+        // Prozess): wieder am Ausgangspunkt, ohne dass ein späteres „Abbrechen“ die Seite schließt
+        if (eingaben.value.sofort == SofortStart.SCANNEN) eingaben.update { it.copy(sofort = null) }
+    }
 
-    /** Der Foto-Knopf in „Frei“; die Erkennung läuft im viewModelScope und übersteht Drehen und Prozessende. */
+    /**
+     * Der Scan-Knopf; Erkennung läuft im viewModelScope weiter, auch wenn gedreht wird. Schon der gelesene Strichcode
+     * öffnet Bestätigen ([scanGelesen]), die Packung füllt sich, sobald Katalog bzw. Open Food Facts antworten.
+     */
+    val scanLauf = ScanLauf(scan, viewModelScope, gespeichert, ::packungUebernehmen, ::imKatalog, ::scanGelesen, ::ohneTreffer)
+
+    /** Der Foto-Knopf; die Erkennung läuft im viewModelScope und übersteht Drehen und Prozessende. */
     val fotoLauf = ErkennungLauf(erkenner, viewModelScope, gespeichert, ::fotoUebernehmen)
 
-    /** Foto-Knopf zeigen: Schalter an und Modell auf diesem Gerät (auf dem Tablet ohne Modell nie). */
-    val fotoKnopf: StateFlow<Boolean> = erkennung.sichtbar.stateIn(viewModelScope, SolangeAppOffen, false)
+    /**
+     * Foto-Knopf zeigen: Schalter an und Modell auf diesem Gerät (auf dem Tablet ohne Modell nie). `null`, bis die
+     * Einstellung gelesen ist: Erfassen hält dann den Platz frei, statt den Knopf zu tauschen.
+     */
+    val fotoKnopf: StateFlow<Boolean?> = erkennung.sichtbar.stateIn(viewModelScope, SolangeAppOffen, null)
 
     /** Während des Speicherns und nach Erfolg gesperrt (bis zum nächsten [oeffnen]): ein Doppeltipp legt nichts doppelt an. */
     private val gesperrt = MutableStateFlow(false)
 
-    /** Einmal gerechnet für Plan und Rezeptsuche; nur solange das Blatt offen ist. */
+    /** Einmal gerechnet für Plan und Rezeptsuche; nur solange die Seite offen ist. */
     private val rezepte = heute.rezepteKurz().shareIn(viewModelScope, SolangeAppOffen, replay = 1)
 
     /** Heutige, noch nicht eingetragene Plan-Einträge des gewählten Tags. */
@@ -201,27 +230,25 @@ class EintragenViewModel @Inject constructor(
     /** Der ganze Katalog, auch für die Häkchen-Vorgabe beim Packungsnamen. */
     private val katalog = db.zutatDao().alleFlow().stateIn(viewModelScope, SolangeAppOffen, emptyList())
 
-    /** Katalog für die Suche: alle Zutaten und die gescannten (mit Strichcode) als Produkte. */
+    /** Katalog für die Suche: alle Zutaten, gescannte Produkte (mit Strichcode) eingeschlossen. */
     private val katalogSicht = katalog.map { z ->
-        val sortiert = z.sortedBy { it.canonicalName.lowercase() }
         KatalogSicht(
-            zutaten = sortiert.map { ZutatKurz(it.id, it.canonicalName) },
-            produkte = sortiert.filter { it.barcode != null }
-                .map { ProduktKurz(it.id, it.canonicalName, packungsEinheit(it.nutrientBasis ?: NutrientBasis.PER_100_G)) },
+            zutaten = z.sortedBy { it.canonicalName.lowercase() }.map { ZutatKurz(it.id, it.canonicalName) },
+            nachId = z.associateBy { it.id },
         )
     }
 
-    /** BLS-Treffer zur Suche nach Zutat (in den Stilen Q–V auch nach Rezept); läuft im Speicher, bricht bei neuer Eingabe ab. */
-    private val blsTreffer = eingaben.map { if (it.weg == EintragenWeg.ZUTAT || it.weg == EintragenWeg.REZEPT) it.suche.trim() else "" }
+    /** BLS-Treffer zur Suche, nur im Schritt Erfassen; läuft im Speicher, bricht bei neuer Eingabe ab. */
+    private val blsTreffer = eingaben.map { if (it.schritt == EintragenSchritt.ERFASSEN) it.suche.trim() else "" }
         .distinctUntilChanged()
         .mapLatest { s -> bls.suchen(s) }
 
     val zustand: StateFlow<EintragenZustand> =
         combine(eingaben, heute.rezeptVorschlaege(rezepte), katalogSicht, offenerPlan, blsTreffer) { e, rezepte, k, plan, bls ->
             val s = e.suche.trim()
-            val gefunden = k.zutaten.filter { passt(it.name, s) }.take(MAX_TREFFER)
+            // Rezepte auch ohne Suchtext, Zutaten (gescannte Produkte eingeschlossen) erst mit
+            val gefunden = if (s.isEmpty()) emptyList() else k.zutaten.filter { passt(it.name, s) }.take(MAX_TREFFER)
             val namen = k.zutaten.map { it.name.lowercase() }.toSet()
-            val produkte = if (e.weg == EintragenWeg.REZEPT && s.isNotEmpty()) k.produkte.filter { passt(it.name, s) }.take(MAX_PRODUKTE) else emptyList()
             EintragenZustand(
                 eingaben = e,
                 rezepte = rezepte.filter { it.titel.contains(s, ignoreCase = true) }.take(MAX_TREFFER),
@@ -229,8 +256,8 @@ class EintragenViewModel @Inject constructor(
                 plan = plan,
                 vorhandeneZutat = e.packung?.let { vorhandene(e.pName) },
                 bls = bls.filterNot { it.vorschlagName.lowercase() in namen },
-                produkte = produkte,
-                gescannt = k.produkte.take(MAX_PRODUKTE),
+                auswahlName = auswahlName(e, rezepte, k.nachId, plan),
+                kcalDazu = kcalDazu(e, rezepte, k.nachId, plan),
             )
         }.stateIn(viewModelScope, SolangeAppOffen, EintragenZustand(Eingaben(), emptyList(), emptyList(), emptyList()))
 
@@ -248,41 +275,40 @@ class EintragenViewModel @Inject constructor(
     /** Ein Wert: Das Mengenfeld von „Zutat“ soll den Fokus bekommen (nach „im Katalog“). */
     val mengeFokus: Flow<Unit> = fokus.receiveAsFlow()
 
+    private val schliessenKanal = Channel<Unit>(Channel.CONFLATED)
+
+    /** Ein Wert: Der Sofort-Start ist abgebrochen (Kamera oder Scanner ohne Ergebnis), die Seite soll zugehen. */
+    val schliessen: Flow<Unit> = schliessenKanal.receiveAsFlow()
+
     /**
-     * Neues Blatt: alles zurück; Mahlzeit aus der angetippten Zeile, sonst nach Uhrzeit. Derselbe [auftrag] erneut
-     * (Neuaufbau nach Drehen) lässt die Eingaben stehen; ein neuer bricht eine laufende Fotoerkennung ab.
+     * Neue Seite: alles zurück, Schritt Erfassen; Mahlzeit aus der angetippten Zeile, sonst nach Uhrzeit. Derselbe
+     * [auftrag] erneut (Neuaufbau nach Drehen) lässt die Eingaben stehen; ein neuer bricht eine laufende Fotoerkennung
+     * und Packungssuche ab und vergisst die Scan-Meldung. [sofort]: gleich Kamera bzw. Scanner (ohne Play-Dienste
+     * bleibt es beim Erfassen).
      */
-    fun oeffnen(datum: LocalDate, mahlzeit: Mahlzeit?, uhrzeit: LocalTime = LocalTime.now(), auftrag: String? = null, start: Schnellstart.Art? = null) {
+    fun oeffnen(datum: LocalDate, mahlzeit: Mahlzeit?, uhrzeit: LocalTime = LocalTime.now(), auftrag: String? = null, sofort: SofortStart? = null) {
         if (auftrag != null && auftrag == letzterAuftrag) return
         letzterAuftrag = auftrag
         fotoLauf.abbrechen()
+        scanLauf.abbrechen()
+        scanLauf.zustand.menueVersuch()
+        fotoDateiLoeschen()
         val m = mahlzeit ?: mahlzeitNachUhrzeit(uhrzeit)
-        val frei = start == Schnellstart.Art.SCANNEN || start == Schnellstart.Art.FOTO
-        eingaben.value = if (frei) Eingaben(datum = datum, mahlzeit = m, weg = EintragenWeg.FREI) else Eingaben(datum = datum, mahlzeit = m)
+        val scannen = sofort == SofortStart.SCANNEN && scanLauf.verfuegbar
+        eingaben.value = Eingaben(
+            geoeffnet = true, datum = datum, mahlzeit = m, mahlzeitStart = m, sofort = sofort.takeIf { it != SofortStart.SCANNEN || scannen },
+        )
         gesperrt.value = false
         // Widgets: nur einmal je Auftrag (der Abgleich oben), also nicht erneut nach Drehen oder Prozessende. Die Kamera
-        // startet der Foto-Knopf (er hält den Launcher), sobald er zu sehen ist; ohne Modell bleibt es beim Blatt in „Frei“.
-        if (start == Schnellstart.Art.SCANNEN && scanLauf.verfuegbar) scanLauf.strichcode()
-        if (start == Schnellstart.Art.FOTO) fotoLauf.kameraAnfragen() else fotoLauf.kameraAnfrageErledigt()
+        // startet die Seite (sie hält die Launcher), auch ohne Modell: Die Kamera braucht keins, Bestätigen zeigt dann das
+        // Vorschaubild, leere Felder und die Meldung der Erkennung.
+        if (scannen) scanLauf.strichcode()
+        if (sofort == SofortStart.FOTO) fotoLauf.kameraAnfragen() else fotoLauf.kameraAnfrageErledigt()
     }
 
-    fun weg(w: EintragenWeg) = eingaben.update { it.copy(weg = w, suche = "") }
-
-    /**
-     * Reiter der Stile Q–V: „Suchen“ bleibt bei Rezept oder Zutat (je nach Wahl), „Scannen“ und „Foto“ sind „Frei“ („Foto“
-     * ohne gescannte Packung), „Geplant“ ist der Plan.
-     */
-    fun reiter(r: EintragenReiter) = eingaben.update {
-        when (r) {
-            EintragenReiter.SUCHEN -> if (it.weg == EintragenWeg.REZEPT || it.weg == EintragenWeg.ZUTAT) it else it.copy(weg = EintragenWeg.REZEPT, suche = "")
-            EintragenReiter.SCANNEN -> it.copy(weg = EintragenWeg.FREI, suche = "")
-            EintragenReiter.FOTO -> it.copy(weg = EintragenWeg.FREI, suche = "", packung = null)
-            EintragenReiter.GEPLANT -> it.copy(weg = EintragenWeg.PLAN, suche = "")
-        }
-    }
     fun mahlzeit(m: Mahlzeit) = eingaben.update { it.copy(mahlzeit = m) }
     fun suche(text: String) = eingaben.update { it.copy(suche = text) }
-    fun rezeptWaehlen(id: String) = eingaben.update { it.copy(rezeptId = id, weg = EintragenWeg.REZEPT) }
+    fun rezeptWaehlen(id: String) = eingaben.update { it.bestaetigen().copy(rezeptId = id, weg = EintragenWeg.REZEPT) }
     fun portionen(text: String) = eingaben.update { it.copy(portionen = text) }
 
     /** − / + in Schritten von 0,5; nie unter 0,5. */
@@ -291,7 +317,12 @@ class EintragenViewModel @Inject constructor(
         it.copy(portionen = zahlText((if (mehr) alt + SCHRITT else alt - SCHRITT).max(SCHRITT)))
     }
 
-    fun zutatWaehlen(id: String) = eingaben.update { it.copy(zutatId = id, weg = EintragenWeg.ZUTAT) }
+    /** Zutat gewählt: Einheit nach ihrer Nährwert-Basis (je 100 ml → ml, sonst g). */
+    fun zutatWaehlen(id: String) = eingaben.update { it.bestaetigen().copy(zutatId = id, weg = EintragenWeg.ZUTAT, einheit = einheitFuer(id)) }
+
+    /** Einheit der Zutat [id] nach ihrer Basis im Katalog; unbekannt oder ohne Basis g. */
+    private fun einheitFuer(id: String): MeasureUnit =
+        packungsEinheit(katalog.value.firstOrNull { it.id == id }?.nutrientBasis ?: NutrientBasis.PER_100_G)
 
     /**
      * BLS-Treffer gewählt: in den Katalog übernehmen (heißt schon eine Zutat so, diese nehmen), auswählen, mit
@@ -310,30 +341,117 @@ class EintragenViewModel @Inject constructor(
                 BlsDichte.gProMl(t.lebensmittel) != null -> MeasureUnit.MILLILITER
                 else -> MeasureUnit.GRAM
             }
-            it.copy(zutatId = id, suche = t.vorschlagName, einheit = einheit, weg = EintragenWeg.ZUTAT)
+            it.bestaetigen().copy(zutatId = id, suche = t.vorschlagName, einheit = einheit, weg = EintragenWeg.ZUTAT)
         }
         fokus.trySend(Unit)
     }
 
     fun menge(text: String) = eingaben.update { it.copy(menge = text) }
     fun einheit(u: MeasureUnit) = eingaben.update { it.copy(einheit = u) }
-    fun planWaehlen(id: String) = eingaben.update { it.copy(planEintragId = id) }
     fun freiName(text: String) = eingaben.update { it.copy(freiName = text) }
     fun freiKcal(text: String) = eingaben.update { it.copy(freiKcal = text) }
     fun freiEiweiss(text: String) = eingaben.update { it.copy(freiEiweiss = text) }
     fun freiKh(text: String) = eingaben.update { it.copy(freiKh = text) }
     fun freiFett(text: String) = eingaben.update { it.copy(freiFett = text) }
 
-    /** Scan-Ergebnis in „Frei“: Name bereinigt (höchstens 200 Zeichen), Werte ungerundet, Häkchen nach dem Namen. */
+    /** Geplantes gewählt: mit der Mahlzeit des Plans (so speichert es [TagebuchRepository.ausPlan] ohnehin). */
+    fun planWaehlen(id: String) {
+        val mahlzeit = zustand.value.plan.firstOrNull { it.planEintragId == id }?.let { Mahlzeit.ausText(it.slot) }
+        eingaben.update { it.bestaetigen().copy(planEintragId = id, weg = EintragenWeg.PLAN, mahlzeit = mahlzeit ?: it.mahlzeit) }
+    }
+
+    /** „Nicht dabei? Frei eintragen“: Bestätigen mit leeren Feldern. */
+    fun freiEintragen() = eingaben.update { it.erfassenStand().bestaetigen().copy(weg = EintragenWeg.FREI) }
+
+    /**
+     * Foto da (Kamera oder Galerie): Bestätigen in „Frei“ mit leeren Feldern, die die Erkennung füllt. [datei], das
+     * Kamerafoto, bleibt fürs Vorschaubild, bis „Zurück“ oder das Ende der Seite es löscht.
+     */
+    fun fotoGemacht(bildUri: String, datei: String?) {
+        eingaben.update { it.erfassenStand().bestaetigen().copy(weg = EintragenWeg.FREI, fotoBild = bildUri, fotoDatei = datei) }
+        fotoLauf.erkennen(bildUri)
+    }
+
+    /** Kamera oder Scanner ohne Ergebnis zurück: Beim Sofort-Start geht die Seite zu ([schliessen]), sonst bleibt alles. */
+    fun aufnahmeAbgebrochen() {
+        if (eingaben.value.sofort == null) return
+        eingaben.update { it.copy(sofort = null) }
+        schliessenKanal.trySend(Unit)
+    }
+
+    /**
+     * „Zurück“: aus Bestätigen nach Erfassen (`true`) – Fotoerkennung und Packungssuche brechen ab (eine späte Antwort
+     * holt nicht wieder nach Bestätigen), Scan-Meldung und Foto-Angebot sind vergessen, das Kamerafoto wird gelöscht,
+     * Wahl, Felder, Packung und Foto sind verworfen; Suche und Datum bleiben, nach Geplantem gilt wieder die Mahlzeit vom
+     * Öffnen. In Erfassen `false`: Die Seite geht zu.
+     */
+    fun zurueck(): Boolean {
+        val e = eingaben.value
+        if (e.schritt != EintragenSchritt.BESTAETIGEN) return false
+        fotoLauf.abbrechen()
+        scanLauf.abbrechen()
+        scanLauf.zustand.menueVersuch()
+        fotoDateiLoeschen()
+        eingaben.value = e.erfassenStand().copy(mahlzeit = if (e.weg == EintragenWeg.PLAN) e.mahlzeitStart else e.mahlzeit)
+        return true
+    }
+
+    /**
+     * Das Kamerafoto fürs Vorschaubild, gleich aus den gesicherten Eingaben: Nach einem Prozessende steht in [zustand]
+     * anfangs noch der Startwert, das Aufräumen darf das Foto trotzdem nicht löschen.
+     */
+    internal val fotoDatei: String? get() = eingaben.value.fotoDatei
+
+    private fun fotoDateiLoeschen() {
+        eingaben.value.fotoDatei?.let { File(it).delete() }
+    }
+
+    /** Die Seite endet: Das Kamerafoto wird nicht mehr gebraucht. */
+    override fun onCleared() {
+        fotoDateiLoeschen()
+    }
+
+    /**
+     * Scan-Ergebnis: Bestätigen in „Frei“ mit der Packung. Name bereinigt (höchstens 200 Zeichen) – ohne Namen in [p]
+     * (Foto der Nährwerttabelle) bleibt der getippte, ohne Strichcode der bisherige –, Werte ungerundet, Häkchen nach
+     * dem Namen. Eine schon getippte Menge bleibt (Bestätigen ist offen, während Open Food Facts
+     * sucht und bevor das Tabellenfoto kommt).
+     */
     fun packungUebernehmen(p: Packungswerte) {
-        val name = nameBereinigt(p.name.orEmpty()).take(MAX_NAME)
+        val gescannt = nameBereinigt(p.name.orEmpty()).take(MAX_NAME)
         eingaben.update {
-            it.copy(
-                packung = p, pName = name, pMenge = "", pBasis = p.basis ?: NutrientBasis.PER_100_G,
+            val name = gescannt.ifEmpty { it.pName }
+            val packung = if (p.strichcode == null) p.copy(strichcode = it.packung?.strichcode) else p
+            it.bestaetigen().copy(
+                weg = EintragenWeg.FREI, packung = packung, pName = name, pBasis = p.basis ?: NutrientBasis.PER_100_G,
                 pKcal = p.kcalText, pEiweiss = p.feldText(Nutrient.PROTEIN_G), pKh = p.feldText(Nutrient.CARBS_G),
                 pFett = p.feldText(Nutrient.FAT_G), alsZutat = vorhandene(name) == null, alsZutatVomNutzer = false,
             )
         }
+    }
+
+    /** Strichcode gelesen: Bestätigen mit der leeren Packung und dem Code, während Katalog und Open Food Facts noch suchen. */
+    private fun scanGelesen(code: String) = packungUebernehmen(leerePackung(code))
+
+    /**
+     * Scan ohne Treffer. Ohne Werte (nicht gefunden, keine Tabelle, nicht verfügbar, Fehler): Bestätigen mit der leeren
+     * Packung, falls noch keine da ist; Meldung und Foto-Knöpfe zeigt [scanLauf]. Lädt der Scanner noch, bleibt es beim
+     * Erfassen; abgebrochen wie [aufnahmeAbgebrochen].
+     */
+    private fun ohneTreffer(a: ScanAusgang) {
+        when (a) {
+            is ScanAusgang.NichtGefunden -> leerePackungZeigen(a.strichcode)
+            is ScanAusgang.KeineTabelle -> leerePackungZeigen(a.strichcode)
+            ScanAusgang.NichtVerfuegbar, ScanAusgang.Fehler -> leerePackungZeigen(null)
+            ScanAusgang.WirdGeladen -> eingaben.update { it.copy(sofort = null) }
+            ScanAusgang.Abgebrochen -> aufnahmeAbgebrochen()
+            // Kommen über onPackung bzw. onImKatalog
+            is ScanAusgang.Gefunden, is ScanAusgang.ImKatalog -> Unit
+        }
+    }
+
+    private fun leerePackungZeigen(code: String?) {
+        if (eingaben.value.packung == null) packungUebernehmen(leerePackung(code))
     }
 
     /**
@@ -360,18 +478,14 @@ class EintragenViewModel @Inject constructor(
         )
     }
 
-    /** „Zurück zu Frei“. */
-    fun packungVerwerfen() = eingaben.update { it.copy(packung = null) }
-
-    /** Den Strichcode trägt schon eine Zutat: Weg „Zutat“ mit ihr, Suche auf ihrem Namen, Fokus auf die Menge. */
+    /**
+     * Den Strichcode trägt schon eine Zutat: Bestätigen mit ihr (Einheit nach ihrer Basis), Suche auf ihrem Namen, Fokus
+     * auf die Menge. Die leere Packung vom Lesen ([scanGelesen]) ist damit erledigt.
+     */
     fun imKatalog(t: ScanAusgang.ImKatalog) {
-        eingaben.update { it.copy(weg = EintragenWeg.ZUTAT, zutatId = t.id, suche = t.name) }
-        fokus.trySend(Unit)
-    }
-
-    /** Gescanntes Produkt aus der Rezeptsuche: wie [imKatalog], dazu die Einheit nach seiner Basis (g oder ml). */
-    fun produktWaehlen(p: ProduktKurz) {
-        eingaben.update { it.copy(weg = EintragenWeg.ZUTAT, zutatId = p.id, suche = p.name, einheit = p.einheit) }
+        eingaben.update {
+            it.bestaetigen().copy(weg = EintragenWeg.ZUTAT, zutatId = t.id, suche = t.name, einheit = einheitFuer(t.id), packung = null)
+        }
         fokus.trySend(Unit)
     }
 
@@ -396,7 +510,7 @@ class EintragenViewModel @Inject constructor(
 
     /**
      * Speichert nach dem gewählten Weg; `null`, wenn die Eingaben ungültig sind oder Rezept/Zutat/Plan fehlen. Das
-     * Schreiben läuft zu Ende, auch wenn das Blatt mittendrin gedreht wird; nur ein Fehler gibt „Speichern“ wieder frei.
+     * Schreiben läuft zu Ende, auch wenn die Seite mittendrin gedreht wird; nur ein Fehler gibt „Speichern“ wieder frei.
      */
     suspend fun speichern(): String? {
         val e = eingaben.value
@@ -428,7 +542,45 @@ class EintragenViewModel @Inject constructor(
     }
 }
 
-private data class KatalogSicht(val zutaten: List<ZutatKurz>, val produkte: List<ProduktKurz>)
+private data class KatalogSicht(val zutaten: List<ZutatKurz>, val nachId: Map<String, ZutatEntity>)
+
+/** Weiter zu Bestätigen; ein Sofort-Start ist damit erledigt. */
+private fun Eingaben.bestaetigen() = copy(schritt = EintragenSchritt.BESTAETIGEN, sofort = null)
+
+/** Erfassen mit Datum, Mahlzeit und Suche; Wahl, Felder, Packung und Foto sind verworfen. */
+private fun Eingaben.erfassenStand() = Eingaben(geoeffnet = geoeffnet, datum = datum, mahlzeit = mahlzeit, mahlzeitStart = mahlzeitStart, suche = suche)
+
+/** Packung ohne Werte zum Selbst-Ausfüllen; [code] merkt sich die Zutat beim Speichern. */
+private fun leerePackung(code: String?) = Packungswerte(null, null, emptyMap(), code, PackungScan.QUELLE_HAND)
+
+/** Titel bzw. Name der Wahl aus den ganzen Listen, nicht den Treffern der Suche. */
+private fun auswahlName(e: Eingaben, rezepte: List<RezeptKurz>, zutaten: Map<String, ZutatEntity>, plan: List<GeplanteMahlzeit>): String? =
+    when (e.weg) {
+        EintragenWeg.REZEPT -> rezepte.firstOrNull { it.id == e.rezeptId }?.titel
+        EintragenWeg.ZUTAT -> e.zutatId?.let(zutaten::get)?.canonicalName
+        EintragenWeg.PLAN -> plan.firstOrNull { it.planEintragId == e.planEintragId }?.titel
+        EintragenWeg.FREI -> null
+    }
+
+/**
+ * kcal der Wahl wie [auswahlName] aus den ganzen Listen: Rezept je Portion × Portionen (kaufmännisch gerundet), Zutat
+ * in Menge und Einheit, Geplantes je Portion. `null` ohne Wahl, ohne Menge > 0 oder ohne Energiewerte.
+ */
+private fun kcalDazu(e: Eingaben, rezepte: List<RezeptKurz>, zutaten: Map<String, ZutatEntity>, plan: List<GeplanteMahlzeit>): Int? =
+    when (e.weg) {
+        EintragenWeg.REZEPT -> {
+            val jePortion = rezepte.firstOrNull { it.id == e.rezeptId }?.kcalJePortion
+            val portionen = zahlAus(e.portionen)?.takeIf { it.positiv() }
+            if (jePortion == null || portionen == null) null else (BigDecimal(jePortion) * portionen).setScale(0, RoundingMode.HALF_UP).toInt()
+        }
+        EintragenWeg.ZUTAT -> {
+            val zutat = e.zutatId?.let(zutaten::get)
+            val menge = zahlAus(e.menge)?.takeIf { it.positiv() }
+            if (zutat == null || menge == null) null else Tagebuch.naehrwerteZutat(zutat.alsIngredient(), menge, e.einheit)?.kcal
+        }
+        EintragenWeg.PLAN -> plan.firstOrNull { it.planEintragId == e.planEintragId }?.kcalJePortion
+        EintragenWeg.FREI -> null
+    }
 
 private fun BigDecimal?.positiv() = this != null && signum() > 0
 

@@ -23,7 +23,8 @@ class PackungScan @Inject constructor(
         if (play.verfuegbar()) play.vorladen()
     }
 
-    suspend fun strichcode(): ScanAusgang {
+    /** [onGelesen] bekommt den gelesenen Strichcode, bevor Katalog und Open Food Facts gefragt werden. */
+    suspend fun strichcode(onGelesen: (String) -> Unit = {}): ScanAusgang {
         if (!play.verfuegbar()) return ScanAusgang.NichtVerfuegbar
         val code = when (val s = leser.lesen()) {
             is StrichcodeStatus.Gelesen -> s.code
@@ -31,6 +32,7 @@ class PackungScan @Inject constructor(
             StrichcodeStatus.WirdGeladen -> return ScanAusgang.WirdGeladen
             StrichcodeStatus.Fehler -> return ScanAusgang.Fehler
         }
+        onGelesen(code)
         katalog.mitStrichcode(code)?.let { return ScanAusgang.ImKatalog(it.id, it.name, code) }
         return online(code)
     }
@@ -62,5 +64,8 @@ class PackungScan @Inject constructor(
 
     companion object {
         const val QUELLE_FOTO = "Packung (Foto)"
+
+        /** Quelle der leeren Packung, die der Nutzer selbst ausfüllt (Strichcode ohne Werte). */
+        const val QUELLE_HAND = "Eigene Angabe"
     }
 }

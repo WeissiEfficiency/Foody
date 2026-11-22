@@ -40,10 +40,10 @@ abstract class KnopfWidget(@param:LayoutRes private val layout: Int, private val
     )
 }
 
-/** Widget „Scannen“: Foody auf „Heute“, Eintragen-Blatt in „Frei“, gleich der Strichcode-Scan ([SCAN_LINK]). */
+/** Widget „Scannen“: Foody über „Heute“ zu Eintragen, gleich der Strichcode-Scan ([SCAN_LINK]). */
 class ScanWidget : KnopfWidget(R.layout.widget_scan, SCAN_LINK, KnopfArt.SCAN)
 
-/** Widget „KI-Foto“: Foody auf „Heute“, Eintragen-Blatt in „Frei“, gleich die Kamera für die Fotoerkennung ([FOTO_LINK]). */
+/** Widget „KI-Foto“: Foody über „Heute“ zu Eintragen, gleich die Kamera für die Fotoerkennung ([FOTO_LINK]). */
 class FotoWidget : KnopfWidget(R.layout.widget_foto, FOTO_LINK, KnopfArt.FOTO)
 
 /**

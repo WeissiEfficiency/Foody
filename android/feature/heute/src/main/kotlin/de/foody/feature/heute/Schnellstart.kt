@@ -1,18 +1,18 @@
 package de.foody.feature.heute
 
 /**
- * Tipp auf ein Homescreen-Widget: womit das Eintragen-Blatt in „Heute“ gleich beginnt. [id] ist je Tipp neu, damit
- * auch der zweite Tipp wieder startet. Als Text ([alsText]) liegt die Anfrage im SavedStateHandle der Navigation.
+ * Tipp auf ein Homescreen-Widget: womit Eintragen aus „Heute“ gleich beginnt. [id] ist je Tipp neu, damit auch der
+ * zweite Tipp wieder startet. Als Text ([alsText]) liegt die Anfrage im SavedStateHandle der Navigation.
  */
 data class Schnellstart(val art: Art, val id: String) {
     enum class Art {
-        /** Widget „Scannen“: „Frei“ mit dem Strichcode-Scan. */
+        /** Widget „Scannen“: gleich der Strichcode-Scan. */
         SCANNEN,
 
-        /** Widget „KI-Foto“: „Frei“ mit der Kamera für die Fotoerkennung. */
+        /** Widget „KI-Foto“: gleich die Kamera für die Fotoerkennung. */
         FOTO,
 
-        /** Widget „Schnell eintragen“: das Blatt wie über „+“ (Suchen, Scannen, Foto zur Wahl). */
+        /** Widget „Schnell eintragen“: Erfassen wie über „+“ (Foto, Scannen, Suche zur Wahl). */
         EINTRAGEN,
     }
 

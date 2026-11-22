@@ -1,6 +1,7 @@
 package de.foody.app.navigation
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
@@ -8,15 +9,26 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.lifecycle.Lifecycle
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.domain.Mahlzeit
+import de.foody.feature.heute.tagebuch.EintragenStart
+import de.foody.feature.heute.tagebuch.SofortStart
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import java.time.LocalDate
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -214,6 +226,94 @@ class NavigationTest {
         starten()
         compose.runOnUiThread { nav.navigate(Kochen("r1", 2)) }
         compose.onNodeWithTag(Hauptgeruest.RAIL).assertDoesNotExist()
+    }
+
+    /** Heute öffnet Eintragen als eigenes Ziel; Zurück führt wieder nach Heute. */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun eintragenAusHeuteUndZurueck() {
+        starten()
+        compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).performClick()
+        compose.onNodeWithText("Eintragen ${Platzhalter.TAG} SNACK").assertExists()
+        compose.runOnUiThread {
+            val ziel = nav.currentBackStackEntry!!.toRoute<Eintragen>()
+            assertEquals(Platzhalter.TAG.toString(), ziel.datum)
+            assertEquals("SNACK", ziel.mahlzeit)
+            assertNull(ziel.sofort)
+            nav.popBackStack()
+        }
+        compose.runOnIdle { assertTrue(nav.currentBackStackEntry!!.destination.hasRoute<Heute>()) }
+        compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).assertExists()
+    }
+
+    /** Eintragen ist wie der Kochmodus ein Vollbild ohne Navigationsleiste. */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun eintragenOhneLeiste() {
+        starten()
+        compose.runOnUiThread { nav.navigate(EintragenStart(Platzhalter.TAG).alsZiel()) }
+        compose.onNodeWithText("Eintragen ${Platzhalter.TAG} null").assertExists()
+        compose.onNodeWithTag(Hauptgeruest.LEISTE).assertDoesNotExist()
+        compose.runOnUiThread { nav.popBackStack() }
+        compose.onNodeWithTag(Hauptgeruest.LEISTE).assertExists()
+    }
+
+    /** Meldet Eintragen zweimal fertig, schließt es nur sich selbst: „Heute“ bleibt, genau einmal auf dem Stapel. */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun eintragenSchliesstNurEinmal() {
+        starten()
+        compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).performClick()
+        compose.onNodeWithText("Eintragen ${Platzhalter.TAG} SNACK").assertExists()
+        compose.onNodeWithText(Platzhalter.ZWEIMAL_FERTIG).performClick()
+        compose.runOnIdle {
+            assertTrue(nav.currentBackStackEntry?.destination?.hasRoute<Heute>() == true, "jetzt: ${nav.currentBackStackEntry?.destination}")
+            // Unter „Heute“ liegt kein weiteres Ziel (nur der Graph): „Heute“ ist genau einmal da
+            assertNull(nav.previousBackStackEntry)
+        }
+        compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).assertExists()
+    }
+
+    /**
+     * Auch wenn Eintragen nicht vorne (RESUMED) ist, schließt „fertig“ die Seite – etwa nach einem abgebrochenen
+     * Sofort-Scan, solange die Scanner-Activity noch obenauf liegt, oder während der Einblendung. Hier: in der Einblendung
+     * (der Eintrag ist erst STARTED), zweimal gemeldet, einmal zurück.
+     */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun eintragenSchliesstAuchNichtVorne() {
+        starten()
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        compose.runOnUiThread { nav.navigate(EintragenStart(Platzhalter.TAG, Mahlzeit.SNACK).alsZiel()) }
+        // Ein paar Bilder der Einblendung (700 ms), nicht bis zum Ende
+        repeat(3) { compose.mainClock.advanceTimeByFrame() }
+        compose.runOnUiThread {
+            val eintrag = nav.currentBackStackEntry!!
+            assertTrue(eintrag.destination.hasRoute<Eintragen>())
+            assertEquals(Lifecycle.State.STARTED, eintrag.lifecycle.currentState, "Voraussetzung: noch in der Einblendung")
+        }
+        // Semantik statt Tippen: Während der Überblendung liegen beide Seiten übereinander
+        compose.onNodeWithText(Platzhalter.ZWEIMAL_FERTIG).performSemanticsAction(SemanticsActions.OnClick)
+        compose.runOnUiThread {
+            assertTrue(nav.currentBackStackEntry?.destination?.hasRoute<Heute>() == true, "jetzt: ${nav.currentBackStackEntry?.destination}")
+            assertNull(nav.previousBackStackEntry)
+        }
+        compose.mainClock.autoAdvance = true
+        compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).assertExists()
+    }
+
+    @Test
+    fun eintragenZielRundreise() {
+        val heute = LocalDate.of(2026, 11, 22)
+        val start = EintragenStart(LocalDate.of(2026, 10, 24), Mahlzeit.MITTAGESSEN, SofortStart.FOTO)
+        val ziel = start.alsZiel("a")
+        assertEquals("a", ziel.auftrag)
+        assertEquals(start, ziel.alsStart(heute))
+        // Ungültiges aus einem alten Stapel: heute, nach Uhrzeit, ohne Sofort-Start
+        assertEquals(EintragenStart(heute, null, null), Eintragen("kaputt", "QUARK", "BLITZ", "a").alsStart(heute))
+        // Je Öffnen ein neuer Auftrag
+        assertNotEquals(start.alsZiel().auftrag, start.alsZiel().auftrag)
     }
 
     @Test

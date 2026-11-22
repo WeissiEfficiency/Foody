@@ -6,7 +6,6 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.ZutatEntity
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
-import de.foody.core.data.zutaten.Packungswerte
 import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
@@ -28,6 +27,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -74,7 +74,6 @@ class EintragenViewModelTest {
     @Test
     fun rezeptMitPortionen() = runTest {
         db.bestand()
-        vm.weg(EintragenWeg.REZEPT)
         vm.rezeptWaehlen("r1")
         vm.portionen("1,5")
         assertTrue(vm.speichernMoeglich.first())
@@ -89,7 +88,6 @@ class EintragenViewModelTest {
     @Test
     fun zutatMitMengeUndEinheit() = runTest {
         db.bestand()
-        vm.weg(EintragenWeg.ZUTAT)
         vm.suche("rei")
         assertEquals(listOf("Reis"), vm.zustand.first().zutaten.map { it.name })
         vm.zutatWaehlen("z-reis")
@@ -104,7 +102,6 @@ class EintragenViewModelTest {
     fun ausPlan() = runTest {
         db.bestand()
         db.planen("p1", heute, "MITTAGESSEN", portionen = 4)
-        vm.weg(EintragenWeg.PLAN)
         assertEquals(listOf("p1"), vm.zustand.first().plan.map { it.planEintragId })
         vm.planWaehlen("p1")
         val e = gespeichert(vm.speichern())
@@ -114,7 +111,7 @@ class EintragenViewModelTest {
 
     @Test
     fun freiOhneKcalGesperrt() = runTest {
-        vm.weg(EintragenWeg.FREI)
+        vm.freiEintragen()
         vm.freiName("Apfel")
         assertFalse(vm.speichernMoeglich.first())
         assertNull(vm.speichern())
@@ -129,7 +126,6 @@ class EintragenViewModelTest {
     @Test
     fun mengeNullGesperrt() = runTest {
         db.bestand()
-        vm.weg(EintragenWeg.ZUTAT)
         vm.zutatWaehlen("z-reis")
         vm.menge("0")
         assertFalse(vm.speichernMoeglich.first())
@@ -142,7 +138,6 @@ class EintragenViewModelTest {
     @Test
     fun portionenNullGesperrt() = runTest {
         db.bestand()
-        vm.weg(EintragenWeg.REZEPT)
         vm.rezeptWaehlen("r1")
         vm.portionen("0")
         assertFalse(vm.speichernMoeglich.first())
@@ -160,7 +155,6 @@ class EintragenViewModelTest {
     @Test
     fun sucheHoechstensDreissig() = runTest {
         repeat(40) { db.zutatDao().upsert(ZutatEntity(id = "z$it", canonicalName = "Mehl $it", createdAt = 1, updatedAt = 1)) }
-        vm.weg(EintragenWeg.ZUTAT)
         vm.suche("MEHL")
         assertEquals(30, vm.zustand.first().zutaten.size)
     }
@@ -184,7 +178,6 @@ class EintragenViewModelTest {
     @Test
     fun blsTrefferWirdZutatUndStueckZaehlt() = runTest {
         val vm = mitBls("B723000	Laugengebäck mit Hagelsalz	1191	9.132	50	1.4	4.113	3.746	2.81")
-        vm.weg(EintragenWeg.ZUTAT)
         vm.suche("Brezn")
         val treffer = vm.zustand.first().bls.single()
         assertEquals("Breze", treffer.vorschlagName)
@@ -207,7 +200,6 @@ class EintragenViewModelTest {
     @Test
     fun blsGetraenkRechnetInMilliliter() = runTest {
         val vm = mitBls("P162000	Export hell	174	0.485	2.238	0.172		0	0.004")
-        vm.weg(EintragenWeg.ZUTAT)
         vm.suche("Export")
         vm.blsWaehlen(vm.zustand.first().bls.single()).join()
         val z = vm.zustand.first()
@@ -225,7 +217,6 @@ class EintragenViewModelTest {
     fun blsTrefferMitVorhandenemNamenNimmtDieZutat() = runTest {
         db.zutatDao().upsert(ZutatEntity(id = "z-breze", canonicalName = "Breze", createdAt = 1, updatedAt = 1))
         val vm = mitBls("B723000	Laugengebäck mit Hagelsalz	1191						")
-        vm.weg(EintragenWeg.ZUTAT)
         vm.suche("Laugengebäck")
         // Der Katalog hat „Breze“ schon: kein BLS-Treffer, der doppelt anlegte
         assertTrue(vm.zustand.first().bls.isEmpty())
@@ -234,48 +225,28 @@ class EintragenViewModelTest {
         assertEquals(1, db.zutatDao().alle().size)
     }
 
-    /** Die eine Suche der Stile Q–V läuft im Weg „Rezept“ und findet auch BLS-Treffer. */
+    /** Die eine Suche in Erfassen findet auch BLS-Treffer. */
     @Test
-    fun blsAuchImWegRezept() = runTest {
+    fun blsInDerSuche() = runTest {
         val vm = mitBls("B723000	Laugengebäck mit Hagelsalz	1191						")
-        vm.weg(EintragenWeg.REZEPT)
         vm.suche("Breze")
         assertTrue(vm.zustand.first { it.bls.isNotEmpty() }.bls.isNotEmpty())
     }
 
+    /** Der BLS sucht nur im Schritt Erfassen; in Bestätigen nicht. */
     @Test
-    fun blsNichtInFrei() = runTest {
+    fun blsNurBeimErfassen() = runTest {
         val vm = mitBls("B723000	Laugengebäck mit Hagelsalz	1191						")
-        vm.weg(EintragenWeg.FREI)
         vm.suche("Breze")
-        assertTrue(vm.zustand.first().bls.isEmpty())
-    }
-
-    /** Reiter der Stile Q–V: „Suchen“ behält Rezept oder Zutat, „Foto“ verwirft eine Packung, die Wahl setzt den Weg. */
-    @Test
-    fun reiterUndWahlSetzenDenWeg() = runTest {
-        vm.oeffnen(LocalDate.of(2026, 10, 24), Mahlzeit.ABENDESSEN)
-        vm.reiter(EintragenReiter.GEPLANT)
-        assertEquals(EintragenWeg.PLAN, vm.zustand.first { it.eingaben.weg == EintragenWeg.PLAN }.eingaben.weg)
-        vm.reiter(EintragenReiter.SUCHEN)
-        assertEquals(EintragenWeg.REZEPT, vm.zustand.first { it.eingaben.weg != EintragenWeg.PLAN }.eingaben.weg)
-        vm.zutatWaehlen("z1")
-        vm.reiter(EintragenReiter.SUCHEN)
-        assertEquals(EintragenWeg.ZUTAT, vm.zustand.first { it.eingaben.zutatId == "z1" }.eingaben.weg)
-        vm.rezeptWaehlen("r1")
-        assertEquals(EintragenWeg.REZEPT, vm.zustand.first { it.eingaben.rezeptId == "r1" }.eingaben.weg)
-        vm.reiter(EintragenReiter.SCANNEN)
-        vm.packungUebernehmen(Packungswerte("Skyr", null, emptyMap(), null, "Test"))
-        assertEquals("Skyr", vm.zustand.first { it.eingaben.packung != null }.eingaben.pName)
-        vm.reiter(EintragenReiter.FOTO)
-        val frei = vm.zustand.first { it.eingaben.packung == null }.eingaben
-        assertEquals(EintragenWeg.FREI, frei.weg)
+        assertTrue(withTimeout(5_000) { vm.zustand.first { it.bls.isNotEmpty() } }.bls.isNotEmpty())
+        vm.freiEintragen()
+        val bestaetigen = withTimeout(5_000) { vm.zustand.first { it.eingaben.schritt == EintragenSchritt.BESTAETIGEN && it.bls.isEmpty() } }
+        assertEquals("Breze", bestaetigen.eingaben.suche, "die Suche bleibt, der BLS schweigt")
     }
 
     @Test
     fun katalogsucheKenntSynonyme() = runTest {
         db.zutatDao().upsert(ZutatEntity(id = "z-b", canonicalName = "Brötchen", createdAt = 1, updatedAt = 1))
-        vm.weg(EintragenWeg.ZUTAT)
         vm.suche("Semmel")
         assertEquals(listOf("Brötchen"), vm.zustand.first().zutaten.map { it.name })
     }
@@ -287,7 +258,6 @@ class EintragenViewModelTest {
     fun fehlerBeimSpeichernGibtSpeichernFrei() = runTest {
         // Scheitert das Schreiben, bleibt „Speichern“ nicht gesperrt (N2)
         db.bestand()
-        vm.weg(EintragenWeg.REZEPT)
         vm.rezeptWaehlen("r1")
         nurLesen(true)
         assertFails { vm.speichern() }
@@ -299,7 +269,6 @@ class EintragenViewModelTest {
     @Test
     fun doppeltippLegtNurEinenEintragAn() = runTest {
         db.bestand()
-        vm.weg(EintragenWeg.REZEPT)
         vm.rezeptWaehlen("r1")
         val ids = kotlinx.coroutines.coroutineScope {
             listOf(async { vm.speichern() }, async { vm.speichern() }).map { it.await() }
