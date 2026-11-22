@@ -51,8 +51,10 @@ import de.foody.core.erkennung.FotoGedaechtnis
 import de.foody.core.erkennung.MahlzeitErkenner
 import de.foody.core.scan.PackungScan
 import de.foody.core.scan.ScanTexte
+import de.foody.core.scan.StrichcodeStatus
 import de.foody.core.scan.ZutatTreffer
 import de.foody.core.testing.ViewModelHalter
+import de.foody.core.testing.nachProzessende
 import de.foody.domain.FotoPortion
 import de.foody.domain.FotoVorschlag
 import de.foody.domain.Mahlzeit
@@ -141,9 +143,10 @@ class EintragenSeiteTest {
         erkenner: MahlzeitErkenner = keinErkenner,
         modell: Boolean = true,
         gedaechtnis: FotoGedaechtnis = testGedaechtnis(),
+        h: SavedStateHandle = SavedStateHandle(),
     ) = halter.behalten(
         EintragenViewModel(
-            SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, scan, erkenner,
+            h, HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, scan, erkenner,
             testErkennung(modell), gedaechtnis, testBls(), ZutatenRepository(db) { 1L },
         ),
     )
@@ -400,6 +403,51 @@ class EintragenSeiteTest {
         compose.onNodeWithText(ScanTexte.GALERIE).assertExists()
         // Eine leere Packung ist noch nichts zum Prüfen
         assertEquals(0, compose.onAllNodes(hasText("bitte prüfen", substring = true)).fetchSemanticsNodes().size)
+    }
+
+    /** Die Packung ist da, ohne Werte und ohne laufende Suche: Meldung (falls eine) und die Knöpfe zur Nährwerttabelle. */
+    private fun leerePackungMitTabellenKnoepfen(meldung: String?) {
+        compose.waitUntil(5_000) { compose.onAllNodes(hasSetTextAction() and hasText("Menge")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForIdle()
+        meldung?.let { compose.onNodeWithText(it).assertExists() }
+        compose.onNodeWithText(ScanTexte.FOTO).assertExists()
+        compose.onNodeWithText(ScanTexte.GALERIE).assertExists()
+    }
+
+    /** Spec, Tabelle der Quellen: Auch nach einem Fehler führen die Knöpfe zur Nährwerttabelle weiter. */
+    @Test
+    fun scanFehlerZeigtTabellenKnoepfe() {
+        zeigen(vm(scan = testScan(lesen = { StrichcodeStatus.Fehler })))
+        scannen()
+        leerePackungMitTabellenKnoepfen(ScanTexte.FEHLER)
+    }
+
+    /** Ebenso, wenn die Play-Dienste beim Scannen nicht (mehr) da sind. */
+    @Test
+    fun scanOhnePlayDiensteZeigtTabellenKnoepfe() {
+        var play = true
+        zeigen(vm(scan = testScan(play = { play })))
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag(ERFASSEN_SCANNEN).fetchSemanticsNodes().isNotEmpty() }
+        play = false
+        compose.onNodeWithTag(ERFASSEN_SCANNEN).performClick()
+        leerePackungMitTabellenKnoepfen(ScanTexte.NICHT_VERFUEGBAR)
+    }
+
+    /**
+     * Prozessende, während Open Food Facts sucht: Die Suche ist weg (ihr „läuft“ wird nicht gesichert), die leere
+     * Packung mit dem Strichcode bleibt. Die Knöpfe zur Nährwerttabelle führen weiter, statt nur das leere Formular.
+     */
+    @Test
+    fun prozessendeWaehrendDerSucheZeigtTabellenKnoepfe() {
+        val h = SavedStateHandle()
+        vm(scan = testScan(suchen = { awaitCancellation() }), h = h).apply {
+            oeffnen(tag, Mahlzeit.MITTAGESSEN, auftrag = "auftrag-1")
+            scanLauf.strichcode()
+            assertTrue(scanLauf.zustand.laeuft)
+        }
+        zeigen(vm(h = h.nachProzessende()))
+        leerePackungMitTabellenKnoepfen(meldung = null)
+        compose.onNodeWithText("Sucht das Produkt …").assertDoesNotExist()
     }
 
     @Test

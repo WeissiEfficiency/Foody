@@ -436,8 +436,8 @@ class EintragenViewModel @Inject constructor(
 
     /**
      * Scan ohne Treffer. Ohne Werte (nicht gefunden, keine Tabelle, nicht verfügbar, Fehler): Bestätigen mit der leeren
-     * Packung, falls noch keine da ist; Meldung und Foto-Knöpfe zeigt [scanLauf]. Lädt der Scanner noch, bleibt es beim
-     * Erfassen; abgebrochen wie [aufnahmeAbgebrochen].
+     * Packung, falls noch keine da ist; die Meldung kommt aus [scanLauf], die Foto-Knöpfe stehen bei jeder Packung ohne
+     * Werte. Lädt der Scanner noch, bleibt es beim Erfassen; abgebrochen wie [aufnahmeAbgebrochen].
      */
     private fun ohneTreffer(a: ScanAusgang) {
         when (a) {

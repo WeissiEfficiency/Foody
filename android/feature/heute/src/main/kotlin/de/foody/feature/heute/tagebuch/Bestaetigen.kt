@@ -80,8 +80,10 @@ private fun KcalDazu(kcal: Int?) {
 }
 
 /**
- * Scan: während Katalog bzw. Open Food Facts suchen ein Fortschritt, die Meldung des Scans und nach einem Scan ohne
- * Werte die Foto-Wege zur Nährwerttabelle (der Strichcode hängt sich an); darunter die Packung.
+ * Scan: während Katalog bzw. Open Food Facts suchen ein Fortschritt, die Meldung des Scans und, solange die Packung
+ * keine Werte hat und nichts mehr sucht, die Foto-Wege zur Nährwerttabelle (der Strichcode hängt sich an); darunter die
+ * Packung. So nach jedem Scan ohne Werte (nicht gefunden, keine Tabelle, nicht verfügbar, Fehler) und nach einem
+ * Prozessende mitten in der Suche, deren „läuft“ es nicht übersteht: Sonst bliebe nur das leere Formular.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -95,7 +97,7 @@ private fun PackungBestaetigen(z: EintragenZustand, vm: EintragenViewModel, aufn
         }
     }
     scan.meldung?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = farben.nebentext) }
-    if (scan.fotoAnbieten && !scan.laeuft) {
+    if (z.eingaben.packung?.werte.isNullOrEmpty() && !scan.laeuft) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
             FoodyKnopf(ScanTexte.FOTO, aufnahme.tabelle, art = KnopfArt.TEXT)
             FoodyKnopf(ScanTexte.GALERIE, aufnahme.tabelleGalerie, art = KnopfArt.TEXT)
