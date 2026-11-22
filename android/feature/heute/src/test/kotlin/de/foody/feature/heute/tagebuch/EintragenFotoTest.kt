@@ -93,15 +93,15 @@ class EintragenFotoTest {
 
     @Test
     fun knopfNurMitModell() {
-        assertFalse(vm(modell = false).fotoKnopf.value, "ohne Modell (Tablet) kein Knopf")
-        assertTrue(vm().fotoKnopf.value)
+        assertEquals(false, vm(modell = false).fotoKnopf.value, "ohne Modell (Tablet) kein Knopf")
+        assertEquals(true, vm().fotoKnopf.value)
     }
 
     @Test
     fun vorschlagErsetztDieFreienFelderUndLaesstSichEintragen() = runTest {
         val vm = vm()
         vm.oeffnen(heute, Mahlzeit.MITTAGESSEN)
-        vm.weg(EintragenWeg.FREI)
+        vm.freiEintragen()
         vm.freiName("Brot")
         vm.freiFett("3")
 
@@ -125,7 +125,7 @@ class EintragenFotoTest {
     fun markiertBisZurAenderung() {
         val vm = vm()
         vm.oeffnen(heute, Mahlzeit.SNACK)
-        vm.weg(EintragenWeg.FREI)
+        vm.freiEintragen()
         vm.fotoLauf.erkennen("content://foto")
         val foto = assertNotNull(vm.e.foto).angezeigt
         assertTrue(wieImFoto(vm.e.freiKcal, foto.kcal))
@@ -145,7 +145,7 @@ class EintragenFotoTest {
     fun ohneVorschlagBleibenDieFelder() {
         val vm = vm(erkenner = { ErkennungStatus.Unlesbar })
         vm.oeffnen(heute, Mahlzeit.SNACK)
-        vm.weg(EintragenWeg.FREI)
+        vm.freiEintragen()
         vm.freiName("Apfel")
         vm.fotoLauf.erkennen("content://foto")
         assertEquals("Apfel", vm.e.freiName)
@@ -158,7 +158,7 @@ class EintragenFotoTest {
         val h = SavedStateHandle()
         val vor = vm(h)
         vor.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
-        vor.weg(EintragenWeg.FREI)
+        vor.freiEintragen()
         vor.fotoLauf.erkennen("content://foto")
 
         val nach = vm(h.nachProzessende(), erkenner = { error("nicht neu gestartet") })
@@ -172,7 +172,7 @@ class EintragenFotoTest {
     fun neuesBlattBrichtDieErkennungAb() {
         val vm = vm(erkenner = { awaitCancellation() })
         vm.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
-        vm.weg(EintragenWeg.FREI)
+        vm.freiEintragen()
         vm.fotoLauf.erkennen("content://foto")
         assertTrue(vm.fotoLauf.zustand.value.laeuft)
 
@@ -188,7 +188,7 @@ class EintragenFotoTest {
     fun portionRechnetNurUnveraenderteFelderUm() {
         val vm = vm()
         vm.oeffnen(heute, Mahlzeit.SNACK)
-        vm.weg(EintragenWeg.FREI)
+        vm.freiEintragen()
         vm.fotoLauf.erkennen("content://foto")
         vm.freiKh("50")
 
@@ -211,7 +211,7 @@ class EintragenFotoTest {
         val gedaechtnis = testGedaechtnis()
         val erstes = vm(gedaechtnis = gedaechtnis)
         erstes.oeffnen(heute, Mahlzeit.MITTAGESSEN)
-        erstes.weg(EintragenWeg.FREI)
+        erstes.freiEintragen()
         erstes.fotoLauf.erkennen("content://foto")
         assertEquals(false, erstes.e.foto?.ausGedaechtnis)
         erstes.freiName("Leberkässemmel mit Senf")
@@ -221,7 +221,7 @@ class EintragenFotoTest {
 
         val zweites = vm(gedaechtnis = gedaechtnis)
         zweites.oeffnen(heute.plusDays(1), Mahlzeit.MITTAGESSEN)
-        zweites.weg(EintragenWeg.FREI)
+        zweites.freiEintragen()
         zweites.fotoLauf.erkennen("content://foto")
         val stand = assertNotNull(zweites.e.foto)
         assertTrue(stand.ausGedaechtnis)
@@ -237,7 +237,7 @@ class EintragenFotoTest {
         val gedaechtnis = testGedaechtnis()
         val vm = vm(gedaechtnis = gedaechtnis)
         vm.oeffnen(heute, Mahlzeit.SNACK)
-        vm.weg(EintragenWeg.FREI)
+        vm.freiEintragen()
         vm.freiName("Leberkässemmel")
         vm.freiKcal("999")
         assertNotNull(vm.speichern())

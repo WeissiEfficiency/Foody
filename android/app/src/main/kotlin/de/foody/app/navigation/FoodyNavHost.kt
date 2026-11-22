@@ -17,6 +17,7 @@ import de.foody.feature.einstellungen.EinstellungenRoute
 import de.foody.feature.einstellungen.VerbindenRoute
 import de.foody.feature.heute.HeuteRoute
 import de.foody.feature.heute.Schnellstart
+import de.foody.feature.heute.tagebuch.EintragenRoute
 import de.foody.feature.heute.tagebuch.TagebuchTagRoute
 import de.foody.feature.kochen.KochenRoute
 import de.foody.feature.rezepte.RezepteBereich
@@ -33,6 +34,8 @@ class Bildschirme(
     /** „Heute“; dazu die offene Anfrage eines Widgets (`null` = keine) und der Rückruf, wenn sie angenommen ist. */
     val heute: @Composable (NavHostController, Schnellstart?, () -> Unit) -> Unit,
     val tagebuch: @Composable (LocalDate, NavHostController) -> Unit,
+    /** Eintragen mit seinem Ziel (Datum, Mahlzeit, Sofort-Start, Auftrag). */
+    val eintragen: @Composable (Eintragen, NavHostController) -> Unit,
     val einstellungen: @Composable (NavHostController) -> Unit,
     val serverVerbinden: @Composable (NavHostController) -> Unit,
     val zutaten: @Composable (NavHostController) -> Unit,
@@ -57,16 +60,22 @@ class Bildschirme(
                     onEinkauf = { nav.navigate(EinkaufListe(it)) },
                     onAlleEintraege = { nav.navigate(TagebuchTag(LocalDate.now().toString())) },
                     onEinstellungen = { nav.navigate(Einstellungen) },
+                    onEintragen = { nav.navigate(it.alsZiel()) },
                     schnellstart = schnellstart,
                     onSchnellstartAngenommen = onSchnellstartAngenommen,
                 )
             },
             tagebuch = { datum, nav ->
                 // Blättern ersetzt den Tag, statt ihn auf den Stapel zu legen: „Zurück“ führt zu „Heute“
-                TagebuchTagRoute(datum, onDatum = { neu ->
-                    nav.navigate(TagebuchTag(neu.toString())) { popUpTo<TagebuchTag> { inclusive = true } }
-                }, onZurueck = { nav.popBackStack() })
+                TagebuchTagRoute(
+                    datum,
+                    onDatum = { neu -> nav.navigate(TagebuchTag(neu.toString())) { popUpTo<TagebuchTag> { inclusive = true } } },
+                    onZurueck = { nav.popBackStack() },
+                    onEintragen = { nav.navigate(it.alsZiel()) },
+                )
             },
+            // Speichern und Zurück aus Erfassen führen dorthin, woher man kam
+            eintragen = { ziel, nav -> EintragenRoute(ziel.alsStart(LocalDate.now()), ziel.auftrag, onFertig = { nav.popBackStack() }) },
             einstellungen = { nav ->
                 EinstellungenRoute(
                     onServer = { nav.navigate(ServerVerbinden) }, onZutaten = { nav.navigate(Zutaten) }, onZurueck = { nav.popBackStack() },
@@ -128,13 +137,13 @@ class Bildschirme(
 /** Schema der Deep Links (die v1 hatte keine). */
 const val SCHEMA = "foody://"
 
-/** Tipp aufs Widget „Scannen“: „Heute“ mit dem Eintragen-Blatt und gleich dem Strichcode-Scan. */
+/** Tipp aufs Widget „Scannen“: über „Heute“ zu Eintragen, gleich mit dem Strichcode-Scan. */
 const val SCAN_LINK = "${SCHEMA}scannen"
 
-/** Tipp aufs Widget „KI-Foto“: „Heute“ mit dem Eintragen-Blatt und gleich der Kamera für die Fotoerkennung. */
+/** Tipp aufs Widget „KI-Foto“: über „Heute“ zu Eintragen, gleich mit der Kamera für die Fotoerkennung. */
 const val FOTO_LINK = "${SCHEMA}foto"
 
-/** Tipp aufs Widget „Schnell eintragen“ (oder dessen Knopf im Heute-Widget): „Heute“ mit dem Eintragen-Blatt. */
+/** Tipp aufs Widget „Schnell eintragen“ (oder dessen Knopf im Heute-Widget): über „Heute“ zu Eintragen (Erfassen). */
 const val EINTRAGEN_LINK = "${SCHEMA}eintragen"
 
 /**
@@ -188,6 +197,7 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
         composable<TagebuchTag>(deepLinks = listOf(navDeepLink<TagebuchTag>(basePath = "${SCHEMA}tagebuch"))) {
             bildschirme.tagebuch(tagebuchDatum(it.toRoute<TagebuchTag>().datum, LocalDate.now()), nav)
         }
+        composable<Eintragen> { bildschirme.eintragen(it.toRoute<Eintragen>(), nav) }
     }
 }
 

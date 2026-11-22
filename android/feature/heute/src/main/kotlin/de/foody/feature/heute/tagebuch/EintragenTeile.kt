@@ -35,7 +35,7 @@ import de.foody.domain.FotoPortion
 import de.foody.domain.Nutrient
 import de.foody.domain.NutritionResult
 
-// Teile von Eintragen, die das alte Blatt und die Seite (Erfassen, Bestätigen) gemeinsam nutzen
+// Teile der Seite Eintragen, die Erfassen und Bestätigen nutzen
 
 /** Portionen zum Vorschlag aus dem Foto (Phase 6). */
 private val PORTIONEN = listOf(FotoPortion.KLEIN to "klein", FotoPortion.NORMAL to "normal", FotoPortion.GROSS to "groß")

@@ -14,7 +14,7 @@ import de.foody.core.data.DarstellungSpeicher
 import de.foody.core.data.StilWahl
 import de.foody.core.designsystem.stil.FoodyStil
 
-/** Widget „Schnell eintragen“ (2×2): großes „+“, der Tipp öffnet das Eintragen-Blatt ([EINTRAGEN_LINK]). */
+/** Widget „Schnell eintragen“ (2×2): großes „+“, der Tipp öffnet Eintragen ([EINTRAGEN_LINK]). */
 class EintragenWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         manager.frischZeigen(ids, eintragenAnsicht(context, DarstellungSpeicher(context).stilAktuell()))

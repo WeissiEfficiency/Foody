@@ -5,9 +5,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -15,27 +15,19 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
-import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.db.FoodyDatenbank
-import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
-import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.MitSchrift200
 import de.foody.feature.heute.bestand
-import de.foody.feature.heute.keinErkenner
 import de.foody.feature.heute.pruefeNichtsAbgeschnitten
-import de.foody.feature.heute.testBls
 import de.foody.feature.heute.testDatenbank
-import de.foody.feature.heute.testErkennung
-import de.foody.feature.heute.testGedaechtnis
-import de.foody.feature.heute.testScan
 import de.foody.feature.heute.warteAufText
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -48,7 +40,6 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.math.BigDecimal
 import java.time.LocalDate
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -65,6 +56,9 @@ class TagebuchTagScreenTest {
     private lateinit var tagebuch: TagebuchRepository
     private var aktuell = heute
 
+    /** Was „Eintragen“ geöffnet hätte (in der App: die Seite Eintragen). */
+    private val eintragen = mutableListOf<EintragenStart>()
+
     @Before
     fun setUp() {
         db = testDatenbank()
@@ -80,12 +74,11 @@ class TagebuchTagScreenTest {
     private fun zeigen(schrift200: Boolean = false, stil: FoodyStil = FoodyStil.MILCHGLAS) {
         val kontext = RuntimeEnvironment.getApplication()
         val vm = halter.behalten(TagebuchTagViewModel(tagebuch, TageszielSpeicher(kontext)))
-        val eintragen = halter.behalten(EintragenViewModel(SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), tagebuch, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis(), testBls(), ZutatenRepository(db) { 1L }))
         compose.setContent {
             FoodyTheme(stil = stil) {
                 var datum by remember { mutableStateOf(heute) }
                 val inhalt = @androidx.compose.runtime.Composable {
-                    TagebuchTagRoute(datum, onDatum = { datum = it; aktuell = it }, vm = vm, eintragenVm = eintragen)
+                    TagebuchTagRoute(datum, onDatum = { datum = it; aktuell = it }, onEintragen = { eintragen += it }, vm = vm)
                 }
                 if (schrift200) MitSchrift200(inhalt) else inhalt()
             }
@@ -187,7 +180,8 @@ class TagebuchTagScreenTest {
         compose.warteAufText("FREITAG, 23. OKT.")
         assertEquals(heute.minusDays(1), aktuell)
         compose.onAllNodesWithContentDescription("Noch nichts eingetragen", substring = true)[0].performClick()
-        compose.warteAufText("Mahl eintragen")
+        // Die Seite Eintragen für den gezeigten Tag, mit der Mahlzeit der Zeile
+        compose.runOnIdle { assertEquals(listOf(EintragenStart(heute.minusDays(1), Mahlzeit.FRUEHSTUECK)), eintragen) }
     }
 
     @Test
@@ -198,15 +192,27 @@ class TagebuchTagScreenTest {
         compose.pruefeNichtsAbgeschnitten()
     }
 
+    /** „+“ der Chronik öffnet Eintragen ohne Mahlzeit (nach Uhrzeit). */
     @Test
-    fun chronikEintragenBlattImStil() {
+    fun chronikPlusOeffnetEintragen() {
         zeigen(stil = FoodyStil.SAGE)
         compose.warteAufText("CHRONIK")
         compose.onNodeWithContentDescription("Eintragen").performClick()
-        compose.warteAufText("Mahl eintragen")
-        compose.onNodeWithText("In die Chronik").assertExists()
-        compose.onNodeWithText("Morgen").assertExists()
-        // TalkBack liest die normalen Namen
-        compose.onAllNodesWithContentDescription("Frühstück").assertCountEquals(2)
+        compose.runOnIdle { assertEquals(listOf(EintragenStart(heute, null)), eintragen) }
+    }
+
+    // Ohne Breitenangabe wie bei eintragAendernSkaliert (Textfeld im Dialog)
+    @Test
+    @Config(qualifiers = "h891dp")
+    fun aendernUeberstehtNeuaufbau() {
+        runBlocking { tagebuch.frei(heute, Mahlzeit.SNACK, "Apfel", 52, null, null, null) }
+        val vm = halter.behalten(TagebuchTagViewModel(tagebuch, TageszielSpeicher(RuntimeEnvironment.getApplication())))
+        val wiederherstellen = StateRestorationTester(compose)
+        wiederherstellen.setContent { FoodyTheme { TagebuchTagRoute(heute, {}, onEintragen = {}, vm = vm) } }
+        compose.warteAufText("Apfel")
+        compose.onNodeWithContentDescription("Apfel ändern").performClick()
+        compose.warteAufText("Speichern")
+        wiederherstellen.emulateSavedInstanceStateRestore()
+        compose.warteAufText("Speichern")
     }
 }

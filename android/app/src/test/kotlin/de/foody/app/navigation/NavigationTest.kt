@@ -8,15 +8,24 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.domain.Mahlzeit
+import de.foody.feature.heute.tagebuch.EintragenStart
+import de.foody.feature.heute.tagebuch.SofortStart
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import java.time.LocalDate
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -214,6 +223,49 @@ class NavigationTest {
         starten()
         compose.runOnUiThread { nav.navigate(Kochen("r1", 2)) }
         compose.onNodeWithTag(Hauptgeruest.RAIL).assertDoesNotExist()
+    }
+
+    /** Heute öffnet Eintragen als eigenes Ziel; Zurück führt wieder nach Heute. */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun eintragenAusHeuteUndZurueck() {
+        starten()
+        compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).performClick()
+        compose.onNodeWithText("Eintragen ${Platzhalter.TAG} SNACK").assertExists()
+        compose.runOnUiThread {
+            val ziel = nav.currentBackStackEntry!!.toRoute<Eintragen>()
+            assertEquals(Platzhalter.TAG.toString(), ziel.datum)
+            assertEquals("SNACK", ziel.mahlzeit)
+            assertNull(ziel.sofort)
+            nav.popBackStack()
+        }
+        compose.runOnIdle { assertTrue(nav.currentBackStackEntry!!.destination.hasRoute<Heute>()) }
+        compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).assertExists()
+    }
+
+    /** Eintragen ist wie der Kochmodus ein Vollbild ohne Navigationsleiste. */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun eintragenOhneLeiste() {
+        starten()
+        compose.runOnUiThread { nav.navigate(EintragenStart(Platzhalter.TAG).alsZiel()) }
+        compose.onNodeWithText("Eintragen ${Platzhalter.TAG} null").assertExists()
+        compose.onNodeWithTag(Hauptgeruest.LEISTE).assertDoesNotExist()
+        compose.runOnUiThread { nav.popBackStack() }
+        compose.onNodeWithTag(Hauptgeruest.LEISTE).assertExists()
+    }
+
+    @Test
+    fun eintragenZielRundreise() {
+        val heute = LocalDate.of(2026, 11, 22)
+        val start = EintragenStart(LocalDate.of(2026, 10, 24), Mahlzeit.MITTAGESSEN, SofortStart.FOTO)
+        val ziel = start.alsZiel("a")
+        assertEquals("a", ziel.auftrag)
+        assertEquals(start, ziel.alsStart(heute))
+        // Ungültiges aus einem alten Stapel: heute, nach Uhrzeit, ohne Sofort-Start
+        assertEquals(EintragenStart(heute, null, null), Eintragen("kaputt", "QUARK", "BLITZ", "a").alsStart(heute))
+        // Je Öffnen ein neuer Auftrag
+        assertNotEquals(start.alsZiel().auftrag, start.alsZiel().auftrag)
     }
 
     @Test

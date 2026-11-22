@@ -2,6 +2,7 @@ package de.foody.feature.heute.tagebuch
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -49,11 +50,15 @@ const val ERFASSEN_SCANNEN = "erfassen-scannen"
  * Schritt Erfassen: oben „Foto“ und „Scannen“ als große Knöpfe (sie starten sofort, ohne Menü; ohne Erkennungsmodell
  * steht „Frei eintragen“ an der Stelle von „Foto“), darunter die Nebenwege Galerie und Nährwerttabelle, ein Hinweis,
  * die Suche über Rezepte, Zutaten und den BLS und das noch offene Geplante des Tags. Antippen führt zu Bestätigen.
+ *
+ * Bis die Einstellung gelesen ist, ob es ein Modell gibt, steht neben „Scannen“ ein leerer Platz gleicher Größe; die
+ * Nebenwege und „Nicht dabei?“ kommen erst danach. So springt beim Öffnen kein Knopf von „Frei eintragen“ zu „Foto“.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun Erfassen(z: EintragenZustand, vm: EintragenViewModel, aufnahme: Aufnahme) {
-    val fotoKnopf by vm.fotoKnopf.collectAsStateWithLifecycle()
+    // null: noch nicht gelesen
+    val fotoKnopf = vm.fotoKnopf.collectAsStateWithLifecycle().value
     val foto by vm.fotoLauf.zustand.collectAsStateWithLifecycle()
     val scan = vm.scanLauf.zustand
     val verfuegbar = vm.scanLauf.verfuegbar
@@ -61,27 +66,29 @@ internal fun Erfassen(z: EintragenZustand, vm: EintragenViewModel, aufnahme: Auf
     // Gleich hohe Knöpfe, auch wenn ein Text bei großer Schrift umbricht
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
         val knopf = Modifier.weight(1f).fillMaxHeight()
-        if (fotoKnopf) {
-            GrosserKnopf("Foto", Icons.Outlined.PhotoCamera, aufnahme.foto, knopf.testTag(ERFASSEN_FOTO))
-        } else {
-            GrosserKnopf("Frei eintragen", Icons.Outlined.Edit, vm::freiEintragen, knopf)
+        when (fotoKnopf) {
+            true -> GrosserKnopf("Foto", Icons.Outlined.PhotoCamera, aufnahme.foto, knopf.testTag(ERFASSEN_FOTO))
+            false -> GrosserKnopf("Frei eintragen", Icons.Outlined.Edit, vm::freiEintragen, knopf)
+            null -> Box(knopf)
         }
         GrosserKnopf(
             "Scannen", Icons.Outlined.DocumentScanner, aufnahme.scannen, knopf.testTag(ERFASSEN_SCANNEN),
             aktiv = scannenMoeglich, laeuft = scan.laeuft,
         )
     }
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-        if (fotoKnopf) FoodyKnopf("Aus der Galerie", aufnahme.galerie, art = KnopfArt.TEXT)
-        // Ein neuer Versuch gehört zu keinem früheren Strichcode
-        FoodyKnopf(
-            "Nährwerttabelle fotografieren",
-            {
-                scan.menueVersuch()
-                aufnahme.tabelle()
-            },
-            art = KnopfArt.TEXT, aktiv = scannenMoeglich,
-        )
+    if (fotoKnopf != null) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
+            if (fotoKnopf) FoodyKnopf("Aus der Galerie", aufnahme.galerie, art = KnopfArt.TEXT)
+            // Ein neuer Versuch gehört zu keinem früheren Strichcode
+            FoodyKnopf(
+                "Nährwerttabelle fotografieren",
+                {
+                    scan.menueVersuch()
+                    aufnahme.tabelle()
+                },
+                art = KnopfArt.TEXT, aktiv = scannenMoeglich,
+            )
+        }
     }
     val hinweis = scan.meldung ?: ScanTexte.NICHT_VERFUEGBAR.takeIf { !verfuegbar } ?: foto.meldung
     hinweis?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = FoodyTheme.farben.nebentext) }
@@ -103,7 +110,7 @@ internal fun Erfassen(z: EintragenZustand, vm: EintragenViewModel, aufnahme: Auf
         Abschnitt("Aus dem Bundeslebensmittelschlüssel")
         z.bls.forEach { t -> BlsZeile(t) { vm.blsWaehlen(t) } }
     }
-    if (fotoKnopf) FoodyKnopf("Nicht dabei? Frei eintragen", vm::freiEintragen, art = KnopfArt.TEXT)
+    if (fotoKnopf == true) FoodyKnopf("Nicht dabei? Frei eintragen", vm::freiEintragen, art = KnopfArt.TEXT)
 }
 
 @Composable

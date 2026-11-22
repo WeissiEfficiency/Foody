@@ -50,14 +50,34 @@ class FesteErgebnisse(
 }
 
 /**
- * Content-Uris für Kamerafotos ohne die Pfadregeln des FileProviders: Er vergleicht Pfade mit „/“ und findet unter
- * Windows den Cache-Ordner nie. Legt für die Kamera-Authority der App eine Pfadregel in seinen statischen Speicher, die
- * jede Datei auf `content://<authority>/test/<name>` abbildet.
+ * Content-Uris für Kamerafotos im Test. Der FileProvider vergleicht Pfade mit „/“ und findet unter Windows den
+ * Cache-Ordner nie: Dort legt dies für die Kamera-Authority der App eine Pfadregel in seinen statischen Speicher, die
+ * jede Datei auf `content://<authority>/test/<name>` abbildet. Sonst (CI unter Linux) bleibt der echte FileProvider; der
+ * Eintrag wird nur geleert, weil er sich Ordner aus früheren Tests (anderer Robolectric-Ordner) merkt.
+ *
+ * Gibt zurück, was die Änderung rückgängig macht (in `@After` aufrufen): Der vorige Eintrag kommt wieder.
  */
-fun kameraUrisOhneFileProvider(context: Context) {
+fun kameraUrisOhneFileProvider(context: Context): () -> Unit {
     val authority = "${context.packageName}.kamera"
+
+    @Suppress("UNCHECKED_CAST")
+    val speicher = FileProvider::class.java.getDeclaredField("sCache").apply { isAccessible = true }.get(null) as MutableMap<String, Any>
+    val vorher = synchronized(speicher) {
+        speicher[authority].also {
+            if (System.getProperty("os.name").orEmpty().startsWith("Windows")) speicher[authority] = pfadregel(authority) else speicher.remove(authority)
+        }
+    }
+    return {
+        synchronized(speicher) {
+            if (vorher != null) speicher[authority] = vorher else speicher.remove(authority)
+        }
+    }
+}
+
+/** Pfadregel (`FileProvider.PathStrategy`), die jede Datei auf `content://<authority>/test/<name>` abbildet. */
+private fun pfadregel(authority: String): Any {
     val regel = Class.forName("androidx.core.content.FileProvider\$PathStrategy")
-    val stellvertreter = Proxy.newProxyInstance(regel.classLoader, arrayOf(regel)) { selbst, methode, args ->
+    return Proxy.newProxyInstance(regel.classLoader, arrayOf(regel)) { selbst, methode, args ->
         when (methode.name) {
             "getUriForFile" -> Uri.parse("content://$authority/test/${(args[0] as File).name}")
             "hashCode" -> System.identityHashCode(selbst)
@@ -66,8 +86,4 @@ fun kameraUrisOhneFileProvider(context: Context) {
             else -> error("Im Test nicht gebraucht: ${methode.name}")
         }
     }
-
-    @Suppress("UNCHECKED_CAST")
-    val speicher = FileProvider::class.java.getDeclaredField("sCache").apply { isAccessible = true }.get(null) as MutableMap<String, Any>
-    synchronized(speicher) { speicher[authority] = stellvertreter }
 }

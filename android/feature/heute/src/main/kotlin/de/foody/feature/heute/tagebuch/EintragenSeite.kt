@@ -31,7 +31,6 @@ import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 /** Test-Tag des Speichern-Knopfs (die Überschrift heißt auch „Eintragen“). */
 const val EINTRAGEN_SPEICHERN = "eintragen-speichern"
@@ -62,8 +61,8 @@ fun EintragenRoute(start: EintragenStart, auftrag: String, onFertig: () -> Unit,
     val z by vm.zustand.collectAsStateWithLifecycle()
     val moeglich by vm.speichernMoeglich.collectAsStateWithLifecycle()
     val e = z.eingaben
-    // Vor dem ersten Zustand (Startwert ohne Datum) gilt der Start, damit Erfassen auch dann nicht aufblitzt
-    val sofort = if (e.datum == LocalDate.EPOCH) start.sofort else e.sofort
+    // Vor dem ersten Zustand (Startwert, noch nicht geöffnet) gilt der Start, damit Erfassen auch dann nicht aufblitzt
+    val sofort = if (e.geoeffnet) e.sofort else start.sofort
     if (schliesst || (sofort != null && e.schritt == EintragenSchritt.ERFASSEN)) {
         Box(Modifier.fillMaxSize())
         return

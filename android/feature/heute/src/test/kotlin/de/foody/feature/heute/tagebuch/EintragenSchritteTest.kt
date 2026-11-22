@@ -134,8 +134,10 @@ class EintragenSchritteTest {
     @Test
     fun startetBeimErfassen() = runTest {
         val vm = vm()
+        assertFalse(vm.zustand.value.eingaben.geoeffnet, "Startwert: Die Seite nimmt die Angaben des Ziels")
         vm.oeffnen(tag, null, LocalTime.of(12, 30))
         val e = vm.e()
+        assertTrue(e.geoeffnet)
         assertEquals(EintragenSchritt.ERFASSEN, e.schritt)
         assertEquals(Mahlzeit.MITTAGESSEN, e.mahlzeit)
         assertNull(e.sofort)
@@ -454,6 +456,16 @@ class EintragenSchritteTest {
         withTimeout(1_000) { vm.schliessen.first() }
     }
 
+    /** Ein normales Öffnen verwirft eine liegengebliebene Kamera-Anfrage. */
+    @Test
+    fun normalesOeffnenVerwirftKameraAnfrage() = runTest {
+        val vm = vm()
+        vm.oeffnen(tag, null, auftrag = "a1", sofort = SofortStart.FOTO)
+        assertTrue(vm.fotoLauf.zustand.value.kameraAngefragt)
+        vm.oeffnen(tag, Mahlzeit.SNACK, auftrag = "a2")
+        assertFalse(vm.fotoLauf.zustand.value.kameraAngefragt)
+    }
+
     @Test
     fun zurueckVonBestaetigenNachErfassen() = runTest {
         linsensuppe()
@@ -515,6 +527,7 @@ class EintragenSchritteTest {
         val nach = vm(h.nachProzessende())
         assertEquals("/p.jpg", nach.fotoLauf.zustand.value.fotoPfad)
         val e = nach.e()
+        assertTrue(e.geoeffnet, "gesichert: kein neues Öffnen nötig")
         assertEquals(SofortStart.FOTO, e.sofort)
         assertEquals(EintragenSchritt.ERFASSEN, e.schritt)
     }

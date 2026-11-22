@@ -19,7 +19,7 @@ import kotlin.coroutines.CoroutineContext
 
 /**
  * Gedächtnis eigener Korrekturen (Phase 6, Regel 29): Was nach einem Foto gespeichert wurde, liegt unter dem Namen, den
- * das Modell genannt hat. Nennt es denselben Namen wieder, schlägt das Blatt diese Werte statt der Schätzung vor.
+ * das Modell genannt hat. Nennt es denselben Namen wieder, schlägt Eintragen diese Werte statt der Schätzung vor.
  * Höchstens [MAX_EINTRAEGE], der älteste fällt weg. Dazu für die Abnahme (Phase 5) ein Protokoll je Speichern:
  * Vorschlag gegen Gespeichertes. Beides liegt nur auf diesem Gerät (`filesDir/fotoerkennung/`), nicht gesynct, nicht in
  * der Sicherung; eine kaputte Datei zählt als leer.

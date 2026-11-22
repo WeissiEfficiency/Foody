@@ -25,7 +25,8 @@ import java.io.File
 
 /**
  * Wege, etwas zu erfassen: Mahlzeitfoto aus Kamera oder Galerie, Strichcode, Foto der Nährwerttabelle aus Kamera oder
- * Galerie. Startet sofort, ohne Menü.
+ * Galerie. Startet sofort, ohne Menü. Solange eine Kamera offen ist, tun sie nichts (ein zweiter schneller Tipp öffnet
+ * keine zweite Kamera und keine Galerie darüber).
  */
 internal class Aufnahme(
     val foto: () -> Unit,
@@ -92,8 +93,10 @@ internal fun rememberAufnahme(vm: EintragenViewModel): Aufnahme {
 
     val aufnahme = remember(vm, kamera, galerie, tabelleKamera, tabelleGalerie) {
         val bild = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+        val kameraOffen = { fotoLauf.zustand.value.fotoPfad != null || scanLauf.zustand.fotoPfad != null }
         Aufnahme(
-            foto = {
+            foto = foto@{
+                if (kameraOffen()) return@foto
                 val datei = KameraDatei.neu(context, KameraDatei.MAHLZEIT, praefix = "mahlzeit-")
                 fotoLauf.kameraGestartet(datei.path)
                 try {
@@ -104,9 +107,10 @@ internal fun rememberAufnahme(vm: EintragenViewModel): Aufnahme {
                     vm.aufnahmeAbgebrochen()
                 }
             },
-            galerie = { galerie.launch(bild) },
+            galerie = { if (!kameraOffen()) galerie.launch(bild) },
             scannen = scanLauf::strichcode,
-            tabelle = {
+            tabelle = tabelle@{
+                if (kameraOffen()) return@tabelle
                 val datei = neuesScanFoto(context)
                 scanLauf.zustand.kameraGestartet(datei.path)
                 try {
@@ -117,7 +121,7 @@ internal fun rememberAufnahme(vm: EintragenViewModel): Aufnahme {
                     scanLauf.zustand.auswerten(ScanAusgang.Fehler)
                 }
             },
-            tabelleGalerie = { tabelleGalerie.launch(bild) },
+            tabelleGalerie = { if (!kameraOffen()) tabelleGalerie.launch(bild) },
         )
     }
 

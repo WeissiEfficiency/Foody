@@ -154,7 +154,7 @@ class ZutatenScreenshotTest {
 
     /**
      * Schmales Handy (320 dp): Unter Robolectric wird ein Dialog mit Textfeld ab etwa 360 dp Breite nie „idle“
-     * (Testumgebung, nicht die App; vgl. EintragenBlattTest in :feature:heute).
+     * (Testumgebung, nicht die App; vgl. TagebuchTagScreenTest in :feature:heute).
      */
     @Test
     @Config(qualifiers = "w320dp-h891dp")

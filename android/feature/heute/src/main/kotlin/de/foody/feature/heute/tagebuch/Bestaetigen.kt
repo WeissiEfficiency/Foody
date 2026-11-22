@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.FoodyMenue
@@ -36,6 +37,8 @@ import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.rezeptBild
 import de.foody.core.designsystem.token.FoodyAbstaende
+import de.foody.core.erkennung.ErkennungLauf
+import de.foody.core.erkennung.ErkennungTexte
 import de.foody.core.scan.ScanTexte
 import de.foody.domain.Mahlzeit
 
@@ -109,6 +112,20 @@ private fun FotoBestaetigen(e: Eingaben, vm: EintragenViewModel) {
     }
     FotoErkennungStand(vm.fotoLauf)
     FreieFelder(e, vm)
+}
+
+/** Unter dem Foto: während der Erkennung „Erkennt das Foto …“ mit „Abbrechen“, danach die Meldung (falls eine). */
+@Composable
+private fun FotoErkennungStand(lauf: ErkennungLauf) {
+    val zustand by lauf.zustand.collectAsStateWithLifecycle()
+    val farben = FoodyTheme.farben
+    when {
+        zustand.laeuft -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
+            Text(ErkennungTexte.LAEUFT, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = farben.nebentext)
+            FoodyKnopf(ErkennungTexte.ABBRECHEN, lauf::abbrechen, art = KnopfArt.TEXT)
+        }
+        zustand.meldung != null -> Text(zustand.meldung.orEmpty(), style = MaterialTheme.typography.bodySmall, color = farben.nebentext)
+    }
 }
 
 /**

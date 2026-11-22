@@ -17,14 +17,26 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
+import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.Schnellstart
+import de.foody.feature.heute.tagebuch.EintragenStart
+import java.time.LocalDate
 
-/** Ersatz für einen Bereich in Navigationstests: zeigt den Titel und die übergebenen Argumente. */
+/**
+ * Ersatz für einen Bereich in Navigationstests: zeigt den Titel und die übergebenen Argumente; mit [aktionText] einen
+ * Knopf, der [onAktion] auslöst (etwa wie „Heute“ Eintragen öffnet).
+ */
 @Composable
-fun Platzhalter(titel: String, argumente: String? = null, modifier: Modifier = Modifier) {
+fun Platzhalter(
+    titel: String,
+    argumente: String? = null,
+    modifier: Modifier = Modifier,
+    aktionText: String? = null,
+    onAktion: (() -> Unit)? = null,
+) {
     Box(modifier.fillMaxSize().safeDrawingPadding().padding(16.dp), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            LeererZustandFlaeche(Icons.Outlined.Construction, titel, Platzhalter.TEXT, aktionText = null, onAktion = null)
+            LeererZustandFlaeche(Icons.Outlined.Construction, titel, Platzhalter.TEXT, aktionText = aktionText, onAktion = onAktion)
             if (argumente != null) {
                 Text(argumente, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
             }
@@ -34,18 +46,31 @@ fun Platzhalter(titel: String, argumente: String? = null, modifier: Modifier = M
 
 object Platzhalter {
     const val TEXT = "Platzhalter für Tests"
+
+    /** Knopf im Heute-Platzhalter: öffnet Eintragen für einen Snack am [TAG], wie die leere Zeile in „Heute“. */
+    const val SNACK_EINTRAGEN = "Snack eintragen"
+
+    val TAG: LocalDate = LocalDate.of(2026, 10, 24)
 }
 
 /** Dieselben Bildschirme mit einem anderen „Heute“. */
 fun Bildschirme.mitHeute(heute: @Composable (NavHostController, Schnellstart?, () -> Unit) -> Unit) = Bildschirme(
-    heute, tagebuch, einstellungen, serverVerbinden, zutaten, zutat, rezepte, rezeptDetail, editor, kochen, woche, einkauf,
+    heute, tagebuch, eintragen, einstellungen, serverVerbinden, zutaten, zutat, rezepte, rezeptDetail, editor, kochen, woche, einkauf,
 )
 
 /** Alle Bereiche als [Platzhalter] – für Navigationstests ohne ViewModels. */
 val Bildschirme.Companion.platzhalter: Bildschirme
     get() = Bildschirme(
-        heute = { _, start, _ -> Platzhalter("Heute", start?.let { "${it.art} angefragt" }) },
+        heute = { nav, start, _ ->
+            // Wie HeuteRoute in Bildschirme.echt: Eintragen als neues Ziel
+            Platzhalter(
+                "Heute", start?.let { "${it.art} angefragt" },
+                aktionText = Platzhalter.SNACK_EINTRAGEN,
+                onAktion = { nav.navigate(EintragenStart(Platzhalter.TAG, Mahlzeit.SNACK).alsZiel()) },
+            )
+        },
         tagebuch = { datum, _ -> Platzhalter("Tagebuch", "Tagebuch $datum") },
+        eintragen = { ziel, _ -> Platzhalter("Eintragen", "Eintragen ${ziel.datum} ${ziel.mahlzeit}" + ziel.sofort?.let { " $it" }.orEmpty()) },
         einstellungen = { Platzhalter("Einstellungen") },
         serverVerbinden = { Platzhalter("Server verbinden") },
         zutaten = { Platzhalter("Zutatenkatalog") },
