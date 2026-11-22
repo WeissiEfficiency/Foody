@@ -19,6 +19,8 @@ import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.heute.HeuteRepository
 import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.erkennung.ErkennungEinstellung
 import de.foody.core.sync.SyncLage
 import de.foody.core.sync.SyncLageQuelle
 import de.foody.core.testing.ViewModelHalter
@@ -76,14 +78,17 @@ class HeuteScreenTest {
         db.close()
     }
 
+    /** [erkennung]: ohne Modell (wie auf dem Tablet) fehlt „Foto“. */
+    private fun viewModel(erkennung: ErkennungEinstellung = testErkennung()) = halter.behalten(
+        HeuteViewModel(
+            HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, SyncLageQuelle { lage },
+            TageszielSpeicher(RuntimeEnvironment.getApplication()), Zeitgeber { zeit },
+            NichtGegessenSpeicher(RuntimeEnvironment.getApplication()), erkennung,
+        ),
+    )
+
     private fun zeigen(schrift200: Boolean = false) {
-        val vm = halter.behalten(
-            HeuteViewModel(
-                HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, SyncLageQuelle { lage },
-                TageszielSpeicher(RuntimeEnvironment.getApplication()), Zeitgeber { zeit },
-                NichtGegessenSpeicher(RuntimeEnvironment.getApplication()),
-            ),
-        )
+        val vm = viewModel()
         compose.setContent {
             FoodyTheme {
                 val inhalt = @androidx.compose.runtime.Composable {
@@ -219,6 +224,30 @@ class HeuteScreenTest {
             }
         }
         compose.runOnIdle { assertEquals(3, eintragen.size) }
+    }
+
+    /**
+     * In einer Szene (Edo) öffnen „Scannen“ und „Foto“ Eintragen für den Tag gleich mit Scanner bzw. Kamera. „Foto“
+     * folgt dem Schalter „Fotoerkennung“ (und dem Modell auf dem Gerät).
+     */
+    @Test
+    fun sofortAusSzene() {
+        val erkennung = testErkennung(modell = true)
+        val vm = viewModel(erkennung)
+        compose.setContent {
+            FoodyTheme(stil = FoodyStil.EDO) {
+                HeuteRoute({ _, _ -> }, {}, {}, {}, {}, onEintragen = { eintragen += it }, vm = vm)
+            }
+        }
+        compose.warteAufText("Foto")
+        compose.onNodeWithText("Scannen").performScrollTo().performClick()
+        compose.onNodeWithText("Foto").performScrollTo().performClick()
+        compose.runOnIdle {
+            assertEquals(listOf(EintragenStart(heute, null, SofortStart.SCANNEN), EintragenStart(heute, null, SofortStart.FOTO)), eintragen)
+        }
+        compose.runOnIdle { erkennung.setzen(false) }
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Foto").fetchSemanticsNodes().isEmpty() }
+        compose.onNodeWithText("Scannen").assertExists()
     }
 
     @Test

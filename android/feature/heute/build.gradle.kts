@@ -20,9 +20,9 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:data"))
     implementation(project(":core:sync"))
-    // „Packung scannen“ in „Frei“ (Phase 6e3)
+    // „Scannen“ in Erfassen (Packung, Phase 6e3)
     implementation(project(":core:scan"))
-    // „Foto erkennen“ in „Frei“ (Fotoerkennung, Phase 3)
+    // Fotoerkennung: „Foto“ in Erfassen und in den Szenen von „Heute“ (nur mit Modell, ErkennungEinstellung)
     implementation(project(":core:erkennung"))
     // Kamera und Galerie für „Foto erkennen“
     implementation(libs.androidx.activity.compose)

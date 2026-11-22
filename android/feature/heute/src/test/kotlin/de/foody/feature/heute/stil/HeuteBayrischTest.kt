@@ -1,6 +1,9 @@
 package de.foody.feature.heute.stil
 
 import android.provider.Settings
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -16,9 +19,10 @@ import de.foody.feature.heute.EintragKurz
 import de.foody.feature.heute.HeuteAktionen
 import de.foody.feature.heute.HeuteScreen
 import de.foody.feature.heute.MahlzeitAbschnitt
-import de.foody.feature.heute.MitSchrift200
+import de.foody.feature.heute.MitSchrift
 import de.foody.feature.heute.beispielZustand
 import de.foody.feature.heute.pruefeNichtsAbgeschnitten
+import de.foody.feature.heute.tagebuch.SofortStart
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -43,9 +47,13 @@ class HeuteBayrischTest {
         onAlleEintraege = { ausgeloest += "alle" },
         onEinstellungen = { ausgeloest += "einstellungen" },
         onEintragen = { ausgeloest += "eintragen ${it?.name}" },
+        onSofort = { ausgeloest += "sofort $it" },
         onGegessen = { ausgeloest += "gegessen $it" },
         onNichtGegessen = { ausgeloest += "nicht ${it.planEintragId}" },
     )
+
+    /** Mit „Foto“ (Modell da); ein Test schaltet es ab. */
+    private var zustand by mutableStateOf(beispielZustand())
 
     @Before
     fun animationenAus() {
@@ -53,10 +61,10 @@ class HeuteBayrischTest {
         Settings.Global.putFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 0f)
     }
 
-    private fun zeigen(variante: StilVariante = StilVariante.IMMERSIV, schrift200: Boolean = false) {
+    private fun zeigen(variante: StilVariante = StilVariante.IMMERSIV, schrift: Float = 1f) {
         compose.setContent {
             FoodyTheme(stil = FoodyStil.BAYRISCH, variante = variante, unschaerfe = false) {
-                if (schrift200) MitSchrift200 { HeuteScreen(beispielZustand(), aktionen) } else HeuteScreen(beispielZustand(), aktionen)
+                MitSchrift(schrift) { HeuteScreen(zustand, aktionen) }
             }
         }
     }
@@ -87,18 +95,38 @@ class HeuteBayrischTest {
         compose.onNodeWithContentDescription("Ofengemüse mit Feta und Kräuterquark, Rezept öffnen").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Tagebuch, 860 von 2.000 kcal").performScrollTo().performClick()
         compose.onNodeWithText("+ Brotzeit eitragn").performScrollTo().performClick()
-        compose.onNodeWithContentDescription("Scannen oder Foto").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Einkauf, 9 offen").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Einstellungen").performClick()
         assertEquals(
-            listOf("kochen r1 2", "rezept r1", "alle", "eintragen ${Mahlzeit.SNACK.name}", "eintragen null", "einkauf l1", "einstellungen"),
+            listOf("kochen r1 2", "rezept r1", "alle", "eintragen ${Mahlzeit.SNACK.name}", "einkauf l1", "einstellungen"),
             ausgeloest,
         )
     }
 
+    /** Zwei runde Symbolknöpfe starten Eintragen gleich mit Scanner bzw. Kamera; „Foto“ nur mit Modell auf dem Gerät. */
+    @Test
+    fun scannenUndFotoGetrennt() {
+        zeigen()
+        compose.onNodeWithContentDescription("Scannen").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Foto").performScrollTo().performClick()
+        assertEquals(listOf("sofort ${SofortStart.SCANNEN}", "sofort ${SofortStart.FOTO}"), ausgeloest)
+        zustand = zustand.copy(fotoMoeglich = false)
+        compose.onNodeWithContentDescription("Scannen").performScrollTo().assertExists()
+        compose.onNodeWithContentDescription("Foto").assertDoesNotExist()
+    }
+
+    /** Schmales Handy mit 130 % Schrift: Die Knöpfe (und alles andere) passen. */
+    @Test
+    @Config(qualifiers = "w360dp-h1600dp")
+    fun szenenKnoepfeBei130() {
+        zeigen(schrift = 1.3f)
+        compose.waitForIdle()
+        compose.pruefeNichtsAbgeschnitten()
+    }
+
     @Test
     fun schrift200OhneAbschneiden() {
-        zeigen(schrift200 = true)
+        zeigen(schrift = 2f)
         compose.waitForIdle()
         compose.pruefeNichtsAbgeschnitten()
     }

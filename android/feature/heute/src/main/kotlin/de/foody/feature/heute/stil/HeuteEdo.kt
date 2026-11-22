@@ -103,6 +103,7 @@ import de.foody.feature.heute.kcalVollstaendig
 import de.foody.feature.heute.kcalZahl
 import de.foody.feature.heute.meta
 import de.foody.feature.heute.rezeptLink
+import de.foody.feature.heute.tagebuch.SofortStart
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -144,7 +145,7 @@ internal fun HeuteEdo(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier:
                         style = Edo.titel(16f), color = FoodyTheme.farben.text,
                     )
                 }
-                Knoepfe(aktionen)
+                Knoepfe(aktionen, zustand.fotoMoeglich)
             }
         }
     }
@@ -474,11 +475,17 @@ private fun Stempel(gegessen: Boolean, onKlick: (() -> Unit)?, beschreibung: Str
     }
 }
 
-/** „＋ Eintragen“ und „Scannen · Foto“; die Einstellungen sitzen oben rechts. */
+/**
+ * „＋ Eintragen“ öffnet Erfassen; darunter „Scannen“ und (mit Modell) „Foto“, die gleich Scanner bzw. Kamera starten.
+ * Die Einstellungen sitzen oben rechts.
+ */
 @Composable
-private fun Knoepfe(aktionen: HeuteAktionen) {
-    Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        EdoKnopf("＋ Eintragen", { aktionen.onEintragen(null) }, Modifier.weight(1f), voll = false, beschreibung = "Eintragen")
-        EdoKnopf("Scannen · Foto", { aktionen.onEintragen(null) }, Modifier.weight(1f), voll = false, beschreibung = "Scannen oder Foto")
+private fun Knoepfe(aktionen: HeuteAktionen, foto: Boolean) {
+    Column(Modifier.fillMaxWidth().padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        EdoKnopf("＋ Eintragen", { aktionen.onEintragen(null) }, Modifier.fillMaxWidth(), voll = false, beschreibung = "Eintragen")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            EdoKnopf("Scannen", { aktionen.onSofort(SofortStart.SCANNEN) }, Modifier.weight(1f), voll = false)
+            if (foto) EdoKnopf("Foto", { aktionen.onSofort(SofortStart.FOTO) }, Modifier.weight(1f), voll = false)
+        }
     }
 }

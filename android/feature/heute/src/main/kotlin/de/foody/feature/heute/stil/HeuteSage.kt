@@ -100,6 +100,7 @@ import de.foody.feature.heute.HeuteAktionen
 import de.foody.feature.heute.HeuteRahmen
 import de.foody.feature.heute.HeuteZustand
 import de.foody.feature.heute.TagebuchHeute
+import de.foody.feature.heute.tagebuch.SofortStart
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -125,7 +126,7 @@ internal fun HeuteSage(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier
             Column(Modifier.padding(horizontal = 20.dp).padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 if (zustand.datenbankLeer) DatenbankLeerHinweis(aktionen.onEinstellungen)
                 Vitalitaet(zustand.tagebuch)
-                WasTun(sageMenue(zustand), aktionen)
+                WasTun(sageMenue(zustand), zustand.fotoMoeglich, aktionen)
             }
         }
     }
@@ -355,9 +356,12 @@ private fun Makro(name: String, gramm: Int, anteil: Float, farbe: Color, modifie
     }
 }
 
-/** Menü „Was tun?“: ein Eintrag ist gewählt, der Hauptknopf darunter führt ihn aus. Darunter zwei Wege zum Eintragen. */
+/**
+ * Menü „Was tun?“: ein Eintrag ist gewählt, der Hauptknopf darunter führt ihn aus. Darunter die Nebenwege: das Rezept
+ * der nächsten Mahlzeit, „+ SCANNEN“ und (mit Modell, [foto]) „+ FOTO“, die gleich Scanner bzw. Kamera starten.
+ */
 @Composable
-private fun WasTun(menue: List<SageEintrag>, aktionen: HeuteAktionen) {
+private fun WasTun(menue: List<SageEintrag>, foto: Boolean, aktionen: HeuteAktionen) {
     val f = FoodyTheme.farben
     val glut = FoodyTheme.stil.zier
     var gewaehlt by rememberSaveable { mutableIntStateOf(0) }
@@ -401,7 +405,8 @@ private fun WasTun(menue: List<SageEintrag>, aktionen: HeuteAktionen) {
     val naechstes = menue.firstOrNull { it.ziel == SageZiel.KOCHEN }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         naechstes?.let { n -> NebenWeg("REZEPT ANSEHEN", "Rezept ansehen", Modifier.weight(1f)) { aktionen.onRezept(requireNotNull(n.rezeptId)) } }
-        NebenWeg("+ SCANNEN · FOTO", "Eintragen mit Scan oder Foto", Modifier.weight(1f)) { aktionen.onEintragen(null) }
+        NebenWeg("+ SCANNEN", "Scannen", Modifier.weight(1f)) { aktionen.onSofort(SofortStart.SCANNEN) }
+        if (foto) NebenWeg("+ FOTO", "Foto", Modifier.weight(1f)) { aktionen.onSofort(SofortStart.FOTO) }
     }
     frage?.let { id -> menue.firstOrNull { it.vorschlag?.planEintragId == id } }?.let { e ->
         GegessenFrage(requireNotNull(e.mahlzeit), requireNotNull(e.vorschlag), aktionen) { frage = null }

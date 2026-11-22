@@ -39,6 +39,8 @@ fun beispielZustand(bild: String? = null) = HeuteZustand(
     ),
     sync = SyncAnzeige.Synchron,
     datenbankLeer = false,
+    // Mit Modell: Die Szenen zeigen beide Sofort-Wege, „Scannen“ und „Foto“
+    fotoMoeglich = true,
 )
 
-val KEINE_AKTIONEN = HeuteAktionen({ _, _ -> }, {}, {}, {}, {}, {}, {}, {})
+val KEINE_AKTIONEN = HeuteAktionen({ _, _ -> }, {}, {}, {}, {}, {}, {}, {}, {})

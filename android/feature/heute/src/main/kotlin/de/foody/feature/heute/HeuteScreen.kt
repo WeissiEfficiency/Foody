@@ -47,13 +47,16 @@ data class HeuteAktionen(
     val onAlleEintraege: () -> Unit,
     val onEinstellungen: () -> Unit,
     val onEintragen: (Mahlzeit?) -> Unit,
+    /** „Scannen“ und „Foto“ in den Szenen: Eintragen gleich mit Scanner bzw. Kamera. */
+    val onSofort: (SofortStart) -> Unit,
     val onGegessen: (planEintragId: String) -> Unit,
     val onNichtGegessen: (GeplanteMahlzeit) -> Unit,
 )
 
 /**
  * „Heute“ mit ViewModel. [onEintragen] öffnet die Seite Eintragen (aus einer Zeile mit deren Mahlzeit, sonst nach
- * Uhrzeit), ebenso eine Anfrage eines Widgets ([schnellstart]); danach meldet sie [onSchnellstartAngenommen].
+ * Uhrzeit; „Scannen“ und „Foto“ gleich mit Scanner bzw. Kamera), ebenso eine Anfrage eines Widgets ([schnellstart]);
+ * danach meldet sie [onSchnellstartAngenommen].
  */
 @Composable
 fun HeuteRoute(
@@ -76,7 +79,8 @@ fun HeuteRoute(
     }
     val aktionen = HeuteAktionen(
         onKochen, onRezept, onEinkauf, onAlleEintraege, onEinstellungen,
-        { onEintragen(EintragenStart(zustand?.datum ?: LocalDate.now(), it)) }, vm::gegessen, vm::nichtGegessen,
+        { onEintragen(EintragenStart(zustand?.datum ?: LocalDate.now(), it)) },
+        { onEintragen(EintragenStart(zustand?.datum ?: LocalDate.now(), null, it)) }, vm::gegessen, vm::nichtGegessen,
     )
     HeuteScreen(zustand, aktionen)
 }

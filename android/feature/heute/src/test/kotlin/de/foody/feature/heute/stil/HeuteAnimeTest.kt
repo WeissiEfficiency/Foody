@@ -51,6 +51,7 @@ class HeuteAnimeTest {
         onAlleEintraege = { ausgeloest += "alle" },
         onEinstellungen = { ausgeloest += "einstellungen" },
         onEintragen = { ausgeloest += "eintragen ${it?.name}" },
+        onSofort = { ausgeloest += "sofort $it" },
         onGegessen = { ausgeloest += "gegessen $it" },
         onNichtGegessen = { ausgeloest += "nicht ${it.planEintragId}" },
     )

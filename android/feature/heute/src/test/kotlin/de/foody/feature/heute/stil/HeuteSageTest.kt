@@ -1,6 +1,9 @@
 package de.foody.feature.heute.stil
 
 import android.provider.Settings
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -15,7 +18,10 @@ import de.foody.core.designsystem.stil.StilVariante
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.HeuteAktionen
 import de.foody.feature.heute.HeuteScreen
+import de.foody.feature.heute.MitSchrift
 import de.foody.feature.heute.beispielZustand
+import de.foody.feature.heute.pruefeNichtsAbgeschnitten
+import de.foody.feature.heute.tagebuch.SofortStart
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -40,9 +46,13 @@ class HeuteSageTest {
         onAlleEintraege = { ausgeloest += "alle" },
         onEinstellungen = { ausgeloest += "einstellungen" },
         onEintragen = { ausgeloest += "eintragen ${it?.name}" },
+        onSofort = { ausgeloest += "sofort $it" },
         onGegessen = { ausgeloest += "gegessen $it" },
         onNichtGegessen = { ausgeloest += "nicht ${it.planEintragId}" },
     )
+
+    /** Mit „Foto“ (Modell da); ein Test schaltet es ab. */
+    private var zustand by mutableStateOf(beispielZustand())
 
     /** Animationen aus: Flamme und Glut ruhen, der Test wartet nicht auf sie. */
     @Before
@@ -51,9 +61,9 @@ class HeuteSageTest {
         Settings.Global.putFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 0f)
     }
 
-    private fun zeigen(variante: StilVariante = StilVariante.IMMERSIV) {
+    private fun zeigen(variante: StilVariante = StilVariante.IMMERSIV, schrift: Float = 1f) {
         compose.setContent {
-            FoodyTheme(stil = FoodyStil.SAGE, variante = variante, unschaerfe = false) { HeuteScreen(beispielZustand(), aktionen) }
+            FoodyTheme(stil = FoodyStil.SAGE, variante = variante, unschaerfe = false) { MitSchrift(schrift) { HeuteScreen(zustand, aktionen) } }
         }
     }
 
@@ -109,8 +119,31 @@ class HeuteSageTest {
         zeigen()
         compose.onNodeWithContentDescription("Einstellungen").performClick()
         compose.onNodeWithText("REZEPT ANSEHEN").performScrollTo().performClick()
-        compose.onNodeWithText("+ SCANNEN · FOTO").performScrollTo().performClick()
-        assertEquals(listOf("einstellungen", "rezept r1", "eintragen null"), ausgeloest)
+        assertEquals(listOf("einstellungen", "rezept r1"), ausgeloest)
+    }
+
+    /** „+ SCANNEN“ und „+ FOTO“ starten Eintragen gleich mit Scanner bzw. Kamera; „+ FOTO“ nur mit Modell auf dem Gerät. */
+    @Test
+    fun scannenUndFotoGetrennt() {
+        zeigen()
+        compose.onNodeWithContentDescription("Scannen").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Foto").performScrollTo().performClick()
+        assertEquals(listOf("sofort ${SofortStart.SCANNEN}", "sofort ${SofortStart.FOTO}"), ausgeloest)
+        compose.onNodeWithText("+ SCANNEN").assertExists()
+        compose.onNodeWithText("+ FOTO").assertExists()
+        zustand = zustand.copy(fotoMoeglich = false)
+        compose.onNodeWithContentDescription("Scannen").performScrollTo().assertExists()
+        compose.onNodeWithContentDescription("Foto").assertDoesNotExist()
+        compose.onNodeWithText("+ FOTO").assertDoesNotExist()
+    }
+
+    /** Schmales Handy mit 130 % Schrift: Die Knöpfe (und alles andere) passen. */
+    @Test
+    @Config(qualifiers = "w360dp-h1600dp")
+    fun szenenKnoepfeBei130() {
+        zeigen(schrift = 1.3f)
+        compose.waitForIdle()
+        compose.pruefeNichtsAbgeschnitten()
     }
 
     @Test
