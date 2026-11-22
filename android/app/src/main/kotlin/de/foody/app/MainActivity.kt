@@ -5,18 +5,23 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.core.util.Consumer
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import de.foody.app.navigation.Hauptgeruest
 import de.foody.app.navigation.deepLinkOeffnen
-import de.foody.app.navigation.schnellstart
-import de.foody.app.navigation.schnellstartAnfragen
+import de.foody.app.navigation.widgetStart
+import de.foody.app.navigation.widgetStartOeffnen
 import de.foody.app.widget.alleAktualisieren
 import de.foody.core.data.DarstellungSpeicher
 import de.foody.core.designsystem.FoodyTheme
@@ -30,8 +35,8 @@ import javax.inject.Inject
 
 /**
  * Einzige Activity der V3. `singleTask`: Ein Deep Link bei laufender App kommt über `onNewIntent` und wird an die
- * Navigation weitergereicht; beim Kaltstart liest die Navigation den Start-Intent selbst (außer den Links der Widgets
- * „Scannen“ und „KI-Foto“, die gibt die Activity weiter).
+ * Navigation weitergereicht; beim Kaltstart liest die Navigation den Start-Intent selbst (außer den Links der Widgets,
+ * die gibt die Activity weiter).
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -42,11 +47,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        // Kaltstart von einem Widget (nicht nach Drehen/Prozessende: Die Anfrage liegt dann schon in „Heute“)
-        val widgetBeimStart = if (savedInstanceState == null) intent.schnellstart() else null
+        // Kaltstart von einem Widget (nicht nach Drehen/Prozessende: Eintragen liegt dann schon im Stapel)
+        val widgetBeimStart = if (savedInstanceState == null) intent.widgetStart() else null
         setContent {
             val nav = rememberNavController()
-            LaunchedEffect(nav) { widgetBeimStart?.let(nav::schnellstartAnfragen) }
+            // „KI-Foto“ und „Scannen“: „Heute“ bleibt unsichtbar, bis Eintragen obenauf liegt (dann gleich Kamera bzw. Scanner)
+            var verdeckt by remember { mutableStateOf(widgetBeimStart?.sofort != null) }
+            LaunchedEffect(nav) {
+                widgetBeimStart?.let(nav::widgetStartOeffnen)
+                verdeckt = false
+            }
             DisposableEffect(nav) {
                 val weiter = Consumer<Intent> { nav.deepLinkOeffnen(it) }
                 addOnNewIntentListener(weiter)
@@ -64,7 +74,9 @@ class MainActivity : ComponentActivity() {
             // Stile haben einen festen Grund; die Systemleisten folgen ihm
             SystemleistenPassend(stil.dunkel(variante, modusDunkel))
             FoodyTheme(dunkel = modusDunkel, farbwelt = Farbwelt.ausName(farbwelt), stil = stil, variante = variante, akzent = wahl.akzent) {
-                FoodyHintergrund { Hauptgeruest(nav) }
+                FoodyHintergrund {
+                    Box(Modifier.graphicsLayer { alpha = if (verdeckt) 0f else 1f }) { Hauptgeruest(nav) }
+                }
             }
         }
     }

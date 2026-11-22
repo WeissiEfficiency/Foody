@@ -24,7 +24,7 @@ dependencies {
     implementation(project(":core:scan"))
     // Fotoerkennung: „Foto“ in Erfassen und in den Szenen von „Heute“ (nur mit Modell, ErkennungEinstellung)
     implementation(project(":core:erkennung"))
-    // Kamera und Galerie für „Foto erkennen“
+    // Seite Eintragen: Kamera und Galerie (Activity-Result-Launcher), Zurück (BackHandler)
     implementation(libs.androidx.activity.compose)
     implementation(project(":domain"))
     implementation(libs.hilt.android)

@@ -13,7 +13,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,9 +53,8 @@ data class HeuteAktionen(
 )
 
 /**
- * „Heute“ mit ViewModel. [onEintragen] öffnet die Seite Eintragen (aus einer Zeile mit deren Mahlzeit, sonst nach
- * Uhrzeit; „Scannen“ und „Foto“ gleich mit Scanner bzw. Kamera), ebenso eine Anfrage eines Widgets ([schnellstart]);
- * danach meldet sie [onSchnellstartAngenommen].
+ * „Heute“ mit ViewModel. [onEintragen] öffnet die Seite Eintragen für den Tag (aus einer Zeile mit deren Mahlzeit,
+ * sonst nach Uhrzeit; „Scannen“ und „Foto“ gleich mit Scanner bzw. Kamera).
  */
 @Composable
 fun HeuteRoute(
@@ -67,29 +65,17 @@ fun HeuteRoute(
     onEinstellungen: () -> Unit,
     onEintragen: (EintragenStart) -> Unit,
     vm: HeuteViewModel = hiltViewModel(),
-    /** Vom Widget (eindeutig je Tipp): öffnet Eintragen, bei „Scannen“ und „KI-Foto“ gleich mit Scanner bzw. Kamera. */
-    schnellstart: Schnellstart? = null,
-    onSchnellstartAngenommen: () -> Unit = {},
 ) {
     val zustand by vm.zustand.collectAsStateWithLifecycle()
-    LaunchedEffect(schnellstart) {
-        if (schnellstart == null) return@LaunchedEffect
-        onEintragen(EintragenStart(LocalDate.now(), null, schnellstart.art.alsSofort()))
-        onSchnellstartAngenommen()
-    }
+    val datum = zustand?.datum ?: LocalDate.now()
     val aktionen = HeuteAktionen(
         onKochen, onRezept, onEinkauf, onAlleEintraege, onEinstellungen,
-        { onEintragen(EintragenStart(zustand?.datum ?: LocalDate.now(), it)) },
-        { onEintragen(EintragenStart(zustand?.datum ?: LocalDate.now(), null, it)) }, vm::gegessen, vm::nichtGegessen,
+        onEintragen = { onEintragen(EintragenStart(datum, it)) },
+        onSofort = { onEintragen(EintragenStart(datum, null, it)) },
+        onGegessen = vm::gegessen,
+        onNichtGegessen = vm::nichtGegessen,
     )
     HeuteScreen(zustand, aktionen)
-}
-
-/** Schnellstart des Widgets als Sofort-Start; „Schnell eintragen“ beginnt mit Erfassen. */
-private fun Schnellstart.Art.alsSofort(): SofortStart? = when (this) {
-    Schnellstart.Art.SCANNEN -> SofortStart.SCANNEN
-    Schnellstart.Art.FOTO -> SofortStart.FOTO
-    Schnellstart.Art.EINTRAGEN -> null
 }
 
 /**

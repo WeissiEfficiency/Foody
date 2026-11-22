@@ -258,6 +258,32 @@ class NavigationTest {
         compose.onNodeWithTag(Hauptgeruest.LEISTE).assertExists()
     }
 
+    /**
+     * Eintragen mit Sofort-Start (Widgets, „Scannen“ und „Foto“ in den Szenen) kommt ohne Überblendung: „Heute“ ist
+     * gleich weg, Kamera bzw. Scanner gehen über der leeren Seite auf. Ohne Sofort-Start blendet Eintragen wie gewohnt.
+     */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun sofortZielOhneUebergang() {
+        starten()
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        compose.runOnUiThread { nav.navigate(EintragenStart(Platzhalter.TAG, null, SofortStart.SCANNEN).alsZiel()) }
+        // Ein paar Bilder, weit vor dem Ende einer Überblendung (700 ms)
+        repeat(5) { compose.mainClock.advanceTimeByFrame() }
+        compose.onNodeWithText("Eintragen ${Platzhalter.TAG} null SCANNEN").assertExists()
+        compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).assertDoesNotExist()
+        compose.mainClock.autoAdvance = true
+        compose.runOnUiThread { nav.popBackStack() }
+        compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).assertExists()
+        // Zum Vergleich ohne Sofort-Start: nach denselben Bildern liegt „Heute“ noch unter der Einblendung
+        compose.mainClock.autoAdvance = false
+        compose.runOnUiThread { nav.navigate(EintragenStart(Platzhalter.TAG).alsZiel()) }
+        repeat(5) { compose.mainClock.advanceTimeByFrame() }
+        compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).assertExists()
+        compose.mainClock.autoAdvance = true
+    }
+
     /** Meldet Eintragen zweimal fertig, schließt es nur sich selbst: „Heute“ bleibt, genau einmal auf dem Stapel. */
     @Test
     @Config(qualifiers = "w411dp-h891dp")

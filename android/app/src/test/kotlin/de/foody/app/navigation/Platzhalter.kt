@@ -18,7 +18,6 @@ import androidx.navigation.NavHostController
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.domain.Mahlzeit
-import de.foody.feature.heute.Schnellstart
 import de.foody.feature.heute.tagebuch.EintragenStart
 import java.time.LocalDate
 
@@ -57,17 +56,17 @@ object Platzhalter {
 }
 
 /** Dieselben Bildschirme mit einem anderen „Heute“. */
-fun Bildschirme.mitHeute(heute: @Composable (NavHostController, Schnellstart?, () -> Unit) -> Unit) = Bildschirme(
+fun Bildschirme.mitHeute(heute: @Composable (NavHostController) -> Unit) = Bildschirme(
     heute, tagebuch, eintragen, einstellungen, serverVerbinden, zutaten, zutat, rezepte, rezeptDetail, editor, kochen, woche, einkauf,
 )
 
 /** Alle Bereiche als [Platzhalter] – für Navigationstests ohne ViewModels. */
 val Bildschirme.Companion.platzhalter: Bildschirme
     get() = Bildschirme(
-        heute = { nav, start, _ ->
+        heute = { nav ->
             // Wie HeuteRoute in Bildschirme.echt: Eintragen als neues Ziel
             Platzhalter(
-                "Heute", start?.let { "${it.art} angefragt" },
+                "Heute",
                 aktionText = Platzhalter.SNACK_EINTRAGEN,
                 onAktion = { nav.navigate(EintragenStart(Platzhalter.TAG, Mahlzeit.SNACK).alsZiel()) },
             )

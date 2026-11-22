@@ -2,15 +2,16 @@ package de.foody.app.navigation
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavGraph
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.feature.heute.Schnellstart
+import de.foody.feature.heute.tagebuch.SofortStart
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -19,6 +20,7 @@ import org.robolectric.annotation.GraphicsMode
 import java.time.LocalDate
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -70,67 +72,49 @@ class DeepLinkTest {
     }
 
     /**
-     * Widget „Scannen“ bei laufender App: zurück zu „Heute“ (wie der Tab), dort eine Scan-Anfrage, die „Heute“ einmal
-     * annimmt. Ein zweiter Tipp bringt eine neue Anfrage mit eigener ID; „KI-Foto“ eine mit der Art FOTO.
+     * Widgets bei laufender App: „Scannen“ öffnet aus einem Rezept heraus Eintragen über „Heute“ (Zurück führt dorthin),
+     * gleich mit dem Scanner. Ein zweiter Tipp ersetzt die offene Seite durch eine neue (neuer Auftrag, also ein neuer
+     * Scan); „KI-Foto“ beginnt mit der Kamera, „Schnell eintragen“ mit Erfassen.
      */
     @Test
-    fun widgetLinksFuehrenZuHeuteMitAnfrage() {
-        val angenommen = mutableListOf<Schnellstart>()
-        val bildschirme = Bildschirme.platzhalter.mitHeute { _, start, annehmen ->
-            LaunchedEffect(start) {
-                if (start != null) {
-                    angenommen += start
-                    annehmen()
-                }
-            }
-            Platzhalter("Heute")
-        }
+    fun widgetLinksOeffnenEintragenUeberHeute() {
         compose.setContent {
             nav = rememberNavController()
-            FoodyTheme { Hauptgeruest(nav, bildschirme) }
+            FoodyTheme { Hauptgeruest(nav, Bildschirme.platzhalter) }
         }
         compose.runOnIdle { nav.navigate(RezeptDetail("r1")) }
-        val link = Intent(Intent.ACTION_VIEW, Uri.parse(SCAN_LINK))
-        compose.runOnIdle { assertTrue(nav.deepLinkOeffnen(link)) }
+        val scan = widgetTippen(SCAN_LINK)
+        assertEquals(SofortStart.SCANNEN.name, scan.sofort)
+        assertEquals(LocalDate.now().toString(), scan.datum)
+        assertNull(scan.mahlzeit, "nach Uhrzeit")
+        compose.onNodeWithText("Eintragen ${LocalDate.now()} null SCANNEN").assertExists()
+        val nochmal = widgetTippen(SCAN_LINK)
+        assertEquals(SofortStart.SCANNEN.name, nochmal.sofort)
+        assertNotEquals(scan.auftrag, nochmal.auftrag, "jeder Tipp eine neue Seite")
+        assertEquals(SofortStart.FOTO.name, widgetTippen(FOTO_LINK).sofort)
+        assertNull(widgetTippen(EINTRAGEN_LINK).sofort, "„Schnell eintragen“ beginnt mit Erfassen")
+    }
+
+    /** Tippt ein Widget an (Link bei laufender App): Danach liegt genau eine Seite Eintragen auf „Heute“; ihr Ziel. */
+    private fun widgetTippen(link: String): Eintragen {
+        compose.runOnIdle { assertTrue(nav.deepLinkOeffnen(Intent(Intent.ACTION_VIEW, Uri.parse(link)))) }
         compose.waitForIdle()
-        compose.runOnIdle {
-            assertTrue(nav.currentBackStackEntry!!.destination.hasRoute<Heute>())
-            assertEquals(1, nav.currentBackStack.value.count { it.destination.hasRoute<Heute>() })
-            assertEquals(1, angenommen.size)
-            assertNull(nav.getBackStackEntry<Heute>().savedStateHandle.get<String>(SCHNELLSTART), "angenommen und weg")
-        }
-        compose.runOnIdle { assertTrue(nav.deepLinkOeffnen(link)) }
-        compose.waitForIdle()
-        compose.runOnIdle {
-            assertEquals(2, angenommen.size)
-            assertEquals(2, angenommen.map { it.id }.toSet().size, "jeder Tipp eine eigene Anfrage")
-            assertEquals(Schnellstart.Art.SCANNEN, angenommen.last().art)
-        }
-        compose.runOnIdle { nav.navigate(Einstellungen) }
-        compose.runOnIdle { assertTrue(nav.deepLinkOeffnen(Intent(Intent.ACTION_VIEW, Uri.parse(FOTO_LINK)))) }
-        compose.waitForIdle()
-        compose.runOnIdle {
-            assertTrue(nav.currentBackStackEntry!!.destination.hasRoute<Heute>())
-            assertEquals(Schnellstart.Art.FOTO, angenommen.last().art)
+        return compose.runOnIdle {
+            val stapel = nav.currentBackStack.value.map { it.destination }.filterNot { it is NavGraph }
+            assertEquals(2, stapel.size, "Stapel nach $link: ${stapel.map { it.route }}")
+            assertTrue(stapel[0].hasRoute<Heute>())
+            assertTrue(stapel[1].hasRoute<Eintragen>())
+            nav.currentBackStackEntry!!.toRoute<Eintragen>()
         }
     }
 
     @Test
     fun widgetLinksErkannt() {
-        assertEquals(Schnellstart.Art.SCANNEN, Intent(Intent.ACTION_VIEW, Uri.parse("foody://scannen")).schnellstart())
-        assertEquals(Schnellstart.Art.FOTO, Intent(Intent.ACTION_VIEW, Uri.parse("foody://foto")).schnellstart())
-        assertEquals(Schnellstart.Art.EINTRAGEN, Intent(Intent.ACTION_VIEW, Uri.parse("foody://eintragen")).schnellstart())
-        assertNull(Intent(Intent.ACTION_VIEW, Uri.parse("foody://rezept/r1")).schnellstart())
-        assertNull(Intent(Intent.ACTION_MAIN).schnellstart())
-    }
-
-    @Test
-    fun schnellstartAlsText() {
-        val start = Schnellstart(Schnellstart.Art.FOTO, "a:b")
-        assertEquals(start, Schnellstart.ausText(start.alsText()))
-        assertNull(Schnellstart.ausText("GIBT_ES_NICHT:1"))
-        assertNull(Schnellstart.ausText("ohne-art"))
-        assertNull(Schnellstart.ausText(null))
+        assertEquals(WidgetStart.SCANNEN, Intent(Intent.ACTION_VIEW, Uri.parse("foody://scannen")).widgetStart())
+        assertEquals(WidgetStart.FOTO, Intent(Intent.ACTION_VIEW, Uri.parse("foody://foto")).widgetStart())
+        assertEquals(WidgetStart.EINTRAGEN, Intent(Intent.ACTION_VIEW, Uri.parse("foody://eintragen")).widgetStart())
+        assertNull(Intent(Intent.ACTION_VIEW, Uri.parse("foody://rezept/r1")).widgetStart())
+        assertNull(Intent(Intent.ACTION_MAIN).widgetStart())
     }
 
     @Test

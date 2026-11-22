@@ -1,10 +1,12 @@
 package de.foody.app.navigation
 
 import android.content.Intent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -16,7 +18,6 @@ import de.foody.feature.einkauf.EinkaufRoute
 import de.foody.feature.einstellungen.EinstellungenRoute
 import de.foody.feature.einstellungen.VerbindenRoute
 import de.foody.feature.heute.HeuteRoute
-import de.foody.feature.heute.Schnellstart
 import de.foody.feature.heute.tagebuch.EintragenRoute
 import de.foody.feature.heute.tagebuch.TagebuchTagRoute
 import de.foody.feature.kochen.KochenRoute
@@ -27,12 +28,10 @@ import de.foody.feature.woche.WocheRoute
 import de.foody.feature.zutaten.ZutatEditorRoute
 import de.foody.feature.zutaten.ZutatenListeRoute
 import java.time.LocalDate
-import java.util.UUID
 
 /** Die Bildschirme mit ViewModel (Hilt); Navigationstests setzen eigene Platzhalter ein (`Platzhalter.kt` in den Tests). */
 class Bildschirme(
-    /** „Heute“; dazu die offene Anfrage eines Widgets (`null` = keine) und der Rückruf, wenn sie angenommen ist. */
-    val heute: @Composable (NavHostController, Schnellstart?, () -> Unit) -> Unit,
+    val heute: @Composable (NavHostController) -> Unit,
     val tagebuch: @Composable (LocalDate, NavHostController) -> Unit,
     /** Eintragen mit seinem Ziel (Datum, Mahlzeit, Sofort-Start, Auftrag); `onFertig` schließt die Seite (einmal). */
     val eintragen: @Composable (Eintragen, onFertig: () -> Unit) -> Unit,
@@ -53,7 +52,7 @@ class Bildschirme(
 ) {
     companion object {
         val echt = Bildschirme(
-            heute = { nav, schnellstart, onSchnellstartAngenommen ->
+            heute = { nav ->
                 HeuteRoute(
                     onKochen = { id, portionen -> nav.navigate(Kochen(id, portionen)) },
                     onRezept = { nav.navigate(RezeptDetail(it)) },
@@ -61,8 +60,6 @@ class Bildschirme(
                     onAlleEintraege = { nav.navigate(TagebuchTag(LocalDate.now().toString())) },
                     onEinstellungen = { nav.navigate(Einstellungen) },
                     onEintragen = { nav.navigate(it.alsZiel()) },
-                    schnellstart = schnellstart,
-                    onSchnellstartAngenommen = onSchnellstartAngenommen,
                 )
             },
             tagebuch = { datum, nav ->
@@ -137,40 +134,28 @@ class Bildschirme(
 /** Schema der Deep Links (die v1 hatte keine). */
 const val SCHEMA = "foody://"
 
-/** Tipp aufs Widget „Scannen“: über „Heute“ zu Eintragen, gleich mit dem Strichcode-Scan. */
+/** Tipp aufs Widget „Scannen“: Eintragen über „Heute“, gleich mit dem Strichcode-Scan ([WidgetStart.SCANNEN]). */
 const val SCAN_LINK = "${SCHEMA}scannen"
 
-/** Tipp aufs Widget „KI-Foto“: über „Heute“ zu Eintragen, gleich mit der Kamera für die Fotoerkennung. */
+/** Tipp aufs Widget „KI-Foto“: Eintragen über „Heute“, gleich mit der Kamera für die Fotoerkennung ([WidgetStart.FOTO]). */
 const val FOTO_LINK = "${SCHEMA}foto"
 
-/** Tipp aufs Widget „Schnell eintragen“ (oder dessen Knopf im Heute-Widget): über „Heute“ zu Eintragen (Erfassen). */
+/** Tipp aufs Widget „Schnell eintragen“ (oder dessen Knopf im Heute-Widget): Eintragen über „Heute“, mit Erfassen. */
 const val EINTRAGEN_LINK = "${SCHEMA}eintragen"
-
-/**
- * Offene Widget-Anfrage im SavedStateHandle von „Heute“ ([Schnellstart.alsText]): übersteht Drehen und Prozessende,
- * bis „Heute“ sie annimmt.
- */
-internal const val SCHNELLSTART = "schnellstart"
-
-/** Der Link eines Widgets ([SCAN_LINK], [FOTO_LINK], [EINTRAGEN_LINK]) als Schnellstart; andere Links → `null`. */
-fun Intent.schnellstart(): Schnellstart.Art? = when (data?.toString()) {
-    SCAN_LINK -> Schnellstart.Art.SCANNEN
-    FOTO_LINK -> Schnellstart.Art.FOTO
-    EINTRAGEN_LINK -> Schnellstart.Art.EINTRAGEN
-    else -> null
-}
 
 /**
  * Alle Ziele der V3. Deep Links: `foody://rezept/{id}`, `foody://einkauf/{listeId}`,
  * `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute), `foody://woche`; dazu
- * [SCAN_LINK] und [FOTO_LINK] von den Widgets, die [deepLinkOeffnen] selbst behandelt.
+ * die Links der Widgets ([WidgetStart]), die [widgetStartOeffnen] behandelt (bei laufender App über [deepLinkOeffnen]).
+ *
+ * Eintragen mit Sofort-Start kommt ohne Übergang, damit „Heute“ nicht aufblitzt, bevor Kamera bzw. Scanner aufgehen;
+ * es geht ohne Ausblenden (darunter blendet „Heute“ wie gewohnt ein).
  */
 @Composable
 fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Modifier = Modifier) {
     NavHost(nav, startDestination = Heute, modifier = modifier) {
-        composable<Heute> { eintrag ->
-            val anfrage by eintrag.savedStateHandle.getStateFlow<String?>(SCHNELLSTART, null).collectAsStateWithLifecycle()
-            bildschirme.heute(nav, Schnellstart.ausText(anfrage)) { eintrag.savedStateHandle[SCHNELLSTART] = null }
+        composable<Heute>(exitTransition = { if (targetState.istSofortZiel()) ExitTransition.None else null }) {
+            bildschirme.heute(nav)
         }
         composable<Rezepte> { bildschirme.rezepte(nav) }
         composable<Woche>(deepLinks = listOf(navDeepLink<Woche>(basePath = "${SCHEMA}woche"))) { bildschirme.woche(nav) }
@@ -197,7 +182,10 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
         composable<TagebuchTag>(deepLinks = listOf(navDeepLink<TagebuchTag>(basePath = "${SCHEMA}tagebuch"))) {
             bildschirme.tagebuch(tagebuchDatum(it.toRoute<TagebuchTag>().datum, LocalDate.now()), nav)
         }
-        composable<Eintragen> { eintrag ->
+        composable<Eintragen>(
+            enterTransition = { if (targetState.istSofortZiel()) EnterTransition.None else null },
+            popExitTransition = { if (initialState.istSofortZiel()) ExitTransition.None else null },
+        ) { eintrag ->
             // Nur solange diese Seite oben auf dem Stapel liegt (er ändert sich sofort): Ein zweites „fertig“ (etwa Speichern
             // und Zurück fast zugleich) räumt nicht auch noch „Heute“ ab. Nicht an RESUMED gebunden: Nach einem
             // abgebrochenen Sofort-Scan liegt die Scanner-Activity noch obenauf, in der Einblendung ist die Seite erst STARTED.
@@ -206,29 +194,23 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
     }
 }
 
+/** Eintragen, das gleich mit Kamera oder Scanner beginnt ([Eintragen.sofort]). */
+private fun NavBackStackEntry.istSofortZiel(): Boolean = destination.hasRoute<Eintragen>() && toRoute<Eintragen>().sofort != null
+
 /**
  * Deep Link bei laufender App (`onNewIntent`): ins laufende Gerüst navigieren. [NavHostController.handleDeepLink] baut
  * bei `FLAG_ACTIVITY_NEW_TASK` (Tipp auf die Timer-Meldung) den Task neu auf und verwirft ungespeicherte Eingaben.
- * Derselbe Link zweimal legt das Ziel nicht doppelt an. Die Widget-Links führen zu [schnellstartAnfragen].
+ * Derselbe Link zweimal legt das Ziel nicht doppelt an. Die Widget-Links führen zu [widgetStartOeffnen].
  */
 fun NavHostController.deepLinkOeffnen(intent: Intent): Boolean {
-    intent.schnellstart()?.let {
-        schnellstartAnfragen(it)
+    intent.widgetStart()?.let {
+        widgetStartOeffnen(it)
         return true
     }
     val uri = intent.data ?: return false
     if (!graph.hasDeepLink(uri)) return false
     navigate(uri, navOptions { launchSingleTop = true })
     return true
-}
-
-/**
- * Widget „Scannen“ oder „KI-Foto“: zurück zu „Heute“ wie ein Tipp auf den Tab und dort eine neue Anfrage hinterlegen
- * (je Tipp eine eigene ID, also auch beim zweiten Tipp ein neuer Scan bzw. ein neues Foto).
- */
-fun NavHostController.schnellstartAnfragen(art: Schnellstart.Art) {
-    popBackStack<Heute>(inclusive = false)
-    getBackStackEntry<Heute>().savedStateHandle[SCHNELLSTART] = Schnellstart(art, UUID.randomUUID().toString()).alsText()
 }
 
 /** „Rezept anpassen“ nach dem Kochen: der Editor ersetzt den Kochmodus, „Zurück“ führt dorthin, woher man kam. */
