@@ -3,6 +3,7 @@ package de.foody.core.erkennung
 import androidx.lifecycle.SavedStateHandle
 import de.foody.domain.FotoVorschlag
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -79,22 +80,31 @@ class ErkennungLauf(
         arbeit?.cancel()
     }
 
+    /**
+     * Startet die Erkennung als [arbeit]. Eine abgebrochene endet oft erst später (die native Seite rechnet zu Ende);
+     * läuft bis dahin schon eine neue, räumt ihr Ende nur das eigene Kamerafoto weg und lässt Bild und „läuft“ der neuen
+     * stehen. Erst zugewiesen, dann gestartet: Auf `Dispatchers.Main.immediate` liefe sie sonst schon vor der Zuweisung.
+     */
     private fun starten(bildUri: String, loeschen: String?) {
         meldung(null)
         _zustand.value = _zustand.value.copy(laeuft = true)
-        arbeit = scope.launch {
+        val job = scope.launch(start = CoroutineStart.LAZY) {
             try {
                 when (val status = erkenner.erkennen(bildUri)) {
                     is ErkennungStatus.Erkannt -> onVorschlag(status.vorschlag)
                     else -> meldung(ErkennungTexte.meldung(status))
                 }
             } finally {
-                gespeichert.remove<String>(BILD)
-                gespeichert.remove<String>(LOESCHEN)
                 loeschen?.let { File(it).delete() }
-                _zustand.value = _zustand.value.copy(laeuft = false)
+                if (arbeit === coroutineContext[Job]) {
+                    gespeichert.remove<String>(BILD)
+                    gespeichert.remove<String>(LOESCHEN)
+                    _zustand.value = _zustand.value.copy(laeuft = false)
+                }
             }
         }
+        arbeit = job
+        job.start()
     }
 
     private fun meldung(text: String?) {
