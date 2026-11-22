@@ -89,15 +89,16 @@ class EintragenSchritteTest {
         Dispatchers.resetMain()
     }
 
-    /** Wie die offene Seite: Zustand und Speichern-Knopf werden gesammelt. */
+    /** Wie die offene Seite: Zustand und Speichern-Knopf werden gesammelt (mit [zusehen] = false noch nicht). */
     private fun vm(
         h: SavedStateHandle = SavedStateHandle(),
         scan: PackungScan = testScan(),
         erkenner: MahlzeitErkenner = keinErkenner,
         bls: BlsNachschlag = testBls(),
+        zusehen: Boolean = true,
     ) = halter.behalten(
         EintragenViewModel(h, HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, scan, erkenner, testErkennung(), testGedaechtnis(), bls, ZutatenRepository(db) { 1L }),
-    ).also { halter.zusehen(it.zustand, it.speichernMoeglich) }
+    ).also { if (zusehen) halter.zusehen(it.zustand, it.speichernMoeglich) }
 
     /** Der Zustand, sobald er mit den Eingaben des Tags rechnet (vorher steht der Anfangswert da). */
     private suspend fun EintragenViewModel.stand() = zustand.first { it.eingaben.datum == tag }
@@ -515,6 +516,20 @@ class EintragenSchritteTest {
         val e3 = vm(foto.nachProzessende()).e()
         assertEquals(EintragenSchritt.BESTAETIGEN, e3.schritt)
         assertEquals("content://foto", e3.fotoBild)
+    }
+
+    /** Nach einem Prozessende in Bestätigen ist schon der Startwert des Zustands Bestätigen: Erfassen blitzt nicht auf. */
+    @Test
+    fun prozessendeBeginntInBestaetigen() = runTest {
+        val h = SavedStateHandle()
+        vm(h).apply {
+            oeffnen(tag, null)
+            freiEintragen()
+            freiName("Apfel")
+        }
+        val start = vm(h.nachProzessende(), zusehen = false).zustand.value.eingaben
+        assertEquals(EintragenSchritt.BESTAETIGEN, start.schritt)
+        assertEquals("Apfel", start.freiName)
     }
 
     @Test

@@ -243,6 +243,10 @@ class EintragenViewModel @Inject constructor(
         .distinctUntilChanged()
         .mapLatest { s -> bls.suchen(s) }
 
+    /**
+     * Startet mit den gesicherten Eingaben, bevor die Listen da sind: Nach einem Prozessende in Bestätigen blitzt so
+     * nicht erst Erfassen auf.
+     */
     val zustand: StateFlow<EintragenZustand> =
         combine(eingaben, heute.rezeptVorschlaege(rezepte), katalogSicht, offenerPlan, blsTreffer) { e, rezepte, k, plan, bls ->
             val s = e.suche.trim()
@@ -259,7 +263,7 @@ class EintragenViewModel @Inject constructor(
                 auswahlName = auswahlName(e, rezepte, k.nachId, plan),
                 kcalDazu = kcalDazu(e, rezepte, k.nachId, plan),
             )
-        }.stateIn(viewModelScope, SolangeAppOffen, EintragenZustand(Eingaben(), emptyList(), emptyList(), emptyList()))
+        }.stateIn(viewModelScope, SolangeAppOffen, EintragenZustand(eingaben.value, emptyList(), emptyList(), emptyList()))
 
     val speichernMoeglich: StateFlow<Boolean> =
         combine(eingaben, gesperrt) { e, sperre -> !sperre && gueltig(e) }.stateIn(viewModelScope, SolangeAppOffen, false)
@@ -396,10 +400,7 @@ class EintragenViewModel @Inject constructor(
         return true
     }
 
-    /**
-     * Das Kamerafoto fürs Vorschaubild, gleich aus den gesicherten Eingaben: Nach einem Prozessende steht in [zustand]
-     * anfangs noch der Startwert, das Aufräumen darf das Foto trotzdem nicht löschen.
-     */
+    /** Das Kamerafoto fürs Vorschaubild aus den gesicherten Eingaben; das Aufräumen beim Aufbau lässt es liegen. */
     internal val fotoDatei: String? get() = eingaben.value.fotoDatei
 
     private fun fotoDateiLoeschen() {
