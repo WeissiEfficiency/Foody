@@ -212,7 +212,7 @@ class EintragenBlattTest {
     /** Ein normales Öffnen verwirft eine liegengebliebene Kamera-Anfrage (etwa ohne Modell, wo der Knopf fehlt). */
     @Test
     fun normalesOeffnenVerwirftKameraAnfrage() {
-        eintragen.oeffnen(heute, null, auftrag = "a1", start = Schnellstart.Art.FOTO)
+        eintragen.oeffnen(heute, null, auftrag = "a1", sofort = SofortStart.FOTO)
         assertTrue(eintragen.fotoLauf.zustand.value.kameraAngefragt)
         eintragen.oeffnen(heute, Mahlzeit.SNACK, auftrag = "a2")
         assertFalse(eintragen.fotoLauf.zustand.value.kameraAngefragt)

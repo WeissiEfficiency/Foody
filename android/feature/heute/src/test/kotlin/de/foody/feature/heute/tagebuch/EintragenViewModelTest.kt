@@ -28,6 +28,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -243,12 +244,16 @@ class EintragenViewModelTest {
         assertTrue(vm.zustand.first { it.bls.isNotEmpty() }.bls.isNotEmpty())
     }
 
+    /** Der BLS sucht nur im Schritt Erfassen, dort aber egal in welchem Weg; in Bestätigen nicht. */
     @Test
-    fun blsNichtInFrei() = runTest {
+    fun blsNurBeimErfassen() = runTest {
         val vm = mitBls("B723000	Laugengebäck mit Hagelsalz	1191						")
         vm.weg(EintragenWeg.FREI)
         vm.suche("Breze")
-        assertTrue(vm.zustand.first().bls.isEmpty())
+        assertTrue(withTimeout(5_000) { vm.zustand.first { it.bls.isNotEmpty() } }.bls.isNotEmpty())
+        vm.freiEintragen()
+        val bestaetigen = withTimeout(5_000) { vm.zustand.first { it.eingaben.schritt == EintragenSchritt.BESTAETIGEN && it.bls.isEmpty() } }
+        assertEquals("Breze", bestaetigen.eingaben.suche, "die Suche bleibt, der BLS schweigt")
     }
 
     /** Reiter der Stile Q–V: „Suchen“ behält Rezept oder Zutat, „Foto“ verwirft eine Packung, die Wahl setzt den Weg. */

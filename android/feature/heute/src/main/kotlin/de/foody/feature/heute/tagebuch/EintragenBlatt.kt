@@ -109,6 +109,13 @@ private fun startReiter(start: Schnellstart.Art?) = when (start) {
     else -> EintragenReiter.SUCHEN
 }
 
+/** Schnellstart des Widgets als Sofort-Start; „Schnell eintragen“ beginnt normal. */
+private fun Schnellstart.Art?.alsSofort(): SofortStart? = when (this) {
+    Schnellstart.Art.FOTO -> SofortStart.FOTO
+    Schnellstart.Art.SCANNEN -> SofortStart.SCANNEN
+    else -> null
+}
+
 /**
  * Eintragen (siehe [BlattAuftrag]); schließt nach erfolgreichem Speichern. Milchglas: Blatt von unten mit den Wegen
  * als Chips. Stile Q–V wie in den Entwürfen mit den Reitern „Suchen · Scannen · Foto · Geplant“ ([EintragenReiter]);
@@ -116,7 +123,7 @@ private fun startReiter(start: Schnellstart.Art?) = when (start) {
  */
 @Composable
 fun EintragenBlatt(auftrag: BlattAuftrag, onFertig: () -> Unit, vm: EintragenViewModel) {
-    LaunchedEffect(auftrag.id) { vm.oeffnen(auftrag.datum, auftrag.mahlzeit, auftrag = auftrag.id, start = auftrag.start) }
+    LaunchedEffect(auftrag.id) { vm.oeffnen(auftrag.datum, auftrag.mahlzeit, auftrag = auftrag.id, sofort = auftrag.start.alsSofort()) }
     val z by vm.zustand.collectAsStateWithLifecycle()
     val moeglich by vm.speichernMoeglich.collectAsStateWithLifecycle()
     val bereich = rememberCoroutineScope()
