@@ -259,37 +259,29 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
 - **`:app`** (`de.foody.app`, `applicationId` `de.foody.app`; Debug `.debug` „Foody Debug“, Release „Foody“,
   `.vorschau` „Foody Vorschau“; Varianten und APK-Ablage: `docs/installation.md`):
   `FoodyApp` (Hilt, `HiltWorkerFactory`; beim Start `SyncAusloeser.beimStart()` und `StartdatenLader`, bei jedem Wechsel
-  in den Vordergrund `AppOffen` und `appImVordergrund()`, beim Wechsel in den Hintergrund `appImHintergrund()`), `MainActivity` (`singleTask`; Deep Links aus `onNewIntent` gehen über
-  `deepLinkOeffnen`, siehe Navigation), `AppModul` (`SyncKonfiguration`, `KontoZugriff` → `KontoAnbindung` auf `SyncKonto`/`sync_state`/
+  in den Vordergrund `AppOffen` und `appImVordergrund()`, beim Wechsel in den Hintergrund `appImHintergrund()`),
+  `MainActivity` (`singleTask`; Deep Links aus `onNewIntent` gehen über `LinkEingang` an `deepLinkOeffnen`, siehe
+  Navigation), `AppModul` (`SyncKonfiguration`, `KontoZugriff` → `KontoAnbindung` auf `SyncKonto`/`sync_state`/
   `SyncAusloeser`, Gerätename „Hersteller Modell“ wie v1).
 - **Navigation** (`navigation/`): typisierte Routen (`Heute`, `Rezepte`, `Woche`, `Einkauf`, `Einstellungen`,
-  `RezeptDetail(id)`, `Kochen(rezeptId, portionen?)`, `EinkaufListe(listeId)`, `TagebuchTag(datum)`). `Hauptgeruest`:
+  `RezeptDetail(id)`, `Kochen(rezeptId, portionen?)`, `EinkaufListe(listeId)`, `TagebuchTag(datum)`,
+  `Eintragen(datum, mahlzeit?, sofort?, auftrag)`, siehe „Eintragen (Teil B)“). `Hauptgeruest`:
   vier Tabs, unter 840 dp `FoodyNavigationsleiste` schwebend unten, ab 840 dp `FoodyNavigationsRail`; Detailziele
-  markieren ihren Tab. **Ein `FoodyNavHost` an fester Stelle** (seit R-W6): Kochen-Vollbild, Drehen und
-  Breitenwechsel blenden nur Leiste bzw. Rail daneben ein oder aus, der Zustand der Bildschirme (`rememberSaveable`)
+  markieren ihren Tab. **Ein `FoodyNavHost` an fester Stelle** (seit R-W6): Kochen und Eintragen als Vollbild, Drehen
+  und Breitenwechsel blenden nur Leiste bzw. Rail daneben ein oder aus, der Zustand der Bildschirme (`rememberSaveable`)
   bleibt. Deep Links `foody://rezept/{id}`, `foody://einkauf/{listeId}`, `foody://kochen/{rezeptId}?portionen={n}`,
   `foody://tagebuch/{datum}` (ungültiges Datum → heute), `foody://woche`. Bei laufender App navigiert `deepLinkOeffnen` mit
   `launchSingleTop` ins Gerüst – **nicht** `handleDeepLink`: das baut bei `FLAG_ACTIVITY_NEW_TASK` (Tipp auf die
   Timer-Meldung) den Task neu auf und verwirft ungespeicherte Eingaben (R-W5).
-  **Widget „Scannen“** (`widget/ScanWidget`, `AppWidgetProvider`, 2×1, Farben aus dem Hintergrundbild): Der Tipp öffnet
-  `foody://scannen` (`SCAN_LINK`, kein Ziel im Graphen). `deepLinkOeffnen` bzw. beim Kaltstart `MainActivity` (nur ohne
-  `savedInstanceState`) rufen `scanAnfragen()`: zurück zu „Heute“ wie der Tab, dann eine neue ID (je Tipp) im
-  `SavedStateHandle` von „Heute“ (`SCAN_ANFRAGE`). `HeuteRoute(scanAnfrage, onScanAngenommen)` öffnet damit das
-  Eintragen-Blatt (`BlattAuftrag(scannen = true)`, ID = Anfrage) und löscht die Anfrage; `EintragenViewModel.oeffnen(…,
-  scannen = true)` setzt „Frei“ und startet den Strichcode-Scan einmal je Auftrag – Drehen oder Prozessende starten ihn
-  nicht erneut. Ohne Play-Dienste bleibt es beim Blatt in „Frei“.
-  **Widget „KI-Foto“** (`FotoWidget`, gleiche Basis `KnopfWidget`, gleiche Farben): `foody://foto` (`FOTO_LINK`) geht
-  denselben Weg; die Anfrage im `SavedStateHandle` (`SCHNELLSTART`) ist ein `Schnellstart(art, id)` (`:feature:heute`,
-  als Text) mit `SCANNEN` oder `FOTO`, `BlattAuftrag(start = …)`. Bei `FOTO` setzt `oeffnen` „Frei“ und
-  `ErkennungLauf.kameraAnfragen()` (im `SavedStateHandle`); der `FotoErkennungKnopf` hält den Kamera-Launcher und öffnet
-  die Kamera, sobald er zu sehen ist und den Ordner aufgeräumt hat – vorher `kameraAnfrageErledigt()`, damit Drehen oder
-  Prozessende sie nicht noch einmal öffnen. Ohne Modell fehlt der Knopf: Das Blatt bleibt in „Frei“, das nächste normale
-  Öffnen verwirft die Anfrage.
+  **Widgets „Scannen“ und „KI-Foto“** (`widget/ScanWidget`, `FotoWidget`, gemeinsame Basis `KnopfWidget`,
+  `AppWidgetProvider`, 2×1, Farben aus dem Hintergrundbild): Der Tipp öffnet `foody://scannen` (`SCAN_LINK`) bzw.
+  `foody://foto` (`FOTO_LINK`), beides kein Ziel im Graphen. Sie öffnen Eintragen gleich mit Scanner bzw. Kamera, siehe
+  „Eintragen (Teil B)“.
   **Widgets mit Daten** (`widget/`, alle im gewählten Stil, siehe unten): „Einkauf“ (2×2, offene Artikel der jüngsten
-  Liste, Tipp `foody://einkauf/{listeId}`), „Schnell eintragen“ (2×2, `foody://eintragen` → `Schnellstart.Art.EINTRAGEN`
-  öffnet das Eintragen-Blatt wie gewohnt), „Heute“ (4×2, nächste Mahlzeit, kcal mit Balken, Ring oder Tank und die
-  Knöpfe „Kochen“/„Eintragen“), „Kalorien“ (2×2, Ring, Tipp `foody://tagebuch/{datum}`) und „Woche“ (4×1, Hauptgericht
-  je Tag – Abendessen vor Mittag, Frühstück, Snack –, Tipp `foody://woche`).
+  Liste, Tipp `foody://einkauf/{listeId}`), „Schnell eintragen“ (2×2, `foody://eintragen` (`EINTRAGEN_LINK`) öffnet
+  Eintragen mit Erfassen), „Heute“ (4×2, nächste Mahlzeit, kcal mit Balken, Ring oder Tank und die Knöpfe
+  „Kochen“/„Eintragen“, dieser mit demselben Link), „Kalorien“ (2×2, Ring, Tipp `foody://tagebuch/{datum}`) und
+  „Woche“ (4×1, Hauptgericht je Tag – Abendessen vor Mittag, Frühstück, Snack –, Tipp `foody://woche`).
   `WidgetDatenQuelle` liest nur aus den Repositories (`HeuteRepository`, `TagebuchRepository`, `TageszielSpeicher`,
   Plan- und Rezept-DAO); die Empfänger holen sie über den Hilt-`@EntryPoint` `WidgetEinstieg` und laden in `onUpdate`
   mit `goAsync` (`imHintergrund`). Solange der Prozess lebt, sammelt `WidgetBeobachter` die
@@ -330,12 +322,9 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   bis zu einer festen Untergrenze und setzt das Datum sonst unter den Titel. In Edo und Sage Ruhig rückt das Datum
   unter den Titel, sobald es nicht mehr daneben passt (`EinstellungenKnopfLageTest`: alle 14 Kombinationen bei 360 dp,
   Schrift 100/130/200 %, Zahnrad höchstens 48 dp unter der Oberkante; Bildvergleich aller Köpfe auch bei 360 dp:
-  `heute_360_*`). Tagebuch in `tagebuch/`: Eintragen-Blatt
-  (Rezept, Zutat, Aus dem Plan, Frei; Mahlzeit aus der Zeile oder nach Uhrzeit; Suche Teilstring oder Katalogname, höchstens 30 Treffer;
-  unter „Zutat“ zusätzlich Treffer aus dem BLS, siehe „BLS nachschlagen“; unter „Rezept“ mit Suchtext zusätzlich bis zu fünf
-  gescannte Produkte (Zutaten mit Strichcode, `zustand.produkte`) – antippen wechselt zu „Zutat“ mit dem Produkt, Einheit
-  nach seiner Basis, Fokus auf die Menge;
-  `speichernMoeglich` nur bei gültigen Eingaben), Ändern-Dialog, „Alle Einträge“ (`TagebuchTagRoute`, Blättern,
+  `heute_360_*`). Eintragen ist ein eigenes Ziel, siehe „Eintragen (Teil B)“; die Szenen Edo, Sage und Bayrisch haben
+  dafür eigene Knöpfe „Scannen“ und „Foto“ (`HeuteAktionen.onSofort`, „Foto“ nur mit `fotoMoeglich`). Tagebuch in
+  `tagebuch/`: die Seite Eintragen, Ändern-Dialog, „Alle Einträge“ (`TagebuchTagRoute`, Blättern,
   Datumsauswahl, Löschen mit „Rückgängig“). Fotos per Coil (`file:`-Links), sonst Platzhalter. Inhalte höchstens
   720 dp breit, mittig.
 - **`:feature:einstellungen`**: „Server verbinden“ über `KontoZugriff` (Anmelden; mit lokalen Daten Wahl
@@ -348,6 +337,71 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   `android/feature/heute/src/test/screenshots/`, Vergleich in der CI (`:feature:heute:verifyRoborazziDebug`).
   Testumgebung: Robolectric dekodiert unter Windows keine Bilder (Foto-Test mit `coil-test`), und ein Textfeld in einem
   Dialog läuft mit Breiten-Qualifier endlos (der Ändern-Test nutzt nur die Höhe).
+
+## Eintragen (Teil B)
+
+ADR 0021, Spec `docs/superpowers/specs/2026-11-21-eintragen-neu-design.md`. Eintragen ist ein eigenes Ziel der
+Navigation (`:app`), die Seite liegt in `:feature:heute` unter `tagebuch/`. Daten, Schema und Sync sind unverändert;
+gespeichert wird wie vorher (`EintragenViewModel.schreiben`).
+
+- **Ziel:** `Eintragen(datum, mahlzeit, sofort, auftrag)` entsteht aus `EintragenStart(datum, mahlzeit?, sofort?)`
+  (`alsZiel`, zurück mit `alsStart`; unbekannte Namen werden `null`). Der `auftrag` ist je Öffnen neu: Nur ein neuer
+  Auftrag setzt in `EintragenViewModel.oeffnen` alles zurück, ein Neuaufbau nach Drehen oder Prozessende lässt die
+  Eingaben stehen. Heute (Zeilen, Eintragen-Knöpfe, Szenen) und das Tagebuch („+ Eintragen“, Mahlzeitkarten) öffnen das
+  Ziel mit der Mahlzeit der Zeile oder ohne; ohne gilt die Uhrzeit (`mahlzeitNachUhrzeit`). Vollbild ohne
+  Navigationsleiste bzw. Rail (`Hauptgeruest`). `onFertig` schließt die Seite nur, solange ihr Eintrag oben auf dem
+  Stapel liegt: Ein zweites „fertig“ (Speichern und Zurück fast zugleich) räumt nicht auch noch Heute ab. Die Prüfung
+  hängt bewusst nicht an `RESUMED`, denn nach einem abgebrochenen Sofort-Scan liegt die Scanner-Activity noch obenauf.
+- **Seite** (`EintragenRoute`, `EintragenSeite.kt`): in allen Stilen und beiden Varianten gleich aufgebaut. Nur der
+  Titel folgt dem Stil (`eintragenTitel`: „Mahl eintragen“, „Eintragen!“, „Eitragn“, „Notieren“); in Bestätigen steht
+  der Name der Wahl im Kopf. Zurück (Pfeil im Kopf und System) führt von Bestätigen nach Erfassen und von dort hinaus.
+- **Erfassen** (`Erfassen.kt`): oben „Foto“ und „Scannen“ als große Knöpfe. Ohne Erkennungsmodell steht „Frei
+  eintragen“ an der Stelle von „Foto“; bis die Einstellung gelesen ist, bleibt der Platz leer, damit nichts springt.
+  Darunter „Aus der Galerie“ (nur mit „Foto“) und „Nährwerttabelle fotografieren“, die Meldung von Scan oder
+  Erkennung, die Suche „Rezept oder Zutat suchen“ und die Treffer: das offene Geplante des Tags, Rezepte (auch ohne
+  Suchtext) und Zutaten samt gescannten Produkten (erst mit Suchtext, Teilstring oder Katalogname), je höchstens 30,
+  dazu der BLS (siehe „BLS nachschlagen“). Ganz unten, wenn es „Foto“ gibt, „Nicht dabei? Frei eintragen“. Antippen
+  führt zu Bestätigen.
+- **Bestätigen** (`Bestaetigen.kt`): je nach Quelle Portionen (− / Feld / +) oder Menge und Einheit, beides mit
+  „= … kcal“ (`kcalDazu`); Geplantes nur zur Ansicht („1 Portion · … kcal“, Mahlzeit des Plans fest, gespeichert über
+  `ausPlan`); nach einem Scan die Packung (`PackungEingabe`), während Katalog bzw. Open Food Facts suchen mit
+  Fortschritt, ohne Werte mit der Meldung und den Knöpfen zur Nährwerttabelle; nach einem Foto das Vorschaubild mit
+  dem Vorschlag der Erkennung; sonst die freien Felder. Darunter die Mahlzeit als Zeile mit `FoodyMenue`, fest unten
+  „Eintragen“ (`speichernMoeglich` nur bei gültigen Eingaben, gegen Doppeltipp gesperrt). Speichern schließt die Seite.
+- **Sofort-Start** (`SofortStart.FOTO`, `SCANNEN`): `oeffnen` startet gleich den Strichcode-Scan (ohne Play-Dienste
+  bleibt es bei Erfassen) bzw. fragt die Kamera an (`ErkennungLauf.kameraAnfragen()`, im `SavedStateHandle`). Die Kamera
+  kommt auch ohne Modell; Bestätigen zeigt dann das Foto, leere Felder und die Meldung der Erkennung. Die Launcher für
+  Kamera und Galerie hängen an der Seite (`rememberAufnahme`, `Aufnahme.kt`) und werden vor allem anderen angelegt.
+  Die angefragte Kamera öffnen sie erst, wenn alte Kamerafotos weggeräumt sind, und vorher setzen sie
+  `kameraAnfrageErledigt()`, damit Drehen oder Prozessende sie nicht noch einmal öffnen. Bis ein Ergebnis da ist,
+  bleibt die Seite leer; ein Abbruch (`aufnahmeAbgebrochen`) schließt sie. Ohne Sofort-Start bleibt der Nutzer nach
+  einem Abbruch, wo er war. Solange eine Kamera offen ist, tun Foto, Galerie und Nährwerttabelle nichts. Ein
+  Sofort-Ziel kommt ohne Übergang, und Heute blendet dabei nicht aus (`EnterTransition.None` bzw.
+  `ExitTransition.None` in `FoodyNavHost`), damit vor Kamera oder Scanner nichts aufblitzt; geschlossen wird es mit
+  der normalen Überblendung.
+- **Prozessende:** Die Eingaben (Schritt, Wahl, Felder, Packung, Foto), der letzte Auftrag, der Zustand des Scans und
+  der laufende Kamera-Aufruf liegen im `SavedStateHandle`. Ein Kamerafoto, das erst nach dem Prozessende ankommt, führt
+  nach Bestätigen; das Aufräumen beim Aufbau lässt es liegen. Die Ausnahme aus ADR 0021: Stirbt der Prozess, während
+  der Google-Code-Scanner offen ist, kommt dessen Ergebnis nicht an. `EintragenViewModel` setzt `sofort` dann beim
+  Start zurück, der Nutzer steht in Erfassen und scannt neu (`prozessendeImScannerZeigtErfassen`).
+- **Widgets** (`navigation/WidgetStart.kt`): `Intent.widgetStart()` macht aus den Links `WidgetStart.SCANNEN` und
+  `FOTO` (Sofort-Start) und `EINTRAGEN` (Erfassen). Aus „Zuletzt verwendet“ (`FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY`; hat
+  ein Widget den Task gestartet, ist sein Link dessen Basis) gibt es `null`, die App öffnet dann ohne neuen Scan.
+  `widgetStartOeffnen` geht zurück zu Heute wie ein Tipp auf den Tab (eine offene Seite Eintragen geht dabei zu, ihre
+  Eingaben sind verworfen) und öffnet darauf Eintragen für heute mit neuem Auftrag; Zurück und Abbrechen führen nach
+  Heute, auch beim Kaltstart. Kaltstart: `MainActivity` liest den Widget-Start nur ohne `savedInstanceState` und hält
+  das Gerüst unsichtbar (`verdeckt`), bis Eintragen obenauf liegt. Bei laufender App kommt der Link über
+  `onNewIntent`: `LinkEingang` ist schon vor `setContent` angemeldet und puffert die Links, bis die Navigation steht,
+  denn nach einem Prozessende im Hintergrund kommt der Link noch vor dem ersten Aufbau. Ein gepufferter Sofort-Link
+  hält das Gerüst ebenso verdeckt. `deepLinkOeffnen` gibt Widget-Links an `widgetStartOeffnen`.
+- **Tests:** `EintragenViewModelTest`, `EintragenSchritteTest` (Schritte, Mahlzeit aus Zeile, Plan und Uhrzeit,
+  Prozessende in beiden Schritten und mit offenem Kamera-Aufruf über `nachProzessende()`), `EintragenPackungTest`,
+  `EintragenFotoTest`; `EintragenSeiteTest` (Robolectric: „Foto“ startet die Kamera ohne Zwischenschritt, ein Abbruch
+  bleibt in Erfassen, Mahlzeit über das Menü, derselbe Aufbau in allen 14 Kombinationen aus Stil und Variante);
+  `NavigationTest` (Sofort-Ziel ohne Übergang, schließt nur einmal, auch wenn die Seite nicht vorne ist),
+  `DeepLinkTest`, `LinkEingangTest`. Roborazzi: `EintragenScreenshotTest` je Stil bei 360 dp, Erfassen und Bestätigen
+  mit Foto bzw. Rezept (`eintragen_<stil>_<zustand>.png`). `ReleaseStartTest` öffnet Eintragen und wartet auf
+  „Scannen“.
 
 ## BLS nachschlagen (`:core:data`, `:domain`)
 
@@ -369,9 +423,9 @@ Spec `docs/superpowers/specs/2026-11-03-bls-nachschlagen-design.md`, ADR 0018.
 - **`BlsSuche`** (`:domain`): Teilwörter ohne Groß/klein, regionale Namen mit bevorzugtem Eintrag, Anzeigename und
   Stückgewicht (Breze, Semmel, Leberkäse, Fleischpflanzerl, Weißwurst, Obazda, Weißbier …), Zusammengesetztes aus
   zwei bekannten Namen. Ergänzen: neue Zeile in `regionalnamen`, Test in `BlsSucheTest`.
-- **Tagebuch:** `EintragenViewModel.zustand.bls` (nur im Weg „Zutat“, ohne Namen, die schon im Katalog stehen);
-  `blsWaehlen` übernimmt, wählt, stellt mit Stückgewicht auf „Stück“, bei Flüssigem auf „ml“, und gibt der Menge den
-  Fokus.
+- **Eintragen:** `EintragenViewModel.zustand.bls` (nur in Erfassen, zum Suchtext, ohne Namen, die schon im Katalog
+  stehen); `blsWaehlen` übernimmt, führt zu Bestätigen, stellt mit Stückgewicht auf „Stück“, bei Flüssigem auf „ml“,
+  und gibt der Menge den Fokus.
 - Quellenangabe: Einstellungen → „Zutaten“.
 
 ## Rezepte (`:feature:rezepte`)
@@ -568,7 +622,7 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6e2-zutaten-design.md`
 
 ## Packung scannen (`:core:scan`)
 
-ADR 0013, Spec `docs/superpowers/archiv/v3/specs/2026-10-26-v3-phase6e3-scan-design.md`. Scannen im Tagebuch („Frei“), im
+ADR 0013, Spec `docs/superpowers/archiv/v3/specs/2026-10-26-v3-phase6e3-scan-design.md`. Scannen beim Eintragen, im
 Zutateneditor und im Dialog „Neue Zutat“; Werte werden nur vorausgefüllt und markiert, Speichern ist die Bestätigung.
 Keine Schema- und keine Protokolländerung (nur die Abfrage `ZutatDao.mitStrichcode`).
 
@@ -588,16 +642,19 @@ Keine Schema- und keine Protokolländerung (nur die Abfrage `ZutatDao.mitStrichc
   `ScanKnopfZustand` liegt im `SavedStateHandle` (übersteht ein Prozessende). Kamerafoto kurz in `cache/scan/` über
   `KameraDatei` (`:core:data`). Antworten von Open Food Facts höchstens 256 kB. Ohne Play-Dienste ausgegraut.
 - **`:core:designsystem`:** `vorausgefuelltFarben` – Rahmen und Beschriftung markierter Felder in der Akzentfarbe.
-- **`:feature:heute`:** Scan-Knopf über „Frei“; nach einem Treffer `PackungEingabe` (Name, Menge in g/ml nach der Basis,
-  ohne Basis Chips, Werte je 100 markiert, Vorschau „= 359 kcal“, Häkchen „Als Zutat speichern“ bzw. „Zutat „…“
-  aktualisieren“, „Zurück zu Frei“). „Im Katalog“ wechselt zu „Zutat“ mit Fokus auf der Menge.
+- **`:feature:heute`:** Eintragen nutzt `ScanLauf` ohne `PackungScanKnopf`: „Scannen“ in Erfassen und der Sofort-Start
+  öffnen gleich den Strichcode-Scanner, „Nährwerttabelle fotografieren“ ist ein Nebenweg (siehe „Eintragen (Teil B)“).
+  Schon der gelesene Strichcode öffnet Bestätigen mit der leeren Packung, die sich füllt, sobald Katalog bzw. Open Food
+  Facts antworten: `PackungEingabe` (Name, Menge in g/ml nach der Basis, ohne Basis Chips, Werte je 100 markiert,
+  Vorschau „= 359 kcal“, Häkchen „Als Zutat speichern“ bzw. „Zutat „…“ aktualisieren“). „Im Katalog“ führt zu
+  Bestätigen mit der Zutat, Fokus auf der Menge.
 - **`:feature:zutaten`:** Editor mit Scan-Knopf im Abschnitt „Nährwerte“, Markierung endet beim Ändern; „Im Katalog“
   mit dieser Zutat → „Online abrufen“, mit einer anderen → Zusammenführen. „Neue Zutat“ mit Scan-Knopf; Packung bzw.
   Meldung gehen über `ZutatUebergabe` an den Editor.
 - **`:feature:einstellungen`:** Schalter „Online-Produktsuche“ im Abschnitt „Zutaten“, wirkt sofort für alle Einstiege.
 - **Tests:** Packungswerte, Repositories, Namenssuche, Ablauf, Open Food Facts (`MockEngine`), Einstellung,
-  Knopf-Zustand, ViewModels und Bildschirme mit einem Fake-Scan ohne Play-Dienste; Roborazzi-Bilder „Frei“ mit Packung
-  (hell/dunkel), Editor mit markierten Werten und „Neue Zutat“ nach einem Scan, Vergleich in der CI.
+  Knopf-Zustand, ViewModels und Bildschirme mit einem Fake-Scan ohne Play-Dienste; Roborazzi-Bilder vom Editor mit
+  markierten Werten und von „Neue Zutat“ nach einem Scan, Vergleich in der CI.
 
 ## Fotoerkennung (`:core:erkennung`)
 
@@ -621,9 +678,12 @@ und `2026-11-02-foto-erkennung-phase3-4-design.md`. Alles auf dem Gerät; kein S
   `viewModelScope`, Abbrechen, Meldungen aus `ErkennungTexte`, Bild und Kamerafoto im `SavedStateHandle`, Neustart nach
   einem Prozessende), `ModellVerwaltung` (Import per Uri, Stand, entfernen) und `ErkennungEinstellung` (an/aus je
   Gerät, `sichtbar` nur mit Modell).
-- **Oberfläche:** In „Eintragen“ › „Frei“ steht „Foto erkennen“ neben „Packung scannen“ (`FotoErkennungKnopf`, nur
-  wenn `ErkennungEinstellung.sichtbar`). `EintragenViewModel` hält den `ErkennungLauf`; ein Vorschlag ersetzt die
-  freien Felder und liegt als `Eingaben.foto` im `SavedStateHandle`, damit die Felder markiert bleiben
+- **Oberfläche:** In Eintragen › Erfassen steht der große Knopf „Foto“ neben „Scannen“, darunter „Aus der Galerie“
+  (nur wenn `ErkennungEinstellung.sichtbar`, sonst „Frei eintragen“ an seiner Stelle). Ein Tipp öffnet gleich die
+  Kamera; die Heute-Szenen Edo, Sage und Bayrisch und das Widget „KI-Foto“ starten sie ebenso (siehe „Eintragen
+  (Teil B)“). Nach dem Foto zeigt Bestätigen das Vorschaubild, während der Erkennung einen Fortschritt mit „Abbrechen“.
+  `EintragenViewModel` hält den `ErkennungLauf`; ein Vorschlag ersetzt die freien Felder und liegt als `Eingaben.foto`
+  im `SavedStateHandle`, damit die Felder markiert bleiben
   (`vorausgefuelltFarben`, „Geschätzt aus dem Foto – bitte prüfen“), bis der Nutzer sie ändert. Kamerafotos liegen in
   `cache/mahlzeit/` (FileProvider aus `:core:data`). Einstellungen › „Fotoerkennung“: Schalter, Stand, Modell
   installieren/ersetzen (`OpenMultipleDocuments`) und entfernen (`Aktion.MODELL_*`).
@@ -634,7 +694,8 @@ und `2026-11-02-foto-erkennung-phase3-4-design.md`. Alles auf dem Gerät; kein S
   Portion); die Chips „klein · normal · groß“ rechnen mit `FotoVorschlag.mal` (`:domain`) um. Über den Zutatenkatalog
   wird nicht gerechnet: Selbst mit perfekter kcal-Dichte wäre der Fehler nicht kleiner, er steckt in der Menge.
 - **Tests:** `ModellErkennerTest` (Fake-Modell), `ModellDateienTest`, `ErkennungLaufTest`, `ModellVerwaltungTest`,
-  `FotoGedaechtnisTest`, `EintragenFotoTest`, `EintragenBlattFotoTest`, `FotoScreenshotTest`, `EinstellungenScreenTest`;
+  `FotoGedaechtnisTest`, `EintragenFotoTest`, `EintragenSeiteTest`, `EintragenScreenshotTest`
+  (`eintragen_*_bestaetigen_foto`), `EinstellungenScreenTest`;
   Messung auf dem Handy mit `MessungTest` (androidTest, nur mit `-e messung an`).
 
 ## Build

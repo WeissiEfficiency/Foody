@@ -17,8 +17,9 @@ Alle Phasen und der Umstieg sind fertig; Offenes (Messungen, TalkBack, Review-Be
 über den Server ist gestrichen (ADR 0019). Abnahmeliste: [`v3-abnahme.md`](ToDoS/archiv/v3-abnahme.md) (archiviert).
 
 - **Heute:** Plan für heute und morgen mit kcal je Portion, Rezeptvorschläge, offene Einkaufsartikel; **Tagebuch** mit
-  beim Eintragen festgehaltenen Nährwerten (ADR 0007) und Tagesziel; unter „Zutat“ auch **Nachschlagen im
-  Bundeslebensmittelschlüssel** (offline, mit bairischen Namen wie Breze, Semmel, Leberkas; ADR 0018).
+  beim Eintragen festgehaltenen Nährwerten (ADR 0007) und Tagesziel. **Eintragen** ist eine eigene Seite: erst Foto,
+  Scan oder Suche, dann bestätigen (ADR 0021); die Suche findet auch Einträge im **Bundeslebensmittelschlüssel**
+  (offline, mit bairischen Namen wie Breze, Semmel, Leberkas; ADR 0018).
 - **Rezepte:** Liste mit Suche und Filtern, Favoriten und „Oft gekocht“, Detail mit Portionen skalieren, Editor,
   **Import aus Markdown** (einzelne Dateien oder ganzer Ordner, bereits importierte Quellen werden übersprungen);
   auf Tablets zweispaltig.
@@ -104,8 +105,8 @@ Neu erzeugen nach größeren UI-Änderungen: Befehle im Kopf von `android/baseli
 einem Emulator ohne echte Daten).
 
 **Kurztest der R8-Variante:** `ReleaseStartTest` startet „Foody Vorschau“ mit R8 wie im Release und öffnet Eintragen
-(Erfassen lädt die Scan-Module vor) – fehlende Keep-Regeln fielen sonst erst auf dem Handy auf (Z1). Die CI führt ihn auf einem Emulator aus
-(`:baselineprofile:ciDeviceBenchmarkVorschauAndroidTest`).
+(Erfassen lädt die Scan-Module vor) – fehlende Keep-Regeln fielen sonst erst auf dem Handy auf (Z1). Die CI führt ihn
+auf einem Emulator aus (`:baselineprofile:ciDeviceBenchmarkVorschauAndroidTest`).
 
 ## Datenschutz
 
