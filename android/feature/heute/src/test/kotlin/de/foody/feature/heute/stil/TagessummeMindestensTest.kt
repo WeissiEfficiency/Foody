@@ -39,7 +39,7 @@ class TagessummeMindestensTest {
 
     private val heute = LocalDate.of(2026, 10, 24)
     private val offen = Summe(kcal = 860, eiweiss = 42, kohlenhydrate = 96, fett = 31, vollstaendig = false)
-    private val aktionen = HeuteAktionen({ _, _ -> }, {}, {}, {}, {}, {}, {}, {})
+    private val aktionen = HeuteAktionen({ _, _ -> }, {}, {}, {}, {}, {}, {}, {}, {})
 
     /** Alle Texte und Beschreibungen, auch unter zusammengefassten Knoten. */
     private fun texte(): List<String> = compose.onAllNodes(SemanticsMatcher("alle") { true }, useUnmergedTree = true)

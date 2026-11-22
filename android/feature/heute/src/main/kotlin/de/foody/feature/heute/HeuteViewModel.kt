@@ -13,6 +13,7 @@ import de.foody.core.data.heute.RezeptKurz
 import de.foody.core.data.tagebuch.TagebuchRepository
 import de.foody.core.designsystem.SolangeAppOffen
 import de.foody.core.designsystem.komponenten.SyncAnzeige
+import de.foody.core.erkennung.ErkennungEinstellung
 import de.foody.core.sync.SyncLage
 import de.foody.core.sync.SyncLageQuelle
 import de.foody.domain.DailyPicks
@@ -44,6 +45,8 @@ data class HeuteZustand(
     val einkauf: OffenerEinkauf?,
     val sync: SyncAnzeige?,
     val datenbankLeer: Boolean,
+    /** „Foto“ in den Szenen: Fotoerkennung an und Modell auf diesem Gerät (auf dem Tablet ohne Modell nie). */
+    val fotoMoeglich: Boolean = false,
 )
 
 /** Tagebuch des Tages: Summe gegen das Ziel und die vier Mahlzeiten mit Einträgen und offenen Plan-Vorschlägen. */
@@ -63,6 +66,8 @@ class HeuteViewModel @Inject constructor(
     zeit: Zeitgeber,
     /** „Nein“ auf „Gegessen?“: Diese Vorschläge blendet „Heute“ für den Tag aus. */
     private val nichtGegessenSpeicher: NichtGegessenSpeicher,
+    /** „Foto“ in den Szenen nur mit eingeschalteter Fotoerkennung und Modell auf dem Gerät. */
+    erkennung: ErkennungEinstellung,
 ) : ViewModel() {
     private val jetzt = zeit.jetzt().shareIn(viewModelScope, SolangeAppOffen, replay = 1)
 
@@ -76,11 +81,11 @@ class HeuteViewModel @Inject constructor(
         }
     }
 
-    private val umfeld = combine(sync.lage(), ziel.tagesziel(), ::Pair)
+    private val umfeld = combine(sync.lage(), ziel.tagesziel(), erkennung.sichtbar, ::Triple)
 
     val zustand: StateFlow<HeuteZustand?> =
-        combine(jetzt, tag, heute.rezeptVorschlaege(rezepte), heute.offenerEinkauf(), umfeld) { j, t, rezepte, einkauf, (lage, kcalZiel) ->
-            heuteZustand(j, t, rezepte, einkauf, lage, kcalZiel)
+        combine(jetzt, tag, heute.rezeptVorschlaege(rezepte), heute.offenerEinkauf(), umfeld) { j, t, rezepte, einkauf, (lage, kcalZiel, foto) ->
+            heuteZustand(j, t, rezepte, einkauf, lage, kcalZiel, foto)
         }.stateIn(viewModelScope, SolangeAppOffen, null)
 
     /** „Gegessen?“ – „Ja“: trägt den Plan-Eintrag mit einer Portion ein (höchstens einmal). */
@@ -97,7 +102,7 @@ private data class Tag(
 )
 
 private fun heuteZustand(
-    jetzt: LocalDateTime, tag: Tag, rezepte: List<RezeptKurz>, einkauf: OffenerEinkauf?, lage: SyncLage, ziel: Int?,
+    jetzt: LocalDateTime, tag: Tag, rezepte: List<RezeptKurz>, einkauf: OffenerEinkauf?, lage: SyncLage, ziel: Int?, foto: Boolean,
 ): HeuteZustand {
     val planHeute = tag.plan.filter { it.datum == tag.datum }
     val inspiration = if (planHeute.isEmpty()) DailyPicks.pick(rezepte, tag.datum, count = 1) { it.id }.firstOrNull() else null
@@ -109,6 +114,7 @@ private fun heuteZustand(
         einkauf = einkauf,
         sync = syncAnzeige(lage.aktiv, lage.laeuft, lage.letzterFehler),
         datenbankLeer = rezepte.isEmpty(),
+        fotoMoeglich = foto,
     )
 }
 

@@ -22,9 +22,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.DocumentScanner
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -45,6 +47,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
@@ -91,6 +94,7 @@ import de.foody.feature.heute.kcalVollstaendig
 import de.foody.feature.heute.kcalZahl
 import de.foody.feature.heute.meta
 import de.foody.feature.heute.rezeptLink
+import de.foody.feature.heute.tagebuch.SofortStart
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -125,7 +129,7 @@ internal fun HeuteBayrisch(zustand: HeuteZustand?, aktionen: HeuteAktionen, modi
                     if (zustand.datenbankLeer) DatenbankLeerHinweis(aktionen.onEinstellungen)
                     Essen(zustand, aktionen)
                     Bilanz(zustand.tagebuch, aktionen.onAlleEintraege)
-                    Eintragen(zustand.tagebuch, aktionen)
+                    Eintragen(zustand.tagebuch, zustand.fotoMoeglich, aktionen)
                     zustand.einkauf?.let { e ->
                         Verweis("Eikaufszettl · no ${e.anzahl} offn ›", "Einkauf, ${e.anzahl} offen") { aktionen.onEinkauf(e.listeId) }
                     }
@@ -409,27 +413,39 @@ private fun Bilanz(t: TagebuchHeute, onTagebuch: () -> Unit) {
     }
 }
 
-/** „+ Brotzeit eitragn“ für die erste leere Mahlzeit, daneben Scannen oder Foto. */
+/**
+ * „+ Brotzeit eitragn“ für die erste leere Mahlzeit öffnet Erfassen; darunter zwei runde Symbolknöpfe „Scannen“ und
+ * (mit Modell) „Foto“, die gleich Scanner bzw. Kamera starten.
+ */
 @Composable
-private fun Eintragen(t: TagebuchHeute, aktionen: HeuteAktionen) {
+private fun Eintragen(t: TagebuchHeute, foto: Boolean, aktionen: HeuteAktionen) {
     val leer = t.mahlzeiten.firstOrNull { it.eintraege.isEmpty() && it.vorschlaege.isEmpty() }?.mahlzeit
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         BayrischKnopf(
             leer?.let { "+ ${it.bairischLang()} eitragn" } ?: "+ Eitragn",
             { aktionen.onEintragen(leer) },
-            Modifier.weight(1f),
+            Modifier.fillMaxWidth(),
             voll = false,
             beschreibung = leer?.let { "${it.anzeigename()} eintragen" } ?: "Eintragen",
         )
-        val f = FoodyTheme.farben
-        Box(
-            Modifier.width(52.dp).heightIn(min = 48.dp).clip(Bayrisch.knopfForm).background(Color.White).border(2.dp, f.text, Bayrisch.knopfForm)
-                .clickable(role = Role.Button) { aktionen.onEintragen(null) }
-                .semantics { contentDescription = "Scannen oder Foto" },
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = f.text)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            RunderKnopf(Icons.Outlined.DocumentScanner, "Scannen") { aktionen.onSofort(SofortStart.SCANNEN) }
+            if (foto) RunderKnopf(Icons.Outlined.PhotoCamera, "Foto") { aktionen.onSofort(SofortStart.FOTO) }
         }
+    }
+}
+
+/** Runder Symbolknopf (48 dp) in Weiß mit dunklem Rand wie die Knöpfe des Stils. */
+@Composable
+private fun RunderKnopf(symbol: ImageVector, beschreibung: String, onKlick: () -> Unit) {
+    val f = FoodyTheme.farben
+    Box(
+        Modifier.size(48.dp).clip(CircleShape).background(Color.White).border(2.dp, f.text, CircleShape)
+            .clickable(role = Role.Button, onClick = onKlick)
+            .semantics { contentDescription = beschreibung },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(symbol, contentDescription = null, tint = f.text)
     }
 }
 
