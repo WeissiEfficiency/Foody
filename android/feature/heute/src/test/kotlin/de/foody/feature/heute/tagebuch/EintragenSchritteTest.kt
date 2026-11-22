@@ -352,6 +352,69 @@ class EintragenSchritteTest {
     }
 
     @Test
+    fun tabellenfotoBehaeltDenStrichcode() = runTest {
+        val vm = vm(scan = gelesen4001)
+        vm.oeffnen(tag, null)
+        vm.scanLauf.strichcode()
+        // Der Knopf hat den Code vergessen (etwa nach einem neuen Versuch); die leere Packung trägt ihn noch
+        vm.scanLauf.zustand.menueVersuch()
+        assertNull(vm.scanLauf.zustand.strichcode)
+
+        vm.packungUebernehmen(Packungswerte(null, NutrientBasis.PER_100_G, mapOf(Nutrient.ENERGY_KJ to BigDecimal(1590)), null, PackungScan.QUELLE_FOTO))
+        assertEquals("4001", vm.e().packung?.strichcode)
+
+        vm.pName("Müsli")
+        vm.pMenge("50")
+        vm.alsZutat(true)
+        assertNotNull(vm.speichern())
+        assertEquals("4001", db.zutatDao().alle().single().barcode)
+    }
+
+    @Test
+    fun getippteKcalUeberstehenNichtGefunden() = runTest {
+        val antwort = CompletableDeferred<ProduktSuche.Antwort>()
+        val vm = vm(scan = haengendeSuche(antwort))
+        vm.oeffnen(tag, null)
+        vm.scanLauf.strichcode()
+        vm.pKcal("380")
+
+        antwort.complete(ProduktSuche.Antwort.Unbekannt)
+        assertTrue(vm.scanLauf.zustand.fotoAnbieten)
+        val e = vm.e()
+        assertEquals("380", e.pKcal)
+        assertEquals("4001", e.packung?.strichcode)
+    }
+
+    @Test
+    fun zurueckVergisstDieScanMeldung() = runTest {
+        val vm = vm(scan = gelesen4001)
+        vm.oeffnen(tag, null)
+        vm.scanLauf.strichcode()
+        assertNotNull(vm.scanLauf.zustand.meldung)
+
+        assertTrue(vm.zurueck())
+        assertNull(vm.scanLauf.zustand.meldung)
+        assertFalse(vm.scanLauf.zustand.fotoAnbieten)
+    }
+
+    @Test
+    fun neuerAuftragBrichtPackungssucheAb() = runTest {
+        val antwort = CompletableDeferred<ProduktSuche.Antwort>()
+        val vm = vm(scan = haengendeSuche(antwort))
+        vm.oeffnen(tag, null, auftrag = "a1")
+        vm.scanLauf.strichcode()
+        assertTrue(vm.scanLauf.zustand.laeuft)
+
+        vm.oeffnen(tag, null, auftrag = "a2")
+        assertFalse(vm.scanLauf.zustand.laeuft)
+        // Die späte Antwort gehört zur alten Seite
+        antwort.complete(haferflocken4001)
+        val e = vm.e()
+        assertEquals(EintragenSchritt.ERFASSEN, e.schritt)
+        assertNull(e.packung)
+    }
+
+    @Test
     fun imKatalogFuehrtZurZutat() = runTest {
         db.bestand()
         val vm = vm(scan = testScan(imKatalog = ZutatTreffer("z-reis", "Reis")))
@@ -361,6 +424,7 @@ class EintragenSchritteTest {
         assertEquals(EintragenSchritt.BESTAETIGEN, e.schritt)
         assertEquals(EintragenWeg.ZUTAT, e.weg)
         assertEquals("z-reis", e.zutatId)
+        assertNull(e.packung)
     }
 
     @Test

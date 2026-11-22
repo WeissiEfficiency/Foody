@@ -7,72 +7,47 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Remove
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasBlatt
 import de.foody.core.designsystem.komponenten.BlattTitel
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
-import de.foody.core.designsystem.komponenten.FoodyTextfeld
+import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.Reiterleiste
 import de.foody.core.designsystem.komponenten.Seitenkopf
 import de.foody.core.designsystem.komponenten.WahlZeile
 import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.platzFuerLeiste
 import de.foody.core.designsystem.komponenten.slotName
-import de.foody.core.designsystem.komponenten.vorausgefuelltFarben
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
-import de.foody.core.erkennung.ErkennungTexte
 import de.foody.core.scan.PackungScanKnopf
-import de.foody.domain.BlsTreffer
-import de.foody.domain.FotoPortion
 import de.foody.domain.Mahlzeit
-import de.foody.domain.Nutrient
-import de.foody.domain.NutritionResult
 import de.foody.feature.heute.Schnellstart
 import kotlinx.coroutines.launch
-
-/** Test-Tag des Speichern-Knopfs (die Überschrift heißt auch „Eintragen“). */
-const val EINTRAGEN_SPEICHERN = "eintragen-speichern"
-
-/** Portionen zum Vorschlag aus dem Foto (Phase 6). */
-private val PORTIONEN = listOf(FotoPortion.KLEIN to "klein", FotoPortion.NORMAL to "normal", FotoPortion.GROSS to "groß")
 
 private val WEGE = listOf(
     EintragenWeg.REZEPT to "Rezept",
@@ -186,9 +161,6 @@ fun EintragenBlatt(auftrag: BlattAuftrag, onFertig: () -> Unit, vm: EintragenVie
     }
 }
 
-@Composable
-private fun eintragenTitel() = stilText("Eintragen", sage = "Mahl eintragen", anime = "Eintragen!", bayrisch = "Eitragn", grauen = "Notieren")
-
 /** Milchglas: das Blatt mit den Wegen als Chips (kein Entwurf mit Reitern). */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -290,6 +262,7 @@ private fun ScannenReiter(z: EintragenZustand, vm: EintragenViewModel) {
     val e = z.eingaben
     if (e.packung != null && e.weg == EintragenWeg.FREI) {
         PackungEingabe(e, z.vorhandeneZutat, vm)
+        FoodyKnopf("Zurück zu Frei", vm::packungVerwerfen, art = KnopfArt.TEXT)
         return
     }
     PackungScanKnopf(vm.scanLauf)
@@ -313,17 +286,6 @@ private fun Auswahl(z: EintragenZustand, vm: EintragenViewModel) {
 }
 
 @Composable
-private fun Suche(text: String, beschriftung: String, onText: (String) -> Unit) {
-    FoodyTextfeld(beschriftung, text, onWert = onText)
-}
-
-/** Auswählbare Trefferzeile mit Haken (im Stil R–V wie im Entwurf), mindestens 48 dp hoch. */
-@Composable
-private fun Treffer(text: String, gewaehlt: Boolean, onWahl: () -> Unit) {
-    WahlZeile(text, gewaehlt, onWahl)
-}
-
-@Composable
 private fun RezeptWahl(z: EintragenZustand, vm: EintragenViewModel) {
     Suche(z.eingaben.suche, "Rezept suchen", vm::suche)
     z.rezepte.forEach { r -> Treffer(r.titel, r.id == z.eingaben.rezeptId) { vm.rezeptWaehlen(r.id) } }
@@ -333,20 +295,6 @@ private fun RezeptWahl(z: EintragenZustand, vm: EintragenViewModel) {
         z.produkte.forEach { p -> WahlZeile(p.name, gewaehlt = false, { vm.produktWaehlen(p) }, knopf = true) }
     }
     PortionenZeile(z.eingaben, vm)
-}
-
-@Composable
-private fun PortionenZeile(e: Eingaben, vm: EintragenViewModel) {
-    // Zeichen in der Textfarbe: Auf den dunklen Seiten der Stile wären sie sonst schwarz
-    val farbe = FoodyTheme.farben.text
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = { vm.portionenSchritt(mehr = false) }) { Icon(Icons.Outlined.Remove, contentDescription = "Weniger Portionen", tint = farbe) }
-        OutlinedTextField(
-            e.portionen, vm::portionen, Modifier.width(120.dp), label = { Text("Portionen") }, singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        )
-        IconButton(onClick = { vm.portionenSchritt(mehr = true) }) { Icon(Icons.Outlined.Add, contentDescription = "Mehr Portionen", tint = farbe) }
-    }
 }
 
 @Composable
@@ -361,30 +309,6 @@ private fun ZutatWahl(z: EintragenZustand, vm: EintragenViewModel) {
         z.bls.forEach { t -> BlsZeile(t) { vm.blsWaehlen(t) } }
     }
     MengeEingabe(z.eingaben, vm)
-}
-
-/** Menge und Einheit einer Zutat; nach „im Katalog“ (Scan) geht der Fokus auf die Menge. */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun MengeEingabe(e: Eingaben, vm: EintragenViewModel) {
-    val mengeFokus = remember { FocusRequester() }
-    LaunchedEffect(vm) { vm.mengeFokus.collect { mengeFokus.requestFocus() } }
-    Zahlfeld("Menge", e.menge, focusRequester = mengeFokus, onWert = vm::menge)
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-        EINTRAGEN_EINHEITEN.forEach { u -> FoodyChip(u.symbol, u == e.einheit, { vm.einheit(u) }) }
-    }
-}
-
-/** BLS-Treffer: Name und kcal je 100 g; antippen übernimmt ihn in den Katalog und wählt ihn. */
-@Composable
-private fun BlsZeile(t: BlsTreffer, onWahl: () -> Unit) {
-    val kcal = t.lebensmittel.werte[Nutrient.ENERGY_KJ]?.let(NutritionResult::kcal)
-    val details = listOfNotNull(
-        t.lebensmittel.name.takeIf { it != t.vorschlagName },
-        kcal?.let { "$it kcal je 100 g" },
-        t.stueckG?.let { "Stück ≈ ${it.toPlainString()} g" },
-    )
-    WahlZeile(t.vorschlagName, gewaehlt = false, onWahl, info = details.joinToString(" · ").ifEmpty { null }, knopf = true)
 }
 
 @Composable
@@ -409,12 +333,13 @@ private fun FreiEingabe(z: EintragenZustand, vm: EintragenViewModel) {
     val e = z.eingaben
     if (e.packung != null) {
         PackungEingabe(e, z.vorhandeneZutat, vm)
+        FoodyKnopf("Zurück zu Frei", vm::packungVerwerfen, art = KnopfArt.TEXT)
         return
     }
     FotoUndFelder(z, vm, mitScan = true)
 }
 
-/** Knöpfe (Scan nur in „Frei“ von Milchglas, Foto mit Modell), Vorschlag aus dem Foto und die freien Felder. */
+/** Knöpfe (Scan nur in „Frei“ von Milchglas, Foto mit Modell), Vorschlag aus dem Foto und die freien Felder ([FreieFelder]). */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FotoUndFelder(z: EintragenZustand, vm: EintragenViewModel, mitScan: Boolean) {
@@ -427,21 +352,5 @@ private fun FotoUndFelder(z: EintragenZustand, vm: EintragenViewModel, mitScan: 
         }
     }
     if (fotoKnopf) FotoErkennungStand(vm.fotoLauf)
-    e.foto?.let { stand ->
-        if (fotoHinweis(e)) {
-            Text(
-                if (stand.ausGedaechtnis) ErkennungTexte.WIE_LETZTES_MAL else ErkennungTexte.BITTE_PRUEFEN,
-                style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.primaer,
-            )
-        }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-            PORTIONEN.forEach { (p, text) -> FoodyChip(text, p == stand.portion, { vm.fotoPortion(p) }) }
-        }
-    }
-    val f = e.foto?.angezeigt
-    FoodyTextfeld("Name", e.freiName, farben = vorausgefuelltFarben(wieImFoto(e.freiName, f?.name)), onWert = vm::freiName)
-    Zahlfeld("kcal", e.freiKcal, ganzzahlig = true, markiert = wieImFoto(e.freiKcal, f?.kcal), onWert = vm::freiKcal)
-    Zahlfeld("Eiweiß (g, optional)", e.freiEiweiss, markiert = wieImFoto(e.freiEiweiss, f?.eiweiss), onWert = vm::freiEiweiss)
-    Zahlfeld("Kohlenhydrate (g, optional)", e.freiKh, markiert = wieImFoto(e.freiKh, f?.kh), onWert = vm::freiKh)
-    Zahlfeld("Fett (g, optional)", e.freiFett, markiert = wieImFoto(e.freiFett, f?.fett), onWert = vm::freiFett)
+    FreieFelder(e, vm)
 }

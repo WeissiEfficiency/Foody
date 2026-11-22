@@ -19,9 +19,7 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.data.zutaten.zahlAus
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyChip
-import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.FoodyTextfeld
-import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.scan.ScanTexte
@@ -45,8 +43,9 @@ internal fun vorschauKcal(e: Eingaben): Int? {
 private fun wieGescannt(feld: String, scan: String) = scan.isNotEmpty() && feld.trim() == scan
 
 /**
- * „Frei“ mit gescannter Packung (Spec 6e3, 3.): Herkunft, Name, Menge mit Einheit nach der Basis (ohne Basis Chips
- * g/ml), Werte je 100 g/ml – markiert, solange sie dem Scan gleichen –, Vorschau, Häkchen und „Zurück zu Frei“.
+ * „Frei“ mit gescannter Packung (Spec 6e3, 3.): Herkunft (nur mit Werten; eine leere Packung ist noch nichts zum
+ * Prüfen), Name, Menge mit Einheit nach der Basis (ohne Basis Chips g/ml), Werte je 100 g/ml – markiert, solange sie
+ * dem Scan gleichen –, Vorschau und Häkchen.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -54,7 +53,7 @@ internal fun PackungEingabe(e: Eingaben, vorhandeneZutat: String?, vm: Eintragen
     val p = e.packung ?: return
     val farben = FoodyTheme.farben
     val einheit = packungsEinheit(e.pBasis).symbol
-    Text(ScanTexte.bittePruefen(p.quelle), style = MaterialTheme.typography.labelLarge, color = farben.primaer)
+    if (p.werte.isNotEmpty()) Text(ScanTexte.bittePruefen(p.quelle), style = MaterialTheme.typography.labelLarge, color = farben.primaer)
     FoodyTextfeld("Name", e.pName, onWert = vm::pName)
     Zahlfeld("Menge", e.pMenge, einheit = einheit, onWert = vm::pMenge)
     if (p.basis == null) {
@@ -82,5 +81,4 @@ internal fun PackungEingabe(e: Eingaben, vorhandeneZutat: String?, vm: Eintragen
             style = MaterialTheme.typography.bodyLarge, color = farben.text,
         )
     }
-    FoodyKnopf("Zurück zu Frei", vm::packungVerwerfen, art = KnopfArt.TEXT)
 }

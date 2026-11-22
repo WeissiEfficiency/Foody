@@ -289,12 +289,15 @@ class EintragenViewModel @Inject constructor(
     /**
      * Neue Seite: alles zurück, Schritt Erfassen; Mahlzeit aus der angetippten Zeile, sonst nach Uhrzeit. Derselbe
      * [auftrag] erneut (Neuaufbau nach Drehen) lässt die Eingaben stehen; ein neuer bricht eine laufende Fotoerkennung
-     * ab. [sofort]: gleich Kamera bzw. Scanner (ohne Play-Dienste bleibt es beim Erfassen).
+     * und Packungssuche ab und vergisst die Scan-Meldung. [sofort]: gleich Kamera bzw. Scanner (ohne Play-Dienste
+     * bleibt es beim Erfassen).
      */
     fun oeffnen(datum: LocalDate, mahlzeit: Mahlzeit?, uhrzeit: LocalTime = LocalTime.now(), auftrag: String? = null, sofort: SofortStart? = null) {
         if (auftrag != null && auftrag == letzterAuftrag) return
         letzterAuftrag = auftrag
         fotoLauf.abbrechen()
+        scanLauf.abbrechen()
+        scanLauf.zustand.menueVersuch()
         fotoDateiLoeschen()
         val m = mahlzeit ?: mahlzeitNachUhrzeit(uhrzeit)
         val scannen = sofort == SofortStart.SCANNEN && scanLauf.verfuegbar
@@ -305,7 +308,8 @@ class EintragenViewModel @Inject constructor(
         )
         gesperrt.value = false
         // Widgets: nur einmal je Auftrag (der Abgleich oben), also nicht erneut nach Drehen oder Prozessende. Die Kamera
-        // startet der Foto-Knopf (er hält den Launcher), sobald er zu sehen ist; ohne Modell bleibt es beim Erfassen.
+        // startet die Seite (sie hält die Launcher), auch ohne Modell: Die Kamera braucht keins, Bestätigen zeigt dann das
+        // Vorschaubild, leere Felder und die Meldung der Erkennung.
         if (scannen) scanLauf.strichcode()
         if (sofort == SofortStart.FOTO) fotoLauf.kameraAnfragen() else fotoLauf.kameraAnfrageErledigt()
     }
@@ -399,18 +403,26 @@ class EintragenViewModel @Inject constructor(
 
     /**
      * „Zurück“: aus Bestätigen nach Erfassen (`true`) – Fotoerkennung und Packungssuche brechen ab (eine späte Antwort
-     * holt nicht wieder nach Bestätigen), das Kamerafoto wird gelöscht, Wahl, Felder, Packung und Foto sind verworfen;
-     * Suche und Datum bleiben, nach Geplantem gilt wieder die Mahlzeit vom Öffnen. In Erfassen `false`: Die Seite geht zu.
+     * holt nicht wieder nach Bestätigen), Scan-Meldung und Foto-Angebot sind vergessen, das Kamerafoto wird gelöscht,
+     * Wahl, Felder, Packung und Foto sind verworfen; Suche und Datum bleiben, nach Geplantem gilt wieder die Mahlzeit vom
+     * Öffnen. In Erfassen `false`: Die Seite geht zu.
      */
     fun zurueck(): Boolean {
         val e = eingaben.value
         if (e.schritt != EintragenSchritt.BESTAETIGEN) return false
         fotoLauf.abbrechen()
         scanLauf.abbrechen()
+        scanLauf.zustand.menueVersuch()
         fotoDateiLoeschen()
         eingaben.value = e.erfassenStand().copy(mahlzeit = if (e.weg == EintragenWeg.PLAN) e.mahlzeitStart else e.mahlzeit)
         return true
     }
+
+    /**
+     * Das Kamerafoto fürs Vorschaubild, gleich aus den gesicherten Eingaben: Nach einem Prozessende steht in [zustand]
+     * anfangs noch der Startwert, das Aufräumen darf das Foto trotzdem nicht löschen.
+     */
+    internal val fotoDatei: String? get() = eingaben.value.fotoDatei
 
     private fun fotoDateiLoeschen() {
         eingaben.value.fotoDatei?.let { File(it).delete() }
@@ -423,15 +435,17 @@ class EintragenViewModel @Inject constructor(
 
     /**
      * Scan-Ergebnis: Bestätigen in „Frei“ mit der Packung. Name bereinigt (höchstens 200 Zeichen) – ohne Namen in [p]
-     * (Foto der Nährwerttabelle) bleibt der getippte –, Werte ungerundet, Häkchen nach dem Namen. Eine schon getippte
-     * Menge bleibt (Bestätigen ist offen, während Open Food Facts sucht und bevor das Tabellenfoto kommt).
+     * (Foto der Nährwerttabelle) bleibt der getippte, ohne Strichcode der bisherige –, Werte ungerundet, Häkchen nach
+     * dem Namen. Eine schon getippte Menge bleibt (Bestätigen ist offen, während Open Food Facts
+     * sucht und bevor das Tabellenfoto kommt).
      */
     fun packungUebernehmen(p: Packungswerte) {
         val gescannt = nameBereinigt(p.name.orEmpty()).take(MAX_NAME)
         eingaben.update {
             val name = gescannt.ifEmpty { it.pName }
+            val packung = if (p.strichcode == null) p.copy(strichcode = it.packung?.strichcode) else p
             it.bestaetigen().copy(
-                weg = EintragenWeg.FREI, packung = p, pName = name, pMenge = it.pMenge.ifBlank { "" }, pBasis = p.basis ?: NutrientBasis.PER_100_G,
+                weg = EintragenWeg.FREI, packung = packung, pName = name, pBasis = p.basis ?: NutrientBasis.PER_100_G,
                 pKcal = p.kcalText, pEiweiss = p.feldText(Nutrient.PROTEIN_G), pKh = p.feldText(Nutrient.CARBS_G),
                 pFett = p.feldText(Nutrient.FAT_G), alsZutat = vorhandene(name) == null, alsZutatVomNutzer = false,
             )
