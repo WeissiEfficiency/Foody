@@ -49,6 +49,9 @@ object Platzhalter {
     /** Knopf im Heute-Platzhalter: öffnet Eintragen für einen Snack am [TAG], wie die leere Zeile in „Heute“. */
     const val SNACK_EINTRAGEN = "Snack eintragen"
 
+    /** Knopf im Tagebuch-Platzhalter: öffnet Eintragen für den gezeigten Tag, wie „+ Eintragen“ im Tagebuch. */
+    const val TAGEBUCH_EINTRAGEN = "Im Tagebuch eintragen"
+
     /** Knopf im Eintragen-Platzhalter: meldet zweimal hintereinander fertig (wie Speichern und Zurück fast zugleich). */
     const val ZWEIMAL_FERTIG = "Zweimal fertig"
 
@@ -64,14 +67,21 @@ fun Bildschirme.mitHeute(heute: @Composable (NavHostController) -> Unit) = Bilds
 val Bildschirme.Companion.platzhalter: Bildschirme
     get() = Bildschirme(
         heute = { nav ->
-            // Wie HeuteRoute in Bildschirme.echt: Eintragen als neues Ziel
+            // Wie HeuteRoute in Bildschirme.echt: Eintragen als neues Ziel, nur einmal obenauf
             Platzhalter(
                 "Heute",
                 aktionText = Platzhalter.SNACK_EINTRAGEN,
-                onAktion = { nav.navigate(EintragenStart(Platzhalter.TAG, Mahlzeit.SNACK).alsZiel()) },
+                onAktion = { nav.eintragenOeffnen(EintragenStart(Platzhalter.TAG, Mahlzeit.SNACK)) },
             )
         },
-        tagebuch = { datum, _ -> Platzhalter("Tagebuch", "Tagebuch $datum") },
+        tagebuch = { datum, nav ->
+            // Wie TagebuchTagRoute in Bildschirme.echt
+            Platzhalter(
+                "Tagebuch", "Tagebuch $datum",
+                aktionText = Platzhalter.TAGEBUCH_EINTRAGEN,
+                onAktion = { nav.eintragenOeffnen(EintragenStart(datum)) },
+            )
+        },
         eintragen = { ziel, onFertig ->
             Platzhalter(
                 "Eintragen", "Eintragen ${ziel.datum} ${ziel.mahlzeit}" + ziel.sofort?.let { " $it" }.orEmpty(),
