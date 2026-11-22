@@ -926,7 +926,7 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
 **2026-11-22 – Einheitlicher Rahmen über alle Stile, Teil B: Eintragen neu** (Spec
 `docs/superpowers/specs/2026-11-21-eintragen-neu-design.md`, Plan `docs/superpowers/plans/2026-11-21-eintragen-neu.md`,
 ADR 0021; Anlass: Alltagstest von 3.9.0 auf dem Handy):
-- Eigenes Ziel mit zwei Schritten (#297): Eintragen ist ein Ziel der Navigation (`Eintragen(datum, mahlzeit, sofort,
+- Eigenes Ziel mit zwei Schritten (#297): Eintragen ist ein Ziel der Navigation (`Eintragen(datum, mahlzeit?, sofort?,
   auftrag)`), eine ganze Seite ohne Navigationsleiste, in allen sieben Stilen und beiden Varianten gleich aufgebaut;
   nur der Titel folgt dem Stil. Erfassen: „Foto“ und „Scannen“ als große Knöpfe, „Aus der Galerie“ und
   „Nährwerttabelle fotografieren“, die Suche über Rezepte, Zutaten samt gescannten Produkten und den BLS, das offene
@@ -958,5 +958,7 @@ ADR 0021; Anlass: Alltagstest von 3.9.0 auf dem Handy):
     prüft nur das ViewModel); kein automatischer Test für `verdeckt` in `MainActivity` (die Logik ließe sich als
     kleine Composable herausziehen); kein Szenenbild ohne Fotomodell (Tablet: Bayrisch mit einem runden Knopf, Edo
     „Scannen“ über die volle Breite); `pruefeNichtsAbgeschnitten` erkennt bei 130 % keinen Umbruch mitten im Wort.
+  - Schwache Prüfungen: `TagebuchStileTest.blaetternUndEintragen` prüft die Mahlzeit nur mit
+    `assertNotNull(start.mahlzeit)`, `HeuteScreenTest.eintragenAusZeile` wählt den Knopf über den Index `[2]`.
   - Bewusst so: Ein Task, den „Schnell eintragen“ gestartet hat, öffnet aus „Zuletzt verwendet“ auf Heute statt in
     Erfassen. Andere Deep Links (Rezept, Kochen) öffnen ihr Ziel von dort erneut; das ist harmlos.

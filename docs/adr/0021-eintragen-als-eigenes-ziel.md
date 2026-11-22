@@ -14,7 +14,7 @@ dem Blatt (`Schnellstart`), Kamera oder Scanner kamen erst danach; das Blatt bli
 erst erfassen (Foto, Scan, Suche) und dann erst Name und kcal sehen, in allen Stilen gleich.
 
 **Entscheidung (Ansatz 1 der Spec):**
-- **Ein Ziel in der Navigation:** `Eintragen(datum, mahlzeit, sofort, auftrag)` in `Ziele.kt`, wie `RezeptDetail` oder
+- **Ein Ziel in der Navigation:** `Eintragen(datum, mahlzeit?, sofort?, auftrag)` in `Ziele.kt`, wie `RezeptDetail` oder
   `Kochen`. Heute mit seinen Szenen, das Tagebuch und die Widgets navigieren dorthin, keiner baut Eintragen mehr selbst
   ein. Heute und Tagebuch liegen beide in `:feature:heute`, die Widgets in `:app`; es gibt kein neues Modul.
 - **Eine Seite, gleich in allen Stilen:** Vollbild ohne Navigationsleiste, in allen sieben Stilen und beiden Varianten
@@ -24,9 +24,15 @@ erst erfassen (Foto, Scan, Suche) und dann erst Name und kcal sehen, in allen St
   Frei eintragen“), dann Bestätigen (je nach Quelle Portionen, Menge, Packung, Foto oder freie Felder, darunter die
   Mahlzeit über `FoodyMenue`, unten „Eintragen“). Zurück führt von Bestätigen nach Erfassen und von dort zur Herkunft.
 - **Sofort-Start:** Mit `sofort` (`FOTO` oder `SCANNEN`) öffnet die Seite gleich Kamera bzw. Scanner und bleibt leer,
-  bis ein Ergebnis da ist; ein Abbruch schließt sie. Die Launcher hängen an der Seite, nicht am Auslöser, damit das
-  Kameraergebnis auch nach Drehen und Prozessende ankommt. Die Knöpfe „Scannen“ und „Foto“ in den Heute-Szenen und die
-  Widgets nutzen denselben Weg.
+  bis ein Ergebnis da ist; ein Abbruch schließt sie. Die Knöpfe „Scannen“ und „Foto“ in den Heute-Szenen und die
+  Widgets öffnen dafür nur das Ziel mit `sofort`.
+- **Bewusst anders als die Skizze von Ansatz 1:** Die Spec skizziert, dass Foto und Scannen beim Auslöser starten
+  (Knopf in Heute oder Tagebuch, bei Widgets die `MainActivity`); wo die Launcher liegen, hat sie dem Umsetzer
+  überlassen. Gebaut ist es anders: Die Seite hält die Launcher für Kamera und Galerie (`rememberAufnahme` in
+  `Aufnahme.kt`), der Strichcode-Scanner läuft über `ScanLauf` im ViewModel (`EintragenViewModel.oeffnen`). Grund: So
+  gibt es eine Stelle, an der die Launcher angemeldet werden, statt je eine in Heute, im Tagebuch, in jeder Szene und
+  in der `MainActivity`, und nur diese Stelle muss ein Prozessende überstehen (das Kameraergebnis kommt nach dem
+  Neustart bei der Seite an, die Anfrage liegt im `SavedStateHandle`).
 
 **Verworfen:**
 - *Ansatz 2, gleicher Ort mit neuem Inhalt:* Eintragen bleibt in Heute und im Tagebuch eingebaut, wird überall eine

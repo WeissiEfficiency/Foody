@@ -344,7 +344,7 @@ ADR 0021, Spec `docs/superpowers/specs/2026-11-21-eintragen-neu-design.md`. Eint
 Navigation (`:app`), die Seite liegt in `:feature:heute` unter `tagebuch/`. Daten, Schema und Sync sind unverändert;
 gespeichert wird wie vorher (`EintragenViewModel.schreiben`).
 
-- **Ziel:** `Eintragen(datum, mahlzeit, sofort, auftrag)` entsteht aus `EintragenStart(datum, mahlzeit?, sofort?)`
+- **Ziel:** `Eintragen(datum, mahlzeit?, sofort?, auftrag)` entsteht aus `EintragenStart(datum, mahlzeit?, sofort?)`
   (`alsZiel`, zurück mit `alsStart`; unbekannte Namen werden `null`). Der `auftrag` ist je Öffnen neu: Nur ein neuer
   Auftrag setzt in `EintragenViewModel.oeffnen` alles zurück, ein Neuaufbau nach Drehen oder Prozessende lässt die
   Eingaben stehen. Heute (Zeilen, Eintragen-Knöpfe, Szenen) und das Tagebuch („+ Eintragen“, Mahlzeitkarten) öffnen das

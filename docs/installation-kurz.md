@@ -69,6 +69,7 @@ In Foody: **Einstellungen → Konto → Server verbinden**, Adresse `https://DEI
 
 - **KI-Hilfe über den Server:** gestrichen (ADR 0019); auf dem Server ist nichts einzurichten.
 - **Fotoerkennung:** nur auf dem Handy. Die beiden Modelldateien kommen nicht in die APK, sondern werden in der App
-  unter *Einstellungen → Fotoerkennung → Modell installieren* importiert (beide zusammen wählen). Danach gibt es
-  *Eintragen → Frei → Foto erkennen*. Auf dem Tablet nichts installieren. Einzelheiten: Abschnitt 9 der
+  unter *Einstellungen → Fotoerkennung → Modell installieren* importiert (beide zusammen wählen). Danach steht unter
+  *Eintragen* der Knopf *Foto* (öffnet gleich die Kamera; ohne Modell oder mit ausgeschaltetem Schalter steht dort
+  *Frei eintragen*). Auf dem Tablet nichts installieren. Einzelheiten: Abschnitt 9 der
   [ausführlichen Anleitung](installation.md#9-fotoerkennung-auf-dem-handy-modell-installieren).
