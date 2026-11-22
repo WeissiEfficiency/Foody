@@ -5,6 +5,8 @@ import androidx.lifecycle.viewmodel.compose.SavedStateHandleSaveableApi
 import androidx.lifecycle.viewmodel.compose.saveable
 import de.foody.core.data.zutaten.Packungswerte
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 
 /**
@@ -43,11 +45,28 @@ class ScanLauf(
     @OptIn(SavedStateHandleSaveableApi::class)
     val zustand: ScanKnopfZustand = gespeichert.saveable(SCHLUESSEL, saver = ScanKnopfZustand.Saver) { ScanKnopfZustand() }
 
+    /** Die laufende Suche bzw. Erkennung; [abbrechen] beendet sie. */
+    private var arbeit: Job? = null
+
     /** Strichcode über das Menü: ein neuer Versuch, ohne den Strichcode eines früheren. */
     fun strichcode() {
         zustand.menueVersuch()
         zustand.starten()
-        scope.launch { weitergeben(strichcodeLesen(onGelesen)) }
+        arbeit = scope.launch {
+            val a = strichcodeLesen(onGelesen)
+            ensureActive()
+            weitergeben(a)
+        }
+    }
+
+    /**
+     * Laufende Suche bzw. Erkennung abbrechen: Ihre Antwort geht verloren, es kommt kein Rückruf mehr – auch wenn die
+     * Suche selbst das Abbrechen nicht bemerkt (deshalb `ensureActive()` vor dem Weitergeben).
+     */
+    fun abbrechen() {
+        if (arbeit?.isActive != true) return
+        arbeit?.cancel()
+        zustand.auswerten(ScanAusgang.Abgebrochen)
     }
 
     /**
@@ -57,9 +76,11 @@ class ScanLauf(
     fun foto(bildUri: String, danach: () -> Unit = {}) {
         zustand.starten()
         val code = zustand.strichcode
-        scope.launch {
+        arbeit = scope.launch {
             try {
-                weitergeben(fotoLesen(bildUri, code))
+                val a = fotoLesen(bildUri, code)
+                ensureActive()
+                weitergeben(a)
             } finally {
                 danach()
             }

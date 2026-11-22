@@ -7,9 +7,11 @@ import de.foody.domain.NutrientBasis
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import java.math.BigDecimal
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -46,6 +48,31 @@ class ScanLaufTest {
         l.strichcode()
         testScheduler.advanceUntilIdle()
         assertEquals(listOf("gelesen:4001", "packung"), aufrufe)
+    }
+
+    @Test
+    fun abbrechenVerwirftSpaeteAntwort() = runTest {
+        val antwort = CompletableDeferred<ScanAusgang>()
+        val imKatalog = mutableListOf<ScanAusgang.ImKatalog>()
+        val l = ScanLauf(
+            verfuegbar = true, vorladen = {},
+            // Auch eine Suche, die das Abbrechen selbst nicht bemerkt, liefert danach nichts mehr ab
+            strichcodeLesen = { withContext(NonCancellable) { antwort.await() } },
+            fotoLesen = { _, _ -> ScanAusgang.Fehler }, scope = this, gespeichert = SavedStateHandle(),
+            onPackung = { packungen += it }, onImKatalog = { imKatalog += it }, onOhneTreffer = { ohneTreffer += it },
+        )
+        l.strichcode()
+        testScheduler.advanceUntilIdle()
+        assertTrue(l.zustand.laeuft)
+
+        l.abbrechen()
+        assertFalse(l.zustand.laeuft)
+        antwort.complete(ScanAusgang.Gefunden(packung))
+        testScheduler.advanceUntilIdle()
+        assertTrue(packungen.isEmpty())
+        assertTrue(imKatalog.isEmpty())
+        assertTrue(ohneTreffer.isEmpty())
+        assertFalse(l.zustand.laeuft)
     }
 
     @Test

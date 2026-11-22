@@ -398,14 +398,15 @@ class EintragenViewModel @Inject constructor(
     }
 
     /**
-     * „Zurück“: aus Bestätigen nach Erfassen (`true`) – die Erkennung bricht ab, das Kamerafoto wird gelöscht, Wahl,
-     * Felder, Packung und Foto sind verworfen; Suche und Datum bleiben, nach Geplantem gilt wieder die Mahlzeit vom
-     * Öffnen. In Erfassen `false`: Die Seite geht zu.
+     * „Zurück“: aus Bestätigen nach Erfassen (`true`) – Fotoerkennung und Packungssuche brechen ab (eine späte Antwort
+     * holt nicht wieder nach Bestätigen), das Kamerafoto wird gelöscht, Wahl, Felder, Packung und Foto sind verworfen;
+     * Suche und Datum bleiben, nach Geplantem gilt wieder die Mahlzeit vom Öffnen. In Erfassen `false`: Die Seite geht zu.
      */
     fun zurueck(): Boolean {
         val e = eingaben.value
         if (e.schritt != EintragenSchritt.BESTAETIGEN) return false
         fotoLauf.abbrechen()
+        scanLauf.abbrechen()
         fotoDateiLoeschen()
         eingaben.value = e.erfassenStand().copy(mahlzeit = if (e.weg == EintragenWeg.PLAN) e.mahlzeitStart else e.mahlzeit)
         return true
@@ -422,14 +423,15 @@ class EintragenViewModel @Inject constructor(
 
     /**
      * Scan-Ergebnis: Bestätigen in „Frei“ mit der Packung. Name bereinigt (höchstens 200 Zeichen) – ohne Namen in [p]
-     * (Foto der Nährwerttabelle) bleibt der getippte –, Werte ungerundet, Häkchen nach dem Namen.
+     * (Foto der Nährwerttabelle) bleibt der getippte –, Werte ungerundet, Häkchen nach dem Namen. Eine schon getippte
+     * Menge bleibt (Bestätigen ist offen, während Open Food Facts sucht und bevor das Tabellenfoto kommt).
      */
     fun packungUebernehmen(p: Packungswerte) {
         val gescannt = nameBereinigt(p.name.orEmpty()).take(MAX_NAME)
         eingaben.update {
             val name = gescannt.ifEmpty { it.pName }
             it.bestaetigen().copy(
-                weg = EintragenWeg.FREI, packung = p, pName = name, pMenge = "", pBasis = p.basis ?: NutrientBasis.PER_100_G,
+                weg = EintragenWeg.FREI, packung = p, pName = name, pMenge = it.pMenge.ifBlank { "" }, pBasis = p.basis ?: NutrientBasis.PER_100_G,
                 pKcal = p.kcalText, pEiweiss = p.feldText(Nutrient.PROTEIN_G), pKh = p.feldText(Nutrient.CARBS_G),
                 pFett = p.feldText(Nutrient.FAT_G), alsZutat = vorhandene(name) == null, alsZutatVomNutzer = false,
             )

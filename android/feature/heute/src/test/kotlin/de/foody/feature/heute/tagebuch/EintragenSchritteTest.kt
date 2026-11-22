@@ -125,6 +125,12 @@ class EintragenSchritteTest {
 
     private val gelesen4001 = testScan(lesen = { StrichcodeStatus.Gelesen("4001") })
 
+    /** Liest „4001“; Open Food Facts antwortet erst mit [antwort]. */
+    private fun haengendeSuche(antwort: CompletableDeferred<ProduktSuche.Antwort>) =
+        testScan(lesen = { StrichcodeStatus.Gelesen("4001") }, suchen = { antwort.await() })
+
+    private val haferflocken4001 = ProduktSuche.Antwort.Gefunden(haferflocken().copy(strichcode = "4001"))
+
     @Test
     fun startetBeimErfassen() = runTest {
         val vm = vm()
@@ -260,7 +266,7 @@ class EintragenSchritteTest {
     @Test
     fun scanGelesenZeigtBestaetigenMitLeererPackung() = runTest {
         val antwort = CompletableDeferred<ProduktSuche.Antwort>()
-        val vm = vm(scan = testScan(lesen = { StrichcodeStatus.Gelesen("4001") }, suchen = { antwort.await() }))
+        val vm = vm(scan = haengendeSuche(antwort))
         vm.oeffnen(tag, null)
         vm.scanLauf.strichcode()
 
@@ -272,11 +278,44 @@ class EintragenSchritteTest {
         assertTrue(assertNotNull(e.packung).werte.isEmpty())
         assertTrue(vm.scanLauf.zustand.laeuft)
 
-        antwort.complete(ProduktSuche.Antwort.Gefunden(haferflocken().copy(strichcode = "4001")))
+        antwort.complete(haferflocken4001)
         val danach = vm.zustand.first { it.eingaben.pName == "Haferflocken" }.eingaben
         assertEquals("359", danach.pKcal)
         assertEquals("13,5", danach.pEiweiss)
         assertEquals(EintragenSchritt.BESTAETIGEN, danach.schritt)
+    }
+
+    @Test
+    fun getippteMengeBleibtBeiSpaeterAntwort() = runTest {
+        val antwort = CompletableDeferred<ProduktSuche.Antwort>()
+        val vm = vm(scan = haengendeSuche(antwort))
+        vm.oeffnen(tag, null)
+        vm.scanLauf.strichcode()
+        // Bestätigen ist offen, während Open Food Facts noch sucht: Die Menge ist schon getippt
+        vm.pMenge("250")
+
+        antwort.complete(haferflocken4001)
+        val e = vm.zustand.first { it.eingaben.pName == "Haferflocken" }.eingaben
+        assertEquals("250", e.pMenge)
+        assertEquals("359", e.pKcal)
+        assertEquals("58,7", e.pKh)
+    }
+
+    @Test
+    fun zurueckBrichtPackungssucheAb() = runTest {
+        val antwort = CompletableDeferred<ProduktSuche.Antwort>()
+        val vm = vm(scan = haengendeSuche(antwort))
+        vm.oeffnen(tag, null)
+        vm.scanLauf.strichcode()
+        assertEquals(EintragenSchritt.BESTAETIGEN, vm.e().schritt)
+
+        assertTrue(vm.zurueck())
+        assertFalse(vm.scanLauf.zustand.laeuft)
+        // Die späte Antwort holt den Nutzer nicht wieder nach Bestätigen
+        antwort.complete(haferflocken4001)
+        val e = vm.e()
+        assertEquals(EintragenSchritt.ERFASSEN, e.schritt)
+        assertNull(e.packung)
     }
 
     @Test
