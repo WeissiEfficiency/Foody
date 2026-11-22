@@ -54,8 +54,8 @@
     markiert, übernommen erst beim Speichern. Unplausibles wird verworfen (Energie über 4000 kJ, Gramm über 100,
     Zucker über Kohlenhydraten). Ein Strichcode, den eine Zutat schon hat, führt zu dieser Zutat (ohne Online-Abfrage).
     Eine vorhandene Zutat wird im Tagebuch nur mit gesetztem Häkchen „Werte aktualisieren“ überschrieben. Mit Häkchen
-    gespeicherte Packungen findet die Suche beim Eintragen auch unter „Rezept“ als „Gescannte Produkte“
-    (`EintragenPackungTest`).
+    gespeicherte Packungen findet die Suche beim Eintragen wie andere Zutaten
+    (`EintragenPackungTest.gescanntesProduktBeimNaechstenMalInDerSuche`).
 27. Import: Nennt die Datei ihre Portionen („Portionen: 4 · …“ in der Kopfzeile), gilt diese Zahl. Ohne Angabe oder mit
     „Portionen: 1“ zählt zuerst eine Stückzahl im Text („Ergibt 12 - 14 Stück“, „24 Stücke abstechen“, bei Backwaren
     auch „in 12 Stücke schneiden“; 2 bis 48). Sonst wird geschätzt: ohne Angabe, bei Backwaren mit „Portionen: 1“ (ganzer

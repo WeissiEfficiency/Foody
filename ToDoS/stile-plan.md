@@ -215,8 +215,9 @@ Gemeinsame liegt in `:core:designsystem`.
 ### Einheitlicher Rahmen (Alltagstest 3.9.0, 2026-11-20)
 - [x] Teil A: Zahnrad, Stilkacheln, Anime-Leiste, Einkauf-Listen, Menüs und Abteilungen (Spec
       `docs/superpowers/specs/2026-11-20-einheitlicher-rahmen-design.md`), 2026-11-21, siehe „Ergebnis“.
-- [ ] Teil B: Eintragen neu – gleich und „nativ“ in allen Stilen, Mahlzeit wählen, Foto ohne Umweg, Widgets direkt
-      zum Ziel statt erst ins Eintragen-Blatt. Eigener Spec, erst mit dem Nutzer klären.
+- [x] Teil B: Eintragen neu – gleich und „nativ“ in allen Stilen, Mahlzeit wählen, Foto ohne Umweg, Widgets direkt
+      zum Ziel statt erst ins Eintragen-Blatt (Spec `docs/superpowers/specs/2026-11-21-eintragen-neu-design.md`,
+      ADR 0021), 2026-11-22, siehe „Ergebnis“.
 
 ## Aufwand und Risiken
 
@@ -921,3 +922,43 @@ Gestennavigation; gleiche Testdaten wie am Handy; Branch `claude/tablet-abnahme`
   Abschnittsköpfe. Bewusst: Im Sage-Rezeptmenü steht „Ins Archiv verbannen“ jetzt in der normalen Textfarbe statt in
   Rot (Menüpunkte einheitlich).
 - Offen: Teil B (Eintragen neu, siehe oben). Am Handy in allen Stilen ansehen (Debug-Build).
+
+**2026-11-22 – Einheitlicher Rahmen über alle Stile, Teil B: Eintragen neu** (Spec
+`docs/superpowers/specs/2026-11-21-eintragen-neu-design.md`, Plan `docs/superpowers/plans/2026-11-21-eintragen-neu.md`,
+ADR 0021; Anlass: Alltagstest von 3.9.0 auf dem Handy):
+- Eigenes Ziel mit zwei Schritten (#297): Eintragen ist ein Ziel der Navigation (`Eintragen(datum, mahlzeit?, sofort?,
+  auftrag)`), eine ganze Seite ohne Navigationsleiste, in allen sieben Stilen und beiden Varianten gleich aufgebaut;
+  nur der Titel folgt dem Stil. Erfassen: „Foto“ und „Scannen“ als große Knöpfe, „Aus der Galerie“ und
+  „Nährwerttabelle fotografieren“, die Suche über Rezepte, Zutaten samt gescannten Produkten und den BLS, das offene
+  Geplante und „Nicht dabei? Frei eintragen“. Bestätigen: je nach Quelle Portionen, Menge, Packung, Foto oder freie
+  Felder, „= … kcal“, die Mahlzeit über `FoodyMenue` und unten „Eintragen“. Heute und Tagebuch öffnen das Ziel; das
+  alte Blatt mit Reitern, Chips und Knopfwörtern je Stil ist weg (`EintragenBlatt`, `FotoErkennungKnopf`). Der
+  Kurztest der R8-Variante (`ReleaseStartTest`) öffnet jetzt Eintragen und wartet auf „Scannen“. Neue Bilder
+  `eintragen_<stil>_{erfassen,bestaetigen_foto,bestaetigen_rezept}` bei 360 dp, die Bilder des alten Blatts entfallen.
+- Heute-Szenen (#298): Edo, Sage und Bayrisch haben statt des kombinierten Knopfs zwei Knöpfe „Scannen“ und „Foto“,
+  die gleich Scanner bzw. Kamera öffnen; „Foto“ nur mit eingeschalteter Fotoerkennung und Modell.
+- Widgets direkt (#299): „KI-Foto“ und „Scannen“ öffnen Kamera bzw. Scanner, ohne dass vorher Heute oder Erfassen zu
+  sehen ist (`WidgetStart` statt `Schnellstart`); beim Kaltstart bleibt Heute unsichtbar, bis Eintragen obenauf liegt.
+  „Schnell eintragen“ öffnet Erfassen. Ein Widget-Tipp nach einem Prozessende im Hintergrund geht nicht mehr verloren
+  (`LinkEingang`), und Öffnen aus „Zuletzt verwendet“ startet den Scanner nicht erneut. Am Handy geprüft: Kaltstart,
+  Abbrechen, Zurück, Prozessende und „Zuletzt verwendet“.
+- Doku und ADR 0021 (#300).
+- Offen:
+  - Am Handy ansehen (Nutzer): Heute blitzt beim Widget-Kaltstart nicht auf, Speichern blendet normal aus, „Schnell
+    eintragen“ öffnet Erfassen.
+  - Ein schneller Doppeltipp auf einen Einstieg (Zeile in Heute, „+“ im Tagebuch) legt zwei Seiten Eintragen auf den
+    Stapel. Das gilt für alle `navigate`-Aufrufe der App.
+  - Sage: „+ SCANNEN“ bricht bei Schrift 130 % zwischen „+“ und dem Wort um (geschütztes Leerzeichen fehlt).
+  - Kosmetisch: Kommt die App per Widget von einer anderen Seite (etwa einem Rezept) nach vorne, blendet diese gut
+    700 ms unter der leeren Seite Eintragen aus.
+  - Reste des alten Blatts in `:core:erkennung`: `ErkennungTexte.KNOPF` und `GALERIE` sind ungenutzt, `KAMERA` steht
+    nur noch in einem Test, `erkennen(loeschen)` rufen nur Tests. `Erfassen` schreibt „Aus der Galerie“ fest, statt die
+    Konstante zu nehmen.
+  - Testlücken: kein Seitentest, dass ein Widget-Sofort-Start nach einem Neuaufbau nicht noch einmal startet (das
+    prüft nur das ViewModel); kein automatischer Test für `verdeckt` in `MainActivity` (die Logik ließe sich als
+    kleine Composable herausziehen); kein Szenenbild ohne Fotomodell (Tablet: Bayrisch mit einem runden Knopf, Edo
+    „Scannen“ über die volle Breite); `pruefeNichtsAbgeschnitten` erkennt bei 130 % keinen Umbruch mitten im Wort.
+  - Schwache Prüfungen: `TagebuchStileTest.blaetternUndEintragen` prüft die Mahlzeit nur mit
+    `assertNotNull(start.mahlzeit)`, `HeuteScreenTest.eintragenAusZeile` wählt den Knopf über den Index `[2]`.
+  - Bewusst so: Ein Task, den „Schnell eintragen“ gestartet hat, öffnet aus „Zuletzt verwendet“ auf Heute statt in
+    Erfassen. Andere Deep Links (Rezept, Kochen) öffnen ihr Ziel von dort erneut; das ist harmlos.

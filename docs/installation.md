@@ -510,8 +510,9 @@ wird einmal eingerichtet. Beide Dateien gehören zusammen; welche der Bildteil i
    wählen (lange tippen für Mehrfachauswahl, z. B. in der Cloud-App). Foody kopiert sie in seinen eigenen Speicher
    (`filesDir`, für andere Apps und den Dateimanager unsichtbar) und vergleicht die Prüfsummen. Meldet Foody
    „unbekannte Dateien“, sind es andere als die gemessenen; die Erkennung läuft dann ohne Gewähr.
-3. Danach steht im Tagebuch unter **Eintragen → Frei** der Knopf **„Foto erkennen“** neben „Packung scannen“
-   (Kamera oder Galerie, meist 40–60 s je Foto, höchstens 90 s). Ohne Modell oder mit ausgeschaltetem Schalter fehlt er.
+3. Danach steht unter **Eintragen** der große Knopf **„Foto“** neben „Scannen“; er öffnet gleich die Kamera, „Aus der
+   Galerie“ steht darunter. Die Erkennung braucht meist 40–60 s je Foto, höchstens 90 s. Ohne Modell oder mit
+   ausgeschaltetem Schalter steht dort „Frei eintragen“. Das Widget „KI-Foto“ öffnet die Kamera direkt.
 4. **Modell entfernen** (oder ersetzen) unter demselben Abschnitt; Deinstallieren der App entfernt das Modell ebenfalls.
 
 Schalter und Modell gelten **je Gerät** und werden nicht gesynct. Auf dem Tablet einfach kein Modell installieren.

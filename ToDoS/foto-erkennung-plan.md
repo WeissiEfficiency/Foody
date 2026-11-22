@@ -164,6 +164,15 @@ die 1,1 GB Gewichte liegen per mmap im Dateicache, die Schwelle ist jetzt 2 GB.
 `docs/superpowers/{specs,plans}/2026-11-02-foto-erkennung-phase3-4*`). Auf dem Emulator (x86_64, ohne Bibliothek) gibt es
 keine Erkennung; der Knopf erscheint dort nur mit importiertem Modell und meldet dann „hat nicht geklappt“.
 
+**Seit 2026-11-22 (Eintragen neu, ADR 0021, #297–#299):** Die Punkte oben beschreiben den Stand von Phase 3; „Frei“,
+der Knopf „Foto erkennen“ mit Menü und das Blatt gibt es nicht mehr. Heute steht „Foto“ als großer Knopf in Erfassen
+(Seite Eintragen) neben „Scannen“ und öffnet gleich die Kamera, „Aus der Galerie“ ist ein Nebenweg darunter; ohne
+Modell steht „Frei eintragen“ an der Stelle von „Foto“. Nach dem Foto zeigt Bestätigen das Vorschaubild, während der
+Erkennung den Fortschritt mit „Abbrechen“, danach die Felder. Die Heute-Szenen Edo, Sage und Bayrisch und das Widget
+„KI-Foto“ öffnen die Kamera direkt. `FotoErkennungKnopf`, `EintragenBlattFotoTest` und die Bilder `foto_*` sind
+entfallen; geprüft wird in `EintragenFotoTest`, `EintragenSeiteTest` und `EintragenScreenshotTest`
+(`eintragen_*_bestaetigen_foto`). `ReleaseStartTest` öffnet Eintragen und wartet auf „Scannen“.
+
 ### Phase 4 – Einstellungen
 
 - [x] Logik vorgebaut: `ModellVerwaltung` (Import zweier Dateien per Uri, Stand, entfernen) und
