@@ -214,6 +214,36 @@ class EintragenSeiteTest {
         assertIs<ActivityResultContracts.TakePicture>(ergebnisse.gestartet.single())
     }
 
+    /** Zwei schnelle Tipps auf „Aus der Galerie“ öffnen die Auswahl nur einmal; ist sie zurück, geht es wieder. */
+    @Test
+    fun doppeltippStartetNurEineGalerie() {
+        ergebnisse.halten = true
+        zeigen(vm())
+        erfassenMitFoto()
+        compose.onNodeWithText("Aus der Galerie").performClick()
+        compose.onNodeWithText("Aus der Galerie").performClick()
+        compose.runOnIdle { assertEquals(1, ergebnisse.gestartet.size, "${ergebnisse.gestartet}") }
+        assertIs<ActivityResultContracts.PickVisualMedia>(ergebnisse.gestartet.single())
+
+        // Ohne Bild zurück: Der Nutzer bleibt in Erfassen, und die Galerie geht wieder auf
+        compose.runOnIdle { ergebnisse.liefern() }
+        compose.onNodeWithText("Aus der Galerie").performClick()
+        compose.runOnIdle { assertEquals(2, ergebnisse.gestartet.size, "${ergebnisse.gestartet}") }
+    }
+
+    /** Ebenso die Galerie für die Nährwerttabelle in Bestätigen (nach einem Scan ohne Werte). */
+    @Test
+    fun doppeltippStartetNurEineTabellenGalerie() {
+        ergebnisse.halten = true
+        zeigen(vm())
+        scannen()
+        compose.warteAufText(ScanTexte.GALERIE)
+        compose.onNodeWithText(ScanTexte.GALERIE).performScrollTo().performClick()
+        compose.onNodeWithText(ScanTexte.GALERIE).performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(1, ergebnisse.gestartet.size, "${ergebnisse.gestartet}") }
+        assertIs<ActivityResultContracts.PickVisualMedia>(ergebnisse.gestartet.single())
+    }
+
     /**
      * Beim Öffnen springt kein Knopf: Bis die Einstellung gelesen ist, steht neben „Scannen“ ein leerer Platz (nicht
      * „Frei eintragen“), die Nebenwege und „Nicht dabei?“ kommen erst danach.
