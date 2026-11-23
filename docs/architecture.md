@@ -266,7 +266,9 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
 - **Navigation** (`navigation/`): typisierte Routen (`Heute`, `Rezepte`, `Woche`, `Einkauf`, `Einstellungen`,
   `RezeptDetail(id)`, `Kochen(rezeptId, portionen?)`, `EinkaufListe(listeId)`, `TagebuchTag(datum)`,
   `Eintragen(datum, mahlzeit?, sofort?, auftrag)`, siehe „Eintragen (Teil B)“). `Hauptgeruest`:
-  vier Tabs, unter 840 dp `FoodyNavigationsleiste` schwebend unten, ab 840 dp `FoodyNavigationsRail`; Detailziele
+  vier Tabs und dazwischen an zweiter Stelle der Knopf „Eintragen“ (`NavZiel.aktion`: nie markiert, für TalkBack ein
+  Knopf; öffnet über `eintragenOeffnen` Eintragen für heute über dem Stapel des Tabs, Zurück und Speichern führen
+  dorthin zurück). Unter 840 dp `FoodyNavigationsleiste` schwebend unten, ab 840 dp `FoodyNavigationsRail`; Detailziele
   markieren ihren Tab. **Ein `FoodyNavHost` an fester Stelle** (seit R-W6): Kochen und Eintragen als Vollbild, Drehen
   und Breitenwechsel blenden nur Leiste bzw. Rail daneben ein oder aus, der Zustand der Bildschirme (`rememberSaveable`)
   bleibt. Deep Links `foody://rezept/{id}`, `foody://einkauf/{listeId}`, `foody://kochen/{rezeptId}?portionen={n}`,

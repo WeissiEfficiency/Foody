@@ -51,7 +51,7 @@ Die Web-Oberfläche ist mit V3 entfallen (ADR 0011).
 
 | Ordner | Modul | Inhalt |
 |---|---|---|
-| `android/app/` | `:app` | **App-Hülle**: Hilt, Navigation mit vier Tabs, Deep Links; bindet alle `:core:*` und `:feature:*` ein |
+| `android/app/` | `:app` | **App-Hülle**: Hilt, Navigation mit vier Tabs und „Eintragen“, Deep Links; bindet alle `:core:*` und `:feature:*` ein |
 | `android/feature/<bereich>/` | `:feature:heute`, `:rezepte`, `:kochen`, `:woche`, `:einkauf`, `:einstellungen`, `:zutaten` | ein Modul je Bereich (Bildschirme, ViewModels); Features kennen sich nicht |
 | `android/core/data/` | `:core:data` | Room (`foody.db` v10), Repositories, Sync-Speicher, Fotos, Sicherung, BLS-Auszug zum Nachschlagen |
 | `android/core/sync/` | `:core:sync` | Sync-Client: Server-Zugang, Sync-Lauf, Verbinden/Trennen, Token |

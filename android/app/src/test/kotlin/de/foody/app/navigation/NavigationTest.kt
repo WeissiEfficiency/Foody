@@ -4,16 +4,25 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
@@ -27,6 +36,7 @@ import de.foody.feature.heute.tagebuch.SofortStart
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.time.LocalDate
@@ -384,6 +394,107 @@ class NavigationTest {
         repeat(3) { compose.mainClock.advanceTimeByFrame() }
         compose.mainClock.autoAdvance = true
         compose.waitForIdle()
+    }
+
+    /** Punkt „Eintragen“ der Leiste (Aktion, kein Reiter) – nicht der Text der Platzhalter-Seite. */
+    private fun leistenEintragen() = compose.onNode(hasText("Eintragen") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+
+    /** Fünf Punkte, „Eintragen“ an zweiter Stelle; der Tipp öffnet Eintragen für heute, ohne Mahlzeit, ohne Leiste. */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun eintragenInDerLeiste() {
+        starten()
+        val x = listOf("Heute", "Eintragen", "Rezepte", "Woche", "Einkauf").map {
+            compose.onNode(hasText(it) and hasAnyAncestor(hasTestTag(Hauptgeruest.LEISTE))).fetchSemanticsNode().boundsInRoot.left
+        }
+        assertEquals(x.sorted(), x, "Reihenfolge Heute · Eintragen · Rezepte · Woche · Einkauf")
+        leistenEintragen().performClick()
+        compose.runOnIdle {
+            val ziel = nav.currentBackStackEntry!!.toRoute<Eintragen>()
+            assertEquals(LocalDate.now().toString(), ziel.datum)
+            assertNull(ziel.mahlzeit)
+            assertNull(ziel.sofort)
+        }
+        compose.onNodeWithTag(Hauptgeruest.LEISTE).assertDoesNotExist()
+    }
+
+    /** Aus einem Rezept eingetragen: Zurück führt ins Rezept, der Reiter Rezepte bleibt markiert. */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun eintragenAusRezeptFuehrtZurueck() {
+        starten()
+        tab("Rezepte").performClick()
+        compose.runOnUiThread { nav.navigate(RezeptDetail("r1")) }
+        compose.onNodeWithText("Rezept r1").assertExists()
+        leistenEintragen().performClick()
+        compose.runOnIdle { assertTrue(nav.currentBackStackEntry!!.destination.hasRoute<Eintragen>()) }
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithText("Rezept r1").assertExists()
+        tab("Rezepte").assertIsSelected()
+    }
+
+    /** Nach dem Einschub markieren die Reiter weiter sich selbst; „Eintragen“ ist nie ein Reiter. */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun reiterNachEintragenRichtigMarkiert() {
+        starten()
+        tab("Heute").assertIsSelected()
+        tab("Eintragen").assertDoesNotExist()
+        for (t in listOf("Rezepte", "Woche", "Einkauf")) {
+            tab(t).performClick()
+            tab(t).assertIsSelected()
+        }
+        leistenEintragen().assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Selected))
+    }
+
+    /**
+     * Zweimal „Eintragen“ in der Leiste, bevor sie verschwindet (zwei Tipps im selben Bild): genau eine Seite. Danach
+     * ist die Leiste weg, ein späterer Tipp geht ins Leere.
+     */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun eintragenAusLeisteNurEinmal() {
+        starten()
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        leistenEintragen().performSemanticsAction(SemanticsActions.OnClick)
+        leistenEintragen().performSemanticsAction(SemanticsActions.OnClick)
+        repeat(3) { compose.mainClock.advanceTimeByFrame() }
+        compose.mainClock.autoAdvance = true
+        compose.runOnIdle {
+            assertTrue(nav.currentBackStackEntry!!.destination.hasRoute<Eintragen>())
+            assertTrue(nav.previousBackStackEntry!!.destination.hasRoute<Heute>(), "darunter: ${nav.previousBackStackEntry?.destination}")
+        }
+    }
+
+    /** Auch die Rail (Tablet) hat „Eintragen“. */
+    @Test
+    @Config(qualifiers = "w1280dp-h800dp")
+    fun tabletRailOeffnetEintragen() {
+        starten()
+        leistenEintragen().performClick()
+        compose.runOnIdle { assertTrue(nav.currentBackStackEntry!!.destination.hasRoute<Eintragen>()) }
+        compose.onNodeWithTag(Hauptgeruest.RAIL).assertDoesNotExist()
+    }
+
+    /**
+     * Handy quer (ab 840 dp Breite gibt es die Rail): Nach Abzug der Systemleisten bleiben oft nur gut 360 dp Höhe, bei
+     * Schrift 130 % zu wenig für fünf Punkte. Die Rail lässt sich dann schieben, statt „Einkauf“ zusammenzudrücken.
+     */
+    @Test
+    @Config(qualifiers = "w891dp-h360dp")
+    fun railPasstImQuerformat() {
+        RuntimeEnvironment.setFontScale(1.3f)
+        starten()
+        val einkaufInDerRail = hasText("Einkauf") and hasAnyAncestor(hasTestTag(Hauptgeruest.RAIL))
+        compose.onNode(einkaufInDerRail).performScrollTo()
+        val bild = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        val einkauf = compose.onNode(einkaufInDerRail).fetchSemanticsNode().boundsInRoot
+        assertTrue(einkauf.top >= bild.top && einkauf.bottom <= bild.bottom + 0.5f, "Einkauf $einkauf liegt nicht ganz im Bild $bild")
+        val hoehe = with(compose.density) { einkauf.height.toDp() }
+        assertTrue(hoehe >= 64.dp, "Einkauf nur $hoehe hoch")
+        tab("Einkauf").performClick()
+        tab("Einkauf").assertIsSelected()
     }
 
     @Test

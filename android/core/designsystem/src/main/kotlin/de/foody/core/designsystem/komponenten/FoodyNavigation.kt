@@ -1,6 +1,7 @@
 package de.foody.core.designsystem.komponenten
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -65,8 +66,11 @@ val LocalMitLeiste = compositionLocalOf { true }
 @Composable
 fun platzFuerLeiste(): Dp = if (LocalMitLeiste.current) ueberLeiste(LEISTE_REGELHOEHE) else 0.dp
 
-/** Ein Ziel der Hauptnavigation; [beschreibung] liest TalkBack, wenn [text] ein Stilwort ist (Bayrisch „Heid“ für Heute). */
-data class NavZiel(val text: String, val symbol: ImageVector, val beschreibung: String? = null)
+/**
+ * Ein Ziel der Hauptnavigation; [beschreibung] liest TalkBack, wenn [text] ein Stilwort ist (Bayrisch „Heid“ für Heute).
+ * [aktion]: kein Reiter, sondern ein Knopf (Eintragen) – nie ausgewählt, für TalkBack ein Knopf.
+ */
+data class NavZiel(val text: String, val symbol: ImageVector, val beschreibung: String? = null, val aktion: Boolean = false)
 
 /** Schwebende Glas-Leiste unten (Handy), 12 dp vom Rand; deckend, wenn der Stil es will (`StilWerte.leiste`). */
 @Composable
@@ -80,7 +84,7 @@ fun FoodyNavigationsleiste(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Un
     }
 }
 
-/** Senkrechte Glas-Leiste links (Tablet); deckend wie die [FoodyNavigationsleiste]. */
+/** Senkrechte Glas-Leiste links (Tablet, Handy quer); deckend wie die [FoodyNavigationsleiste]. */
 @Composable
 fun FoodyNavigationsRail(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Unit, modifier: Modifier = Modifier) {
     GlasFlaeche(GlasStufe.LEICHT, modifier.padding(FoodyAbstaende.s3), form = FoodyTheme.formen.leiste, deckend = FoodyTheme.stil.leiste) {
@@ -97,14 +101,21 @@ fun FoodyNavigationsRail(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Unit
  * Der Druckeffekt bleibt in dieser Pille, statt den ganzen Eintrag als Rechteck zu füllen.
  */
 @Composable
-private fun NavEintrag(ziel: NavZiel, aktiv: Boolean, onKlick: () -> Unit, modifier: Modifier) {
+private fun NavEintrag(ziel: NavZiel, gewaehlt: Boolean, onKlick: () -> Unit, modifier: Modifier) {
+    val aktiv = gewaehlt && !ziel.aktion
     val farben = FoodyTheme.farben
     val farbe = if (aktiv) farben.primaer else farben.nebentext
     val druck = remember { MutableInteractionSource() }
     Column(
         modifier
             .heightIn(min = 64.dp)
-            .selectable(selected = aktiv, onClick = onKlick, role = Role.Tab, interactionSource = druck, indication = null)
+            .then(
+                if (ziel.aktion) {
+                    Modifier.clickable(interactionSource = druck, indication = null, role = Role.Button, onClick = onKlick)
+                } else {
+                    Modifier.selectable(selected = aktiv, onClick = onKlick, role = Role.Tab, interactionSource = druck, indication = null)
+                },
+            )
             .then(if (ziel.beschreibung != null) Modifier.semantics { contentDescription = ziel.beschreibung } else Modifier)
             .padding(vertical = FoodyAbstaende.s2, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
