@@ -18,8 +18,11 @@ import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
@@ -33,6 +36,7 @@ import de.foody.feature.heute.tagebuch.SofortStart
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.time.LocalDate
@@ -471,6 +475,26 @@ class NavigationTest {
         leistenEintragen().performClick()
         compose.runOnIdle { assertTrue(nav.currentBackStackEntry!!.destination.hasRoute<Eintragen>()) }
         compose.onNodeWithTag(Hauptgeruest.RAIL).assertDoesNotExist()
+    }
+
+    /**
+     * Handy quer (ab 840 dp Breite gibt es die Rail): Nach Abzug der Systemleisten bleiben oft nur gut 360 dp Höhe, bei
+     * Schrift 130 % zu wenig für fünf Punkte. Die Rail lässt sich dann schieben, statt „Einkauf“ zusammenzudrücken.
+     */
+    @Test
+    @Config(qualifiers = "w891dp-h360dp")
+    fun railPasstImQuerformat() {
+        RuntimeEnvironment.setFontScale(1.3f)
+        starten()
+        val einkaufInDerRail = hasText("Einkauf") and hasAnyAncestor(hasTestTag(Hauptgeruest.RAIL))
+        compose.onNode(einkaufInDerRail).performScrollTo()
+        val bild = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        val einkauf = compose.onNode(einkaufInDerRail).fetchSemanticsNode().boundsInRoot
+        assertTrue(einkauf.top >= bild.top && einkauf.bottom <= bild.bottom + 0.5f, "Einkauf $einkauf liegt nicht ganz im Bild $bild")
+        val hoehe = with(compose.density) { einkauf.height.toDp() }
+        assertTrue(hoehe >= 64.dp, "Einkauf nur $hoehe hoch")
+        tab("Einkauf").performClick()
+        tab("Einkauf").assertIsSelected()
     }
 
     @Test

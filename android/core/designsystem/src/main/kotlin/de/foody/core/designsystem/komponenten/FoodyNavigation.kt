@@ -84,7 +84,7 @@ fun FoodyNavigationsleiste(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Un
     }
 }
 
-/** Senkrechte Glas-Leiste links (Tablet); deckend wie die [FoodyNavigationsleiste]. */
+/** Senkrechte Glas-Leiste links (Tablet, Handy quer); deckend wie die [FoodyNavigationsleiste]. */
 @Composable
 fun FoodyNavigationsRail(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Unit, modifier: Modifier = Modifier) {
     GlasFlaeche(GlasStufe.LEICHT, modifier.padding(FoodyAbstaende.s3), form = FoodyTheme.formen.leiste, deckend = FoodyTheme.stil.leiste) {

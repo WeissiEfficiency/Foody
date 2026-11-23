@@ -1,13 +1,16 @@
 package de.foody.app.navigation
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.CalendarMonth
@@ -130,8 +133,15 @@ fun Hauptgeruest(
         // der Zustand der Bildschirme (`rememberSaveable`) bleibt.
         Row(Modifier.fillMaxSize()) {
             if (breit) {
-                Box(Modifier.fillMaxHeight().safeDrawingPadding(), contentAlignment = Alignment.Center) {
-                    FoodyNavigationsRail(ziele, aktivStelle, waehlen, Modifier.wrapContentHeight().testTag(Hauptgeruest.RAIL))
+                // Mittig; reicht die Höhe nicht (Handy quer, große Schrift), lässt sich die Rail schieben, statt den
+                // letzten Punkt zusammenzudrücken
+                BoxWithConstraints(Modifier.fillMaxHeight().safeDrawingPadding()) {
+                    Column(
+                        Modifier.verticalScroll(rememberScrollState()).heightIn(min = maxHeight),
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        FoodyNavigationsRail(ziele, aktivStelle, waehlen, Modifier.testTag(Hauptgeruest.RAIL))
+                    }
                 }
             }
             CompositionLocalProvider(LocalLeistenZuwachs provides zuwachs, LocalMitLeiste provides mitLeiste) {
