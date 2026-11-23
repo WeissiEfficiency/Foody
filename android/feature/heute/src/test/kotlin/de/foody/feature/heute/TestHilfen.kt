@@ -128,7 +128,8 @@ fun haferflocken(name: String? = "Haferflocken", basis: NutrientBasis? = Nutrien
 /**
  * Scan ohne Play-Dienste: Der Strichcode ist immer gelesen; trägt ihn [imKatalog], kommt „im Katalog“, sonst [packung]
  * (ohne: unbekannt). [lesen] und [suchen] ersetzen den Leser bzw. die Online-Suche (etwa abgebrochen oder hängend),
- * [play] die Frage nach den Play-Diensten (etwa erst da, dann weg).
+ * [tabelle] die Texterkennung der Nährwerttabelle (ohne: Fehler), [play] die Frage nach den Play-Diensten (etwa erst
+ * da, dann weg).
  */
 fun testScan(
     packung: Packungswerte? = null,
@@ -136,13 +137,14 @@ fun testScan(
     beimLesen: () -> Unit = {},
     lesen: suspend () -> StrichcodeStatus = { StrichcodeStatus.Gelesen("4000000000000") },
     suchen: suspend () -> ProduktSuche.Antwort = { packung?.let { ProduktSuche.Antwort.Gefunden(it) } ?: ProduktSuche.Antwort.Unbekannt },
+    tabelle: suspend () -> ScanStatus = { ScanStatus.Fehler },
     play: () -> Boolean = { true },
 ) = PackungScan(
     leser = {
         beimLesen()
         lesen()
     },
-    tabelle = { ScanStatus.Fehler },
+    tabelle = { tabelle() },
     suche = { suchen() },
     katalog = { imKatalog },
     play = { play() },

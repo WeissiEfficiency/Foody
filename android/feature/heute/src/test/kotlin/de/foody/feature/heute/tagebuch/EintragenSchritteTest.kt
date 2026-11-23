@@ -570,8 +570,8 @@ class EintragenSchritteTest {
         val vm = vm()
         vm.oeffnen(tag, null)
         val leer = vm.zustand.first { it.eingaben.datum == tag && it.rezepte.isNotEmpty() }
+        // Den BLS ohne Suchtext prüft BlsNachschlagTest (leere Eingabe, leere Liste), BLS nur in Erfassen blsNurBeimErfassen
         assertTrue(leer.zutaten.isEmpty())
-        assertTrue(leer.bls.isEmpty())
 
         vm.suche("Hafer")
         val z = vm.zustand.first { it.eingaben.suche == "Hafer" }

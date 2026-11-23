@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +20,7 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelected
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -50,6 +52,7 @@ import de.foody.core.erkennung.ErkennungTexte
 import de.foody.core.erkennung.FotoGedaechtnis
 import de.foody.core.erkennung.MahlzeitErkenner
 import de.foody.core.scan.PackungScan
+import de.foody.core.scan.ScanStatus
 import de.foody.core.scan.ScanTexte
 import de.foody.core.scan.StrichcodeStatus
 import de.foody.core.scan.ZutatTreffer
@@ -58,6 +61,9 @@ import de.foody.core.testing.nachProzessende
 import de.foody.domain.FotoPortion
 import de.foody.domain.FotoVorschlag
 import de.foody.domain.Mahlzeit
+import de.foody.domain.Nutrient
+import de.foody.domain.NutrientBasis
+import de.foody.domain.ScanErgebnis
 import de.foody.feature.heute.MitSchrift
 import de.foody.feature.heute.bestand
 import de.foody.feature.heute.haferflocken
@@ -85,6 +91,7 @@ import java.time.LocalDate
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
@@ -152,13 +159,16 @@ class EintragenSeiteTest {
     )
 
     private fun zeigen(vm: EintragenViewModel, sofort: SofortStart? = null, schrift: Float = 1f) {
-        val start = EintragenStart(tag, Mahlzeit.MITTAGESSEN, sofort)
-        compose.setContent {
-            val (stil, variante) = auswahl
-            CompositionLocalProvider(LocalActivityResultRegistryOwner provides ergebnisse.besitzer) {
-                FoodyTheme(stil = stil, variante = variante, unschaerfe = false) {
-                    MitSchrift(schrift) { EintragenRoute(start, "auftrag-1", { fertig++ }, vm) }
-                }
+        compose.setContent { Seite(vm, sofort, schrift) }
+    }
+
+    /** Die Seite im gewählten Stil ([auswahl]), Kamera und Galerie aus [ergebnisse]. */
+    @Composable
+    private fun Seite(vm: EintragenViewModel, sofort: SofortStart? = null, schrift: Float = 1f) {
+        val (stil, variante) = auswahl
+        CompositionLocalProvider(LocalActivityResultRegistryOwner provides ergebnisse.besitzer) {
+            FoodyTheme(stil = stil, variante = variante, unschaerfe = false) {
+                MitSchrift(schrift) { EintragenRoute(EintragenStart(tag, Mahlzeit.MITTAGESSEN, sofort), "auftrag-1", { fertig++ }, vm) }
             }
         }
     }
@@ -314,24 +324,53 @@ class EintragenSeiteTest {
         compose.onNodeWithContentDescription(VORSCHAU).assertExists()
     }
 
+    /**
+     * Sofort-Foto: Die Seite wird abgebaut und neu aufgebaut, während die Kamera offen und die Seite leer ist – wie nach
+     * einem Prozessende, mit einem neuen ViewModel aus dem gesicherten Zustand. Das Foto kommt trotzdem an und führt nach
+     * Bestätigen mit dem Vorschaubild; die Kamera geht nicht noch einmal auf.
+     */
     @Test
-    fun fotoKommtAuchBeiLeererSeiteAn() {
+    fun fotoUeberstehtNeuaufbauUndProzessende() {
         ergebnisse.halten = true
-        val vm = vm(erkenner = { awaitCancellation() })
-        zeigen(vm, SofortStart.FOTO)
+        val h = SavedStateHandle()
+        var vm = vm(erkenner = { awaitCancellation() }, h = h)
+        val wiederherstellen = StateRestorationTester(compose)
+        wiederherstellen.setContent { Seite(vm, SofortStart.FOTO) }
         compose.waitUntil(5_000) { ergebnisse.gestartet.isNotEmpty() }
-        // Die Kamera ist offen, die Seite leer
         compose.onNodeWithTag(ERFASSEN_SCANNEN).assertDoesNotExist()
+        val pfad = assertNotNull(vm.fotoLauf.zustand.value.fotoPfad)
 
-        // Wie nach einem Prozessende: Der Pfad des Fotos kommt aus dem gesicherten Zustand
-        val foto = File(File(RuntimeEnvironment.getApplication().cacheDir, "mahlzeit").apply { mkdirs() }, "vorher.jpg").apply { writeText("jpg") }
-        compose.runOnIdle {
-            vm.fotoLauf.kameraGestartet(foto.path)
-            ergebnisse.liefern()
-        }
+        vm = vm(erkenner = { awaitCancellation() }, h = h.nachProzessende())
+        wiederherstellen.emulateSavedInstanceStateRestore()
+        compose.runOnIdle { ergebnisse.liefern() }
         compose.waitUntil(5_000) { compose.onAllNodesWithContentDescription(VORSCHAU).fetchSemanticsNodes().isNotEmpty() }
-        compose.runOnIdle { assertEquals(Uri.fromFile(foto).toString(), vm.zustand.value.eingaben.fotoBild) }
-        compose.runOnIdle { assertEquals(0, fertig) }
+        compose.runOnIdle {
+            assertEquals(Uri.fromFile(File(pfad)).toString(), vm.zustand.value.eingaben.fotoBild)
+            assertIs<ActivityResultContracts.TakePicture>(ergebnisse.gestartet.single())
+            assertEquals(0, fertig)
+        }
+    }
+
+    /** Ebenso das Foto der Nährwerttabelle, aufgenommen aus Bestätigen: Es kommt an und füllt die Packung. */
+    @Test
+    fun tabellenfotoUeberstehtNeuaufbauUndProzessende() {
+        ergebnisse.halten = true
+        val h = SavedStateHandle()
+        val scan = testScan(tabelle = { ScanStatus.Erkannt(ScanErgebnis(NutrientBasis.PER_100_G, mapOf(Nutrient.ENERGY_KJ to BigDecimal(1590)))) })
+        var vm = vm(scan = scan, h = h)
+        val wiederherstellen = StateRestorationTester(compose)
+        wiederherstellen.setContent { Seite(vm) }
+        scannen()
+        compose.warteAufText(ScanTexte.FOTO)
+        compose.onNodeWithText(ScanTexte.FOTO).performScrollTo().performClick()
+        compose.runOnIdle { assertIs<ActivityResultContracts.TakePicture>(ergebnisse.gestartet.single()) }
+
+        vm = vm(scan = scan, h = h.nachProzessende())
+        wiederherstellen.emulateSavedInstanceStateRestore()
+        compose.warteAufText(ScanTexte.FOTO)
+        compose.runOnIdle { ergebnisse.liefern() }
+        // 1590 kJ je 100 g
+        compose.waitUntil(5_000) { compose.onAllNodes(hasSetTextAction() and hasText("380")).fetchSemanticsNodes().isNotEmpty() }
     }
 
     @Test
