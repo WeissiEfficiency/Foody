@@ -45,7 +45,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** „Frei“ mit dem Foto-Knopf: Vorschlag füllt die Felder, Markierung, Prozessende, Abbrechen (Fake-Erkenner). */
+/** Bestätigen nach einem Foto: Vorschlag füllt die freien Felder, Markierung, Prozessende, Abbrechen (Fake-Erkenner). */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = android.app.Application::class)
@@ -58,7 +58,7 @@ class EintragenFotoTest {
     private val vorschlag = FotoVorschlag("Leberkässemmel", 480, BigDecimal("18.5"), BigDecimal("40"), null)
     private val erkannt = MahlzeitErkenner { ErkennungStatus.Erkannt(vorschlag, 20_000) }
 
-    /** Wie das offene Blatt: Im Test ist die App zu, der Zustand rechnet nur mit Zuseher. */
+    /** Wie die offene Seite: Im Test ist die App zu, der Zustand rechnet nur mit Zuseher. */
     private val zuseher = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     @Before
@@ -157,29 +157,29 @@ class EintragenFotoTest {
     fun vorschlagUndMarkierungUeberstehenProzessende() {
         val h = SavedStateHandle()
         val vor = vm(h)
-        vor.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
+        vor.oeffnen(heute, Mahlzeit.SNACK, auftrag = "seite-1")
         vor.freiEintragen()
         vor.fotoLauf.erkennen("content://foto")
 
         val nach = vm(h.nachProzessende(), erkenner = { error("nicht neu gestartet") })
-        nach.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
+        nach.oeffnen(heute, Mahlzeit.SNACK, auftrag = "seite-1")
         assertEquals(vor.e.foto, nach.e.foto)
         assertEquals("Leberkässemmel", nach.e.freiName)
         assertTrue(fotoHinweis(nach.e))
     }
 
     @Test
-    fun neuesBlattBrichtDieErkennungAb() {
+    fun neueSeiteBrichtDieErkennungAb() {
         val vm = vm(erkenner = { awaitCancellation() })
-        vm.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
+        vm.oeffnen(heute, Mahlzeit.SNACK, auftrag = "seite-1")
         vm.freiEintragen()
         vm.fotoLauf.erkennen("content://foto")
         assertTrue(vm.fotoLauf.zustand.value.laeuft)
 
-        // Neuaufbau mit demselben Auftrag (Drehen) lässt sie laufen, ein neues Blatt nicht
-        vm.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
+        // Neuaufbau mit demselben Auftrag (Drehen) lässt sie laufen, eine neue Seite nicht
+        vm.oeffnen(heute, Mahlzeit.SNACK, auftrag = "seite-1")
         assertTrue(vm.fotoLauf.zustand.value.laeuft)
-        vm.oeffnen(heute, Mahlzeit.ABENDESSEN, auftrag = "blatt-2")
+        vm.oeffnen(heute, Mahlzeit.ABENDESSEN, auftrag = "seite-2")
         assertFalse(vm.fotoLauf.zustand.value.laeuft)
         assertNull(vm.e.foto)
     }

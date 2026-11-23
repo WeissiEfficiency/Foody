@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Widget „Schnell eintragen“ (EintragenWidget): Titel, großes „+“ im Kreis, darunter „Suchen · Scannen · Foto“.
-     Der ganze Knopf öffnet das Eintragen-Blatt; Farben, Rand und Kreis im Stil (eintragenAnsicht). -->
+     Der ganze Knopf öffnet die Seite Eintragen mit Erfassen; Farben, Rand und Kreis im Stil (eintragenAnsicht). -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@android:id/background"

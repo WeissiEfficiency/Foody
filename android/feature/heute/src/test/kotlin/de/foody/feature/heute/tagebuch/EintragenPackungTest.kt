@@ -50,7 +50,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** „Frei“ mit gescannter Packung: Übernahme, Häkchen-Vorgabe, Prüfregeln und Speichern über `ausPackung`. */
+/** Bestätigen mit gescannter Packung: Übernahme, Häkchen-Vorgabe, Prüfregeln und Speichern über `ausPackung`. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = android.app.Application::class)
@@ -83,7 +83,7 @@ class EintragenPackungTest {
 
     private val e get() = vm.zustand.value.eingaben
 
-    /** Wie das offene Blatt: Im Test ist die App zu, der Zustand rechnet nur mit Zuseher ([SolangeAppOffen]). */
+    /** Wie die offene Seite: Im Test ist die App zu, der Zustand rechnet nur mit Zuseher ([SolangeAppOffen]). */
     private val zuseher = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private fun EintragenViewModel.sichtbar() = also { vm ->
@@ -96,13 +96,13 @@ class EintragenPackungTest {
         // Foto aus dem Tagebuch: Während die Kamera offen ist, beendet Android die App (R-W7/D1)
         val h = SavedStateHandle()
         val vor = halter.behalten(EintragenViewModel(h, HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis(), testBls(), ZutatenRepository(db) { 1L })).sichtbar()
-        vor.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
+        vor.oeffnen(heute, Mahlzeit.SNACK, auftrag = "seite-1")
         vor.packungUebernehmen(haferflocken())
         vor.pMenge("60")
 
         val nach = halter.behalten(EintragenViewModel(h.nachProzessende(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, testScan(), keinErkenner, testErkennung(), testGedaechtnis(), testBls(), ZutatenRepository(db) { 1L })).sichtbar()
-        // Das Blatt baut sich mit demselben Auftrag wieder auf: Die Eingaben bleiben
-        nach.oeffnen(heute, Mahlzeit.SNACK, auftrag = "blatt-1")
+        // Die Seite baut sich mit demselben Auftrag wieder auf: Die Eingaben bleiben
+        nach.oeffnen(heute, Mahlzeit.SNACK, auftrag = "seite-1")
         val wieder = nach.zustand.value.eingaben
         assertEquals(EintragenWeg.FREI, wieder.weg)
         assertEquals(haferflocken(), wieder.packung)

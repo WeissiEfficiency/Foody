@@ -19,7 +19,10 @@ data class ErkennungZustand(
     val meldung: String? = null,
     /** Datei des Kamerafotos, solange die Kamera offen ist. */
     val fotoPfad: String? = null,
-    /** Widget „KI-Foto“: Der Knopf soll gleich die Kamera öffnen (einmal, dann [ErkennungLauf.kameraAnfrageErledigt]). */
+    /**
+     * Sofort-Start mit Foto (Widget „KI-Foto“, Knopf einer Heute-Szene): Die Seite soll gleich die Kamera öffnen, sobald
+     * sie aufgeräumt hat (einmal, dann [ErkennungLauf.kameraAnfrageErledigt]).
+     */
     val kameraAngefragt: Boolean = false,
 )
 
@@ -27,7 +30,7 @@ data class ErkennungZustand(
  * Ablauf hinter dem Foto-Knopf, gehalten vom ViewModel (wie `ScanLauf`): Die Erkennung läuft in [scope]
  * (`viewModelScope`) und bricht beim Drehen nicht ab. Bild und Kamerafoto liegen in [gespeichert]; endet der Prozess
  * mitten in der Erkennung, startet sie beim nächsten Mal von selbst neu. Ein Vorschlag geht an [onVorschlag] (füllt
- * „Frei“ vor), sonst steht eine Meldung da.
+ * die freien Felder vor), sonst steht eine Meldung da.
  */
 class ErkennungLauf(
     private val erkenner: MahlzeitErkenner,
@@ -46,7 +49,7 @@ class ErkennungLauf(
         gespeichert.get<String>(BILD)?.let { starten(it, gespeichert[LOESCHEN]) }
     }
 
-    /** Die Kamera soll aufgehen, sobald der Knopf zu sehen ist; übersteht Drehen und Prozessende bis dahin. */
+    /** Die Kamera soll aufgehen, sobald die Seite bereit ist; übersteht Drehen und Prozessende bis dahin. */
     fun kameraAnfragen() = anfrage(true)
 
     /** Angenommen (vor dem Start der Kamera, damit ein Neuaufbau sie nicht noch einmal öffnet) oder verworfen. */

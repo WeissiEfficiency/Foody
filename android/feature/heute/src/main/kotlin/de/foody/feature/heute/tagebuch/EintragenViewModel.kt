@@ -97,7 +97,7 @@ data class Eingaben(
     val freiEiweiss: String = "",
     val freiKh: String = "",
     val freiFett: String = "",
-    /** Gescannte Packung in „Frei“ (Phase 6e3); die p-Felder sind ihr Formular, Werte je 100 g/ml. */
+    /** Gescannte Packung auf dem Weg [EintragenWeg.FREI] (Phase 6e3); die p-Felder sind ihr Formular, Werte je 100 g/ml. */
     val packung: Packungswerte? = null,
     val pName: String = "",
     val pMenge: String = "",
@@ -159,7 +159,7 @@ data class EintragenZustand(
     val vorhandeneZutat: String? = null,
     /** Treffer im BLS zur Zutatensuche, ohne die, die schon so im Katalog stehen. */
     val bls: List<BlsTreffer> = emptyList(),
-    /** Titel des gewählten Rezepts bzw. Geplanten oder Name der Zutat; `null` bei „Frei“ oder ohne Wahl. */
+    /** Titel des gewählten Rezepts bzw. Geplanten oder Name der Zutat; `null` bei [EintragenWeg.FREI] oder ohne Wahl. */
     val auswahlName: String? = null,
     /** kcal, die der Eintrag dazubringt (Rezept × Portionen, Zutat in der Menge, Geplantes je Portion); sonst `null`. */
     val kcalDazu: Int? = null,
@@ -368,7 +368,7 @@ class EintragenViewModel @Inject constructor(
     fun freiEintragen() = eingaben.update { it.erfassenStand().bestaetigen().copy(weg = EintragenWeg.FREI) }
 
     /**
-     * Foto da (Kamera oder Galerie): Bestätigen in „Frei“ mit leeren Feldern, die die Erkennung füllt. [datei], das
+     * Foto da (Kamera oder Galerie): Bestätigen auf [EintragenWeg.FREI] mit leeren Feldern, die die Erkennung füllt. [datei], das
      * Kamerafoto, bleibt fürs Vorschaubild, bis „Zurück“ oder das Ende der Seite es löscht.
      */
     fun fotoGemacht(bildUri: String, datei: String?) {
@@ -413,7 +413,7 @@ class EintragenViewModel @Inject constructor(
     }
 
     /**
-     * Scan-Ergebnis: Bestätigen in „Frei“ mit der Packung. Name bereinigt (höchstens 200 Zeichen) – ohne Namen in [p]
+     * Scan-Ergebnis: Bestätigen auf [EintragenWeg.FREI] mit der Packung. Name bereinigt (höchstens 200 Zeichen) – ohne Namen in [p]
      * (Foto der Nährwerttabelle) bleibt der getippte, ohne Strichcode der bisherige –, Werte ungerundet, Häkchen nach
      * dem Namen. Eine schon getippte Menge bleibt (Bestätigen ist offen, während Open Food Facts
      * sucht und bevor das Tabellenfoto kommt).
@@ -590,7 +590,7 @@ private fun optional(text: String): BigDecimal? = zahlAus(text)
 
 private fun optionalGueltig(text: String) = text.isBlank() || zahlAus(text)?.let { it.signum() >= 0 } == true
 
-/** Portionen > 0, Menge > 0, „Frei“ mit Name und kcal ≥ 0 (ganzzahlig), Makros leer oder ≥ 0; Packung: [packungGueltig]. */
+/** Portionen > 0, Menge > 0, frei mit Name und kcal ≥ 0 (ganzzahlig), Makros leer oder ≥ 0; Packung: [packungGueltig]. */
 internal fun gueltig(e: Eingaben): Boolean = when (e.weg) {
     EintragenWeg.REZEPT -> e.rezeptId != null && zahlAus(e.portionen).positiv()
     EintragenWeg.ZUTAT -> e.zutatId != null && zahlAus(e.menge).positiv()
