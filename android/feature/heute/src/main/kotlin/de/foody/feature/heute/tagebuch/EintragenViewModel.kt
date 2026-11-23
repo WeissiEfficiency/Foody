@@ -97,7 +97,7 @@ data class Eingaben(
     val freiEiweiss: String = "",
     val freiKh: String = "",
     val freiFett: String = "",
-    /** Gescannte Packung in „Frei“ (Phase 6e3); die p-Felder sind ihr Formular, Werte je 100 g/ml. */
+    /** Gescannte Packung auf dem Weg [EintragenWeg.FREI] (Phase 6e3); die p-Felder sind ihr Formular, Werte je 100 g/ml. */
     val packung: Packungswerte? = null,
     val pName: String = "",
     val pMenge: String = "",
@@ -159,7 +159,7 @@ data class EintragenZustand(
     val vorhandeneZutat: String? = null,
     /** Treffer im BLS zur Zutatensuche, ohne die, die schon so im Katalog stehen. */
     val bls: List<BlsTreffer> = emptyList(),
-    /** Titel des gewählten Rezepts bzw. Geplanten oder Name der Zutat; `null` bei „Frei“ oder ohne Wahl. */
+    /** Titel des gewählten Rezepts bzw. Geplanten oder Name der Zutat; `null` bei [EintragenWeg.FREI] oder ohne Wahl. */
     val auswahlName: String? = null,
     /** kcal, die der Eintrag dazubringt (Rezept × Portionen, Zutat in der Menge, Geplantes je Portion); sonst `null`. */
     val kcalDazu: Int? = null,
@@ -243,6 +243,10 @@ class EintragenViewModel @Inject constructor(
         .distinctUntilChanged()
         .mapLatest { s -> bls.suchen(s) }
 
+    /**
+     * Startet mit den gesicherten Eingaben, bevor die Listen da sind: Nach einem Prozessende in Bestätigen blitzt so
+     * nicht erst Erfassen auf.
+     */
     val zustand: StateFlow<EintragenZustand> =
         combine(eingaben, heute.rezeptVorschlaege(rezepte), katalogSicht, offenerPlan, blsTreffer) { e, rezepte, k, plan, bls ->
             val s = e.suche.trim()
@@ -259,7 +263,7 @@ class EintragenViewModel @Inject constructor(
                 auswahlName = auswahlName(e, rezepte, k.nachId, plan),
                 kcalDazu = kcalDazu(e, rezepte, k.nachId, plan),
             )
-        }.stateIn(viewModelScope, SolangeAppOffen, EintragenZustand(Eingaben(), emptyList(), emptyList(), emptyList()))
+        }.stateIn(viewModelScope, SolangeAppOffen, EintragenZustand(eingaben.value, emptyList(), emptyList(), emptyList()))
 
     val speichernMoeglich: StateFlow<Boolean> =
         combine(eingaben, gesperrt) { e, sperre -> !sperre && gueltig(e) }.stateIn(viewModelScope, SolangeAppOffen, false)
@@ -364,8 +368,8 @@ class EintragenViewModel @Inject constructor(
     fun freiEintragen() = eingaben.update { it.erfassenStand().bestaetigen().copy(weg = EintragenWeg.FREI) }
 
     /**
-     * Foto da (Kamera oder Galerie): Bestätigen in „Frei“ mit leeren Feldern, die die Erkennung füllt. [datei], das
-     * Kamerafoto, bleibt fürs Vorschaubild, bis „Zurück“ oder das Ende der Seite es löscht.
+     * Foto da (Kamera oder Galerie): Bestätigen auf [EintragenWeg.FREI] mit leeren Feldern, die die Erkennung füllt.
+     * [datei], das Kamerafoto, bleibt fürs Vorschaubild, bis „Zurück“ oder das Ende der Seite es löscht.
      */
     fun fotoGemacht(bildUri: String, datei: String?) {
         eingaben.update { it.erfassenStand().bestaetigen().copy(weg = EintragenWeg.FREI, fotoBild = bildUri, fotoDatei = datei) }
@@ -396,10 +400,7 @@ class EintragenViewModel @Inject constructor(
         return true
     }
 
-    /**
-     * Das Kamerafoto fürs Vorschaubild, gleich aus den gesicherten Eingaben: Nach einem Prozessende steht in [zustand]
-     * anfangs noch der Startwert, das Aufräumen darf das Foto trotzdem nicht löschen.
-     */
+    /** Das Kamerafoto fürs Vorschaubild aus den gesicherten Eingaben; das Aufräumen beim Aufbau lässt es liegen. */
     internal val fotoDatei: String? get() = eingaben.value.fotoDatei
 
     private fun fotoDateiLoeschen() {
@@ -412,10 +413,10 @@ class EintragenViewModel @Inject constructor(
     }
 
     /**
-     * Scan-Ergebnis: Bestätigen in „Frei“ mit der Packung. Name bereinigt (höchstens 200 Zeichen) – ohne Namen in [p]
-     * (Foto der Nährwerttabelle) bleibt der getippte, ohne Strichcode der bisherige –, Werte ungerundet, Häkchen nach
-     * dem Namen. Eine schon getippte Menge bleibt (Bestätigen ist offen, während Open Food Facts
-     * sucht und bevor das Tabellenfoto kommt).
+     * Scan-Ergebnis: Bestätigen auf [EintragenWeg.FREI] mit der Packung. Name bereinigt (höchstens 200 Zeichen) – ohne
+     * Namen in [p] (Foto der Nährwerttabelle) bleibt der getippte, ohne Strichcode der bisherige –, Werte ungerundet,
+     * Häkchen nach dem Namen. Eine schon getippte Menge bleibt (Bestätigen ist offen, während Open Food Facts sucht und
+     * bevor das Tabellenfoto kommt).
      */
     fun packungUebernehmen(p: Packungswerte) {
         val gescannt = nameBereinigt(p.name.orEmpty()).take(MAX_NAME)
@@ -435,8 +436,8 @@ class EintragenViewModel @Inject constructor(
 
     /**
      * Scan ohne Treffer. Ohne Werte (nicht gefunden, keine Tabelle, nicht verfügbar, Fehler): Bestätigen mit der leeren
-     * Packung, falls noch keine da ist; Meldung und Foto-Knöpfe zeigt [scanLauf]. Lädt der Scanner noch, bleibt es beim
-     * Erfassen; abgebrochen wie [aufnahmeAbgebrochen].
+     * Packung, falls noch keine da ist; die Meldung kommt aus [scanLauf], die Foto-Knöpfe stehen bei jeder Packung ohne
+     * Werte. Lädt der Scanner noch, bleibt es beim Erfassen; abgebrochen wie [aufnahmeAbgebrochen].
      */
     private fun ohneTreffer(a: ScanAusgang) {
         when (a) {
@@ -589,7 +590,7 @@ private fun optional(text: String): BigDecimal? = zahlAus(text)
 
 private fun optionalGueltig(text: String) = text.isBlank() || zahlAus(text)?.let { it.signum() >= 0 } == true
 
-/** Portionen > 0, Menge > 0, „Frei“ mit Name und kcal ≥ 0 (ganzzahlig), Makros leer oder ≥ 0; Packung: [packungGueltig]. */
+/** Portionen > 0, Menge > 0, frei mit Name und kcal ≥ 0 (ganzzahlig), Makros leer oder ≥ 0; Packung: [packungGueltig]. */
 internal fun gueltig(e: Eingaben): Boolean = when (e.weg) {
     EintragenWeg.REZEPT -> e.rezeptId != null && zahlAus(e.portionen).positiv()
     EintragenWeg.ZUTAT -> e.zutatId != null && zahlAus(e.menge).positiv()

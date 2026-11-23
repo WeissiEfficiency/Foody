@@ -119,7 +119,7 @@ class DatenWidgetTest {
     }
 
     @Test
-    fun eintragenOeffnetDasBlatt() {
+    fun eintragenOeffnetErfassen() {
         val v = eintragenAnsicht(kontext, StilWahl()).apply(kontext, FrameLayout(kontext))
         assertEquals("Eintragen", v.text(R.id.widget_titel))
         assertEquals("Suchen · Scannen · Foto", v.text(R.id.widget_fuss))

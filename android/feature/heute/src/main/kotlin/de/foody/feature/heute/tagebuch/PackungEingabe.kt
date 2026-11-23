@@ -43,7 +43,7 @@ internal fun vorschauKcal(e: Eingaben): Int? {
 private fun wieGescannt(feld: String, scan: String) = scan.isNotEmpty() && feld.trim() == scan
 
 /**
- * „Frei“ mit gescannter Packung (Spec 6e3, 3.): Herkunft (nur mit Werten; eine leere Packung ist noch nichts zum
+ * Bestätigen mit gescannter Packung (Spec 6e3, 3.): Herkunft (nur mit Werten; eine leere Packung ist noch nichts zum
  * Prüfen), Name, Menge mit Einheit nach der Basis (ohne Basis Chips g/ml), Werte je 100 g/ml – markiert, solange sie
  * dem Scan gleichen –, Vorschau und Häkchen.
  */

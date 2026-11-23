@@ -3,6 +3,7 @@ package de.foody.core.erkennung
 import androidx.lifecycle.SavedStateHandle
 import de.foody.domain.FotoVorschlag
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +19,10 @@ data class ErkennungZustand(
     val meldung: String? = null,
     /** Datei des Kamerafotos, solange die Kamera offen ist. */
     val fotoPfad: String? = null,
-    /** Widget „KI-Foto“: Der Knopf soll gleich die Kamera öffnen (einmal, dann [ErkennungLauf.kameraAnfrageErledigt]). */
+    /**
+     * Sofort-Start mit Foto (Widget „KI-Foto“, Knopf einer Heute-Szene): Die Seite soll gleich die Kamera öffnen, sobald
+     * sie aufgeräumt hat (einmal, dann [ErkennungLauf.kameraAnfrageErledigt]).
+     */
     val kameraAngefragt: Boolean = false,
 )
 
@@ -26,7 +30,7 @@ data class ErkennungZustand(
  * Ablauf hinter dem Foto-Knopf, gehalten vom ViewModel (wie `ScanLauf`): Die Erkennung läuft in [scope]
  * (`viewModelScope`) und bricht beim Drehen nicht ab. Bild und Kamerafoto liegen in [gespeichert]; endet der Prozess
  * mitten in der Erkennung, startet sie beim nächsten Mal von selbst neu. Ein Vorschlag geht an [onVorschlag] (füllt
- * „Frei“ vor), sonst steht eine Meldung da.
+ * die freien Felder vor), sonst steht eine Meldung da.
  */
 class ErkennungLauf(
     private val erkenner: MahlzeitErkenner,
@@ -45,7 +49,7 @@ class ErkennungLauf(
         gespeichert.get<String>(BILD)?.let { starten(it, gespeichert[LOESCHEN]) }
     }
 
-    /** Die Kamera soll aufgehen, sobald der Knopf zu sehen ist; übersteht Drehen und Prozessende bis dahin. */
+    /** Die Kamera soll aufgehen, sobald die Seite bereit ist; übersteht Drehen und Prozessende bis dahin. */
     fun kameraAnfragen() = anfrage(true)
 
     /** Angenommen (vor dem Start der Kamera, damit ein Neuaufbau sie nicht noch einmal öffnet) oder verworfen. */
@@ -79,22 +83,31 @@ class ErkennungLauf(
         arbeit?.cancel()
     }
 
+    /**
+     * Startet die Erkennung als [arbeit]. Eine abgebrochene endet oft erst später (die native Seite rechnet zu Ende);
+     * läuft bis dahin schon eine neue, räumt ihr Ende nur das eigene Kamerafoto weg und lässt Bild und „läuft“ der neuen
+     * stehen. Erst zugewiesen, dann gestartet: Auf `Dispatchers.Main.immediate` liefe sie sonst schon vor der Zuweisung.
+     */
     private fun starten(bildUri: String, loeschen: String?) {
         meldung(null)
         _zustand.value = _zustand.value.copy(laeuft = true)
-        arbeit = scope.launch {
+        val job = scope.launch(start = CoroutineStart.LAZY) {
             try {
                 when (val status = erkenner.erkennen(bildUri)) {
                     is ErkennungStatus.Erkannt -> onVorschlag(status.vorschlag)
                     else -> meldung(ErkennungTexte.meldung(status))
                 }
             } finally {
-                gespeichert.remove<String>(BILD)
-                gespeichert.remove<String>(LOESCHEN)
                 loeschen?.let { File(it).delete() }
-                _zustand.value = _zustand.value.copy(laeuft = false)
+                if (arbeit === coroutineContext[Job]) {
+                    gespeichert.remove<String>(BILD)
+                    gespeichert.remove<String>(LOESCHEN)
+                    _zustand.value = _zustand.value.copy(laeuft = false)
+                }
             }
         }
+        arbeit = job
+        job.start()
     }
 
     private fun meldung(text: String?) {

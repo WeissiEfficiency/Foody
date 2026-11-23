@@ -19,6 +19,7 @@ import de.foody.feature.einstellungen.EinstellungenRoute
 import de.foody.feature.einstellungen.VerbindenRoute
 import de.foody.feature.heute.HeuteRoute
 import de.foody.feature.heute.tagebuch.EintragenRoute
+import de.foody.feature.heute.tagebuch.EintragenStart
 import de.foody.feature.heute.tagebuch.TagebuchTagRoute
 import de.foody.feature.kochen.KochenRoute
 import de.foody.feature.rezepte.RezepteBereich
@@ -59,7 +60,7 @@ class Bildschirme(
                     onEinkauf = { nav.navigate(EinkaufListe(it)) },
                     onAlleEintraege = { nav.navigate(TagebuchTag(LocalDate.now().toString())) },
                     onEinstellungen = { nav.navigate(Einstellungen) },
-                    onEintragen = { nav.navigate(it.alsZiel()) },
+                    onEintragen = nav::eintragenOeffnen,
                 )
             },
             tagebuch = { datum, nav ->
@@ -68,7 +69,7 @@ class Bildschirme(
                     datum,
                     onDatum = { neu -> nav.navigate(TagebuchTag(neu.toString())) { popUpTo<TagebuchTag> { inclusive = true } } },
                     onZurueck = { nav.popBackStack() },
-                    onEintragen = { nav.navigate(it.alsZiel()) },
+                    onEintragen = nav::eintragenOeffnen,
                 )
             },
             // Speichern und Zurück aus Erfassen führen dorthin, woher man kam
@@ -208,6 +209,18 @@ fun NavHostController.deepLinkOeffnen(intent: Intent): Boolean {
     if (!graph.hasDeepLink(uri)) return false
     navigate(uri, navOptions { launchSingleTop = true })
     return true
+}
+
+/**
+ * Eintragen aus Heute oder dem Tagebuch (Zeilen, Knöpfe, Sofort-Knöpfe der Szenen). Liegt Eintragen schon obenauf,
+ * passiert nichts: Während der Überblendung ist die Seite darunter noch bedienbar, und ein zweiter schneller Tipp legte
+ * sonst eine zweite Seite auf den Stapel (nach Speichern stünde man auf einer leeren statt auf Heute). Der Stapel ändert
+ * sich beim Navigieren sofort, also greift die Prüfung schon beim zweiten Tipp. Widgets nehmen [widgetStartOeffnen]: Dort
+ * ersetzt ein neuer Tipp die offene Seite.
+ */
+fun NavHostController.eintragenOeffnen(start: EintragenStart) {
+    if (currentBackStackEntry?.destination?.hasRoute<Eintragen>() == true) return
+    navigate(start.alsZiel())
 }
 
 /** „Rezept anpassen“ nach dem Kochen: der Editor ersetzt den Kochmodus, „Zurück“ führt dorthin, woher man kam. */

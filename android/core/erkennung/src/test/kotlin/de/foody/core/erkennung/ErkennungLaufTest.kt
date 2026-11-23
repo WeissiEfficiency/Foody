@@ -111,6 +111,32 @@ class ErkennungLaufTest {
         assertEquals(1, aufrufe)
     }
 
+    /**
+     * Zurück bricht Erkennung 1 ab, ein schnelles neues Foto startet Erkennung 2, bevor 1 zu Ende ist: Das Ende von 1
+     * lässt 2 laufen und vergisst deren Bild und Kamerafoto nicht (sie starten nach einem Prozessende neu).
+     */
+    @Test fun abgebrochenesEndeLaesstDieNaechsteErkennungStehen() = runTest {
+        val h = SavedStateHandle()
+        val zweites = tmp.newFile("zweites.jpg")
+        val l = lauf(h) { awaitCancellation() }
+        l.erkennen("content://a")
+        testScheduler.advanceUntilIdle()
+        l.abbrechen()
+        l.erkennen("file://${zweites.path}", loeschen = zweites.path)
+        // Jetzt kommt das Ende von 1
+        testScheduler.advanceUntilIdle()
+        assertTrue(l.zustand.value.laeuft)
+
+        val uris = mutableListOf<String>()
+        lauf(h.nachProzessende()) {
+            uris += it
+            ErkennungStatus.Unlesbar
+        }
+        testScheduler.advanceUntilIdle()
+        assertEquals(listOf("file://${zweites.path}"), uris)
+        assertFalse(zweites.exists(), "das Kamerafoto von 2 wird nach der Erkennung gelöscht")
+    }
+
     @Test fun prozessendeMittenInDerErkennungStartetSieNeu() = runTest {
         val h = SavedStateHandle()
         lauf(h) { awaitCancellation() }.erkennen("content://foto", loeschen = "/cache/erkennung/kamera.jpg")

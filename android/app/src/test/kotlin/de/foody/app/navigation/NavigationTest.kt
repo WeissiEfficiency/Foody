@@ -342,6 +342,50 @@ class NavigationTest {
         compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).assertExists()
     }
 
+    /**
+     * Ein zweiter Tipp, solange Heute noch ausblendet (700 ms), öffnet keine zweite Seite Eintragen: Speichern führt
+     * danach zurück nach Heute statt auf eine zweite, leere Seite.
+     */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun doppeltippAusHeuteOeffnetEintragenEinmal() {
+        starten()
+        doppeltippInDerUeberblendung(Platzhalter.SNACK_EINTRAGEN)
+        compose.runOnUiThread {
+            assertTrue(nav.currentBackStackEntry!!.destination.hasRoute<Eintragen>())
+            assertTrue(nav.previousBackStackEntry!!.destination.hasRoute<Heute>(), "darunter: ${nav.previousBackStackEntry?.destination}")
+        }
+    }
+
+    /** Ebenso aus dem Tagebuch: genau eine Seite Eintragen über dem Tag. */
+    @Test
+    @Config(qualifiers = "w411dp-h891dp")
+    fun doppeltippAusDemTagebuchOeffnetEintragenEinmal() {
+        starten()
+        compose.runOnUiThread { nav.navigate(TagebuchTag("2026-10-24")) }
+        compose.onNodeWithText("Tagebuch 2026-10-24").assertExists()
+        doppeltippInDerUeberblendung(Platzhalter.TAGEBUCH_EINTRAGEN)
+        compose.runOnUiThread {
+            assertEquals("2026-10-24", nav.currentBackStackEntry!!.toRoute<Eintragen>().datum)
+            assertTrue(nav.previousBackStackEntry!!.destination.hasRoute<TagebuchTag>(), "darunter: ${nav.previousBackStackEntry?.destination}")
+        }
+    }
+
+    /**
+     * Tippt [knopf] an und noch einmal, während die Seite in der Überblendung ausblendet. Semantik statt Tippen: Beide
+     * Seiten liegen dann übereinander.
+     */
+    private fun doppeltippInDerUeberblendung(knopf: String) {
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        compose.onNodeWithText(knopf).performSemanticsAction(SemanticsActions.OnClick)
+        repeat(3) { compose.mainClock.advanceTimeByFrame() }
+        compose.onNodeWithText(knopf).performSemanticsAction(SemanticsActions.OnClick)
+        repeat(3) { compose.mainClock.advanceTimeByFrame() }
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+    }
+
     @Test
     fun eintragenZielRundreise() {
         val heute = LocalDate.of(2026, 11, 22)

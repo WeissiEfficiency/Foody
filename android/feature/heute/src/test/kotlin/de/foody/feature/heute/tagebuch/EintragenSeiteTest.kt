@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +20,7 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelected
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -50,16 +52,23 @@ import de.foody.core.erkennung.ErkennungTexte
 import de.foody.core.erkennung.FotoGedaechtnis
 import de.foody.core.erkennung.MahlzeitErkenner
 import de.foody.core.scan.PackungScan
+import de.foody.core.scan.ScanStatus
 import de.foody.core.scan.ScanTexte
+import de.foody.core.scan.StrichcodeStatus
 import de.foody.core.scan.ZutatTreffer
 import de.foody.core.testing.ViewModelHalter
+import de.foody.core.testing.nachProzessende
 import de.foody.domain.FotoPortion
 import de.foody.domain.FotoVorschlag
 import de.foody.domain.Mahlzeit
+import de.foody.domain.Nutrient
+import de.foody.domain.NutrientBasis
+import de.foody.domain.ScanErgebnis
 import de.foody.feature.heute.MitSchrift
 import de.foody.feature.heute.bestand
 import de.foody.feature.heute.haferflocken
 import de.foody.feature.heute.keinErkenner
+import de.foody.feature.heute.planen
 import de.foody.feature.heute.pruefeNichtsAbgeschnitten
 import de.foody.feature.heute.testBls
 import de.foody.feature.heute.testDatenbank
@@ -83,6 +92,7 @@ import java.time.LocalDate
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
@@ -141,21 +151,25 @@ class EintragenSeiteTest {
         erkenner: MahlzeitErkenner = keinErkenner,
         modell: Boolean = true,
         gedaechtnis: FotoGedaechtnis = testGedaechtnis(),
+        h: SavedStateHandle = SavedStateHandle(),
     ) = halter.behalten(
         EintragenViewModel(
-            SavedStateHandle(), HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, scan, erkenner,
+            h, HeuteRepository(db, EmptyCoroutineContext), TagebuchRepository(db) { 1L }, db, scan, erkenner,
             testErkennung(modell), gedaechtnis, testBls(), ZutatenRepository(db) { 1L },
         ),
     )
 
     private fun zeigen(vm: EintragenViewModel, sofort: SofortStart? = null, schrift: Float = 1f) {
-        val start = EintragenStart(tag, Mahlzeit.MITTAGESSEN, sofort)
-        compose.setContent {
-            val (stil, variante) = auswahl
-            CompositionLocalProvider(LocalActivityResultRegistryOwner provides ergebnisse.besitzer) {
-                FoodyTheme(stil = stil, variante = variante, unschaerfe = false) {
-                    MitSchrift(schrift) { EintragenRoute(start, "auftrag-1", { fertig++ }, vm) }
-                }
+        compose.setContent { Seite(vm, sofort, schrift) }
+    }
+
+    /** Die Seite im gewählten Stil ([auswahl]), Kamera und Galerie aus [ergebnisse]. */
+    @Composable
+    private fun Seite(vm: EintragenViewModel, sofort: SofortStart? = null, schrift: Float = 1f) {
+        val (stil, variante) = auswahl
+        CompositionLocalProvider(LocalActivityResultRegistryOwner provides ergebnisse.besitzer) {
+            FoodyTheme(stil = stil, variante = variante, unschaerfe = false) {
+                MitSchrift(schrift) { EintragenRoute(EintragenStart(tag, Mahlzeit.MITTAGESSEN, sofort), "auftrag-1", { fertig++ }, vm) }
             }
         }
     }
@@ -209,6 +223,36 @@ class EintragenSeiteTest {
         compose.onNodeWithText("Aus der Galerie").performClick()
         compose.runOnIdle { assertEquals(1, ergebnisse.gestartet.size, "${ergebnisse.gestartet}") }
         assertIs<ActivityResultContracts.TakePicture>(ergebnisse.gestartet.single())
+    }
+
+    /** Zwei schnelle Tipps auf „Aus der Galerie“ öffnen die Auswahl nur einmal; ist sie zurück, geht es wieder. */
+    @Test
+    fun doppeltippStartetNurEineGalerie() {
+        ergebnisse.halten = true
+        zeigen(vm())
+        erfassenMitFoto()
+        compose.onNodeWithText("Aus der Galerie").performClick()
+        compose.onNodeWithText("Aus der Galerie").performClick()
+        compose.runOnIdle { assertEquals(1, ergebnisse.gestartet.size, "${ergebnisse.gestartet}") }
+        assertIs<ActivityResultContracts.PickVisualMedia>(ergebnisse.gestartet.single())
+
+        // Ohne Bild zurück: Der Nutzer bleibt in Erfassen, und die Galerie geht wieder auf
+        compose.runOnIdle { ergebnisse.liefern() }
+        compose.onNodeWithText("Aus der Galerie").performClick()
+        compose.runOnIdle { assertEquals(2, ergebnisse.gestartet.size, "${ergebnisse.gestartet}") }
+    }
+
+    /** Ebenso die Galerie für die Nährwerttabelle in Bestätigen (nach einem Scan ohne Werte). */
+    @Test
+    fun doppeltippStartetNurEineTabellenGalerie() {
+        ergebnisse.halten = true
+        zeigen(vm())
+        scannen()
+        compose.warteAufText(ScanTexte.GALERIE)
+        compose.onNodeWithText(ScanTexte.GALERIE).performScrollTo().performClick()
+        compose.onNodeWithText(ScanTexte.GALERIE).performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(1, ergebnisse.gestartet.size, "${ergebnisse.gestartet}") }
+        assertIs<ActivityResultContracts.PickVisualMedia>(ergebnisse.gestartet.single())
     }
 
     /**
@@ -281,24 +325,53 @@ class EintragenSeiteTest {
         compose.onNodeWithContentDescription(VORSCHAU).assertExists()
     }
 
+    /**
+     * Sofort-Foto: Die Seite wird abgebaut und neu aufgebaut, während die Kamera offen und die Seite leer ist – wie nach
+     * einem Prozessende, mit einem neuen ViewModel aus dem gesicherten Zustand. Das Foto kommt trotzdem an und führt nach
+     * Bestätigen mit dem Vorschaubild; die Kamera geht nicht noch einmal auf.
+     */
     @Test
-    fun fotoKommtAuchBeiLeererSeiteAn() {
+    fun fotoUeberstehtNeuaufbauUndProzessende() {
         ergebnisse.halten = true
-        val vm = vm(erkenner = { awaitCancellation() })
-        zeigen(vm, SofortStart.FOTO)
+        val h = SavedStateHandle()
+        var vm = vm(erkenner = { awaitCancellation() }, h = h)
+        val wiederherstellen = StateRestorationTester(compose)
+        wiederherstellen.setContent { Seite(vm, SofortStart.FOTO) }
         compose.waitUntil(5_000) { ergebnisse.gestartet.isNotEmpty() }
-        // Die Kamera ist offen, die Seite leer
         compose.onNodeWithTag(ERFASSEN_SCANNEN).assertDoesNotExist()
+        val pfad = assertNotNull(vm.fotoLauf.zustand.value.fotoPfad)
 
-        // Wie nach einem Prozessende: Der Pfad des Fotos kommt aus dem gesicherten Zustand
-        val foto = File(File(RuntimeEnvironment.getApplication().cacheDir, "mahlzeit").apply { mkdirs() }, "vorher.jpg").apply { writeText("jpg") }
-        compose.runOnIdle {
-            vm.fotoLauf.kameraGestartet(foto.path)
-            ergebnisse.liefern()
-        }
+        vm = vm(erkenner = { awaitCancellation() }, h = h.nachProzessende())
+        wiederherstellen.emulateSavedInstanceStateRestore()
+        compose.runOnIdle { ergebnisse.liefern() }
         compose.waitUntil(5_000) { compose.onAllNodesWithContentDescription(VORSCHAU).fetchSemanticsNodes().isNotEmpty() }
-        compose.runOnIdle { assertEquals(Uri.fromFile(foto).toString(), vm.zustand.value.eingaben.fotoBild) }
-        compose.runOnIdle { assertEquals(0, fertig) }
+        compose.runOnIdle {
+            assertEquals(Uri.fromFile(File(pfad)).toString(), vm.zustand.value.eingaben.fotoBild)
+            assertIs<ActivityResultContracts.TakePicture>(ergebnisse.gestartet.single())
+            assertEquals(0, fertig)
+        }
+    }
+
+    /** Ebenso das Foto der Nährwerttabelle, aufgenommen aus Bestätigen: Es kommt an und füllt die Packung. */
+    @Test
+    fun tabellenfotoUeberstehtNeuaufbauUndProzessende() {
+        ergebnisse.halten = true
+        val h = SavedStateHandle()
+        val scan = testScan(tabelle = { ScanStatus.Erkannt(ScanErgebnis(NutrientBasis.PER_100_G, mapOf(Nutrient.ENERGY_KJ to BigDecimal(1590)))) })
+        var vm = vm(scan = scan, h = h)
+        val wiederherstellen = StateRestorationTester(compose)
+        wiederherstellen.setContent { Seite(vm) }
+        scannen()
+        compose.warteAufText(ScanTexte.FOTO)
+        compose.onNodeWithText(ScanTexte.FOTO).performScrollTo().performClick()
+        compose.runOnIdle { assertIs<ActivityResultContracts.TakePicture>(ergebnisse.gestartet.single()) }
+
+        vm = vm(scan = scan, h = h.nachProzessende())
+        wiederherstellen.emulateSavedInstanceStateRestore()
+        compose.warteAufText(ScanTexte.FOTO)
+        compose.runOnIdle { ergebnisse.liefern() }
+        // 1590 kJ je 100 g
+        compose.waitUntil(5_000) { compose.onAllNodes(hasSetTextAction() and hasText("380")).fetchSemanticsNodes().isNotEmpty() }
     }
 
     @Test
@@ -322,6 +395,23 @@ class EintragenSeiteTest {
 
         zurueck()
         compose.runOnIdle { assertEquals(1, fertig) }
+    }
+
+    /**
+     * Treffer in Erfassen (Geplantes, Rezepte, Zutaten) sind Knöpfe, die weiterführen, keine Optionsfelder: TalkBack
+     * sagt nicht „Optionsfeld, nicht ausgewählt“.
+     */
+    @Test
+    fun trefferSindKnoepfe() {
+        runBlocking { db.planen("p1", tag, "MITTAGESSEN") }
+        zeigen(vm())
+        compose.onNode(hasSetTextAction()).performTextReplacement("Reis")
+        compose.warteAufText("Reispfanne · Mittagessen")
+        for (text in listOf("Reispfanne · Mittagessen", "Reispfanne", "Reis")) {
+            compose.onNode(hasText(text) and !hasSetTextAction())
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+                .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Selected))
+        }
     }
 
     @Test
@@ -351,7 +441,8 @@ class EintragenSeiteTest {
         val vm = vm()
         zeigen(vm)
         erfassenMitFoto()
-        val erwartet = listOf("Foto", "Scannen", "Aus der Galerie", "Nährwerttabelle fotografieren", "Nicht dabei? Frei eintragen")
+        // Mit dem Rezept aus dem Bestand als Treffer (auch ein Knopf)
+        val erwartet = listOf("Foto", "Scannen", "Aus der Galerie", "Nährwerttabelle fotografieren", "Reispfanne", "Nicht dabei? Frei eintragen")
         val verboten = listOf("Siegel", "Deuten", "Ins Bordbuch", "Eintragen! ✓", "In die Chronik", "Ins Logbuch")
         val fehler = mutableListOf<String>()
         for (stil in FoodyStil.entries) {
@@ -400,6 +491,51 @@ class EintragenSeiteTest {
         compose.onNodeWithText(ScanTexte.GALERIE).assertExists()
         // Eine leere Packung ist noch nichts zum Prüfen
         assertEquals(0, compose.onAllNodes(hasText("bitte prüfen", substring = true)).fetchSemanticsNodes().size)
+    }
+
+    /** Die Packung ist da, ohne Werte und ohne laufende Suche: Meldung (falls eine) und die Knöpfe zur Nährwerttabelle. */
+    private fun leerePackungMitTabellenKnoepfen(meldung: String?) {
+        compose.waitUntil(5_000) { compose.onAllNodes(hasSetTextAction() and hasText("Menge")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForIdle()
+        meldung?.let { compose.onNodeWithText(it).assertExists() }
+        compose.onNodeWithText(ScanTexte.FOTO).assertExists()
+        compose.onNodeWithText(ScanTexte.GALERIE).assertExists()
+    }
+
+    /** Spec, Tabelle der Quellen: Auch nach einem Fehler führen die Knöpfe zur Nährwerttabelle weiter. */
+    @Test
+    fun scanFehlerZeigtTabellenKnoepfe() {
+        zeigen(vm(scan = testScan(lesen = { StrichcodeStatus.Fehler })))
+        scannen()
+        leerePackungMitTabellenKnoepfen(ScanTexte.FEHLER)
+    }
+
+    /** Ebenso, wenn die Play-Dienste beim Scannen nicht (mehr) da sind. */
+    @Test
+    fun scanOhnePlayDiensteZeigtTabellenKnoepfe() {
+        var play = true
+        zeigen(vm(scan = testScan(play = { play })))
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag(ERFASSEN_SCANNEN).fetchSemanticsNodes().isNotEmpty() }
+        play = false
+        compose.onNodeWithTag(ERFASSEN_SCANNEN).performClick()
+        leerePackungMitTabellenKnoepfen(ScanTexte.NICHT_VERFUEGBAR)
+    }
+
+    /**
+     * Prozessende, während Open Food Facts sucht: Die Suche ist weg (ihr „läuft“ wird nicht gesichert), die leere
+     * Packung mit dem Strichcode bleibt. Die Knöpfe zur Nährwerttabelle führen weiter, statt nur das leere Formular.
+     */
+    @Test
+    fun prozessendeWaehrendDerSucheZeigtTabellenKnoepfe() {
+        val h = SavedStateHandle()
+        vm(scan = testScan(suchen = { awaitCancellation() }), h = h).apply {
+            oeffnen(tag, Mahlzeit.MITTAGESSEN, auftrag = "auftrag-1")
+            scanLauf.strichcode()
+            assertTrue(scanLauf.zustand.laeuft)
+        }
+        zeigen(vm(h = h.nachProzessende()))
+        leerePackungMitTabellenKnoepfen(meldung = null)
+        compose.onNodeWithText("Sucht das Produkt …").assertDoesNotExist()
     }
 
     @Test

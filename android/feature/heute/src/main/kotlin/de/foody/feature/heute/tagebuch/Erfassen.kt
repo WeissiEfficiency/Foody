@@ -93,18 +93,18 @@ internal fun Erfassen(z: EintragenZustand, vm: EintragenViewModel, aufnahme: Auf
     val hinweis = scan.meldung ?: ScanTexte.NICHT_VERFUEGBAR.takeIf { !verfuegbar } ?: foto.meldung
     hinweis?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = FoodyTheme.farben.nebentext) }
 
-    Suche(z.eingaben.suche, "Rezept oder Zutat suchen", vm::suche)
+    Suche(z.eingaben.suche, vm::suche)
     if (z.plan.isNotEmpty()) {
         Abschnitt("Geplant")
-        z.plan.forEach { p -> Treffer("${p.titel} · ${slotName(p.slot)}", gewaehlt = false) { vm.planWaehlen(p.planEintragId) } }
+        z.plan.forEach { p -> Treffer("${p.titel} · ${slotName(p.slot)}") { vm.planWaehlen(p.planEintragId) } }
     }
     if (z.rezepte.isNotEmpty()) {
         Abschnitt("Rezepte")
-        z.rezepte.forEach { r -> Treffer(r.titel, gewaehlt = false) { vm.rezeptWaehlen(r.id) } }
+        z.rezepte.forEach { r -> Treffer(r.titel) { vm.rezeptWaehlen(r.id) } }
     }
     if (z.zutaten.isNotEmpty()) {
         Abschnitt("Zutaten")
-        z.zutaten.forEach { t -> Treffer(t.name, gewaehlt = false) { vm.zutatWaehlen(t.id) } }
+        z.zutaten.forEach { t -> Treffer(t.name) { vm.zutatWaehlen(t.id) } }
     }
     if (z.bls.isNotEmpty()) {
         Abschnitt("Aus dem Bundeslebensmittelschlüssel")

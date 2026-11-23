@@ -3,6 +3,7 @@ package de.foody.feature.heute.tagebuch
 import android.content.ActivityNotFoundException
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -10,6 +11,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -26,7 +28,7 @@ import java.io.File
 /**
  * Wege, etwas zu erfassen: Mahlzeitfoto aus Kamera oder Galerie, Strichcode, Foto der Nährwerttabelle aus Kamera oder
  * Galerie. Startet sofort, ohne Menü. Solange eine Kamera offen ist, tun sie nichts (ein zweiter schneller Tipp öffnet
- * keine zweite Kamera und keine Galerie darüber).
+ * keine zweite Kamera und keine Galerie darüber); solange eine Galerie offen ist, öffnen beide Galerien keine zweite.
  */
 internal class Aufnahme(
     val foto: () -> Unit,
@@ -76,7 +78,10 @@ internal fun rememberAufnahme(vm: EintragenViewModel): Aufnahme {
             vm.aufnahmeAbgebrochen()
         }
     }
+    // Wie der Pfad der offenen Kamera: übersteht Drehen und Prozessende, bis die Galerie zurück ist
+    var galerieOffen by rememberSaveable { mutableStateOf(false) }
     val galerie = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        galerieOffen = false
         if (uri != null) vm.fotoGemacht(uri.toString(), null) else vm.aufnahmeAbgebrochen()
     }
     val tabelleKamera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
@@ -88,12 +93,19 @@ internal fun rememberAufnahme(vm: EintragenViewModel): Aufnahme {
         }
     }
     val tabelleGalerie = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        galerieOffen = false
         if (uri != null) scanLauf.foto(uri.toString())
     }
 
     val aufnahme = remember(vm, kamera, galerie, tabelleKamera, tabelleGalerie) {
         val bild = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
         val kameraOffen = { fotoLauf.zustand.value.fotoPfad != null || scanLauf.zustand.fotoPfad != null }
+        val galerieOeffnen = { auswahl: ActivityResultLauncher<PickVisualMediaRequest> ->
+            if (!kameraOffen() && !galerieOffen) {
+                galerieOffen = true
+                auswahl.launch(bild)
+            }
+        }
         Aufnahme(
             foto = foto@{
                 if (kameraOffen()) return@foto
@@ -107,7 +119,7 @@ internal fun rememberAufnahme(vm: EintragenViewModel): Aufnahme {
                     vm.aufnahmeAbgebrochen()
                 }
             },
-            galerie = { if (!kameraOffen()) galerie.launch(bild) },
+            galerie = { galerieOeffnen(galerie) },
             scannen = scanLauf::strichcode,
             tabelle = tabelle@{
                 if (kameraOffen()) return@tabelle
@@ -121,7 +133,7 @@ internal fun rememberAufnahme(vm: EintragenViewModel): Aufnahme {
                     scanLauf.zustand.auswerten(ScanAusgang.Fehler)
                 }
             },
-            tabelleGalerie = { if (!kameraOffen()) tabelleGalerie.launch(bild) },
+            tabelleGalerie = { galerieOeffnen(tabelleGalerie) },
         )
     }
 

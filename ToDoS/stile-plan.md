@@ -943,15 +943,29 @@ ADR 0021; Anlass: Alltagstest von 3.9.0 auf dem Handy):
   (`LinkEingang`), und Öffnen aus „Zuletzt verwendet“ startet den Scanner nicht erneut. Am Handy geprüft: Kaltstart,
   Abbrechen, Zurück, Prozessende und „Zuletzt verwendet“.
 - Doku und ADR 0021 (#300).
+- Nachbesserung nach dem Abschlussreview (Branch `claude/eintragen-nachbesserung`): Ein Doppeltipp auf einen
+  Einstieg in Heute oder im Tagebuch öffnet nur eine Seite Eintragen (`eintragenOeffnen`); eine offene Galerie öffnet
+  keine zweite; jede leere Packung (Scan ohne Werte, Fehler, ohne Play-Dienste, Prozessende während der Suche) zeigt
+  die Knöpfe zum Tabellenfoto; nach einem Prozessende in Bestätigen blitzt Erfassen nicht mehr auf; das Ende einer
+  abgebrochenen Fotoerkennung räumt die neue nicht mehr ab; die Treffer in Erfassen sind Knöpfe statt
+  Optionsfelder. Neue Seitentests: Foto und Tabellenfoto überstehen Neuaufbau und Prozessende. Die Wörter
+  „Blatt“ und „Frei“ sind aus Code, KDoc und Tests von Eintragen raus.
 - Offen:
   - Am Handy ansehen (Nutzer): Heute blitzt beim Widget-Kaltstart nicht auf, Speichern blendet normal aus, „Schnell
     eintragen“ öffnet Erfassen.
-  - Ein schneller Doppeltipp auf einen Einstieg (Zeile in Heute, „+“ im Tagebuch) legt zwei Seiten Eintragen auf den
-    Stapel. Das gilt für alle `navigate`-Aufrufe der App.
-  - Sage: „+ SCANNEN“ bricht bei Schrift 130 % zwischen „+“ und dem Wort um (geschütztes Leerzeichen fehlt).
+  - Doppeltipp: Für Eintragen erledigt (s. o.); die übrigen `navigate`-Aufrufe der App (etwa Rezept öffnen) haben
+    keinen Schutz.
+  - Sage: „+ SCANNEN“ bricht bei Schrift 130 % zwischen „+“ und dem Wort um. Ein geschütztes Leerzeichen hilft
+    nicht: Bei 360 dp ist der Knopf (einer von drei gleich breiten) 93 px breit, der Text braucht gut 100 px; dann
+    bricht es mitten im Wort („+ SCAN / NEN“). Braucht eine Gestaltungsentscheidung (Laufweite, kleinere Schrift,
+    ohne „+“, zwei Zeilen Knöpfe).
+  - `verdeckt` in `MainActivity` erst bei RESUMED zurücknehmen? Unbestätigt, hängt an der Sichtprüfung am Handy: Bei
+    offener Kamera wird die Seite nie RESUMED, die Oberfläche könnte unsichtbar bleiben.
+  - Bayrisch und Grauen zeichnen auch vor Knopf-Zeilen (`WahlZeile(knopf = true)`, etwa die Treffer in Erfassen)
+    den leeren Stil-Punkt; er sieht wie ein Optionsfeld aus.
   - Kosmetisch: Kommt die App per Widget von einer anderen Seite (etwa einem Rezept) nach vorne, blendet diese gut
     700 ms unter der leeren Seite Eintragen aus.
-  - Reste des alten Blatts in `:core:erkennung`: `ErkennungTexte.KNOPF` und `GALERIE` sind ungenutzt, `KAMERA` steht
+  - Reste des alten Blatts in `:core:erkennung` (die KDoc ist bereinigt): `ErkennungTexte.KNOPF` und `GALERIE` sind ungenutzt, `KAMERA` steht
     nur noch in einem Test, `erkennen(loeschen)` rufen nur Tests. `Erfassen` schreibt „Aus der Galerie“ fest, statt die
     Konstante zu nehmen.
   - Testlücken: kein Seitentest, dass ein Widget-Sofort-Start nach einem Neuaufbau nicht noch einmal startet (das
