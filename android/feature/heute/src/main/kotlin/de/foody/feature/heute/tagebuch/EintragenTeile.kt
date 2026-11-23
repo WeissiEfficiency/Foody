@@ -44,15 +44,19 @@ private val PORTIONEN = listOf(FotoPortion.KLEIN to "klein", FotoPortion.NORMAL 
 @Composable
 internal fun eintragenTitel() = stilText("Eintragen", sage = "Mahl eintragen", anime = "Eintragen!", bayrisch = "Eitragn", grauen = "Notieren")
 
+/** Die eine Suche in Erfassen über Rezepte, Zutaten und den BLS. */
 @Composable
-internal fun Suche(text: String, beschriftung: String, onText: (String) -> Unit) {
-    FoodyTextfeld(beschriftung, text, onWert = onText)
+internal fun Suche(text: String, onText: (String) -> Unit) {
+    FoodyTextfeld("Rezept oder Zutat suchen", text, onWert = onText)
 }
 
-/** Auswählbare Trefferzeile mit Haken (im Stil R–V wie im Entwurf), mindestens 48 dp hoch. */
+/**
+ * Trefferzeile (im Stil R–V wie im Entwurf), mindestens 48 dp hoch: ein Knopf, der nach Bestätigen führt, keine
+ * Auswahl (TalkBack sagt nicht „Optionsfeld“), wie die BLS-Zeilen.
+ */
 @Composable
-internal fun Treffer(text: String, gewaehlt: Boolean, onWahl: () -> Unit) {
-    WahlZeile(text, gewaehlt, onWahl)
+internal fun Treffer(text: String, onWahl: () -> Unit) {
+    WahlZeile(text, gewaehlt = false, onWahl, knopf = true)
 }
 
 /** Portionen des gewählten Rezepts: − / Feld / + in Schritten von 0,5. */

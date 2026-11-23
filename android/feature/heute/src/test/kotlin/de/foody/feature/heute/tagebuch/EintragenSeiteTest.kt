@@ -68,6 +68,7 @@ import de.foody.feature.heute.MitSchrift
 import de.foody.feature.heute.bestand
 import de.foody.feature.heute.haferflocken
 import de.foody.feature.heute.keinErkenner
+import de.foody.feature.heute.planen
 import de.foody.feature.heute.pruefeNichtsAbgeschnitten
 import de.foody.feature.heute.testBls
 import de.foody.feature.heute.testDatenbank
@@ -396,6 +397,23 @@ class EintragenSeiteTest {
         compose.runOnIdle { assertEquals(1, fertig) }
     }
 
+    /**
+     * Treffer in Erfassen (Geplantes, Rezepte, Zutaten) sind Knöpfe, die weiterführen, keine Optionsfelder: TalkBack
+     * sagt nicht „Optionsfeld, nicht ausgewählt“.
+     */
+    @Test
+    fun trefferSindKnoepfe() {
+        runBlocking { db.planen("p1", tag, "MITTAGESSEN") }
+        zeigen(vm())
+        compose.onNode(hasSetTextAction()).performTextReplacement("Reis")
+        compose.warteAufText("Reispfanne · Mittagessen")
+        for (text in listOf("Reispfanne · Mittagessen", "Reispfanne", "Reis")) {
+            compose.onNode(hasText(text) and !hasSetTextAction())
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+                .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Selected))
+        }
+    }
+
     @Test
     fun mahlzeitUeberMenue() {
         zeigen(vm())
@@ -423,7 +441,8 @@ class EintragenSeiteTest {
         val vm = vm()
         zeigen(vm)
         erfassenMitFoto()
-        val erwartet = listOf("Foto", "Scannen", "Aus der Galerie", "Nährwerttabelle fotografieren", "Nicht dabei? Frei eintragen")
+        // Mit dem Rezept aus dem Bestand als Treffer (auch ein Knopf)
+        val erwartet = listOf("Foto", "Scannen", "Aus der Galerie", "Nährwerttabelle fotografieren", "Reispfanne", "Nicht dabei? Frei eintragen")
         val verboten = listOf("Siegel", "Deuten", "Ins Bordbuch", "Eintragen! ✓", "In die Chronik", "Ins Logbuch")
         val fehler = mutableListOf<String>()
         for (stil in FoodyStil.entries) {
