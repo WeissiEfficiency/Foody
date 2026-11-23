@@ -348,7 +348,9 @@ gespeichert wird wie vorher (`EintragenViewModel.schreiben`).
   (`alsZiel`, zurück mit `alsStart`; unbekannte Namen werden `null`). Der `auftrag` ist je Öffnen neu: Nur ein neuer
   Auftrag setzt in `EintragenViewModel.oeffnen` alles zurück, ein Neuaufbau nach Drehen oder Prozessende lässt die
   Eingaben stehen. Heute (Zeilen, Eintragen-Knöpfe, Szenen) und das Tagebuch („+ Eintragen“, Mahlzeitkarten) öffnen das
-  Ziel mit der Mahlzeit der Zeile oder ohne; ohne gilt die Uhrzeit (`mahlzeitNachUhrzeit`). Vollbild ohne
+  Ziel mit der Mahlzeit der Zeile oder ohne; ohne gilt die Uhrzeit (`mahlzeitNachUhrzeit`). Beide gehen über
+  `eintragenOeffnen`: Liegt Eintragen schon oben, navigiert ein zweiter Tipp während der Überblendung nicht noch
+  einmal (Doppeltipp-Schutz). Vollbild ohne
   Navigationsleiste bzw. Rail (`Hauptgeruest`). `onFertig` schließt die Seite nur, solange ihr Eintrag oben auf dem
   Stapel liegt: Ein zweites „fertig“ (Speichern und Zurück fast zugleich) räumt nicht auch noch Heute ab. Die Prüfung
   hängt bewusst nicht an `RESUMED`, denn nach einem abgebrochenen Sofort-Scan liegt die Scanner-Activity noch obenauf.
@@ -365,7 +367,8 @@ gespeichert wird wie vorher (`EintragenViewModel.schreiben`).
 - **Bestätigen** (`Bestaetigen.kt`): je nach Quelle Portionen (− / Feld / +) oder Menge und Einheit, beides mit
   „= … kcal“ (`kcalDazu`); Geplantes nur zur Ansicht („1 Portion · … kcal“, Mahlzeit des Plans fest, gespeichert über
   `ausPlan`); nach einem Scan die Packung (`PackungEingabe`), während Katalog bzw. Open Food Facts suchen mit
-  Fortschritt, ohne Werte mit der Meldung und den Knöpfen zur Nährwerttabelle; nach einem Foto das Vorschaubild mit
+  Fortschritt, ohne Werte (auch nach Fehler, ohne Play-Dienste oder Prozessende während der Suche) mit der Meldung
+  und den Knöpfen zur Nährwerttabelle; nach einem Foto das Vorschaubild mit
   dem Vorschlag der Erkennung; sonst die freien Felder. Darunter die Mahlzeit als Zeile mit `FoodyMenue`, fest unten
   „Eintragen“ (`speichernMoeglich` nur bei gültigen Eingaben, gegen Doppeltipp gesperrt). Speichern schließt die Seite.
 - **Sofort-Start** (`SofortStart.FOTO`, `SCANNEN`): `oeffnen` startet gleich den Strichcode-Scan (ohne Play-Dienste
@@ -375,7 +378,8 @@ gespeichert wird wie vorher (`EintragenViewModel.schreiben`).
   Die angefragte Kamera öffnen sie erst, wenn alte Kamerafotos weggeräumt sind, und vorher setzen sie
   `kameraAnfrageErledigt()`, damit Drehen oder Prozessende sie nicht noch einmal öffnen. Bis ein Ergebnis da ist,
   bleibt die Seite leer; ein Abbruch (`aufnahmeAbgebrochen`) schließt sie. Ohne Sofort-Start bleibt der Nutzer nach
-  einem Abbruch, wo er war. Solange eine Kamera offen ist, tun Foto, Galerie und Nährwerttabelle nichts. Ein
+  einem Abbruch, wo er war. Solange eine Kamera offen ist, tun Foto, Galerie und Nährwerttabelle nichts; eine offene
+  Galerie öffnet keine zweite. Ein
   Sofort-Ziel kommt ohne Übergang, und Heute blendet dabei nicht aus (`EnterTransition.None` bzw.
   `ExitTransition.None` in `FoodyNavHost`), damit vor Kamera oder Scanner nichts aufblitzt; geschlossen wird es mit
   der normalen Überblendung.
