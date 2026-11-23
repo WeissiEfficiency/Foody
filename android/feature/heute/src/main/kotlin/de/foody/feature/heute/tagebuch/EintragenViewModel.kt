@@ -368,8 +368,8 @@ class EintragenViewModel @Inject constructor(
     fun freiEintragen() = eingaben.update { it.erfassenStand().bestaetigen().copy(weg = EintragenWeg.FREI) }
 
     /**
-     * Foto da (Kamera oder Galerie): Bestätigen auf [EintragenWeg.FREI] mit leeren Feldern, die die Erkennung füllt. [datei], das
-     * Kamerafoto, bleibt fürs Vorschaubild, bis „Zurück“ oder das Ende der Seite es löscht.
+     * Foto da (Kamera oder Galerie): Bestätigen auf [EintragenWeg.FREI] mit leeren Feldern, die die Erkennung füllt.
+     * [datei], das Kamerafoto, bleibt fürs Vorschaubild, bis „Zurück“ oder das Ende der Seite es löscht.
      */
     fun fotoGemacht(bildUri: String, datei: String?) {
         eingaben.update { it.erfassenStand().bestaetigen().copy(weg = EintragenWeg.FREI, fotoBild = bildUri, fotoDatei = datei) }
@@ -413,10 +413,10 @@ class EintragenViewModel @Inject constructor(
     }
 
     /**
-     * Scan-Ergebnis: Bestätigen auf [EintragenWeg.FREI] mit der Packung. Name bereinigt (höchstens 200 Zeichen) – ohne Namen in [p]
-     * (Foto der Nährwerttabelle) bleibt der getippte, ohne Strichcode der bisherige –, Werte ungerundet, Häkchen nach
-     * dem Namen. Eine schon getippte Menge bleibt (Bestätigen ist offen, während Open Food Facts
-     * sucht und bevor das Tabellenfoto kommt).
+     * Scan-Ergebnis: Bestätigen auf [EintragenWeg.FREI] mit der Packung. Name bereinigt (höchstens 200 Zeichen) – ohne
+     * Namen in [p] (Foto der Nährwerttabelle) bleibt der getippte, ohne Strichcode der bisherige –, Werte ungerundet,
+     * Häkchen nach dem Namen. Eine schon getippte Menge bleibt (Bestätigen ist offen, während Open Food Facts sucht und
+     * bevor das Tabellenfoto kommt).
      */
     fun packungUebernehmen(p: Packungswerte) {
         val gescannt = nameBereinigt(p.name.orEmpty()).take(MAX_NAME)
