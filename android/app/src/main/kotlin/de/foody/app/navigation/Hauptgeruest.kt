@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Restaurant
@@ -38,6 +39,8 @@ import de.foody.core.designsystem.komponenten.LocalMitLeiste
 import de.foody.core.designsystem.komponenten.NavZiel
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyBreiten
+import de.foody.feature.heute.tagebuch.EintragenStart
+import java.time.LocalDate
 
 /** Ein Tab mit seiner Route. */
 private class Tab(val route: Any, val ziel: NavZiel)
@@ -56,9 +59,23 @@ private val tabs = listOf(
 private fun aktiverTab(nav: NavHostController): Int =
     (1 until tabs.size).firstOrNull { i -> runCatching { nav.getBackStackEntry(tabs[i].route) }.isSuccess } ?: 0
 
+/** Stelle von „Eintragen“ in der Leiste: zwischen Heute und Rezepte. Ein Knopf, kein Tab. */
+private const val EINTRAGEN = 1
+
+/** Stelle in der Leiste → Tab; `null` für „Eintragen“. */
+private fun tabAnStelle(stelle: Int): Int? = when {
+    stelle < EINTRAGEN -> stelle
+    stelle == EINTRAGEN -> null
+    else -> stelle - 1
+}
+
+/** Tab → Stelle in der Leiste. */
+private fun stelleVonTab(tab: Int): Int = if (tab < EINTRAGEN) tab else tab + 1
+
 /**
- * Rahmen der App: vier Tabs Heute · Rezepte · Woche · Einkauf. Handy: schwebende [FoodyNavigationsleiste] unten über
- * dem Inhalt; ab 840 dp Breite [FoodyNavigationsRail] links neben dem Inhalt.
+ * Rahmen der App: vier Tabs Heute · Rezepte · Woche · Einkauf und dazwischen der Knopf „Eintragen“ (öffnet Eintragen
+ * für heute, von jeder Seite aus). Handy: schwebende [FoodyNavigationsleiste] unten über dem Inhalt; ab 840 dp Breite
+ * [FoodyNavigationsRail] links neben dem Inhalt.
  */
 @Composable
 fun Hauptgeruest(
@@ -69,7 +86,7 @@ fun Hauptgeruest(
     val aktiv = remember(eintrag) { aktiverTab(navController) }
     // Kochmodus und Eintragen sind Vollbilder ohne Navigation
     val vollbild = eintrag?.destination?.let { it.hasRoute<Kochen>() || it.hasRoute<Eintragen>() } == true
-    val waehlen: (Int) -> Unit = { i ->
+    val tabWaehlen: (Int) -> Unit = { i ->
         when {
             // Heute ist die Wurzel; der aktive Tab erneut: zurück an seinen Anfang
             i == 0 -> navController.popBackStack<Heute>(inclusive = false)
@@ -81,14 +98,28 @@ fun Hauptgeruest(
             }
         }
     }
-    // Wörter je Stil in Immersiv (Bayrisch „Heid · Rezepte · Wochn · Eikaufn“, Sternenkreuzer „Brücke · Archiv · Kurs · Fracht“)
+    // „Eintragen“ legt die Seite über den Stapel des Tabs: Speichern und Zurück führen wieder dorthin
+    val waehlen: (Int) -> Unit = { stelle ->
+        tabAnStelle(stelle)?.let(tabWaehlen) ?: navController.eintragenOeffnen(EintragenStart(LocalDate.now()))
+    }
+    // Wörter je Stil in Immersiv (Bayrisch „Heid · Eitragn · Rezepte · Wochn · Eikaufn“,
+    // Sternenkreuzer „Brücke · Erfassen · Archiv · Kurs · Fracht“)
     val woerter = listOf(
         stilText("Heute", bayrisch = "Heid", kreuzer = "Brücke"),
         stilText("Rezepte", kreuzer = "Archiv"),
         stilText("Woche", bayrisch = "Wochn", kreuzer = "Kurs"),
         stilText("Einkauf", bayrisch = "Eikaufn", kreuzer = "Fracht"),
     )
+    val eintragen = stilText("Eintragen", bayrisch = "Eitragn", kreuzer = "Erfassen")
     val ziele = tabs.mapIndexed { i, t -> if (woerter[i] == t.ziel.text) t.ziel else t.ziel.copy(text = woerter[i], beschreibung = t.ziel.text) }
+        .toMutableList()
+        .apply {
+            add(
+                EINTRAGEN,
+                NavZiel(eintragen, Icons.Outlined.AddCircleOutline, beschreibung = "Eintragen".takeIf { it != eintragen }, aktion = true),
+            )
+        }
+    val aktivStelle = stelleVonTab(aktiv)
     val dichte = LocalDensity.current
     var leiste by remember { mutableStateOf(LEISTE_REGELHOEHE) }
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -100,7 +131,7 @@ fun Hauptgeruest(
         Row(Modifier.fillMaxSize()) {
             if (breit) {
                 Box(Modifier.fillMaxHeight().safeDrawingPadding(), contentAlignment = Alignment.Center) {
-                    FoodyNavigationsRail(ziele, aktiv, waehlen, Modifier.wrapContentHeight().testTag(Hauptgeruest.RAIL))
+                    FoodyNavigationsRail(ziele, aktivStelle, waehlen, Modifier.wrapContentHeight().testTag(Hauptgeruest.RAIL))
                 }
             }
             CompositionLocalProvider(LocalLeistenZuwachs provides zuwachs, LocalMitLeiste provides mitLeiste) {
@@ -109,7 +140,7 @@ fun Hauptgeruest(
         }
         if (mitLeiste) {
             FoodyNavigationsleiste(
-                ziele, aktiv, waehlen,
+                ziele, aktivStelle, waehlen,
                 Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
                     .onSizeChanged { leiste = with(dichte) { it.height.toDp() } }
                     .testTag(Hauptgeruest.LEISTE),

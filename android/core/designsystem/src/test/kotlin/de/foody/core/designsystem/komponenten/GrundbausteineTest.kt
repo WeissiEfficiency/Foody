@@ -4,26 +4,34 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.ShoppingBag
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
@@ -159,5 +167,46 @@ class GrundbausteineTest {
             }
         }
         compose.pruefeNichtsAbgeschnitten()
+    }
+
+    private val fuenf = listOf(
+        ziele[0],
+        NavZiel("Eintragen", Icons.Outlined.AddCircleOutline, aktion = true),
+    ) + ziele.drop(1)
+
+    /** Eine Aktion in der Leiste (Eintragen) ist ein Knopf, kein Reiter: nie ausgewählt, ein Tipp meldet ihre Stelle. */
+    @Test
+    fun aktionIstKnopf() {
+        var gewaehlt = -1
+        compose.setContent { FoodyTheme { FoodyNavigationsleiste(fuenf, aktiv = 1, onWahl = { gewaehlt = it }) } }
+        val eintragen = compose.onNodeWithText("Eintragen")
+        eintragen.assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+        eintragen.assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Selected))
+        eintragen.performClick()
+        assertEquals(1, gewaehlt)
+    }
+
+    /** Fünf Punkte bei 360 dp und Schrift 130 %: jedes Wort in einer Zeile, nichts abgeschnitten, auch die Stilwörter. */
+    @Test
+    fun fuenfPunkteBei130() {
+        val bayrisch = listOf("Heid", "Eitragn", "Rezepte", "Wochn", "Eikaufn")
+        val kreuzer = listOf("Brücke", "Erfassen", "Archiv", "Kurs", "Fracht")
+        compose.setContent {
+            FoodyTheme {
+                val d = LocalDensity.current
+                CompositionLocalProvider(LocalDensity provides Density(d.density, fontScale = 1.3f)) {
+                    Column(Modifier.width(360.dp)) {
+                        FoodyNavigationsleiste(fuenf, aktiv = 0, onWahl = {})
+                        for (woerter in listOf(bayrisch, kreuzer)) {
+                            FoodyNavigationsleiste(woerter.map { NavZiel(it, Icons.Outlined.LightMode) }, aktiv = 0, onWahl = {})
+                        }
+                    }
+                }
+            }
+        }
+        compose.pruefeNichtsAbgeschnitten()
+        for (t in fuenf.map { it.text } + bayrisch + kreuzer) {
+            compose.onAllNodesWithText(t, useUnmergedTree = true).onFirst().assertExists()
+        }
     }
 }
