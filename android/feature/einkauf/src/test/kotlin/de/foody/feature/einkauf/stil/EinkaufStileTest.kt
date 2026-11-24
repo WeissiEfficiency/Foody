@@ -103,8 +103,8 @@ class EinkaufStileTest {
         return vm
     }
 
-    /** Der Posten (Checkbox) in der Szene, nicht die Kachel im Katalog. */
-    private fun posten(name: String) = hasText(name) and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox)
+    /** Der Posten in der Szene (mit Langdruck „Details“), nicht die Kachel im Katalog. */
+    private fun posten(name: String) = hasText(name) and SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick)
 
     private fun gekauft(name: String) = runBlocking { db.einkaufsartikelDao().alle().single { it.name == name }.checked }
 
@@ -189,20 +189,27 @@ class EinkaufStileTest {
         }
     }
 
-    /** Anime: Jede Abteilung ist ein offenes Comic-Panel; ihre Kacheln stehen ohne Aufklappen in einer wischbaren Reihe. */
+    /**
+     * Anime: Unter „Hinzufügen“ wählt eine Pille die Abteilung, darunter stehen nur deren Kacheln; nichts klappt und
+     * nichts scrollt waagerecht.
+     */
     @Test
-    fun animeAbteilungenAlsPanels() {
+    fun animeAbteilungPerPille() {
         liste()
         val vm = u.vm()
         compose.setContent { FoodyTheme(stil = FoodyStil.ANIME, variante = StilVariante.IMMERSIV) { EinkaufRoute(null, {}, {}, vm = vm) } }
         compose.warteAufText("Zwiebeln")
-        val raster = compose.onAllNodes(hasScrollToIndexAction()).onFirst()
-        raster.performScrollToNode(hasText("Obst & Gemüse", substring = true))
-        // Einmal als Abteilung der Liste (Zwiebeln), einmal als Panel des Katalogs
-        compose.onAllNodes(hasText("Obst & Gemüse", substring = true) and isHeading()).assertCountEquals(2)
+        val raster = compose.onNode(hasScrollToIndexAction())
+        val obst = hasText("🥕 Obst & Gemüse") and SemanticsMatcher.keyIsDefined(SemanticsProperties.Selected)
+        raster.performScrollToNode(obst)
+        compose.onNode(obst).performClick()
+        // „Äpfel“ steht nur im Katalog
+        raster.performScrollToNode(hasText("Äpfel"))
+        compose.onNodeWithText("🥤 Getränke").performClick()
+        raster.performScrollToNode(hasText("Wasser", substring = true))
+        compose.onAllNodesWithText("Äpfel").assertCountEquals(0)
         compose.onAllNodes(SemanticsMatcher("Aufklappen") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "Aufklappen" }).assertCountEquals(0)
-        // „Äpfel“ steht nur im Katalog: gleich in der Reihe der Abteilung, ohne Klappen
-        compose.onNodeWithText("Äpfel").assertExists()
+        compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange)).assertCountEquals(0)
     }
 
     /** „Listen“ öffnet die Listen-Seite wie im Entwurf auf dem ersten Reiter „Neue Liste“. */
