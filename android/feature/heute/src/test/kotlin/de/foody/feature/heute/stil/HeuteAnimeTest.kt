@@ -103,6 +103,20 @@ class HeuteAnimeTest {
         assertEquals(listOf("kochen r1 2", "rezept r1", "alle", "eintragen null", "einkauf l1", "einstellungen"), ausgeloest)
     }
 
+    /** Ohne Tagesziel keine leeren Segmente, sondern „Tagesziel festlegen ▸“; das führt in die Einstellungen. */
+    @Test
+    fun ohneZielHinweis() {
+        val z = beispielZustand()
+        compose.setContent {
+            FoodyTheme(stil = FoodyStil.ANIME, variante = StilVariante.IMMERSIV, unschaerfe = false) {
+                HeuteScreen(z.copy(tagebuch = z.tagebuch.copy(ziel = null)), aktionen)
+            }
+        }
+        compose.onNodeWithContentDescription("860 kcal").assertExists()
+        compose.onNodeWithText("Tagesziel festlegen ▸").performScrollTo().performClick()
+        assertEquals(listOf("einstellungen"), ausgeloest)
+    }
+
     @Test
     fun schrift200OhneAbschneiden() {
         zeigen(schrift200 = true)
