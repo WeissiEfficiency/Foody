@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material3.Text
@@ -19,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -29,7 +32,6 @@ import de.foody.core.data.einkauf.EinkaufsAnsicht
 import de.foody.core.data.einkauf.EinkaufsArtikel
 import de.foody.core.data.einkauf.ZuletztArtikel
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.anime.animeSzenenTitel
@@ -52,8 +54,10 @@ internal fun LazyGridScope.animeKopf(ansicht: EinkaufsAnsicht?, onListen: () -> 
 }
 
 internal fun LazyGridScope.animePosten(ansicht: EinkaufsAnsicht?, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {
-    ansicht.gruppiert().forEachIndexed { i, g ->
-        ganzeBreite("anime-${g.name}") { Abzeichen(g.name, ABZEICHEN[i % ABZEICHEN.size]) }
+    ansicht.gruppiert().forEach { g ->
+        // Farbe nach der Abteilung, nicht nach der Reihenfolge: Abhaken verschiebt Abteilungen, die Farbe bleibt
+        val farbe = ABZEICHEN[ShoppingCatalog.sectionOrder.indexOf(g.name).coerceAtLeast(0) % ABZEICHEN.size]
+        ganzeBreite("anime-${g.name}") { Abzeichen(g.name, farbe) }
         items(g.artikel, key = { "anime-posten-${it.id}" }) { a ->
             EinkaufKachel(
                 a.name, a.menge.orEmpty(), a.emoji, if (a.gekauft) Stand.GEKAUFT else Stand.OFFEN, { onUmschalten(a.id, !a.gekauft) },
@@ -158,7 +162,22 @@ private fun Pillen(pillen: List<Pair<String, String>>, aktiv: String, onWaehlen:
     Column(Modifier.fillMaxWidth().padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text("Hinzufügen", Modifier.semantics { heading() }, style = Anime.titel(18f, 0f), color = FoodyTheme.farben.text)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            pillen.forEach { (name, text) -> FoodyChip(text, name == aktiv, { onWaehlen(name) }) }
+            pillen.forEach { (name, text) -> Pille(text, name == aktiv) { onWaehlen(name) } }
         }
+    }
+}
+
+/** Eine Abteilung zum Wählen: kleine Pille, gewählt in Gelb; die Tippfläche ist trotzdem 48 dp hoch. */
+@Composable
+private fun Pille(text: String, gewaehlt: Boolean, onKlick: () -> Unit) {
+    val f = FoodyTheme.farben
+    Box(Modifier.heightIn(min = 48.dp).selectable(gewaehlt, role = Role.Tab, onClick = onKlick), contentAlignment = Alignment.Center) {
+        Text(
+            text,
+            Modifier.background(if (gewaehlt) Anime.gelb else Color.White, Anime.pille).border(2.dp, f.text, Anime.pille)
+                .padding(horizontal = 10.dp, vertical = 3.dp),
+            style = Anime.text(13f, FontWeight.ExtraBold),
+            color = f.text,
+        )
     }
 }

@@ -70,6 +70,9 @@ Stile (letzter Abschnitt). Ziel: wenig neuer Code, Bestehendes umstellen statt n
 - 5: #309. Kein „+“ neben „Was willst du einkaufen?“ (alle Stile). Anime: runder Listen-Knopf mit Klemmbrett; Zuletzt
   und Katalog als Comic-Panels mit wischbarer Kachelreihe statt Klappen (`animeKlappkopf` entfällt). Auf dem Handy
   geprüft: Kachel antippen setzt auf die Liste, Reihe wischt, Listen-Knopf öffnet „Listen!“, „„Grillkohle“ hinzufügen“ trägt ein.
+- 5b: Nach Rückmeldung („Überschrift, links und runter scrollen, zu unruhig“) neu: kleiner Kopf statt „QUEST!“-Banner
+  und XP-Balken, Posten als Kacheln je Abteilung, „Hinzufügen“ mit Abteilungs-Pillen, die umbrechen; keine Panels,
+  kein waagerechtes Wischen. Auf dem Handy geprüft (Abhaken, Pillenwahl, Zähler).
 
 ## Danach: übrige Stile
 
