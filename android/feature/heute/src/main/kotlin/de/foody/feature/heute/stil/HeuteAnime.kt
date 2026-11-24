@@ -1,7 +1,5 @@
 package de.foody.feature.heute.stil
 
-import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
@@ -53,12 +51,10 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
@@ -236,9 +232,8 @@ internal fun sprechblase(z: HeuteZustand): String {
 }
 
 /**
- * Foody das Reisbällchen und die Sprechblase daneben. Es blinzelt und kippt alle 10 s wie ein Klumpen nach links um
- * (über die linke untere Ecke, schneller werdend, kurzer Aufprall), bleibt mit zugekniffenen Augen liegen und steht
- * federnd wieder auf; [REISBAELLCHEN_TAKT]. Ohne Animationen (Systemeinstellung) steht es still.
+ * Foody das Reisbällchen und die Sprechblase daneben. Es blinzelt in jedem [REISBAELLCHEN_TAKT] einmal einfach und
+ * einmal doppelt; ohne Animationen (Systemeinstellung) hat es die Augen offen.
  */
 @Composable
 private fun Reisbaellchen(text: String) {
@@ -246,27 +241,6 @@ private fun Reisbaellchen(text: String) {
     val akzent = FoodyTheme.stil.zier
     val bewegt = animationenErlaubt()
     val zeit = rememberInfiniteTransition(label = "Reisbällchen")
-    val kippen by if (bewegt) {
-        zeit.animateFloat(
-            0f, 0f,
-            infiniteRepeatable(
-                keyframes {
-                    durationMillis = REISBAELLCHEN_TAKT
-                    0f at 7800 using FastOutLinearInEasing
-                    1f at 8250
-                    0.9f at 8340
-                    1f at 8440
-                    1f at 9300 using FastOutSlowInEasing
-                    -0.08f at 9650
-                    0.03f at 9800
-                    0f at 9950
-                },
-            ),
-            label = "Kippen",
-        )
-    } else {
-        remember { mutableFloatStateOf(0f) }
-    }
     val augen by if (bewegt) {
         zeit.animateFloat(
             1f, 1f,
@@ -281,10 +255,6 @@ private fun Reisbaellchen(text: String) {
                     1f at 5600
                     0.1f at 5700
                     1f at 5820
-                    1f at 8200
-                    0.1f at 8300
-                    0.1f at 9350
-                    1f at 9500
                 },
             ),
             label = "Blinzeln",
@@ -301,14 +271,7 @@ private fun Reisbaellchen(text: String) {
         )
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        // Kippen um die linke untere Ecke; die Verschiebung nach rechts hält es im eigenen Feld (links ist der Rand)
-        Canvas(
-            Modifier.size(92.dp).clearAndSetSemantics { }.graphicsLayer {
-                transformOrigin = TransformOrigin(8f / 92f, 84f / 92f)
-                rotationZ = -90f * kippen
-                translationX = size.width * 76f / 92f * kippen
-            },
-        ) {
+        Canvas(Modifier.size(92.dp).clearAndSetSemantics { }) {
             val s = size.width / 92f
             scale(s, Offset.Zero) {
                 val (koerper, mund, stern) = pfade
@@ -346,7 +309,7 @@ private fun Reisbaellchen(text: String) {
     }
 }
 
-/** Ein Durchgang des Reisbällchens in ms: zweimal blinzeln, dann umfallen und wieder aufstehen. */
+/** Ein Durchgang des Reisbällchens in ms: einmal einfach und einmal doppelt blinzeln. */
 private const val REISBAELLCHEN_TAKT = 10_000
 
 /** Die nächste Mahlzeit als Karte im Akzent mit Speedlines und hartem Schatten; ohne Plan die Inspiration. */
