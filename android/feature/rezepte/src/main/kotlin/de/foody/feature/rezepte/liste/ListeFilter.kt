@@ -21,7 +21,6 @@ data class ListeFilter(
     val oftGekocht: Boolean = false,
     val diaeten: Set<Diet> = emptySet(),
     val mahlzeit: Mahlzeit? = null,
-    val tags: Set<String> = emptySet(),
     val archiv: Boolean = false,
     val sortierung: Sortierung = Sortierung.NAME,
 ) {
@@ -47,8 +46,7 @@ fun filtern(karten: List<RezeptKarte>, f: ListeFilter): List<RezeptKarte> {
             (!f.schnell || (k.zeitMinuten ?: Int.MAX_VALUE) <= SCHNELL_MINUTEN) &&
             (!f.oftGekocht || k.gekocht > 0) &&
             k.diaeten.containsAll(f.diaeten) &&
-            (f.mahlzeit == null || k.einordnung.passtZu(f.mahlzeit)) &&
-            (f.tags.isEmpty() || k.tags.any { t -> f.tags.any { it.equals(t, true) } })
+            (f.mahlzeit == null || k.einordnung.passtZu(f.mahlzeit))
     }
     val ordnung = when (f.sortierung) {
         Sortierung.NAME -> nachName
@@ -59,9 +57,3 @@ fun filtern(karten: List<RezeptKarte>, f: ListeFilter): List<RezeptKarte> {
     }
     return treffer.sortedWith(ordnung)
 }
-
-/** Die häufigsten Tags (höchstens [anzahl]) für die Tag-Chips. */
-fun haeufigeTags(karten: List<RezeptKarte>, anzahl: Int = 12): List<String> =
-    karten.filter { !it.archiviert }.flatMap { it.tags }.groupingBy { it }.eachCount()
-        .entries.sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key.lowercase() })
-        .take(anzahl).map { it.key }

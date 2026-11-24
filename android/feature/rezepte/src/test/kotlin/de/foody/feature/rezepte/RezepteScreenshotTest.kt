@@ -106,7 +106,7 @@ class RezepteScreenshotTest {
         for (dunkel in listOf(false, true)) {
             val modus = if (dunkel) "dunkel" else "hell"
             bild("liste_${modus}_$geraet", dunkel) {
-                RezeptListeRoute({}, {}, {}, vm = remember { halter.behalten(RezeptListeViewModel(repo)) })
+                RezeptListeRoute({}, {}, vm = remember { halter.behalten(RezeptListeViewModel(repo)) })
             }
             bild("detail_${modus}_$geraet", dunkel) {
                 RezeptDetailRoute("r1", { _, _ -> }, {}, {}, {}, vm = remember { halter.behalten(RezeptDetailViewModel(repo, db.einkauf())) })
@@ -135,7 +135,7 @@ class RezepteScreenshotTest {
     @Config(qualifiers = "w411dp-h1600dp")
     fun sage() {
         bild("sage_liste_handy", dunkel = false, stil = FoodyStil.SAGE) {
-            RezeptListeRoute({}, {}, {}, vm = remember { halter.behalten(RezeptListeViewModel(repo)) })
+            RezeptListeRoute({}, {}, vm = remember { halter.behalten(RezeptListeViewModel(repo)) })
         }
         bild("sage_editor_handy", dunkel = false, stil = FoodyStil.SAGE) {
             val ablage = FotoAblage(RuntimeEnvironment.getApplication())
@@ -152,7 +152,7 @@ class RezepteScreenshotTest {
     fun stileHandy() {
         for (stil in listOf(FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)) {
             bild("stil_${stil.name.lowercase()}_liste_handy", dunkel = false, stil = stil) {
-                RezeptListeRoute({}, {}, {}, vm = remember { halter.behalten(RezeptListeViewModel(repo)) })
+                RezeptListeRoute({}, {}, vm = remember { halter.behalten(RezeptListeViewModel(repo)) })
             }
             bild("stil_${stil.name.lowercase()}_rezept_handy", dunkel = false, stil = stil) {
                 RezeptDetailRoute("r1", { _, _ -> }, {}, {}, {}, vm = remember { halter.behalten(RezeptDetailViewModel(repo, db.einkauf())) })

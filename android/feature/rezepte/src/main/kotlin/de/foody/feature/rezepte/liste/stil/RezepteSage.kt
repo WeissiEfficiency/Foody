@@ -23,7 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -50,10 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.komponenten.FoodyMenue
-import de.foody.core.designsystem.komponenten.FoodyMenuePunkt
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
-import de.foody.core.designsystem.komponenten.Suchfeld
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.stil.sage.Sage
@@ -65,14 +61,16 @@ import de.foody.core.designsystem.stil.svgPfad
 import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.rezepte.liste.FilterChips
+import de.foody.feature.rezepte.liste.LEER_TEXT
 import de.foody.feature.rezepte.liste.ListeFilter
 import de.foody.feature.rezepte.liste.ListeZustand
+import de.foody.feature.rezepte.liste.Suche
 import java.util.Locale
 
 /**
  * Rezeptliste der Düsteren Sage in Immersiv (Entwurf `Q-Rezepte`): „Grimoire“ mit Suche und denselben Filtern wie die
  * normale Liste; die Treffer werden einzeln aufgeschlagen, mit Emblem, Art, Zeit, kcal und „gekocht“, darunter
- * „‹ Aufschlagen ›“. Dieselbe Logik und dieselben Ziele wie die normale Liste (öffnen, neu, importieren).
+ * „‹ Aufschlagen ›“. Dieselbe Logik und dieselben Ziele wie die normale Liste (öffnen, neu).
  */
 @Composable
 internal fun RezepteSage(
@@ -81,7 +79,6 @@ internal fun RezepteSage(
     zuruecksetzen: () -> Unit,
     onOeffnen: (String) -> Unit,
     onNeu: () -> Unit,
-    onImport: () -> Unit,
 ) {
     // Blättern beginnt bei jeder neuen Suche oder jedem Filter wieder vorn
     var i by rememberSaveable(z.filter) { mutableIntStateOf(0) }
@@ -95,17 +92,17 @@ internal fun RezepteSage(
             val rand = Modifier.padding(horizontal = 20.dp)
             SageKopf(szenenWort("GESAMMELTE REZEPTE", "SAMMLUNG"), szenenWort("GRIMOIRE", "REZEPTE"), "Rezepte", rand) {
                 if (n > 0) Text("${index + 1} / $n", Modifier.padding(bottom = 12.dp), style = Sage.titel(15f, 0.04f), color = FoodyTheme.farben.text)
-                NeuKnopf(onNeu, onImport)
+                NeuKnopf(onNeu)
             }
             if (z.geladen && z.keineRezepte) {
                 LeererZustandFlaeche(
-                    Icons.AutoMirrored.Outlined.MenuBook, "Noch keine Rezepte", "Lege ein Rezept an oder importiere Markdown-Dateien.",
+                    Icons.AutoMirrored.Outlined.MenuBook, "Noch keine Rezepte", LEER_TEXT,
                     aktionText = "Anlegen", onAktion = onNeu, modifier = rand,
                 )
                 return@Column
             }
-            Suchfeld(z.filter.suche, { s -> aendern { it.copy(suche = s) } }, szenenWort("Im Grimoire suchen", "Suchen"), rand)
-            FilterChips(z.filter, z.tags, aendern)
+            Suche(z.filter, aendern, szenenWort("Im Grimoire suchen", "Suchen"), rand)
+            FilterChips(z.filter, aendern)
             val r = z.treffer.getOrNull(index)
             if (r == null) {
                 if (z.geladen) {
@@ -249,22 +246,15 @@ private fun Blaettern(zeichen: String, beschreibung: String, aktiv: Boolean, onK
     }
 }
 
-/** „+“ als eckiger Knopf im Akzent; öffnet „Neues Rezept“ oder „Markdown importieren“. */
+/** „+“ als eckiger Knopf im Akzent; öffnet ein neues Rezept. */
 @Composable
-private fun NeuKnopf(onNeu: () -> Unit, onImport: () -> Unit) {
-    var menue by remember { mutableStateOf(false) }
-    Box {
-        Box(
-            Modifier.size(48.dp).border(1.dp, FoodyTheme.stil.zier)
-                .clickable(role = Role.Button) { menue = true }
-                .semantics { contentDescription = "Rezept hinzufügen" },
-            contentAlignment = Alignment.Center,
-        ) { Text("+", style = Sage.titel(22f, 0f), color = FoodyTheme.farben.primaer) }
-        FoodyMenue(menue, onSchliessen = { menue = false }) {
-            FoodyMenuePunkt("Neues Rezept", { menue = false; onNeu() })
-            FoodyMenuePunkt("Markdown importieren", { menue = false; onImport() })
-        }
-    }
+private fun NeuKnopf(onNeu: () -> Unit) {
+    Box(
+        Modifier.size(48.dp).border(1.dp, FoodyTheme.stil.zier)
+            .clickable(role = Role.Button, onClick = onNeu)
+            .semantics { contentDescription = "Neues Rezept" },
+        contentAlignment = Alignment.Center,
+    ) { Text("+", style = Sage.titel(22f, 0f), color = FoodyTheme.farben.primaer) }
 }
 
 private const val MAX_RAUTEN = 12

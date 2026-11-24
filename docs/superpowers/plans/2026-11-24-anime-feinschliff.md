@@ -60,6 +60,14 @@ Stile (letzter Abschnitt). Ziel: wenig neuer Code, Bestehendes umstellen statt n
 - Abteilungen als Comic-Panels: weiße Karte mit Kante und Versatzschatten, bunte Kopf-Pille, darin eine waagerecht
   wischbare Reihe Kacheln. Kein Auf- und Zuklappen mehr.
 
+## Ergebnis
+
+- 1: #305. 2: #306. 3: #307 (Döner 1 Stk. → 350 g geschätzt, 699 kcal; auf dem Handy geprüft).
+- 4: Anime-Liste endlos (`LazyColumn` aus Zweierreihen, behält die Stelle nach „Zurück“, Filter und Suche beginnen oben);
+  Edo, Bayrisch, Grauen, Kreuzer behalten ihre Seiten. Tag-Chips und `haeufigeTags` entfernt (Suche findet Tags weiter).
+  Sortierung als runder Knopf neben der Suche in allen Stilen; „+“ / „+ Neu“ öffnet überall direkt den Editor. Import
+  in den Einstellungen (Abschnitt „Rezepte“ über „Sicherung“). Auf dem Handy mit 318 importierten Rezepten geprüft.
+
 ## Danach: übrige Stile
 
 Schritte 2 (Leiste, Mahlzeit-Pillen), 3, 4 (Filter, Sortierung, Neu, Import) und der „+“ aus 5 gelten sofort für alle

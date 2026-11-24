@@ -4,8 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.isSelected
@@ -16,6 +18,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.RezeptEntity
@@ -48,7 +51,7 @@ import kotlin.test.assertEquals
 
 /**
  * Die Rezeptlisten-Szenen der Stile R–V in Immersiv: Titel für TalkBack, Rezept wählen und öffnen (Anime öffnet
- * direkt aus dem Raster), Seiten blättern, „+ Neu“ mit Menü, leere Liste bietet „Anlegen“; bei 200 % Schrift wird
+ * direkt aus dem Raster), Seiten blättern (Anime: endlos), „+ Neu“ öffnet ein neues Rezept, leere Liste bietet „Anlegen“; bei 200 % Schrift wird
  * nichts abgeschnitten.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -63,7 +66,6 @@ class RezepteStileTest {
     private lateinit var db: FoodyDatenbank
     private val geoeffnet = mutableListOf<String>()
     private var neu = 0
-    private var importiert = 0
 
     @Before
     fun setUp() {
@@ -94,7 +96,7 @@ class RezepteStileTest {
         compose.setContent {
             FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV) {
                 val inhalt = @Composable {
-                    RezeptListeRoute(onOeffnen = { geoeffnet += it }, onNeu = { neu++ }, onImport = { importiert++ }, vm = vm)
+                    RezeptListeRoute(onOeffnen = { geoeffnet += it }, onNeu = { neu++ }, vm = vm)
                 }
                 if (schrift200) MitSchrift200(inhalt) else inhalt()
             }
@@ -134,11 +136,8 @@ class RezepteStileTest {
         rezepte(0)
         zeigen(stil)
         warteAufBeschreibung("Reispfanne")
-        compose.onNodeWithContentDescription("Rezept hinzufügen").performClick()
-        compose.onNodeWithText("Neues Rezept").performClick()
-        compose.onNodeWithContentDescription("Rezept hinzufügen").performClick()
-        compose.onNodeWithText("Markdown importieren").performClick()
-        assertEquals(1 to 1, neu to importiert)
+        compose.onNodeWithContentDescription("Neues Rezept").performClick()
+        assertEquals(1, neu)
     }
 
     private fun leer(stil: FoodyStil) {
@@ -233,7 +232,18 @@ class RezepteStileTest {
 
     @Test fun kreuzer() = pruefen(FoodyStil.KREUZER)
 
-    @Test fun animeBlaettern() = blaettern(FoodyStil.ANIME)
+    /** Anime zeigt alle Treffer in einer Liste ohne Seiten; das letzte Rezept erreicht man durch Scrollen. */
+    @Test
+    fun animeEndlos() {
+        rezepte(7)
+        zeigen(FoodyStil.ANIME)
+        warteAufBeschreibung("Shakshuka")
+        compose.onAllNodesWithContentDescription("Seite 1 von", substring = true).assertCountEquals(0)
+        val liste = compose.onNode(hasScrollToIndexAction() and SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange))
+        liste.performScrollToNode(hasContentDescription("Öffnen: Tomatensuppe", substring = true))
+        compose.onNodeWithContentDescription("Öffnen: Tomatensuppe", substring = true).performClick()
+        assertEquals(listOf("r8"), geoeffnet)
+    }
 
     @Test fun edoBlaettern() = blaettern(FoodyStil.EDO)
 

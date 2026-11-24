@@ -449,14 +449,16 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase6a-rezepte-design.md`.
   mehrere Dateien oder ein ganzer Ordner über SAF, höchstens 1 MiB je Datei, in Blöcken zu 25 Rezepten; Rezepte mit
   schon vorhandener Quelle werden übersprungen, Ergebnis `importiert/übersprungen/fehler`.
 - **`:feature:rezepte`**: Liste (`liste/`: ein Bildraster mit Suche über Name, Tags und Zutaten, Chips Favoriten ·
-  Oft gekocht · Ernährung · häufige Tags, Sortierung Name/Neueste/kcal/Eiweiß/Oft gekocht), Detail (`detail/`: Kopfbild mit
+  Schnell · Oft gekocht · Ernährung · Mahlzeit · Archiv, Sortierung Name/Neueste/kcal/Eiweiß/Oft gekocht über den runden
+  Knopf neben der Suche, „+“ öffnet gleich ein neues Rezept; Anime zeigt alle Treffer in einer `LazyColumn` ohne Seiten), Detail (`detail/`: Kopfbild mit
   Glasfläche und kcal je Portion sowie für die gewählten Portionen, Portionen skalieren, Zutaten, Schritte, Einordnung, Nährwerttabelle je Portion und gesamt mit
   Vollständigkeit, Archivieren mit „Rückgängig“, Duplizieren, Kochen), Editor (`editor/`: alle Felder auf einer
   Seite, Zutaten als Freitext je Zeile mit Vorschau „im Katalog / neu / ungültig“ – unveränderte Zeilen behalten ihre
   Zutat und ihren Hinweis (`RezeptEntwurf.zutatIds`), ein nicht angefasstes Foto bleibt, auch wenn der Sync es
   inzwischen gebracht hat (`bildBehalten`); Foto per Photo-Picker oder Kamera
   über `KameraDatei` (`:core:data`, FileProvider `${applicationId}.kamera`), Speichern gesperrt bis gültig und während des Speicherns,
-  „Änderungen verwerfen?“ beim Zurück), Import-Blatt (`importieren/`). `RezepteBereich` zeigt ab 840 dp Liste und
+  „Änderungen verwerfen?“ beim Zurück), Import-Blatt (`importieren/`; geöffnet aus den Einstellungen, Abschnitt
+  „Rezepte“ – `:app` zeigt das Blatt, weil sich die Features nicht kennen). `RezepteBereich` zeigt ab 840 dp Liste und
   Detail nebeneinander; ein Tipp links fragt erst, wenn rechts ein Editor ungespeicherte Änderungen hat. Inhalte höchstens 720 dp breit.
 - **Tests:** Repository- und Importtests (Room im Speicher), Filter- und Zeilentests, Bildschirmtests mit echtem
   ViewModel (Schrift 200 %, Doppeltipp auf Speichern, gelöschtes Rezept im Editor, Zustand nach Drehen),
