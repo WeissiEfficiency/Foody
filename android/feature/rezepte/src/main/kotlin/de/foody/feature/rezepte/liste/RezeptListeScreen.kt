@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -20,8 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.komponenten.FoodyKnopf
-import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.RezeptkarteRaster
 import de.foody.core.designsystem.komponenten.rezeptBild
@@ -32,8 +29,11 @@ import de.foody.feature.rezepte.liste.stil.RezepteSage
 import de.foody.feature.rezepte.liste.stil.RezepteStil
 import de.foody.feature.rezepte.liste.stil.RezepteSzene
 
+/** Leere Liste: Markdown-Dateien importiert man in den Einstellungen. */
+internal const val LEER_TEXT = "Lege ein Rezept an oder importiere Markdown-Dateien in den Einstellungen."
+
 /**
- * Rezeptliste: Kopf mit Menü, Suche, Filterchips, Bildraster. [ausgewaehlt] hebt auf dem Tablet das rechts offene
+ * Rezeptliste: Kopf mit „+“ (neues Rezept), Suche mit Sortierknopf, Filterchips, Bildraster. [ausgewaehlt] hebt auf dem Tablet das rechts offene
  * Rezept hervor; [nebenDetail] heißt, rechts daneben steht das Detail (Tablet), ein Tipp in einer Szene öffnet dann. Die Düstere Sage zeigt in Immersiv das Grimoire (`stil/RezepteSage.kt`),
  * die Stile R–V ihre Szenen (`stil/RezepteStile.kt`).
  */
@@ -41,7 +41,6 @@ import de.foody.feature.rezepte.liste.stil.RezepteSzene
 fun RezeptListeRoute(
     onOeffnen: (String) -> Unit,
     onNeu: () -> Unit,
-    onImport: () -> Unit,
     ausgewaehlt: String? = null,
     nebenDetail: Boolean = false,
     vm: RezeptListeViewModel = hiltViewModel(),
@@ -49,28 +48,25 @@ fun RezeptListeRoute(
     val z by vm.zustand.collectAsStateWithLifecycle()
     // Düstere Sage in Immersiv: das Grimoire mit derselben Liste und denselben Filtern
     if (FoodyTheme.stil.szene(FoodyStil.SAGE)) {
-        RezepteSage(z, vm::filter, vm::zuruecksetzen, onOeffnen, onNeu, onImport)
+        RezepteSage(z, vm::filter, vm::zuruecksetzen, onOeffnen, onNeu)
         return
     }
     // Stile R–V in Immersiv: ihre Szene mit derselben Liste, denselben Filtern und Zielen
     RezepteSzene.aktuell()?.let { stil ->
-        RezepteStil(stil, z, vm::filter, vm::zuruecksetzen, onOeffnen, onNeu, onImport, offen = ausgewaehlt, nebenDetail = nebenDetail)
+        RezepteStil(stil, z, vm::filter, vm::zuruecksetzen, onOeffnen, onNeu, offen = ausgewaehlt, nebenDetail = nebenDetail)
         return
     }
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-        ListeKopf(z.anzahl.takeIf { z.geladen && !z.keineRezepte }, onNeu, onImport)
+        ListeKopf(z.anzahl.takeIf { z.geladen && !z.keineRezepte }, onNeu)
         if (z.geladen && z.keineRezepte) {
-            Column(Modifier.padding(FoodyAbstaende.s4), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
-                LeererZustandFlaeche(
-                    Icons.AutoMirrored.Outlined.MenuBook, "Noch keine Rezepte",
-                    "Lege ein Rezept an oder importiere Markdown-Dateien.", aktionText = "Anlegen", onAktion = onNeu,
-                )
-                FoodyKnopf("Importieren", onImport, Modifier.fillMaxWidth(), art = KnopfArt.UMRISS)
-            }
+            LeererZustandFlaeche(
+                Icons.AutoMirrored.Outlined.MenuBook, "Noch keine Rezepte", LEER_TEXT, aktionText = "Anlegen", onAktion = onNeu,
+                modifier = Modifier.padding(FoodyAbstaende.s4),
+            )
             return@Column
         }
-        Suche(z.filter.suche) { s -> vm.filter { it.copy(suche = s) } }
-        FilterChips(z.filter, z.tags, vm::filter)
+        Suche(z.filter, vm::filter)
+        FilterChips(z.filter, vm::filter)
         if (z.geladen && z.treffer.isEmpty()) {
             LeererZustandFlaeche(
                 Icons.AutoMirrored.Outlined.MenuBook, "Nichts gefunden", "Kein Rezept passt zu Suche und Filtern.",

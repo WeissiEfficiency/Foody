@@ -1,13 +1,9 @@
 package de.foody.feature.rezepte.liste
 
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -15,7 +11,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
@@ -54,7 +49,6 @@ class RezeptListeScreenTest {
     private lateinit var db: FoodyDatenbank
     private val geoeffnet = mutableListOf<String>()
     private var neu = 0
-    private var importiert = 0
 
     @Before
     fun setUp() {
@@ -72,7 +66,7 @@ class RezeptListeScreenTest {
         compose.setContent {
             FoodyTheme(stil = stil) {
                 val inhalt = @androidx.compose.runtime.Composable {
-                    RezeptListeRoute(onOeffnen = { geoeffnet += it }, onNeu = { neu++ }, onImport = { importiert++ }, vm = vm)
+                    RezeptListeRoute(onOeffnen = { geoeffnet += it }, onNeu = { neu++ }, vm = vm)
                 }
                 if (schrift200) MitSchrift200(inhalt) else inhalt()
             }
@@ -89,12 +83,11 @@ class RezeptListeScreenTest {
     }
 
     @Test
-    fun leerZeigtAnlegenUndImportieren() {
+    fun leerZeigtAnlegen() {
         zeigen()
         compose.warteAufText("Noch keine Rezepte")
         compose.onNodeWithText("Anlegen").performClick()
-        compose.onNodeWithText("Importieren").performClick()
-        assertEquals(1 to 1, neu to importiert)
+        assertEquals(1, neu)
     }
 
     @Test
@@ -108,32 +101,28 @@ class RezeptListeScreenTest {
         compose.warteAufText("Reispfanne")
     }
 
+    /** „+“ öffnet gleich ein neues Rezept; importiert wird in den Einstellungen. */
     @Test
-    fun menuNeuUndImport() {
+    fun plusOeffnetNeuesRezept() {
         runBlocking { db.bestand() }
         zeigen()
         compose.warteAufText("Reispfanne")
-        compose.onNodeWithContentDescription("Rezept hinzufügen").performClick()
-        compose.onNodeWithText("Neues Rezept").performClick()
-        compose.onNodeWithContentDescription("Rezept hinzufügen").performClick()
-        compose.onNodeWithText("Markdown importieren").performClick()
-        assertEquals(1 to 1, neu to importiert)
+        compose.onNodeWithContentDescription("Neues Rezept").performClick()
+        assertEquals(1, neu)
+        compose.onNodeWithText("Markdown importieren").assertDoesNotExist()
     }
 
-    /** Das Menü der Sortierung hakt die gewählte ab. */
+    /** Der Sortierknopf neben der Suche öffnet ein Menü, das die gewählte abhakt. */
     @Test
     fun sortierungZeigtDieGewaehlte() {
         runBlocking { db.bestand() }
         zeigen()
         compose.warteAufText("Reispfanne")
-        // Die waagerechte Reihe der Filterchips; die Sortierung steht ganz hinten
-        val chips = compose.onNode(hasScrollToIndexAction() and SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange))
-        chips.performScrollToNode(hasText("Sortierung: Name"))
-        compose.onNodeWithText("Sortierung: Name").performClick()
+        compose.onNodeWithContentDescription("Sortierung: Name").performClick()
         compose.onNodeWithText("Name").assertIsSelected()
         compose.onAllNodesWithTag("menue-haken", useUnmergedTree = true).assertCountEquals(1)
         compose.onNodeWithText("Neueste").performClick()
-        compose.onNodeWithText("Sortierung: Neueste").performClick()
+        compose.onNodeWithContentDescription("Sortierung: Neueste").performClick()
         compose.onNodeWithText("Neueste").assertIsSelected()
         compose.onAllNodesWithTag("menue-haken", useUnmergedTree = true).assertCountEquals(1)
     }
@@ -182,8 +171,7 @@ class RezeptListeScreenTest {
         compose.warteAufText("Reispfanne ›")
         compose.onNodeWithText("Reispfanne ›").performClick()
         assertEquals(listOf("r1"), geoeffnet)
-        compose.onNodeWithContentDescription("Rezept hinzufügen").performClick()
-        compose.onNodeWithText("Neues Rezept").performClick()
+        compose.onNodeWithContentDescription("Neues Rezept").performClick()
         assertEquals(1, neu)
     }
 

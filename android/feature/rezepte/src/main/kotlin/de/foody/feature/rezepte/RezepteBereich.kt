@@ -30,8 +30,6 @@ import de.foody.feature.rezepte.detail.RezeptDetailRoute
 import de.foody.feature.rezepte.detail.RezeptDetailViewModel
 import de.foody.feature.rezepte.editor.EditorRoute
 import de.foody.feature.rezepte.editor.EditorViewModel
-import de.foody.feature.rezepte.importieren.ImportBlatt
-import de.foody.feature.rezepte.importieren.ImportViewModel
 import de.foody.feature.rezepte.liste.RezeptListeRoute
 import de.foody.feature.rezepte.liste.RezeptListeViewModel
 
@@ -41,7 +39,7 @@ private enum class Rechts { DETAIL, NEU, BEARBEITEN }
 
 /**
  * Der Tab „Rezepte“. Unter 840 dp nur die Liste, Detail und Editor sind eigene Ziele ([onOeffnen], [onNeu]); ab 840 dp
- * Liste links und Detail bzw. Editor rechts, ohne Navigation. Der Import läuft als Blatt über der Liste.
+ * Liste links und Detail bzw. Editor rechts, ohne Navigation. Den Markdown-Import ([ImportBlatt]) öffnen die Einstellungen.
  */
 @Composable
 fun RezepteBereich(
@@ -52,11 +50,9 @@ fun RezepteBereich(
     onEinkauf: () -> Unit = {},
     listeVm: RezeptListeViewModel = hiltViewModel(),
     detailVm: RezeptDetailViewModel = hiltViewModel(),
-    importVm: ImportViewModel? = null,
     /** Nur für Tests: der Editor ohne Hilt. */
     editorVm: EditorViewModel? = null,
 ) {
-    var importOffen by rememberSaveable { mutableStateOf(false) }
     var ausgewaehlt by rememberSaveable { mutableStateOf<String?>(null) }
     var rechts by rememberSaveable { mutableStateOf(Rechts.DETAIL) }
     // Ein Editor-ViewModel für alle Aufträge (fester Schlüssel, sonst bliebe je Auftrag eines liegen); ein neuer Auftrag
@@ -66,7 +62,7 @@ fun RezepteBereich(
     var wartenderWechsel by remember { mutableStateOf<(() -> Unit)?>(null) }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         if (maxWidth < FoodyBreiten.zweispaltig) {
-            RezeptListeRoute(onOeffnen, onNeu, onImport = { importOffen = true }, vm = listeVm)
+            RezeptListeRoute(onOeffnen, onNeu, vm = listeVm)
         } else {
             val editor = if (rechts == Rechts.DETAIL) {
                 null
@@ -80,7 +76,7 @@ fun RezepteBereich(
                     RezeptListeRoute(
                         onOeffnen = { neu -> wechseln { ausgewaehlt = neu; rechts = Rechts.DETAIL } },
                         onNeu = { wechseln { auftrag++; rechts = Rechts.NEU } },
-                        onImport = { importOffen = true }, ausgewaehlt = ausgewaehlt, nebenDetail = true, vm = listeVm,
+                        ausgewaehlt = ausgewaehlt, nebenDetail = true, vm = listeVm,
                     )
                 }
                 Box(Modifier.weight(1f).fillMaxHeight()) {
@@ -111,5 +107,4 @@ fun RezepteBereich(
     wartenderWechsel?.let { aktion ->
         VerwerfenFrage(onVerwerfen = { wartenderWechsel = null; aktion() }, onWeiter = { wartenderWechsel = null })
     }
-    if (importOffen) ImportBlatt(onSchliessen = { importOffen = false }, vm = importVm ?: hiltViewModel())
 }

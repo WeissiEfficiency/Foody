@@ -44,7 +44,7 @@ import kotlin.math.min
 
 /*
  * „Rezepte“ im Anime-Stil (R) in Immersiv (Entwurf `R-Rezepte`): schräges „REZEPTE“ mit Schatten im Akzent und
- * gelbem „+ Neu“, darunter die Treffer als Comic-Karten zu zweit: farbiger Kopf mit Speedlines und Anfangsbuchstabe,
+ * gelbem „+ Neu“, darunter alle Treffer als Comic-Karten zu zweit (endlos, ohne Seiten): farbiger Kopf mit Speedlines und Anfangsbuchstabe,
  * Sterne für „gekocht“, Marke FAV/FIX/NEU, Name und „40 Min. · 553 kcal“. Antippen öffnet das Rezept.
  */
 
@@ -79,19 +79,14 @@ internal fun AnimeKopf(n: Int, neu: @Composable () -> Unit) {
     }
 }
 
-/** Die Treffer der Seite als Comic-Karten zu zweit; die Reihe wächst mit der Schrift. */
+/** Reihe [reihe] der Liste: zwei Comic-Karten nebeneinander, gleich hoch, auch wenn ein Name umbricht. */
 @Composable
-internal fun AnimeRaster(liste: List<RezeptKarte>, onOeffnen: (String) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        liste.chunked(2).forEachIndexed { reihe, paar ->
-            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                paar.forEachIndexed { spalte, r ->
-                    val i = reihe * 2 + spalte
-                    Karte(r, i, Modifier.weight(1f).fillMaxHeight()) { onOeffnen(r.id) }
-                }
-                if (paar.size == 1) Spacer(Modifier.weight(1f))
-            }
+internal fun AnimeReihe(paar: List<RezeptKarte>, reihe: Int, onOeffnen: (String) -> Unit, modifier: Modifier) {
+    Row(modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        paar.forEachIndexed { spalte, r ->
+            Karte(r, reihe * 2 + spalte, Modifier.weight(1f).fillMaxHeight()) { onOeffnen(r.id) }
         }
+        if (paar.size == 1) Spacer(Modifier.weight(1f))
     }
 }
 

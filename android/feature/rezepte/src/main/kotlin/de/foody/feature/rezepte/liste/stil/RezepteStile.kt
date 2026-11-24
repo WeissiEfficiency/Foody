@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
@@ -41,10 +45,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.komponenten.FoodyMenue
-import de.foody.core.designsystem.komponenten.FoodyMenuePunkt
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
-import de.foody.core.designsystem.komponenten.Suchfeld
 import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilAktion
@@ -57,14 +58,17 @@ import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.szenenStil
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.rezepte.liste.FilterChips
+import de.foody.feature.rezepte.liste.LEER_TEXT
 import de.foody.feature.rezepte.liste.ListeFilter
 import de.foody.feature.rezepte.liste.ListeZustand
+import de.foody.feature.rezepte.liste.Suche
 
 /**
  * Gemeinsames der Rezeptlisten-Szenen der Stile R–V in Immersiv: welche Szene gilt, Kopf, Suche und dieselben
  * Filter wie die normale Liste, die Treffer in Seiten zu [SEITE] (‹ Seite 1 / 3 ›), das gewählte Rezept (übersteht
  * das Drehen, beginnt bei jeder neuen Suche vorn) und die leeren Zustände. Jede Szene zeichnet ihren Kopf, die Wahl
- * (Raster, Fächer, Herzen, Regal, Sternkarte) und die Karte des gewählten Rezepts in ihrer Art.
+ * (Fächer, Herzen, Regal, Sternkarte) und die Karte des gewählten Rezepts in ihrer Art. Anime zeigt statt Seiten alle
+ * Treffer in einer Liste, die nur zeichnet, was gerade im Bild ist ([AnimeListe]).
  */
 internal object RezepteSzene {
     /** Der Stil R–V, dessen Szene die Rezeptliste zeigt; `null` = keiner (Milchglas, Ruhig, Sage hat ihre eigene). */
@@ -88,10 +92,13 @@ internal fun RezepteStil(
     zuruecksetzen: () -> Unit,
     onOeffnen: (String) -> Unit,
     onNeu: () -> Unit,
-    onImport: () -> Unit,
     offen: String? = null,
     nebenDetail: Boolean = false,
 ) {
+    if (stil == FoodyStil.ANIME) {
+        AnimeListe(z, aendern, zuruecksetzen, onOeffnen, onNeu)
+        return
+    }
     // Seite und Wahl beginnen bei jeder neuen Suche oder jedem Filter wieder vorn
     var seite by rememberSaveable(z.filter) { mutableIntStateOf(0) }
     var gewaehlt by rememberSaveable(z.filter) { mutableStateOf<String?>(null) }
@@ -100,7 +107,6 @@ internal fun RezepteStil(
     val s = if (seiten == 0) 0 else seite.coerceIn(0, seiten - 1)
     val aufSeite = z.treffer.drop(s * SEITE).take(SEITE)
     val r = aufSeite.firstOrNull { it.id == gewaehlt } ?: aufSeite.firstOrNull { it.id == offen } ?: aufSeite.firstOrNull()
-    val neu = @Composable { NeuMenue(stil, onNeu, onImport) }
     // Antippen wählt nur; die Karte mit „Öffnen“ liegt auf dem Handy oft unter der schwebenden Leiste. Nach der Wahl
     // rollt sie deshalb samt Platz für die Leiste ins Bild (Gerätetest 2026-11-16).
     val karte = remember { BringIntoViewRequester() }
@@ -118,40 +124,14 @@ internal fun RezepteStil(
         ) {
             // FilterChips bringen ihren Rand selbst mit, alles andere bekommt ihn hier
             val rand = Modifier.padding(horizontal = 16.dp)
-            Box(rand) {
-                when (stil) {
-                    FoodyStil.ANIME -> AnimeKopf(n, neu)
-                    FoodyStil.EDO -> EdoKopf(n, neu)
-                    FoodyStil.BAYRISCH -> BayrischKopf(n, neu)
-                    FoodyStil.GRAUEN -> GrauenKopf(n, neu)
-                    else -> KreuzerKopf(n, neu)
-                }
-            }
-            if (z.geladen && z.keineRezepte) {
-                LeererZustandFlaeche(
-                    Icons.AutoMirrored.Outlined.MenuBook, "Noch keine Rezepte", "Lege ein Rezept an oder importiere Markdown-Dateien.",
-                    aktionText = "Anlegen", onAktion = onNeu, modifier = rand,
-                )
-                return@Column
-            }
-            Suchfeld(z.filter.suche, { text -> aendern { it.copy(suche = text) } }, suchText(stil, FoodyTheme.stil.inszeniert), rand)
-            FilterChips(z.filter, z.tags, aendern)
-            if (r == null) {
-                if (z.geladen) {
-                    LeererZustandFlaeche(
-                        Icons.AutoMirrored.Outlined.MenuBook, "Nichts gefunden", "Kein Rezept passt zu Suche und Filtern.",
-                        aktionText = "Filter zurücksetzen", onAktion = zuruecksetzen, modifier = rand,
-                    )
-                }
-                return@Column
-            }
+            Oben(stil, z, aendern, zuruecksetzen, onNeu, rand)
+            if (r == null) return@Column
             val waehlen = { id: String ->
                 gewaehlt = id
                 if (nebenDetail) onOeffnen(id)
             }
             Box(rand) {
                 when (stil) {
-                    FoodyStil.ANIME -> AnimeRaster(aufSeite, onOeffnen)
                     FoodyStil.EDO -> EdoFaecher(aufSeite, r.id, waehlen)
                     FoodyStil.BAYRISCH -> BayrischHerzen(aufSeite, r.id, waehlen)
                     FoodyStil.GRAUEN -> GrauenRegal(aufSeite, r.id, waehlen)
@@ -164,18 +144,80 @@ internal fun RezepteStil(
                     gewaehlt = null
                 }
             }
-            // Anime öffnet direkt aus dem Raster; die anderen zeigen das gewählte Rezept als Karte
-            if (stil != FoodyStil.ANIME) {
-                Box(rand.bringIntoViewRequester(karte).onSizeChanged { kartenGroesse = it }) {
-                    when (stil) {
-                        FoodyStil.EDO -> EdoBlatt(r, onOeffnen)
-                        FoodyStil.BAYRISCH -> BayrischKarte(r, onOeffnen)
-                        FoodyStil.GRAUEN -> GrauenSeite(r, onOeffnen)
-                        else -> KreuzerDaten(r, onOeffnen)
-                    }
+            Box(rand.bringIntoViewRequester(karte).onSizeChanged { kartenGroesse = it }) {
+                when (stil) {
+                    FoodyStil.EDO -> EdoBlatt(r, onOeffnen)
+                    FoodyStil.BAYRISCH -> BayrischKarte(r, onOeffnen)
+                    FoodyStil.GRAUEN -> GrauenSeite(r, onOeffnen)
+                    else -> KreuzerDaten(r, onOeffnen)
                 }
             }
         }
+    }
+}
+
+/**
+ * Anime: Kopf, Suche und Filter, darunter alle Treffer als Comic-Karten zu zweit. Endlos statt Seiten; die Liste
+ * zeichnet nur die Reihen im Bild, und eine neue Suche oder ein Filter beginnt wieder oben.
+ */
+@Composable
+private fun AnimeListe(
+    z: ListeZustand,
+    aendern: ((ListeFilter) -> ListeFilter) -> Unit,
+    zuruecksetzen: () -> Unit,
+    onOeffnen: (String) -> Unit,
+    onNeu: () -> Unit,
+) {
+    val reihen = remember(z.treffer) { z.treffer.chunked(2) }
+    val zustand = rememberSaveable(z.filter, saver = LazyListState.Saver) { LazyListState() }
+    val breite = Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth()
+    val rand = Modifier.padding(horizontal = 16.dp)
+    LazyColumn(
+        Modifier.fillMaxSize().safeDrawingPadding(),
+        state = zustand,
+        contentPadding = PaddingValues(top = 16.dp, bottom = ueberLeiste(PLATZ_FUER_LEISTE)),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        item(key = "oben") {
+            Column(breite, verticalArrangement = Arrangement.spacedBy(14.dp)) { Oben(FoodyStil.ANIME, z, aendern, zuruecksetzen, onNeu, rand) }
+        }
+        itemsIndexed(reihen, key = { _, paar -> paar.first().id }) { reihe, paar -> AnimeReihe(paar, reihe, onOeffnen, breite.then(rand)) }
+    }
+}
+
+/** Kopf mit „+ Neu“, Suche mit Sortierknopf, Filter und die leeren Zustände; [rand] für alles außer den Filtern. */
+@Composable
+private fun Oben(
+    stil: FoodyStil,
+    z: ListeZustand,
+    aendern: ((ListeFilter) -> ListeFilter) -> Unit,
+    zuruecksetzen: () -> Unit,
+    onNeu: () -> Unit,
+    rand: Modifier,
+) {
+    val n = z.treffer.size
+    val neu = @Composable { StilAktion(if (stil == FoodyStil.EDO) "＋ Neu" else "+ Neu", onNeu, beschreibung = "Neues Rezept", voll = true) }
+    Box(rand) {
+        when (stil) {
+            FoodyStil.ANIME -> AnimeKopf(n, neu)
+            FoodyStil.EDO -> EdoKopf(n, neu)
+            FoodyStil.BAYRISCH -> BayrischKopf(n, neu)
+            FoodyStil.GRAUEN -> GrauenKopf(n, neu)
+            else -> KreuzerKopf(n, neu)
+        }
+    }
+    if (z.geladen && z.keineRezepte) {
+        LeererZustandFlaeche(Icons.AutoMirrored.Outlined.MenuBook, "Noch keine Rezepte", LEER_TEXT, aktionText = "Anlegen", onAktion = onNeu, modifier = rand)
+        return
+    }
+    Suche(z.filter, aendern, suchText(stil, FoodyTheme.stil.inszeniert), rand)
+    FilterChips(z.filter, aendern)
+    if (z.geladen && z.treffer.isEmpty()) {
+        LeererZustandFlaeche(
+            Icons.AutoMirrored.Outlined.MenuBook, "Nichts gefunden", "Kein Rezept passt zu Suche und Filtern.",
+            aktionText = "Filter zurücksetzen", onAktion = zuruecksetzen, modifier = rand,
+        )
     }
 }
 
@@ -212,19 +254,6 @@ private fun Seiten(seite: Int, seiten: Int, schrift: TextStyle, modifier: Modifi
             style = schrift, color = FoodyTheme.farben.nebentext, textAlign = TextAlign.Center,
         )
         StilAktion("›", { onSeite((seite + 1) % seiten) }, Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp), beschreibung = "Nächste Seite")
-    }
-}
-
-/** „+ Neu“ im Knopf des Stils; öffnet „Neues Rezept“ oder „Markdown importieren“. */
-@Composable
-private fun NeuMenue(stil: FoodyStil, onNeu: () -> Unit, onImport: () -> Unit) {
-    var menue by remember { mutableStateOf(false) }
-    Box {
-        StilAktion(if (stil == FoodyStil.EDO) "＋ Neu" else "+ Neu", { menue = true }, beschreibung = "Rezept hinzufügen", voll = true)
-        FoodyMenue(menue, onSchliessen = { menue = false }) {
-            FoodyMenuePunkt("Neues Rezept", { menue = false; onNeu() })
-            FoodyMenuePunkt("Markdown importieren", { menue = false; onImport() })
-        }
     }
 }
 
