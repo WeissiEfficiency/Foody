@@ -1,6 +1,5 @@
 package de.foody.feature.heute.tagebuch
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -9,29 +8,22 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyKnopf
-import de.foody.core.designsystem.komponenten.FoodyMenue
-import de.foody.core.designsystem.komponenten.FoodyMenuePunkt
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.anzeigename
 import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
@@ -131,36 +123,26 @@ private fun FotoErkennungStand(lauf: ErkennungLauf) {
 }
 
 /**
- * „Mahlzeit  Mittagessen ⌄“: öffnet das Menü mit den vier Mahlzeiten. Ohne [onWahl] (Geplantes: die Mahlzeit des
- * Plans) nur zur Ansicht.
+ * „Mahlzeit“ und darunter die vier Mahlzeiten als Pillen, die gewählte hervorgehoben. Ohne [onWahl] (Geplantes: die
+ * Mahlzeit des Plans) nur zur Ansicht.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MahlzeitZeile(mahlzeit: Mahlzeit, onWahl: ((Mahlzeit) -> Unit)?) {
     val farben = FoodyTheme.farben
-    val name = mahlzeit.anzeigename()
-    var offen by remember { mutableStateOf(false) }
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 48.dp)
-            .then(if (onWahl != null) Modifier.clickable(role = Role.Button) { offen = true } else Modifier)
-            .semantics(mergeDescendants = true) { contentDescription = if (onWahl != null) "Mahlzeit: $name, ändern" else "Mahlzeit: $name" },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2),
-    ) {
-        Text("Mahlzeit", Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = farben.nebentext)
-        Text(name, style = MaterialTheme.typography.bodyLarge, color = if (onWahl != null) farben.primaer else farben.text)
-        if (onWahl != null) {
-            // Das Menü hängt am Pfeil, also rechts unter dem Wert
-            Box {
-                Icon(Icons.Outlined.ExpandMore, contentDescription = null, tint = farben.primaer)
-                FoodyMenue(offen, onSchliessen = { offen = false }) {
-                    MAHLZEITEN.forEach { m ->
-                        FoodyMenuePunkt(m.anzeigename(), {
-                            offen = false
-                            onWahl(m)
-                        }, gewaehlt = m == mahlzeit)
-                    }
-                }
-            }
+    if (onWahl == null) {
+        val name = mahlzeit.anzeigename()
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp).semantics(mergeDescendants = true) { contentDescription = "Mahlzeit: $name" },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Mahlzeit", Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = farben.nebentext)
+            Text(name, style = MaterialTheme.typography.bodyLarge, color = farben.text)
         }
+        return
+    }
+    Text("Mahlzeit", style = MaterialTheme.typography.bodyLarge, color = farben.nebentext)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
+        MAHLZEITEN.forEach { m -> FoodyChip(m.anzeigename(), m == mahlzeit, { onWahl(m) }) }
     }
 }

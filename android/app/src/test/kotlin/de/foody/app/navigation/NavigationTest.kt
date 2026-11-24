@@ -9,6 +9,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasAnyAncestor
@@ -260,16 +261,25 @@ class NavigationTest {
         compose.onNodeWithText(Platzhalter.SNACK_EINTRAGEN).assertExists()
     }
 
-    /** Eintragen ist wie der Kochmodus ein Vollbild ohne Navigationsleiste. */
+    /**
+     * Eintragen behält die Navigationsleiste (anders als der Kochmodus), kein Reiter ist dabei gewählt. Ein Reiter
+     * schließt Eintragen: Es bleibt nicht im Stapel des vorigen Reiters liegen.
+     */
     @Test
     @Config(qualifiers = "w411dp-h891dp")
-    fun eintragenOhneLeiste() {
+    fun eintragenMitLeiste() {
         starten()
         compose.runOnUiThread { nav.navigate(EintragenStart(Platzhalter.TAG).alsZiel()) }
         compose.onNodeWithText("Eintragen ${Platzhalter.TAG} null").assertExists()
-        compose.onNodeWithTag(Hauptgeruest.LEISTE).assertDoesNotExist()
-        compose.runOnUiThread { nav.popBackStack() }
         compose.onNodeWithTag(Hauptgeruest.LEISTE).assertExists()
+        tab("Heute").assertIsNotSelected()
+        tab("Rezepte").performClick()
+        compose.waitForIdle()
+        tab("Rezepte").assertIsSelected()
+        compose.runOnUiThread { assertTrue(nav.currentBackStack.value.none { it.destination.hasRoute<Eintragen>() }) }
+        tab("Heute").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Eintragen ${Platzhalter.TAG} null").assertDoesNotExist()
     }
 
     /**
@@ -399,7 +409,7 @@ class NavigationTest {
     /** Punkt „Eintragen“ der Leiste (Aktion, kein Reiter) – nicht der Text der Platzhalter-Seite. */
     private fun leistenEintragen() = compose.onNode(hasText("Eintragen") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
 
-    /** Fünf Punkte, „Eintragen“ an zweiter Stelle; der Tipp öffnet Eintragen für heute, ohne Mahlzeit, ohne Leiste. */
+    /** Fünf Punkte, „Eintragen“ an zweiter Stelle; der Tipp öffnet Eintragen für heute, ohne Mahlzeit; die Leiste bleibt. */
     @Test
     @Config(qualifiers = "w411dp-h891dp")
     fun eintragenInDerLeiste() {
@@ -415,7 +425,7 @@ class NavigationTest {
             assertNull(ziel.mahlzeit)
             assertNull(ziel.sofort)
         }
-        compose.onNodeWithTag(Hauptgeruest.LEISTE).assertDoesNotExist()
+        compose.onNodeWithTag(Hauptgeruest.LEISTE).assertExists()
     }
 
     /** Aus einem Rezept eingetragen: Zurück führt ins Rezept, der Reiter Rezepte bleibt markiert. */
@@ -467,14 +477,14 @@ class NavigationTest {
         }
     }
 
-    /** Auch die Rail (Tablet) hat „Eintragen“. */
+    /** Auch die Rail (Tablet) hat „Eintragen“; sie bleibt neben der Seite. */
     @Test
     @Config(qualifiers = "w1280dp-h800dp")
     fun tabletRailOeffnetEintragen() {
         starten()
         leistenEintragen().performClick()
         compose.runOnIdle { assertTrue(nav.currentBackStackEntry!!.destination.hasRoute<Eintragen>()) }
-        compose.onNodeWithTag(Hauptgeruest.RAIL).assertDoesNotExist()
+        compose.onNodeWithTag(Hauptgeruest.RAIL).assertExists()
     }
 
     /**

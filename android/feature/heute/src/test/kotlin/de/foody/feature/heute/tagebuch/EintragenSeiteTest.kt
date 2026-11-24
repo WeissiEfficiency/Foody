@@ -14,6 +14,8 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
@@ -415,13 +417,14 @@ class EintragenSeiteTest {
     }
 
     @Test
-    fun mahlzeitUeberMenue() {
+    fun mahlzeitUeberPillen() {
         zeigen(vm())
         rezeptWaehlen()
-        compose.onNodeWithContentDescription("Mahlzeit: Mittagessen, ändern").performScrollTo().performClick()
-        compose.onNodeWithText("Snack").performClick()
+        compose.onNodeWithText("Mittagessen").performScrollTo().assertIsSelected()
+        compose.onNodeWithText("Snack").performScrollTo().performClick()
         compose.waitForIdle()
-        compose.onNodeWithContentDescription("Mahlzeit: Snack, ändern").assertExists()
+        compose.onNodeWithText("Snack").assertIsSelected()
+        compose.onNodeWithText("Mittagessen").assertIsNotSelected()
 
         compose.onNodeWithTag(EINTRAGEN_SPEICHERN).performClick()
         compose.waitUntil(5_000) { fertig > 0 }
@@ -442,7 +445,7 @@ class EintragenSeiteTest {
         zeigen(vm)
         erfassenMitFoto()
         // Mit dem Rezept aus dem Bestand als Treffer (auch ein Knopf)
-        val erwartet = listOf("Foto", "Scannen", "Aus der Galerie", "Nährwerttabelle fotografieren", "Reispfanne", "Nicht dabei? Frei eintragen")
+        val erwartet = listOf("Foto", "Scannen", "Aus der Galerie", "Nährwerttabelle", "Reispfanne", "Nicht dabei? Frei eintragen")
         val verboten = listOf("Siegel", "Deuten", "Ins Bordbuch", "Eintragen! ✓", "In die Chronik", "Ins Logbuch")
         val fehler = mutableListOf<String>()
         for (stil in FoodyStil.entries) {

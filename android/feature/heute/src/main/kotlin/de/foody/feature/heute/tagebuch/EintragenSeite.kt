@@ -6,8 +6,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
@@ -24,10 +27,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.Seitenkopf
+import de.foody.core.designsystem.komponenten.platzFuerLeiste
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import kotlinx.coroutines.launch
@@ -41,6 +46,7 @@ const val EINTRAGEN_SPEICHERN = "eintragen-speichern"
  * ([onFertig]), ebenso erfolgreiches Speichern. Mit [EintragenStart.sofort] öffnet sie gleich Kamera bzw. Scanner und
  * bleibt bis zum Ergebnis leer; ein Abbruch schließt sie. [auftrag] unterscheidet ein neues Öffnen vom Neuaufbau.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EintragenRoute(start: EintragenStart, auftrag: String, onFertig: () -> Unit, vm: EintragenViewModel = hiltViewModel()) {
     // Zuerst und immer: Die Launcher müssen stehen, auch solange die Seite leer ist (Kameraergebnis nach Prozessende)
@@ -70,8 +76,10 @@ fun EintragenRoute(start: EintragenStart, auftrag: String, onFertig: () -> Unit,
 
     val bereich = rememberCoroutineScope()
     val erfassenScroll = rememberScrollState()
+    // Unten Platz für die schwebende Leiste; bei offener Tastatur liegt sie darunter
+    val unten = if (WindowInsets.isImeVisible) 0.dp else platzFuerLeiste()
     Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.fillMaxSize().widthIn(max = FoodyBreiten.inhalt)) {
+        Column(Modifier.fillMaxSize().widthIn(max = FoodyBreiten.inhalt).padding(bottom = unten)) {
             val auswahl = z.auswahlName.takeIf { e.schritt == EintragenSchritt.BESTAETIGEN }
             // Das Stilwort liest TalkBack als „Eintragen“, den Namen der Wahl so, wie er dasteht
             Seitenkopf(

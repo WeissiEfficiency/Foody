@@ -68,7 +68,7 @@ fun platzFuerLeiste(): Dp = if (LocalMitLeiste.current) ueberLeiste(LEISTE_REGEL
 
 /**
  * Ein Ziel der Hauptnavigation; [beschreibung] liest TalkBack, wenn [text] ein Stilwort ist (Bayrisch „Heid“ für Heute).
- * [aktion]: kein Reiter, sondern ein Knopf (Eintragen) – nie ausgewählt, für TalkBack ein Knopf.
+ * [aktion]: kein Reiter, sondern ein Knopf (Eintragen) – für TalkBack ein Knopf; hervorgehoben, solange seine Seite offen ist.
  */
 data class NavZiel(val text: String, val symbol: ImageVector, val beschreibung: String? = null, val aktion: Boolean = false)
 
@@ -102,7 +102,7 @@ fun FoodyNavigationsRail(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Unit
  */
 @Composable
 private fun NavEintrag(ziel: NavZiel, gewaehlt: Boolean, onKlick: () -> Unit, modifier: Modifier) {
-    val aktiv = gewaehlt && !ziel.aktion
+    val aktiv = gewaehlt
     val farben = FoodyTheme.farben
     val farbe = if (aktiv) farben.primaer else farben.nebentext
     val druck = remember { MutableInteractionSource() }
