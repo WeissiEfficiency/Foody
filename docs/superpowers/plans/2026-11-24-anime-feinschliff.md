@@ -63,10 +63,13 @@ Stile (letzter Abschnitt). Ziel: wenig neuer Code, Bestehendes umstellen statt n
 ## Ergebnis
 
 - 1: #305. 2: #306. 3: #307 (Döner 1 Stk. → 350 g geschätzt, 699 kcal; auf dem Handy geprüft).
-- 4: Anime-Liste endlos (`LazyColumn` aus Zweierreihen, behält die Stelle nach „Zurück“, Filter und Suche beginnen oben);
+- 4: #308. Anime-Liste endlos (`LazyColumn` aus Zweierreihen, behält die Stelle nach „Zurück“, Filter und Suche beginnen oben);
   Edo, Bayrisch, Grauen, Kreuzer behalten ihre Seiten. Tag-Chips und `haeufigeTags` entfernt (Suche findet Tags weiter).
   Sortierung als runder Knopf neben der Suche in allen Stilen; „+“ / „+ Neu“ öffnet überall direkt den Editor. Import
   in den Einstellungen (Abschnitt „Rezepte“ über „Sicherung“). Auf dem Handy mit 318 importierten Rezepten geprüft.
+- 5: #309. Kein „+“ neben „Was willst du einkaufen?“ (alle Stile). Anime: runder Listen-Knopf mit Klemmbrett; Zuletzt
+  und Katalog als Comic-Panels mit wischbarer Kachelreihe statt Klappen (`animeKlappkopf` entfällt). Auf dem Handy
+  geprüft: Kachel antippen setzt auf die Liste, Reihe wischt, Listen-Knopf öffnet „Listen!“, „„Grillkohle“ hinzufügen“ trägt ein.
 
 ## Danach: übrige Stile
 
