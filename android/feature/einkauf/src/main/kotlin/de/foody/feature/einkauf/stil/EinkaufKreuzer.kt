@@ -45,7 +45,8 @@ import de.foody.core.designsystem.stil.kreuzer.KreuzerKnopf
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
 import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
-import de.foody.feature.einkauf.KlappkopfInhalt
+import de.foody.feature.einkauf.PillenAussehen
+import de.foody.feature.einkauf.ZULETZT
 import java.util.Locale
 import kotlin.math.min
 
@@ -69,18 +70,11 @@ internal fun LazyGridScope.kreuzerPosten(ansicht: EinkaufsAnsicht?, onUmschalten
     }
 }
 
-/**
- * Klappkopf der Abteilungen (Zuletzt, Katalog) wie die Abteilungen der Liste in Ruhig: Mono in Versalien in der
- * Nebenfarbe. TalkBack hört den Titel in normaler Schreibung.
- */
-internal val kreuzerKlappkopf: KlappkopfInhalt = { titel, offen, onKlick ->
-    Klappzeile(offen, onKlick) {
-        Text(
-            titel.uppercase(Locale.GERMAN), Modifier.weight(1f).semantics { contentDescription = titel },
-            style = Kreuzer.mono(12.5f, 0.08f), color = FoodyTheme.farben.nebentext,
-        )
-    }
-}
+/** „Hinzufügen“ im Frachtraum: „FRACHT ANFORDERN“ in Mono, jede Abteilung mit ihrem Kisten-Code („OBS · Obst & Gemüse“). */
+internal val kreuzerPillen = PillenAussehen(
+    ueberschrift = { m -> Text("FRACHT ANFORDERN", m, style = Kreuzer.mono(12.5f, 0.08f), color = FoodyTheme.farben.nebentext) },
+    name = { a, _ -> if (a == ZULETZT) "LOG · Zuletzt" else "${kistenCode(a)} · $a" },
+)
 
 /** Code der Abteilung auf der Kiste: die ersten drei Buchstaben, groß („OBS“, „KÜH“). */
 internal fun kistenCode(abteilung: String): String =

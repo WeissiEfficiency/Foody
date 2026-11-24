@@ -55,7 +55,8 @@ import de.foody.core.designsystem.stil.sage.SageNebenknopf
 import de.foody.core.designsystem.stil.sage.SageRaute
 import de.foody.core.designsystem.stil.svgPfad
 import de.foody.core.designsystem.stil.szenenWort
-import de.foody.feature.einkauf.KlappkopfInhalt
+import de.foody.feature.einkauf.PillenAussehen
+import de.foody.feature.einkauf.ZULETZT
 import java.util.Locale
 
 /**
@@ -103,19 +104,18 @@ internal fun LazyGridScope.haendlerPosten(ansicht: EinkaufsAnsicht?, onUmschalte
     }
 }
 
-/**
- * Klappkopf der Abteilungen (Zuletzt, Katalog) wie die Abschnitte der Sage: Cinzel in Versalien in der Nebenfarbe wie die
- * Abteilung auf den Posten, darüber eine feine Linie. TalkBack hört den Titel in normaler Schreibung.
- */
-internal val sageKlappkopf: KlappkopfInhalt = { titel, offen, onKlick ->
-    val f = FoodyTheme.farben
-    Klappzeile(offen, onKlick, Modifier.drawBehind { drawLine(f.lichtkante, Offset.Zero, Offset(size.width, 0f), 1.dp.toPx()) }) {
+/** „Hinzufügen“ beim Händler: „Die Waren des Händlers“ in Versalien unter einer feinen Kante, die Waren ohne Emoji. */
+internal val sagePillen = PillenAussehen(
+    ueberschrift = { m ->
+        val f = FoodyTheme.farben
         Text(
-            titel.uppercase(Locale.GERMAN), Modifier.weight(1f).semantics { contentDescription = titel },
+            "DIE WAREN DES HÄNDLERS",
+            m.fillMaxWidth().drawBehind { drawLine(f.lichtkante, Offset.Zero, Offset(size.width, 0f), 1.dp.toPx()) }.padding(top = 12.dp, bottom = 4.dp),
             style = Sage.titel(12f, 0.18f), color = f.nebentext,
         )
-    }
-}
+    },
+    name = { a, _ -> if (a == ZULETZT) "Zuletzt gehandelt" else a },
+)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
