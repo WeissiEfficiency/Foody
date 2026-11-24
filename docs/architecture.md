@@ -545,6 +545,10 @@ Menge in der Basiseinheit und Herkunft je `NeedSource`, manuelle Artikel ohne He
   aufklappbaren Abteilungen nehmen einen Kopf über den Slot `KlappkopfInhalt` (`zuletztKacheln`, `katalogKacheln`):
   Milchglas `StandardKlappkopf`, jede Szene ihren eigenen (`sageKlappkopf` … `kreuzerKlappkopf`) in Schrift und
   Farben ihrer Abschnittsköpfe; Rolle, „Aufklappen“/„Zuklappen“ und 48 dp sind gemeinsam (`Modifier.klappbar`).
+  Anime klappt nicht: Zuletzt und jede Katalog-Abteilung sind Comic-Panels (`animeZuletzt`, `animeKatalog`) mit
+  bunter Kopf-Pille und einer waagerecht wischbaren `LazyRow` aus Kacheln; der Listen-Knopf ist dort rund mit
+  Klemmbrett. Neben dem Eingabefeld steht in keinem Stil mehr ein „+“: Eintragen über „Fertig“ oder die Kachel
+  „„…“ hinzufügen“ unter den Treffern.
 - **`:core:designsystem`**: `Kachel` mit `aufDerListe` (rot), `onLangdruck` („Details“) und `zustandsText`;
   `KachelEmoji` für die Katalog-Emojis.
 - **`:feature:rezepte`**: „Auf die Einkaufsliste“ im Rezeptdetail (Portionen-Dialog, Snackbar mit „Ansehen“ →

@@ -166,7 +166,7 @@ class EinkaufStileTest {
         hasText(name, substring = true, ignoreCase = true) and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button) and
             SemanticsMatcher("Label „$label“") { it.config.getOrNull(SemanticsActions.OnClick)?.label == label }
 
-    /** Q–V (Immersiv): Die Abteilungen des Katalogs klappen im Kopf der Szene auf und wieder zu. */
+    /** Q–V außer Anime (Immersiv): Die Abteilungen des Katalogs klappen im Kopf der Szene auf und wieder zu. */
     @Test
     fun abteilungKlapptAuf() {
         liste()
@@ -175,7 +175,7 @@ class EinkaufStileTest {
         compose.setContent { FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV) { EinkaufRoute(null, {}, {}, vm = vm) } }
         compose.warteAufText("Zwiebeln")
         val raster = compose.onNode(hasScrollToIndexAction())
-        for (s in listOf(FoodyStil.SAGE, FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)) {
+        for (s in listOf(FoodyStil.SAGE, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)) {
             stil = s
             compose.waitForIdle()
             raster.performScrollToNode(abteilung("Obst & Gemüse", "Aufklappen"))
@@ -187,6 +187,22 @@ class EinkaufStileTest {
             compose.onNode(abteilung("Obst & Gemüse", "Aufklappen")).assertExists()
             compose.onAllNodesWithText("Äpfel").assertCountEquals(0)
         }
+    }
+
+    /** Anime: Jede Abteilung ist ein offenes Comic-Panel; ihre Kacheln stehen ohne Aufklappen in einer wischbaren Reihe. */
+    @Test
+    fun animeAbteilungenAlsPanels() {
+        liste()
+        val vm = u.vm()
+        compose.setContent { FoodyTheme(stil = FoodyStil.ANIME, variante = StilVariante.IMMERSIV) { EinkaufRoute(null, {}, {}, vm = vm) } }
+        compose.warteAufText("Zwiebeln")
+        val raster = compose.onAllNodes(hasScrollToIndexAction()).onFirst()
+        raster.performScrollToNode(hasText("Obst & Gemüse", substring = true))
+        // Einmal als Abteilung der Liste (Zwiebeln), einmal als Panel des Katalogs
+        compose.onAllNodes(hasText("Obst & Gemüse", substring = true) and isHeading()).assertCountEquals(2)
+        compose.onAllNodes(SemanticsMatcher("Aufklappen") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "Aufklappen" }).assertCountEquals(0)
+        // „Äpfel“ steht nur im Katalog: gleich in der Reihe der Abteilung, ohne Klappen
+        compose.onNodeWithText("Äpfel").assertExists()
     }
 
     /** „Listen“ öffnet die Listen-Seite wie im Entwurf auf dem ersten Reiter „Neue Liste“. */

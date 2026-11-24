@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -19,8 +20,13 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.LazyGridScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,21 +49,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.foody.core.data.einkauf.EinkaufsAnsicht
 import de.foody.core.data.einkauf.EinkaufsArtikel
+import de.foody.core.data.einkauf.ZuletztArtikel
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.animationenErlaubt
+import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.stil.anime.Anime
-import de.foody.core.designsystem.stil.anime.AnimeKnopf
 import de.foody.core.designsystem.stil.anime.animeSchatten
 import de.foody.core.designsystem.stil.anime.animeSzenenTitel
 import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
-import de.foody.feature.einkauf.KlappkopfInhalt
+import de.foody.domain.ShoppingCatalog
+import de.foody.feature.einkauf.EinkaufKachel
+import de.foody.feature.einkauf.ZULETZT
+import de.foody.feature.einkauf.stand
 import kotlin.math.min
 
 /**
  * „Einkauf“ im Anime-Stil (R) in Immersiv (Entwurf `R-Einkauf`): schräges „QUEST!“ mit Schatten im Akzent und
- * „Listen ▸“, darunter der XP-Balken (erledigt/gesamt). Jede Abteilung ist eine weiße Karte mit hartem Schatten und
- * farbigem Abzeichen, darin die Posten zu zweit; gekaufte sind blass, durchgestrichen und tragen ein „GET!“.
+ * rundem Knopf „Listen“ (Klemmbrett), darunter der XP-Balken (erledigt/gesamt). Jede Abteilung ist eine weiße Karte mit
+ * hartem Schatten und farbigem Abzeichen, darin die Posten zu zweit; gekaufte sind blass, durchgestrichen und tragen
+ * ein „GET!“. „Zuletzt verwendet“ und der Katalog sind ebenso Comic-Panels, statt Klappen mit einer waagerecht
+ * wischbaren Reihe Kacheln.
  */
 internal fun LazyGridScope.animeKopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit) {
     ganzeBreite("anime-kopf") { Kopf(ansicht, onListen) }
@@ -67,15 +79,59 @@ internal fun LazyGridScope.animePosten(ansicht: EinkaufsAnsicht?, onUmschalten: 
     jeGruppe("anime", ansicht.gruppiert()) { i, g -> Karte(g, ABZEICHEN[i % ABZEICHEN.size], onUmschalten, onDetails) }
 }
 
-/** Klappkopf der Abteilungen (Zuletzt, Katalog): der Name im Abzeichen wie über den Karten der Posten. */
-internal val animeKlappkopf: KlappkopfInhalt = { titel, offen, onKlick ->
+/** „Zuletzt verwendet“ als Panel; Antippen setzt den Artikel wieder auf die Liste. */
+internal fun LazyGridScope.animeZuletzt(zuletzt: List<ZuletztArtikel>, alle: List<EinkaufsArtikel>, onTipp: (ZuletztArtikel) -> Unit) {
+    if (zuletzt.isEmpty()) return
+    ganzeBreite("anime-zuletzt") {
+        Panel(ZULETZT, Anime.gelb, zuletzt, { it.name }) { z, m -> EinkaufKachel(z.name, "", z.emoji, stand(z.name, alle), { onTipp(z) }, m) }
+    }
+}
+
+/** Der Katalog: je Abteilung ein Panel mit wischbarer Kachelreihe, zuletzt die „Eigenen Artikel“ der Liste. */
+internal fun LazyGridScope.animeKatalog(alle: List<EinkaufsArtikel>, onTipp: (name: String, abteilung: String) -> Unit) {
+    ShoppingCatalog.sections.forEachIndexed { i, s ->
+        ganzeBreite("anime-katalog-${s.name}") {
+            Panel("${s.emoji} ${s.name}", ABZEICHEN[i % ABZEICHEN.size], s.items, { it.name }) { k, m ->
+                EinkaufKachel(k.name, "", k.emoji, stand(k.name, alle), { onTipp(k.name, s.name) }, m)
+            }
+        }
+    }
+    val eigene = alle.filter { ShoppingCatalog.find(it.name) == null }.distinctBy { it.name.lowercase() }
+    if (eigene.isEmpty()) return
+    val name = ShoppingCatalog.OWN_ITEMS
+    ganzeBreite("anime-katalog-eigene") {
+        Panel("🛒 $name", Anime.rosa, eigene, { it.name.lowercase() }) { e, m ->
+            EinkaufKachel(e.name, "", e.emoji, stand(e.name, alle), { onTipp(e.name, name) }, m)
+        }
+    }
+}
+
+/** Breite einer Kachel in der wischbaren Reihe; die nächste schaut rechts heraus. */
+private val PANEL_KACHEL = 104.dp
+
+/**
+ * Comic-Panel: weiße Karte mit Kante und Versatzschatten, oben der [titel] in der bunten Pille [farbe], darunter die
+ * [eintraege] als waagerecht wischbare Reihe (gezeichnet wird nur, was im Bild ist).
+ */
+@Composable
+private fun <T> Panel(titel: String, farbe: Color, eintraege: List<T>, schluessel: (T) -> String, kachel: @Composable (T, Modifier) -> Unit) {
     val f = FoodyTheme.farben
-    Klappzeile(offen, onKlick) {
-        Box(Modifier.weight(1f)) {
-            Text(
-                titel, Modifier.background(Anime.mint, Anime.pille).border(2.dp, f.text, Anime.pille).padding(horizontal = 8.dp),
-                style = Anime.text(13f, FontWeight.ExtraBold), color = f.text,
-            )
+    val form = RoundedCornerShape(16.dp)
+    Column(
+        Modifier.fillMaxWidth().padding(end = 4.dp, bottom = 4.dp)
+            .then(if (FoodyTheme.stil.inszeniert) Modifier.animeSchatten(form, f.text, 4.dp) else Modifier)
+            .background(Color.White, form).border(2.5.dp, f.text, form).clip(form).padding(top = 8.dp, bottom = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            titel,
+            Modifier.padding(horizontal = 10.dp).background(farbe, Anime.pille).border(2.dp, f.text, Anime.pille).padding(horizontal = 8.dp)
+                .semantics { heading() },
+            style = Anime.text(13f, FontWeight.ExtraBold),
+            color = f.text,
+        )
+        LazyRow(contentPadding = PaddingValues(horizontal = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            items(eintraege, key = schluessel) { kachel(it, Modifier.width(PANEL_KACHEL)) }
         }
     }
 }
@@ -103,9 +159,8 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit) {
                 style = animeSzenenTitel(titelGroesse(38f)),
                 color = f.text,
             )
-            Row(Modifier.align(Alignment.CenterVertically), verticalAlignment = Alignment.CenterVertically) {
-                AnimeKnopf("Listen ▸", onListen, beschreibung = "Einkaufslisten", voll = false)
-            }
+            // Rund wie das Zahnrad auf „Heute“, mit Klemmbrett
+            Box(Modifier.align(Alignment.CenterVertically)) { RunderKnopf(Icons.AutoMirrored.Outlined.Assignment, "Einkaufslisten", onListen) }
         }
         val gesamt = ansicht.gesamt
         if (gesamt > 0) Fortschritt(ansicht.erledigt, gesamt)
