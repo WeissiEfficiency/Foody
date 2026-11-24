@@ -543,14 +543,17 @@ Menge in der Basiseinheit und Herkunft je `NeedSource`, manuelle Artikel ohne He
   Das ⋮-Menü (`EinkaufMenue`) hat nur Milchglas. In den Szenen Sage bis Kreuzer führt allein der Listen-Knopf
   (Bedienhilfe „Einkaufslisten“) zur `ListenSeite` mit den Reitern „Neue Liste · Abgleich · Frühere“; „Liste
   löschen“ ist dort der Papierkorb „Diese Liste löschen“ im Kopf, nur wenn eine Liste angezeigt wird (auch eine
-  frühere); er löscht die angezeigte Liste. Die
-  aufklappbaren Abteilungen nehmen einen Kopf über den Slot `KlappkopfInhalt` (`zuletztKacheln`, `katalogKacheln`):
-  Milchglas `StandardKlappkopf`, jede Szene ihren eigenen (`sageKlappkopf` … `kreuzerKlappkopf`) in Schrift und
-  Farben ihrer Abschnittsköpfe; Rolle, „Aufklappen“/„Zuklappen“ und 48 dp sind gemeinsam (`Modifier.klappbar`).
-  Anime klappt nicht und scrollt nur senkrecht: kleiner Kopf („QUEST!“, Zähler „1/4“, runder Listen-Knopf mit
-  Klemmbrett), die Posten als Kacheln je Abteilung unter einem bunten Abzeichen (Farbe fest je Abteilung), darunter
-  „Hinzufügen“ mit Zuletzt, den Abteilungen und „Eigene Artikel“ als umbrechende Pillen; nur die Kacheln der
-  gewählten stehen darunter (`animeHinzufuegen`, Wahl in `rememberSaveable`). Neben dem Eingabefeld steht in keinem Stil mehr ein „+“: Eintragen über „Fertig“ oder die Kachel
+  frühere); er löscht die angezeigte Liste. Nur Milchglas klappt Zuletzt und
+  die Katalog-Abteilungen auf (`zuletztKacheln`, `katalogKacheln`, Kopf `StandardKlappkopf`, `Modifier.klappbar`).
+  Alle Szenen (Sage bis Kreuzer, Anime) zeigen „Hinzufügen“ mit Zuletzt, den Abteilungen und „Eigene Artikel“ als
+  umbrechende Pillen, darunter nur die Kacheln der gewählten (`hinzufuegenMitPillen` in `EinkaufHinzufuegen.kt`,
+  Wahl in `rememberSaveable`); gescrollt wird nur senkrecht. Jede Szene bringt ein `PillenAussehen` mit:
+  Überschrift (Sage „Die Waren des Händlers“, Edo „Noch besorgen“, Bayrisch „Wos brauch ma no?“, Grauen „Was die
+  Expedition noch braucht“, Kreuzer „FRACHT ANFORDERN“, Anime „Hinzufügen“; für TalkBack immer „Hinzufügen“), die
+  Namen der Abteilungen wie in ihren Posten (Marktnamen, bairisch, Kisten-Code „OBS · …“) und die Pille
+  (`FoodyChip` im Stil, Anime seine kompakte gelbe). Anime hat dazu einen kleinen Kopf („QUEST!“, Zähler „1/4“,
+  runder Listen-Knopf mit Klemmbrett) und die Posten als Kacheln je Abteilung unter einem bunten Abzeichen (Farbe
+  fest je Abteilung). Neben dem Eingabefeld steht in keinem Stil mehr ein „+“: Eintragen über „Fertig“ oder die Kachel
   „„…“ hinzufügen“ unter den Treffern.
 - **`:core:designsystem`**: `Kachel` mit `aufDerListe` (rot), `onLangdruck` („Details“) und `zustandsText`;
   `KachelEmoji` für die Katalog-Emojis.

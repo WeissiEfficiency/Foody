@@ -39,6 +39,7 @@ import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.domain.ShoppingCatalog
 import de.foody.feature.einkauf.EinkaufKachel
+import de.foody.feature.einkauf.PillenAussehen
 import de.foody.feature.einkauf.Stand
 import de.foody.feature.einkauf.ZULETZT
 import de.foody.feature.einkauf.stand
@@ -67,42 +68,12 @@ internal fun LazyGridScope.animePosten(ansicht: EinkaufsAnsicht?, onUmschalten: 
     }
 }
 
-/**
- * „Hinzufügen“: die Abteilungen als Pillen, darunter die Kacheln der Abteilung [gewaehlt] (`null` oder nicht mehr da =
- * Zuletzt, sonst die erste). Antippen nach der Kachelregel; aus „Zuletzt“ kommt der Artikel wieder auf die Liste.
- */
-internal fun LazyGridScope.animeHinzufuegen(
-    zuletzt: List<ZuletztArtikel>,
-    alle: List<EinkaufsArtikel>,
-    gewaehlt: String?,
-    onWaehlen: (String) -> Unit,
-    onZuletzt: (ZuletztArtikel) -> Unit,
-    onTipp: (name: String, abteilung: String) -> Unit,
-) {
-    val eigene = alle.filter { ShoppingCatalog.find(it.name) == null }.distinctBy { it.name.lowercase() }
-    val eigenName = ShoppingCatalog.OWN_ITEMS
-    val pillen = buildList {
-        if (zuletzt.isNotEmpty()) add(ZULETZT to "🕘 Zuletzt")
-        ShoppingCatalog.sections.forEach { add(it.name to "${it.emoji} ${it.name}") }
-        if (eigene.isNotEmpty()) add(eigenName to "🛒 $eigenName")
-    }
-    val aktiv = gewaehlt?.takeIf { g -> pillen.any { it.first == g } } ?: pillen.first().first
-    ganzeBreite("anime-hinzufuegen") { Pillen(pillen, aktiv, onWaehlen) }
-    when (aktiv) {
-        ZULETZT -> items(zuletzt, key = { "anime-zuletzt-${it.name}" }) { z ->
-            EinkaufKachel(z.name, "", z.emoji, stand(z.name, alle), { onZuletzt(z) })
-        }
-        eigenName -> items(eigene, key = { "anime-eigen-${it.name.lowercase()}" }) { e ->
-            EinkaufKachel(e.name, "", e.emoji, stand(e.name, alle), { onTipp(e.name, eigenName) })
-        }
-        else -> {
-            val s = ShoppingCatalog.sections.first { it.name == aktiv }
-            items(s.items, key = { "anime-katalog-${s.name}-${it.name}" }) { k ->
-                EinkaufKachel(k.name, "", k.emoji, stand(k.name, alle), { onTipp(k.name, s.name) })
-            }
-        }
-    }
-}
+/** „Hinzufügen“ in Anime: Überschrift in der Titelschrift, kleine Pillen mit Emoji, gewählt in Gelb. */
+internal val animePillen = PillenAussehen(
+    ueberschrift = { m -> Text("Hinzufügen", m, style = Anime.titel(18f, 0f), color = FoodyTheme.farben.text) },
+    name = { a, e -> "$e " + if (a == ZULETZT) "Zuletzt" else a },
+    pille = { t, g, k -> Pille(t, g, k) },
+)
 
 /** Farben der Abteilungs-Abzeichen wie im Entwurf (Grün, Türkis, Orange, Lila, Rosa). */
 private val ABZEICHEN = listOf(Anime.mint, Anime.tuerkis, Anime.orange, Anime.lila, Anime.rosa)
@@ -152,18 +123,6 @@ private fun Abzeichen(text: String, farbe: Color) {
             style = Anime.text(13f, FontWeight.ExtraBold),
             color = f.text,
         )
-    }
-}
-
-/** „Hinzufügen“ und die Abteilungen als Pillen, die umbrechen; [aktiv] ist gewählt. */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun Pillen(pillen: List<Pair<String, String>>, aktiv: String, onWaehlen: (String) -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("Hinzufügen", Modifier.semantics { heading() }, style = Anime.titel(18f, 0f), color = FoodyTheme.farben.text)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            pillen.forEach { (name, text) -> Pille(text, name == aktiv) { onWaehlen(name) } }
-        }
     }
 }
 
