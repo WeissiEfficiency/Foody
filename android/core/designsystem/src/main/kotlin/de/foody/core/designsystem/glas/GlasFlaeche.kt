@@ -42,7 +42,7 @@ internal fun glasModus(unschaerfe: Boolean, hatHaze: Boolean, stufe: GlasStufe):
  * Milchglas: LEICHT/DICHT mit unscharfem, getöntem, leicht gekörntem Hintergrund, BILD als fast deckende Leiste über Fotos; dazu
  * eine Lichtkante. [unschaerfeErlaubt] = false für Flächen in Listen (Leistung).
  * Die Tönung allein hält WCAG AA (Kontrast-Test) – ohne Unschärfe bleibt alles lesbar.
- * [deckend] füllt die Fläche stattdessen mit dieser Farbe, ohne Tönung und Unschärfe (Anime-Leiste, `StilWerte.leiste`);
+ * [deckend] füllt die Fläche stattdessen mit dieser Farbe, ohne Tönung und Unschärfe (Anime: Weiß, `StilWerte.deckend`);
  * Kante und Versatzschatten bleiben.
  */
 @Composable
@@ -51,7 +51,7 @@ fun GlasFlaeche(
     modifier: Modifier = Modifier,
     form: Shape = FoodyTheme.formen.gross,
     unschaerfeErlaubt: Boolean = true,
-    deckend: Color? = null,
+    deckend: Color? = FoodyTheme.stil.deckend,
     inhalt: @Composable BoxScope.() -> Unit,
 ) {
     val werte = glasWerte(stufe, FoodyTheme.stil)

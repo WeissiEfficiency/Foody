@@ -72,10 +72,10 @@ fun platzFuerLeiste(): Dp = if (LocalMitLeiste.current) ueberLeiste(LEISTE_REGEL
  */
 data class NavZiel(val text: String, val symbol: ImageVector, val beschreibung: String? = null, val aktion: Boolean = false)
 
-/** Schwebende Glas-Leiste unten (Handy), 12 dp vom Rand; deckend, wenn der Stil es will (`StilWerte.leiste`). */
+/** Schwebende Glas-Leiste unten (Handy), 12 dp vom Rand; deckend, wenn der Stil es will (`StilWerte.deckend`). */
 @Composable
 fun FoodyNavigationsleiste(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Unit, modifier: Modifier = Modifier) {
-    GlasFlaeche(GlasStufe.LEICHT, modifier.padding(FoodyAbstaende.s3), form = FoodyTheme.formen.leiste, deckend = FoodyTheme.stil.leiste) {
+    GlasFlaeche(GlasStufe.LEICHT, modifier.padding(FoodyAbstaende.s3), form = FoodyTheme.formen.leiste) {
         Row(Modifier.padding(horizontal = FoodyAbstaende.s1), verticalAlignment = Alignment.CenterVertically) {
             ziele.forEachIndexed { i, ziel ->
                 NavEintrag(ziel, i == aktiv, { onWahl(i) }, Modifier.weight(1f))
@@ -87,7 +87,7 @@ fun FoodyNavigationsleiste(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Un
 /** Senkrechte Glas-Leiste links (Tablet, Handy quer); deckend wie die [FoodyNavigationsleiste]. */
 @Composable
 fun FoodyNavigationsRail(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Unit, modifier: Modifier = Modifier) {
-    GlasFlaeche(GlasStufe.LEICHT, modifier.padding(FoodyAbstaende.s3), form = FoodyTheme.formen.leiste, deckend = FoodyTheme.stil.leiste) {
+    GlasFlaeche(GlasStufe.LEICHT, modifier.padding(FoodyAbstaende.s3), form = FoodyTheme.formen.leiste) {
         Column(Modifier.padding(vertical = FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1)) {
             ziele.forEachIndexed { i, ziel ->
                 NavEintrag(ziel, i == aktiv, { onWahl(i) }, Modifier.width(88.dp))

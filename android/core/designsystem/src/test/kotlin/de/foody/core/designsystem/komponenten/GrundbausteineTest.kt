@@ -152,6 +152,33 @@ class GrundbausteineTest {
         }
     }
 
+    /** Anime: Auch runde Knöpfe (Zurück, Zahnrad) und das Suchfeld sind deckend weiß, nicht grau getöntes Glas. */
+    @Test
+    fun animeFlaechenDeckendWeiss() {
+        var variante by mutableStateOf(StilVariante.IMMERSIV)
+        var suchfeld by mutableStateOf(false)
+        compose.setContent {
+            FoodyTheme(stil = FoodyStil.ANIME, variante = variante, unschaerfe = true) {
+                FoodyHintergrund {
+                    if (suchfeld) Suchfeld("", {}, "Suchen") else RunderKnopf(Icons.Outlined.LightMode, "Zurück", {})
+                }
+            }
+        }
+        for (s in listOf(false, true)) {
+            for (v in StilVariante.entries) {
+                suchfeld = s
+                variante = v
+                compose.waitForIdle()
+                // Links in der Mitte, innerhalb der Kante und neben dem Symbol: dort liegt nur die Fläche
+                val f = compose.onNode(SemanticsMatcher.keyIsDefined(GlasModusKey), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+                val x = f.left + with(compose.density) { 6.dp.toPx() }
+                val y = f.center.y
+                val name = (if (s) "Suchfeld " else "Knopf ") + v.name
+                assertEquals(Color.White, compose.onRoot().captureToImage().toPixelMap()[x.toInt(), y.toInt()], name)
+            }
+        }
+    }
+
     @Test
     fun doppelteSchriftOhneAbschneiden() {
         compose.setContent {
