@@ -1,5 +1,6 @@
 package de.foody.feature.heute.stil
 
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -55,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
@@ -107,6 +109,7 @@ import de.foody.feature.heute.tagebuch.SofortStart
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.sin
 
 private val DATUM = DateTimeFormatter.ofPattern("EEEE · d. MMMM", Locale.GERMAN)
 
@@ -204,7 +207,7 @@ private fun RastAmFeuer(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: 
 
 /**
  * Die Szene des Entwurfs als Zeichnung: Nachthimmel, Mond, Hügel, Ruinen mit Torbogen, Lichtschein, Holzscheite,
- * Flamme und aufsteigende Glut. Gezeichnet im Maß des Entwurfs (390 × 318) und auf die Höhe skaliert, mittig; links
+ * Flamme und aufsteigende Glut; die Flamme pumpt und züngelt, alle drei Sekunden fliegen ein, zwei Funken. Gezeichnet im Maß des Entwurfs (390 × 318) und auf die Höhe skaliert, mittig; links
  * und rechts laufen Himmel und Boden weiter.
  */
 @Composable
@@ -220,6 +223,18 @@ private fun Lagerfeuer(glut: Color, modifier: Modifier) {
         zeit.animateFloat(0f, 1f, infiniteRepeatable(tween(2700, easing = LinearEasing)), label = "Glut")
     } else {
         remember { mutableFloatStateOf(0.35f) }
+    }
+    // Zweites, schnelleres Flackern gegen den Takt der Flamme: sie wabert unregelmäßig statt nur zu pumpen
+    val wabern by if (bewegt) {
+        zeit.animateFloat(0f, 1f, infiniteRepeatable(tween(530, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "Wabern")
+    } else {
+        remember { mutableFloatStateOf(0f) }
+    }
+    // Funkenflug: alle drei Sekunden springen ein, zwei kleine Splitter aus dem Feuer
+    val flug by if (bewegt) {
+        zeit.animateFloat(0f, 1f, infiniteRepeatable(tween(FUNKEN_TAKT, easing = LinearEasing)), label = "Funkenflug")
+    } else {
+        remember { mutableFloatStateOf(0.9f) }
     }
     val pfade = remember { SzenePfade() }
     // Die ruhende Szene entsteht einmal je Größe (Verläufe inklusive); Flamme und Glut liegen in einer eigenen Ebene,
@@ -263,8 +278,9 @@ private fun Lagerfeuer(glut: Color, modifier: Modifier) {
                 onDrawBehind {
                     translate(x0, 0f) {
                         scale(s, Offset.Zero) {
-                            feuer(pfade, flamme)
+                            feuer(pfade, flamme, wabern, glut)
                             glutFunken(glut, funken)
+                            funkenflug(glut, flug)
                         }
                     }
                 }
@@ -275,10 +291,61 @@ private fun Lagerfeuer(glut: Color, modifier: Modifier) {
 
 private val FLAMMENFARBE = Brush.verticalGradient(0f to Color(0xFFFDE68A), 0.5f to Sage.feuer, 1f to Color(0xFFC2410C), startY = 196f, endY = 268f)
 
-private fun DrawScope.feuer(pfade: SzenePfade, flamme: Float) {
-    withTransform({ scale(1f, 1f + 0.06f * flamme, Offset(195f, 268f)); translate(0f, -2f * flamme) }) {
+/**
+ * Flamme und Kern: [flamme] pumpt sie hoch, [wabern] (schneller, gegen den Takt) lässt sie seitlich züngeln und den
+ * Schein um das Feuer flackern. Ruhend (beide 0) wie im Entwurf.
+ */
+private fun DrawScope.feuer(pfade: SzenePfade, flamme: Float, wabern: Float, glut: Color) {
+    val boden = Offset(195f, 268f)
+    drawCircle(
+        Brush.radialGradient(listOf(glut.copy(alpha = 0.10f + 0.12f * wabern * (0.5f + flamme)), Color.Transparent), Offset(195f, 244f), 70f),
+        70f, Offset(195f, 244f),
+    )
+    withTransform({
+        scale(1f - 0.05f * wabern, 1f + 0.06f * flamme + 0.05f * wabern, boden)
+        rotate(4f * (wabern - flamme * wabern), boden)
+        translate(0f, -2f * flamme)
+    }) {
         drawPath(pfade.flamme, FLAMMENFARBE)
+    }
+    withTransform({
+        scale(1f + 0.06f * wabern, 1f + 0.1f * flamme * wabern, boden)
+        rotate(-3f * wabern, boden)
+        translate(0f, -2f * flamme)
+    }) {
         drawPath(pfade.kern, Color(0xFFFFF7D6))
+    }
+}
+
+/** Ein Splitter des Funkenflugs: Start im Takt (0–1), Drift zur Seite, Steighöhe, Größe und Drehungen. */
+private class Funke(val start: Float, val dx: Float, val hoehe: Float, val groesse: Float, val dreh: Float)
+
+/** Zwei Schübe je Takt mit je zwei Splittern, versetzt; jeder lebt [FLUG_DAUER] des Takts (knapp zwei Sekunden). */
+private val FUNKEN = listOf(
+    Funke(0f, 26f, 112f, 1.7f, 1.5f),
+    Funke(0.05f, -16f, 88f, 1.2f, -2f),
+    Funke(0.5f, -30f, 124f, 1.5f, 1f),
+    Funke(0.56f, 12f, 76f, 1.1f, -1.5f),
+)
+private const val FUNKEN_TAKT = 6000
+private const val FLUG_DAUER = 0.3f
+
+/**
+ * Funkenflug: kleine Splitter springen aus der Flamme, steigen gebremst, taumeln zur Seite, drehen sich und verglühen
+ * von hellem Gelb zur Glutfarbe. Bei [t] außerhalb ihrer Lebenszeit unsichtbar (so auch ruhend).
+ */
+private fun DrawScope.funkenflug(glut: Color, t: Float) {
+    FUNKEN.forEach { f ->
+        val p = ((t - f.start + 1f) % 1f) / FLUG_DAUER
+        if (p !in 0f..1f) return@forEach
+        val steigen = 1f - (1f - p) * (1f - p)
+        val x = 195f + f.dx * p + 3f * sin(p * 14f)
+        val y = 222f - f.hoehe * steigen
+        val farbe = lerp(Color(0xFFFFF3C4), glut, p).copy(alpha = (1f - p) * (1f - p * 0.3f))
+        val g = f.groesse * (1f - 0.4f * p)
+        rotate(360f * f.dreh * p, Offset(x, y)) {
+            drawRect(farbe, Offset(x - g, y - g * 0.5f), Size(2f * g, g))
+        }
     }
 }
 
