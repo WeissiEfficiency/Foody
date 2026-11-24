@@ -1,6 +1,9 @@
 package de.foody.feature.heute.stil
 
 import android.provider.Settings
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -72,6 +75,23 @@ class HeuteGrauenTest {
         // Das Auge liest TalkBack als nüchternen Satz
         compose.onNodeWithContentDescription("860 von 2.000 kcal: Eiweiß 42 g, Kohlenhydrate 96 g, Fett 31 g").assertExists()
         compose.onNodeWithContentDescription("Heute").assertExists()
+    }
+
+    /** Das Auge öffnet das Energietagebuch; ohne Ziel führt „Tagesziel festlegen“ in die Einstellungen. */
+    @Test
+    fun augeUndZiel() {
+        var ziel by mutableStateOf<Int?>(2000)
+        compose.setContent {
+            FoodyTheme(stil = FoodyStil.GRAUEN, variante = StilVariante.IMMERSIV, unschaerfe = false) {
+                val z = beispielZustand()
+                HeuteScreen(z.copy(tagebuch = z.tagebuch.copy(ziel = ziel)), aktionen)
+            }
+        }
+        compose.onNodeWithContentDescription("860 von 2.000 kcal", substring = true).performClick()
+        compose.onNodeWithContentDescription("Tagesziel festlegen").assertDoesNotExist()
+        ziel = null
+        compose.onNodeWithContentDescription("Tagesziel festlegen").performScrollTo().performClick()
+        assertEquals(listOf("alle", "einstellungen"), ausgeloest)
     }
 
     @Test

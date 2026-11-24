@@ -122,10 +122,13 @@ class HeuteSageTest {
         assertEquals(listOf("einstellungen", "rezept r1"), ausgeloest)
     }
 
-    /** „+ SCANNEN“ und „+ FOTO“ starten Eintragen gleich mit Scanner bzw. Kamera; „+ FOTO“ nur mit Modell auf dem Gerät. */
+    /**
+     * Ruhig: „+ SCANNEN“ und „+ FOTO“ starten Eintragen gleich mit Scanner bzw. Kamera; „+ FOTO“ nur mit Modell auf dem
+     * Gerät. In Immersiv gehören beide zu „Mahl eintragen“ und fehlen auf der Startseite.
+     */
     @Test
-    fun scannenUndFotoGetrennt() {
-        zeigen()
+    fun scannenUndFotoNurInRuhig() {
+        zeigen(StilVariante.RUHIG)
         compose.onNodeWithContentDescription("Scannen").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Foto").performScrollTo().performClick()
         assertEquals(listOf("sofort ${SofortStart.SCANNEN}", "sofort ${SofortStart.FOTO}"), ausgeloest)
@@ -135,6 +138,25 @@ class HeuteSageTest {
         compose.onNodeWithContentDescription("Scannen").performScrollTo().assertExists()
         compose.onNodeWithContentDescription("Foto").assertDoesNotExist()
         compose.onNodeWithText("+ FOTO").assertDoesNotExist()
+    }
+
+    @Test
+    fun immersivOhneScannenUndFoto() {
+        zeigen()
+        compose.onNodeWithText("REZEPT ANSEHEN").performScrollTo()
+        compose.onNodeWithContentDescription("Scannen").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Foto").assertDoesNotExist()
+    }
+
+    /** Die Vitalität öffnet das Energietagebuch; ohne Ziel führt „Tagesziel festlegen“ in die Einstellungen. */
+    @Test
+    fun vitalitaetUndZiel() {
+        zeigen()
+        compose.onNodeWithContentDescription("860 von 2.000 kcal", substring = true).performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Tagesziel festlegen").assertDoesNotExist()
+        zustand = zustand.copy(tagebuch = zustand.tagebuch.copy(ziel = null))
+        compose.onNodeWithContentDescription("Tagesziel festlegen").performScrollTo().performClick()
+        assertEquals(listOf("alle", "einstellungen"), ausgeloest)
     }
 
     /** Schmales Handy mit 130 % Schrift: Die Knöpfe (und alles andere) passen. */
