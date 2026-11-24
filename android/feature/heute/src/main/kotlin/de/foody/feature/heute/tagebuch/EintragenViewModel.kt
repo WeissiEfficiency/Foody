@@ -36,6 +36,7 @@ import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
 import de.foody.domain.Nutrient
 import de.foody.domain.NutrientBasis
+import de.foody.domain.StueckSchaetzung
 import de.foody.domain.Tagebuch
 import de.foody.feature.heute.mahlzeitNachUhrzeit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -91,6 +92,11 @@ data class Eingaben(
     val zutatId: String? = null,
     val menge: String = "",
     val einheit: MeasureUnit = MeasureUnit.GRAM,
+    /**
+     * Gramm je Stück, solange in Stück eingetragen wird: vorbelegt mit dem der Zutat, sonst geschätzt
+     * ([StueckSchaetzung]); änderbar, die Zutat merkt sich den Wert beim Speichern.
+     */
+    val stueckG: String = "",
     val planEintragId: String? = null,
     val freiName: String = "",
     val freiKcal: String = "",
@@ -163,6 +169,10 @@ data class EintragenZustand(
     val auswahlName: String? = null,
     /** kcal, die der Eintrag dazubringt (Rezept × Portionen, Zutat in der Menge, Geplantes je Portion); sonst `null`. */
     val kcalDazu: Int? = null,
+    /** Einheiten der gewählten Zutat, in denen sich ihre Werte rechnen lassen; Stück immer (mit [Eingaben.stueckG]). */
+    val einheiten: List<MeasureUnit> = EINTRAGEN_EINHEITEN,
+    /** Die Zutat kennt kein eigenes Stückgewicht: [Eingaben.stueckG] ist geschätzt bzw. noch leer. */
+    val stueckGeschaetzt: Boolean = false,
 ) {
     val mahlzeit: Mahlzeit get() = eingaben.mahlzeit
 }
@@ -262,6 +272,8 @@ class EintragenViewModel @Inject constructor(
                 bls = bls.filterNot { it.vorschlagName.lowercase() in namen },
                 auswahlName = auswahlName(e, rezepte, k.nachId, plan),
                 kcalDazu = kcalDazu(e, rezepte, k.nachId, plan),
+                einheiten = einheiten(e.zutatId?.let(k.nachId::get)),
+                stueckGeschaetzt = e.zutatId?.let(k.nachId::get)?.pieceWeightG == null,
             )
         }.stateIn(viewModelScope, SolangeAppOffen, EintragenZustand(eingaben.value, emptyList(), emptyList(), emptyList()))
 
@@ -322,7 +334,16 @@ class EintragenViewModel @Inject constructor(
     }
 
     /** Zutat gewählt: Einheit nach ihrer Nährwert-Basis (je 100 ml → ml, sonst g). */
-    fun zutatWaehlen(id: String) = eingaben.update { it.bestaetigen().copy(zutatId = id, weg = EintragenWeg.ZUTAT, einheit = einheitFuer(id)) }
+    fun zutatWaehlen(id: String) = eingaben.update {
+        it.bestaetigen().copy(zutatId = id, weg = EintragenWeg.ZUTAT, einheit = einheitFuer(id), stueckG = stueckVorgabe(id))
+    }
+
+    /** Gramm je Stück der Zutat [id] als Text: ihr eigenes, sonst nach [name] bzw. ihrem Namen geschätzt, sonst leer. */
+    private fun stueckVorgabe(id: String, name: String? = null): String {
+        val z = katalog.value.firstOrNull { it.id == id }
+        val g = z?.pieceWeightG ?: StueckSchaetzung.gramm(name ?: z?.canonicalName.orEmpty())
+        return g?.let(::zahlText).orEmpty()
+    }
 
     /** Einheit der Zutat [id] nach ihrer Basis im Katalog; unbekannt oder ohne Basis g. */
     private fun einheitFuer(id: String): MeasureUnit =
@@ -345,13 +366,17 @@ class EintragenViewModel @Inject constructor(
                 BlsDichte.gProMl(t.lebensmittel) != null -> MeasureUnit.MILLILITER
                 else -> MeasureUnit.GRAM
             }
-            it.bestaetigen().copy(zutatId = id, suche = t.vorschlagName, einheit = einheit, weg = EintragenWeg.ZUTAT)
+            val stueck = t.stueckG ?: StueckSchaetzung.gramm(t.vorschlagName) ?: StueckSchaetzung.gramm(t.lebensmittel.name)
+            it.bestaetigen().copy(
+                zutatId = id, suche = t.vorschlagName, einheit = einheit, weg = EintragenWeg.ZUTAT, stueckG = stueck?.let(::zahlText).orEmpty(),
+            )
         }
         fokus.trySend(Unit)
     }
 
     fun menge(text: String) = eingaben.update { it.copy(menge = text) }
     fun einheit(u: MeasureUnit) = eingaben.update { it.copy(einheit = u) }
+    fun stueckG(text: String) = eingaben.update { it.copy(stueckG = text) }
     fun freiName(text: String) = eingaben.update { it.copy(freiName = text) }
     fun freiKcal(text: String) = eingaben.update { it.copy(freiKcal = text) }
     fun freiEiweiss(text: String) = eingaben.update { it.copy(freiEiweiss = text) }
@@ -485,7 +510,9 @@ class EintragenViewModel @Inject constructor(
      */
     fun imKatalog(t: ScanAusgang.ImKatalog) {
         eingaben.update {
-            it.bestaetigen().copy(weg = EintragenWeg.ZUTAT, zutatId = t.id, suche = t.name, einheit = einheitFuer(t.id), packung = null)
+            it.bestaetigen().copy(
+                weg = EintragenWeg.ZUTAT, zutatId = t.id, suche = t.name, einheit = einheitFuer(t.id), stueckG = stueckVorgabe(t.id), packung = null,
+            )
         }
         fokus.trySend(Unit)
     }
@@ -527,7 +554,7 @@ class EintragenViewModel @Inject constructor(
     private suspend fun schreiben(e: Eingaben): String? {
         val id = when (e.weg) {
             EintragenWeg.REZEPT -> tagebuch.ausRezept(e.datum, e.mahlzeit, e.rezeptId!!, zahlAus(e.portionen)!!)
-            EintragenWeg.ZUTAT -> tagebuch.ausZutat(e.datum, e.mahlzeit, e.zutatId!!, zahlAus(e.menge)!!, e.einheit)
+            EintragenWeg.ZUTAT -> tagebuch.ausZutat(e.datum, e.mahlzeit, e.zutatId!!, zahlAus(e.menge)!!, e.einheit, stueckGewicht(e))
             EintragenWeg.PLAN -> tagebuch.ausPlan(e.planEintragId!!)
             EintragenWeg.FREI -> if (e.packung != null) {
                 tagebuch.ausPackung(e.datum, e.mahlzeit, e.pName, zahlAus(e.pMenge)!!, packungsEinheit(e.pBasis), formularWerte(e), e.alsZutat)
@@ -577,7 +604,7 @@ private fun kcalDazu(e: Eingaben, rezepte: List<RezeptKurz>, zutaten: Map<String
         EintragenWeg.ZUTAT -> {
             val zutat = e.zutatId?.let(zutaten::get)
             val menge = zahlAus(e.menge)?.takeIf { it.positiv() }
-            if (zutat == null || menge == null) null else Tagebuch.naehrwerteZutat(zutat.alsIngredient(), menge, e.einheit)?.kcal
+            if (zutat == null || menge == null) null else Tagebuch.naehrwerteZutat(zutat.mitStueck(stueckGewicht(e)), menge, e.einheit)?.kcal
         }
         EintragenWeg.PLAN -> plan.firstOrNull { it.planEintragId == e.planEintragId }?.kcalJePortion
         EintragenWeg.FREI -> null
@@ -593,7 +620,7 @@ private fun optionalGueltig(text: String) = text.isBlank() || zahlAus(text)?.let
 /** Portionen > 0, Menge > 0, frei mit Name und kcal ≥ 0 (ganzzahlig), Makros leer oder ≥ 0; Packung: [packungGueltig]. */
 internal fun gueltig(e: Eingaben): Boolean = when (e.weg) {
     EintragenWeg.REZEPT -> e.rezeptId != null && zahlAus(e.portionen).positiv()
-    EintragenWeg.ZUTAT -> e.zutatId != null && zahlAus(e.menge).positiv()
+    EintragenWeg.ZUTAT -> e.zutatId != null && zahlAus(e.menge).positiv() && (e.einheit != MeasureUnit.PIECE || zahlAus(e.stueckG).positiv())
     EintragenWeg.PLAN -> e.planEintragId != null
     EintragenWeg.FREI if e.packung != null -> packungGueltig(e)
     EintragenWeg.FREI -> e.freiName.isNotBlank() && e.freiName.trim().length <= MAX_NAME && (e.freiKcal.trim().toIntOrNull() ?: -1) >= 0 &&
@@ -610,6 +637,25 @@ private fun packungGueltig(e: Eingaben): Boolean {
     val name = nameBereinigt(e.pName)
     return name.isNotEmpty() && name.length <= MAX_NAME && zahlAus(e.pMenge).positiv() && imBereich(e.pKcal, TAUSEND) &&
         listOf(e.pEiweiss, e.pKh, e.pFett).all { it.isBlank() || imBereich(it, HUNDERT) }
+}
+
+/** Gramm je Stück aus den Eingaben, nur beim Eintragen in Stück und wenn > 0. */
+private fun stueckGewicht(e: Eingaben): BigDecimal? =
+    if (e.einheit == MeasureUnit.PIECE) zahlAus(e.stueckG)?.takeIf { it.signum() > 0 } else null
+
+/** Die Zutat als [de.foody.domain.Ingredient], mit [stueckG] statt ihres eigenen Stückgewichts, falls angegeben. */
+private fun ZutatEntity.mitStueck(stueckG: BigDecimal?) = alsIngredient().let { i ->
+    if (stueckG == null) i else i.copy(conversion = i.conversion.copy(pieceWeightG = stueckG))
+}
+
+/**
+ * Einheiten, in denen sich [zutat] rechnen lässt (Masse und Volumen je nach Basis und Dichte); Stück immer, weil das
+ * Gewicht je Stück beim Eintragen dazukommt. Ohne Zutat oder ohne rechenbare Einheit alle.
+ */
+private fun einheiten(zutat: ZutatEntity?): List<MeasureUnit> {
+    val i = zutat?.alsIngredient() ?: return EINTRAGEN_EINHEITEN
+    val rechenbar = EINTRAGEN_EINHEITEN.filter { u -> u != MeasureUnit.PIECE && Tagebuch.naehrwerteZutat(i, BigDecimal.ONE, u) != null }
+    return if (rechenbar.isEmpty()) EINTRAGEN_EINHEITEN else EINTRAGEN_EINHEITEN.filter { it == MeasureUnit.PIECE || it in rechenbar }
 }
 
 /** Die Basis der Packung bestimmt die Einheit der Menge. */
