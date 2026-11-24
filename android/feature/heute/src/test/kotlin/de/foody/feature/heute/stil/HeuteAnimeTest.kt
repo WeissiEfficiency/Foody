@@ -181,6 +181,11 @@ class HeuteAnimeTest {
         assertEquals(4.3f, segmente(860, 2000), 0.001f)
         assertEquals(10f, segmente(2500, 2000))
         assertEquals(0f, segmente(860, null))
+        // Döner 350 g: 46 g Eiweiß (184 kcal), 63 g KH (252), 28 g Fett (252) → Grenzen bei 27 % und 63 %
+        val (e, k) = makroGrenzen(46, 63, 28)!!
+        assertEquals(0.267f, e, 0.001f)
+        assertEquals(0.634f, k, 0.001f)
+        assertEquals(null, makroGrenzen(0, 0, 0))
         val z = beispielZustand()
         assertEquals(
             "Heute Abend gibt's Ofengemüse! Heute war's schon reichlich – morgen geht's weiter!",
