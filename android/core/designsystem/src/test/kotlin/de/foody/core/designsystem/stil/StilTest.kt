@@ -70,12 +70,12 @@ class StilTest {
     }
 
     @Test
-    fun leisteNurBeiAnimeWeiss() {
+    fun flaechenNurBeiAnimeDeckendWeiss() {
         for (stil in FoodyStil.entries) {
             for (variante in StilVariante.entries) {
                 for (dunkel in listOf(false, true)) {
                     val erwartet = if (stil == FoodyStil.ANIME) Color.White else null
-                    assertEquals(erwartet, stilWerte(stil, variante, dunkel = dunkel).leiste, "$stil $variante dunkel=$dunkel")
+                    assertEquals(erwartet, stilWerte(stil, variante, dunkel = dunkel).deckend, "$stil $variante dunkel=$dunkel")
                 }
             }
         }
