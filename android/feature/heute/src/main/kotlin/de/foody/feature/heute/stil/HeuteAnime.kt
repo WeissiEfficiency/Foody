@@ -1,5 +1,11 @@
 package de.foody.feature.heute.stil
 
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,6 +38,9 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,10 +53,12 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
@@ -65,6 +76,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.animationenErlaubt
 import de.foody.core.designsystem.komponenten.EinstellungenKnopf
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.SyncStatus
@@ -223,12 +235,64 @@ internal fun sprechblase(z: HeuteZustand): String {
     return "$gericht $bilanz"
 }
 
-/** Foody das Reisbällchen und die Sprechblase daneben. */
+/**
+ * Foody das Reisbällchen und die Sprechblase daneben. Es blinzelt und kippt alle 10 s wie ein Klumpen nach links um
+ * (über die linke untere Ecke, schneller werdend, kurzer Aufprall), bleibt mit zugekniffenen Augen liegen und steht
+ * federnd wieder auf; [REISBAELLCHEN_TAKT]. Ohne Animationen (Systemeinstellung) steht es still.
+ */
 @Composable
 private fun Reisbaellchen(text: String) {
     val f = FoodyTheme.farben
     val akzent = FoodyTheme.stil.zier
-    val pfade = androidx.compose.runtime.remember {
+    val bewegt = animationenErlaubt()
+    val zeit = rememberInfiniteTransition(label = "Reisbällchen")
+    val kippen by if (bewegt) {
+        zeit.animateFloat(
+            0f, 0f,
+            infiniteRepeatable(
+                keyframes {
+                    durationMillis = REISBAELLCHEN_TAKT
+                    0f at 7800 using FastOutLinearInEasing
+                    1f at 8250
+                    0.9f at 8340
+                    1f at 8440
+                    1f at 9300 using FastOutSlowInEasing
+                    -0.08f at 9650
+                    0.03f at 9800
+                    0f at 9950
+                },
+            ),
+            label = "Kippen",
+        )
+    } else {
+        remember { mutableFloatStateOf(0f) }
+    }
+    val augen by if (bewegt) {
+        zeit.animateFloat(
+            1f, 1f,
+            infiniteRepeatable(
+                keyframes {
+                    durationMillis = REISBAELLCHEN_TAKT
+                    1f at 2400
+                    0.1f at 2480
+                    1f at 2600
+                    1f at 5400
+                    0.1f at 5480
+                    1f at 5600
+                    0.1f at 5700
+                    1f at 5820
+                    1f at 8200
+                    0.1f at 8300
+                    0.1f at 9350
+                    1f at 9500
+                },
+            ),
+            label = "Blinzeln",
+        )
+    } else {
+        remember { mutableFloatStateOf(1f) }
+    }
+    val pfade = remember {
         val p = ::svgPfad
         Triple(
             p("M46 8C56 8 84 58 84 70c0 10-8 14-38 14S8 80 8 70C8 58 36 8 46 8z"),
@@ -237,7 +301,14 @@ private fun Reisbaellchen(text: String) {
         )
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Canvas(Modifier.size(92.dp).clearAndSetSemantics { }) {
+        // Kippen um die linke untere Ecke; die Verschiebung nach rechts hält es im eigenen Feld (links ist der Rand)
+        Canvas(
+            Modifier.size(92.dp).clearAndSetSemantics { }.graphicsLayer {
+                transformOrigin = TransformOrigin(8f / 92f, 84f / 92f)
+                rotationZ = -90f * kippen
+                translationX = size.width * 76f / 92f * kippen
+            },
+        ) {
             val s = size.width / 92f
             scale(s, Offset.Zero) {
                 val (koerper, mund, stern) = pfade
@@ -245,8 +316,8 @@ private fun Reisbaellchen(text: String) {
                 clipRect(24f, 64f, 68f, 84f) { drawPath(koerper, f.text) }
                 drawPath(koerper, f.text, style = Stroke(3f, join = StrokeJoin.Round))
                 listOf(35f, 57f).forEach { x ->
-                    drawOval(f.text, Offset(x - 5f, 41f), Size(10f, 14f))
-                    drawCircle(Color.White, 2f, Offset(x + 1.5f, 45.5f))
+                    drawOval(f.text, Offset(x - 5f, 48f - 7f * augen), Size(10f, 14f * augen))
+                    if (augen > 0.6f) drawCircle(Color.White, 2f, Offset(x + 1.5f, 45.5f))
                 }
                 listOf(25f, 67f).forEach { x -> drawOval(akzent.copy(alpha = 0.7f), Offset(x - 5f, 55f), Size(10f, 6f)) }
                 drawPath(mund, f.text, style = Stroke(2.5f, cap = StrokeCap.Round))
@@ -274,6 +345,9 @@ private fun Reisbaellchen(text: String) {
         }
     }
 }
+
+/** Ein Durchgang des Reisbällchens in ms: zweimal blinzeln, dann umfallen und wieder aufstehen. */
+private const val REISBAELLCHEN_TAKT = 10_000
 
 /** Die nächste Mahlzeit als Karte im Akzent mit Speedlines und hartem Schatten; ohne Plan die Inspiration. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -382,7 +456,7 @@ private fun Energie(t: TagebuchHeute, onTagebuch: () -> Unit, onZiel: () -> Unit
                 style = Anime.text(13f, FontWeight.ExtraBold), color = f.text,
             )
         } else {
-            Segmente(segmente(s.kcal, ziel), akzent)
+            Segmente(segmente(s.kcal, ziel), makroGrenzen(s.eiweiss, s.kohlenhydrate, s.fett), akzent)
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             listOf(
@@ -399,10 +473,34 @@ private fun Energie(t: TagebuchHeute, onTagebuch: () -> Unit, onZiel: () -> Unit
     }
 }
 
-/** Zehn schräge Segmente, [voll] davon (auch angebrochen) im Akzent; für TalkBack stumm (die Zahl sagt es). */
+/**
+ * Wo im gefüllten Teil der Leiste Eiweiß in Kohlenhydrate und diese in Fett übergehen, als Anteile 0–1 an deren
+ * Energie (4 / 4 / 9 kcal je g): 46 g, 63 g, 28 g → 0,27 und 0,63. `null` ohne Nährwerte.
+ */
+internal fun makroGrenzen(eiweiss: Int, kohlenhydrate: Int, fett: Int): Pair<Float, Float>? {
+    val e = eiweiss * 4f
+    val k = kohlenhydrate * 4f
+    val gesamt = e + k + fett * 9f
+    return if (gesamt > 0f) e / gesamt to (e + k) / gesamt else null
+}
+
+/**
+ * Zehn schräge Segmente, [voll] davon (auch angebrochen) gefüllt: von links Eiweiß, Kohlenhydrate und Fett in ihren
+ * Farben wie die Punkte darunter ([grenzen]), ohne Nährwerte im [akzent]. Für TalkBack stumm (die Zahl sagt es).
+ */
 @Composable
-private fun Segmente(voll: Float, akzent: Color) {
+private fun Segmente(voll: Float, grenzen: Pair<Float, Float>?, akzent: Color) {
     val f = FoodyTheme.farben
+    // Abschnitte der Füllung in Segment-Einheiten (0–voll) mit ihrer Farbe
+    val baender = if (grenzen == null) {
+        listOf(Triple(0f, voll, akzent))
+    } else {
+        listOf(
+            Triple(0f, voll * grenzen.first, f.makro.eiweiss),
+            Triple(voll * grenzen.first, voll * grenzen.second, f.makro.kohlenhydrate),
+            Triple(voll * grenzen.second, voll, f.makro.fett),
+        )
+    }
     Canvas(Modifier.fillMaxWidth().height(16.dp).clearAndSetSemantics { }) {
         val luecke = 3.dp.toPx()
         val b = (size.width - 9 * luecke - 6.dp.toPx()) / 10f
@@ -416,8 +514,18 @@ private fun Segmente(voll: Float, akzent: Color) {
                 lineTo(x, size.height)
                 close()
             }
-            val anteil = (voll - i).coerceIn(0f, 1f)
-            if (anteil > 0f) clipRect(right = x + schraeg + b * anteil + (if (anteil >= 1f) schraeg else 0f)) { drawPath(form4, akzent) }
+
+            // Senkrechter Schnitt bei Anteil t des Segments; 0 und 1 nehmen die schrägen Ecken mit
+            fun schnitt(t: Float) = when {
+                t <= 0f -> x
+                t >= 1f -> x + b + 2 * schraeg
+                else -> x + schraeg + b * t
+            }
+            for ((von, bis, farbe) in baender) {
+                val links = (von - i).coerceIn(0f, 1f)
+                val rechts = (bis - i).coerceIn(0f, 1f)
+                if (rechts > links) clipRect(left = schnitt(links), right = schnitt(rechts)) { drawPath(form4, farbe) }
+            }
             drawPath(form4, f.text, style = Stroke(2.dp.toPx(), join = StrokeJoin.Miter))
         }
     }
