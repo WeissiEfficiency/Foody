@@ -32,6 +32,7 @@ import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.erkennung.ErkennungTexte
 import de.foody.domain.BlsTreffer
 import de.foody.domain.FotoPortion
+import de.foody.domain.MeasureUnit
 import de.foody.domain.Nutrient
 import de.foody.domain.NutritionResult
 
@@ -74,15 +75,33 @@ internal fun PortionenZeile(e: Eingaben, vm: EintragenViewModel) {
     }
 }
 
-/** Menge und Einheit einer Zutat; nach „im Katalog“ (Scan) und einem BLS-Treffer geht der Fokus auf die Menge. */
+/**
+ * Menge und Einheit einer Zutat, nur Einheiten, die sich rechnen lassen; nach „im Katalog“ (Scan) und einem BLS-Treffer
+ * geht der Fokus auf die Menge. In Stück darunter das Gewicht je Stück, geschätzt, solange die Zutat keines kennt.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun MengeEingabe(e: Eingaben, vm: EintragenViewModel) {
+internal fun MengeEingabe(z: EintragenZustand, vm: EintragenViewModel) {
+    val e = z.eingaben
     val mengeFokus = remember { FocusRequester() }
     LaunchedEffect(vm) { vm.mengeFokus.collect { mengeFokus.requestFocus() } }
     Zahlfeld("Menge", e.menge, focusRequester = mengeFokus, onWert = vm::menge)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-        EINTRAGEN_EINHEITEN.forEach { u -> FoodyChip(u.symbol, u == e.einheit, { vm.einheit(u) }) }
+        z.einheiten.forEach { u -> FoodyChip(u.symbol, u == e.einheit, { vm.einheit(u) }) }
+    }
+    if (e.einheit == MeasureUnit.PIECE) {
+        Zahlfeld("1 Stück wiegt", e.stueckG, einheit = "g", onWert = vm::stueckG)
+        if (z.stueckGeschaetzt) {
+            Text(
+                if (e.stueckG.isBlank()) {
+                    "Wie viel wiegt ein Stück? Foody merkt es sich."
+                } else {
+                    "Geschätzt – anpassen, wenn dein Stück anders ist. Foody merkt es sich."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = FoodyTheme.farben.nebentext,
+            )
+        }
     }
 }
 

@@ -40,11 +40,23 @@ class TagebuchRepository(private val db: FoodyDatenbank, private val uhr: () -> 
     }
 
     /** Neue ID; ohne Nährwerte oder bei nicht umrechenbarer Einheit unvollständig ohne Werte. `null` ohne Zutat. */
-    suspend fun ausZutat(datum: LocalDate, mahlzeit: Mahlzeit, zutatId: String, menge: BigDecimal, einheit: MeasureUnit): String? {
-        val zutat = db.zutatDao().nachId(zutatId) ?: return null
+    suspend fun ausZutat(
+        datum: LocalDate,
+        mahlzeit: Mahlzeit,
+        zutatId: String,
+        menge: BigDecimal,
+        einheit: MeasureUnit,
+        stueckG: BigDecimal? = null,
+    ): String? = db.withTransaction {
+        var zutat = db.zutatDao().nachId(zutatId) ?: return@withTransaction null
+        // Gewicht je Stück vom Eintragen (geschätzt oder geändert): Die Zutat merkt es sich, auch für den Abgleich
+        if (einheit == MeasureUnit.PIECE && stueckG != null && stueckG.signum() > 0 && zutat.pieceWeightG?.compareTo(stueckG) != 0) {
+            zutat = zutat.copy(pieceWeightG = stueckG, updatedAt = uhr())
+            db.zutatDao().upsert(zutat)
+        }
         val werte = Tagebuch.naehrwerteZutat(zutat.alsIngredient(), menge, einheit) ?: Naehrwerte(null, null, null, null, false)
         val e = neu(datum, mahlzeit, TagebuchArt.ZUTAT, zutat.canonicalName, werte)
-        return speichern(e.copy(zutatId = zutatId, menge = menge, einheit = einheit))
+        speichern(e.copy(zutatId = zutatId, menge = menge, einheit = einheit))
     }
 
     /**

@@ -10,6 +10,7 @@ import de.foody.core.data.zutaten.ZutatenRepository
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
 import de.foody.domain.MeasureUnit
+import de.foody.domain.NutrientBasis
 import de.foody.domain.TagebuchArt
 import de.foody.feature.heute.bestand
 import de.foody.feature.heute.keinErkenner
@@ -276,4 +277,70 @@ class EintragenViewModelTest {
         assertEquals(1, ids.filterNotNull().size)
         assertEquals(1, db.tagebuchDao().alle().size)
     }
+
+    /** Döner aus dem BLS kennt kein Stückgewicht: „Stk.“ schätzt 350 g, rechnet damit und merkt es sich an der Zutat. */
+    @Test
+    fun stueckOhneGewichtWirdGeschaetzt() = runTest {
+        val vm = mitBls("X999000	Döner Kebab, Fladenbrot gefüllt mit Grillfleisch (Geflügel), Rohkost und Sauce	837	12	20	8	2	3	1.5")
+        vm.suche("Döner")
+        vm.blsWaehlen(vm.zustand.first().bls.single()).join()
+        val id = assertNotNull(vm.zustand.first().eingaben.zutatId)
+        assertNull(db.zutatDao().nachId(id)?.pieceWeightG)
+        vm.einheit(MeasureUnit.PIECE)
+        vm.menge("1")
+        val z = vm.zustand.first()
+        assertEquals("350", z.eingaben.stueckG)
+        assertTrue(z.stueckGeschaetzt)
+        // 350 g × 837 kJ je 100 g = 2929,5 kJ ≈ 700 kcal
+        assertEquals(700, z.kcalDazu)
+        val e = gespeichert(vm.speichern())
+        assertEquals(0, BigDecimal("2929.5").compareTo(e.energieKj))
+        assertEquals(0, BigDecimal("350").compareTo(db.zutatDao().nachId(id)?.pieceWeightG))
+    }
+
+    /** Das geschätzte Gewicht lässt sich ändern; die Zutat übernimmt den geänderten Wert. */
+    @Test
+    fun stueckgewichtAenderbar() = runTest {
+        db.zutatDao().upsert(doener)
+        vm.zutatWaehlen("z-doener")
+        vm.einheit(MeasureUnit.PIECE)
+        vm.stueckG("300")
+        vm.menge("2")
+        val e = gespeichert(vm.speichern())
+        // 600 g × 800 kJ je 100 g
+        assertEquals(0, BigDecimal("4800").compareTo(e.energieKj))
+        assertEquals(0, BigDecimal("300").compareTo(db.zutatDao().nachId("z-doener")?.pieceWeightG))
+    }
+
+    /** Ohne Gewicht je Stück lässt sich in Stück nicht eintragen (sonst stünden 0 kcal im Tagebuch). */
+    @Test
+    fun stueckOhneGewichtNichtSpeicherbar() = runTest {
+        db.zutatDao().upsert(doener.copy(id = "z-x", canonicalName = "Unbekanntes Gericht"))
+        vm.zutatWaehlen("z-x")
+        vm.einheit(MeasureUnit.PIECE)
+        vm.menge("1")
+        val z = vm.zustand.first()
+        assertEquals("", z.eingaben.stueckG)
+        assertNull(z.kcalDazu)
+        assertFalse(vm.speichernMoeglich.first())
+        vm.stueckG("250")
+        assertTrue(vm.speichernMoeglich.first())
+    }
+
+    /** Nur Einheiten, die sich umrechnen lassen: ohne Dichte kein ml, EL, TL; Stück immer (mit Gewicht je Stück). */
+    @Test
+    fun nurRechenbareEinheiten() = runTest {
+        db.zutatDao().upsert(doener)
+        vm.zutatWaehlen("z-doener")
+        assertEquals(listOf(MeasureUnit.GRAM, MeasureUnit.PIECE), vm.zustand.first().einheiten)
+        db.zutatDao().upsert(doener.copy(id = "z-milch", canonicalName = "Milch", densityGPerMl = BigDecimal("1.03")))
+        vm.zurueck()
+        vm.zutatWaehlen("z-milch")
+        assertEquals(EINTRAGEN_EINHEITEN, vm.zustand.first().einheiten)
+    }
+
+    private val doener = ZutatEntity(
+        id = "z-doener", canonicalName = "Döner", nutrientBasis = NutrientBasis.PER_100_G, energyKj = BigDecimal("800"),
+        createdAt = 1, updatedAt = 1,
+    )
 }

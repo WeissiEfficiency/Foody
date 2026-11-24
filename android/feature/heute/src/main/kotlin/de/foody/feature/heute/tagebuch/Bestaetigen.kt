@@ -48,7 +48,7 @@ internal fun Bestaetigen(z: EintragenZustand, vm: EintragenViewModel, aufnahme: 
             KcalDazu(z.kcalDazu)
         }
         EintragenWeg.ZUTAT -> {
-            MengeEingabe(e, vm)
+            MengeEingabe(z, vm)
             KcalDazu(z.kcalDazu)
         }
         // Gespeichert wird eine Portion mit der Mahlzeit des Plans (ausPlan): nur zur Ansicht
