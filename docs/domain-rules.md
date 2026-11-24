@@ -97,6 +97,10 @@
     1,18 (nur Gruppe P, aus der Energie, die Eiweiß, Kohlenhydrate, Fett und Ballaststoffe nicht erklären, 29 kJ/g).
     Festes bleibt ohne Dichte. Übernommene BLS-Zutaten ohne Dichte bekommen sie beim Start nachgetragen; eine gesetzte
     Dichte bleibt.
+34. Eintragen in Stück (zu Regel 3): Kennt die Zutat kein Stückgewicht, schätzt Foody es nach dem Namen
+    (`StueckSchaetzung`, Teil vor dem ersten Komma, längstes Stichwort; Döner 350 g). Das Gewicht je Stück steht änderbar
+    unter der Menge; ohne Gewicht ist Eintragen gesperrt, nie 0 kcal. Beim Speichern merkt sich die Zutat den Wert.
+    Zur Wahl stehen nur Einheiten, in denen sich die Zutat rechnen lässt (ml, EL, TL nur mit Basis je 100 ml oder Dichte).
 
 ## Tests je Regel
 
@@ -137,3 +141,4 @@ Jede Regel ist durch mindestens einen Test belegt (Domain: `shared/domain/src/te
 | 31 | `RezeptImportTest.gewichtAusDemHinweisFuerUnbekanntePackungen`, `RezeptImportTest.gewichtAusDemHinweisNurWennNoetig` |
 | 32 | `BlsSucheTest`, `BlsNachschlagTest.suchtImEchtenAuszug`, `EintragenViewModelTest.blsTrefferWirdZutatUndStueckZaehlt`, `EintragenViewModelTest.blsTrefferMitVorhandenemNamenNimmtDieZutat` |
 | 33 | `BlsDichteTest`, `BlsDichteNachtragenTest`, `EintragenViewModelTest.blsGetraenkRechnetInMilliliter` |
+| 34 | `StueckSchaetzungTest`, `EintragenViewModelTest.stueckOhneGewichtWirdGeschaetzt`, `EintragenViewModelTest.stueckgewichtAenderbar`, `EintragenViewModelTest.stueckOhneGewichtNichtSpeicherbar`, `EintragenViewModelTest.nurRechenbareEinheiten` |
