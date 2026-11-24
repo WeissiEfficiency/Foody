@@ -117,7 +117,7 @@ internal fun HeuteAnime(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifie
             // Ruhig wie im Entwurf ohne Foody das Reisbällchen
             if (FoodyTheme.stil.inszeniert) Reisbaellchen(sprechblase(zustand))
             Mahlzeitkarte(zustand, aktionen)
-            Energie(zustand.tagebuch, aktionen.onAlleEintraege)
+            Energie(zustand.tagebuch, aktionen.onAlleEintraege, aktionen.onEinstellungen)
             Zettel(zustand.tagebuch, aktionen)
             zustand.einkauf?.let { e ->
                 Box(
@@ -340,10 +340,13 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.speedlines() {
 /** Anteil der kcal am Ziel in Zehnteln: 860 von 2.000 → 4,3 Segmente. */
 internal fun segmente(kcal: Int, ziel: Int?): Float = ziel?.takeIf { it > 0 }?.let { (kcal * 10f / it).coerceIn(0f, 10f) } ?: 0f
 
-/** Energie des Tages: Verweis aufs Tagebuch, kcal gegen das Ziel, zehn schräge Segmente und die Nährwerte. */
+/**
+ * Energie des Tages: Verweis aufs Tagebuch, kcal gegen das Ziel, zehn schräge Segmente und die Nährwerte. Ohne Ziel
+ * gibt es keinen Anteil; statt leerer Segmente steht dann „Tagesziel festlegen ▸“ ([onZiel], die Einstellungen).
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Energie(t: TagebuchHeute, onTagebuch: () -> Unit) {
+private fun Energie(t: TagebuchHeute, onTagebuch: () -> Unit, onZiel: () -> Unit) {
     val f = FoodyTheme.farben
     val akzent = FoodyTheme.stil.zier
     val s = t.summe
@@ -371,24 +374,15 @@ private fun Energie(t: TagebuchHeute, onTagebuch: () -> Unit) {
                 Text(rest, Modifier.padding(bottom = 3.dp), style = Anime.text(13f), color = f.text)
             }
         }
-        val voll = segmente(s.kcal, ziel)
-        Canvas(Modifier.fillMaxWidth().height(16.dp).clearAndSetSemantics { }) {
-            val luecke = 3.dp.toPx()
-            val b = (size.width - 9 * luecke - 6.dp.toPx()) / 10f
-            val schraeg = size.height * 0.32f
-            for (i in 0 until 10) {
-                val x = 3.dp.toPx() + i * (b + luecke)
-                val form4 = Path().apply {
-                    moveTo(x + schraeg, 0f)
-                    lineTo(x + b + schraeg, 0f)
-                    lineTo(x + b, size.height)
-                    lineTo(x, size.height)
-                    close()
-                }
-                val anteil = (voll - i).coerceIn(0f, 1f)
-                if (anteil > 0f) clipRect(right = x + schraeg + b * anteil + (if (anteil >= 1f) schraeg else 0f)) { drawPath(form4, akzent) }
-                drawPath(form4, f.text, style = Stroke(2.dp.toPx(), join = StrokeJoin.Miter))
-            }
+        if (ziel == null) {
+            Text(
+                "Tagesziel festlegen ▸",
+                Modifier.heightIn(min = 48.dp).clip(Anime.pille).clickable(role = Role.Button, onClick = onZiel)
+                    .background(Anime.gelb, Anime.pille).border(2.dp, f.text, Anime.pille).padding(horizontal = 12.dp, vertical = 12.dp),
+                style = Anime.text(13f, FontWeight.ExtraBold), color = f.text,
+            )
+        } else {
+            Segmente(segmente(s.kcal, ziel), akzent)
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             listOf(
@@ -401,6 +395,30 @@ private fun Energie(t: TagebuchHeute, onTagebuch: () -> Unit) {
                     Text(text, Modifier.padding(start = 5.dp), style = Anime.text(12.5f), color = f.text)
                 }
             }
+        }
+    }
+}
+
+/** Zehn schräge Segmente, [voll] davon (auch angebrochen) im Akzent; für TalkBack stumm (die Zahl sagt es). */
+@Composable
+private fun Segmente(voll: Float, akzent: Color) {
+    val f = FoodyTheme.farben
+    Canvas(Modifier.fillMaxWidth().height(16.dp).clearAndSetSemantics { }) {
+        val luecke = 3.dp.toPx()
+        val b = (size.width - 9 * luecke - 6.dp.toPx()) / 10f
+        val schraeg = size.height * 0.32f
+        for (i in 0 until 10) {
+            val x = 3.dp.toPx() + i * (b + luecke)
+            val form4 = Path().apply {
+                moveTo(x + schraeg, 0f)
+                lineTo(x + b + schraeg, 0f)
+                lineTo(x + b, size.height)
+                lineTo(x, size.height)
+                close()
+            }
+            val anteil = (voll - i).coerceIn(0f, 1f)
+            if (anteil > 0f) clipRect(right = x + schraeg + b * anteil + (if (anteil >= 1f) schraeg else 0f)) { drawPath(form4, akzent) }
+            drawPath(form4, f.text, style = Stroke(2.dp.toPx(), join = StrokeJoin.Miter))
         }
     }
 }
