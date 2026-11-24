@@ -38,9 +38,10 @@ import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
 import de.foody.feature.einkauf.stil.EinkaufSzene
-import de.foody.feature.einkauf.stil.animeKlappkopf
+import de.foody.feature.einkauf.stil.animeKatalog
 import de.foody.feature.einkauf.stil.animeKopf
 import de.foody.feature.einkauf.stil.animePosten
+import de.foody.feature.einkauf.stil.animeZuletzt
 import de.foody.feature.einkauf.stil.bayrischKlappkopf
 import de.foody.feature.einkauf.stil.bayrischKopf
 import de.foody.feature.einkauf.stil.bayrischPosten
@@ -84,10 +85,9 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
     // „Listen“ der Szenen ist der einzige Weg zu den Listen (erster Reiter „Neue Liste“); nur ohne Szene das Menü ⋮.
     val szene = EinkaufSzene.aktuell()
     val onListen: () -> Unit = { vm.blattOeffnen(Blatt.Vorschau) }
-    // Zuletzt und Katalog: Klappköpfe in Schrift und Farben der Szene
+    // Zuletzt und Katalog: Klappköpfe in Schrift und Farben der Szene; Anime zeigt statt Klappen Comic-Panels
     val kopf = when (szene) {
         FoodyStil.SAGE -> sageKlappkopf
-        FoodyStil.ANIME -> animeKlappkopf
         FoodyStil.EDO -> edoKlappkopf
         FoodyStil.BAYRISCH -> bayrischKlappkopf
         FoodyStil.GRAUEN -> grauenKlappkopf
@@ -127,11 +127,19 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
                 FoodyStil.KREUZER -> kreuzerPosten(z.ansicht, umschalten, details)
                 else -> offeneKacheln(z.ansicht?.offen.orEmpty(), onGekauft = { vm.abhaken(it, true) }, onDetails = details)
             }
-            zuletztKacheln(z.zuletzt, alle, ZULETZT in aufgeklappt, { umschalten(ZULETZT) }, { vm.zuletztAntippen(it) }, kopf)
+            if (szene == FoodyStil.ANIME) {
+                animeZuletzt(z.zuletzt, alle) { vm.zuletztAntippen(it) }
+            } else {
+                zuletztKacheln(z.zuletzt, alle, ZULETZT in aufgeklappt, { umschalten(ZULETZT) }, { vm.zuletztAntippen(it) }, kopf)
+            }
         }
     }
     val katalog: LazyGridScope.() -> Unit = {
-        katalogKacheln(alle, aufgeklappt.toSet(), umschalten, onTipp = { n, a -> vm.antippen(n, a, null) }, kopf = kopf)
+        if (szene == FoodyStil.ANIME) {
+            animeKatalog(alle) { n, a -> vm.antippen(n, a, null) }
+        } else {
+            katalogKacheln(alle, aufgeklappt.toSet(), umschalten, onTipp = { n, a -> vm.antippen(n, a, null) }, kopf = kopf)
+        }
     }
 
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {

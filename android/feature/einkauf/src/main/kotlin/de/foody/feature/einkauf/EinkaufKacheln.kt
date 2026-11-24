@@ -45,7 +45,7 @@ internal fun stand(name: String, alle: List<EinkaufsArtikel>): Stand {
 }
 
 @Composable
-private fun EinkaufKachel(
+internal fun EinkaufKachel(
     name: String,
     menge: String,
     emoji: String,
