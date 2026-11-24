@@ -4,6 +4,10 @@ import android.content.Intent
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -25,6 +29,7 @@ import de.foody.feature.kochen.KochenRoute
 import de.foody.feature.rezepte.RezepteBereich
 import de.foody.feature.rezepte.detail.RezeptDetailRoute
 import de.foody.feature.rezepte.editor.EditorRoute
+import de.foody.feature.rezepte.importieren.ImportBlatt
 import de.foody.feature.woche.WocheRoute
 import de.foody.feature.zutaten.ZutatEditorRoute
 import de.foody.feature.zutaten.ZutatenListeRoute
@@ -75,9 +80,13 @@ class Bildschirme(
             // Speichern und Zurück aus Erfassen führen dorthin, woher man kam
             eintragen = { ziel, onFertig -> EintragenRoute(ziel.alsStart(LocalDate.now()), ziel.auftrag, onFertig = onFertig) },
             einstellungen = { nav ->
+                // Der Markdown-Import gehört zu „Rezepte“; die Einstellungen öffnen sein Blatt (Features kennen sich nicht)
+                var importOffen by rememberSaveable { mutableStateOf(false) }
                 EinstellungenRoute(
                     onServer = { nav.navigate(ServerVerbinden) }, onZutaten = { nav.navigate(Zutaten) }, onZurueck = { nav.popBackStack() },
+                    onRezepteImport = { importOffen = true },
                 )
+                if (importOffen) ImportBlatt(onSchliessen = { importOffen = false })
             },
             serverVerbinden = { nav -> VerbindenRoute(onZurueck = { nav.popBackStack() }) },
             zutaten = { nav -> ZutatenListeRoute(onZutat = { nav.navigate(Zutat(it)) }, onZurueck = { nav.popBackStack() }) },

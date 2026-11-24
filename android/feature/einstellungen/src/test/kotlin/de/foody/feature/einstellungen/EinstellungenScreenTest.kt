@@ -47,6 +47,7 @@ class EinstellungenScreenTest {
     private lateinit var u: EinstellungenTestUmgebung
     private var server = 0
     private var zutatenGeoeffnet = 0
+    private var importGeoeffnet = 0
     private lateinit var zip: File
     private lateinit var sicherung: File
 
@@ -84,7 +85,12 @@ class EinstellungenScreenTest {
         val vm = u.vm()
         compose.setContent {
             FoodyTheme {
-                val inhalt = @Composable { EinstellungenRoute(onServer = { server++ }, onZutaten = { zutatenGeoeffnet++ }, onZurueck = {}, vm = vm, dateiwahl = dateien, modellwahl = modellwahl) }
+                val inhalt = @Composable {
+                    EinstellungenRoute(
+                        onServer = { server++ }, onZutaten = { zutatenGeoeffnet++ }, onZurueck = {}, onRezepteImport = { importGeoeffnet++ },
+                        vm = vm, dateiwahl = dateien, modellwahl = modellwahl,
+                    )
+                }
                 if (schrift200) MitSchrift200(inhalt) else inhalt()
             }
         }
@@ -105,6 +111,14 @@ class EinstellungenScreenTest {
         compose.warteAufText("3")
         compose.onNodeWithText("Zutatenkatalog").performScrollTo().performClick()
         assertEquals(1, zutatenGeoeffnet)
+    }
+
+    /** Der Markdown-Import der Rezepte steht in den Einstellungen (aus „+ Neu“ der Liste gezogen). */
+    @Test
+    fun rezepteImportieren() {
+        zeigen()
+        compose.onNodeWithText("Markdown importieren").performScrollTo().performClick()
+        assertEquals(1, importGeoeffnet)
     }
 
     @Test

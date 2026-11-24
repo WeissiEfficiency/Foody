@@ -67,7 +67,7 @@ fun rememberModellwahl(onGewaehlt: (List<Uri>) -> Unit): () -> Unit {
 
 /**
  * Einstellungen: Konto (→ „Server verbinden“), Darstellung mit Stil und Farbwelt, Tagesziel, Zutatenkatalog und Online-Produktsuche,
- * Fotoerkennung, Sicherung, alle Daten löschen, Hinweise. In den Stilen Q–V steht das Konto (der Abgleich) wie in den
+ * Fotoerkennung, Rezepte importieren ([onRezepteImport]), Sicherung, alle Daten löschen, Hinweise. In den Stilen Q–V steht das Konto (der Abgleich) wie in den
  * Entwürfen erst nach der Fotoerkennung.
  * Wiederherstellen, Löschen und „Modell entfernen“ fragen nach; bei verbundenem Sync sind die ersten beiden gesperrt.
  */
@@ -76,6 +76,7 @@ fun EinstellungenRoute(
     onServer: () -> Unit,
     onZutaten: () -> Unit,
     onZurueck: () -> Unit,
+    onRezepteImport: () -> Unit = {},
     vm: EinstellungenViewModel = hiltViewModel(),
     dateiwahl: @Composable (onErstellt: (Uri) -> Unit, onGewaehlt: (Uri) -> Unit) -> Dateiwahl = { erstellt, gewaehlt ->
         rememberDateiwahl(vm.dateiname(), erstellt, gewaehlt)
@@ -134,6 +135,7 @@ fun EinstellungenRoute(
                 ZutatenAbschnitt(z.zutaten, z.onlineSuche, onZutaten, vm::onlineSucheSetzen)
                 FotoErkennungAbschnitt(z, vm::fotoErkennungSetzen, onInstallieren = modellDialog, onEntfernen = { modellEntfernen = true })
                 if (!kontoOben) KontoAbschnitt(z.konto, System.currentTimeMillis(), onServer)
+                RezepteAbschnitt(onRezepteImport)
                 SicherungAbschnitt(z, onErstellen = dateien.erstellen, onWiederherstellen = dateien.oeffnen)
                 DatenAbschnitt(z, onLoeschen = { loeschen = true })
                 HinweiseAbschnitt()

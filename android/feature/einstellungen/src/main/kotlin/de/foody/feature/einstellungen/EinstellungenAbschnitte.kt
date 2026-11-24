@@ -321,6 +321,13 @@ internal fun FotoErkennungAbschnitt(
     }
 }
 
+/** Rezepte als Markdown-Dateien übernehmen; das Blatt dazu kommt aus „Rezepte“ (über [onImport], `:app`). */
+@Composable
+internal fun RezepteAbschnitt(onImport: () -> Unit) = Abschnitt("Rezepte", sage = "Schriften") {
+    Klein("Markdown-Dateien oder einen ganzen Ordner übernehmen, auch aus der OpenCloud-App.")
+    FoodyKnopf("Markdown importieren", onImport, Modifier.fillMaxWidth(), art = KnopfArt.UMRISS)
+}
+
 @Composable
 internal fun SicherungAbschnitt(z: EinstellungenZustand, onErstellen: () -> Unit, onWiederherstellen: () -> Unit) = Abschnitt(
     "Sicherung",
