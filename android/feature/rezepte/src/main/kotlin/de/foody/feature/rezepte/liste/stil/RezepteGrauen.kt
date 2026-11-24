@@ -2,31 +2,43 @@ package de.foody.feature.rezepte.liste.stil
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.grauen.Grauen
@@ -34,23 +46,27 @@ import de.foody.core.designsystem.stil.grauen.GrauenKnopf
 import de.foody.core.designsystem.stil.grauen.grauenHell
 import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
-import kotlin.math.min
 
 /*
- * „Rezepte“ im Kosmischen Grauen (U) in Immersiv (Entwurf `U-Rezepte`): „Die Bibliothek – Ein Regal, das niemand
- * aufgestellt hat“, die Treffer der Seite als Bände auf einem Regalbrett (der gewählte herausgezogen und glühend),
- * darunter seine aufgeschlagene Pergamentseite mit Band, Name, Zeit, kcal, Favorit, dem Zutatensatz kursiv und
- * „Aufschlagen“. In Ruhig wie im Entwurf: „Rezepte“, die Treffer als Zeilen mit Name und kcal, eine helle Seite ohne
+ * „Rezepte“ im Kosmischen Grauen (U) in Immersiv: „Die Bibliothek – Ein Regal, das niemand aufgestellt hat“, alle
+ * Treffer als Bände auf Brettern zu je vier, endlos nach unten; der Titel steht längs auf dem Rücken, Antippen schlägt
+ * den Band auf (Wunsch 2026-11-24 statt Seiten mit Pergamentkarte). In Ruhig wie im Entwurf: „Rezepte“, die Treffer als Zeilen mit Name und kcal, eine helle Seite ohne
  * Schein, „Öffnen“.
  */
 
-/** Einbände und Höhen der Bände wie im Entwurf. */
+/** Einbände und Höhen der Bände. */
 private val EINBAND = listOf(Color(0xFF2E3B2C), Color(0xFF4A2228), Color(0xFF24324A), Color(0xFF5A3A1C), Color(0xFF3A2A48), Color(0xFF1E3A36))
-private val HOEHE = listOf(128, 118, 134, 112, 124, 132)
+private val HOEHE = listOf(176, 162, 184, 168, 158, 180)
 private val PERGAMENT = Grauen.pergament
 private val TINTE = Grauen.tinte
 private val TINTE_NEBEN = Grauen.tinteNeben
 private val BRETT = Color(0xFF2B2117)
+private val BRETT_KANTE = Color(0xFF4A3826)
+private val GOLD = Color(0xFFB59A5A)
+private val RUECKEN_SCHRIFT = Color(0xFFE6DCC2)
+
+/** So viele Bände stehen auf einem Brett der Bibliothek. */
+internal const val JE_BRETT = 4
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -70,45 +86,87 @@ internal fun GrauenKopf(n: Int, neu: @Composable () -> Unit) {
     }
 }
 
-/** Die Treffer der Seite als Bände auf einem Brett; der gewählte steht ein Stück heraus und glüht. */
+/**
+ * Brett [brett] der Bibliothek (Immersiv): bis zu [JE_BRETT] Bände nebeneinander auf einem Holzbrett, der Titel längs
+ * auf dem Rücken wie bei einem Buch. Steht ein Brett nicht voll, lehnt der letzte Band schräg am Nachbarn. Antippen
+ * schlägt den Band auf; [offen] (rechts offen auf dem Tablet) glüht.
+ */
 @Composable
-internal fun GrauenRegal(liste: List<RezeptKarte>, gewaehlt: String, onWahl: (String) -> Unit) {
-    if (!FoodyTheme.stil.inszeniert) {
-        GrauenListe(liste, gewaehlt, onWahl)
-        return
-    }
-    val glut = FoodyTheme.stil.zier
+internal fun GrauenBrett(baende: List<RezeptKarte>, brett: Int, offen: String?, onOeffnen: (String) -> Unit, modifier: Modifier) {
     Row(
-        Modifier.fillMaxWidth().padding(top = 20.dp).drawBehind {
-            drawLine(BRETT, Offset(0f, size.height - 5.dp.toPx()), Offset(size.width, size.height - 5.dp.toPx()), 10.dp.toPx())
-        }.padding(bottom = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        modifier.drawBehind {
+            val dicke = 12.dp.toPx()
+            drawRect(BRETT, Offset(0f, size.height - dicke), Size(size.width, dicke))
+            drawLine(BRETT_KANTE, Offset(0f, size.height - dicke), Offset(size.width, size.height - dicke), 2.dp.toPx())
+            drawRect(Color.Black.copy(alpha = 0.35f), Offset(0f, size.height), Size(size.width, 4.dp.toPx()))
+        }.padding(start = 10.dp, end = 10.dp, bottom = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.Bottom,
     ) {
-        liste.forEachIndexed { i, r ->
-            val an = r.id == gewaehlt
-            val form = RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp)
-            Column(
-                Modifier.width(48.dp).offset(y = if (an) (-16).dp else 0.dp)
-                    .then(if (an) Modifier.shadow(14.dp, form, ambientColor = glut, spotColor = glut) else Modifier)
-                    .heightIn(min = HOEHE[i % HOEHE.size].dp).background(EINBAND[i % EINBAND.size], form)
-                    .border(if (an) 1.5.dp else 1.dp, if (an) glut else Color.Black.copy(alpha = 0.4f), form)
-                    .rezeptWahl(r, an) { onWahl(r.id) }
-                    .padding(vertical = 10.dp, horizontal = 2.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween,
-            ) {
-                // Goldene Bünde am Rücken
-                Box(Modifier.fillMaxWidth(0.7f).height(2.dp).background(Color(0xFFB59A5A).copy(alpha = 0.7f)))
-                Text(anfang(r), Modifier.padding(vertical = 8.dp), style = Grauen.titel(20f), color = if (an) glut else Color(0xFFE6DCC2))
-                Text(
-                    r.kcalJePortion?.toString() ?: "–", style = Grauen.maschine(10f),
-                    color = Color(0xFFE6DCC2).copy(alpha = 0.8f), textAlign = TextAlign.Center,
-                )
+        baende.forEachIndexed { spalte, r ->
+            val lehnt = baende.size in 2 until JE_BRETT && spalte == baende.lastIndex
+            val schraeg = if (lehnt) {
+                Modifier.graphicsLayer {
+                    rotationZ = -5f
+                    transformOrigin = TransformOrigin(0f, 1f)
+                }
+            } else {
+                Modifier
             }
+            Band(r, brett * JE_BRETT + spalte, r.id == offen, Modifier.weight(1f).then(schraeg)) { onOeffnen(r.id) }
         }
+        repeat(JE_BRETT - baende.size) { Spacer(Modifier.weight(1f)) }
     }
 }
+
+/** Ein Band: Einband mit goldenen Bünden, der Name längs, unten kcal; TalkBack hört „Öffnen: Reispfanne, 30 Min., …“. */
+@Composable
+private fun Band(r: RezeptKarte, i: Int, an: Boolean, modifier: Modifier, onKlick: () -> Unit) {
+    val glut = FoodyTheme.stil.zier
+    val form = RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp, bottomStart = 1.dp, bottomEnd = 1.dp)
+    val einband = EINBAND[i % EINBAND.size]
+    val schatten = lerp(einband, Color.Black, 0.45f)
+    Column(
+        modifier.height(HOEHE[i % HOEHE.size].dp)
+            .then(if (an) Modifier.shadow(14.dp, form, ambientColor = glut, spotColor = glut) else Modifier)
+            .background(Brush.horizontalGradient(listOf(schatten, einband, lerp(einband, Color.White, 0.08f), einband, schatten)), form)
+            .border(if (an) 1.5.dp else 1.dp, if (an) glut else Color.Black.copy(alpha = 0.45f), form)
+            .clickable(role = Role.Button, onClickLabel = "Aufschlagen", onClick = onKlick)
+            .semantics(mergeDescendants = true) { contentDescription = "Öffnen: ${rezeptBeschreibung(r)}" }
+            .padding(vertical = 8.dp, horizontal = 5.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Buende()
+        Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+            Text(
+                r.name, Modifier.laengs(), style = Grauen.name(17f).copy(lineHeight = 19.sp), color = if (an) glut else RUECKEN_SCHRIFT,
+                textAlign = TextAlign.Center, maxLines = 3,
+                autoSize = TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = 17.sp),
+            )
+        }
+        if (r.favorit) Text("♦", style = Grauen.text(12f), color = GOLD)
+        Text(r.kcalJePortion?.toString() ?: "–", style = Grauen.maschine(10f), color = RUECKEN_SCHRIFT.copy(alpha = 0.8f), maxLines = 1)
+        Buende()
+    }
+}
+
+/** Zwei goldene Bünde quer über den Rücken. */
+@Composable
+private fun Buende() {
+    Column(Modifier.fillMaxWidth(0.8f).padding(vertical = 2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        repeat(2) { Box(Modifier.fillMaxWidth().height(1.5.dp).background(GOLD.copy(alpha = 0.7f))) }
+    }
+}
+
+/** Dreht den Inhalt um 90° (von oben nach unten zu lesen); Breite und Höhe tauschen beim Messen. */
+private fun Modifier.laengs(): Modifier = layout { messbar, c ->
+    val p = messbar.measure(Constraints(maxWidth = c.maxHeight, maxHeight = c.maxWidth))
+    layout(p.height, p.width) { p.place((p.height - p.width) / 2, (p.width - p.height) / 2) }
+}.rotate(90f)
+
+/** Ruhig: die Treffer als Zeilen (die Bibliothek mit Brettern gibt es nur in Immersiv). */
+@Composable
+internal fun GrauenRegal(liste: List<RezeptKarte>, gewaehlt: String, onWahl: (String) -> Unit) = GrauenListe(liste, gewaehlt, onWahl)
 
 /** Ruhig wie im Entwurf: die Treffer als Zeilen mit Name und kcal, die gewählte mit einem Hauch Akzent. */
 @Composable

@@ -78,12 +78,14 @@ class RezepteBereichTest {
 
     /**
      * Szenen R–V auf dem Tablet: Die Wahl öffnet das Rezept rechts. Vorher wählte der Tipp nur aus, rechts blieb
-     * „Wähle ein Rezept“ (Gerätetest Tablet 2026-11-17).
+     * „Wähle ein Rezept“ (Gerätetest Tablet 2026-11-17). Die Bibliothek des Grauens hat keine Wahl, der Band schlägt
+     * direkt auf.
      */
     private fun szeneOeffnetRechts(stil: FoodyStil) {
         zeigen(stil)
         compose.warteAufText("Wähle ein Rezept")
-        compose.onAllNodes(isSelectable() and hasContentDescription("Reispfanne", substring = true))[0].performClick()
+        val rezept = if (stil == FoodyStil.GRAUEN) hasContentDescription("Öffnen: Reispfanne", substring = true) else isSelectable()
+        compose.onAllNodes(rezept and hasContentDescription("Reispfanne", substring = true))[0].performClick()
         compose.warteAufText("400 g")
         assertEquals(emptyList(), geoeffnet)
     }

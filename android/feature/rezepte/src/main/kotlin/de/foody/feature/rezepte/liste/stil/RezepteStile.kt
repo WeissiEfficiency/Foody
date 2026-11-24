@@ -67,8 +67,9 @@ import de.foody.feature.rezepte.liste.Suche
  * Gemeinsames der Rezeptlisten-Szenen der Stile R–V in Immersiv: welche Szene gilt, Kopf, Suche und dieselben
  * Filter wie die normale Liste, die Treffer in Seiten zu [SEITE] (‹ Seite 1 / 3 ›), das gewählte Rezept (übersteht
  * das Drehen, beginnt bei jeder neuen Suche vorn) und die leeren Zustände. Jede Szene zeichnet ihren Kopf, die Wahl
- * (Fächer, Herzen, Regal, Sternkarte) und die Karte des gewählten Rezepts in ihrer Art. Anime zeigt statt Seiten alle
- * Treffer in einer Liste, die nur zeichnet, was gerade im Bild ist ([AnimeListe]).
+ * (Fächer, Herzen, Regal, Sternkarte) und die Karte des gewählten Rezepts in ihrer Art. Anime und die Bibliothek des
+ * Grauens (Immersiv) zeigen statt Seiten alle Treffer in einer Liste, die nur zeichnet, was gerade im Bild ist
+ * ([EndlosListe]): Anime als Comic-Karten zu zweit, das Grauen als Bretter mit Bänden.
  */
 internal object RezepteSzene {
     /** Der Stil R–V, dessen Szene die Rezeptliste zeigt; `null` = keiner (Milchglas, Ruhig, Sage hat ihre eigene). */
@@ -96,7 +97,13 @@ internal fun RezepteStil(
     nebenDetail: Boolean = false,
 ) {
     if (stil == FoodyStil.ANIME) {
-        AnimeListe(z, aendern, zuruecksetzen, onOeffnen, onNeu)
+        EndlosListe(stil, z, aendern, zuruecksetzen, onNeu, 2, Arrangement.spacedBy(14.dp)) { paar, i, m -> AnimeReihe(paar, i, onOeffnen, m) }
+        return
+    }
+    if (stil == FoodyStil.GRAUEN && FoodyTheme.stil.inszeniert) {
+        EndlosListe(stil, z, aendern, zuruecksetzen, onNeu, JE_BRETT, Arrangement.spacedBy(22.dp)) { baende, i, m ->
+            GrauenBrett(baende, i, offen, onOeffnen, m)
+        }
         return
     }
     // Seite und Wahl beginnen bei jeder neuen Suche oder jedem Filter wieder vorn
@@ -157,18 +164,22 @@ internal fun RezepteStil(
 }
 
 /**
- * Anime: Kopf, Suche und Filter, darunter alle Treffer als Comic-Karten zu zweit. Endlos statt Seiten; die Liste
- * zeichnet nur die Reihen im Bild, und eine neue Suche oder ein Filter beginnt wieder oben.
+ * Kopf, Suche und Filter, darunter alle Treffer in Reihen zu [jeReihe], die [reihe] zeichnet (Reihe, Nummer, Modifier
+ * mit Breite und Rand). Endlos statt Seiten; die Liste zeichnet nur die Reihen im Bild, und eine neue Suche oder ein
+ * Filter beginnt wieder oben.
  */
 @Composable
-private fun AnimeListe(
+private fun EndlosListe(
+    stil: FoodyStil,
     z: ListeZustand,
     aendern: ((ListeFilter) -> ListeFilter) -> Unit,
     zuruecksetzen: () -> Unit,
-    onOeffnen: (String) -> Unit,
     onNeu: () -> Unit,
+    jeReihe: Int,
+    abstand: Arrangement.Vertical,
+    reihe: @Composable (List<RezeptKarte>, Int, Modifier) -> Unit,
 ) {
-    val reihen = remember(z.treffer) { z.treffer.chunked(2) }
+    val reihen = remember(z.treffer, jeReihe) { z.treffer.chunked(jeReihe) }
     val zustand = rememberSaveable(z.filter, saver = LazyListState.Saver) { LazyListState() }
     val breite = Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth()
     val rand = Modifier.padding(horizontal = 16.dp)
@@ -176,13 +187,13 @@ private fun AnimeListe(
         Modifier.fillMaxSize().safeDrawingPadding(),
         state = zustand,
         contentPadding = PaddingValues(top = 16.dp, bottom = ueberLeiste(PLATZ_FUER_LEISTE)),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = abstand,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         item(key = "oben") {
-            Column(breite, verticalArrangement = Arrangement.spacedBy(14.dp)) { Oben(FoodyStil.ANIME, z, aendern, zuruecksetzen, onNeu, rand) }
+            Column(breite, verticalArrangement = Arrangement.spacedBy(14.dp)) { Oben(stil, z, aendern, zuruecksetzen, onNeu, rand) }
         }
-        itemsIndexed(reihen, key = { _, paar -> paar.first().id }) { reihe, paar -> AnimeReihe(paar, reihe, onOeffnen, breite.then(rand)) }
+        itemsIndexed(reihen, key = { _, r -> r.first().id }) { i, r -> reihe(r, i, breite.then(rand)) }
     }
 }
 
