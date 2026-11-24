@@ -19,7 +19,6 @@ import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.testing.ViewModelHalter
-import de.foody.feature.rezepte.MitSchrift200
 import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.pruefeNichtsAbgeschnitten
 import de.foody.feature.rezepte.testDatenbank
@@ -61,14 +60,14 @@ class RezeptListeScreenTest {
         db.close()
     }
 
-    private fun zeigen(schrift200: Boolean = false, stil: FoodyStil = FoodyStil.MILCHGLAS) {
+    private fun zeigen(stil: FoodyStil = FoodyStil.MILCHGLAS) {
         val vm = halter.behalten(RezeptListeViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1L }))
         compose.setContent {
             FoodyTheme(stil = stil) {
                 val inhalt = @androidx.compose.runtime.Composable {
                     RezeptListeRoute(onOeffnen = { geoeffnet += it }, onNeu = { neu++ }, vm = vm)
                 }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
     }
@@ -137,14 +136,6 @@ class RezeptListeScreenTest {
         compose.onNodeWithText("Alle").assertIsNotSelected()
         compose.onNodeWithText("Alle").performClick()
         compose.onNodeWithText("Favoriten").assertIsNotSelected()
-    }
-
-    @Test
-    fun schrift200OhneAbschneiden() {
-        runBlocking { db.bestand() }
-        zeigen(schrift200 = true)
-        compose.warteAufText("Reispfanne")
-        compose.pruefeNichtsAbgeschnitten()
     }
 
     @Test

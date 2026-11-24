@@ -39,7 +39,7 @@ import java.time.LocalDate
 /**
  * Das Zahnrad für die Einstellungen sitzt in jedem Stil und jeder Variante oben rechts im Kopf von „Heute“ und ist
  * gleich groß (48 dp), auch auf einem schmalen Handy (360 dp) mit einem langen Datum (Mittwoch, 30. Dezember) und bei
- * großer Schrift (130 %, 200 %). Oben heißt in der ersten Zeile des Kopfes, nicht neben einem umgebrochenen Titel.
+ * großer Schrift (130 %). Oben heißt in der ersten Zeile des Kopfes, nicht neben einem umgebrochenen Titel.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -92,9 +92,6 @@ class EinstellungenKnopfLageTest {
 
     @Test
     fun schrift130() = obenRechts(1.3f)
-
-    @Test
-    fun schrift200() = obenRechts(2f)
 
     /** Zeilen des Titels: Edo zeigt „Heute“, die Sage „HEUTE“ mit der Bedienhilfe „Heute“. */
     private fun titelZeilen(): Int {

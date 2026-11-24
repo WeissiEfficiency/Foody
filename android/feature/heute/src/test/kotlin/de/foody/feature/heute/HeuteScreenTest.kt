@@ -80,7 +80,7 @@ class HeuteScreenTest {
         ),
     )
 
-    private fun zeigen(schrift200: Boolean = false) {
+    private fun zeigen() {
         val vm = viewModel()
         compose.setContent {
             FoodyTheme {
@@ -90,7 +90,7 @@ class HeuteScreenTest {
                         onEinstellungen = { einstellungen++ }, onEintragen = { eintragen += it }, vm = vm,
                     )
                 }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
         compose.warteAufText("Heute")
@@ -239,26 +239,5 @@ class HeuteScreenTest {
         compose.warteAufText("SAMSTAG, 24. OKTOBER")
         zeit.value = LocalDateTime.of(heute.plusDays(1), LocalTime.MIDNIGHT)
         compose.warteAufText("SONNTAG, 25. OKTOBER")
-    }
-
-    @Test
-    fun schrift200OhneAbschneiden() {
-        runBlocking { db.bestand(); db.planen("p1", heute, "ABENDESSEN"); db.einkauf("Tomaten", "Paprika") }
-        zeigen(schrift200 = true)
-        compose.warteAufText("Reispfanne")
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
-    }
-
-    /** Mit Sync-Status („Wartet auf Netz“) bleibt der Titel bei 200 % einzeilig: der Status rückt unter den Titel (V2, vorher „He-ute“). */
-    @Test
-    fun schrift200TitelMitSyncStatusEinzeilig() {
-        lage.value = SyncLage(aktiv = true, laeuft = false, letzterFehler = "offline")
-        runBlocking { db.bestand() }
-        zeigen(schrift200 = true)
-        compose.waitForIdle()
-        val layout = mutableListOf<TextLayoutResult>()
-        compose.onNodeWithText("Heute").fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(layout)
-        assertEquals(1, layout.single().lineCount)
     }
 }

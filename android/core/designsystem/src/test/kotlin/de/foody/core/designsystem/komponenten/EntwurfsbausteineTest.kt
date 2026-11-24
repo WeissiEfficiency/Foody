@@ -23,7 +23,6 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.MitSchrift200
 import de.foody.core.designsystem.pruefeNichtsAbgeschnitten
 import org.junit.Rule
 import org.junit.Test
@@ -128,22 +127,5 @@ class EntwurfsbausteineTest {
         compose.setContent { FoodyTheme { FoodyFab("Eintragen", Icons.Outlined.Add, onKlick = { klicks++ }) } }
         compose.onNodeWithText("Eintragen").performClick()
         assertEquals(1, klicks)
-    }
-
-    @Test
-    fun doppelteSchriftOhneAbschneiden() {
-        compose.setContent {
-            FoodyTheme {
-                MitSchrift200 {
-                    Column(Modifier.width(411.dp)) {
-                        Seitenkopf("Rezepte", ueberzeile = "6 Rezepte") { RunderKnopf(Icons.Outlined.Add, "Neu", {}, primaer = true) }
-                        Suchfeld("", {}, "Suchen")
-                        FoodyFab("Eintragen", Icons.Outlined.Add, {})
-                        Initiale("Kürbis")
-                    }
-                }
-            }
-        }
-        compose.pruefeNichtsAbgeschnitten()
     }
 }

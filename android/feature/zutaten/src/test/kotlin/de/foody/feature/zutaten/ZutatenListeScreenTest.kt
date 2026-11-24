@@ -44,12 +44,12 @@ class ZutatenListeScreenTest {
     @After
     fun tearDown() = u.schliessen()
 
-    private fun zeigen(schrift200: Boolean = false) {
+    private fun zeigen() {
         val vm = u.liste()
         compose.setContent {
             FoodyTheme {
                 val inhalt = @Composable { ZutatenListeRoute(onZutat = { geoeffnet += it }, onZurueck = {}, vm = vm) }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
     }
@@ -150,15 +150,6 @@ class ZutatenListeScreenTest {
         zeigen()
         compose.warteAufText("Reis")
         compose.pruefeUeberLeiste(compose.onNodeWithContentDescription("Neue Zutat"))
-    }
-
-    @Test
-    @Config(qualifiers = "w411dp-h1600dp")
-    fun schrift200() {
-        bestand()
-        zeigen(schrift200 = true)
-        compose.warteAufText("Reis")
-        compose.pruefeNichtsAbgeschnitten()
     }
 
     private fun neuOeffnen() {

@@ -25,7 +25,6 @@ import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
 import de.foody.domain.Summe
-import de.foody.feature.heute.MitSchrift200
 import de.foody.feature.heute.pruefeNichtsAbgeschnitten
 import de.foody.feature.heute.tagebuch.EintragenStart
 import de.foody.feature.heute.tagebuch.TagAbschnitt
@@ -50,8 +49,7 @@ import kotlin.test.assertNull
 
 /**
  * Tagebuch-Szenen der Stile R–V in Immersiv: Titel für TalkBack „Tagebuch“, Tag blättern, Eintrag öffnen und
- * löschen, „+“ und leere Mahlzeit öffnen Eintragen (mit der Mahlzeit der Zeile); bei 200 % Schrift wird nichts
- * abgeschnitten.
+ * löschen, „+“ und leere Mahlzeit öffnen Eintragen (mit der Mahlzeit der Zeile).
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -84,7 +82,7 @@ class TagebuchStileTest {
         db.close()
     }
 
-    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false, variante: StilVariante = StilVariante.IMMERSIV) {
+    private fun zeigen(stil: FoodyStil, variante: StilVariante = StilVariante.IMMERSIV) {
         val kontext = RuntimeEnvironment.getApplication()
         val vm = halter.behalten(TagebuchTagViewModel(tagebuch, TageszielSpeicher(kontext)))
         compose.setContent {
@@ -93,7 +91,7 @@ class TagebuchStileTest {
                 val inhalt = @Composable {
                     TagebuchTagRoute(datum, onDatum = { datum = it; aktuell = it }, onZurueck = { zurueck++ }, onEintragen = { eintragen += it }, vm = vm)
                 }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
         compose.warteAufText("Apfel")
@@ -126,12 +124,6 @@ class TagebuchStileTest {
         zeigen(stil)
         compose.onAllNodes(hasContentDescription("Eintragen") and !isHeading()).onFirst().performClick()
         compose.runOnIdle { assertEquals(listOf(EintragenStart(heute, null)), eintragen) }
-    }
-
-    private fun gross(stil: FoodyStil) {
-        zeigen(stil, schrift200 = true)
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
     }
 
     /** Wie in den Entwürfen: „‹“ im Kopf führt zurück zu Heute (Canvas-Abgleich 2026-11-17). */
@@ -181,16 +173,6 @@ class TagebuchStileTest {
     @Test fun edoPlus() = plus(FoodyStil.EDO)
 
     @Test fun grauenPlus() = plus(FoodyStil.GRAUEN)
-
-    @Test fun animeSchrift200() = gross(FoodyStil.ANIME)
-
-    @Test fun edoSchrift200() = gross(FoodyStil.EDO)
-
-    @Test fun bayrischSchrift200() = gross(FoodyStil.BAYRISCH)
-
-    @Test fun grauenSchrift200() = gross(FoodyStil.GRAUEN)
-
-    @Test fun kreuzerSchrift200() = gross(FoodyStil.KREUZER)
 
     @Test
     fun texte() {

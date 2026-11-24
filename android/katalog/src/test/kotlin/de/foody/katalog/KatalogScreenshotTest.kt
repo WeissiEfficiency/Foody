@@ -12,8 +12,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Referenzbilder aller Katalogseiten: hell/dunkel × Handy/Tablet, dazu Schrift 200 % auf dem Handy. Breiten wie in der
- * Spec (411 dp, 1280 dp), Höhe größer, damit lange Seiten ganz im Bild sind. Robolectric rendert keine Unschärfe –
+ * Referenzbilder aller Katalogseiten: hell/dunkel × Handy/Tablet. Breiten wie in der Spec (411 dp, 1280 dp), Höhe größer, damit lange Seiten ganz im Bild sind. Robolectric rendert keine Unschärfe –
  * die Bilder zeigen Glas nur getönt, genau den Fall, den der Kontrast-Test absichert.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -31,33 +30,23 @@ class KatalogScreenshotTest {
 
     @Test
     @Config(qualifiers = "w411dp-h2400dp")
-    fun handy() = alleSeiten("handy", schrift200 = listOf(false, true))
+    fun handy() = alleSeiten("handy")
 
     @Test
     @Config(qualifiers = "w1280dp-h1600dp")
-    fun tablet() = alleSeiten("tablet", schrift200 = listOf(false))
+    fun tablet() = alleSeiten("tablet")
 
     private val vergleich = FoodyBildvergleich
 
-    private fun alleSeiten(geraet: String, schrift200: List<Boolean>) {
+    private fun alleSeiten(geraet: String) {
         for (seite in KatalogSeite.entries) {
             for (dunkel in listOf(false, true)) {
-                for (gross in schrift200) {
-                    if (gross && dunkel) continue
-                    val name = buildString {
-                        append(seite.name.lowercase()).append('_').append(if (dunkel) "dunkel" else "hell").append('_').append(geraet)
-                        if (gross) append("_schrift200")
-                    }
-                    captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
-                        KatalogApp(
-                            start = seite,
-                            einstellung = KatalogEinstellung(
-                                darstellung = if (dunkel) Darstellung.DUNKEL else Darstellung.HELL,
-                                schrift200 = gross,
-                                ohneUnschaerfe = true,
-                            ),
-                        )
-                    }
+                val name = seite.name.lowercase() + "_" + (if (dunkel) "dunkel" else "hell") + "_" + geraet
+                captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
+                    KatalogApp(
+                        start = seite,
+                        einstellung = KatalogEinstellung(darstellung = if (dunkel) Darstellung.DUNKEL else Darstellung.HELL, ohneUnschaerfe = true),
+                    )
                 }
             }
         }

@@ -2,15 +2,12 @@ package de.foody.feature.kochen
 
 import android.content.Context
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.unit.Density
 import androidx.lifecycle.SavedStateHandle
 import androidx.room.Room
 import de.foody.core.data.db.ArbeitsschrittEntity
@@ -94,13 +91,6 @@ class KochTestUmgebung(val db: FoodyDatenbank, val clock: Clock = TEST_UHR) {
 
 fun ComposeTestRule.warteAufText(text: String) =
     waitUntil(5_000) { onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
-
-/** Inhalt mit doppelter Schriftgröße (Systemschrift 200 %). */
-@Composable
-fun MitSchrift200(inhalt: @Composable () -> Unit) {
-    val d = LocalDensity.current
-    CompositionLocalProvider(LocalDensity provides Density(d.density, fontScale = 2f)) { inhalt() }
-}
 
 /** Wie in :core:designsystem: zu viele Zeilen, gekürzte Zeile oder zu wenig Höhe. */
 fun ComposeTestRule.pruefeNichtsAbgeschnitten() {

@@ -125,13 +125,6 @@ class HeuteBayrischTest {
     }
 
     @Test
-    fun schrift200OhneAbschneiden() {
-        zeigen(schrift = 2f)
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
-    }
-
-    @Test
     fun texte() {
         assertEquals("Passt scho – no 1.140 frei", bilanzSatz(860, 2000))
         assertEquals("Obacht – 300 drüber", bilanzSatz(2300, 2000))

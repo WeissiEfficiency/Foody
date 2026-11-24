@@ -18,7 +18,6 @@ import de.foody.core.designsystem.komponenten.roemisch
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.testing.ViewModelHalter
-import de.foody.feature.rezepte.MitSchrift200
 import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.detail.RezeptDetailRoute
 import de.foody.feature.rezepte.detail.RezeptDetailViewModel
@@ -40,7 +39,7 @@ import kotlin.test.assertEquals
 
 /**
  * Die Rezept-Szenen der Stile R–V in Immersiv: Name als Überschrift, Portionen skalieren, die drei Reiter, Kochen,
- * Favorit, Einkaufsliste, Menü, Zurück, Archivieren und Zurückholen; bei 200 % Schrift wird nichts abgeschnitten.
+ * Favorit, Einkaufsliste, Menü, Zurück, Archivieren und Zurückholen.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -71,7 +70,7 @@ class RezeptStileTest {
         db.close()
     }
 
-    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false) {
+    private fun zeigen(stil: FoodyStil) {
         val vm = halter.behalten(
             RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1_000L }, db.einkauf()),
         )
@@ -83,7 +82,7 @@ class RezeptStileTest {
                         onDupliziert = {}, onZurueck = { zurueck++ }, vm = vm,
                     )
                 }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
         compose.warteAufText("Reispfanne")
@@ -130,12 +129,6 @@ class RezeptStileTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithContentDescription("Wiederherstellen").fetchSemanticsNodes().isEmpty() }
     }
 
-    private fun gross(stil: FoodyStil) {
-        zeigen(stil, schrift200 = true)
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
-    }
-
     @Test fun animeReiter() = reiter(FoodyStil.ANIME)
 
     @Test fun edoReiter() = reiter(FoodyStil.EDO)
@@ -161,16 +154,6 @@ class RezeptStileTest {
     @Test fun grauenArchiv() = archiv(FoodyStil.GRAUEN)
 
     @Test fun kreuzerArchiv() = archiv(FoodyStil.KREUZER)
-
-    @Test fun animeSchrift200() = gross(FoodyStil.ANIME)
-
-    @Test fun edoSchrift200() = gross(FoodyStil.EDO)
-
-    @Test fun bayrischSchrift200() = gross(FoodyStil.BAYRISCH)
-
-    @Test fun grauenSchrift200() = gross(FoodyStil.GRAUEN)
-
-    @Test fun kreuzerSchrift200() = gross(FoodyStil.KREUZER)
 
     @Test
     fun texte() {

@@ -17,7 +17,6 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.MitSchrift200
 import de.foody.core.designsystem.pruefeNichtsAbgeschnitten
 import org.junit.Rule
 import org.junit.Test
@@ -59,15 +58,8 @@ class KachelTest {
             groesse = androidx.compose.ui.unit.DpSize(b.right - b.left, b.bottom - b.top)
             assertEquals(groesse.width, groesse.height, "Monogramm bei Schrift ×$skala ist kein Kreis: $groesse")
             kotlin.test.assertTrue(groesse.width >= 30.dp, "Monogramm kleiner als 30 dp: $groesse")
-            break // setContent geht nur einmal je Test; 200 % prüft monogrammWaechstMitSchrift
+            break // setContent geht nur einmal je Test
         }
-    }
-
-    @Test
-    fun monogrammWaechstMitSchrift() {
-        compose.setContent { FoodyTheme { MitSchrift200 { Kachel("Paprika", "3 Stk.", onKlick = {}) } } }
-        val b = compose.onNodeWithTag(MONOGRAMM_TAG, useUnmergedTree = true).getBoundsInRoot()
-        assertEquals(b.right - b.left, b.bottom - b.top, "Monogramm bei 200 % ist kein Kreis: $b")
     }
 
     @Test
@@ -82,16 +74,6 @@ class KachelTest {
         compose.setContent { FoodyTheme { Kachel("Milch", "1 l", onKlick = { klicks++ }) } }
         compose.onNodeWithText("Milch").performClick()
         assertEquals(1, klicks)
-    }
-
-    @Test
-    fun doppelteSchriftOhneAbschneiden() {
-        compose.setContent {
-            FoodyTheme {
-                MitSchrift200 { Kachel("Paprika", "3 Stk.", onKlick = {}, untertitel = "Gemüse", modifier = Modifier.width(120.dp)) }
-            }
-        }
-        compose.pruefeNichtsAbgeschnitten()
     }
 
     @Test

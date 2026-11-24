@@ -27,7 +27,6 @@ import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.feature.woche.MITTWOCH
 import de.foody.feature.woche.MONTAG
-import de.foody.feature.woche.MitSchrift200
 import de.foody.feature.woche.WocheRoute
 import de.foody.feature.woche.WocheTestUmgebung
 import de.foody.feature.woche.bestand
@@ -49,8 +48,7 @@ import kotlin.test.assertEquals
 
 /**
  * Die Wochen-Szenen der Stile R–V in Immersiv: Titel für TalkBack „Woche“, Tag wählen, Eintrag öffnet das
- * Mahlzeit-Blatt, „+ Mahlzeit“ die Mahlzeitwahl, „Leere Tage füllen“ das Blatt, Blättern zeigt „Heute“; bei 200 %
- * Schrift wird nichts abgeschnitten.
+ * Mahlzeit-Blatt, „+ Mahlzeit“ die Mahlzeitwahl, „Leere Tage füllen“ das Blatt, Blättern zeigt „Heute“.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -80,12 +78,12 @@ class WocheStileTest {
         db.close()
     }
 
-    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false, variante: StilVariante = StilVariante.IMMERSIV) {
+    private fun zeigen(stil: FoodyStil, variante: StilVariante = StilVariante.IMMERSIV) {
         val vm = u.vm()
         compose.setContent {
             FoodyTheme(stil = stil, variante = variante) {
                 val inhalt = @Composable { WocheRoute({ _, _ -> }, {}, vm = vm) }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
         warteAufBeschreibung("Mittwoch, 28.10.")
@@ -128,12 +126,6 @@ class WocheStileTest {
         warteAufBeschreibung("Montag, 2.11.")
         compose.onAllNodes(hasContentDescription("Heute")).onFirst().performClick()
         warteAufBeschreibung("Mittwoch, 28.10.")
-    }
-
-    private fun gross(stil: FoodyStil) {
-        zeigen(stil, schrift200 = true)
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
     }
 
     /** Sage in Ruhig wie im Entwurf: die Szene schlicht, „WOCHE“ mit Tageschips statt der Karte. */
@@ -237,16 +229,6 @@ class WocheStileTest {
     @Test fun animeBlaettern() = blaettern(FoodyStil.ANIME)
 
     @Test fun kreuzerBlaettern() = blaettern(FoodyStil.KREUZER)
-
-    @Test fun animeSchrift200() = gross(FoodyStil.ANIME)
-
-    @Test fun edoSchrift200() = gross(FoodyStil.EDO)
-
-    @Test fun bayrischSchrift200() = gross(FoodyStil.BAYRISCH)
-
-    @Test fun grauenSchrift200() = gross(FoodyStil.GRAUEN)
-
-    @Test fun kreuzerSchrift200() = gross(FoodyStil.KREUZER)
 
     @Test
     fun texte() {

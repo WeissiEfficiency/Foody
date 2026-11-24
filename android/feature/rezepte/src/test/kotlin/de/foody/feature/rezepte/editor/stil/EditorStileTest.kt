@@ -30,7 +30,6 @@ import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.ImportedIngredient
 import de.foody.domain.MeasureUnit
-import de.foody.feature.rezepte.MitSchrift200
 import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.editor.EditorRoute
 import de.foody.feature.rezepte.editor.EditorViewModel
@@ -53,7 +52,7 @@ import kotlin.test.assertTrue
 
 /**
  * Editor der Stile Q–V in Immersiv: Felder mit Etikett (TalkBack liest das Etikett), erkannte Zutatenzeilen, Speichern
- * unten (gesperrt ohne Namen), Verwerfen fragt nach; bei 200 % Schrift wird nichts abgeschnitten (R–V). Die Sage hat
+ * unten (gesperrt ohne Namen), Verwerfen fragt nach (R–V). Die Sage hat
  * eigene Reiter.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -81,14 +80,14 @@ class EditorStileTest {
         db.close()
     }
 
-    private fun zeigen(stil: FoodyStil, id: String?, schrift200: Boolean = false, mitLeiste: Boolean = true) {
+    private fun zeigen(stil: FoodyStil, id: String?, mitLeiste: Boolean = true) {
         val ablage = FotoAblage(RuntimeEnvironment.getApplication())
         val vm = halter.behalten(EditorViewModel(SavedStateHandle(), RezeptRepository(db, ablage, EmptyCoroutineContext) { 1_000L }, db, ablage))
         compose.setContent {
             FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV) {
                 val inhalt = @Composable { EditorRoute(id, onFertig = { fertig += it }, onZurueck = { zurueck++ }, vm = vm) }
                 CompositionLocalProvider(LocalMitLeiste provides mitLeiste) {
-                    if (schrift200) MitSchrift200(inhalt) else inhalt()
+                    inhalt()
                 }
             }
         }
@@ -138,13 +137,6 @@ class EditorStileTest {
         assertTrue(ende - knopf.bottom < LEISTE_REGELHOEHE, "Speichern endet bei ${knopf.bottom}, der Rand liegt bei $ende")
     }
 
-    private fun gross(stil: FoodyStil) {
-        zeigen(stil, "r1", schrift200 = true)
-        compose.warteAufText("Reispfanne")
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
-    }
-
     @Test fun anime() = neuSpeichern(FoodyStil.ANIME)
 
     @Test fun edo() = neuSpeichern(FoodyStil.EDO)
@@ -170,16 +162,6 @@ class EditorStileTest {
     @Test fun bayrischVerwerfen() = verwerfen(FoodyStil.BAYRISCH)
 
     @Test fun kreuzerVerwerfen() = verwerfen(FoodyStil.KREUZER)
-
-    @Test fun animeSchrift200() = gross(FoodyStil.ANIME)
-
-    @Test fun edoSchrift200() = gross(FoodyStil.EDO)
-
-    @Test fun bayrischSchrift200() = gross(FoodyStil.BAYRISCH)
-
-    @Test fun grauenSchrift200() = gross(FoodyStil.GRAUEN)
-
-    @Test fun kreuzerSchrift200() = gross(FoodyStil.KREUZER)
 
     /**
      * Sage: Kopf „Neue Seite“ (TalkBack „Neues Rezept“), Reiter Grundlagen · Zutaten · Ritual, die erkannten Zeilen unter

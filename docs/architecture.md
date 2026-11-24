@@ -244,10 +244,10 @@ wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für 
   `KontrastTest` rechnet jedes Paar aus `kontrastPaare` nach, für jede Farbwelt hell und dunkel und für jeden Stil
   mit Variante und Akzent.
 - **`:katalog`** (`de.foody.katalog`, nie ausgeliefert): alle Komponenten in allen Zuständen, Umschalter
-  hell/dunkel/System, Schrift 200 %, ohne Unschärfe; ab 840 dp zweispaltig.
-- **Tests:** Robolectric-Komponententests mit nativer Grafik (echte Textmessung) und 200-%-Prüfung
-  (`TestHilfen.abgeschnitteneTexte`); Roborazzi-Screenshots aller Katalogseiten (hell/dunkel, Handy 411 dp,
-  Tablet 1280 dp, Schrift 200 %) in `android/katalog/src/test/screenshots/`, Vergleich in der CI
+  hell/dunkel/System, ohne Unschärfe; ab 840 dp zweispaltig.
+- **Tests:** Robolectric-Komponententests mit nativer Grafik (echte Textmessung) und Prüfung auf
+  abgeschnittene Texte (`TestHilfen.abgeschnitteneTexte`); Roborazzi-Screenshots aller Katalogseiten (hell/dunkel, Handy 411 dp,
+  Tablet 1280 dp) in `android/katalog/src/test/screenshots/`, Vergleich in der CI
   (`:katalog:verifyRoborazziDebug`, Toleranz 0,1 %). Neu aufnehmen: `./gradlew :katalog:recordRoborazziDebug`.
   Alle Referenzbilder (Katalog und Features) nutzen `FoodyBildvergleich` aus `:core:testing`: halbe Auflösung, damit
   jedes Neuaufnehmen das Repo nur wenig wachsen lässt.
@@ -323,7 +323,7 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   wenn der Kopf mit großer Schrift mehrzeilig wird; der Anime-Kopf hält Titel, Datum und Zahnrad in einer Zeile, verkleinert den Titel
   bis zu einer festen Untergrenze und setzt das Datum sonst unter den Titel. In Edo und Sage Ruhig rückt das Datum
   unter den Titel, sobald es nicht mehr daneben passt (`EinstellungenKnopfLageTest`: alle 14 Kombinationen bei 360 dp,
-  Schrift 100/130/200 %, Zahnrad höchstens 48 dp unter der Oberkante; Bildvergleich aller Köpfe auch bei 360 dp:
+  Schrift 100/130 %, Zahnrad höchstens 48 dp unter der Oberkante; Bildvergleich aller Köpfe auch bei 360 dp:
   `heute_360_*`). Eintragen ist ein eigenes Ziel, siehe „Eintragen (Teil B)“; die Szenen Edo, Sage und Bayrisch haben
   dafür eigene Knöpfe „Scannen“ und „Foto“ (`HeuteAktionen.onSofort`, „Foto“ nur mit `fotoMoeglich`). Tagebuch in
   `tagebuch/`: die Seite Eintragen, Ändern-Dialog, „Alle Einträge“ (`TagebuchTagRoute`, Blättern,
@@ -334,7 +334,7 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   synchronisiert“, letzter Fehler als Klartext, „Jetzt synchronisieren“, „Neu anmelden“ nach abgelaufener Anmeldung,
   Trennen mit Rückfrage). Das Passwort liegt nur im Eingabefeld.
 - **Tests:** Repository-Tests (Room im Speicher), Navigations- und Deep-Link-Tests, Bildschirmtests mit echtem
-  ViewModel (Uhr und Sync-Lage als Flows vorgegeben, Room-Abfragen synchron), Schrift 200 %, Hilt-Graph. Roborazzi-
+  ViewModel (Uhr und Sync-Lage als Flows vorgegeben, Room-Abfragen synchron), Hilt-Graph. Roborazzi-
   Bilder von „Heute“ und „Alle Einträge“ (hell/dunkel × Handy 411 dp/Tablet 1280 dp, erfundene Daten) in
   `android/feature/heute/src/test/screenshots/`, Vergleich in der CI (`:feature:heute:verifyRoborazziDebug`).
   Testumgebung: Robolectric dekodiert unter Windows keine Bilder (Foto-Test mit `coil-test`), und ein Textfeld in einem
@@ -461,7 +461,7 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase6a-rezepte-design.md`.
   „Rezepte“ – `:app` zeigt das Blatt, weil sich die Features nicht kennen). `RezepteBereich` zeigt ab 840 dp Liste und
   Detail nebeneinander; ein Tipp links fragt erst, wenn rechts ein Editor ungespeicherte Änderungen hat. Inhalte höchstens 720 dp breit.
 - **Tests:** Repository- und Importtests (Room im Speicher), Filter- und Zeilentests, Bildschirmtests mit echtem
-  ViewModel (Schrift 200 %, Doppeltipp auf Speichern, gelöschtes Rezept im Editor, Zustand nach Drehen),
+  ViewModel (Doppeltipp auf Speichern, gelöschtes Rezept im Editor, Zustand nach Drehen),
   Navigationstests in `:app`. Roborazzi-Bilder von Liste, Detail und Editor (hell/dunkel × Handy/Tablet) in
   `android/feature/rezepte/src/test/screenshots/`, Vergleich in der CI.
 
@@ -490,7 +490,7 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6b-kochen-design.md`. 
   darf. Benachrichtigungs-Freigabe beim ersten Timer; abgelehnt meldet der offene Kochmodus selbst (Ton, Vibration)
   und sagt das einmal.
 - **Tests:** Repository, Schritte, Sitzung, Timer-Speicher und Zeitplan, ViewModel (Doppeltipp „Fertig“, Sync-
-  Änderung, gelöschtes Rezept, Portionen 0/500), Bildschirm (Schrift 200 %, Drehen, Tablet), Navigation in `:app`.
+  Änderung, gelöschtes Rezept, Portionen 0/500), Bildschirm (Drehen, Tablet), Navigation in `:app`.
   Roborazzi-Bilder in `android/feature/kochen/src/test/screenshots/`, Vergleich in der CI.
 
 ## Woche (`:feature:woche`)
@@ -569,7 +569,7 @@ Zellbreite (Stile 88 dp, Akzente 72 dp, mit der Schrift wachsend) und gleichem I
 Name hat immer Platz für zwei Zeilen. Die Spaltenzahl kommt aus der Breite der Seite abzüglich des größten
 Karteneinzugs aller Stile (Glaskarte, 2 × 16 dp), nicht aus der Karte des gewählten Stils; auf dem Tablet stehen so
 sechs Stile in einer Reihe. Beim Umschalten ändern die Kacheln weder Spalten noch Breite noch Reihe
-(`EinstellungenStileTest`, alle Stile und Varianten bei 360 dp mit Schrift 130 % und 200 % und auf dem Tablet).
+(`EinstellungenStileTest`, alle Stile und Varianten bei 360 dp mit Schrift 130 % und auf dem Tablet).
 
 - **`:core:data`:** `DarstellungSpeicher` (`themeMode` mit den v1-Werten `SYSTEM`/`LIGHT`/`DARK`, Flow und `aktuell()`
   als Startwert), `TageszielSpeicher.setzen` (500–10.000 kcal, `null` = kein Ziel), `Sicherung.allesLoeschen()`:

@@ -15,7 +15,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.GraphicsMode
 import kotlin.test.assertEquals
 
-/** Gegenprobe: der Helfer erkennt wirklich abgeschnittene Texte – sonst wären die 200-%-Tests wertlos. */
+/** Gegenprobe: der Helfer erkennt wirklich abgeschnittene Texte – sonst wären die Tests mit großer Schrift wertlos. */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
 class TestHilfenTest {

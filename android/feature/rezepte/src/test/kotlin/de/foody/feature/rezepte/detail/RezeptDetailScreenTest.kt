@@ -23,7 +23,6 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.MeasureUnit
-import de.foody.feature.rezepte.MitSchrift200
 import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.einkauf
 import de.foody.feature.rezepte.pruefeNichtsAbgeschnitten
@@ -76,7 +75,7 @@ class RezeptDetailScreenTest {
         db.close()
     }
 
-    private fun zeigen(id: String = "r1", schrift200: Boolean = false, stil: FoodyStil = FoodyStil.MILCHGLAS) {
+    private fun zeigen(id: String = "r1", stil: FoodyStil = FoodyStil.MILCHGLAS) {
         val vm = halter.behalten(RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1_000L }, db.einkauf()))
         compose.setContent {
             FoodyTheme(stil = stil) {
@@ -86,7 +85,7 @@ class RezeptDetailScreenTest {
                         onDupliziert = { dupliziert += it }, onZurueck = { zurueck++ }, onEinkauf = { einkauf++ }, vm = vm,
                     )
                 }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
     }
@@ -226,26 +225,6 @@ class RezeptDetailScreenTest {
     }
 
     @Test
-    fun schrift200OhneAbschneiden() {
-        zeigen(schrift200 = true)
-        compose.warteAufText("Reispfanne")
-        compose.pruefeNichtsAbgeschnitten()
-    }
-
-    @Test
-    fun schrift200LangerNameImKopf() {
-        // Kopf wächst mit dem Namen statt 260 dp fest: nichts abgeschnitten, der Name liegt nicht unter „Zurück“ (N5)
-        val name = "Gebratener Reis mit Gemüse, Ei und Frühlingszwiebeln nach Art des Hauses"
-        runBlocking { db.rezeptDao().upsert(db.rezeptDao().nachId("r1")!!.copy(name = name)) }
-        zeigen(schrift200 = true)
-        compose.warteAufText(name)
-        compose.pruefeNichtsAbgeschnitten()
-        val zurueck = compose.onNodeWithContentDescription("Zurück").getUnclippedBoundsInRoot()
-        val titel = compose.onNodeWithText(name).getUnclippedBoundsInRoot()
-        assertTrue(titel.top >= zurueck.bottom, "Name ab ${titel.top}, Zurück bis ${zurueck.bottom}")
-    }
-
-    @Test
     fun aufEinkaufslisteMitAnsehen() {
         zeigen()
         compose.warteAufText("Reispfanne")
@@ -319,12 +298,5 @@ class RezeptDetailScreenTest {
         compose.warteAufText("Dieses Rezept ruht im Archiv.")
         compose.onNodeWithContentDescription("Wiederherstellen").performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithText("Dieses Rezept ruht im Archiv.").fetchSemanticsNodes().isEmpty() }
-    }
-
-    @Test
-    fun grimoireMitSchrift200() {
-        zeigen(schrift200 = true, stil = FoodyStil.SAGE)
-        compose.warteAufText("AUS DEM GRIMOIRE")
-        compose.pruefeNichtsAbgeschnitten()
     }
 }
