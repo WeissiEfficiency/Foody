@@ -85,6 +85,41 @@ Ziel bleibt: wenig neuer Code, gemeinsame Bausteine statt fünf Einzellösungen.
 - Test `EinkaufStileTest.abteilungPerPille` (alle sechs Szenen: Pille wählt, nur deren Kacheln, nichts klappt,
   nichts scrollt waagerecht); Bilder der fünf Szenen neu; auf dem Handy in Sage geprüft.
 
+## Runde 2 · Immersive Stile eigenständig (Wunsch 2026-11-24)
+
+Der Nutzer will keine Gleichmacherei: Jeder immersive Stil soll auf jeder Seite (Heute mit Energie, Eintragen,
+Rezepte mit Liste und Rezept, Woche, Einkauf) **seine eigene Form** haben, so wie Anime mit dem Reisbällchen. Zuerst
+**Düstere Sage** und **Kosmisches Grauen**; Edo, Bayrisch und Sternenkreuzer später, Milchglas passt, die ruhigen
+Varianten bleiben unangetastet. Anime: „Hinzufügen“ im Einkauf bleibt. Damit ersetzt Runde 2 für Sage und Grauen den
+Schritt 2 oben (Bühne plus Liste).
+
+### Kosmisches Grauen
+- **G1 Bibliothek als Bücherregal:** Bretter mit je vier Bänden untereinander, endlos nach unten scrollbar (nur die
+  Bretter im Bild werden gezeichnet). Auf dem Rücken steht der Titel schräg bzw. längs wie auf einem Buch, statt des
+  Anfangsbuchstabens. Antippen öffnet den Band. Seiten (‹ ›) und die Pergamentkarte darunter entfallen.
+- **G2 Rezept als Buch:** Das Rezept öffnet als aufgeschlagenes Buch; Zutaten, Zubereitung und Nährwerte sind Seiten,
+  die man umblättert. Im Kochmodus ist jeder Schritt eine Seite mit Umblättern statt Durchschalten.
+- **G3 Mondphasen (Woche):** Das Wochenumschalten oben (‹ ›) entfällt, die Monde selbst wählen den Tag, Wischen über
+  den Mondbogen wechselt die Woche. „2/7 planen“ oben verschwindet und geht im Ritual unten auf („Die dunklen Nächte
+  füllen“ mit dem Stand „2 von 7“).
+- **G4 Auge (Heute):** Die kcal-Zeile unter dem Auge öffnet das Energietagebuch; Makro-Farben wie Anime (Schritt 3).
+- **G5 Expeditionsliste (Einkauf):** später prüfen, ob sie eigenständiger werden soll.
+
+### Düstere Sage (mehr Dark-Fantasy, „Elden-Ring-Gefühl“)
+- **S1 Rast am Feuer (Heute):** Vitalität zeigt Eiweiß, KH und Fett in ihren Farben – als drei Leisten wie Leben,
+  Fokus und Ausdauer eines Helden. „+ Scannen“/„+ Foto“ unten auf der Startseite entfallen (Scannen gehört zu
+  Eintragen). Vitalität öffnet das Energietagebuch.
+- **S2 Mahl eintragen:** neu gestalten – Foto, Scannen, Galerie, Nährwerttabelle als Gegenstände in Inventarfeldern,
+  die Treffer als Liste im Stil statt der nackten Zeilen.
+- **S3 Grimoire als Inventar:** Rezepte als Raster aus Inventarfeldern (scrollbar), oben die Beschreibung des
+  gewählten Gegenstands mit Werten (Zeit, kcal, gekocht) und „Aufschlagen“.
+- **S4 Der Händler:** zwei, drei Bildvarianten zum Vergleich zeichnen; die Liste als Papierrolle, die sich nach unten
+  ausrollt.
+- **S5 Einstellungen:** Das Layout verschiebt sich; auf dem Handy nachstellen und beheben.
+
+### Reihenfolge Runde 2
+G1 → S1 → G4 → G3 → S3 → S5 → G2 → S2 → S4; je ein kleiner PR mit Tests, Bildern und Blick aufs Handy.
+
 ## Reihenfolge und Abnahme
 1 → 2 → 3 → 4 → 5; jeder Schritt mit Tests, Bildern und einem Blick auf dem Handy in allen fünf Stilen. Danach ein
 Release (3.12).
