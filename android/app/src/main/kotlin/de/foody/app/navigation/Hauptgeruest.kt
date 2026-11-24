@@ -87,9 +87,12 @@ fun Hauptgeruest(
 ) {
     val eintrag by navController.currentBackStackEntryAsState()
     val aktiv = remember(eintrag) { aktiverTab(navController) }
-    // Kochmodus und Eintragen sind Vollbilder ohne Navigation
-    val vollbild = eintrag?.destination?.let { it.hasRoute<Kochen>() || it.hasRoute<Eintragen>() } == true
+    // Der Kochmodus ist ein Vollbild ohne Navigation; Eintragen behält sie
+    val vollbild = eintrag?.destination?.hasRoute<Kochen>() == true
+    val inEintragen = eintrag?.destination?.hasRoute<Eintragen>() == true
     val tabWaehlen: (Int) -> Unit = { i ->
+        // Ein Reiter schließt Eintragen, sonst läge es beim Zurückkehren noch im Stapel des Reiters
+        if (navController.currentBackStackEntry?.destination?.hasRoute<Eintragen>() == true) navController.popBackStack()
         when {
             // Heute ist die Wurzel; der aktive Tab erneut: zurück an seinen Anfang
             i == 0 -> navController.popBackStack<Heute>(inclusive = false)
@@ -122,7 +125,7 @@ fun Hauptgeruest(
                 NavZiel(eintragen, Icons.Outlined.AddCircleOutline, beschreibung = "Eintragen".takeIf { it != eintragen }, aktion = true),
             )
         }
-    val aktivStelle = stelleVonTab(aktiv)
+    val aktivStelle = if (inEintragen) EINTRAGEN else stelleVonTab(aktiv)
     val dichte = LocalDensity.current
     var leiste by remember { mutableStateOf(LEISTE_REGELHOEHE) }
     BoxWithConstraints(Modifier.fillMaxSize()) {

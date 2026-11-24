@@ -4,11 +4,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DocumentScanner
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material.icons.outlined.TableChart
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -47,14 +48,13 @@ const val ERFASSEN_FOTO = "erfassen-foto"
 const val ERFASSEN_SCANNEN = "erfassen-scannen"
 
 /**
- * Schritt Erfassen: oben „Foto“ und „Scannen“ als große Knöpfe (sie starten sofort, ohne Menü; ohne Erkennungsmodell
- * steht „Frei eintragen“ an der Stelle von „Foto“), darunter die Nebenwege Galerie und Nährwerttabelle, ein Hinweis,
+ * Schritt Erfassen: vier große Knöpfe mit Symbol, oben „Foto“ und „Scannen“ (sie starten sofort, ohne Menü; ohne
+ * Erkennungsmodell steht „Frei eintragen“ an der Stelle von „Foto“), darunter „Aus der Galerie“ und „Nährwerttabelle“, ein Hinweis,
  * die Suche über Rezepte, Zutaten und den BLS und das noch offene Geplante des Tags. Antippen führt zu Bestätigen.
  *
  * Bis die Einstellung gelesen ist, ob es ein Modell gibt, steht neben „Scannen“ ein leerer Platz gleicher Größe; die
  * Nebenwege und „Nicht dabei?“ kommen erst danach. So springt beim Öffnen kein Knopf von „Frei eintragen“ zu „Foto“.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun Erfassen(z: EintragenZustand, vm: EintragenViewModel, aufnahme: Aufnahme) {
     // null: noch nicht gelesen
@@ -63,9 +63,8 @@ internal fun Erfassen(z: EintragenZustand, vm: EintragenViewModel, aufnahme: Auf
     val scan = vm.scanLauf.zustand
     val verfuegbar = vm.scanLauf.verfuegbar
     val scannenMoeglich = verfuegbar && !scan.laeuft
-    // Gleich hohe Knöpfe, auch wenn ein Text bei großer Schrift umbricht
-    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
-        val knopf = Modifier.weight(1f).fillMaxHeight()
+    // Gleich hohe Knöpfe je Reihe, auch wenn ein Text bei großer Schrift umbricht
+    Reihe { knopf ->
         when (fotoKnopf) {
             true -> GrosserKnopf("Foto", Icons.Outlined.PhotoCamera, aufnahme.foto, knopf.testTag(ERFASSEN_FOTO))
             false -> GrosserKnopf("Frei eintragen", Icons.Outlined.Edit, vm::freiEintragen, knopf)
@@ -77,17 +76,19 @@ internal fun Erfassen(z: EintragenZustand, vm: EintragenViewModel, aufnahme: Auf
         )
     }
     if (fotoKnopf != null) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-            if (fotoKnopf) FoodyKnopf("Aus der Galerie", aufnahme.galerie, art = KnopfArt.TEXT)
+        Reihe { knopf ->
+            if (fotoKnopf) GrosserKnopf("Aus der Galerie", Icons.Outlined.PhotoLibrary, aufnahme.galerie, knopf)
             // Ein neuer Versuch gehört zu keinem früheren Strichcode
-            FoodyKnopf(
-                "Nährwerttabelle fotografieren",
+            GrosserKnopf(
+                "Nährwerttabelle",
+                Icons.Outlined.TableChart,
                 {
                     scan.menueVersuch()
                     aufnahme.tabelle()
                 },
-                art = KnopfArt.TEXT, aktiv = scannenMoeglich,
+                knopf, aktiv = scannenMoeglich,
             )
+            if (!fotoKnopf) Box(knopf)
         }
     }
     val hinweis = scan.meldung ?: ScanTexte.NICHT_VERFUEGBAR.takeIf { !verfuegbar } ?: foto.meldung
@@ -116,6 +117,14 @@ internal fun Erfassen(z: EintragenZustand, vm: EintragenViewModel, aufnahme: Auf
 @Composable
 private fun Abschnitt(text: String) {
     Text(text, style = MaterialTheme.typography.labelLarge, color = FoodyTheme.farben.nebentext)
+}
+
+/** Zwei gleich breite, gleich hohe Knöpfe nebeneinander; [inhalt] bekommt den Modifier für jeden. */
+@Composable
+private fun Reihe(inhalt: @Composable RowScope.(Modifier) -> Unit) {
+    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
+        inhalt(Modifier.weight(1f).fillMaxHeight())
+    }
 }
 
 /**
