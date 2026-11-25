@@ -85,6 +85,7 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
     // Immersiv: Kopf und Posten als Szene des Stils (Sage „Der Händler“, R–V), sonst die normale Ansicht. Der Knopf
     // „Listen“ der Szenen ist der einzige Weg zu den Listen (erster Reiter „Neue Liste“); nur ohne Szene das Menü ⋮.
     val szene = EinkaufSzene.aktuell()
+    val inszeniert = FoodyTheme.stil.inszeniert
     val onListen: () -> Unit = { vm.blattOeffnen(Blatt.Vorschau) }
     // Szenen: „Hinzufügen“ mit Abteilungs-Pillen in Überschrift, Namen und Form des Stils; Milchglas behält die Klappliste
     val pillen = when (szene) {
@@ -121,7 +122,7 @@ fun EinkaufRoute(listeId: String?, onListe: (String) -> Unit, onAktuelle: () -> 
             val umschalten: (String, Boolean) -> Unit = { id, an -> vm.abhaken(id, an) }
             val details: (String) -> Unit = { vm.blattOeffnen(Blatt.Details(it)) }
             when (szene) {
-                FoodyStil.SAGE -> haendlerPosten(z.ansicht, umschalten, details)
+                FoodyStil.SAGE -> haendlerPosten(z.ansicht, inszeniert, umschalten, details)
                 FoodyStil.ANIME -> animePosten(z.ansicht, umschalten, details)
                 FoodyStil.EDO -> edoPosten(z.ansicht, umschalten, details)
                 FoodyStil.BAYRISCH -> bayrischPosten(z.ansicht, umschalten, details)

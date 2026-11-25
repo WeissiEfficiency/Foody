@@ -325,7 +325,7 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   unter den Titel, sobald es nicht mehr daneben passt (`EinstellungenKnopfLageTest`: alle 14 Kombinationen bei 360 dp,
   Schrift 100/130/200 %, Zahnrad höchstens 48 dp unter der Oberkante; Bildvergleich aller Köpfe auch bei 360 dp:
   `heute_360_*`). Eintragen ist ein eigenes Ziel, siehe „Eintragen (Teil B)“; die Szenen Edo, Sage und Bayrisch haben
-  dafür eigene Knöpfe „Scannen“ und „Foto“ (`HeuteAktionen.onSofort`, „Foto“ nur mit `fotoMoeglich`). Tagebuch in
+  dafür eigene Knöpfe „Scannen“ und „Foto“ (`HeuteAktionen.onSofort`, „Foto“ nur mit `fotoMoeglich`; Sage nur in Ruhig). Tagebuch in
   `tagebuch/`: die Seite Eintragen, Ändern-Dialog, „Alle Einträge“ (`TagebuchTagRoute`, Blättern,
   Datumsauswahl, Löschen mit „Rückgängig“). Fotos per Coil (`file:`-Links), sonst Platzhalter. Inhalte höchstens
   720 dp breit, mittig.
@@ -555,6 +555,10 @@ Menge in der Basiseinheit und Herkunft je `NeedSource`, manuelle Artikel ohne He
   runder Listen-Knopf mit Klemmbrett) und die Posten als Kacheln je Abteilung unter einem bunten Abzeichen (Farbe
   fest je Abteilung). Neben dem Eingabefeld steht in keinem Stil mehr ein „+“: Eintragen über „Fertig“ oder die Kachel
   „„…“ hinzufügen“ unter den Treffern.
+  Sage Immersiv: Der Händler steht als Schattenriss im Ruinentor mit goldenem Licht, Nebel und steigenden Funken
+  (`HaendlerRuinentor`, Höhe aus der Breite, auf dem Tablet höchstens 230 dp), darunter sein Spruch als Untertitel.
+  Die Posten stehen auf einer Papierrolle (`HaendlerRolle`, ein Eintrag im Raster, ab 560 dp zwei Spalten), die sich
+  beim ersten Zeigen nach unten ausrollt (`rememberSaveable`, ohne Animationen sofort offen). Ruhig behält die Felder.
 - **`:core:designsystem`**: `Kachel` mit `aufDerListe` (rot), `onLangdruck` („Details“) und `zustandsText`;
   `KachelEmoji` für die Katalog-Emojis.
 - **`:feature:rezepte`**: „Auf die Einkaufsliste“ im Rezeptdetail (Portionen-Dialog, Snackbar mit „Ansehen“ →
