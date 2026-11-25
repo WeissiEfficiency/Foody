@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -14,6 +15,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.TageszielSpeicher
 import de.foody.core.data.db.FoodyDatenbank
@@ -169,6 +172,25 @@ class TagebuchStileTest {
     @Test fun bayrischBlaettern() = blaetternUndEintragen(FoodyStil.BAYRISCH)
 
     @Test fun kreuzerBlaettern() = blaetternUndEintragen(FoodyStil.KREUZER)
+
+    /** Grauen in Immersiv: Das Logbuch ist ein Buch; „‹“ blättert weiterhin zum Vortag. */
+    @Test fun grauenBlaettern() = blaetternUndEintragen(FoodyStil.GRAUEN)
+
+    /** Grauen in Immersiv: Wischen nach links schlägt das Blatt des nächsten Tages auf. */
+    @Test
+    fun grauenLogbuchWischen() {
+        zeigen(FoodyStil.GRAUEN)
+        compose.onNodeWithText("Apfel").performTouchInput { swipe(center, center - Offset(250f, 0f), 300) }
+        compose.waitUntil(5_000) { aktuell == heute.plusDays(1) }
+        compose.waitForIdle()
+        compose.onNodeWithText("Apfel").assertDoesNotExist()
+    }
+
+    @Test
+    fun logbuchSeiteUndTag() {
+        assertEquals(heute, logbuchTag(logbuchSeite(heute)))
+        assertEquals(logbuchSeite(heute) + 1, logbuchSeite(heute.plusDays(1)))
+    }
 
     @Test fun edoPlus() = plus(FoodyStil.EDO)
 
