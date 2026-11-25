@@ -239,7 +239,8 @@ wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für 
     `HorizontalPager`, `Modifier.umblaettern` kippt das gehende Blatt um den Bund statt es gleiten zu lassen; die Reiter
     oben folgen der Seite (`grauenBuchBlaettern`). Auch das Logbuch blättert so: `LogbuchBlaetter` legt jeden Tag
     auf ein Blatt (Seite = Tage seit 2000, Seitenzahl = Tag im Jahr), Wischen meldet den neuen Tag, Pfeile und
-    Datumswahl blättern das Buch mit. Buchschmuck: Lesebändchen
+    Datumswahl blättern das Buch mit. Die Woche ist ein Almanach: `TagBlaetter` (`WocheGrauen.kt`) legt die sieben
+    Tage auf Blätter, Wischen wählt den Tag, die Monde blättern mit; auf dem Tablet eine Doppelseite. Buchschmuck: Lesebändchen
     im rechten Rand, Eselsohr (`eselsohr`), `GrauenInitiale` am ersten Schritt, `GrauenRandnotiz` für die Rezeptnotiz. Vom Auge auf „Heute“ ins Tagebuch führt ein Blick
     (`AugenBlick.kt`): Das Auge reißt auf, stürzt um die Pupille heran und versinkt in ihrem Dunkel (`blickStand`,
     900 ms, gezeichnet auf einer Ebene über der Seite); erst dann navigiert es, und im NavHost taucht das Tagebuch mit

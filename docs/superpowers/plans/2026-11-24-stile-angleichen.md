@@ -120,7 +120,10 @@ Schritt 2 oben (Bühne plus Liste).
   Zutaten (`GrauenRandnotiz`). *Erledigt (2):* Ein Tipp auf einen Band zieht ihn aus dem Regal und kippt ihn an, er
   holt sich mit dem Titel in Gold heran, bis er den Schirm füllt, und der Deckel schlägt nach links auf; aus der ersten
   Seite taucht das Rezept auf (`RegalUebergang.kt`, im NavHost Einblenden). Neben dem Detail (Tablet) öffnet er sofort.
-  Offen: 4.
+  *Erledigt (4):* In der Woche liegt der gewählte Tag als Blatt eines Almanachs (`TagBlaetter` in `WocheGrauen.kt`,
+  Seitenzahl = Tag im Jahr); Wischen blättert zum Nachbartag und wählt seinen Mond, ein Mond blättert das Buch mit. Auf
+  dem Tablet (ab `FoodyBreiten.zweispaltig`) liegt der Almanach als Doppelseite offen: links Kopf, Mondbogen und Ritual,
+  rechts der Tag, gleich hoch. Damit ist G6 fertig.
 
 ### Düstere Sage (mehr Dark-Fantasy, „Elden-Ring-Gefühl“)
 - **S1 Rast am Feuer (Heute):** Vitalität zeigt Eiweiß, KH und Fett in ihren Farben – als drei Leisten wie Leben,

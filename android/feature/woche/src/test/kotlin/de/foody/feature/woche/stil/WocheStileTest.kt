@@ -214,6 +214,25 @@ class WocheStileTest {
         warteAufBeschreibung("Mittwoch, 28.10.")
     }
 
+    /**
+     * Grauen in Immersiv (Buch ausbauen): Der gewählte Tag ist ein Blatt des Almanachs. Wischen blättert zum nächsten
+     * Tag und wählt dessen Mond; ein Tipp auf einen Mond blättert das Buch zu seinem Tag.
+     */
+    @Test
+    fun grauenAlmanachBlaettern() {
+        zeigen(FoodyStil.GRAUEN)
+        compose.onNode(hasText("Mittwoch", substring = true) and isHeading()).performTouchInput {
+            swipe(centerRight - Offset(10f, 0f), centerLeft + Offset(10f, 0f))
+        }
+        compose.waitForIdle()
+        compose.onAllNodes(hasContentDescription("Donnerstag, 29.10.", substring = true) and isSelected()).onFirst().assertExists()
+        compose.onNode(hasText("Donnerstag", substring = true) and isHeading()).assertExists()
+        compose.onAllNodes(hasContentDescription("Montag, 26.10.", substring = true)).onFirst().performClick()
+        compose.waitForIdle()
+        compose.onNode(hasText("Montag", substring = true) and isHeading()).assertExists()
+        compose.onAllNodes(hasText("Donnerstag", substring = true) and isHeading()).assertCountEquals(0)
+    }
+
     @Test fun kreuzer() = pruefen(FoodyStil.KREUZER)
 
     @Test
