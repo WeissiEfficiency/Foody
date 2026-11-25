@@ -117,7 +117,10 @@ Schritt 2 oben (Bühne plus Liste).
   dem Tag des Jahres als römischer Seitenzahl (`roemischVoll`); Wischen und „‹ ›“ blättern um den Bund.
   *Erledigt (3):* Lesebändchen im rechten Rand jedes Blatts, Eselsohr an Blättern mit Folgeseite (Rezept, Kochmodus,
   Logbuch), Initiale am ersten Schritt (`GrauenInitiale`, ein Text), die Rezeptnotiz als Randnotiz in Rosé unter den
-  Zutaten (`GrauenRandnotiz`). Offen: 2 und 4.
+  Zutaten (`GrauenRandnotiz`). *Erledigt (2):* Ein Tipp auf einen Band zieht ihn aus dem Regal und kippt ihn an, er
+  holt sich mit dem Titel in Gold heran, bis er den Schirm füllt, und der Deckel schlägt nach links auf; aus der ersten
+  Seite taucht das Rezept auf (`RegalUebergang.kt`, im NavHost Einblenden). Neben dem Detail (Tablet) öffnet er sofort.
+  Offen: 4.
 
 ### Düstere Sage (mehr Dark-Fantasy, „Elden-Ring-Gefühl“)
 - **S1 Rast am Feuer (Heute):** Vitalität zeigt Eiweiß, KH und Fett in ihren Farben – als drei Leisten wie Leben,

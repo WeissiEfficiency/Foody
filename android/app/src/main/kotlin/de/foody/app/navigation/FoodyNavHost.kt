@@ -146,7 +146,7 @@ class Bildschirme(
     }
 }
 
-/** Dauer, in der das Tagebuch aus dem Auge auftaucht (Grauen). */
+/** Dauer, in der das Tagebuch aus dem Auge bzw. das Rezept aus dem aufgeschlagenen Band auftaucht (Grauen). */
 private const val AUFTAUCHEN_MS = 380
 
 /** Schema der Deep Links (die v1 hatte keine). */
@@ -166,14 +166,16 @@ const val EINTRAGEN_LINK = "${SCHEMA}eintragen"
  * `foody://kochen/{rezeptId}?portionen={n}`, `foody://tagebuch/{datum}` (ungültiges Datum → heute), `foody://woche`; dazu
  * die Links der Widgets ([WidgetStart]), die [widgetStartOeffnen] behandelt (bei laufender App über [deepLinkOeffnen]).
  *
- * Das Tagebuch taucht im Grauen (Immersiv) aus dem Dunkel des Auges auf, wenn es von „Heute“ kommt.
+ * Das Tagebuch taucht im Grauen (Immersiv) aus dem Dunkel des Auges auf, wenn es von „Heute“ kommt; das Rezept aus der
+ * ersten Seite des aufgeschlagenen Bands, wenn es aus der Bibliothek kommt.
  * Eintragen mit Sofort-Start kommt ohne Übergang, damit „Heute“ nicht aufblitzt, bevor Kamera bzw. Scanner aufgehen;
  * geschlossen wird es wie jede Seite (Abbrechen wie Speichern).
  */
 @Composable
 fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Modifier = Modifier) {
-    // Grauen Immersiv: Nach dem Blick ins Auge (das Dunkel der Pupille auf „Heute“) taucht das Tagebuch daraus auf
-    val ausDemAuge = FoodyTheme.stil.immersiv(FoodyStil.GRAUEN)
+    // Grauen Immersiv: Nach dem Blick ins Auge (das Dunkel der Pupille auf „Heute“) taucht das Tagebuch daraus auf,
+    // nach dem Band aus dem Regal das Rezept aus seiner ersten Seite
+    val grauen = FoodyTheme.stil.immersiv(FoodyStil.GRAUEN)
     NavHost(nav, startDestination = Heute, modifier = modifier) {
         composable<Heute>(exitTransition = { if (targetState.istSofortZiel()) ExitTransition.None else null }) {
             bildschirme.heute(nav)
@@ -185,7 +187,10 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
         composable<ServerVerbinden> { bildschirme.serverVerbinden(nav) }
         composable<Zutaten> { bildschirme.zutaten(nav) }
         composable<Zutat> { bildschirme.zutat(it.toRoute<Zutat>().id, nav) }
-        composable<RezeptDetail>(deepLinks = listOf(navDeepLink<RezeptDetail>(basePath = "${SCHEMA}rezept"))) {
+        composable<RezeptDetail>(
+            deepLinks = listOf(navDeepLink<RezeptDetail>(basePath = "${SCHEMA}rezept")),
+            enterTransition = { if (grauen && initialState.destination.hasRoute<Rezepte>()) fadeIn(tween(AUFTAUCHEN_MS)) else null },
+        ) {
             bildschirme.rezeptDetail(it.toRoute<RezeptDetail>().id, nav)
         }
         composable<RezeptNeu> { bildschirme.editor(null, null, nav) }
@@ -203,7 +208,7 @@ fun FoodyNavHost(nav: NavHostController, bildschirme: Bildschirme, modifier: Mod
         composable<TagebuchTag>(
             deepLinks = listOf(navDeepLink<TagebuchTag>(basePath = "${SCHEMA}tagebuch")),
             enterTransition = {
-                if (ausDemAuge && initialState.destination.hasRoute<Heute>()) {
+                if (grauen && initialState.destination.hasRoute<Heute>()) {
                     fadeIn(tween(AUFTAUCHEN_MS)) + scaleIn(tween(AUFTAUCHEN_MS), initialScale = 0.86f)
                 } else {
                     null
