@@ -18,19 +18,26 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -89,10 +96,18 @@ internal fun GrauenKopf(n: Int, neu: @Composable () -> Unit) {
 /**
  * Brett [brett] der Bibliothek (Immersiv): bis zu [JE_BRETT] Bände nebeneinander auf einem Holzbrett, der Titel längs
  * auf dem Rücken wie bei einem Buch. Steht ein Brett nicht voll, lehnt der letzte Band schräg am Nachbarn. Antippen
- * schlägt den Band auf; [offen] (rechts offen auf dem Tablet) glüht.
+ * schlägt den Band auf ([onOeffnen] bekommt seine Lage im Fenster und die Farbe des Einbands für den Übergang);
+ * [offen] (rechts offen auf dem Tablet) glüht, der Band [fliegt] ist unsichtbar, solange er aus dem Regal kommt.
  */
 @Composable
-internal fun GrauenBrett(baende: List<RezeptKarte>, brett: Int, offen: String?, onOeffnen: (String) -> Unit, modifier: Modifier) {
+internal fun GrauenBrett(
+    baende: List<RezeptKarte>,
+    brett: Int,
+    offen: String?,
+    onOeffnen: (RezeptKarte, Rect?, Color) -> Unit,
+    modifier: Modifier,
+    fliegt: () -> String? = { null },
+) {
     Row(
         modifier.drawBehind {
             val dicke = 12.dp.toPx()
@@ -113,7 +128,8 @@ internal fun GrauenBrett(baende: List<RezeptKarte>, brett: Int, offen: String?, 
             } else {
                 Modifier
             }
-            Band(r, brett * JE_BRETT + spalte, r.id == offen, Modifier.weight(1f).then(schraeg)) { onOeffnen(r.id) }
+            val weg = Modifier.graphicsLayer { alpha = if (fliegt() == r.id) 0f else 1f }
+            Band(r, brett * JE_BRETT + spalte, r.id == offen, Modifier.weight(1f).then(schraeg).then(weg)) { lage, farbe -> onOeffnen(r, lage, farbe) }
         }
         repeat(JE_BRETT - baende.size) { Spacer(Modifier.weight(1f)) }
     }
@@ -121,17 +137,18 @@ internal fun GrauenBrett(baende: List<RezeptKarte>, brett: Int, offen: String?, 
 
 /** Ein Band: Einband mit goldenen Bünden, der Name längs, unten kcal; TalkBack hört „Öffnen: Reispfanne, 30 Min., …“. */
 @Composable
-private fun Band(r: RezeptKarte, i: Int, an: Boolean, modifier: Modifier, onKlick: () -> Unit) {
+private fun Band(r: RezeptKarte, i: Int, an: Boolean, modifier: Modifier, onKlick: (Rect?, Color) -> Unit) {
     val glut = FoodyTheme.stil.zier
     val form = RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp, bottomStart = 1.dp, bottomEnd = 1.dp)
     val einband = EINBAND[i % EINBAND.size]
+    var lage by remember { mutableStateOf<Rect?>(null) }
     val schatten = lerp(einband, Color.Black, 0.45f)
     Column(
-        modifier.height(HOEHE[i % HOEHE.size].dp)
+        modifier.height(HOEHE[i % HOEHE.size].dp).onGloballyPositioned { lage = it.boundsInRoot() }
             .then(if (an) Modifier.shadow(14.dp, form, ambientColor = glut, spotColor = glut) else Modifier)
             .background(Brush.horizontalGradient(listOf(schatten, einband, lerp(einband, Color.White, 0.08f), einband, schatten)), form)
             .border(if (an) 1.5.dp else 1.dp, if (an) glut else Color.Black.copy(alpha = 0.45f), form)
-            .clickable(role = Role.Button, onClickLabel = "Aufschlagen", onClick = onKlick)
+            .clickable(role = Role.Button, onClickLabel = "Aufschlagen") { onKlick(lage, einband) }
             .semantics(mergeDescendants = true) { contentDescription = "Öffnen: ${rezeptBeschreibung(r)}" }
             .padding(vertical = 8.dp, horizontal = 5.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

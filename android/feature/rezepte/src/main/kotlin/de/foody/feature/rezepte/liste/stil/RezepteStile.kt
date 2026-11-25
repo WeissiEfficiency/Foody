@@ -32,8 +32,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -101,8 +104,19 @@ internal fun RezepteStil(
         return
     }
     if (stil == FoodyStil.GRAUEN && FoodyTheme.stil.inszeniert) {
-        EndlosListe(stil, z, aendern, zuruecksetzen, onNeu, JE_BRETT, Arrangement.spacedBy(22.dp)) { baende, i, m ->
-            GrauenBrett(baende, i, offen, onOeffnen, m)
+        // Auf dem Handy kommt der Band aus dem Regal und schlägt sich auf; neben dem Detail (Tablet) öffnet er sofort
+        val u = rememberRegalUebergang()
+        var wurzel by remember { mutableStateOf(Offset.Zero) }
+        Box(Modifier.fillMaxSize().onGloballyPositioned { wurzel = it.positionInRoot() }) {
+            EndlosListe(stil, z, aendern, zuruecksetzen, onNeu, JE_BRETT, Arrangement.spacedBy(22.dp)) { baende, i, m ->
+                GrauenBrett(
+                    baende, i, offen,
+                    onOeffnen = { r, lage, farbe -> if (nebenDetail) onOeffnen(r.id) else u.oeffnen(r.id, r.name, lage, farbe) { onOeffnen(r.id) } },
+                    modifier = m,
+                    fliegt = { u.band.takeIf { u.zug.value > 0f } },
+                )
+            }
+            if (!nebenDetail) RegalEbene(u, { wurzel }, Modifier.matchParentSize())
         }
         return
     }
