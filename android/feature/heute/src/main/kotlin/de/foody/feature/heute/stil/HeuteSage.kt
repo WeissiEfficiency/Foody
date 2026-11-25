@@ -1,5 +1,6 @@
 package de.foody.feature.heute.stil
 
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -55,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
@@ -66,10 +68,13 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -104,6 +109,7 @@ import de.foody.feature.heute.tagebuch.SofortStart
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.sin
 
 private val DATUM = DateTimeFormatter.ofPattern("EEEE · d. MMMM", Locale.GERMAN)
 
@@ -125,7 +131,7 @@ internal fun HeuteSage(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier
             if (zustand == null) return@Column
             Column(Modifier.padding(horizontal = 20.dp).padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 if (zustand.datenbankLeer) DatenbankLeerHinweis(aktionen.onEinstellungen)
-                Vitalitaet(zustand.tagebuch)
+                Vitalitaet(zustand.tagebuch, aktionen.onAlleEintraege, aktionen.onEinstellungen)
                 WasTun(sageMenue(zustand), zustand.fotoMoeglich, aktionen)
             }
         }
@@ -201,7 +207,7 @@ private fun RastAmFeuer(datum: LocalDate?, sync: SyncAnzeige?, onEinstellungen: 
 
 /**
  * Die Szene des Entwurfs als Zeichnung: Nachthimmel, Mond, Hügel, Ruinen mit Torbogen, Lichtschein, Holzscheite,
- * Flamme und aufsteigende Glut. Gezeichnet im Maß des Entwurfs (390 × 318) und auf die Höhe skaliert, mittig; links
+ * Flamme und aufsteigende Glut; die Flamme pumpt und züngelt, alle drei Sekunden fliegen ein, zwei Funken. Gezeichnet im Maß des Entwurfs (390 × 318) und auf die Höhe skaliert, mittig; links
  * und rechts laufen Himmel und Boden weiter.
  */
 @Composable
@@ -217,6 +223,18 @@ private fun Lagerfeuer(glut: Color, modifier: Modifier) {
         zeit.animateFloat(0f, 1f, infiniteRepeatable(tween(2700, easing = LinearEasing)), label = "Glut")
     } else {
         remember { mutableFloatStateOf(0.35f) }
+    }
+    // Zweites, schnelleres Flackern gegen den Takt der Flamme: sie wabert unregelmäßig statt nur zu pumpen
+    val wabern by if (bewegt) {
+        zeit.animateFloat(0f, 1f, infiniteRepeatable(tween(530, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "Wabern")
+    } else {
+        remember { mutableFloatStateOf(0f) }
+    }
+    // Funkenflug: alle drei Sekunden springen ein, zwei kleine Splitter aus dem Feuer
+    val flug by if (bewegt) {
+        zeit.animateFloat(0f, 1f, infiniteRepeatable(tween(FUNKEN_TAKT, easing = LinearEasing)), label = "Funkenflug")
+    } else {
+        remember { mutableFloatStateOf(0.9f) }
     }
     val pfade = remember { SzenePfade() }
     // Die ruhende Szene entsteht einmal je Größe (Verläufe inklusive); Flamme und Glut liegen in einer eigenen Ebene,
@@ -260,8 +278,9 @@ private fun Lagerfeuer(glut: Color, modifier: Modifier) {
                 onDrawBehind {
                     translate(x0, 0f) {
                         scale(s, Offset.Zero) {
-                            feuer(pfade, flamme)
+                            feuer(pfade, flamme, wabern, glut)
                             glutFunken(glut, funken)
+                            funkenflug(glut, flug)
                         }
                     }
                 }
@@ -272,10 +291,61 @@ private fun Lagerfeuer(glut: Color, modifier: Modifier) {
 
 private val FLAMMENFARBE = Brush.verticalGradient(0f to Color(0xFFFDE68A), 0.5f to Sage.feuer, 1f to Color(0xFFC2410C), startY = 196f, endY = 268f)
 
-private fun DrawScope.feuer(pfade: SzenePfade, flamme: Float) {
-    withTransform({ scale(1f, 1f + 0.06f * flamme, Offset(195f, 268f)); translate(0f, -2f * flamme) }) {
+/**
+ * Flamme und Kern: [flamme] pumpt sie hoch, [wabern] (schneller, gegen den Takt) lässt sie seitlich züngeln und den
+ * Schein um das Feuer flackern. Ruhend (beide 0) wie im Entwurf.
+ */
+private fun DrawScope.feuer(pfade: SzenePfade, flamme: Float, wabern: Float, glut: Color) {
+    val boden = Offset(195f, 268f)
+    drawCircle(
+        Brush.radialGradient(listOf(glut.copy(alpha = 0.10f + 0.12f * wabern * (0.5f + flamme)), Color.Transparent), Offset(195f, 244f), 70f),
+        70f, Offset(195f, 244f),
+    )
+    withTransform({
+        scale(1f - 0.05f * wabern, 1f + 0.06f * flamme + 0.05f * wabern, boden)
+        rotate(4f * (wabern - flamme * wabern), boden)
+        translate(0f, -2f * flamme)
+    }) {
         drawPath(pfade.flamme, FLAMMENFARBE)
+    }
+    withTransform({
+        scale(1f + 0.06f * wabern, 1f + 0.1f * flamme * wabern, boden)
+        rotate(-3f * wabern, boden)
+        translate(0f, -2f * flamme)
+    }) {
         drawPath(pfade.kern, Color(0xFFFFF7D6))
+    }
+}
+
+/** Ein Splitter des Funkenflugs: Start im Takt (0–1), Drift zur Seite, Steighöhe, Größe und Drehungen. */
+private class Funke(val start: Float, val dx: Float, val hoehe: Float, val groesse: Float, val dreh: Float)
+
+/** Zwei Schübe je Takt mit je zwei Splittern, versetzt; jeder lebt [FLUG_DAUER] des Takts (knapp zwei Sekunden). */
+private val FUNKEN = listOf(
+    Funke(0f, 26f, 112f, 1.7f, 1.5f),
+    Funke(0.05f, -16f, 88f, 1.2f, -2f),
+    Funke(0.5f, -30f, 124f, 1.5f, 1f),
+    Funke(0.56f, 12f, 76f, 1.1f, -1.5f),
+)
+private const val FUNKEN_TAKT = 6000
+private const val FLUG_DAUER = 0.3f
+
+/**
+ * Funkenflug: kleine Splitter springen aus der Flamme, steigen gebremst, taumeln zur Seite, drehen sich und verglühen
+ * von hellem Gelb zur Glutfarbe. Bei [t] außerhalb ihrer Lebenszeit unsichtbar (so auch ruhend).
+ */
+private fun DrawScope.funkenflug(glut: Color, t: Float) {
+    FUNKEN.forEach { f ->
+        val p = ((t - f.start + 1f) % 1f) / FLUG_DAUER
+        if (p !in 0f..1f) return@forEach
+        val steigen = 1f - (1f - p) * (1f - p)
+        val x = 195f + f.dx * p + 3f * sin(p * 14f)
+        val y = 222f - f.hoehe * steigen
+        val farbe = lerp(Color(0xFFFFF3C4), glut, p).copy(alpha = (1f - p) * (1f - p * 0.3f))
+        val g = f.groesse * (1f - 0.4f * p)
+        rotate(360f * f.dreh * p, Offset(x, y)) {
+            drawRect(farbe, Offset(x - g, y - g * 0.5f), Size(2f * g, g))
+        }
     }
 }
 
@@ -300,45 +370,97 @@ private class SzenePfade {
     val kern = svgPfad("M195 268c-9 0-13-7-10-14 2-5 6-7 6-12 4 3 5 7 5 9 2-4 5-6 4-12 6 5 9 12 8 18-1 7-6 11-13 11z")
 }
 
-/** kcal gegen das Ziel als Balken in Gold, darunter Eiweiß, Kohlenhydrate und Fett; TalkBack liest einen Satz. */
+/**
+ * kcal gegen das Ziel als Balken, darunter Eiweiß, Kohlenhydrate und Fett; TalkBack liest einen Satz. In Immersiv eine
+ * Lebensleiste wie die eines Helden: gefüllt in den Farben von Eiweiß, KH und Fett, die Gramm in ihrer Farbe, Antippen
+ * öffnet das Energietagebuch ([onTagebuch]); ohne Ziel steht darunter „Tagesziel festlegen ▸“ ([onZiel]). Ruhig bleibt
+ * schlicht in Gold.
+ */
 @Composable
-private fun Vitalitaet(t: TagebuchHeute) {
+private fun Vitalitaet(t: TagebuchHeute, onTagebuch: () -> Unit, onZiel: () -> Unit) {
     val f = FoodyTheme.farben
     val glut = FoodyTheme.stil.zier
+    val inszeniert = FoodyTheme.stil.inszeniert
     val s = t.summe
     val ziel = t.ziel?.takeIf { it > 0 }
     val ueber = ziel != null && s.kcal > ziel
     val satz = kcalStand(s.kcal, ziel, s.vollstaendig) +
         (if (ueber) ", über Ziel" else "") + ": " + makroSatz(s.eiweiss, s.kohlenhydrate, s.fett)
-    Column(Modifier.clearAndSetSemantics { contentDescription = satz }, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text("VITALITÄT", Modifier.weight(1f), style = Sage.titel(12f, 0.2f), color = f.nebentext)
-            Text(kcalZahl(s.kcal, s.vollstaendig), style = Sage.titel(22f, 0.02f), color = sageHell())
-            Text(
-                (if (ziel != null) " / ${ganzzahlDeutsch(ziel)} kcal" else " kcal") + if (ueber) " · über Ziel" else "",
-                style = Sage.text(15f), color = f.nebentext,
-            )
-        }
-        if (ziel != null) {
-            val anteil = zielAnteil(s.kcal, ziel) ?: 0f
-            Box(
-                Modifier.fillMaxWidth().height(10.dp).background(FoodyTheme.werte.glas).border(1.dp, f.lichtkante)
-                    .drawBehind {
-                        drawRect(
-                            Brush.horizontalGradient(listOf(lerp(glut, Color.Black, 0.45f), glut)),
-                            Offset(1.dp.toPx(), 1.dp.toPx()),
-                            Size((size.width - 2.dp.toPx()) * anteil, size.height - 2.dp.toPx()),
-                        )
-                    },
-            )
-        }
-        val a = balkenanteile(s.kcal, null, s.eiweiss, s.kohlenhydrate, s.fett)
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Makro("Eiweiß", s.eiweiss, a.eiweiss, f.makro.eiweiss, Modifier.weight(1f))
-            Makro("KH", s.kohlenhydrate, a.kh, f.makro.kohlenhydrate, Modifier.weight(1f))
-            Makro("Fett", s.fett, a.fett, f.makro.fett, Modifier.weight(1f))
-        }
+    val tippen = if (inszeniert) {
+        Modifier.clearAndSetSemantics {
+            contentDescription = satz
+            role = Role.Button
+            onClick("Energietagebuch öffnen") {
+                onTagebuch()
+                true
+            }
+        }.clickable(onClick = onTagebuch)
+    } else {
+        Modifier.clearAndSetSemantics { contentDescription = satz }
     }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(tippen, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(if (inszeniert) "VITALITÄT ›" else "VITALITÄT", Modifier.weight(1f), style = Sage.titel(12f, 0.2f), color = f.nebentext)
+                Text(kcalZahl(s.kcal, s.vollstaendig), style = Sage.titel(22f, 0.02f), color = sageHell())
+                Text(
+                    (if (ziel != null) " / ${ganzzahlDeutsch(ziel)} kcal" else " kcal") + if (ueber) " · über Ziel" else "",
+                    style = Sage.text(15f), color = f.nebentext,
+                )
+            }
+            if (ziel != null) {
+                val anteil = zielAnteil(s.kcal, ziel) ?: 0f
+                val grenzen = if (inszeniert) makroGrenzen(s.eiweiss, s.kohlenhydrate, s.fett) else null
+                Lebensleiste(anteil, grenzen, glut, if (inszeniert) 12.dp else 10.dp)
+            }
+            val a = balkenanteile(s.kcal, null, s.eiweiss, s.kohlenhydrate, s.fett)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Makro("Eiweiß", s.eiweiss, a.eiweiss, f.makro.eiweiss, Modifier.weight(1f))
+                Makro("KH", s.kohlenhydrate, a.kh, f.makro.kohlenhydrate, Modifier.weight(1f))
+                Makro("Fett", s.fett, a.fett, f.makro.fett, Modifier.weight(1f))
+            }
+        }
+        if (ziel == null && inszeniert) NebenWeg("TAGESZIEL FESTLEGEN ▸", "Tagesziel festlegen", Modifier.fillMaxWidth(), onZiel)
+    }
+}
+
+/**
+ * Die Leiste: [anteil] gefüllt, mit [grenzen] (Eiweiß→KH, KH→Fett) in den drei Nährwertfarben mit Glanz oben,
+ * sonst in Gold ([glut]). Rahmen in gedämpftem Gold mit kleinen Endkappen.
+ */
+@Composable
+private fun Lebensleiste(anteil: Float, grenzen: Pair<Float, Float>?, glut: Color, hoehe: Dp) {
+    val f = FoodyTheme.farben
+    val makro = f.makro
+    Box(
+        Modifier.fillMaxWidth().height(hoehe).background(FoodyTheme.werte.glas)
+            .border(1.dp, if (grenzen != null) glut.copy(alpha = 0.55f) else f.lichtkante)
+            .drawBehind {
+                val rand = 1.dp.toPx()
+                val breite = (size.width - 2 * rand) * anteil.coerceIn(0f, 1f)
+                val h = size.height - 2 * rand
+                if (grenzen == null) {
+                    drawRect(Brush.horizontalGradient(listOf(lerp(glut, Color.Black, 0.45f), glut)), Offset(rand, rand), Size(breite, h))
+                    return@drawBehind
+                }
+                listOf(
+                    Triple(0f, grenzen.first, makro.eiweiss),
+                    Triple(grenzen.first, grenzen.second, makro.kohlenhydrate),
+                    Triple(grenzen.second, 1f, makro.fett),
+                ).forEach { (von, bis, farbe) ->
+                    val x = rand + breite * von
+                    val w = breite * (bis - von)
+                    if (w > 0f) {
+                        val glanz = Brush.verticalGradient(listOf(lerp(farbe, Color.White, 0.25f), farbe, lerp(farbe, Color.Black, 0.35f)), rand, rand + h)
+                        drawRect(glanz, Offset(x, rand), Size(w, h))
+                    }
+                }
+                // Endkappen wie an einer Leiste im Spiel
+                val kappe = 3.dp.toPx()
+                drawRect(glut.copy(alpha = 0.8f), Offset(-kappe, -rand), Size(kappe, size.height + 2 * rand))
+                drawRect(glut.copy(alpha = 0.8f), Offset(size.width, -rand), Size(kappe, size.height + 2 * rand))
+            },
+    )
 }
 
 @Composable
@@ -346,7 +468,7 @@ private fun Makro(name: String, gramm: Int, anteil: Float, farbe: Color, modifie
     Column(modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Row {
             Text(name, Modifier.weight(1f), style = Sage.text(14f), color = FoodyTheme.farben.nebentext)
-            Text("$gramm g", style = Sage.text(14f), color = FoodyTheme.farben.text)
+            Text("$gramm g", style = Sage.text(14f), color = if (FoodyTheme.stil.inszeniert) farbe else FoodyTheme.farben.text)
         }
         Box(
             Modifier.fillMaxWidth().height(4.dp).background(FoodyTheme.werte.glas).drawBehind {
@@ -358,7 +480,8 @@ private fun Makro(name: String, gramm: Int, anteil: Float, farbe: Color, modifie
 
 /**
  * Menü „Was tun?“: ein Eintrag ist gewählt, der Hauptknopf darunter führt ihn aus. Darunter die Nebenwege: das Rezept
- * der nächsten Mahlzeit, „+ SCANNEN“ und (mit Modell, [foto]) „+ FOTO“, die gleich Scanner bzw. Kamera starten.
+ * der nächsten Mahlzeit und, nur in Ruhig, „+ SCANNEN“ und (mit Modell, [foto]) „+ FOTO“, die gleich Scanner bzw.
+ * Kamera starten. In Immersiv gehören Scannen und Foto zu „Mahl eintragen“ (Wunsch 2026-11-24).
  */
 @Composable
 private fun WasTun(menue: List<SageEintrag>, foto: Boolean, aktionen: HeuteAktionen) {
@@ -405,8 +528,10 @@ private fun WasTun(menue: List<SageEintrag>, foto: Boolean, aktionen: HeuteAktio
     val naechstes = menue.firstOrNull { it.ziel == SageZiel.KOCHEN }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         naechstes?.let { n -> NebenWeg("REZEPT ANSEHEN", "Rezept ansehen", Modifier.weight(1f)) { aktionen.onRezept(requireNotNull(n.rezeptId)) } }
-        NebenWeg("+ SCANNEN", "Scannen", Modifier.weight(1f)) { aktionen.onSofort(SofortStart.SCANNEN) }
-        if (foto) NebenWeg("+ FOTO", "Foto", Modifier.weight(1f)) { aktionen.onSofort(SofortStart.FOTO) }
+        if (!FoodyTheme.stil.inszeniert) {
+            NebenWeg("+ SCANNEN", "Scannen", Modifier.weight(1f)) { aktionen.onSofort(SofortStart.SCANNEN) }
+            if (foto) NebenWeg("+ FOTO", "Foto", Modifier.weight(1f)) { aktionen.onSofort(SofortStart.FOTO) }
+        }
     }
     frage?.let { id -> menue.firstOrNull { it.vorschlag?.planEintragId == id } }?.let { e ->
         GegessenFrage(requireNotNull(e.mahlzeit), requireNotNull(e.vorschlag), aktionen) { frage = null }

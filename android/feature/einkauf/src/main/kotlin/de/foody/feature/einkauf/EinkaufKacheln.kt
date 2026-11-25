@@ -72,7 +72,7 @@ private fun LazyGridScope.ganzeZeile(key: String, inhalt: @Composable () -> Unit
 
 /**
  * Aufklappbarer Abschnittskopf (Zuletzt, Katalog-Abteilungen) mit [titel]; [offen] sagt, ob der Abschnitt offen ist.
- * Jede Szene bringt ihren eigenen mit (`sageKlappkopf` …), ohne Szene gilt [StandardKlappkopf].
+ * Nur noch in der normalen Ansicht (Milchglas, Ruhig); die Szenen wählen Abteilungen über Pillen ([hinzufuegenMitPillen]).
  */
 internal typealias KlappkopfInhalt = @Composable (titel: String, offen: Boolean, onKlick: () -> Unit) -> Unit
 

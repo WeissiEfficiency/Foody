@@ -65,6 +65,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -127,7 +129,11 @@ internal fun HeuteGrauen(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifi
                 if (zustand == null) return@Column
                 Column(Modifier.padding(end = 12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     if (zustand.datenbankLeer) DatenbankLeerHinweis(aktionen.onEinstellungen)
-                    if (FoodyTheme.stil.inszeniert) DasAuge(zustand.tagebuch) else SchlichterRing(zustand.tagebuch)
+                    if (FoodyTheme.stil.inszeniert) {
+                        DasAuge(zustand.tagebuch, aktionen.onAlleEintraege, aktionen.onEinstellungen)
+                    } else {
+                        SchlichterRing(zustand.tagebuch)
+                    }
                     Ritual(zustand, aktionen)
                     Protokoll(zustand.tagebuch, aktionen)
                     zustand.einkauf?.let { e ->
@@ -178,9 +184,13 @@ internal fun augenSatz(kcal: Int, ziel: Int?, vollstaendig: Boolean = true): Str
     else -> "Es hat ${kcalStand(kcal, ziel, vollstaendig)} gesehen."
 }
 
-/** Das Auge mit dem Ring (Anteil am Ziel) und der Satz darunter; TalkBack hört einen nüchternen Satz. */
+/**
+ * Das Auge mit dem Ring (Anteil am Ziel) und der Satz darunter, die Nährwerte in ihren Farben; TalkBack hört einen
+ * nüchternen Satz. Antippen öffnet das Energietagebuch ([onTagebuch]); ohne Ziel steht darunter „Tagesziel festlegen ▸“
+ * ([onZiel]).
+ */
 @Composable
-private fun DasAuge(t: TagebuchHeute) {
+private fun DasAuge(t: TagebuchHeute, onTagebuch: () -> Unit, onZiel: () -> Unit) {
     val f = FoodyTheme.farben
     val glut = FoodyTheme.stil.zier
     val s = t.summe
@@ -190,7 +200,14 @@ private fun DasAuge(t: TagebuchHeute) {
         (if (ziel != null && s.kcal > ziel) ", über Ziel" else "") +
         ": " + makroSatz(s.eiweiss, s.kohlenhydrate, s.fett)
     Column(
-        Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = vorlesen },
+        Modifier.fillMaxWidth().clearAndSetSemantics {
+            contentDescription = vorlesen
+            role = Role.Button
+            onClick("Energietagebuch öffnen") {
+                onTagebuch()
+                true
+            }
+        }.clickable(onClick = onTagebuch),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -207,10 +224,21 @@ private fun DasAuge(t: TagebuchHeute) {
             style = Grauen.text(18f, kursiv = true), color = f.text, textAlign = TextAlign.Center,
         )
         Text(
-            makroSatz(s.eiweiss, s.kohlenhydrate, s.fett, " · "),
+            buildAnnotatedString {
+                listOf(
+                    Triple("Eiweiß", s.eiweiss, f.makro.eiweiss),
+                    Triple("Kohlenhydrate", s.kohlenhydrate, f.makro.kohlenhydrate),
+                    Triple("Fett", s.fett, f.makro.fett),
+                ).forEachIndexed { i, (name, gramm, farbe) ->
+                    if (i > 0) append(" · ")
+                    append("$name ")
+                    withStyle(SpanStyle(color = farbe)) { append("$gramm g") }
+                }
+            },
             style = Grauen.text(15f), color = f.nebentext, textAlign = TextAlign.Center,
         )
     }
+    if (ziel == null) Verweis("Tagesziel festlegen ›", "Tagesziel festlegen", onKlick = onZiel)
 }
 
 /** Ruhig wie im Entwurf: statt des Auges ein Ring mit der Summe, daneben das Ziel und die Nährwerte mit Punkten. */

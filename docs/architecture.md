@@ -325,7 +325,7 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   unter den Titel, sobald es nicht mehr daneben passt (`EinstellungenKnopfLageTest`: alle 14 Kombinationen bei 360 dp,
   Schrift 100/130 %, Zahnrad höchstens 48 dp unter der Oberkante; Bildvergleich aller Köpfe auch bei 360 dp:
   `heute_360_*`). Eintragen ist ein eigenes Ziel, siehe „Eintragen (Teil B)“; die Szenen Edo, Sage und Bayrisch haben
-  dafür eigene Knöpfe „Scannen“ und „Foto“ (`HeuteAktionen.onSofort`, „Foto“ nur mit `fotoMoeglich`). Tagebuch in
+  dafür eigene Knöpfe „Scannen“ und „Foto“ (`HeuteAktionen.onSofort`, „Foto“ nur mit `fotoMoeglich`; Sage nur in Ruhig). Tagebuch in
   `tagebuch/`: die Seite Eintragen, Ändern-Dialog, „Alle Einträge“ (`TagebuchTagRoute`, Blättern,
   Datumsauswahl, Löschen mit „Rückgängig“). Fotos per Coil (`file:`-Links), sonst Platzhalter. Inhalte höchstens
   720 dp breit, mittig.
@@ -543,15 +543,22 @@ Menge in der Basiseinheit und Herkunft je `NeedSource`, manuelle Artikel ohne He
   Das ⋮-Menü (`EinkaufMenue`) hat nur Milchglas. In den Szenen Sage bis Kreuzer führt allein der Listen-Knopf
   (Bedienhilfe „Einkaufslisten“) zur `ListenSeite` mit den Reitern „Neue Liste · Abgleich · Frühere“; „Liste
   löschen“ ist dort der Papierkorb „Diese Liste löschen“ im Kopf, nur wenn eine Liste angezeigt wird (auch eine
-  frühere); er löscht die angezeigte Liste. Die
-  aufklappbaren Abteilungen nehmen einen Kopf über den Slot `KlappkopfInhalt` (`zuletztKacheln`, `katalogKacheln`):
-  Milchglas `StandardKlappkopf`, jede Szene ihren eigenen (`sageKlappkopf` … `kreuzerKlappkopf`) in Schrift und
-  Farben ihrer Abschnittsköpfe; Rolle, „Aufklappen“/„Zuklappen“ und 48 dp sind gemeinsam (`Modifier.klappbar`).
-  Anime klappt nicht und scrollt nur senkrecht: kleiner Kopf („QUEST!“, Zähler „1/4“, runder Listen-Knopf mit
-  Klemmbrett), die Posten als Kacheln je Abteilung unter einem bunten Abzeichen (Farbe fest je Abteilung), darunter
-  „Hinzufügen“ mit Zuletzt, den Abteilungen und „Eigene Artikel“ als umbrechende Pillen; nur die Kacheln der
-  gewählten stehen darunter (`animeHinzufuegen`, Wahl in `rememberSaveable`). Neben dem Eingabefeld steht in keinem Stil mehr ein „+“: Eintragen über „Fertig“ oder die Kachel
+  frühere); er löscht die angezeigte Liste. Nur Milchglas klappt Zuletzt und
+  die Katalog-Abteilungen auf (`zuletztKacheln`, `katalogKacheln`, Kopf `StandardKlappkopf`, `Modifier.klappbar`).
+  Alle Szenen (Sage bis Kreuzer, Anime) zeigen „Hinzufügen“ mit Zuletzt, den Abteilungen und „Eigene Artikel“ als
+  umbrechende Pillen, darunter nur die Kacheln der gewählten (`hinzufuegenMitPillen` in `EinkaufHinzufuegen.kt`,
+  Wahl in `rememberSaveable`); gescrollt wird nur senkrecht. Jede Szene bringt ein `PillenAussehen` mit:
+  Überschrift (Sage „Die Waren des Händlers“, Edo „Noch besorgen“, Bayrisch „Wos brauch ma no?“, Grauen „Was die
+  Expedition noch braucht“, Kreuzer „FRACHT ANFORDERN“, Anime „Hinzufügen“; für TalkBack immer „Hinzufügen“), die
+  Namen der Abteilungen wie in ihren Posten (Marktnamen, bairisch, Kisten-Code „OBS · …“) und die Pille
+  (`FoodyChip` im Stil, Anime seine kompakte gelbe). Anime hat dazu einen kleinen Kopf („QUEST!“, Zähler „1/4“,
+  runder Listen-Knopf mit Klemmbrett) und die Posten als Kacheln je Abteilung unter einem bunten Abzeichen (Farbe
+  fest je Abteilung). Neben dem Eingabefeld steht in keinem Stil mehr ein „+“: Eintragen über „Fertig“ oder die Kachel
   „„…“ hinzufügen“ unter den Treffern.
+  Sage Immersiv: Der Händler steht als Schattenriss im Ruinentor mit goldenem Licht, Nebel und steigenden Funken
+  (`HaendlerRuinentor`, Höhe aus der Breite, auf dem Tablet höchstens 230 dp), darunter sein Spruch als Untertitel.
+  Die Posten stehen auf einer Papierrolle (`HaendlerRolle`, ein Eintrag im Raster, ab 560 dp zwei Spalten), die sich
+  beim ersten Zeigen nach unten ausrollt (`rememberSaveable`, ohne Animationen sofort offen). Ruhig behält die Felder.
 - **`:core:designsystem`**: `Kachel` mit `aufDerListe` (rot), `onLangdruck` („Details“) und `zustandsText`;
   `KachelEmoji` für die Katalog-Emojis.
 - **`:feature:rezepte`**: „Auf die Einkaufsliste“ im Rezeptdetail (Portionen-Dialog, Snackbar mit „Ansehen“ →
@@ -565,8 +572,9 @@ Menge in der Basiseinheit und Herkunft je `NeedSource`, manuelle Artikel ohne He
 Spec `docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6e1-einstellungen-design.md`. Das Zahnrad (`EinstellungenKnopf`) oben rechts
 im Kopf von Heute öffnet in allen Stilen die Einstellungsseite; „Server verbinden“ ist das eigene Ziel
 `ServerVerbinden`. Keine Schemaänderung. Die Stilwahl (`StilWahl`) legt die Kacheln in ein Raster mit fester
-Zellbreite (Stile 88 dp, Akzente 72 dp, mit der Schrift wachsend) und gleichem Innenabstand mit und ohne Auswahl, der
-Name hat immer Platz für zwei Zeilen. Die Spaltenzahl kommt aus der Breite der Seite abzüglich des größten
+Zellbreite (Stile 88 dp, Akzente 64 dp, mit der Schrift wachsend) und gleichem Innenabstand mit und ohne Auswahl, der
+Name hat immer Platz für zwei Zeilen. Die vier Akzente stehen auf dem Handy in einer Reihe; passen sie nicht, zwei zu
+je zwei statt drei und eine allein (`rasterSpalten`, `EinstellungenStileTest.sageFarbenInEinerReihe` bei 361 dp). Die Spaltenzahl kommt aus der Breite der Seite abzüglich des größten
 Karteneinzugs aller Stile (Glaskarte, 2 × 16 dp), nicht aus der Karte des gewählten Stils; auf dem Tablet stehen so
 sechs Stile in einer Reihe. Beim Umschalten ändern die Kacheln weder Spalten noch Breite noch Reihe
 (`EinstellungenStileTest`, alle Stile und Varianten bei 360 dp mit Schrift 130 % und auf dem Tablet).

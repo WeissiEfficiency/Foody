@@ -160,6 +160,20 @@ class EinstellungenStileTest {
 
     @Test fun milchglasAbgleichOben() = abgleichUnten(FoodyStil.MILCHGLAS, unten = false)
 
+    /**
+     * Sage auf dem Handy des Nutzers (361 dp, Schrift 90 %): Die vier Farben stehen in einer Reihe; vorher rutschte die
+     * vierte allein in eine neue Zeile und das Layout sprang.
+     */
+    @Test
+    @Config(qualifiers = "w361dp-h1600dp")
+    fun sageFarbenInEinerReihe() {
+        zeigen(FoodyStil.SAGE, schrift = 0.9f)
+        val oben = FoodyStil.SAGE.akzente.map {
+            compose.onNode(isSelectable() and hasText(it.anzeigename)).fetchSemanticsNode().positionInRoot.y
+        }
+        assertEquals(1, oben.distinct().size, "Farben in Reihen: $oben")
+    }
+
     /** Wie ein Tipp auf die Kachel (und auf die [variante]): Speicher und Theme zeigen danach [stil]. */
     private fun wechseln(stil: FoodyStil, variante: StilVariante = themaVariante) {
         u.darstellung.stilSetzen(stil.name)
