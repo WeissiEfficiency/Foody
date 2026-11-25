@@ -1,13 +1,19 @@
 package de.foody.feature.rezepte.detail.stil
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
+import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.ArbeitsschrittEntity
 import de.foody.core.data.db.FoodyDatenbank
@@ -143,6 +149,18 @@ class RezeptStileTest {
     @Test fun bayrischReiter() = reiter(FoodyStil.BAYRISCH)
 
     @Test fun grauenReiter() = reiter(FoodyStil.GRAUEN)
+
+    /** Grauen in Immersiv (Runde 2 G2): Die Reiter sind Seiten eines Buchs; Wischen blättert um und wählt den Reiter mit. */
+    @Test
+    fun grauenBuchBlaettern() {
+        zeigen(FoodyStil.GRAUEN)
+        compose.warteAufText("400 g")
+        compose.onNode(hasContentDescription("Zutaten") and isSelected()).assertExists()
+        compose.onNodeWithText("400 g").performTouchInput { swipe(center, center - Offset(250f, 0f), 300) }
+        compose.waitUntil(5_000) { compose.onAllNodes(hasContentDescription("Zubereitung") and isSelected()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("Schritt 1").assertExists()
+        compose.onAllNodes(hasText("— II —", substring = false) or isHeading()).onFirst().assertExists()
+    }
 
     @Test fun kreuzerReiter() = reiter(FoodyStil.KREUZER)
 

@@ -234,7 +234,10 @@ wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für 
     `zeilenImStil()` die Zeilen der Stile R bis V. Texte nur in Immersiv über `stilText(standard, sage, anime, edo,
     bayrisch, grauen, kreuzer)` (`StilTexte`); TalkBack bekommt die normalen Begriffe. Gemeinsame Bausteine:
     `StilBausteine` (`StilAktion`, `stilTitel`), `StilFelder` (`StilFeld`, `StilAbschnitt`, `StilKarte`) und je Stil
-    `stil/<stil>/…Bausteine.kt` (Seitenkopf, Knöpfe, Zeichnungen). Die Szenen liegen in den Features unter `stil/`
+    `stil/<stil>/…Bausteine.kt` (Seitenkopf, Knöpfe, Zeichnungen). Grauen Immersiv zeigt Rezept und Kochmodus als
+    Buch: `GrauenSeite` (dunkles Blatt mit Bundschatten, Seitenkanten, Kapitel oben, römische Seitenzahl unten) im
+    `HorizontalPager`, `Modifier.umblaettern` kippt das gehende Blatt um den Bund statt es gleiten zu lassen; die Reiter
+    oben folgen der Seite (`grauenBuchBlaettern`). Die Szenen liegen in den Features unter `stil/`
     und bekommen denselben Zustand und dieselben Aktionen wie der normale Screen. Die Wahl speichert
     `DarstellungSpeicher` als `StilWahl` (`stil`, `stilVariante`, `stilAkzent`); fehlt sie, gilt Milchglas.
     Den Modus Hell/Dunkel und die Farbwelten gibt es nur bei Milchglas, die Systemleisten folgen dem Grund des Stils.

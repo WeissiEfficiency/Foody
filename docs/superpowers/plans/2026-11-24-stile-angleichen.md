@@ -103,7 +103,9 @@ Schritt 2 oben (Bühne plus Liste).
   Bretter im Bild werden gezeichnet). Auf dem Rücken steht der Titel schräg bzw. längs wie auf einem Buch, statt des
   Anfangsbuchstabens. Antippen öffnet den Band. Seiten (‹ ›) und die Pergamentkarte darunter entfallen.
 - **G2 Rezept als Buch:** Das Rezept öffnet als aufgeschlagenes Buch; Zutaten, Zubereitung und Nährwerte sind Seiten,
-  die man umblättert. Im Kochmodus ist jeder Schritt eine Seite mit Umblättern statt Durchschalten.
+  die man umblättert. Im Kochmodus ist jeder Schritt eine Seite mit Umblättern statt Durchschalten. *Erledigt:*
+  `GrauenSeite` und `umblaettern` in `:core:designsystem`; Rezept (Wischen oder Reiter) und Kochmodus blättern um
+  den Bund, Seitenzahlen römisch. Ruhig bleibt bei Reitern und Gleiten.
 - **G3 Mondphasen (Woche):** Das Wochenumschalten oben (‹ ›) entfällt, die Monde selbst wählen den Tag, Wischen über
   den Mondbogen wechselt die Woche. „2/7 planen“ oben verschwindet und geht im Ritual unten auf („Die dunklen Nächte
   füllen“ mit dem Stand „2 von 7“).
