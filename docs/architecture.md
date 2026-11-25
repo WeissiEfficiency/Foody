@@ -572,8 +572,9 @@ Menge in der Basiseinheit und Herkunft je `NeedSource`, manuelle Artikel ohne He
 Spec `docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6e1-einstellungen-design.md`. Das Zahnrad (`EinstellungenKnopf`) oben rechts
 im Kopf von Heute öffnet in allen Stilen die Einstellungsseite; „Server verbinden“ ist das eigene Ziel
 `ServerVerbinden`. Keine Schemaänderung. Die Stilwahl (`StilWahl`) legt die Kacheln in ein Raster mit fester
-Zellbreite (Stile 88 dp, Akzente 72 dp, mit der Schrift wachsend) und gleichem Innenabstand mit und ohne Auswahl, der
-Name hat immer Platz für zwei Zeilen. Die Spaltenzahl kommt aus der Breite der Seite abzüglich des größten
+Zellbreite (Stile 88 dp, Akzente 64 dp, mit der Schrift wachsend) und gleichem Innenabstand mit und ohne Auswahl, der
+Name hat immer Platz für zwei Zeilen. Die vier Akzente stehen auf dem Handy in einer Reihe; passen sie nicht, zwei zu
+je zwei statt drei und eine allein (`rasterSpalten`, `EinstellungenStileTest.sageFarbenInEinerReihe` bei 361 dp). Die Spaltenzahl kommt aus der Breite der Seite abzüglich des größten
 Karteneinzugs aller Stile (Glaskarte, 2 × 16 dp), nicht aus der Karte des gewählten Stils; auf dem Tablet stehen so
 sechs Stile in einer Reihe. Beim Umschalten ändern die Kacheln weder Spalten noch Breite noch Reihe
 (`EinstellungenStileTest`, alle Stile und Varianten bei 360 dp mit Schrift 130 % und 200 % und auf dem Tablet).

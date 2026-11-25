@@ -85,6 +85,11 @@ Ziel bleibt: wenig neuer Code, gemeinsame Bausteine statt fünf Einzellösungen.
 - Test `EinkaufStileTest.abteilungPerPille` (alle sechs Szenen: Pille wählt, nur deren Kacheln, nichts klappt,
   nichts scrollt waagerecht); Bilder der fünf Szenen neu; auf dem Handy in Sage geprüft.
 
+### Runde 2 · S5 Sage-Einstellungen
+- Bei 361 dp (Handy des Nutzers) passten nur drei der vier Farben in eine Reihe, die vierte rutschte allein in eine
+  neue Zeile. Akzente jetzt 64 dp breit, passen sie nicht, 2 + 2 (`rasterSpalten`,
+  `EinstellungenStileTest.sageFarbenInEinerReihe`). Gilt auch für die Ruhig-Varianten.
+
 ## Runde 2 · Immersive Stile eigenständig (Wunsch 2026-11-24)
 
 Der Nutzer will keine Gleichmacherei: Jeder immersive Stil soll auf jeder Seite (Heute mit Energie, Eintragen,
