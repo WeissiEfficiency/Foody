@@ -85,11 +85,6 @@ Ziel bleibt: wenig neuer Code, gemeinsame Bausteine statt fünf Einzellösungen.
 - Test `EinkaufStileTest.abteilungPerPille` (alle sechs Szenen: Pille wählt, nur deren Kacheln, nichts klappt,
   nichts scrollt waagerecht); Bilder der fünf Szenen neu; auf dem Handy in Sage geprüft.
 
-### Runde 2 · G3 Mondphasen
-- Grauen Immersiv: ‹ › und „2/7 planen ›“ oben entfallen. Monde wählen den Tag, Wischen über den Bogen blättert,
-  leise ‹ › in den oberen Ecken, „Heute ›“ im Kopf nur in einer anderen Woche, Ø kcal unter dem Titel. Das Ritual
-  unten zeigt „2 von 7 Nächten erhellt“ (`WocheStileTest.grauenMondbogenWischen`, `grauenBlaettern`).
-
 ## Runde 2 · Immersive Stile eigenständig (Wunsch 2026-11-24)
 
 Der Nutzer will keine Gleichmacherei: Jeder immersive Stil soll auf jeder Seite (Heute mit Energie, Eintragen,
@@ -132,3 +127,10 @@ G1 → S1 → G4 → G3 → S3 → S5 → G2 → S2 → S4; je ein kleiner PR mi
 ## Reihenfolge und Abnahme
 1 → 2 → 3 → 4 → 5; jeder Schritt mit Tests, Bildern und einem Blick auf dem Handy in allen fünf Stilen. Danach ein
 Release (3.12).
+
+## Ergebnis Runde 2
+
+### Runde 2 · G3 Mondphasen
+- Grauen Immersiv: ‹ › und „2/7 planen ›“ oben entfallen. Monde wählen den Tag, Wischen über den Bogen blättert,
+  leise ‹ › in den oberen Ecken, „Heute ›“ im Kopf nur in einer anderen Woche, Ø kcal unter dem Titel. Das Ritual
+  unten zeigt „2 von 7 Nächten erhellt“ (`WocheStileTest.grauenMondbogenWischen`, `grauenBlaettern`).
