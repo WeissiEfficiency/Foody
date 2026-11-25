@@ -126,14 +126,11 @@ class HeuteGrauenTest {
     }
 
     @Test
-    fun ruhigZeigtSzeneSchlicht() {
-        // Wie im Entwurf U-Heute in Ruhig: „Heute“ auf Pergament, statt des Auges ein Ring, die Mahlzeit beim Namen
+    fun ominoesZeigtDasAuge() {
+        // Ruhig ist beim Grauen „Ominös“ (ADR 0022): die volle Szene mit dem Auge, nicht mehr das schlichte Pergament
         zeigen(StilVariante.RUHIG)
-        compose.onNodeWithText("Das Auge").assertDoesNotExist()
-        compose.onNodeWithText("Heute").assertExists()
-        compose.onNodeWithText("Abendessen").assertExists()
-        compose.onNodeWithContentDescription("860 von 2.000 kcal: Eiweiß 42 g, Kohlenhydrate 96 g, Fett 31 g").assertExists()
-        compose.onNodeWithText("Tagebuch ›").assertExists()
+        compose.onNodeWithText("Das Auge").assertExists()
+        compose.onNodeWithText("Tagebuch ›").assertDoesNotExist()
     }
 
     @Test

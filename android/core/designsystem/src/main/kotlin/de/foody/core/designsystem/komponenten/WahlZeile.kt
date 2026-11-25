@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
-import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
@@ -142,7 +141,7 @@ private class ZeilenAussehen(
 @Composable
 private fun zeilenAussehen(gewaehlt: Boolean): ZeilenAussehen? {
     val s = FoodyTheme.stil
-    if (s.variante != StilVariante.IMMERSIV) return null
+    if (!s.inszeniert) return null
     val f = FoodyTheme.farben
     return when (s.stil) {
         FoodyStil.ANIME -> {

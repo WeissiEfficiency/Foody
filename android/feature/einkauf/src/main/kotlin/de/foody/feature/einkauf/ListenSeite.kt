@@ -19,7 +19,6 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.Reiterleiste
 import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.komponenten.Seitenkopf
-import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
@@ -45,7 +44,7 @@ internal fun ListenSeite(
     inhalt: @Composable () -> Unit,
 ) {
     BackHandler(onBack = onZurueck)
-    val immersiv = FoodyTheme.stil.variante == StilVariante.IMMERSIV
+    val immersiv = FoodyTheme.stil.inszeniert
     // Grauen und Kreuzer: Überzeile wie im Entwurf (Immersiv)
     val ueberzeile = if (immersiv) stilText("", grauen = "Das Archiv der Expeditionen", kreuzer = "Fracht · Dock 7").ifEmpty { null } else null
     Column(Modifier.fillMaxSize().widthIn(max = FoodyBreiten.inhalt)) {

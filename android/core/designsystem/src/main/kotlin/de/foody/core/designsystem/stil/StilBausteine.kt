@@ -94,7 +94,7 @@ fun stilTitel(art: TitelArt): TextStyle? {
 @Composable
 internal fun StilKnopf(text: String, onKlick: () -> Unit, modifier: Modifier, art: KnopfArt, aktiv: Boolean): Boolean {
     val s = FoodyTheme.stil
-    if (s.variante != StilVariante.IMMERSIV) return false
+    if (!s.inszeniert) return false
     if (art == KnopfArt.TEXT && s.stil != FoodyStil.MILCHGLAS && s.stil != FoodyStil.SAGE) {
         StilTextKnopf(text, onKlick, modifier, aktiv)
         return true

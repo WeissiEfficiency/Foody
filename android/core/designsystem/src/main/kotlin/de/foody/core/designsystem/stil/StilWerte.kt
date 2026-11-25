@@ -84,8 +84,8 @@ data class StilWerte(
 ) {
     val farben: FoodyFarben get() = werte.farben
 
-    /** `true`, wenn [stil] in der Variante Immersiv gewählt ist (Bausteine und Wörter in voller Inszenierung). */
-    fun immersiv(stil: FoodyStil): Boolean = this.stil == stil && variante == StilVariante.IMMERSIV
+    /** `true`, wenn [stil] gewählt und voll inszeniert ist (Bausteine und Wörter, [StilVariante.inszeniertFuer]). */
+    fun immersiv(stil: FoodyStil): Boolean = this.stil == stil && variante.inszeniertFuer(stil)
 
     /**
      * `true`, wenn ein Screen die Szene von [stil] zeigt: in Immersiv und, für die Stile in [RUHIG_ALS_SZENE], auch in
@@ -93,8 +93,14 @@ data class StilWerte(
      */
     fun szene(stil: FoodyStil): Boolean = this.stil == stil && (variante == StilVariante.IMMERSIV || stil in RUHIG_ALS_SZENE)
 
-    /** Bilder, Schrägen, harte Schatten und Animationen der Szenen: nur in Immersiv; Ruhig zeigt die Szene schlicht. */
-    val inszeniert: Boolean get() = variante == StilVariante.IMMERSIV
+    /**
+     * Bilder, Schrägen, harte Schatten und Animationen der Szenen: in Immersiv, beim Grauen in beiden Varianten; Ruhig
+     * zeigt die Szene sonst schlicht.
+     */
+    val inszeniert: Boolean get() = variante.inszeniertFuer(stil)
+
+    /** Das Gesicht „Necronomicon“ des Grauens (Immersiv): die App als Buch (ADR 0022). */
+    val grauenBuch: Boolean get() = stil == FoodyStil.GRAUEN && variante == StilVariante.IMMERSIV
 }
 
 /**
@@ -129,7 +135,7 @@ fun stilWerte(
     farbwelt: Farbwelt = Farbwelt.Standard,
 ): StilWerte {
     val akzent = stil.akzent(akzentName) ?: return milchglasWerte(farbwelt, dunkel)
-    val immersiv = variante == StilVariante.IMMERSIV
+    val immersiv = variante.inszeniertFuer(stil)
     val g = stilGrundlage(stil, immersiv, akzent.farbe)
     val (werte, akzentFarbe) = ableiten(g, akzent.farbe, if (stil == FoodyStil.KREUZER) HoloBlau else null)
     return StilWerte(

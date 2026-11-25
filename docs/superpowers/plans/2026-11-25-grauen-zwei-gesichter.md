@@ -18,6 +18,8 @@ Handy und beide Gesichter ansehen; Fehler zuerst beheben, dann weiter.
   Bilder von Grauen Ruhig werden neu aufgenommen.
 
 ### 2 · Bedienelemente ohne Kästen (beide Gesichter, zuerst sichtbar in Ominös)
+Hinweis des Nutzers (2026-11-25): Eckige oder andere Bedienelemente dürfen vorkommen, sie müssen nur ins Design
+passen. Die heutigen Kästen tun das nicht; Maßstab ist das Buch, nicht „rund statt eckig“.
 - In `:core:designsystem/stil/grauen/` neu:
   - `GrauenSiegel` (Wachs mit gewelltem Rand, Zeichen, Text daneben)
   - `GrauenZurueck` („↶ Ziel“) und `GrauenMenue` („∴“)
@@ -73,4 +75,14 @@ Vorschauen nach `res/drawable-nodpi/widget_vorschau_*`.
 
 ## Ergebnis
 
-(folgt je Schritt)
+### Schritt 1 · Varianten umdeuten
+- `StilVariante.inszeniertFuer(stil)` ist die eine Abfrage für „voll inszeniert“; `StilWerte.inszeniert` und
+  `immersiv(stil)` nutzen sie, ebenso die früheren Einzelprüfungen auf `IMMERSIV` (Texte, Bausteine, Wahlzeile,
+  Planen, Einkauf, Widgets). `StilWerte.grauenBuch` kennzeichnet das Necronomicon.
+- Das Grauen ist in beiden Varianten dunkel; Ominös zeigt das grüne Grauen mit Sternen, das schlichte Pergament ist
+  nicht mehr erreichbar (Code räumt Schritt 7 weg).
+- Einstellungen: „Necronomicon“ und „Ominös“ mit eigenem Satz darunter, keine Zeile „Farbe“ beim Grauen; der Akzent
+  ist fest Glut (`FoodyStil.GRAUEN.akzente` hat nur noch ihn).
+- Tests: `StilTest.grauenHatZweiImmersiveGesichter`, `grauenOhneFarbwahl`; angepasst `HeuteGrauenTest`,
+  `WocheStileTest`, `EinstellungenStileTest`, `DatenWidgetTest`. Neu aufgenommen: `stil_grauen_ruhig`,
+  `stil_grauen_einstellungen_handy`.

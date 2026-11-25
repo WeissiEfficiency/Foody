@@ -51,7 +51,6 @@ import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.ueberLeiste
-import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.SageHauptknopf
 import de.foody.core.designsystem.stil.sage.SageKopf
@@ -153,7 +152,7 @@ internal fun zutatenSatz(r: RezeptKarte, hoechstens: Int = 4): String? {
 private fun Seite(r: RezeptKarte, onOeffnen: () -> Unit, modifier: Modifier) {
     val f = FoodyTheme.farben
     val glut = FoodyTheme.stil.zier
-    val immersiv = FoodyTheme.stil.variante == StilVariante.IMMERSIV
+    val immersiv = FoodyTheme.stil.inszeniert
     Column(
         modifier.fillMaxWidth()
             // Doppelter Rahmen wie im Entwurf: innen Kante, 4 dp außen eine dunklere Linie

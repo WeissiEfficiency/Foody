@@ -35,7 +35,6 @@ import de.foody.core.designsystem.komponenten.ganzzahlDeutsch
 import de.foody.core.designsystem.komponenten.platzFuerLeiste
 import de.foody.core.designsystem.komponenten.slotName
 import de.foody.core.designsystem.komponenten.zeilenImStil
-import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
@@ -106,7 +105,7 @@ internal fun PlanenSeite(start: PlanenStart, karten: List<RezeptKarte>, fuellen:
     val n = portionen ?: rezept?.portionen ?: 2
     val stil = FoodyTheme.stil
     // Grauen und Kreuzer: Überzeile wie im Entwurf (Immersiv)
-    val ueberzeile = if (stil.variante == StilVariante.IMMERSIV) {
+    val ueberzeile = if (stil.inszeniert) {
         stilText("", grauen = "Die Sterne befragen", kreuzer = "Navigation · ${wochenTitel(montagVon(tag)).substringBefore(" ·")}").ifEmpty { null }
     } else {
         null

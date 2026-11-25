@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
@@ -100,11 +101,20 @@ class EinstellungenStileTest {
         val verbunden = if (stil == FoodyStil.KREUZER) "VERBUNDEN · HTTP://10.0.2.2:8081" else "Verbunden mit http://10.0.2.2:8081"
         compose.onNodeWithText(verbunden).performScrollTo().performClick()
         assertEquals(1, server)
-        // Variante und Farbe als Optionsfelder
-        compose.onNode(isSelectable() and hasContentDescription(stil.akzente[1].anzeigename)).performScrollTo().performClick()
-        compose.waitUntil(5_000) { vm.zustand.value.akzent == stil.akzente[1].name }
-        compose.onNode(isSelectable() and hasContentDescription(stil.akzente[1].anzeigename)).assertIsSelected()
-        compose.onNodeWithText(if (stil == FoodyStil.KREUZER) "RUHIG" else "Ruhig").performScrollTo().performClick()
+        // Variante und Farbe als Optionsfelder; das Grauen hat keine Farbe zur Wahl und nennt Ruhig „Ominös“ (ADR 0022)
+        if (stil == FoodyStil.GRAUEN) {
+            compose.onAllNodes(hasText("Farbe")).assertCountEquals(0)
+        } else {
+            compose.onNode(isSelectable() and hasContentDescription(stil.akzente[1].anzeigename)).performScrollTo().performClick()
+            compose.waitUntil(5_000) { vm.zustand.value.akzent == stil.akzente[1].name }
+            compose.onNode(isSelectable() and hasContentDescription(stil.akzente[1].anzeigename)).assertIsSelected()
+        }
+        val ruhig = when (stil) {
+            FoodyStil.KREUZER -> "RUHIG"
+            FoodyStil.GRAUEN -> "Ominös"
+            else -> "Ruhig"
+        }
+        compose.onNodeWithText(ruhig).performScrollTo().performClick()
         compose.waitUntil(5_000) { vm.zustand.value.variante == StilVariante.RUHIG }
         // Tagesziel: − und + in Schritten von 50, das Feld nimmt eine eigene Zahl
         compose.onNodeWithContentDescription("Ziel erhöhen").performScrollTo().performClick()
