@@ -368,7 +368,9 @@ gespeichert wird wie vorher (`EintragenViewModel.schreiben`).
   Erkennung, die Suche „Rezept oder Zutat suchen“ und die Treffer: das offene Geplante des Tags, Rezepte (auch ohne
   Suchtext) und Zutaten samt gescannten Produkten (erst mit Suchtext, Teilstring oder Katalogname), je höchstens 30,
   dazu der BLS (siehe „BLS nachschlagen“). Ganz unten, wenn es „Foto“ gibt, „Nicht dabei? Frei eintragen“. Antippen
-  führt zu Bestätigen.
+  führt zu Bestätigen. Sage Immersiv (`stil/ErfassenSage.kt`) zeigt die vier Wege als Gegenstände in Inventarfeldern
+  unter „Ausrüstung“ (eine Reihe, darunter kurze Namen; TalkBack hört die vollen) und die Treffer als Zeilen mit
+  Rune, Name, Nebenzeile und goldenem Pfeil unter Überschriften zwischen Linien (`eintragen_sage_erfassen_suche`).
 - **Bestätigen** (`Bestaetigen.kt`): je nach Quelle Portionen (− / Feld / +) oder Menge und Einheit, beides mit
   „= … kcal“ (`kcalDazu`); Geplantes nur zur Ansicht („1 Portion · … kcal“, Mahlzeit des Plans fest, gespeichert über
   `ausPlan`); nach einem Scan die Packung (`PackungEingabe`), während Katalog bzw. Open Food Facts suchen mit

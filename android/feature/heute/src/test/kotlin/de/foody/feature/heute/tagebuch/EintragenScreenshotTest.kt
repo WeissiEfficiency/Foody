@@ -134,6 +134,17 @@ class EintragenScreenshotTest {
         jeStil("erfassen")
     }
 
+    /** Sage Immersiv (Runde 2 S2): Inventarfelder und die Treffer der Suche als Liste im Stil. */
+    @Test
+    fun erfassenSucheSage() {
+        stil = FoodyStil.SAGE
+        val vm = zeigen()
+        compose.runOnIdle { vm.suche("Reis") }
+        compose.warteAufText("Zutaten")
+        compose.waitForIdle()
+        captureScreenRoboImage("src/test/screenshots/eintragen_sage_erfassen_suche.png", roborazziOptions = FoodyBildvergleich)
+    }
+
     @Test
     fun bestaetigenFoto() {
         val vm = zeigen()

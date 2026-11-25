@@ -117,7 +117,8 @@ Schritt 2 oben (Bühne plus Liste).
   Fokus und Ausdauer eines Helden. „+ Scannen“/„+ Foto“ unten auf der Startseite entfallen (Scannen gehört zu
   Eintragen). Vitalität öffnet das Energietagebuch.
 - **S2 Mahl eintragen:** neu gestalten – Foto, Scannen, Galerie, Nährwerttabelle als Gegenstände in Inventarfeldern,
-  die Treffer als Liste im Stil statt der nackten Zeilen.
+  die Treffer als Liste im Stil statt der nackten Zeilen. *Erledigt:* vier Inventarfelder unter „Ausrüstung“ (Foto,
+  Scannen, Galerie, Tabelle), Treffer als Zeilen mit Rune und goldenem Pfeil; Ruhig behält die großen Knöpfe.
 - **S3 Grimoire als Inventar:** Rezepte als Raster aus Inventarfeldern (scrollbar), oben die Beschreibung des
   gewählten Gegenstands mit Werten (Zeit, kcal, gekocht) und „Aufschlagen“.
 - **S4 Der Händler:** zwei, drei Bildvarianten zum Vergleich zeichnen; die Liste als Papierrolle, die sich nach unten

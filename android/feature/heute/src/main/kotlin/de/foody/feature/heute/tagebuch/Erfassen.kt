@@ -37,9 +37,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
+import de.foody.core.designsystem.komponenten.WahlZeile
 import de.foody.core.designsystem.komponenten.slotName
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.scan.ScanTexte
+import de.foody.feature.heute.stil.SageAbschnitt
+import de.foody.feature.heute.stil.SageTreffer
+import de.foody.feature.heute.stil.SageWerkzeuge
+import de.foody.feature.heute.stil.Werkzeug
 
 /** Test-Tag des großen Knopfs „Foto“ in Erfassen. */
 const val ERFASSEN_FOTO = "erfassen-foto"
@@ -51,6 +57,7 @@ const val ERFASSEN_SCANNEN = "erfassen-scannen"
  * Schritt Erfassen: vier große Knöpfe mit Symbol, oben „Foto“ und „Scannen“ (sie starten sofort, ohne Menü; ohne
  * Erkennungsmodell steht „Frei eintragen“ an der Stelle von „Foto“), darunter „Aus der Galerie“ und „Nährwerttabelle“, ein Hinweis,
  * die Suche über Rezepte, Zutaten und den BLS und das noch offene Geplante des Tags. Antippen führt zu Bestätigen.
+ * Sage Immersiv zeigt dieselben Wege als Inventarfelder und die Treffer als Liste im Stil ([SageWerkzeuge]).
  *
  * Bis die Einstellung gelesen ist, ob es ein Modell gibt, steht neben „Scannen“ ein leerer Platz gleicher Größe; die
  * Nebenwege und „Nicht dabei?“ kommen erst danach. So springt beim Öffnen kein Knopf von „Frei eintragen“ zu „Foto“.
@@ -63,53 +70,73 @@ internal fun Erfassen(z: EintragenZustand, vm: EintragenViewModel, aufnahme: Auf
     val scan = vm.scanLauf.zustand
     val verfuegbar = vm.scanLauf.verfuegbar
     val scannenMoeglich = verfuegbar && !scan.laeuft
-    // Gleich hohe Knöpfe je Reihe, auch wenn ein Text bei großer Schrift umbricht
-    Reihe { knopf ->
-        when (fotoKnopf) {
-            true -> GrosserKnopf("Foto", Icons.Outlined.PhotoCamera, aufnahme.foto, knopf.testTag(ERFASSEN_FOTO))
-            false -> GrosserKnopf("Frei eintragen", Icons.Outlined.Edit, vm::freiEintragen, knopf)
-            null -> Box(knopf)
-        }
-        GrosserKnopf(
-            "Scannen", Icons.Outlined.DocumentScanner, aufnahme.scannen, knopf.testTag(ERFASSEN_SCANNEN),
-            aktiv = scannenMoeglich, laeuft = scan.laeuft,
-        )
+    val sage = FoodyTheme.stil.immersiv(FoodyStil.SAGE)
+    // Ein neuer Versuch gehört zu keinem früheren Strichcode
+    val tabelle = {
+        scan.menueVersuch()
+        aufnahme.tabelle()
     }
-    if (fotoKnopf != null) {
-        Reihe { knopf ->
-            if (fotoKnopf) GrosserKnopf("Aus der Galerie", Icons.Outlined.PhotoLibrary, aufnahme.galerie, knopf)
-            // Ein neuer Versuch gehört zu keinem früheren Strichcode
-            GrosserKnopf(
-                "Nährwerttabelle",
-                Icons.Outlined.TableChart,
-                {
-                    scan.menueVersuch()
-                    aufnahme.tabelle()
+    if (sage) {
+        val frei = Werkzeug("Frei eintragen", "Frei", Icons.Outlined.Edit, vm::freiEintragen)
+        SageWerkzeuge(
+            listOf(
+                when (fotoKnopf) {
+                    true -> Werkzeug("Foto", "Foto", Icons.Outlined.PhotoCamera, aufnahme.foto, tag = ERFASSEN_FOTO)
+                    false -> frei
+                    null -> null
                 },
-                knopf, aktiv = scannenMoeglich,
+                Werkzeug("Scannen", "Scannen", Icons.Outlined.DocumentScanner, aufnahme.scannen, scannenMoeglich, scan.laeuft, ERFASSEN_SCANNEN),
+                Werkzeug("Aus der Galerie", "Galerie", Icons.Outlined.PhotoLibrary, aufnahme.galerie).takeIf { fotoKnopf == true },
+                Werkzeug("Nährwerttabelle", "Tabelle", Icons.Outlined.TableChart, tabelle, scannenMoeglich).takeIf { fotoKnopf != null },
+            ),
+        )
+    } else {
+        // Gleich hohe Knöpfe je Reihe, auch wenn ein Text bei großer Schrift umbricht
+        Reihe { knopf ->
+            when (fotoKnopf) {
+                true -> GrosserKnopf("Foto", Icons.Outlined.PhotoCamera, aufnahme.foto, knopf.testTag(ERFASSEN_FOTO))
+                false -> GrosserKnopf("Frei eintragen", Icons.Outlined.Edit, vm::freiEintragen, knopf)
+                null -> Box(knopf)
+            }
+            GrosserKnopf(
+                "Scannen", Icons.Outlined.DocumentScanner, aufnahme.scannen, knopf.testTag(ERFASSEN_SCANNEN),
+                aktiv = scannenMoeglich, laeuft = scan.laeuft,
             )
-            if (!fotoKnopf) Box(knopf)
+        }
+        if (fotoKnopf != null) {
+            Reihe { knopf ->
+                if (fotoKnopf) GrosserKnopf("Aus der Galerie", Icons.Outlined.PhotoLibrary, aufnahme.galerie, knopf)
+                GrosserKnopf("Nährwerttabelle", Icons.Outlined.TableChart, tabelle, knopf, aktiv = scannenMoeglich)
+                if (!fotoKnopf) Box(knopf)
+            }
         }
     }
     val hinweis = scan.meldung ?: ScanTexte.NICHT_VERFUEGBAR.takeIf { !verfuegbar } ?: foto.meldung
     hinweis?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = FoodyTheme.farben.nebentext) }
 
     Suche(z.eingaben.suche, vm::suche)
+    val abschnitt: @Composable (String) -> Unit = if (sage) { t -> SageAbschnitt(t) } else { t -> Abschnitt(t) }
+    val treffer: @Composable (String, String?, () -> Unit) -> Unit =
+        if (sage) { t, i, w -> SageTreffer(t, i, w) } else { t, i, w -> WahlZeile(t, gewaehlt = false, w, info = i, knopf = true) }
     if (z.plan.isNotEmpty()) {
-        Abschnitt("Geplant")
-        z.plan.forEach { p -> Treffer("${p.titel} · ${slotName(p.slot)}") { vm.planWaehlen(p.planEintragId) } }
+        abschnitt("Geplant")
+        z.plan.forEach { p ->
+            // Sage: die Mahlzeit als Nebenzeile; sonst in einer Zeile
+            val titel = if (sage) p.titel else "${p.titel} · ${slotName(p.slot)}"
+            treffer(titel, slotName(p.slot).takeIf { sage }) { vm.planWaehlen(p.planEintragId) }
+        }
     }
     if (z.rezepte.isNotEmpty()) {
-        Abschnitt("Rezepte")
-        z.rezepte.forEach { r -> Treffer(r.titel) { vm.rezeptWaehlen(r.id) } }
+        abschnitt("Rezepte")
+        z.rezepte.forEach { r -> treffer(r.titel, null) { vm.rezeptWaehlen(r.id) } }
     }
     if (z.zutaten.isNotEmpty()) {
-        Abschnitt("Zutaten")
-        z.zutaten.forEach { t -> Treffer(t.name) { vm.zutatWaehlen(t.id) } }
+        abschnitt("Zutaten")
+        z.zutaten.forEach { t -> treffer(t.name, null) { vm.zutatWaehlen(t.id) } }
     }
     if (z.bls.isNotEmpty()) {
-        Abschnitt("Aus dem Bundeslebensmittelschlüssel")
-        z.bls.forEach { t -> BlsZeile(t) { vm.blsWaehlen(t) } }
+        abschnitt("Aus dem Bundeslebensmittelschlüssel")
+        z.bls.forEach { t -> treffer(t.vorschlagName, blsInfo(t)) { vm.blsWaehlen(t) } }
     }
     if (fotoKnopf == true) FoodyKnopf("Nicht dabei? Frei eintragen", vm::freiEintragen, art = KnopfArt.TEXT)
 }
