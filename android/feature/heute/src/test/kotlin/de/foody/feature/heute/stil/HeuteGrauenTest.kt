@@ -19,7 +19,6 @@ import de.foody.core.designsystem.stil.StilVariante
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.HeuteAktionen
 import de.foody.feature.heute.HeuteScreen
-import de.foody.feature.heute.MitSchrift200
 import de.foody.feature.heute.beispielZustand
 import de.foody.feature.heute.pruefeNichtsAbgeschnitten
 import org.junit.Before
@@ -59,10 +58,10 @@ class HeuteGrauenTest {
         Settings.Global.putFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 0f)
     }
 
-    private fun zeigen(variante: StilVariante = StilVariante.IMMERSIV, schrift200: Boolean = false) {
+    private fun zeigen(variante: StilVariante = StilVariante.IMMERSIV) {
         compose.setContent {
             FoodyTheme(stil = FoodyStil.GRAUEN, variante = variante, unschaerfe = false) {
-                if (schrift200) MitSchrift200 { HeuteScreen(beispielZustand(), aktionen) } else HeuteScreen(beispielZustand(), aktionen)
+                HeuteScreen(beispielZustand(), aktionen)
             }
         }
     }
@@ -136,17 +135,6 @@ class HeuteGrauenTest {
         compose.onNodeWithContentDescription("Abendessen Ofengemüse mit Feta und Kräuterquark: gegessen?").performScrollTo().performClick()
         compose.onNodeWithText("Ja").performClick()
         assertEquals(listOf("gegessen p1"), ausgeloest)
-    }
-
-    @Test
-    fun schrift200OhneAbschneiden() {
-        zeigen(schrift200 = true)
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
-        // Der Titel bleibt einzeilig, das Datum rückt darunter
-        val layout = mutableListOf<TextLayoutResult>()
-        compose.onNodeWithText("Das Auge").fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(layout)
-        assertEquals(1, layout.single().lineCount)
     }
 
     @Test

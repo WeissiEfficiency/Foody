@@ -30,7 +30,6 @@ import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Einordnung
-import de.foody.feature.rezepte.MitSchrift200
 import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.liste.RezeptListeRoute
 import de.foody.feature.rezepte.liste.RezeptListeViewModel
@@ -51,8 +50,7 @@ import kotlin.test.assertEquals
 
 /**
  * Die Rezeptlisten-Szenen der Stile R–V in Immersiv: Titel für TalkBack, Rezept wählen und öffnen (Anime und die
- * Bibliothek des Grauens öffnen direkt), Seiten blättern (Anime und Grauen: endlos), „+ Neu“ öffnet ein neues Rezept, leere Liste bietet „Anlegen“; bei 200 % Schrift wird
- * nichts abgeschnitten.
+ * Bibliothek des Grauens öffnen direkt), Seiten blättern (Anime und Grauen: endlos), „+ Neu“ öffnet ein neues Rezept, leere Liste bietet „Anlegen“.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -91,14 +89,14 @@ class RezepteStileTest {
         }
     }
 
-    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false) {
+    private fun zeigen(stil: FoodyStil) {
         val vm = halter.behalten(RezeptListeViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1L }))
         compose.setContent {
             FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV) {
                 val inhalt = @Composable {
                     RezeptListeRoute(onOeffnen = { geoeffnet += it }, onNeu = { neu++ }, vm = vm)
                 }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
     }
@@ -145,14 +143,6 @@ class RezepteStileTest {
         compose.warteAufText("Noch keine Rezepte")
         compose.onNodeWithText("Anlegen").performClick()
         assertEquals(1, neu)
-    }
-
-    private fun gross(stil: FoodyStil) {
-        rezepte(7)
-        zeigen(stil, schrift200 = true)
-        warteAufBeschreibung("Shakshuka")
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
     }
 
     /**
@@ -264,16 +254,6 @@ class RezepteStileTest {
     @Test fun animeLeer() = leer(FoodyStil.ANIME)
 
     @Test fun kreuzerLeer() = leer(FoodyStil.KREUZER)
-
-    @Test fun animeSchrift200() = gross(FoodyStil.ANIME)
-
-    @Test fun edoSchrift200() = gross(FoodyStil.EDO)
-
-    @Test fun bayrischSchrift200() = gross(FoodyStil.BAYRISCH)
-
-    // Grauen ohne 200-%-Test: lange Titel werden auf dem Buchrücken dann gekürzt; 200 % zählt nicht (TalkBack liest den ganzen Namen)
-
-    @Test fun kreuzerSchrift200() = gross(FoodyStil.KREUZER)
 
     @Test
     fun texte() {

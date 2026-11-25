@@ -1,8 +1,6 @@
 package de.foody.core.scan
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
@@ -16,7 +14,6 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.unit.Density
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.zutaten.Packungswerte
@@ -57,7 +54,7 @@ class PackungScanKnopfTest {
     @After
     fun tearDown() = scope.cancel()
 
-    private fun zeigen(verfuegbar: Boolean = true, schrift200: Boolean = false) {
+    private fun zeigen(verfuegbar: Boolean = true) {
         compose.setContent {
             FoodyTheme {
                 val inhalt = @Composable {
@@ -74,12 +71,7 @@ class PackungScanKnopfTest {
                         ),
                     )
                 }
-                if (schrift200) {
-                    val d = LocalDensity.current
-                    CompositionLocalProvider(LocalDensity provides Density(d.density, fontScale = 2f)) { inhalt() }
-                } else {
-                    inhalt()
-                }
+                inhalt()
             }
         }
     }
@@ -143,15 +135,6 @@ class PackungScanKnopfTest {
         strichcodeScannen()
         assertEquals(0, compose.onAllNodesWithText("Foto der Nährwerttabelle").fetchSemanticsNodes().size)
         compose.onNodeWithText("Packung scannen").assertIsEnabled()
-    }
-
-    @Test
-    fun schrift200() {
-        ausgang = ScanAusgang.NichtGefunden(code, ScanAusgang.Grund.OFFLINE)
-        zeigen(schrift200 = true)
-        strichcodeScannen()
-        compose.onNodeWithText("Keine Verbindung – Foto der Nährwerttabelle?").assertExists()
-        compose.pruefeNichtsAbgeschnitten()
     }
 }
 

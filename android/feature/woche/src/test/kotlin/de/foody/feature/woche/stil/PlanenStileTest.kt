@@ -27,7 +27,6 @@ import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.testing.FoodyBildvergleich
 import de.foody.feature.woche.MONTAG
-import de.foody.feature.woche.MitSchrift200
 import de.foody.feature.woche.WocheRoute
 import de.foody.feature.woche.WocheTestUmgebung
 import de.foody.feature.woche.bestand
@@ -49,7 +48,7 @@ import kotlin.test.assertEquals
 
 /**
  * Planen der Stile R–V in Immersiv: „Leere Tage füllen“ (Reiter der Planen-Seite) mit Vorschlagszeilen des Stils (abwählen, neu ziehen),
- * Portionen im Mahlzeit-Blatt mit den Knöpfen des Stils; bei 200 % Schrift wird nichts abgeschnitten. Bilder
+ * Portionen im Mahlzeit-Blatt mit den Knöpfen des Stils. Bilder
  * `stil_*_fuellen_handy` und `stil_*_mahlzeit_handy`.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -84,19 +83,19 @@ class PlanenStileTest {
         db.close()
     }
 
-    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false) {
+    private fun zeigen(stil: FoodyStil) {
         val vm = u.vm()
         compose.setContent {
             FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV, unschaerfe = false) {
                 val inhalt = @Composable { WocheRoute({ _, _ -> }, {}, vm = vm) }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
         compose.waitUntil(5_000) { compose.onAllNodesWithContentDescription("Mittwoch, 28.10.", substring = true).fetchSemanticsNodes().isNotEmpty() }
     }
 
-    private fun fuellenOeffnen(stil: FoodyStil, schrift200: Boolean = false) {
-        zeigen(stil, schrift200)
+    private fun fuellenOeffnen(stil: FoodyStil) {
+        zeigen(stil)
         compose.onAllNodes(hasContentDescription("Leere Tage füllen", substring = true)).onFirst().performScrollTo().performClick()
         compose.warteAufText("Neu mischen")
     }
@@ -130,12 +129,6 @@ class PlanenStileTest {
         assertEquals(2, runBlocking { db.planEintragDao().alle().single().servings })
     }
 
-    private fun gross(stil: FoodyStil) {
-        fuellenOeffnen(stil, schrift200 = true)
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
-    }
-
     @Test fun animeFuellen() = fuellen(FoodyStil.ANIME)
 
     @Test fun edoFuellen() = fuellen(FoodyStil.EDO)
@@ -151,16 +144,6 @@ class PlanenStileTest {
     @Test fun bayrischPortionen() = portionen(FoodyStil.BAYRISCH)
 
     @Test fun kreuzerPortionen() = portionen(FoodyStil.KREUZER)
-
-    @Test fun animeSchrift200() = gross(FoodyStil.ANIME)
-
-    @Test fun edoSchrift200() = gross(FoodyStil.EDO)
-
-    @Test fun bayrischSchrift200() = gross(FoodyStil.BAYRISCH)
-
-    @Test fun grauenSchrift200() = gross(FoodyStil.GRAUEN)
-
-    @Test fun kreuzerSchrift200() = gross(FoodyStil.KREUZER)
 
     @Test
     fun texte() {

@@ -16,7 +16,6 @@ import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.testing.ViewModelHalter
-import de.foody.feature.rezepte.MitSchrift200
 import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.pruefeNichtsAbgeschnitten
 import de.foody.feature.rezepte.testDatenbank
@@ -115,13 +114,5 @@ class EditorScreenTest {
         feld("Name").performTextInput("Bowl")
         wiederherstellen.emulateSavedInstanceStateRestore()
         compose.warteAufText("Bowl")
-    }
-
-    @Test
-    fun schrift200OhneAbschneiden() {
-        compose.setContent { FoodyTheme { MitSchrift200 { EditorRoute(id = "r1", onFertig = {}, onZurueck = {}, vm = vm) } } }
-        compose.warteAufText("400 g Reis")
-        compose.onNodeWithText("Bearbeiten").assertExists()
-        compose.pruefeNichtsAbgeschnitten()
     }
 }

@@ -46,7 +46,7 @@ import kotlin.test.assertEquals
 /**
  * Einstellungen der Stile R–V in Immersiv wie in den Entwürfen: Überschriften mit Stilwort (TalkBack liest das
  * normale Wort), Schalter-Zeilen, Tagesziel mit − und + und Feld, Varianten-Leiste und Farbmuster als Optionsfelder,
- * Abgleich öffnet „Server verbinden“; bei 200 % Schrift wird nichts abgeschnitten. Die Kacheln der Stilwahl behalten
+ * Abgleich öffnet „Server verbinden“. Die Kacheln der Stilwahl behalten
  * beim Wechsel des Stils ihre Größe und stehen in jedem Stil in denselben Spalten und Reihen, auch auf einem schmalen
  * Handy mit großer Schrift und auf dem Tablet.
  */
@@ -123,12 +123,6 @@ class EinstellungenStileTest {
         schalter.assertIsOff()
     }
 
-    private fun gross(stil: FoodyStil) {
-        zeigen(stil, schrift = 2f)
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
-    }
-
     @Test fun anime() = bedienen(FoodyStil.ANIME)
 
     @Test fun edo() = bedienen(FoodyStil.EDO)
@@ -138,16 +132,6 @@ class EinstellungenStileTest {
     @Test fun grauen() = bedienen(FoodyStil.GRAUEN)
 
     @Test fun kreuzer() = bedienen(FoodyStil.KREUZER)
-
-    @Test fun animeSchrift200() = gross(FoodyStil.ANIME)
-
-    @Test fun edoSchrift200() = gross(FoodyStil.EDO)
-
-    @Test fun bayrischSchrift200() = gross(FoodyStil.BAYRISCH)
-
-    @Test fun grauenSchrift200() = gross(FoodyStil.GRAUEN)
-
-    @Test fun kreuzerSchrift200() = gross(FoodyStil.KREUZER)
 
     /** Wie in den Entwürfen steht der Abgleich nach Darstellung, Tagesziel und Daten; nur Milchglas behält ihn oben. */
     private fun abgleichUnten(stil: FoodyStil, variante: StilVariante = StilVariante.IMMERSIV, unten: Boolean = true) {
@@ -279,13 +263,6 @@ class EinstellungenStileTest {
     @Config(qualifiers = "w360dp-h1600dp")
     fun kachelnSchmalMitGrosserSchrift() {
         rasterUeberallGleich(1.3f)
-    }
-
-    /** Schmales Handy mit 200 % Schrift: eine Kachel je Reihe, auch ohne Karte. */
-    @Test
-    @Config(qualifiers = "w360dp-h1600dp")
-    fun kachelnSchmalMitSchrift200() {
-        rasterUeberallGleich(2f)
     }
 
     /**

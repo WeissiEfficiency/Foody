@@ -13,7 +13,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.MitSchrift200
 import de.foody.core.designsystem.pruefeNichtsAbgeschnitten
 import org.junit.Rule
 import org.junit.Test
@@ -44,20 +43,5 @@ class LeererZustandTest {
         }
         compose.onNodeWithText("Nichts einzukaufen").assertExists()
         assertEquals(0, compose.onAllNodes(hasClickAction()).fetchSemanticsNodes().size)
-    }
-
-    @Test
-    fun doppelteSchriftOhneAbschneiden() {
-        compose.setContent {
-            FoodyTheme {
-                MitSchrift200 {
-                    Column(Modifier.width(360.dp)) {
-                        LeererZustandZeile("Noch kein Snack eingetragen", "Eintragen", onAktion = {})
-                        LeererZustandFlaeche(Icons.Outlined.ShoppingBag, "Nichts einzukaufen", "Die Liste ist leer.", "Artikel hinzufügen", {})
-                    }
-                }
-            }
-        }
-        compose.pruefeNichtsAbgeschnitten()
     }
 }

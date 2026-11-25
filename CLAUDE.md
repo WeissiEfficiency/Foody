@@ -48,6 +48,8 @@ JDK 21+ (JBR von Android Studio), Android SDK 37. Befehle in PowerShell mit `.\g
   erst `schliessen()`, dann `db.close()` – sonst fragt ein laufender Flow die geschlossene Datenbank ab (ADR 0014).
 - Eingaben, die ein Prozessende überstehen müssen, liegen im `SavedStateHandle`; Tests prüfen das mit
   `SavedStateHandle.nachProzessende()` aus `:core:testing` (Werte und `saveable`-Zustände gehen wie beim Sichern durch ein Parcel).
+- Große Schrift: geprüft wird bis 130 % (Handy und Tablet). 200 % nutzt der Nutzer nicht; dafür keine Tests und keine
+  Korrekturen (seit 2026-11-24 gelöscht).
 - Room: nie einen destruktiven Fallback; jede Schemaänderung mit Migration und Migrationstest.
 - Änderungen unter `shared/api-protocol/` oder `server/` → der Server muss neu gebaut werden; im PR sagen, ob ein
   Server-Rebuild nötig ist (`server/README.md`, Update).

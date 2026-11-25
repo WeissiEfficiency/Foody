@@ -64,14 +64,14 @@ class WocheScreenTest {
 
     private fun prefs() = RuntimeEnvironment.getApplication().getSharedPreferences(Einstellungsschluessel.PREFS, Context.MODE_PRIVATE)
 
-    private fun zeigen(schrift200: Boolean = false, stil: FoodyStil = FoodyStil.MILCHGLAS) {
+    private fun zeigen(stil: FoodyStil = FoodyStil.MILCHGLAS) {
         val vm = u.vm()
         compose.setContent {
             FoodyTheme(stil = stil) {
                 val inhalt = @androidx.compose.runtime.Composable {
                     WocheRoute(onKochen = { r, p -> gekocht += r to p }, onRezept = { rezepte += it }, vm = vm)
                 }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
     }
@@ -266,14 +266,6 @@ class WocheScreenTest {
         val mo = compose.onNodeWithText("Montag, 26.10.").getUnclippedBoundsInRoot()
         val fr = compose.onNodeWithText("Freitag, 30.10.").getUnclippedBoundsInRoot()
         assertTrue(fr.left > mo.right, "Freitag in der rechten Spalte")
-    }
-
-    @Test
-    fun schrift200OhneAbschneiden() {
-        planen(2, "ABENDESSEN")
-        zeigen(schrift200 = true)
-        compose.warteAufText("Reispfanne")
-        compose.pruefeNichtsAbgeschnitten()
     }
 
     @Test

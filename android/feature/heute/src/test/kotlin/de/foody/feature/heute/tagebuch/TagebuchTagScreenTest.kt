@@ -24,7 +24,6 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Mahlzeit
-import de.foody.feature.heute.MitSchrift200
 import de.foody.feature.heute.bestand
 import de.foody.feature.heute.pruefeNichtsAbgeschnitten
 import de.foody.feature.heute.testDatenbank
@@ -71,7 +70,7 @@ class TagebuchTagScreenTest {
         db.close()
     }
 
-    private fun zeigen(schrift200: Boolean = false, stil: FoodyStil = FoodyStil.MILCHGLAS) {
+    private fun zeigen(stil: FoodyStil = FoodyStil.MILCHGLAS) {
         val kontext = RuntimeEnvironment.getApplication()
         val vm = halter.behalten(TagebuchTagViewModel(tagebuch, TageszielSpeicher(kontext)))
         compose.setContent {
@@ -80,7 +79,7 @@ class TagebuchTagScreenTest {
                 val inhalt = @androidx.compose.runtime.Composable {
                     TagebuchTagRoute(datum, onDatum = { datum = it; aktuell = it }, onEintragen = { eintragen += it }, vm = vm)
                 }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
     }
@@ -148,18 +147,6 @@ class TagebuchTagScreenTest {
     }
 
     @Test
-    fun schrift200OhneAbschneiden() {
-        runBlocking {
-            db.bestand()
-            tagebuch.ausRezept(heute, Mahlzeit.ABENDESSEN, "r1", BigDecimal.ONE)
-            tagebuch.frei(heute, Mahlzeit.FRUEHSTUECK, "Haferflocken mit Apfel und Zimt", 380, null, null, null)
-        }
-        zeigen(schrift200 = true)
-        compose.warteAufText("Reispfanne")
-        compose.pruefeNichtsAbgeschnitten()
-    }
-
-    @Test
     fun chronikBerichtigenUndTilgen() {
         runBlocking { tagebuch.frei(heute, Mahlzeit.SNACK, "Apfel", 500, null, null, null) }
         zeigen(stil = FoodyStil.SAGE)
@@ -182,14 +169,6 @@ class TagebuchTagScreenTest {
         compose.onAllNodesWithContentDescription("Noch nichts eingetragen", substring = true)[0].performClick()
         // Die Seite Eintragen für den gezeigten Tag, mit der Mahlzeit der Zeile
         compose.runOnIdle { assertEquals(listOf(EintragenStart(heute.minusDays(1), Mahlzeit.FRUEHSTUECK)), eintragen) }
-    }
-
-    @Test
-    fun chronikMitSchrift200() {
-        runBlocking { tagebuch.frei(heute, Mahlzeit.SNACK, "Apfel", 500, null, null, null) }
-        zeigen(schrift200 = true, stil = FoodyStil.SAGE)
-        compose.warteAufText("CHRONIK")
-        compose.pruefeNichtsAbgeschnitten()
     }
 
     /** „+“ der Chronik öffnet Eintragen ohne Mahlzeit (nach Uhrzeit). */

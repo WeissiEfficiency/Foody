@@ -48,12 +48,12 @@ class ZutatEditorScreenTest {
     @After
     fun tearDown() = u.schliessen()
 
-    private fun zeigen(id: String, schrift200: Boolean = false): ZutatEditorViewModel {
+    private fun zeigen(id: String): ZutatEditorViewModel {
         val vm = u.editor()
         compose.setContent {
             FoodyTheme {
                 val inhalt = @Composable { ZutatEditorRoute(id, onFertig = { fertig++ }, vm = vm) }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
         compose.warteAufText("Speichern")
@@ -205,13 +205,6 @@ class ZutatEditorScreenTest {
         reis()
         zeigen("seed-reis")
         compose.pruefeUeberLeiste(compose.onNodeWithText("Speichern"))
-    }
-
-    @Test
-    fun schrift200() {
-        reis()
-        zeigen("seed-reis", schrift200 = true)
-        compose.pruefeNichtsAbgeschnitten()
     }
 
     /** „Packung scannen“ → „Strichcode“ (Eintrag im Menü, nicht der Abschnitt gleichen Namens). */

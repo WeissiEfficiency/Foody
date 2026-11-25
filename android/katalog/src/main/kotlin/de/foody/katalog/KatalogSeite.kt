@@ -17,10 +17,9 @@ enum class KatalogSeite(val titel: String) {
 
 enum class Darstellung { SYSTEM, HELL, DUNKEL }
 
-/** Umschalter des Katalogs: Darstellung, Schrift 200 %, Glas ohne Unschärfe. */
+/** Umschalter des Katalogs: Darstellung, Glas ohne Unschärfe. */
 data class KatalogEinstellung(
     val darstellung: Darstellung = Darstellung.SYSTEM,
-    val schrift200: Boolean = false,
     val ohneUnschaerfe: Boolean = false,
 )
 
