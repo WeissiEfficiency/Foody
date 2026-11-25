@@ -50,23 +50,27 @@ internal fun StilWahl(gewaehlt: FoodyStil, variante: StilVariante, breite: Dp, o
     Raster(FoodyStil.entries, zelle = 88.dp, breite) { s, modifier -> StilMuster(s, variante, s == gewaehlt, modifier) { onWahl(s) } }
 }
 
-/** Die vier Akzente des [stil]s als runde Farbmuster, so viele in einer Reihe, wie in [breite] passen. */
+/**
+ * Die vier Akzente des [stil]s als runde Farbmuster: auf dem Handy alle vier in einer Reihe; passen sie nicht (große
+ * Schrift), zwei Reihen zu je zwei statt drei und einem allein.
+ */
 @Composable
 internal fun AkzentWahl(stil: FoodyStil, gewaehlt: StilAkzent, breite: Dp, onWahl: (StilAkzent) -> Unit) {
-    Raster(stil.akzente, zelle = 72.dp, breite) { a, modifier -> AkzentMuster(a, a == gewaehlt, modifier) { onWahl(a) } }
+    Raster(stil.akzente, zelle = 64.dp, breite, gleicheReihen = true) { a, modifier -> AkzentMuster(a, a == gewaehlt, modifier) { onWahl(a) } }
 }
 
 /**
  * Zellen mit fester Breite ([zelle], mit der Schrift wachsend), linksbündig, so viele Spalten, wie in [breite] passen.
  * [breite] ist in jedem Stil dieselbe (die der schmalsten Karte, siehe [DarstellungAbschnitt]), nicht der Platz in der
  * Karte des Stils: Ob der Stil die Wahl in eine Karte mit Innenabstand legt oder nicht, die Zellen bleiben gleich groß
- * und gleich auf die Reihen verteilt.
+ * und gleich auf die Reihen verteilt. [gleicheReihen]: lieber 2 + 2 als 3 + 1.
  */
 @Composable
-private fun <T> Raster(eintraege: List<T>, zelle: Dp, breite: Dp, inhalt: @Composable (T, Modifier) -> Unit) {
-    val zellbreite = maxOf(zelle, zelle * LocalDensity.current.fontScale * 0.85f)
+private fun <T> Raster(eintraege: List<T>, zelle: Dp, breite: Dp, gleicheReihen: Boolean = false, inhalt: @Composable (T, Modifier) -> Unit) {
+    val schrift = LocalDensity.current.fontScale
+    val spalten = rasterSpalten(eintraege.size, zelle, breite, schrift, gleicheReihen)
+    val zellbreite = zellBreite(zelle, schrift)
     val abstand = FoodyAbstaende.s2
-    val spalten = ((breite + abstand) / (zellbreite + abstand)).toInt().coerceAtLeast(1)
     Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s3)) {
         eintraege.chunked(spalten).forEach { reihe ->
             Row(horizontalArrangement = Arrangement.spacedBy(abstand)) {
@@ -74,6 +78,16 @@ private fun <T> Raster(eintraege: List<T>, zelle: Dp, breite: Dp, inhalt: @Compo
             }
         }
     }
+}
+
+/** Spaltenzahl für [Raster]: wie viele Zellen in [breite] passen, bei [gleicheReihen] auf gleich volle Reihen verteilt. */
+internal fun rasterSpalten(anzahl: Int, zelle: Dp, breite: Dp, schrift: Float, gleicheReihen: Boolean): Int {
+    val zellbreite = zellBreite(zelle, schrift)
+    val abstand = FoodyAbstaende.s2
+    val passen = ((breite + abstand) / (zellbreite + abstand)).toInt().coerceIn(1, maxOf(anzahl, 1))
+    if (!gleicheReihen) return passen
+    val reihen = (anzahl + passen - 1) / passen
+    return (anzahl + reihen - 1) / reihen
 }
 
 @Composable
@@ -174,3 +188,6 @@ private fun AkzentMuster(akzent: StilAkzent, gewaehlt: Boolean, modifier: Modifi
 }
 
 private fun Color.luminanzHell(): Boolean = 0.2126f * red + 0.7152f * green + 0.0722f * blue > 0.5f
+
+/** Breite einer Zelle: [zelle], ab Schrift 118 % mitwachsend. */
+private fun zellBreite(zelle: Dp, schrift: Float): Dp = maxOf(zelle, zelle * schrift * 0.85f)

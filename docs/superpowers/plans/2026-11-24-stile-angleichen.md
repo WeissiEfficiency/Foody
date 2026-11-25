@@ -115,7 +115,9 @@ Schritt 2 oben (Bühne plus Liste).
   gewählten Gegenstands mit Werten (Zeit, kcal, gekocht) und „Aufschlagen“.
 - **S4 Der Händler:** zwei, drei Bildvarianten zum Vergleich zeichnen; die Liste als Papierrolle, die sich nach unten
   ausrollt. *Erledigt:* drei Entwürfe (Gnadenort, Ruinentor, Karren); gewählt **Ruinentor** (Nutzer, 2026-11-25).
-- **S5 Einstellungen:** Das Layout verschiebt sich; auf dem Handy nachstellen und beheben.
+- **S5 Einstellungen:** Das Layout verschiebt sich; auf dem Handy nachstellen und beheben. *Erledigt:* Bei 361 dp
+  passten nur drei der vier Farben in eine Reihe, die vierte rutschte allein in eine neue Zeile. Akzente jetzt 64 dp
+  breit, sonst 2 + 2.
 
 ### Später · Übergänge
 Übergänge zwischen Seiten im Stil, z. B. Grauen: Tipp aufs Auge → das Auge öffnet sich und zoomt auf den Betrachter
