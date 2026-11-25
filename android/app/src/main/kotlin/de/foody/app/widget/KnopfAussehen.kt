@@ -36,7 +36,7 @@ internal const val SCHATTEN_VERSATZ = 4f
  */
 fun knopfAussehen(wahl: StilWahl, art: KnopfArt): KnopfAussehen? {
     val stil = FoodyStil.ausName(wahl.stil)
-    val immersiv = StilVariante.ausName(wahl.variante) == StilVariante.IMMERSIV
+    val immersiv = StilVariante.ausName(wahl.variante).inszeniertFuer(stil)
     val akzent = stil.akzent(wahl.akzent)?.farbe?.toArgb() ?: return null
     val scan = art == KnopfArt.SCAN
     return when (stil) {

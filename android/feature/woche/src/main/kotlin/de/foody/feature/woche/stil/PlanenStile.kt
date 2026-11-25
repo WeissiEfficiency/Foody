@@ -26,7 +26,6 @@ import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.WahlZeile
 import de.foody.core.designsystem.stil.FoodyStil
-import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
@@ -61,7 +60,7 @@ internal fun planenTag(stil: FoodyStil, tag: LocalDate, inszeniert: Boolean = tr
 @Composable
 internal fun planenEinleitung(): Pair<String, TextStyle>? {
     val s = FoodyTheme.stil
-    if (s.variante != StilVariante.IMMERSIV) return null
+    if (!s.inszeniert) return null
     return when (s.stil) {
         FoodyStil.ANIME -> "Foody schlägt für jeden leeren Tag etwas vor, das länger nicht dran war." to Anime.text(14f)
         FoodyStil.EDO -> "Foody füllt die freien Tage mit Rezepten, die länger nicht dran waren." to Edo.text(14.5f)

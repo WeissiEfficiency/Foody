@@ -21,7 +21,7 @@ fun stilText(
     kreuzer: String? = null,
 ): String {
     val s = FoodyTheme.stil
-    if (s.variante != StilVariante.IMMERSIV) return standard
+    if (!s.inszeniert) return standard
     return when (s.stil) {
         FoodyStil.MILCHGLAS -> null
         FoodyStil.SAGE -> sage

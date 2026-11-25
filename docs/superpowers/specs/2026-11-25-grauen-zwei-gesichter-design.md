@@ -18,7 +18,9 @@ Eine Variante „schlicht“ gibt es beim Grauen nicht mehr. Die anderen Stile b
 
 - **Aufbau wie in allen Stilen:** die schwebende Leiste unten, dieselben Seiten, dieselben Abschnitte und Reihenfolgen.
   Kein Daumenregister und kein Ledereinband als Rahmen (Runden 1–3 verworfen: zu viel Platz, nicht einheitlich).
-- **Bedienelemente ohne eckige Kästen:**
+- **Bedienelemente, die zum Buch passen:** Die heutigen Kästen um Pfeile, Menü und Knöpfe passen nicht ins Design.
+  Eckige oder andere Formen dürfen trotzdem vorkommen, wo sie zum Buch passen (Hinweis des Nutzers, 2026-11-25); die
+  Liste unten ist die Richtung, kein Verbot:
   - Zurück als „↶ Bibliothek“ (Pfeil mit Schwung und Ziel), das Menü als „∴“.
   - Portionen als „Für 4 Personen“ mit − und + als Zeichen.
   - Reiter als Kapitelwörter mit einem Schwung unter dem aktiven.

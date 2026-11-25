@@ -31,7 +31,8 @@ class StilTest {
 
     @Test
     fun jederStilHatVierAkzente() {
-        FoodyStil.entries.filter { it != FoodyStil.MILCHGLAS }.forEach { assertEquals(4, it.akzente.size, it.name) }
+        // Das Grauen hat keine Wahl mehr (ADR 0022, eigener Test)
+        FoodyStil.entries.filter { it != FoodyStil.MILCHGLAS && it != FoodyStil.GRAUEN }.forEach { assertEquals(4, it.akzente.size, it.name) }
     }
 
     @Test
@@ -48,7 +49,37 @@ class StilTest {
             }
         }
         assertTrue(FoodyStil.GRAUEN.dunkel(StilVariante.IMMERSIV, false))
-        assertFalse(FoodyStil.GRAUEN.dunkel(StilVariante.RUHIG, true))
+        // Ominös ist das grüne Grauen, dunkel wie Immersiv (ADR 0022)
+        assertTrue(FoodyStil.GRAUEN.dunkel(StilVariante.RUHIG, false))
+    }
+
+    /** ADR 0022: Beim Grauen sind beide Varianten inszeniert; Ruhig ist „Ominös“, Immersiv das „Necronomicon“. */
+    @Test
+    fun grauenHatZweiImmersiveGesichter() {
+        val ominoes = stilWerte(FoodyStil.GRAUEN, StilVariante.RUHIG)
+        val buch = stilWerte(FoodyStil.GRAUEN, StilVariante.IMMERSIV)
+        assertTrue(ominoes.inszeniert)
+        assertTrue(ominoes.immersiv(FoodyStil.GRAUEN))
+        assertEquals(Hintergrundmuster.STERNE, ominoes.muster)
+        assertFalse(ominoes.grauenBuch)
+        assertTrue(buch.inszeniert)
+        assertTrue(buch.grauenBuch)
+        assertEquals("Ominös", FoodyStil.GRAUEN.variantenName(StilVariante.RUHIG))
+        assertEquals("Necronomicon", FoodyStil.GRAUEN.variantenName(StilVariante.IMMERSIV))
+        // Die anderen Stile behalten Immersiv und Ruhig
+        for (stil in FoodyStil.entries.filter { it != FoodyStil.GRAUEN && it != FoodyStil.MILCHGLAS }) {
+            assertFalse(stilWerte(stil, StilVariante.RUHIG).inszeniert, stil.name)
+            assertFalse(stilWerte(stil, StilVariante.IMMERSIV).grauenBuch, stil.name)
+            assertEquals("Ruhig", stil.variantenName(StilVariante.RUHIG))
+            assertEquals("Immersiv", stil.variantenName(StilVariante.IMMERSIV))
+        }
+    }
+
+    /** ADR 0022: Beim Grauen gibt es keine Farbe zur Wahl; ein früher gespeicherter Akzent ergibt Glut. */
+    @Test
+    fun grauenOhneFarbwahl() {
+        assertEquals(listOf("GLUT"), FoodyStil.GRAUEN.akzente.map { it.name })
+        assertEquals("GLUT", FoodyStil.GRAUEN.akzent("ROSE")?.name)
     }
 
     @Test
@@ -64,7 +95,8 @@ class StilTest {
     fun stileDeckendUndRuhigOhneMuster() {
         FoodyStil.entries.filter { it != FoodyStil.MILCHGLAS }.forEach { stil ->
             assertEquals(Flaechenart.DECKEND, stilWerte(stil).flaeche)
-            assertEquals(Hintergrundmuster.KEINS, stilWerte(stil, StilVariante.RUHIG).muster)
+            // Ruhig ohne Muster, außer beim Grauen: Dort ist Ruhig das inszenierte „Ominös“ (ADR 0022)
+            if (stil != FoodyStil.GRAUEN) assertEquals(Hintergrundmuster.KEINS, stilWerte(stil, StilVariante.RUHIG).muster)
             assertNull(stilWerte(stil, StilVariante.RUHIG).schatten)
         }
     }

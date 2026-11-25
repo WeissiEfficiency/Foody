@@ -105,7 +105,7 @@ private const val TEXT_KONTRAST = 4.55
  */
 fun kartenAussehen(context: Context, wahl: StilWahl, zettel: Boolean = false): KartenAussehen {
     val stil = FoodyStil.ausName(wahl.stil)
-    val immersiv = StilVariante.ausName(wahl.variante) == StilVariante.IMMERSIV
+    val immersiv = StilVariante.ausName(wahl.variante).inszeniertFuer(stil)
     val akzent = akzentVon(wahl)
     if (stil == FoodyStil.MILCHGLAS || akzent == null) {
         val text = context.getColor(R.color.widget_inhalt)
