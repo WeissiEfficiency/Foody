@@ -514,6 +514,10 @@ Schemaänderung.
   Mahlzeit-Blatt (Portionen, Gekocht, Kochen, Rezept ansehen, Verschieben auf Mo–So oder ±7 Tage, Umbenennen,
   Entfernen mit „Rückgängig“), Füllen-Blatt; „Leere Tage füllen“ fest über der Navigationsleiste; Blätter ganz
   geöffnet und scrollbar; ab 840 dp zwei Spalten (Mo–Do | Fr–So).
+  Grauen Immersiv („Mondphasen“, `WocheGrauen`): kein Blättern und kein „planen ›“ im Kopf; ein Tipp auf einen Mond
+  wählt den Tag, Wischen über den Mondbogen (ab 56 dp) blättert die Woche, leise ‹ › in den oberen Ecken des Himmels
+  (für TalkBack „Vorige/Nächste Woche“), „Heute ›“ im Kopf nur in einer anderen Woche. Unten das Ritual „Die dunklen
+  Nächte füllen“ mit „2 von 7 Nächten erhellt“. Ruhig unverändert.
 - **Tests:** Repository (Lesen, Ändern, Vorschlag), ViewModel (Blättern, Jahreswechsel KW 53/KW 1, Füllen mit
   verstellbarer Uhr), Bildschirm (Hinzufügen mit eigenem Namen, Blätter, Rückgängig, Tablet), Navigation. Roborazzi-
   Bilder in `android/feature/woche/src/test/screenshots/`, Vergleich in der CI.

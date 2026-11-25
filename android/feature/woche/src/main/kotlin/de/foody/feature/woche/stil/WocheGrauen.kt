@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -36,6 +37,8 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -53,29 +56,41 @@ import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.domain.Mahlzeit
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.sin
 
 /**
- * „Woche“ im Kosmischen Grauen (U) in Immersiv (Entwurf `U-Woche`): „Mondphasen“ mit „6 / 7 · planen ›“, darunter
- * die sieben Tage als Monde auf einem Bogen – je mehr Mahlzeiten geplant sind, desto voller der Mond, leere Tage sind
- * Neumond mit gestricheltem Rand, heute leuchtet. Darunter die Tafel des gewählten Tages mit einer Notiz und ganz
- * unten „Die dunklen Nächte füllen lassen“. In Ruhig wie im Entwurf auf Pergament: „Woche“, sieben Tageschips statt
- * des Bogens, eine helle Tafel ohne Notiz, „Leere Tage vorschlagen lassen“.
+ * „Woche“ im Kosmischen Grauen (U) in Immersiv (Entwurf `U-Woche`, Runde 2 G3): „Mondphasen“ mit Kalenderwoche und
+ * Ø kcal, darunter die sieben Tage als Monde auf einem Bogen – je mehr Mahlzeiten geplant sind, desto voller der Mond,
+ * leere Tage sind Neumond mit gestricheltem Rand, heute leuchtet. Ein Tipp auf einen Mond wählt den Tag, Wischen über
+ * den Bogen blättert die Woche (dazu ‹ › leise in den oberen Ecken des Himmels, „Heute ›“ im Kopf, wenn eine andere
+ * Woche zu sehen ist). Darunter die Tafel des gewählten Tages mit einer Notiz und ganz unten das Ritual „Die dunklen
+ * Nächte füllen“ mit dem Stand „2 von 7 Nächten erhellt“. In Ruhig wie im Entwurf auf Pergament: „Woche“ mit
+ * „2 / 7 · planen ›“ und Blättern, sieben Tageschips statt des Bogens, eine helle Tafel ohne Notiz, „Leere Tage
+ * vorschlagen lassen“.
  */
 @Composable
 internal fun WocheGrauen(w: WocheDaten, aktionen: WocheSageAktionen, unten: Dp) {
     var gewaehlt by rememberGewaehlt(w)
+    val inszeniert = FoodyTheme.stil.inszeniert
     WocheRahmen(unten) {
-        Kopf(w, aktionen.onFuellen)
-        Blaettern(w, aktionen, Grauen.maschine(13f))
+        if (inszeniert) {
+            MondKopf(w, aktionen.onHeute)
+        } else {
+            Kopf(w, aktionen.onFuellen)
+            Blaettern(w, aktionen, Grauen.maschine(13f))
+        }
         if (w.tage.size == 7) {
-            if (FoodyTheme.stil.inszeniert) Mondbogen(w, gewaehlt) { gewaehlt = it } else TagChips(w, gewaehlt) { gewaehlt = it }
+            if (inszeniert) Mondbogen(w, gewaehlt, aktionen.onBlaettern) { gewaehlt = it } else TagChips(w, gewaehlt) { gewaehlt = it }
         }
         w.tage.getOrNull(gewaehlt)?.let { Tafel(it, it.datum == w.heute, aktionen) }
-        Naechte(aktionen.onFuellen)
+        if (inszeniert) Ritual(w, aktionen.onFuellen) else Naechte(aktionen.onFuellen)
     }
 }
+
+/** „2 von 7 Nächten erhellt“: der Stand des Rituals. */
+internal fun naechteStand(geplant: Int, tage: Int): String = "$geplant von $tage ${if (tage == 1) "Nacht" else "Nächten"} erhellt"
 
 /** Wie voll der Mond eines Tages ist: Anteil der vier Mahlzeiten, die geplant sind (0 = Neumond, 1 = Vollmond). */
 internal fun mondAnteil(t: WochenTag): Float =
@@ -134,10 +149,55 @@ private fun Kopf(w: WocheDaten, onFuellen: () -> Unit) {
     }
 }
 
+/**
+ * Kopf in Immersiv: Kalenderwoche, „Mondphasen“ und darunter Ø kcal; rechts „Heute ›“, wenn eine andere Woche zu
+ * sehen ist. Blättern und Planen liegen am Bogen bzw. im Ritual unten.
+ */
 @Composable
-private fun Mondbogen(w: WocheDaten, gewaehlt: Int, onWahl: (Int) -> Unit) {
+private fun MondKopf(w: WocheDaten, onHeute: () -> Unit) {
+    val f = FoodyTheme.farben
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            w.woche?.let { Text(kwText(it.montag), style = Grauen.maschine(12.5f), color = f.nebentext) }
+            // Der Titel wächst mit der Systemschrift nur bis 130 %
+            Text(
+                "Mondphasen",
+                Modifier.semantics {
+                    heading()
+                    contentDescription = "Woche"
+                },
+                style = Grauen.titel(titelGroesse(34f), 0.02f), color = f.text,
+            )
+            w.schnitt?.let { Text(it, style = Grauen.maschine(12.5f), color = f.nebentext) }
+        }
+        if (!w.zeigtHeute) {
+            Box(
+                Modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onHeute)
+                    .semantics { contentDescription = "Heute" }.padding(horizontal = 8.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("Heute ›", style = Grauen.maschine(13f), color = f.primaer)
+            }
+        }
+    }
+}
+
+/** Ab dieser Strecke blättert ein Wischen über den Bogen die Woche. */
+private val WISCH_STRECKE = 56.dp
+
+@Composable
+private fun Mondbogen(w: WocheDaten, gewaehlt: Int, onBlaettern: (Long) -> Unit, onWahl: (Int) -> Unit) {
     val glut = FoodyTheme.stil.zier
-    BoxWithConstraints(Modifier.fillMaxWidth().height(210.dp).clipToBounds()) {
+    val strecke = with(LocalDensity.current) { WISCH_STRECKE.toPx() }
+    BoxWithConstraints(
+        Modifier.fillMaxWidth().height(210.dp).clipToBounds().pointerInput(Unit) {
+            var weg = 0f
+            detectHorizontalDragGestures(
+                onDragStart = { weg = 0f },
+                onDragEnd = { if (abs(weg) > strecke) onBlaettern(if (weg < 0f) 1 else -1) },
+            ) { _, dx -> weg += dx }
+        },
+    ) {
         val breite = 48.dp
         val schritt = (maxWidth - breite) / 6
         Canvas(Modifier.fillMaxSize().clearAndSetSemantics { }) {
@@ -157,6 +217,19 @@ private fun Mondbogen(w: WocheDaten, gewaehlt: Int, onWahl: (Int) -> Unit) {
             val hoehe = (118 - sin(PI * i / 6) * 96).dp
             Mond(t, heute = i == w.heuteIndex, an = i == gewaehlt, Modifier.offset(schritt * i, hoehe).width(breite)) { onWahl(i) }
         }
+        // Leise Pfeile in den oberen Ecken des Himmels, über den Enden des Bogens
+        Pfeil("‹", "Vorige Woche", Modifier.align(Alignment.TopStart)) { onBlaettern(-1) }
+        Pfeil("›", "Nächste Woche", Modifier.align(Alignment.TopEnd)) { onBlaettern(1) }
+    }
+}
+
+@Composable
+private fun Pfeil(zeichen: String, beschreibung: String, modifier: Modifier, onKlick: () -> Unit) {
+    Box(
+        modifier.size(48.dp).clickable(role = Role.Button, onClick = onKlick).semantics { contentDescription = beschreibung },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(zeichen, style = Grauen.titel(22f), color = FoodyTheme.farben.nebentext.copy(alpha = 0.7f))
     }
 }
 
@@ -243,7 +316,31 @@ private fun Tafel(t: WochenTag, heute: Boolean, aktionen: WocheSageAktionen) {
     }
 }
 
-/** „Die dunklen Nächte füllen lassen“: gestrichelt in der Glut. */
+/**
+ * Immersiv: das Ritual „Die dunklen Nächte füllen“ mit dem Stand („2 von 7 Nächten erhellt“), gestrichelt in der
+ * Glut; ersetzt das „planen ›“ im Kopf.
+ */
+@Composable
+private fun Ritual(w: WocheDaten, onKlick: () -> Unit) {
+    val glut = FoodyTheme.stil.zier
+    val f = FoodyTheme.farben
+    Column(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp)
+            .drawBehind {
+                drawRect(glut, style = Stroke(1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))))
+            }
+            .clickable(role = Role.Button, onClick = onKlick)
+            .clearAndSetSemantics { contentDescription = "Leere Tage füllen, ${w.geplant} von ${w.tage.size} Tagen geplant" }
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text("Die dunklen Nächte füllen", style = Grauen.maschine(14f), color = f.text, textAlign = TextAlign.Center)
+        if (w.tage.isNotEmpty()) Text(naechteStand(w.geplant, w.tage.size), style = Grauen.maschine(12f), color = glut, textAlign = TextAlign.Center)
+    }
+}
+
+/** Ruhig: „Leere Tage vorschlagen lassen“, gestrichelt. */
 @Composable
 private fun Naechte(onKlick: () -> Unit) {
     val glut = if (FoodyTheme.stil.inszeniert) FoodyTheme.stil.zier else FoodyTheme.farben.primaer
@@ -257,7 +354,6 @@ private fun Naechte(onKlick: () -> Unit) {
             .padding(horizontal = 12.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
-        val text = szenenWort("Die dunklen Nächte füllen lassen", "Leere Tage vorschlagen lassen")
-        Text(text, style = Grauen.maschine(14f), color = FoodyTheme.farben.text, textAlign = TextAlign.Center)
+        Text("Leere Tage vorschlagen lassen", style = Grauen.maschine(14f), color = FoodyTheme.farben.text, textAlign = TextAlign.Center)
     }
 }

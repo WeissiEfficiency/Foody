@@ -2,9 +2,11 @@ package de.foody.feature.woche.stil
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -17,6 +19,8 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.db.FoodyDatenbank
@@ -200,6 +204,24 @@ class WocheStileTest {
 
     @Test fun grauen() = pruefen(FoodyStil.GRAUEN)
 
+    @Test fun grauenBlaettern() = blaettern(FoodyStil.GRAUEN)
+
+    /**
+     * Grauen in Immersiv (Runde 2 G3): kein Blättern und kein „planen ›“ oben; Wischen über den Mondbogen blättert die
+     * Woche, das Ritual unten nennt den Stand.
+     */
+    @Test
+    fun grauenMondbogenWischen() {
+        zeigen(FoodyStil.GRAUEN)
+        compose.onAllNodes(hasText("planen ›")).assertCountEquals(0)
+        compose.onNodeWithText("2 von 7 Nächten erhellt", useUnmergedTree = true).assertExists()
+        compose.onAllNodes(hasContentDescription("Leere Tage füllen, 2 von 7 Tagen geplant")).onFirst().assertExists()
+        compose.onAllNodes(hasContentDescription("Montag, 26.10.", substring = true)).onFirst().performTouchInput { swipe(center, center - Offset(400f, 0f)) }
+        warteAufBeschreibung("Montag, 2.11.")
+        compose.onAllNodes(hasContentDescription("Montag, 2.11.", substring = true)).onFirst().performTouchInput { swipe(center, center + Offset(400f, 0f)) }
+        warteAufBeschreibung("Mittwoch, 28.10.")
+    }
+
     @Test fun kreuzer() = pruefen(FoodyStil.KREUZER)
 
     @Test
@@ -252,6 +274,8 @@ class WocheStileTest {
     fun texte() {
         val tag = { tage: Long, n: Int -> WochenTag(MONTAG.plusDays(tage), List(n) { eintrag(MONTAG.plusDays(tage)) }, null) }
         assertEquals("KW 44 · 26. Oktober – 1. November", kwText(MONTAG))
+        assertEquals("2 von 7 Nächten erhellt", naechteStand(2, 7))
+        assertEquals("0 von 1 Nacht erhellt", naechteStand(0, 1))
         assertEquals("KW 45 · 2.–8. November", kwText(MONTAG.plusDays(7)))
         assertEquals("SAMSTAG · HEID", bayrischTagTitel(tag(5, 1), heute = true))
         assertEquals("SUNDA, 1.", bayrischTagTitel(tag(6, 0), heute = false))
