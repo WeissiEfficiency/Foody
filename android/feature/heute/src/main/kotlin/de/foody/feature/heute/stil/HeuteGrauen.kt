@@ -46,7 +46,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -54,12 +53,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -121,7 +120,10 @@ import java.time.format.TextStyle as Wochentagform
  */
 @Composable
 internal fun HeuteGrauen(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize()) {
+    val uebergang = rememberAugenUebergang()
+    // Lage der Seite im Fenster, für die Ebene des Übergangs (gelesen erst beim Zeichnen)
+    val wurzel = remember { mutableStateOf(Offset.Zero) }
+    Box(modifier.fillMaxSize().onGloballyPositioned { wurzel.value = it.positionInRoot() }) {
         if (FoodyTheme.stil.inszeniert) Tiefe(Modifier.matchParentSize())
         HeuteRahmen(innen = PaddingValues(start = 22.dp, end = 10.dp, top = 14.dp)) { rahmen ->
             Column(rahmen, verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -130,7 +132,7 @@ internal fun HeuteGrauen(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifi
                 Column(Modifier.padding(end = 12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     if (zustand.datenbankLeer) DatenbankLeerHinweis(aktionen.onEinstellungen)
                     if (FoodyTheme.stil.inszeniert) {
-                        DasAuge(zustand.tagebuch, aktionen.onAlleEintraege, aktionen.onEinstellungen)
+                        DasAuge(zustand.tagebuch, uebergang, { uebergang.oeffnen(aktionen.onAlleEintraege) }, aktionen.onEinstellungen)
                     } else {
                         SchlichterRing(zustand.tagebuch)
                     }
@@ -142,6 +144,12 @@ internal fun HeuteGrauen(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifi
                     }
                 }
             }
+        }
+        if (FoodyTheme.stil.inszeniert && zustand != null) {
+            val t = zustand.tagebuch
+            AugenBlickEbene(
+                uebergang, zielAnteil(t.summe.kcal, t.ziel?.takeIf { it > 0 }), FoodyTheme.stil.zier, { wurzel.value }, Modifier.matchParentSize(),
+            )
         }
     }
 }
@@ -186,11 +194,11 @@ internal fun augenSatz(kcal: Int, ziel: Int?, vollstaendig: Boolean = true): Str
 
 /**
  * Das Auge mit dem Ring (Anteil am Ziel) und der Satz darunter, die Nährwerte in ihren Farben; TalkBack hört einen
- * nüchternen Satz. Antippen öffnet das Energietagebuch ([onTagebuch]); ohne Ziel steht darunter „Tagesziel festlegen ▸“
- * ([onZiel]).
+ * nüchternen Satz. Antippen öffnet das Energietagebuch ([onTagebuch], mit dem Blick aus [uebergang]); ohne Ziel steht
+ * darunter „Tagesziel festlegen ▸“ ([onZiel]). Während des Blicks zeichnet die Ebene das Auge, hier ruht es unsichtbar.
  */
 @Composable
-private fun DasAuge(t: TagebuchHeute, onTagebuch: () -> Unit, onZiel: () -> Unit) {
+private fun DasAuge(t: TagebuchHeute, uebergang: AugenUebergang, onTagebuch: () -> Unit, onZiel: () -> Unit) {
     val f = FoodyTheme.farben
     val glut = FoodyTheme.stil.zier
     val s = t.summe
@@ -211,7 +219,12 @@ private fun DasAuge(t: TagebuchHeute, onTagebuch: () -> Unit, onZiel: () -> Unit
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Auge(anteil, glut, Modifier.widthIn(max = 300.dp).fillMaxWidth().aspectRatio(AUGE_BREITE / AUGE_HOEHE))
+        Auge(
+            anteil, glut,
+            Modifier.widthIn(max = 300.dp).fillMaxWidth().aspectRatio(AUGE_BREITE / AUGE_HOEHE)
+                .onGloballyPositioned(uebergang::merken)
+                .graphicsLayer { alpha = if (uebergang.blick.value > 0f) 0f else 1f },
+        )
         val satz = augenSatz(s.kcal, ziel, s.vollstaendig)
         val zahl = kcalZahl(s.kcal, s.vollstaendig)
         Text(
@@ -319,41 +332,17 @@ private fun Auge(anteil: Float?, glut: Color, modifier: Modifier) {
         remember { mutableFloatStateOf(1f) }
     }
     val pfade = remember { AugenPfade() }
-    // Das Schweben verschiebt nur die Ebene, ohne neu zu zeichnen; Verläufe entstehen einmal je Größe. Neu gezeichnet
-    // wird nur, solange das Lid sich bewegt (Blinzeln, gut 0,4 s alle 7 s).
+    // Das Schweben verschiebt nur die Ebene, ohne neu zu zeichnen. Neu gezeichnet wird nur, solange das Lid sich bewegt
+    // (Blinzeln, gut 0,4 s alle 7 s).
     Spacer(
-        modifier.graphicsLayer { translationY = -4.dp.toPx() * schweben }.drawWithCache {
-            val s = size.width / AUGE_BREITE
-            val schein = Brush.radialGradient(listOf(glut.copy(alpha = 0.35f), glut.copy(alpha = 0f)), Offset(150f, 85f), 150f)
-            val iris = Brush.radialGradient(
-                0f to Color(0xFF1B3A2C), 0.7f to Color(0xFF0E2019), 1f to Color(0xFF06100C),
-                center = Offset(150f, 85f), radius = 56f,
-            )
-            onDrawBehind {
-                scale(s, Offset.Zero) {
-                    drawOval(schein, Offset.Zero, Size(300f, 170f))
-                    withTransform({ scale(1f, lid, Offset(150f, 85f)) }) {
-                        drawPath(pfade.lid, Color(0xFFC9C4A8).copy(alpha = 0.12f))
-                        drawPath(pfade.lid, Color(0xFF7F948A), style = Stroke(1.5f))
-                        clipPath(pfade.lid) {
-                            drawPath(pfade.adern, Color(0xFF6A2430).copy(alpha = 0.45f), style = Stroke(1f))
-                            drawCircle(iris, 56f, Offset(150f, 85f))
-                            drawCircle(Color(0xFF24382F), 50f, Offset(150f, 85f), style = Stroke(8f))
-                            if (anteil != null && anteil > 0f) {
-                                drawArc(glut, -90f, 360f * anteil, false, Offset(100f, 35f), Size(100f, 100f), style = Stroke(8f))
-                            }
-                            drawOval(Color(0xFF020403), Offset(141f, 51f), Size(18f, 68f))
-                            drawCircle(Color.White.copy(alpha = 0.5f), 5f, Offset(166f, 66f))
-                        }
-                    }
-                }
-            }
+        modifier.graphicsLayer { translationY = -4.dp.toPx() * schweben }.drawBehind {
+            scale(size.width / AUGE_BREITE, Offset.Zero) { augeMalen(pfade, anteil, glut, lid) }
         },
     )
 }
 
 /** Pfade aus dem SVG des Entwurfs (Maß 300 × 170 für das Auge, 390 breit für die Tiefe). */
-private class AugenPfade {
+internal class AugenPfade {
     val lid: Path = svgPfad("M10 85C60 15 240 15 290 85 240 155 60 155 10 85z")
     val adern: Path = svgPfad("M40 70c30 4 50 10 70 14M260 70c-30 4-50 10-70 14M60 110c24-6 40-10 56-12M240 110c-24-6-40-10-56-12")
 }
@@ -556,5 +545,5 @@ private fun Verweis(text: String, beschreibung: String, groesse: Float = 17f, on
 /** Verlauf der Tafel in Immersiv. */
 private val TAFEL = listOf(Color(0xFF121B18), Color(0xFF0C1210))
 
-private const val AUGE_BREITE = 300f
+internal const val AUGE_BREITE = 300f
 private const val AUGE_HOEHE = 170f

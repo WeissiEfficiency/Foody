@@ -237,7 +237,10 @@ wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für 
     `stil/<stil>/…Bausteine.kt` (Seitenkopf, Knöpfe, Zeichnungen). Grauen Immersiv zeigt Rezept und Kochmodus als
     Buch: `GrauenSeite` (dunkles Blatt mit Bundschatten, Seitenkanten, Kapitel oben, römische Seitenzahl unten) im
     `HorizontalPager`, `Modifier.umblaettern` kippt das gehende Blatt um den Bund statt es gleiten zu lassen; die Reiter
-    oben folgen der Seite (`grauenBuchBlaettern`). Die Szenen liegen in den Features unter `stil/`
+    oben folgen der Seite (`grauenBuchBlaettern`). Vom Auge auf „Heute“ ins Tagebuch führt ein Blick
+    (`AugenBlick.kt`): Das Auge reißt auf, stürzt um die Pupille heran und versinkt in ihrem Dunkel (`blickStand`,
+    900 ms, gezeichnet auf einer Ebene über der Seite); erst dann navigiert es, und im NavHost taucht das Tagebuch mit
+    Einblenden und Wachsen auf. Ohne Animationen öffnet es sofort; zurück auf „Heute“ ruht das Auge wieder. Die Szenen liegen in den Features unter `stil/`
     und bekommen denselben Zustand und dieselben Aktionen wie der normale Screen. Die Wahl speichert
     `DarstellungSpeicher` als `StilWahl` (`stil`, `stilVariante`, `stilAkzent`); fehlt sie, gilt Milchglas.
     Den Modus Hell/Dunkel und die Farbwelten gibt es nur bei Milchglas, die Systemleisten folgen dem Grund des Stils.

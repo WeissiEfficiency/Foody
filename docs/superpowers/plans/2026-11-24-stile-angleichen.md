@@ -128,6 +128,8 @@ Schritt 2 oben (Bühne plus Liste).
 ### Später · Übergänge
 Übergänge zwischen Seiten im Stil, z. B. Grauen: Tipp aufs Auge → das Auge öffnet sich und zoomt auf den Betrachter
 zu, dahinter ploppt das Energietagebuch auf. Erst nach den Seiten von Runde 2 (Wunsch 2026-11-24).
+*Erledigt (Grauen, Auge → Tagebuch):* Lid und Pupille öffnen sich, der Blick stürzt heran und versinkt im Dunkel der
+Pupille, daraus taucht das Tagebuch auf. Weitere Übergänge je Stil offen.
 
 ### Reihenfolge Runde 2
 G1 → S1 → G4 → G3 → S3 → S5 → G2 → S2 → S4; je ein kleiner PR mit Tests, Bildern und Blick aufs Handy.

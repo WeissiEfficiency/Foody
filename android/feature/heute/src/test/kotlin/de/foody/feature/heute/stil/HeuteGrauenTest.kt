@@ -13,9 +13,13 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
+import com.github.takahirom.roborazzi.captureScreenRoboImage
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.glas.FoodyHintergrund
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
+import de.foody.core.testing.FoodyBildvergleich
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.HeuteAktionen
 import de.foody.feature.heute.HeuteScreen
@@ -91,6 +95,34 @@ class HeuteGrauenTest {
         ziel = null
         compose.onNodeWithContentDescription("Tagesziel festlegen").performScrollTo().performClick()
         assertEquals(listOf("alle", "einstellungen"), ausgeloest)
+    }
+
+    /**
+     * Übergang: Mit Animationen reißt das Auge auf und stürzt heran; erst danach öffnet das Tagebuch, ein zweiter Tipp
+     * währenddessen zählt nicht. Das Bild zeigt die Mitte des Blicks.
+     */
+    @OptIn(ExperimentalRoborazziApi::class)
+    @Test
+    fun augeStuerztHeranUndOeffnetDanach() {
+        val resolver = ApplicationProvider.getApplicationContext<android.app.Application>().contentResolver
+        Settings.Global.putFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+        compose.setContent {
+            FoodyTheme(stil = FoodyStil.GRAUEN, variante = StilVariante.IMMERSIV, unschaerfe = false) {
+                FoodyHintergrund { HeuteScreen(beispielZustand(), aktionen) }
+            }
+        }
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        val auge = compose.onNodeWithContentDescription("860 von 2.000 kcal", substring = true)
+        auge.performClick()
+        compose.mainClock.advanceTimeBy(BLICK_MS / 2L)
+        auge.performClick()
+        assertEquals(emptyList(), ausgeloest)
+        captureScreenRoboImage("src/test/screenshots/stil_grauen_blick_mitte.png", roborazziOptions = FoodyBildvergleich)
+        compose.mainClock.advanceTimeBy(BLICK_MS * 3L / 10L)
+        captureScreenRoboImage("src/test/screenshots/stil_grauen_blick_spaet.png", roborazziOptions = FoodyBildvergleich)
+        compose.mainClock.advanceTimeBy(BLICK_MS.toLong())
+        assertEquals(listOf("alle"), ausgeloest)
     }
 
     @Test
