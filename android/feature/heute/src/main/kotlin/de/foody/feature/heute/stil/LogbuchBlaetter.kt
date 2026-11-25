@@ -58,6 +58,6 @@ internal fun LogbuchBlaetter(datum: LocalDate, onDatum: (LocalDate) -> Unit, inh
     }
     HorizontalPager(pager, Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) { s ->
         val tag = logbuchTag(s)
-        GrauenSeite(kapitel = null, seite = roemischVoll(tag.dayOfYear), modifier = Modifier.umblaettern(pager, s)) { inhalt(tag) }
+        GrauenSeite(kapitel = null, seite = roemischVoll(tag.dayOfYear), modifier = Modifier.umblaettern(pager, s), eselsohr = true) { inhalt(tag) }
     }
 }

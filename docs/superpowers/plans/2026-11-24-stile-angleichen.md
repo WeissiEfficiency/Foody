@@ -115,6 +115,9 @@ Schritt 2 oben (Bühne plus Liste).
   Bibliothek → Rezept), (3) Buchschmuck im Rezept (Initiale, Lesebändchen, Randnotiz, Eselsohr), (4) Woche als
   Almanach. Zuerst 1 und 3. *Erledigt (1):* Im Logbuch ist jeder Tag ein Blatt (`LogbuchBlaetter`, `GrauenSeite`) mit
   dem Tag des Jahres als römischer Seitenzahl (`roemischVoll`); Wischen und „‹ ›“ blättern um den Bund.
+  *Erledigt (3):* Lesebändchen im rechten Rand jedes Blatts, Eselsohr an Blättern mit Folgeseite (Rezept, Kochmodus,
+  Logbuch), Initiale am ersten Schritt (`GrauenInitiale`, ein Text), die Rezeptnotiz als Randnotiz in Rosé unter den
+  Zutaten (`GrauenRandnotiz`). Offen: 2 und 4.
 
 ### Düstere Sage (mehr Dark-Fantasy, „Elden-Ring-Gefühl“)
 - **S1 Rast am Feuer (Heute):** Vitalität zeigt Eiweiß, KH und Fett in ihren Farben – als drei Leisten wie Leben,

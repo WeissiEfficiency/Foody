@@ -2,27 +2,33 @@ package de.foody.feature.rezepte.detail.stil
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.github.takahirom.roborazzi.captureRoboImage
 import de.foody.core.data.db.ArbeitsschrittEntity
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.glas.FoodyHintergrund
 import de.foody.core.designsystem.komponenten.roemisch
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
+import de.foody.core.testing.FoodyBildvergleich
 import de.foody.core.testing.ViewModelHalter
 import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.detail.RezeptDetailRoute
@@ -76,7 +82,7 @@ class RezeptStileTest {
         db.close()
     }
 
-    private fun zeigen(stil: FoodyStil) {
+    private fun zeigen(stil: FoodyStil, hintergrund: Boolean = false) {
         val vm = halter.behalten(
             RezeptDetailViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1_000L }, db.einkauf()),
         )
@@ -88,7 +94,7 @@ class RezeptStileTest {
                         onDupliziert = {}, onZurueck = { zurueck++ }, vm = vm,
                     )
                 }
-                inhalt()
+                if (hintergrund) FoodyHintergrund { inhalt() } else inhalt()
             }
         }
         compose.warteAufText("Reispfanne")
@@ -153,6 +159,28 @@ class RezeptStileTest {
         compose.waitUntil(5_000) { compose.onAllNodes(hasContentDescription("Zubereitung") and isSelected()).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithContentDescription("Schritt 1").assertExists()
         compose.onAllNodes(hasText("— II —", substring = false) or isHeading()).onFirst().assertExists()
+    }
+
+    /**
+     * Grauen-Buch mit Schmuck: Die Notiz steht als Randnotiz unter den Zutaten (nicht mehr bei den Nährwerten), der
+     * erste Schritt trägt eine Initiale und bleibt als ganzer Satz lesbar.
+     */
+    @Test
+    fun grauenBuchSchmuck() {
+        runBlocking {
+            val r = db.rezeptDao().nachId("r1")!!
+            db.rezeptDao().upsert(r.copy(notes = "Mit Zitrone noch besser."))
+            db.arbeitsschrittDao().upsert(ArbeitsschrittEntity("s2", "r1", 1, "Mit dem Gemüse anbraten."))
+        }
+        zeigen(FoodyStil.GRAUEN, hintergrund = true)
+        warteAufBeschreibung("Notiz: Mit Zitrone noch besser.")
+        compose.onNodeWithContentDescription("Zubereitung").performClick()
+        compose.warteAufText("Reis kochen.")
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("src/test/screenshots/stil_grauen_rezept_schmuck_handy.png", roborazziOptions = FoodyBildvergleich)
+        compose.onNodeWithContentDescription("Nährwerte").performClick()
+        compose.warteAufText("Energie")
+        compose.onAllNodesWithText("Notiz: Mit Zitrone noch besser.").assertCountEquals(0)
     }
 
     @Test fun kreuzerReiter() = reiter(FoodyStil.KREUZER)
