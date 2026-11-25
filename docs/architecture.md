@@ -243,7 +243,8 @@ wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für 
     im rechten Rand, Eselsohr (`eselsohr`), `GrauenInitiale` am ersten Schritt, `GrauenRandnotiz` für die Rezeptnotiz. Vom Auge auf „Heute“ ins Tagebuch führt ein Blick
     (`AugenBlick.kt`): Das Auge reißt auf, stürzt um die Pupille heran und versinkt in ihrem Dunkel (`blickStand`,
     900 ms, gezeichnet auf einer Ebene über der Seite); erst dann navigiert es, und im NavHost taucht das Tagebuch mit
-    Einblenden und Wachsen auf. Ohne Animationen öffnet es sofort; zurück auf „Heute“ ruht das Auge wieder. Die Szenen liegen in den Features unter `stil/`
+    Einblenden und Wachsen auf. Ebenso kommt in der Bibliothek ein Band aus dem Regal
+    (`RegalUebergang.kt`, `regalStand`, 1000 ms): herausziehen, heranholen, Deckel aufschlagen, dann das Rezept. Ohne Animationen öffnet es sofort; zurück auf „Heute“ ruht das Auge wieder. Die Szenen liegen in den Features unter `stil/`
     und bekommen denselben Zustand und dieselben Aktionen wie der normale Screen. Die Wahl speichert
     `DarstellungSpeicher` als `StilWahl` (`stil`, `stilVariante`, `stilAkzent`); fehlt sie, gilt Milchglas.
     Den Modus Hell/Dunkel und die Farbwelten gibt es nur bei Milchglas, die Systemleisten folgen dem Grund des Stils.

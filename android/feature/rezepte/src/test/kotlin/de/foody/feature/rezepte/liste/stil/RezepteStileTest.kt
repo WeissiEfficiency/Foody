@@ -1,5 +1,6 @@
 package de.foody.feature.rezepte.liste.stil
 
+import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -19,15 +20,20 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
+import com.github.takahirom.roborazzi.captureScreenRoboImage
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.glas.FoodyHintergrund
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
+import de.foody.core.testing.FoodyBildvergleich
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Einordnung
 import de.foody.feature.rezepte.bestand
@@ -68,6 +74,13 @@ class RezepteStileTest {
     @Before
     fun setUp() {
         db = testDatenbank()
+        // Ohne Animationen öffnet der Band sofort; der Übergang hat seinen eigenen Test
+        animationen(0f)
+    }
+
+    private fun animationen(skala: Float) {
+        val resolver = ApplicationProvider.getApplicationContext<android.app.Application>().contentResolver
+        Settings.Global.putFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, skala)
     }
 
     @After
@@ -89,16 +102,41 @@ class RezepteStileTest {
         }
     }
 
-    private fun zeigen(stil: FoodyStil) {
+    private fun zeigen(stil: FoodyStil, hintergrund: Boolean = false) {
         val vm = halter.behalten(RezeptListeViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1L }))
         compose.setContent {
-            FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV) {
+            FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV, unschaerfe = false) {
                 val inhalt = @Composable {
                     RezeptListeRoute(onOeffnen = { geoeffnet += it }, onNeu = { neu++ }, vm = vm)
                 }
-                inhalt()
+                if (hintergrund) FoodyHintergrund { inhalt() } else inhalt()
             }
         }
+    }
+
+    /**
+     * Grauen: Mit Animationen kommt der Band aus dem Regal, holt sich heran und schlägt sich auf; erst danach öffnet
+     * das Rezept, ein zweiter Tipp währenddessen zählt nicht. Die Bilder zeigen das Heranholen und das Aufschlagen.
+     */
+    @OptIn(ExperimentalRoborazziApi::class)
+    @Test
+    fun grauenBandKommtAusDemRegal() {
+        animationen(1f)
+        rezepte(2)
+        zeigen(FoodyStil.GRAUEN, hintergrund = true)
+        warteAufBeschreibung("Shakshuka")
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        val band = compose.onAllNodes(hasContentDescription("Öffnen: Shakshuka", substring = true)).onFirst()
+        band.performClick()
+        compose.mainClock.advanceTimeBy(REGAL_MS * 45L / 100L)
+        band.performClick()
+        assertEquals(emptyList(), geoeffnet)
+        captureScreenRoboImage("src/test/screenshots/stil_grauen_regal_heran.png", roborazziOptions = FoodyBildvergleich)
+        compose.mainClock.advanceTimeBy(REGAL_MS * 35L / 100L)
+        captureScreenRoboImage("src/test/screenshots/stil_grauen_regal_auf.png", roborazziOptions = FoodyBildvergleich)
+        compose.mainClock.advanceTimeBy(REGAL_MS.toLong())
+        assertEquals(listOf("r3"), geoeffnet)
     }
 
     private fun warteAufBeschreibung(text: String) =
