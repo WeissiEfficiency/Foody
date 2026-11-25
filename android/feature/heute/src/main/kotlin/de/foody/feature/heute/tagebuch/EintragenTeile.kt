@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyChip
 import de.foody.core.designsystem.komponenten.FoodyTextfeld
-import de.foody.core.designsystem.komponenten.WahlZeile
 import de.foody.core.designsystem.komponenten.vorausgefuelltFarben
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
@@ -49,15 +48,6 @@ internal fun eintragenTitel() = stilText("Eintragen", sage = "Mahl eintragen", a
 @Composable
 internal fun Suche(text: String, onText: (String) -> Unit) {
     FoodyTextfeld("Rezept oder Zutat suchen", text, onWert = onText)
-}
-
-/**
- * Trefferzeile (im Stil R–V wie im Entwurf), mindestens 48 dp hoch: ein Knopf, der nach Bestätigen führt, keine
- * Auswahl (TalkBack sagt nicht „Optionsfeld“), wie die BLS-Zeilen.
- */
-@Composable
-internal fun Treffer(text: String, onWahl: () -> Unit) {
-    WahlZeile(text, gewaehlt = false, onWahl, knopf = true)
 }
 
 /** Portionen des gewählten Rezepts: − / Feld / + in Schritten von 0,5. */
@@ -105,16 +95,14 @@ internal fun MengeEingabe(z: EintragenZustand, vm: EintragenViewModel) {
     }
 }
 
-/** BLS-Treffer: Name und kcal je 100 g; antippen übernimmt ihn in den Katalog und wählt ihn. */
-@Composable
-internal fun BlsZeile(t: BlsTreffer, onWahl: () -> Unit) {
+/** Nebenzeile eines BLS-Treffers: voller Name (wenn anders), kcal je 100 g, Stückgewicht. */
+internal fun blsInfo(t: BlsTreffer): String? {
     val kcal = t.lebensmittel.werte[Nutrient.ENERGY_KJ]?.let(NutritionResult::kcal)
-    val details = listOfNotNull(
+    return listOfNotNull(
         t.lebensmittel.name.takeIf { it != t.vorschlagName },
         kcal?.let { "$it kcal je 100 g" },
         t.stueckG?.let { "Stück ≈ ${it.toPlainString()} g" },
-    )
-    WahlZeile(t.vorschlagName, gewaehlt = false, onWahl, info = details.joinToString(" · ").ifEmpty { null }, knopf = true)
+    ).joinToString(" · ").ifEmpty { null }
 }
 
 /**
