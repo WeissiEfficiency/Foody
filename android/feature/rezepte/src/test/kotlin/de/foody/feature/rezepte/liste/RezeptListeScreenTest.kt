@@ -1,5 +1,8 @@
 package de.foody.feature.rezepte.liste
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -14,6 +17,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.db.FoodyDatenbank
+import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
@@ -138,19 +142,35 @@ class RezeptListeScreenTest {
         compose.onNodeWithText("Favoriten").assertIsNotSelected()
     }
 
+    /**
+     * Grimoire als Inventar: Das erste Fach ist gewählt, „Aufschlagen“ öffnet es; ein Tipp auf ein anderes Fach wählt
+     * es (öffnet nicht), ein zweiter Tipp schlägt es auf.
+     */
     @Test
-    fun grimoireBlaettertUndSchlaegtAuf() {
-        runBlocking { db.bestand() }
+    fun grimoireWaehltUndSchlaegtAuf() {
+        runBlocking {
+            db.bestand()
+            db.rezeptDao().upsert(
+                RezeptEntity(
+                    id = "r2", name = "Shakshuka", defaultServings = 2, prepMinutes = 10, cookMinutes = 15, imageUri = null,
+                    notes = null, tags = "", archivedAt = null, createdAt = 1, updatedAt = 1,
+                ),
+            )
+        }
         zeigen(stil = FoodyStil.SAGE)
         compose.warteAufText("GRIMOIRE")
-        val n = compose.onAllNodesWithContentDescription("Öffnen: ", substring = true).fetchSemanticsNodes().size
-        assertTrue(n >= 1)
-        compose.onNodeWithText("AUFSCHLAGEN").performScrollTo().performClick()
+        val faecher = compose.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
+        val n = faecher.fetchSemanticsNodes().size
+        assertTrue(n >= 2, "Fächer: $n")
+        faecher[0].assertIsSelected()
+        compose.onNodeWithText("AUFSCHLAGEN").performClick()
         assertEquals(1, geoeffnet.size)
-        compose.onNodeWithContentDescription("Nächstes Rezept").performScrollTo().performClick()
-        compose.onNodeWithText("AUFSCHLAGEN").performScrollTo().performClick()
-        // Mit mehr als einem Rezept zeigt „Nächstes“ ein anderes; mit einem bleibt es dasselbe
+        faecher[1].performClick()
+        faecher[1].assertIsSelected()
+        assertEquals(1, geoeffnet.size)
+        faecher[1].performClick()
         assertEquals(2, geoeffnet.size)
+        assertTrue(geoeffnet[0] != geoeffnet[1])
     }
 
     @Test
@@ -159,8 +179,8 @@ class RezeptListeScreenTest {
         zeigen(stil = FoodyStil.SAGE)
         compose.warteAufText("GRIMOIRE")
         compose.onNode(hasSetTextAction()).performTextInput("Reispfanne")
-        compose.warteAufText("Reispfanne ›")
-        compose.onNodeWithText("Reispfanne ›").performClick()
+        compose.warteAufText("1 Rezept")
+        compose.onNodeWithContentDescription("Öffnen: Reispfanne").performClick()
         assertEquals(listOf("r1"), geoeffnet)
         compose.onNodeWithContentDescription("Neues Rezept").performClick()
         assertEquals(1, neu)

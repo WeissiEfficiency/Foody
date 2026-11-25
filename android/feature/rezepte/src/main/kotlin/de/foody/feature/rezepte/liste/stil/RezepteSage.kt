@@ -68,8 +68,8 @@ import de.foody.feature.rezepte.liste.Suche
 import java.util.Locale
 
 /**
- * Rezeptliste der Düsteren Sage in Immersiv (Entwurf `Q-Rezepte`): „Grimoire“ mit Suche und denselben Filtern wie die
- * normale Liste; die Treffer werden einzeln aufgeschlagen, mit Emblem, Art, Zeit, kcal und „gekocht“, darunter
+ * Rezeptliste der Düsteren Sage (Entwurf `Q-Rezepte`): In Immersiv das Grimoire als Inventar ([GrimoireInventar]). In
+ * Ruhig „Sammlung“ mit Suche und denselben Filtern wie die normale Liste; die Treffer werden einzeln aufgeschlagen, mit Emblem, Art, Zeit, kcal und „gekocht“, darunter
  * „‹ Aufschlagen ›“. Dieselbe Logik und dieselben Ziele wie die normale Liste (öffnen, neu).
  */
 @Composable
@@ -80,6 +80,11 @@ internal fun RezepteSage(
     onOeffnen: (String) -> Unit,
     onNeu: () -> Unit,
 ) {
+    // Immersiv: das Grimoire als Inventar; Ruhig blättert weiter Seite für Seite
+    if (FoodyTheme.stil.inszeniert) {
+        GrimoireInventar(z, aendern, zuruecksetzen, onOeffnen, onNeu)
+        return
+    }
     // Blättern beginnt bei jeder neuen Suche oder jedem Filter wieder vorn
     var i by rememberSaveable(z.filter) { mutableIntStateOf(0) }
     val n = z.treffer.size
