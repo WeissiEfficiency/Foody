@@ -200,7 +200,7 @@ private fun KochInhalt(
                 val schritt = z.schritt(seite)
                 val naechster = z.schritt(seite + 1)?.text
                 if (buch) {
-                    GrauenSeite(null, roemisch(seite + 1)) {
+                    GrauenSeite(null, roemisch(seite + 1), eselsohr = seite < pager.pageCount - 1) {
                         val nummer = seite + if (z.hatBereitlegen) 0 else 1
                         if (schritt == null) BereitlegenStil(art!!, z, a) else SchrittStil(art!!, schritt, nummer, z.schritte.size, z.abgehakt, a, naechster)
                     }
