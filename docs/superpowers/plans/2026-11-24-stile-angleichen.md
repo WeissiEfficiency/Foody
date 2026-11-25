@@ -124,6 +124,8 @@ Schritt 2 oben (Bühne plus Liste).
   Seitenzahl = Tag im Jahr); Wischen blättert zum Nachbartag und wählt seinen Mond, ein Mond blättert das Buch mit. Auf
   dem Tablet (ab `FoodyBreiten.zweispaltig`) liegt der Almanach als Doppelseite offen: links Kopf, Mondbogen und Ritual,
   rechts der Tag, gleich hoch. Damit ist G6 fertig.
+- **G7 Zwei Gesichter** (Wunsch 2026-11-25): Ominös (Grün) und Necronomicon (Buch) statt Ruhig und Immersiv;
+  eigener Plan `2026-11-25-grauen-zwei-gesichter.md`, ADR 0022.
 
 ### Düstere Sage (mehr Dark-Fantasy, „Elden-Ring-Gefühl“)
 - **S1 Rast am Feuer (Heute):** Vitalität zeigt Eiweiß, KH und Fett in ihren Farben – als drei Leisten wie Leben,

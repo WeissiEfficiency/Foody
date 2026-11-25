@@ -3,7 +3,8 @@
 Status: angenommen (2026-11-13). Erweitert ADR 0015: Milchglas mit den Farbwelten bleibt der Standard und wird ein
 Stil unter sieben. Plan und Ergebnisse: `ToDoS/stile-plan.md`. Entwürfe: Design-Canvas „Foody Design“ (privat), Q bis V
 mit je 14 Screens und Widgets. Für Eintragen ist die Form je Stil (Blatt oder Seite, Reiter, Knopfwörter) seit
-2026-11-22 durch ADR 0021 ersetzt: eine Seite, in allen Stilen gleich aufgebaut.
+2026-11-22 durch ADR 0021 ersetzt: eine Seite, in allen Stilen gleich aufgebaut. Für das Kosmische Grauen gelten
+seit 2026-11-25 zwei immersive Gesichter statt Immersiv und Ruhig und keine Akzentwahl (ADR 0022).
 
 **Kontext:** Im Design-Canvas sind sechs Stile entstanden, jeder mit eigener Welt: Q Düstere Sage, R Anime, S Edo,
 T Bayrisch, U Kosmisches Grauen, V Sternenkreuzer. Der Nutzer wollte sie alle in der App wählen können, nicht nur
