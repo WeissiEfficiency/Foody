@@ -85,6 +85,11 @@ Ziel bleibt: wenig neuer Code, gemeinsame Bausteine statt fünf Einzellösungen.
 - Test `EinkaufStileTest.abteilungPerPille` (alle sechs Szenen: Pille wählt, nur deren Kacheln, nichts klappt,
   nichts scrollt waagerecht); Bilder der fünf Szenen neu; auf dem Handy in Sage geprüft.
 
+### Runde 2 · S5 Sage-Einstellungen
+- Bei 361 dp (Handy des Nutzers) passten nur drei der vier Farben in eine Reihe, die vierte rutschte allein in eine
+  neue Zeile. Akzente jetzt 64 dp breit, passen sie nicht, 2 + 2 (`rasterSpalten`,
+  `EinstellungenStileTest.sageFarbenInEinerReihe`). Gilt auch für die Ruhig-Varianten.
+
 ## Runde 2 · Immersive Stile eigenständig (Wunsch 2026-11-24)
 
 Der Nutzer will keine Gleichmacherei: Jeder immersive Stil soll auf jeder Seite (Heute mit Energie, Eintragen,
@@ -115,9 +120,7 @@ Schritt 2 oben (Bühne plus Liste).
   gewählten Gegenstands mit Werten (Zeit, kcal, gekocht) und „Aufschlagen“.
 - **S4 Der Händler:** zwei, drei Bildvarianten zum Vergleich zeichnen; die Liste als Papierrolle, die sich nach unten
   ausrollt. *Erledigt:* drei Entwürfe (Gnadenort, Ruinentor, Karren); gewählt **Ruinentor** (Nutzer, 2026-11-25).
-- **S5 Einstellungen:** Das Layout verschiebt sich; auf dem Handy nachstellen und beheben. *Erledigt:* Bei 361 dp
-  passten nur drei der vier Farben in eine Reihe, die vierte rutschte allein in eine neue Zeile. Akzente jetzt 64 dp
-  breit, sonst 2 + 2.
+- **S5 Einstellungen:** Das Layout verschiebt sich; auf dem Handy nachstellen und beheben.
 
 ### Später · Übergänge
 Übergänge zwischen Seiten im Stil, z. B. Grauen: Tipp aufs Auge → das Auge öffnet sich und zoomt auf den Betrachter
