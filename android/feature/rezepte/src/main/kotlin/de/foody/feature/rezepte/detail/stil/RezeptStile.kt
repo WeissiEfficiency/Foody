@@ -14,18 +14,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -68,6 +72,8 @@ import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.grauen.Grauen
+import de.foody.core.designsystem.stil.grauen.GrauenSeite
+import de.foody.core.designsystem.stil.grauen.umblaettern
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.szenenStil
 import de.foody.core.designsystem.token.FoodyBreiten
@@ -210,14 +216,38 @@ internal fun RezeptStil(stil: FoodyStil, z: DetailZustand.Da, a: DetailAktionen)
                 }
                 Portionen(art, z.portionen, a.onPortionen)
                 Reiterleiste(art, reiter) { reiter = it }
-                when (reiter) {
-                    0 -> Zutaten(art, z)
-                    1 -> Schritte(art, z.voll.schritte)
-                    else -> Werte(art, z)
+                if (stil == FoodyStil.GRAUEN && FoodyTheme.stil.inszeniert) {
+                    Buch(art, z, reiter) { reiter = it }
+                } else {
+                    when (reiter) {
+                        0 -> Zutaten(art, z)
+                        1 -> Schritte(art, z.voll.schritte)
+                        else -> Werte(art, z)
+                    }
                 }
             }
         }
         Knopfleiste(art, z, a) { leiste = it }
+    }
+}
+
+/**
+ * Grauen in Immersiv (Runde 2 G2): Zutaten, Zubereitung und Nährwerte sind die Seiten eines Buchs, die man umblättert
+ * (Wischen oder die Reiter als Lesezeichen darüber); jede Seite mit Kapitel und römischer Seitenzahl.
+ */
+@Composable
+private fun Buch(art: RezeptArt, z: DetailZustand.Da, reiter: Int, onReiter: (Int) -> Unit) {
+    val pager = rememberPagerState(initialPage = reiter) { REITER.size }
+    LaunchedEffect(pager) { snapshotFlow { pager.settledPage }.collect { onReiter(it) } }
+    LaunchedEffect(reiter) { if (pager.currentPage != reiter) pager.animateScrollToPage(reiter) }
+    HorizontalPager(pager, Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, beyondViewportPageCount = 1) { seite ->
+        GrauenSeite(REITER[seite], roemisch(seite + 1), Modifier.umblaettern(pager, seite)) {
+            when (seite) {
+                0 -> Zutaten(art, z)
+                1 -> Schritte(art, z.voll.schritte)
+                else -> Werte(art, z)
+            }
+        }
     }
 }
 

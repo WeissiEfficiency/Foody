@@ -55,7 +55,10 @@ import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.LeererZustandFlaeche
 import de.foody.core.designsystem.komponenten.RunderKnopf
+import de.foody.core.designsystem.komponenten.roemisch
 import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.grauen.GrauenSeite
+import de.foody.core.designsystem.stil.grauen.umblaettern
 import de.foody.core.designsystem.stil.stilText
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.FoodyBreiten
@@ -187,13 +190,22 @@ private fun KochInhalt(
             art != null -> KochKopfStil(art, z, pager.currentPage, onSchliessen)
             else -> Kopf(z, pager.currentPage, onSchliessen)
         }
+        // Grauen in Immersiv: jeder Schritt ist ein Blatt im Buch, das man umblättert (Runde 2 G2)
+        val buch = KochSzene.aktuell() == FoodyStil.GRAUEN && inszeniert
         HorizontalPager(pager, Modifier.weight(1f)) { seite ->
             Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                Modifier.fillMaxSize().then(if (buch) Modifier.umblaettern(pager, seite) else Modifier).verticalScroll(rememberScrollState())
                     .padding(horizontal = if (sage || art != null) 20.dp else FoodyAbstaende.s4, vertical = FoodyAbstaende.s3),
             ) {
                 val schritt = z.schritt(seite)
                 val naechster = z.schritt(seite + 1)?.text
+                if (buch) {
+                    GrauenSeite(null, roemisch(seite + 1)) {
+                        val nummer = seite + if (z.hatBereitlegen) 0 else 1
+                        if (schritt == null) BereitlegenStil(art!!, z, a) else SchrittStil(art!!, schritt, nummer, z.schritte.size, z.abgehakt, a, naechster)
+                    }
+                    return@Column
+                }
                 when {
                     sage && schritt == null -> BereitlegenSage(z, a)
                     sage -> SchrittSage(schritt!!, seite + if (z.hatBereitlegen) 0 else 1, z.schritte.size, z.abgehakt, a, naechster)
