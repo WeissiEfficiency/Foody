@@ -196,10 +196,18 @@ fun Modifier.umblaettern(pager: PagerState, seite: Int): Modifier {
             transformOrigin = TransformOrigin(0f, 0.5f)
             rotationY = -100f * versatz.coerceAtMost(1f)
             cameraDistance = 14f * density
-            alpha = if (versatz < 0.9f) 1f else 0f
-        } else {
-            // Kommendes Blatt darunter: aus dem Schatten
-            alpha = 1f - 0.5f * abs(versatz)
         }
+        alpha = blattDeckkraft(versatz)
     }
+}
+
+/**
+ * Deckkraft eines Blatts bei [versatz] (Seiten vom aktuellen Blatt entfernt, mit Bruchteil beim Wischen): Das gehende
+ * Blatt ist bis kurz vor der Kante sichtbar, das kommende taucht aus dem Schatten auf. Ein Blatt, das eine ganze Seite
+ * oder mehr entfernt liegt, ist unsichtbar; sonst schiene die vorbereitete Nachbarseite unter einem kürzeren Blatt durch.
+ */
+internal fun blattDeckkraft(versatz: Float): Float = when {
+    versatz >= 0f -> if (versatz < 0.9f) 1f else 0f
+    versatz <= -1f -> 0f
+    else -> 1f - 0.5f * abs(versatz)
 }

@@ -111,6 +111,10 @@ Schritt 2 oben (Bühne plus Liste).
   füllen“ mit dem Stand „2 von 7“).
 - **G4 Auge (Heute):** Die kcal-Zeile unter dem Auge öffnet das Energietagebuch; Makro-Farben wie Anime (Schritt 3).
 - **G5 Expeditionsliste (Einkauf):** später prüfen, ob sie eigenständiger werden soll.
+- **G6 Buch ausbauen** (Wunsch 2026-11-25): vier Ideen – (1) Logbuch als Blätter, (2) Buch aus dem Regal (Übergang
+  Bibliothek → Rezept), (3) Buchschmuck im Rezept (Initiale, Lesebändchen, Randnotiz, Eselsohr), (4) Woche als
+  Almanach. Zuerst 1 und 3. *Erledigt (1):* Im Logbuch ist jeder Tag ein Blatt (`LogbuchBlaetter`, `GrauenSeite`) mit
+  dem Tag des Jahres als römischer Seitenzahl (`roemischVoll`); Wischen und „‹ ›“ blättern um den Bund.
 
 ### Düstere Sage (mehr Dark-Fantasy, „Elden-Ring-Gefühl“)
 - **S1 Rast am Feuer (Heute):** Vitalität zeigt Eiweiß, KH und Fett in ihren Farben – als drei Leisten wie Leben,
