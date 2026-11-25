@@ -46,7 +46,8 @@ import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
 import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
-import de.foody.feature.einkauf.KlappkopfInhalt
+import de.foody.feature.einkauf.PillenAussehen
+import de.foody.feature.einkauf.ZULETZT
 import java.time.temporal.IsoFields
 import kotlin.math.min
 
@@ -68,13 +69,11 @@ internal fun LazyGridScope.grauenPosten(ansicht: EinkaufsAnsicht?, onUmschalten:
     ganzeBreite("grauen-pergament") { Pergament(ansicht, gruppen, onUmschalten, onDetails) }
 }
 
-/**
- * Klappkopf der Abteilungen (Zuletzt, Katalog) in der Titelschrift wie die Abteilungen auf dem Pergament; statt Moos,
- * das nur auf dem Pergament trägt, im Primärton (AA auf dem Grund beider Varianten).
- */
-internal val grauenKlappkopf: KlappkopfInhalt = { titel, offen, onKlick ->
-    Klappzeile(offen, onKlick) { Text(titel, Modifier.weight(1f), style = Grauen.titel(15f, 0.06f), color = FoodyTheme.farben.primaer) }
-}
+/** „Hinzufügen“ der Expedition: „Was die Expedition noch braucht“, die Abteilungen mit ihren düsteren Namen. */
+internal val grauenPillen = PillenAussehen(
+    ueberschrift = { m -> Text("Was die Expedition noch braucht", m, style = Grauen.titel(15f, 0.06f), color = FoodyTheme.farben.primaer) },
+    name = { a, _ -> if (a == ZULETZT) "Zuletzt gesehen" else grauenAbteilung(a) },
+)
 
 /** Namen der Abteilungen für die Expedition; andere bleiben, wie sie sind. */
 internal fun grauenAbteilung(name: String): String = when (name) {

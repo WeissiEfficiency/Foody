@@ -50,7 +50,8 @@ import de.foody.core.designsystem.stil.bayrisch.bayrischSzenenTitel
 import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.core.designsystem.token.FoodyAbstaende
-import de.foody.feature.einkauf.KlappkopfInhalt
+import de.foody.feature.einkauf.PillenAussehen
+import de.foody.feature.einkauf.ZULETZT
 import kotlin.math.min
 
 /**
@@ -68,11 +69,14 @@ internal fun LazyGridScope.bayrischPosten(ansicht: EinkaufsAnsicht?, onUmschalte
     jeGruppe("bayrisch", ansicht.gruppiert()) { _, g -> Kiste(g, onUmschalten, onDetails) }
 }
 
-/** Klappkopf der Abteilungen (Zuletzt, Katalog) in der Titelschrift wie in den Kisten: Tinte in Immersiv, Blau in Ruhig. */
-internal val bayrischKlappkopf: KlappkopfInhalt = { titel, offen, onKlick ->
-    val farbe = if (FoodyTheme.stil.inszeniert) FoodyTheme.farben.text else bayrischBlau()
-    Klappzeile(offen, onKlick) { Text(titel, Modifier.weight(1f), style = Bayrisch.titel(15f, FontWeight.ExtraBold), color = farbe) }
-}
+/** „Hinzufügen“ auf Bairisch: „Wos brauch ma no?“, die Abteilungen mit Emoji und ihren bairischen Namen. */
+internal val bayrischPillen = PillenAussehen(
+    ueberschrift = { m ->
+        val farbe = if (FoodyTheme.stil.inszeniert) FoodyTheme.farben.text else bayrischBlau()
+        Text("Wos brauch ma no?", m, style = Bayrisch.titel(15f, FontWeight.ExtraBold), color = farbe)
+    },
+    name = { a, e -> "$e " + if (a == ZULETZT) "Zletzt" else bayrischAbteilung(a) },
+)
 
 /** Namen der Abteilungen auf Bairisch; andere bleiben, wie sie sind. */
 internal fun bayrischAbteilung(name: String): String = when (name) {
