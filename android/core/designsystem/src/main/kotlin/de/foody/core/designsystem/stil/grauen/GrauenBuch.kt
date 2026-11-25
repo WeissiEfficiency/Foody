@@ -30,12 +30,14 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import de.foody.core.designsystem.FoodyTheme
 import kotlin.math.abs
@@ -151,23 +153,37 @@ private fun DrawScope.lesebaendchen(blatt: Float) {
 @Composable
 fun GrauenInitiale(text: String, stil: TextStyle, farbe: Color, modifier: Modifier = Modifier) {
     val glut = FoodyTheme.stil.zier
-    var lage by remember { mutableStateOf<Rect?>(null) }
+    var satzbild by remember { mutableStateOf<TextLayoutResult?>(null) }
     val satz = buildAnnotatedString {
-        withStyle(Grauen.name(30f).toSpanStyle().copy(color = glut, letterSpacing = 0.35.em)) { append(text.take(1)) }
+        withStyle(Grauen.name(INITIALE_SP).toSpanStyle().copy(color = glut, letterSpacing = INITIALE_ABSTAND.em)) { append(text.take(1)) }
         append(text.drop(1))
     }
     Text(
         satz,
         modifier.drawBehind {
-            val r = lage ?: return@drawBehind
-            val rand = 3.dp.toPx()
-            val feld = Rect(r.left - rand, r.top, r.left + r.height * 0.8f + rand, r.bottom)
+            val l = satzbild?.takeIf { text.isNotEmpty() } ?: return@drawBehind
+            val feld = initialenFeld(l.getBoundingBox(0), l.getLineBaseline(0), INITIALE_SP.sp.toPx())
             drawRect(glut.copy(alpha = 0.08f), feld.topLeft, feld.size)
             drawRect(glut.copy(alpha = 0.6f), feld.topLeft, feld.size, style = Stroke(1.dp.toPx()))
         },
         style = stil, color = farbe,
-        onTextLayout = { l -> lage = if (text.isEmpty()) null else l.getBoundingBox(0) },
+        onTextLayout = { satzbild = it },
     )
+}
+
+private const val INITIALE_SP = 28f
+private const val INITIALE_ABSTAND = 0.35f
+
+/**
+ * Das Feld um die Initiale: ein Quadrat um den Buchstaben selbst, gemessen an der Grundlinie [grundlinie] und der
+ * Schriftgröße [groesse] (Pixel). Die Zeilenhöhe des Absatzes ist fest und kleiner als der Buchstabe; die Box des
+ * Zeichens ([zeichen], mit dem Abstand dahinter) taugt deshalb nur für die Lage links.
+ */
+internal fun initialenFeld(zeichen: Rect, grundlinie: Float, groesse: Float): Rect {
+    val breite = zeichen.width - INITIALE_ABSTAND * groesse
+    val mitte = Offset(zeichen.left + breite / 2f, grundlinie - 0.36f * groesse)
+    val halb = 0.52f * groesse
+    return Rect(mitte.x - halb, mitte.y - halb, mitte.x + halb, mitte.y + halb)
 }
 
 /** Eine Notiz am Rand in blassem Rosé, kursiv und leicht schräg wie von Hand nachgetragen. */
