@@ -34,3 +34,22 @@ fun roemisch(n: Int): String {
     if (n !in 1..39) return n.toString()
     return "X".repeat(n / 10) + listOf("", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX")[n % 10]
 }
+
+private val ROEMISCHE_STUFEN = listOf(
+    1000 to "M", 900 to "CM", 500 to "D", 400 to "CD", 100 to "C", 90 to "XC",
+    50 to "L", 40 to "XL", 10 to "X", 9 to "IX", 5 to "V", 4 to "IV", 1 to "I",
+)
+
+/** Römische Zahl ohne Grenze für Seitenzahlen (I … MMMCMXCIX, etwa „CCCXXIX“ für den 329. Tag); außerhalb arabisch. */
+fun roemischVoll(n: Int): String {
+    if (n !in 1..3999) return n.toString()
+    var rest = n
+    return buildString {
+        ROEMISCHE_STUFEN.forEach { (wert, zeichen) ->
+            while (rest >= wert) {
+                append(zeichen)
+                rest -= wert
+            }
+        }
+    }
+}

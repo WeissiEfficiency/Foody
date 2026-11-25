@@ -255,26 +255,33 @@ internal fun TagebuchStil(
             ) {
                 Kopf(stil, art, onZurueck)
                 Tageswahl(art, datum, heute, onDatum, onWahl)
-                val z = zustand?.takeIf { it.datum == datum } ?: return@Column
-                if (stil == FoodyStil.KREUZER) Balken(art, z) else Ring(art, z)
-                when (stil) {
-                    FoodyStil.BAYRISCH -> bayrischSpruch(z, FoodyTheme.stil.inszeniert)?.let {
-                        Text(it, style = art.klein(15f), color = FoodyTheme.farben.primaer)
+                val tag: @Composable (TagZustand) -> Unit = { z ->
+                    if (stil == FoodyStil.KREUZER) Balken(art, z) else Ring(art, z)
+                    when (stil) {
+                        FoodyStil.BAYRISCH -> bayrischSpruch(z, FoodyTheme.stil.inszeniert)?.let {
+                            Text(it, style = art.klein(15f), color = FoodyTheme.farben.primaer)
+                        }
+                        // Die Notiz zum Tag nur in Immersiv, wie im Entwurf
+                        FoodyStil.GRAUEN -> if (FoodyTheme.stil.inszeniert) {
+                            Text(grauenNotiz(z, heute), style = Grauen.text(16f, kursiv = true), color = FoodyTheme.farben.nebentext)
+                        }
+                        else -> Unit
                     }
-                    // Die Notiz zum Tag nur in Immersiv, wie im Entwurf
-                    FoodyStil.GRAUEN -> if (FoodyTheme.stil.inszeniert) {
-                        Text(grauenNotiz(z, heute), style = Grauen.text(16f, kursiv = true), color = FoodyTheme.farben.nebentext)
+                    gruppenFolge(stil, z.abschnitte).forEach { a ->
+                        Gruppe(
+                            stil, art, a, offenId,
+                            onWahl = { e -> offenId = if (offenId == e.id) null else e.id },
+                            onEintragen = { onEintragen(a.mahlzeit) },
+                            onAendern = { e -> offenId = null; onAendern(e) },
+                            onLoeschen = { e -> offenId = null; onLoeschen(e) },
+                        )
                     }
-                    else -> Unit
                 }
-                gruppenFolge(stil, z.abschnitte).forEach { a ->
-                    Gruppe(
-                        stil, art, a, offenId,
-                        onWahl = { e -> offenId = if (offenId == e.id) null else e.id },
-                        onEintragen = { onEintragen(a.mahlzeit) },
-                        onAendern = { e -> offenId = null; onAendern(e) },
-                        onLoeschen = { e -> offenId = null; onLoeschen(e) },
-                    )
+                if (stil == FoodyStil.GRAUEN && FoodyTheme.stil.inszeniert) {
+                    // Grauen in Immersiv: jeder Tag ein Blatt im Logbuch
+                    LogbuchBlaetter(datum, onDatum) { seite -> zustand?.takeIf { it.datum == seite && seite == datum }?.let { tag(it) } }
+                } else {
+                    zustand?.takeIf { it.datum == datum }?.let { tag(it) }
                 }
             }
         }
