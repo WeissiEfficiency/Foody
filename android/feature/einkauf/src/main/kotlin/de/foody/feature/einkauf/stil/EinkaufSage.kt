@@ -82,19 +82,29 @@ internal fun LazyGridScope.haendlerKopf(ansicht: EinkaufsAnsicht?, onListen: () 
                 }
                 SageNebenknopf("LISTEN", "Einkaufslisten", onListen, akzent = true)
             }
-            // Ruhig: ohne den Laden und den Spruch des Händlers (Entwurf `Q-Einkauf`, Ruhig)
-            if (FoodyTheme.stil.inszeniert) Laden(offen)
+            // Ruhig: ohne das Ruinentor und den Spruch des Händlers (Entwurf `Q-Einkauf`, Ruhig)
+            if (FoodyTheme.stil.inszeniert) HaendlerRuinentor(offen)
         }
     }
 }
 
 /**
- * Die offenen Posten in Laufreihenfolge, danach die schon gekauften (durchgestrichen); je Reihe zwei wie im Entwurf,
- * unabhängig von den Spalten des Katalogs darunter.
+ * Die offenen Posten in Laufreihenfolge, danach die schon gekauften (durchgestrichen). [inszeniert]: als Papierrolle
+ * ([HaendlerRolle]) in einem Stück; Ruhig: Felder, je Reihe zwei wie im Entwurf, unabhängig von den Spalten des Katalogs.
  */
-internal fun LazyGridScope.haendlerPosten(ansicht: EinkaufsAnsicht?, onUmschalten: (String, Boolean) -> Unit, onDetails: (String) -> Unit) {
+internal fun LazyGridScope.haendlerPosten(
+    ansicht: EinkaufsAnsicht?,
+    inszeniert: Boolean,
+    onUmschalten: (String, Boolean) -> Unit,
+    onDetails: (String) -> Unit,
+) {
     val offen = ansicht?.offen.orEmpty().flatMap { it.artikel }
     val gekauft = ansicht?.alle.orEmpty().filter { it.gekauft }
+    if (inszeniert) {
+        if (offen.isEmpty() && gekauft.isEmpty()) return
+        item(key = "haendler-rolle", span = { GridItemSpan(maxLineSpan) }) { HaendlerRolle(offen + gekauft, onUmschalten, onDetails) }
+        return
+    }
     items((offen + gekauft).chunked(2), key = { "posten-${it.first().id}" }, span = { GridItemSpan(maxLineSpan) }) { reihe ->
         // Gleich hohe Felder je Reihe, auch wenn eine Unterzeile zweizeilig wird
         Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -157,61 +167,3 @@ internal fun haendlerSpruch(offen: Int): String = when (offen) {
 }
 
 private val ZAHLWORTE = listOf("Keine", "Ein", "Zwei", "Drei", "Vier", "Fünf", "Sechs", "Sieben", "Acht", "Neun", "Zehn", "Elf", "Zwölf")
-
-/**
- * Der Laden als Zeichnung (Vordach, Pfosten, Theke mit Waren, der Händler im Torbogen mit leuchtenden Augen, Laterne),
- * daneben der Spruch. Höhe wächst mit der Schrift; die Zeichnung ist für TalkBack stumm, der Spruch nicht.
- */
-@Composable
-private fun Laden(offen: Int) {
-    val f = FoodyTheme.farben
-    val glut = FoodyTheme.stil.zier
-    val pfade = remember { LadenPfade() }
-    Box(
-        Modifier.fillMaxWidth().heightIn(min = 140.dp).border(1.dp, f.balkenSpur).clipToBounds()
-            .background(Color(0xFF110F0C)),
-    ) {
-        Canvas(Modifier.matchParentSize().clearAndSetSemantics { }) {
-            drawRect(
-                Brush.radialGradient(
-                    listOf(Sage.feuer.copy(alpha = 0.22f), Color.Transparent),
-                    center = Offset(size.width * 0.22f, size.height * 0.4f), radius = size.width * 0.55f,
-                ),
-            )
-            val s = size.height / 140f
-            scale(s, Offset.Zero) {
-                drawPath(pfade.dach, Color(0xFF1E1A14))
-                drawPath(pfade.dach, Color(0xFF3A3428), style = Stroke(1f))
-                drawLine(Color(0xFF2A251C), Offset(14f, 40f), Offset(14f, 140f), 6f)
-                drawLine(Color(0xFF2A251C), Offset(226f, 40f), Offset(226f, 140f), 6f)
-                drawRect(Color(0xFF1A1611), Offset(0f, 108f), Size(240f, 32f))
-                drawRect(Color(0xFF2A2218), Offset(30f, 92f), Size(22f, 16f))
-                drawRoundRect(Color(0xFF2A2218), Offset(58f, 96f), Size(16f, 12f), CornerRadius(6f))
-                drawRect(Color(0xFF2A2218), Offset(180f, 90f), Size(26f, 18f))
-                drawPath(pfade.bogen, Color(0xFF0A0908))
-                drawPath(pfade.kapuze, Color(0xFF161310))
-                drawCircle(glut, 1.8f, Offset(139f, 78f))
-                drawCircle(glut, 1.8f, Offset(153f, 78f))
-                drawLine(Color(0xFF3A3428), Offset(76f, 40f), Offset(76f, 54f), 1f)
-                drawPath(pfade.laterne, Sage.feuer.copy(alpha = 0.85f))
-                drawCircle(Sage.feuer.copy(alpha = 0.15f), 14f, Offset(76f, 62f))
-            }
-        }
-        Row(Modifier.fillMaxSize()) {
-            Spacer(Modifier.weight(1f))
-            Text(
-                "„Was führt Euch her? ${haendlerSpruch(offen)}“",
-                Modifier.width(150.dp).padding(top = 18.dp, end = 12.dp, bottom = 12.dp),
-                style = Sage.text(15.5f, kursiv = true),
-                color = f.text,
-            )
-        }
-    }
-}
-
-private class LadenPfade {
-    val dach = svgPfad("M0 40L60 14h120l60 26z")
-    val bogen = svgPfad("M120 140v-50c0-24 12-40 26-40s26 16 26 40v50z")
-    val kapuze = svgPfad("M126 70c4-14 12-20 20-20s16 6 20 20c-8-6-32-6-40 0z")
-    val laterne = svgPfad("M70 54h12l-2 16h-8z")
-}

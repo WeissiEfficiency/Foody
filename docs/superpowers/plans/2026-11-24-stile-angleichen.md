@@ -114,8 +114,12 @@ Schritt 2 oben (Bühne plus Liste).
 - **S3 Grimoire als Inventar:** Rezepte als Raster aus Inventarfeldern (scrollbar), oben die Beschreibung des
   gewählten Gegenstands mit Werten (Zeit, kcal, gekocht) und „Aufschlagen“.
 - **S4 Der Händler:** zwei, drei Bildvarianten zum Vergleich zeichnen; die Liste als Papierrolle, die sich nach unten
-  ausrollt.
+  ausrollt. *Erledigt:* drei Entwürfe (Gnadenort, Ruinentor, Karren); gewählt **Ruinentor** (Nutzer, 2026-11-25).
 - **S5 Einstellungen:** Das Layout verschiebt sich; auf dem Handy nachstellen und beheben.
+
+### Später · Übergänge
+Übergänge zwischen Seiten im Stil, z. B. Grauen: Tipp aufs Auge → das Auge öffnet sich und zoomt auf den Betrachter
+zu, dahinter ploppt das Energietagebuch auf. Erst nach den Seiten von Runde 2 (Wunsch 2026-11-24).
 
 ### Reihenfolge Runde 2
 G1 → S1 → G4 → G3 → S3 → S5 → G2 → S2 → S4; je ein kleiner PR mit Tests, Bildern und Blick aufs Handy.
