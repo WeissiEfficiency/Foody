@@ -21,6 +21,11 @@ class GrimoireTexteTest {
     }
 
     @Test
+    fun inventarWerteNurBekanntes() {
+        assertEquals("0× gekocht", inventarWerte(karte()))
+    }
+
+    @Test
     fun zutatenSatzWieGesprochen() {
         assertNull(zutatenSatz(karte()))
         assertEquals("Mit Feta.", zutatenSatz(karte(zutaten = listOf("Feta"))))

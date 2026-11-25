@@ -192,15 +192,15 @@ class RezepteStileTest {
             )
         }
         zeigen(stil)
-        // Die Sage zeigt ein Rezept nach dem anderen („1 / 4“), die Szenen R–V alle in der Wahl
+        // Die Sage zählt die Gegenstände im Grimoire („4 Rezepte“), die Szenen R–V zeigen alle in der Wahl
         val sage = stil == FoodyStil.SAGE
-        if (sage) compose.warteAufText("1 / 4") else warteAufBeschreibung("Schmorbraten")
+        if (sage) compose.warteAufText("4 Rezepte") else warteAufBeschreibung("Schmorbraten")
         compose.onNode(hasText(alle) and hasContentDescription("Alle") and isSelected()).assertExists()
         compose.onNode(hasText(favoriten) and hasContentDescription("Favoriten")).assertExists()
         compose.onNode(hasText(schnell) and hasContentDescription("Höchstens 30 Minuten")).performClick()
         compose.onNode(hasContentDescription("Höchstens 30 Minuten") and isSelected()).assertExists()
         if (sage) {
-            compose.warteAufText("1 / 3")
+            compose.warteAufText("3 Rezepte")
         } else {
             compose.waitUntil(5_000) { compose.onAllNodesWithContentDescription("Schmorbraten", substring = true).fetchSemanticsNodes().isEmpty() }
             warteAufBeschreibung("Shakshuka")
