@@ -114,6 +114,32 @@ class HeuteScreenshotTest {
         }
     }
 
+    /** Necronomicon (Grauen, Immersiv) auf dem Tablet: Heute mit dem Auge in Tinte und das Logbuch. */
+    @Test
+    @Config(qualifiers = "w1280dp-h1200dp")
+    fun grauenBuchTablet() {
+        buch("stil_grauen_buch_heute_tablet") { HeuteScreen(beispielZustand(), KEINE_AKTIONEN) }
+        buch("stil_grauen_buch_logbuch_tablet") {
+            TagebuchStil(FoodyStil.GRAUEN, BEISPIEL_TAG, BEISPIEL_TAG, beispielTag(), {}, {}, {}, {}, {}, onZurueck = {})
+        }
+    }
+
+    /** Necronomicon mit 130 % Schrift auf dem Handy: Fraktur-Titel und Datum passen in den Kopf. */
+    @Test
+    @Config(qualifiers = "w360dp-h1200dp")
+    fun grauenBuch130() {
+        buch("stil_grauen_buch_heute_130") { MitSchrift(1.3f) { HeuteScreen(beispielZustand(), KEINE_AKTIONEN) } }
+        buch("stil_grauen_buch_logbuch_130") {
+            MitSchrift(1.3f) { TagebuchStil(FoodyStil.GRAUEN, BEISPIEL_TAG, BEISPIEL_TAG, beispielTag(), {}, {}, {}, {}, {}, onZurueck = {}) }
+        }
+    }
+
+    private fun buch(name: String, inhalt: @Composable () -> Unit) {
+        captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
+            FoodyTheme(stil = FoodyStil.GRAUEN, variante = StilVariante.IMMERSIV, unschaerfe = false) { FoodyHintergrund { inhalt() } }
+        }
+    }
+
     private fun bild(name: String, dunkel: Boolean, inhalt: @Composable () -> Unit) {
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
             FoodyTheme(dunkel = dunkel, unschaerfe = false) { FoodyHintergrund { inhalt() } }

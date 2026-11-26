@@ -135,3 +135,13 @@ Vorschauen nach `res/drawable-nodpi/widget_vorschau_*`.
 - Tests: `StilTest.necronomiconIstPergamentMitTinteUndBlut`, `NecronomiconKontrastTest` (Text, Nebentext und Zier auf
   dem dunkelsten Fleck, Messing auf Leder und Siegel), `KontrastTest` deckt das Necronomicon mit ab; Bilder
   `stil_grauen_leiste_ominoes`/`_necronomicon` neu, alle Grauen-Bilder neu.
+
+### Schritt 5a · Necronomicon: Heute und Logbuch
+- Das Auge ist im Necronomicon eine Federzeichnung (`augeFeder` in `AugenBlick.kt`): Lid in Tinte zweimal
+  nachgezogen mit Wimpern, Schraffur unter dem oberen Lid (um die Iris ausgespart), Adern und Ring in Blut, Iris aus
+  feinen Strahlen, Pupille als Schlitz; kein Schein. Der Blick beim Öffnen zeichnet dasselbe Auge.
+- Kopf von Heute: „Liber I · Vom Tage“ über „Heute“ in Fraktur (`grauenFrakturTitel`); die Fangarme aus der Tiefe
+  bleiben Ominös vorbehalten. Der Logbuch-Titel steht im Buch ebenfalls in Fraktur.
+- Tests: `HeuteGrauenTest.necronomiconHeisstHeuteMitDemAuge` schlug vorher fehl; neue Bilder
+  `stil_grauen_buch_heute_tablet`/`_130` und `stil_grauen_buch_logbuch_tablet`/`_130`, Handy über die bestehenden
+  `stil_grauen_immersiv`, `heute_360_grauen` und `stil_grauen_tagebuch_handy`.

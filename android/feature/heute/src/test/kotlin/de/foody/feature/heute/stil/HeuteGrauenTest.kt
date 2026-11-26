@@ -70,10 +70,13 @@ class HeuteGrauenTest {
         }
     }
 
+    /** Im Necronomicon (Immersiv) heißt die Seite wie im Entwurf „Heute“ mit „Liber I · Vom Tage“; das Auge bleibt. */
     @Test
-    fun immersivZeigtDasAuge() {
+    fun necronomiconHeisstHeuteMitDemAuge() {
         zeigen()
-        compose.onNodeWithText("Das Auge").assertExists()
+        compose.onNodeWithText("Heute").assertExists()
+        compose.onNodeWithText("Liber I · Vom Tage").assertExists()
+        compose.onNodeWithText("Das Auge").assertDoesNotExist()
         compose.onNodeWithText("Das Ritual des Abends").assertExists()
         // Das Auge liest TalkBack als nüchternen Satz
         compose.onNodeWithContentDescription("860 von 2.000 kcal: Eiweiß 42 g, Kohlenhydrate 96 g, Fett 31 g").assertExists()

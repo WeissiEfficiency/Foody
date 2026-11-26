@@ -95,6 +95,7 @@ import de.foody.core.designsystem.stil.grauen.GrauenKnopf
 import de.foody.core.designsystem.stil.grauen.GrauenNotizknopf
 import de.foody.core.designsystem.stil.grauen.TRENNER_HOEHE
 import de.foody.core.designsystem.stil.grauen.grauenFraktur
+import de.foody.core.designsystem.stil.grauen.grauenFrakturTitel
 import de.foody.core.designsystem.stil.grauen.trennerMitAuge
 import de.foody.core.designsystem.stil.svgPfad
 import de.foody.core.designsystem.stil.szenenWort
@@ -128,7 +129,8 @@ internal fun HeuteGrauen(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifi
     // Lage der Seite im Fenster, für die Ebene des Übergangs (gelesen erst beim Zeichnen)
     val wurzel = remember { mutableStateOf(Offset.Zero) }
     Box(modifier.fillMaxSize().onGloballyPositioned { wurzel.value = it.positionInRoot() }) {
-        if (FoodyTheme.stil.inszeniert) Tiefe(Modifier.matchParentSize())
+        // Die Fangarme aus der Tiefe nur in Ominös; das Necronomicon hat seine Ranke im Wasserzeichen
+        if (FoodyTheme.stil.inszeniert && !FoodyTheme.stil.grauenBuch) Tiefe(Modifier.matchParentSize())
         HeuteRahmen(innen = PaddingValues(start = 22.dp, end = 10.dp, top = 14.dp)) { rahmen ->
             Column(rahmen, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Kopf(zustand, aktionen.onEinstellungen)
@@ -153,6 +155,7 @@ internal fun HeuteGrauen(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifi
             val t = zustand.tagebuch
             AugenBlickEbene(
                 uebergang, zielAnteil(t.summe.kcal, t.ziel?.takeIf { it > 0 }), FoodyTheme.stil.zier, { wurzel.value }, Modifier.matchParentSize(),
+                feder = FoodyTheme.stil.grauenBuch,
             )
         }
     }
@@ -162,17 +165,20 @@ internal fun HeuteGrauen(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifi
 @Composable
 private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
     val f = FoodyTheme.farben
+    // Necronomicon wie im Entwurf: „Heute“ in Fraktur, darüber das Buch, aus dem die Seite stammt
+    val buch = FoodyTheme.stil.grauenBuch
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (buch) Text("Liber I · Vom Tage", style = Grauen.titel(13f, 0.08f), color = f.nebentext)
         Row(verticalAlignment = Alignment.CenterVertically) {
             // Titel und Datum in einer Zeile wie im Entwurf; bei großer Schrift rückt das Datum unter den Titel
             FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
-                    szenenWort("Das Auge", "Heute"),
+                    if (buch) "Heute" else szenenWort("Das Auge", "Heute"),
                     Modifier.align(Alignment.CenterVertically).semantics {
                         heading()
                         contentDescription = "Heute"
                     },
-                    style = Grauen.titel(34f, 0.02f), color = f.text, maxLines = 1,
+                    style = if (buch) grauenFrakturTitel(38f) else Grauen.titel(34f, 0.02f), color = f.text, maxLines = 1,
                 )
                 zustand?.datum?.let {
                     Text(grauenDatum(it), Modifier.align(Alignment.CenterVertically).padding(start = 8.dp), style = Grauen.maschine(12.5f), color = f.nebentext)
@@ -224,7 +230,7 @@ private fun DasAuge(t: TagebuchHeute, uebergang: AugenUebergang, onTagebuch: () 
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Auge(
-            anteil, glut,
+            anteil, glut, FoodyTheme.stil.grauenBuch,
             Modifier.widthIn(max = 300.dp).fillMaxWidth().aspectRatio(AUGE_BREITE / AUGE_HOEHE)
                 .onGloballyPositioned(uebergang::merken)
                 .graphicsLayer { alpha = if (uebergang.blick.value > 0f) 0f else 1f },
@@ -311,7 +317,7 @@ private fun Makro(name: String, gramm: Int, farbe: Color) {
  * Glut, Pupille als Schlitz, Glanzpunkt. Es schwebt langsam und blinzelt selten.
  */
 @Composable
-private fun Auge(anteil: Float?, glut: Color, modifier: Modifier) {
+private fun Auge(anteil: Float?, glut: Color, feder: Boolean, modifier: Modifier) {
     val bewegt = animationenErlaubt()
     val zeit = rememberInfiniteTransition(label = "Auge")
     val schweben by if (bewegt) {
@@ -340,7 +346,7 @@ private fun Auge(anteil: Float?, glut: Color, modifier: Modifier) {
     // (Blinzeln, gut 0,4 s alle 7 s).
     Spacer(
         modifier.graphicsLayer { translationY = -4.dp.toPx() * schweben }.drawBehind {
-            scale(size.width / AUGE_BREITE, Offset.Zero) { augeMalen(pfade, anteil, glut, lid) }
+            scale(size.width / AUGE_BREITE, Offset.Zero) { augeMalen(pfade, anteil, glut, lid, feder = feder) }
         },
     )
 }
