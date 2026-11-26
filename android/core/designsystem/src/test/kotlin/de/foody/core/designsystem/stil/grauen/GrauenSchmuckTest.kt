@@ -12,6 +12,8 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.FoodyHintergrund
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
+import de.foody.core.designsystem.stil.TitelArt
+import de.foody.core.designsystem.stil.stilTitel
 import de.foody.core.designsystem.token.UnifrakturFamilie
 import org.junit.Rule
 import org.junit.Test
@@ -35,6 +37,27 @@ class GrauenSchmuckTest {
         assertEquals(0, span.start)
         assertEquals(1, span.end)
         assertEquals(UnifrakturFamilie, span.item.fontFamily)
+    }
+
+    /** Im Necronomicon stehen Seitentitel in Fraktur, Blatttitel und Ominös bleiben in Kapitälchen. */
+    @Test
+    fun seitentitelImBuchInFraktur() {
+        val familien = mutableMapOf<String, androidx.compose.ui.text.font.FontFamily?>()
+        compose.setContent {
+            FoodyTheme(stil = FoodyStil.GRAUEN, variante = StilVariante.IMMERSIV) {
+                familien["seite"] = stilTitel(TitelArt.SEITE)?.fontFamily
+                familien["zurueck"] = stilTitel(TitelArt.SEITE_ZURUECK)?.fontFamily
+                familien["blatt"] = stilTitel(TitelArt.BLATT)?.fontFamily
+            }
+            FoodyTheme(stil = FoodyStil.GRAUEN, variante = StilVariante.RUHIG) {
+                familien["ominoes"] = stilTitel(TitelArt.SEITE)?.fontFamily
+            }
+        }
+        compose.waitForIdle()
+        assertEquals(UnifrakturFamilie, familien["seite"])
+        assertEquals(UnifrakturFamilie, familien["zurueck"])
+        assertTrue(familien["blatt"] != UnifrakturFamilie)
+        assertTrue(familien["ominoes"] != UnifrakturFamilie)
     }
 
     @Test
