@@ -86,3 +86,13 @@ Vorschauen nach `res/drawable-nodpi/widget_vorschau_*`.
 - Tests: `StilTest.grauenHatZweiImmersiveGesichter`, `grauenOhneFarbwahl`; angepasst `HeuteGrauenTest`,
   `WocheStileTest`, `EinstellungenStileTest`, `DatenWidgetTest`. Neu aufgenommen: `stil_grauen_ruhig`,
   `stil_grauen_einstellungen_handy`.
+
+### Schritt 2a · Knöpfe ohne Kasten (zentral)
+- Neu `GrauenZeichen.kt`: `GrauenZeichen` (Zurück, Weiter, Menü ∴, Lesebändchen leer/voll, Kerze, Rolle, Feder, Auge,
+  Ältestes Zeichen) als Pfade, `GrauenSymbol` und `GrauenSiegel` (grünes Wachs mit gewelltem Rand).
+- `GrauenKnopf` zeichnet im inszenierten Grauen keinen Kasten mehr: „‹“, „›“, „⋯“, „◇“, „♦“ werden zu Zeichen, − und +
+  stehen frei, der volle Knopf ist ein Siegel mit kursivem Text, der Umriss-Knopf ein Wort in Kapitälchen mit Schwung.
+  Da `StilAktion` und die Szenen ihn nutzen, gilt das sofort auf allen Seiten.
+- Rezept: Reiter ohne Linie, unter dem aktiven ein Schwung (`schwung`).
+- Offen für 2b: `GrauenNotizknopf` („+ notieren“, „Gegessen?“), Chips und Auswahlfelder in Planen.
+- Tests: `GrauenKnopfTest` (Zeichen statt Schrift, Beschreibung, 48 dp, inaktiv); 25 Grauen-Bilder neu.

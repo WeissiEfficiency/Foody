@@ -3,15 +3,23 @@ package de.foody.core.designsystem.stil.grauen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -68,9 +76,24 @@ object Grauen {
 @Composable
 fun grauenHell(): Color = if (FoodyTheme.stil.inszeniert) lerp(FoodyTheme.farben.text, Color.White, 0.45f) else FoodyTheme.farben.text
 
+/** Knopftexte, die im Grauen als gezeichnetes Zeichen erscheinen; `null` = Schrift. */
+internal fun grauenZeichenFuer(text: String): GrauenZeichen? = when (text.trim()) {
+    "‹" -> GrauenZeichen.ZURUECK
+    "›" -> GrauenZeichen.WEITER
+    "⋯", "…", "∴" -> GrauenZeichen.MENUE
+    "◇", "☆" -> GrauenZeichen.BAND
+    "♦", "★" -> GrauenZeichen.BAND_VOLL
+    else -> null
+}
+
+/** Knöpfe, die nur ein Rechenzeichen sind (Portionen, Mengen): ohne Rahmen, groß gesetzt. */
+private val RECHENZEICHEN = setOf("−", "+", "-")
+
 /**
- * Knopf des Grauens: eckig, Rahmen in der Glut, Fläche mit einem Hauch Glut, Buchschrift; [umriss] = nur ein Rahmen
- * im Nebenton. Mindestens 48 dp hoch, [aktiv] = false blasst ihn ab; TalkBack hört [beschreibung], falls gesetzt.
+ * Knopf des Grauens ohne Kasten (Plan „Zwei Gesichter“, Schritt 2): Zeichen wie „‹“, „⋯“ oder „◇“ werden gezeichnet
+ * ([GrauenZeichen]), − und + stehen frei, der volle Knopf ist ein Wachssiegel mit kursivem Text daneben, [umriss] eine
+ * Zeile in Kapitälchen mit einem Schwung darunter. Mindestens 48 × 48 dp, [aktiv] = false blasst ihn ab; TalkBack hört
+ * [beschreibung], falls gesetzt.
  */
 @Composable
 fun GrauenKnopf(
@@ -81,20 +104,66 @@ fun GrauenKnopf(
     umriss: Boolean = false,
     aktiv: Boolean = true,
 ) {
+    if (!FoodyTheme.stil.inszeniert) {
+        GrauenKnopfRuhig(text, onKlick, modifier, beschreibung, umriss, aktiv)
+        return
+    }
+    val hell = grauenHell()
     val glut = FoodyTheme.stil.zier
-    // Ruhig wie in den Entwürfen: voll in Tinte mit hellem Papier als Schrift
-    val ruhig = !FoodyTheme.stil.inszeniert
+    val zeichen = grauenZeichenFuer(text)
+    val basis = modifier.heightIn(min = 48.dp).widthIn(min = 48.dp)
+        .alpha(if (aktiv) 1f else 0.38f)
+        .clickable(enabled = aktiv, role = Role.Button, onClick = onKlick)
+        .then(
+            when {
+                beschreibung != null -> Modifier.semantics { contentDescription = beschreibung }
+                zeichen != null -> Modifier.semantics { contentDescription = text }
+                else -> Modifier
+            },
+        )
+    when {
+        zeichen != null -> Box(basis, contentAlignment = Alignment.Center) { GrauenSymbol(zeichen, hell, groesse = 24.dp) }
+        text.trim() in RECHENZEICHEN -> Box(basis, contentAlignment = Alignment.Center) {
+            Text(text.trim(), style = Grauen.titel(26f), color = hell)
+        }
+        !umriss -> Row(
+            basis.padding(vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GrauenSiegel(GrauenZeichen.AELTESTES, groesse = 46.dp, farbe = hell)
+            Text(text, Modifier.weight(1f, fill = false), style = Grauen.text(18f, kursiv = true), color = hell)
+        }
+        else -> Box(basis.padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+            Text(
+                text,
+                Modifier.drawBehind { schwung(glut.copy(alpha = 0.75f)) }.padding(bottom = 7.dp),
+                style = Grauen.titel(16f, 0.06f), color = hell, textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+/** Ein leichter Schwung unter einem Wort: die Unterstreichung des Buchs (Reiter, Textknöpfe). */
+fun DrawScope.schwung(farbe: Color) {
+    val y = size.height - 2.5.dp.toPx()
+    val l = size.width * 0.12f
+    val r = size.width * 0.88f
+    val w = r - l
+    val pfad = Path().apply {
+        moveTo(l, y)
+        cubicTo(l + w * 0.25f, y - 4.dp.toPx(), l + w * 0.5f, y + 3.dp.toPx(), l + w * 0.75f, y - 1.5.dp.toPx())
+        quadraticTo(l + w * 0.9f, y - 3.dp.toPx(), r, y - 0.5.dp.toPx())
+    }
+    drawPath(pfad, farbe, style = Stroke(1.4.dp.toPx(), cap = StrokeCap.Round))
+}
+
+/** Der frühere Knopf mit Rahmen (Pergament, schlicht); nur erreichbar, solange [FoodyTheme.stil] nicht inszeniert ist. */
+@Composable
+private fun GrauenKnopfRuhig(text: String, onKlick: () -> Unit, modifier: Modifier, beschreibung: String?, umriss: Boolean, aktiv: Boolean) {
     val tinte = FoodyTheme.farben.text
-    val rand = when {
-        umriss -> FoodyTheme.farben.nebentext
-        ruhig -> tinte
-        else -> glut
-    }
-    val flaeche = when {
-        umriss -> Color.Transparent
-        ruhig -> tinte
-        else -> glut.copy(alpha = 0.1f)
-    }
+    val rand = if (umriss) FoodyTheme.farben.nebentext else tinte
+    val flaeche = if (umriss) Color.Transparent else tinte
     Box(
         modifier.heightIn(min = 48.dp)
             .alpha(if (aktiv) 1f else 0.38f)
@@ -105,7 +174,7 @@ fun GrauenKnopf(
             .padding(horizontal = 14.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = Grauen.titel(17f, 0.06f), color = if (ruhig && !umriss) Grauen.papierHell else grauenHell(), textAlign = TextAlign.Center)
+        Text(text, style = Grauen.titel(17f, 0.06f), color = if (!umriss) Grauen.papierHell else grauenHell(), textAlign = TextAlign.Center)
     }
 }
 
