@@ -112,3 +112,10 @@ fun grauenFraktur(text: String, farbe: Color, groesse: Float, faktor: Float = 1.
     withStyle(SpanStyle(fontFamily = UnifrakturFamilie, fontSize = (groesse * faktor).sp, color = farbe)) { append(text.take(1)) }
     append(text.drop(1))
 }
+
+/** Ein ganzer Titel in Fraktur (UnifrakturCook), [groesse] sp; im Necronomicon für Seitentitel wie „Heute“. */
+fun grauenFrakturTitel(groesse: Float) = androidx.compose.ui.text.TextStyle(
+    fontFamily = UnifrakturFamilie,
+    fontSize = groesse.sp,
+    lineHeight = (groesse * 1.1f).sp,
+)

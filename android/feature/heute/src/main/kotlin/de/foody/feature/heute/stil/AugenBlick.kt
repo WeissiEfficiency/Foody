@@ -17,7 +17,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -31,6 +34,9 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import de.foody.core.designsystem.animationenErlaubt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 /*
  * Übergang des Kosmischen Grauens von „Heute“ ins Energietagebuch (Runde 2, Übergänge): Ein Tipp aufs Auge, und es
@@ -111,20 +117,20 @@ internal fun rememberAugenUebergang(): AugenUebergang {
  * Blick erst beim Zeichnen: Die Seite setzt sich dafür nicht neu zusammen. Für TalkBack stumm.
  */
 @Composable
-internal fun AugenBlickEbene(u: AugenUebergang, anteil: Float?, glut: Color, wurzel: () -> Offset, modifier: Modifier) {
+internal fun AugenBlickEbene(u: AugenUebergang, anteil: Float?, glut: Color, wurzel: () -> Offset, modifier: Modifier, feder: Boolean = false) {
     val pfade = remember { AugenPfade() }
     Spacer(
         modifier.clearAndSetSemantics { }.drawBehind {
             val t = u.blick.value
             val lage = u.lage ?: return@drawBehind
             if (t <= 0f) return@drawBehind
-            augenBlick(blickStand(t), lage.translate(-wurzel()), pfade, anteil, glut)
+            augenBlick(blickStand(t), lage.translate(-wurzel()), pfade, anteil, glut, feder)
         },
     )
 }
 
 /** Zeichnet das Auge an [lage] im Stand [b]: um die Pupille gezoomt, darüber das Dunkel. */
-internal fun DrawScope.augenBlick(b: Blick, lage: Rect, pfade: AugenPfade, anteil: Float?, glut: Color) {
+internal fun DrawScope.augenBlick(b: Blick, lage: Rect, pfade: AugenPfade, anteil: Float?, glut: Color, feder: Boolean = false) {
     val s = lage.width / AUGE_BREITE
     val mitte = Offset(lage.left + 150f * s, lage.top + 85f * s)
     withTransform({
@@ -132,16 +138,21 @@ internal fun DrawScope.augenBlick(b: Blick, lage: Rect, pfade: AugenPfade, antei
         scale(s * b.zoom, s * b.zoom, Offset.Zero)
         translate(-150f, -85f)
     }) {
-        augeMalen(pfade, anteil, glut, lid = b.lid, pupille = b.pupille)
+        augeMalen(pfade, anteil, glut, lid = b.lid, pupille = b.pupille, feder = feder)
     }
     if (b.dunkel > 0f) drawRect(PUPILLE.copy(alpha = b.dunkel))
 }
 
 /**
  * Das Auge im Maß des Entwurfs (300 × 170): Schein, Lid mit Adern, Iris, Ring mit dem Anteil in der Glut, Pupille,
- * Glanzpunkt. [lid] streckt das Lid senkrecht (Blinzeln < 1, Aufreißen > 1), [pupille] ist ihre Breite.
+ * Glanzpunkt. [lid] streckt das Lid senkrecht (Blinzeln < 1, Aufreißen > 1), [pupille] ist ihre Breite. Mit [feder]
+ * (Necronomicon) dieselbe Form als Federzeichnung in Tinte, der Ring in [glut] (dort Blut).
  */
-internal fun DrawScope.augeMalen(pfade: AugenPfade, anteil: Float?, glut: Color, lid: Float, pupille: Float = 18f) {
+internal fun DrawScope.augeMalen(pfade: AugenPfade, anteil: Float?, glut: Color, lid: Float, pupille: Float = 18f, feder: Boolean = false) {
+    if (feder) {
+        augeFeder(pfade, anteil, glut, lid, pupille)
+        return
+    }
     val schein = Brush.radialGradient(listOf(glut.copy(alpha = 0.35f), glut.copy(alpha = 0f)), Offset(150f, 85f), 150f)
     val iris = Brush.radialGradient(
         0f to Color(0xFF1B3A2C), 0.7f to Color(0xFF0E2019), 1f to Color(0xFF06100C),
@@ -162,4 +173,63 @@ internal fun DrawScope.augeMalen(pfade: AugenPfade, anteil: Float?, glut: Color,
             drawCircle(Color.White.copy(alpha = 0.5f), 5f, Offset(166f, 66f))
         }
     }
+}
+
+private val TINTE = Color(0xFF17110B)
+
+/**
+ * Das Auge des Necronomicon als Federzeichnung: Lid in Tinte mit Wimpern, Schraffur unter dem oberen Lid, Adern in
+ * [blut], Iris aus feinen Strahlen, Ring mit dem Anteil in [blut], Pupille als Schlitz. Kein Schein: auf Pergament
+ * leuchtet nichts.
+ */
+internal fun DrawScope.augeFeder(pfade: AugenPfade, anteil: Float?, blut: Color, lid: Float, pupille: Float) {
+    val mitte = Offset(150f, 85f)
+    withTransform({ scale(1f, lid, mitte) }) {
+        clipPath(pfade.lid) {
+            // Schatten unter dem oberen Lid: schräge Schraffur, nicht über der Iris
+            val iris = Path().apply { addOval(Rect(mitte, 56f)) }
+            clipPath(iris, ClipOp.Difference) {
+                var x = -40f
+                while (x < 320f) {
+                    drawLine(TINTE.copy(alpha = 0.28f), Offset(x, 20f), Offset(x + 26f, 58f), 0.9f)
+                    x += 6f
+                }
+            }
+            drawPath(pfade.adern, blut.copy(alpha = 0.55f), style = Stroke(1f))
+            // Iris: Strahlen von der Pupille nach außen, dazu ein feiner Rand
+            for (i in 0 until 40) {
+                val w = (i / 40f) * 2f * PI.toFloat()
+                val innen = 20f + (i % 3) * 2f
+                drawLine(
+                    TINTE.copy(alpha = 0.55f),
+                    Offset(mitte.x + innen * cos(w), mitte.y + innen * sin(w)),
+                    Offset(mitte.x + 44f * cos(w), mitte.y + 44f * sin(w)),
+                    0.9f,
+                )
+            }
+            drawCircle(TINTE.copy(alpha = 0.18f), 50f, mitte, style = Stroke(7f))
+            if (anteil != null && anteil > 0f) {
+                drawArc(blut, -90f, 360f * anteil, false, Offset(100f, 35f), Size(100f, 100f), style = Stroke(7f))
+            }
+            drawCircle(TINTE, 56f, mitte, style = Stroke(1.4f))
+            drawOval(TINTE, Offset(150f - pupille / 2f, 51f), Size(pupille, 68f))
+            drawCircle(Color(0xFFF1E6CA), 4.5f, Offset(166f, 66f))
+        }
+        // Lid zweimal nachgezogen wie mit der Feder, oben Wimpern
+        drawPath(pfade.lid, TINTE, style = Stroke(2.2f))
+        drawPath(pfade.lid, TINTE.copy(alpha = 0.4f), style = Stroke(1f), alpha = 1f)
+        for (i in 2..16) {
+            val t = i / 18f
+            val p = bezier(t, Offset(10f, 85f), Offset(60f, 15f), Offset(240f, 15f), Offset(290f, 85f))
+            val q = bezier(t + 0.01f, Offset(10f, 85f), Offset(60f, 15f), Offset(240f, 15f), Offset(290f, 85f))
+            val richtung = Offset(q.y - p.y, -(q.x - p.x)).let { it / it.getDistance() }
+            drawLine(TINTE, p, p + richtung * 9f + Offset((t - 0.5f) * 6f, 0f), 1.3f, StrokeCap.Round)
+        }
+    }
+}
+
+/** Punkt bei [t] auf der kubischen Bézierkurve [a]–[d]. */
+private fun bezier(t: Float, a: Offset, b: Offset, c: Offset, d: Offset): Offset {
+    val u = 1f - t
+    return a * (u * u * u) + b * (3f * u * u * t) + c * (3f * u * t * t) + d * (t * t * t)
 }

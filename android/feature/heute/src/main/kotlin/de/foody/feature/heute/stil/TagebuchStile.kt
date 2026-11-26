@@ -67,6 +67,7 @@ import de.foody.core.designsystem.stil.anime.animeSzenenTitel
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.grauen.Grauen
+import de.foody.core.designsystem.stil.grauen.grauenFrakturTitel
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.szenenStil
 import de.foody.core.designsystem.stil.szenenWort
@@ -317,7 +318,12 @@ private fun KopfText(stil: FoodyStil, art: TagebuchArt) {
                 heading()
                 contentDescription = "Tagebuch"
             },
-            style = if (stil == FoodyStil.ANIME) animeSzenenTitel(groesse) else art.titelSchrift(groesse),
+            style = when {
+                stil == FoodyStil.ANIME -> animeSzenenTitel(groesse)
+                // Im Necronomicon steht der Seitentitel in Fraktur wie „Heute“
+                FoodyTheme.stil.grauenBuch -> grauenFrakturTitel(groesse + 4f)
+                else -> art.titelSchrift(groesse)
+            },
             color = f.text,
         )
     }
