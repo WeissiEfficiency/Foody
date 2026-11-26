@@ -63,6 +63,8 @@ import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.edoShu
 import de.foody.core.designsystem.stil.grauen.Grauen
+import de.foody.core.designsystem.stil.grauen.grauenHell
+import de.foody.core.designsystem.stil.grauen.schwung
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
 
@@ -286,7 +288,6 @@ internal fun <T> Segmente(optionen: List<Pair<T, String>>, gewaehlt: T, onWahl: 
     val aussen: Modifier = when (s.stil) {
         FoodyStil.EDO -> Modifier.border(1.5.dp, f.text)
         FoodyStil.BAYRISCH -> Modifier.clip(RoundedCornerShape(10.dp)).border(2.dp, f.text, RoundedCornerShape(10.dp))
-        FoodyStil.GRAUEN -> Modifier.border(1.dp, s.zier.copy(alpha = 0.3f))
         else -> Modifier
     }
     Row(Modifier.fillMaxWidth().then(aussen).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(luecke)) {
@@ -296,11 +297,11 @@ internal fun <T> Segmente(optionen: List<Pair<T, String>>, gewaehlt: T, onWahl: 
                 FoodyStil.ANIME -> Triple(if (an) Anime.gelb else Color.White, f.text, Modifier.border(2.5.dp, f.text, Anime.pille))
                 FoodyStil.EDO -> Triple(if (an) f.text else Color.Transparent, if (an) Edo.papier else f.text, Modifier)
                 FoodyStil.BAYRISCH -> Triple(if (an) bayrischBlau() else Color.White, if (an) Color.White else f.text, Modifier)
+                // Grauen: Wörter ohne Rahmen, das gewählte hell mit Schwung (Plan „Zwei Gesichter“, Schritt 2)
                 FoodyStil.GRAUEN -> Triple(
-                    if (an) s.zier.copy(alpha = 0.1f) else Color.Transparent, f.text,
-                    Modifier.drawBehind {
-                        if (an) drawLine(s.zier, Offset(0f, size.height - 1.dp.toPx()), Offset(size.width, size.height - 1.dp.toPx()), 2.dp.toPx())
-                    },
+                    Color.Transparent,
+                    if (an) grauenHell() else f.nebentext,
+                    Modifier.drawBehind { if (an) schwung(s.zier) },
                 )
                 else -> Triple(
                     if (an) s.zier.copy(alpha = 0.08f) else Color.Transparent, if (an) s.zier else f.text,
@@ -317,7 +318,7 @@ internal fun <T> Segmente(optionen: List<Pair<T, String>>, gewaehlt: T, onWahl: 
                     FoodyStil.ANIME -> Anime.text(13f)
                     FoodyStil.EDO -> Edo.text(13.5f, FontWeight.Bold)
                     FoodyStil.BAYRISCH -> Bayrisch.text(14f, FontWeight.Bold)
-                    FoodyStil.GRAUEN -> Grauen.maschine(13f)
+                    FoodyStil.GRAUEN -> Grauen.titel(15.5f, 0.04f)
                     else -> Kreuzer.mono(12.5f, 0.04f)
                 }
                 Text(if (s.stil == FoodyStil.KREUZER) text.uppercase() else text, style = stilSchrift, color = schrift, textAlign = TextAlign.Center)

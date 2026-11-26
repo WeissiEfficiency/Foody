@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.grauen.GrauenWahlwort
 import de.foody.core.designsystem.stil.sage.Sage
 import de.foody.core.designsystem.stil.sage.sageHell
 import de.foody.core.designsystem.stil.stilChip
@@ -34,6 +35,11 @@ import de.foody.core.designsystem.token.FoodyAbstaende
  */
 @Composable
 fun FoodyChip(text: String, ausgewaehlt: Boolean, onKlick: () -> Unit, modifier: Modifier = Modifier, beschreibung: String? = null) {
+    // Grauen: ein Wahlwort mit Schwung statt eines Kastens (Plan „Zwei Gesichter“, Schritt 2)
+    if (FoodyTheme.stil.immersiv(FoodyStil.GRAUEN)) {
+        GrauenWahlwort(text, ausgewaehlt, onKlick, modifier, beschreibung)
+        return
+    }
     val farben = FoodyTheme.farben
     val druck = remember { MutableInteractionSource() }
     // Düstere Sage, Immersiv: eckig, gewählt mit Rahmen im Akzent und leichtem Schimmer statt gefüllt
