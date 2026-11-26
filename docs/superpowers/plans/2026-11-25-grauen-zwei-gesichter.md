@@ -145,3 +145,12 @@ Vorschauen nach `res/drawable-nodpi/widget_vorschau_*`.
 - Tests: `HeuteGrauenTest.necronomiconHeisstHeuteMitDemAuge` schlug vorher fehl; neue Bilder
   `stil_grauen_buch_heute_tablet`/`_130` und `stil_grauen_buch_logbuch_tablet`/`_130`, Handy über die bestehenden
   `stil_grauen_immersiv`, `heute_360_grauen` und `stil_grauen_tagebuch_handy`.
+
+### Schritt 5b · Necronomicon: Woche, Planen und Seitentitel
+- Die Monde sind Federzeichnungen (`mondMalen`/`mondFeder` in `WocheGrauen.kt`): Schattenseite schraffiert, Neumond
+  dünn schraffiert mit gestricheltem Rand, Krater, gewählt mit Rand in Blut, heute mit zweitem Blutring; Sterne als
+  Tintenpunkte. „Mondphasen“ in Fraktur.
+- Zentral: `stilTitel` gibt im Necronomicon Seitentiteln (Seite, Seite mit Zurück) Fraktur; Blätter bleiben in
+  Kapitälchen. Damit tragen Planen, Einkauf, Einstellungen, Zutaten und der Editor Fraktur-Titel.
+- Tests: `MondFederTest.neumondIstImBuchKeineSchwarzeScheibe` und `GrauenSchmuckTest.seitentitelImBuchInFraktur`
+  schlugen vorher fehl; Grauen-Bilder aller Bereiche neu.

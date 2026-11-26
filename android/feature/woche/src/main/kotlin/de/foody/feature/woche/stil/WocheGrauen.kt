@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
@@ -64,6 +65,7 @@ import de.foody.core.designsystem.komponenten.roemischVoll
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
 import de.foody.core.designsystem.stil.grauen.GrauenSeite
+import de.foody.core.designsystem.stil.grauen.grauenFrakturTitel
 import de.foody.core.designsystem.stil.grauen.umblaettern
 import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
@@ -232,13 +234,15 @@ private fun MondKopf(w: WocheDaten, onHeute: () -> Unit) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             w.woche?.let { Text(kwText(it.montag), style = Grauen.maschine(12.5f), color = f.nebentext) }
             // Der Titel wächst mit der Systemschrift nur bis 130 %
+            // Im Necronomicon in Fraktur wie „Heute“
+            val buch = FoodyTheme.stil.grauenBuch
             Text(
                 "Mondphasen",
                 Modifier.semantics {
                     heading()
                     contentDescription = "Woche"
                 },
-                style = Grauen.titel(titelGroesse(34f), 0.02f), color = f.text,
+                style = if (buch) grauenFrakturTitel(titelGroesse(36f)) else Grauen.titel(titelGroesse(34f), 0.02f), color = f.text,
             )
             w.schnitt?.let { Text(it, style = Grauen.maschine(12.5f), color = f.nebentext) }
         }
@@ -260,6 +264,8 @@ private val WISCH_STRECKE = 56.dp
 @Composable
 private fun Mondbogen(w: WocheDaten, gewaehlt: Int, onBlaettern: (Long) -> Unit, onWahl: (Int) -> Unit) {
     val glut = FoodyTheme.stil.zier
+    // Auf Pergament sind die Sterne Tintenpunkte
+    val stern = if (FoodyTheme.stil.grauenBuch) FoodyTheme.farben.nebentext.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.45f)
     val strecke = with(LocalDensity.current) { WISCH_STRECKE.toPx() }
     BoxWithConstraints(
         Modifier.fillMaxWidth().height(210.dp).clipToBounds().pointerInput(Unit) {
@@ -282,7 +288,7 @@ private fun Mondbogen(w: WocheDaten, gewaehlt: Int, onBlaettern: (Long) -> Unit,
             val strich = PathEffect.dashPathEffect(floatArrayOf(2.dp.toPx(), 6.dp.toPx()))
             drawPath(bogen, glut.copy(alpha = 0.25f), style = Stroke(1.dp.toPx(), pathEffect = strich))
             listOf(20f to 30f, 300f to 20f, 170f to 190f, 90f to 180f).forEach { (x, y) ->
-                drawCircle(Color.White.copy(alpha = 0.45f), 0.8.dp.toPx(), Offset(x * sx, y * sy))
+                drawCircle(stern, 0.8.dp.toPx(), Offset(x * sx, y * sy))
             }
         }
         w.tage.forEachIndexed { i, t ->
@@ -336,26 +342,8 @@ private fun Mond(t: WochenTag, heute: Boolean, an: Boolean, modifier: Modifier, 
     val leer = t.eintraege.isEmpty()
     val anteil = mondAnteil(t)
     Column(modifier.tagWahl(t, heute, an, onKlick), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Canvas(Modifier.size(44.dp)) {
-            val r = 18.dp.toPx()
-            if (heute || an) {
-                drawCircle(Brush.radialGradient(listOf(glut.copy(alpha = if (heute) 0.45f else 0.3f), Color.Transparent), center, r * 1.4f), r * 1.4f)
-            }
-            drawCircle(if (heute) MOND_HEUTE else MOND, r)
-            if (anteil < 1f) {
-                // Der Schatten rückt mit jeder geplanten Mahlzeit weiter zur Seite
-                val versatz = (if (anteil == 0f) 0f else 6f + anteil * 36f) * size.width / 44f
-                val scheibe = Path().apply { addOval(Rect(center, r)) }
-                clipPath(scheibe) { drawCircle(NACHT, r, Offset(center.x + versatz, center.y)) }
-            }
-            when {
-                an -> drawCircle(glut, r, style = Stroke(1.2.dp.toPx()))
-                leer -> {
-                    val strich = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.dp.toPx()))
-                    drawCircle(f.nebentext, r, style = Stroke(1.2.dp.toPx(), pathEffect = strich))
-                }
-            }
-        }
+        val feder = FoodyTheme.stil.grauenBuch
+        Canvas(Modifier.size(44.dp)) { mondMalen(anteil, leer, heute, an, glut, f.nebentext, feder) }
         // Das Kürzel wächst nur bis 130 %, der Bogen hat feste Maße
         Text(wochentagKurz(t.datum), style = Grauen.titel(titelGroesse(13f), 0.06f), color = if (an) f.text else f.nebentext)
     }
@@ -435,5 +423,88 @@ private fun Naechte(onKlick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Text("Leere Tage vorschlagen lassen", style = Grauen.maschine(14f), color = FoodyTheme.farben.text, textAlign = TextAlign.Center)
+    }
+}
+
+/**
+ * Ein Mond im Maß von 44 dp: [anteil] 0 ist Neumond, 1 Vollmond; [heute] und [an] (gewählt) heben ihn hervor. Mit
+ * [feder] (Necronomicon) als Federzeichnung auf Pergament.
+ */
+internal fun DrawScope.mondMalen(anteil: Float, leer: Boolean, heute: Boolean, an: Boolean, glut: Color, rand: Color, feder: Boolean = false) {
+    if (feder) {
+        mondFeder(anteil, leer, heute, an, glut)
+        return
+    }
+    val r = 18.dp.toPx()
+    if (heute || an) {
+        drawCircle(Brush.radialGradient(listOf(glut.copy(alpha = if (heute) 0.45f else 0.3f), Color.Transparent), center, r * 1.4f), r * 1.4f)
+    }
+    drawCircle(if (heute) MOND_HEUTE else MOND, r)
+    if (anteil < 1f) {
+        // Der Schatten rückt mit jeder geplanten Mahlzeit weiter zur Seite
+        val versatz = (if (anteil == 0f) 0f else 6f + anteil * 36f) * size.width / 44f
+        val scheibe = Path().apply { addOval(Rect(center, r)) }
+        clipPath(scheibe) { drawCircle(NACHT, r, Offset(center.x + versatz, center.y)) }
+    }
+    when {
+        an -> drawCircle(glut, r, style = Stroke(1.2.dp.toPx()))
+        leer -> {
+            val strich = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.dp.toPx()))
+            drawCircle(rand, r, style = Stroke(1.2.dp.toPx(), pathEffect = strich))
+        }
+    }
+}
+
+private val TINTE = Color(0xFF17110B)
+
+/**
+ * Der Mond als Federzeichnung: die Schattenseite schraffiert (beim Neumond dünn über die ganze Scheibe, Rand
+ * gestrichelt), der Rand in Tinte, ein paar Krater; gewählt mit Rand in Blut ([blut]), heute mit einem zweiten Ring.
+ */
+private fun DrawScope.mondFeder(anteil: Float, leer: Boolean, heute: Boolean, an: Boolean, blut: Color) {
+    val r = 18.dp.toPx()
+    val scheibe = Path().apply { addOval(Rect(center, r)) }
+    val abstand = 2.4.dp.toPx()
+    val strich = 0.8.dp.toPx()
+    clipPath(scheibe) {
+        if (anteil == 0f) {
+            // Neumond: eine dünne Schraffur, kaum zu sehen
+            schraffur(TINTE.copy(alpha = 0.35f), abstand * 1.6f, strich)
+        } else if (anteil < 1f) {
+            val versatz = (6f + anteil * 36f) * size.width / 44f
+            val schatten = Path().apply { addOval(Rect(Offset(center.x + versatz, center.y), r)) }
+            clipPath(schatten) {
+                schraffur(TINTE.copy(alpha = 0.7f), abstand, strich)
+                // Kreuzschraffur am Rand der Nacht
+                schraffur(TINTE.copy(alpha = 0.35f), abstand * 1.5f, strich, steigend = false)
+            }
+        }
+        // Krater auf der hellen Seite
+        listOf(Triple(-0.35f, -0.3f, 0.16f), Triple(0.2f, 0.25f, 0.12f), Triple(-0.1f, 0.45f, 0.08f)).forEach { (x, y, g) ->
+            drawCircle(TINTE.copy(alpha = 0.45f), r * g, Offset(center.x + r * x, center.y + r * y), style = Stroke(strich))
+        }
+    }
+    val rand = when {
+        an -> blut
+        else -> TINTE
+    }
+    if (leer && !an) {
+        drawCircle(TINTE, r, style = Stroke(1.2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.dp.toPx()))))
+    } else {
+        drawCircle(rand, r, style = Stroke(if (an) 1.8.dp.toPx() else 1.2.dp.toPx()))
+    }
+    if (heute) drawCircle(blut, r + 3.5.dp.toPx(), style = Stroke(1.dp.toPx()))
+}
+
+/** Schräge Striche über die ganze Fläche im [abstand]; [steigend] von links unten nach rechts oben. */
+private fun DrawScope.schraffur(farbe: Color, abstand: Float, breite: Float, steigend: Boolean = true) {
+    var x = -size.height
+    while (x < size.width) {
+        if (steigend) {
+            drawLine(farbe, Offset(x, size.height), Offset(x + size.height, 0f), breite)
+        } else {
+            drawLine(farbe, Offset(x, 0f), Offset(x + size.height, size.height), breite)
+        }
+        x += abstand
     }
 }
