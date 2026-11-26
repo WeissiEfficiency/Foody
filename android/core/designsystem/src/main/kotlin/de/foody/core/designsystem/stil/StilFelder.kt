@@ -49,6 +49,8 @@ import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.edoShu
 import de.foody.core.designsystem.stil.grauen.Grauen
+import de.foody.core.designsystem.stil.grauen.TRENNER_HOEHE
+import de.foody.core.designsystem.stil.grauen.trennerMitAuge
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
 import de.foody.core.designsystem.stil.sage.Sage
@@ -211,8 +213,12 @@ fun StilKarte(modifier: Modifier = Modifier, inhalt: @Composable ColumnScope.() 
             val form = Bayrisch.kartenForm
             Modifier.background(Color.White, form).border(2.dp, f.text, form).padding(horizontal = 14.dp, vertical = 12.dp)
         }
-        FoodyStil.GRAUEN -> Modifier.background(Color.White.copy(alpha = 0.03f)).border(1.dp, s.zier.copy(alpha = 0.3f))
-            .padding(horizontal = 14.dp, vertical = 12.dp)
+        // Grauen: kein Kasten, der Abschnitt endet mit einem Trenner mit Auge (Plan „Zwei Gesichter“, Schritt 3)
+        FoodyStil.GRAUEN -> {
+            val glut = s.zier.copy(alpha = 0.55f)
+            Modifier.drawBehind { trennerMitAuge(glut, size.height - TRENNER_HOEHE.toPx() / 2f) }
+                .padding(top = 4.dp, bottom = TRENNER_HOEHE + 6.dp)
+        }
         else -> Modifier
     }
     Column(modifier.fillMaxWidth().then(rahmen), verticalArrangement = Arrangement.spacedBy(10.dp), content = inhalt)

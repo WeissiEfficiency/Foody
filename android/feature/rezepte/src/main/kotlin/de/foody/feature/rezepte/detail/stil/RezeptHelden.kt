@@ -42,6 +42,7 @@ import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.edoShu
 import de.foody.core.designsystem.stil.grauen.Grauen
+import de.foody.core.designsystem.stil.grauen.grauenFraktur
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
 import de.foody.core.designsystem.stil.kreuzer.kreuzerForm
@@ -199,6 +200,7 @@ private fun Rautenband(blau: Color) {
 private val PERGAMENT = Grauen.pergament
 private val TINTE = Grauen.tinte
 private val TINTE_NEBEN = Grauen.tinteNeben
+private val BLUT = Color(0xFF5C2318)
 
 /** U: eine Pergamentseite, die im Dunkel glüht: Band, Name, Angaben. */
 @Composable
@@ -219,7 +221,9 @@ internal fun GrauenHeld(z: DetailZustand.Da) {
     ) {
         val band = listOfNotNull(einordnungZeile(z), if (r.favorite) "♦ Favorit" else null).joinToString(" · ")
         if (band.isNotEmpty()) Text(band, style = Grauen.text(14f, kursiv = true), color = TINTE_NEBEN)
-        Text(r.name, Modifier.semantics { heading() }, style = Grauen.name(titelGroesse(26f)), color = TINTE)
+        // Fraktur-Initiale in getrocknetem Blut (Plan „Zwei Gesichter“, Schritt 3)
+        val groesse = titelGroesse(26f)
+        Text(grauenFraktur(r.name, BLUT, groesse), Modifier.semantics { heading() }, style = Grauen.name(groesse), color = TINTE)
         angabenZeile(z)?.let { Text(it, style = Grauen.text(15f), color = TINTE_NEBEN) }
     }
 }

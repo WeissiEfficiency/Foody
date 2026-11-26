@@ -63,8 +63,10 @@ import de.foody.core.designsystem.stil.bayrisch.bayrischBlau
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.edoShu
 import de.foody.core.designsystem.stil.grauen.Grauen
+import de.foody.core.designsystem.stil.grauen.TRENNER_HOEHE
 import de.foody.core.designsystem.stil.grauen.grauenHell
 import de.foody.core.designsystem.stil.grauen.schwung
+import de.foody.core.designsystem.stil.grauen.trennerMitAuge
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.kreuzerAmber
 
@@ -110,8 +112,15 @@ internal fun StilRahmen(titel: String?, beschreibung: String?, sync: Boolean, in
             }
         else -> {
             val linie = trennlinie()
+            // Grauen: zwischen den Abschnitten ein Trenner mit Auge statt einer Linie
+            val auge = s.stil == FoodyStil.GRAUEN
             Column(
-                Modifier.fillMaxWidth().drawBehind { drawLine(linie, Offset.Zero, Offset(size.width, 0f), 1.dp.toPx()) }.padding(top = 10.dp),
+                Modifier.fillMaxWidth()
+                    .drawBehind {
+                        if (auge) trennerMitAuge(s.zier.copy(alpha = 0.5f), TRENNER_HOEHE.toPx() / 2f)
+                        else drawLine(linie, Offset.Zero, Offset(size.width, 0f), 1.dp.toPx())
+                    }
+                    .padding(top = if (auge) TRENNER_HOEHE + 4.dp else 10.dp),
                 verticalArrangement = abstand,
             ) {
                 if (titel != null) StilAbschnitt(titel, beschreibung = beschreibung)

@@ -67,6 +67,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
@@ -92,6 +93,9 @@ import de.foody.core.designsystem.komponenten.ueberLeiste
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
 import de.foody.core.designsystem.stil.grauen.GrauenNotizknopf
+import de.foody.core.designsystem.stil.grauen.TRENNER_HOEHE
+import de.foody.core.designsystem.stil.grauen.grauenFraktur
+import de.foody.core.designsystem.stil.grauen.trennerMitAuge
 import de.foody.core.designsystem.stil.svgPfad
 import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.token.FoodyBreiten
@@ -431,19 +435,33 @@ private fun Tafel(ueber: String, titel: String, zeile: String, onTitel: () -> Un
     val f = FoodyTheme.farben
     // Auf dem Pergament (Ruhig) ist die Glut zu hell für Schrift; dort die lesbare Primärfarbe
     val glut = if (FoodyTheme.stil.inszeniert) FoodyTheme.stil.zier else f.primaer
-    Box(Modifier.fillMaxWidth().border(1.dp, f.lichtkante).padding(4.dp)) {
+    // Inszeniert ohne Kasten: oben und unten ein Trenner mit Auge (Plan „Zwei Gesichter“, Schritt 3)
+    val inszeniert = FoodyTheme.stil.inszeniert
+    val rahmen = if (inszeniert) {
+        val linie = glut.copy(alpha = 0.55f)
+        Modifier.drawBehind {
+            trennerMitAuge(linie, TRENNER_HOEHE.toPx() / 2f)
+            trennerMitAuge(linie, size.height - TRENNER_HOEHE.toPx() / 2f)
+        }.padding(vertical = TRENNER_HOEHE)
+    } else {
+        Modifier.border(1.dp, f.lichtkante).padding(4.dp)
+    }
+    Box(Modifier.fillMaxWidth().then(rahmen)) {
         Column(
             Modifier.fillMaxWidth()
-                .background(
-                    if (FoodyTheme.stil.inszeniert) Brush.verticalGradient(TAFEL) else SolidColor(Color.White.copy(alpha = 0.35f)),
-                )
-                .border(1.dp, f.lichtkante)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .then(
+                    if (inszeniert) {
+                        Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
+                    } else {
+                        Modifier.background(SolidColor(Color.White.copy(alpha = 0.35f))).border(1.dp, f.lichtkante)
+                            .padding(horizontal = 16.dp, vertical = 14.dp)
+                    },
+                ),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(ueber, style = Grauen.titel(15f, 0.06f), color = glut)
             Text(
-                "$titel ›",
+                if (inszeniert) grauenFraktur("$titel ›", glut, 25f) else AnnotatedString("$titel ›"),
                 Modifier.rezeptLink(titel, onTitel).padding(vertical = 4.dp),
                 style = Grauen.name(25f), color = f.text,
             )
@@ -543,7 +561,6 @@ private fun Verweis(text: String, beschreibung: String, groesse: Float = 17f, on
 }
 
 /** Verlauf der Tafel in Immersiv. */
-private val TAFEL = listOf(Color(0xFF121B18), Color(0xFF0C1210))
 
 internal const val AUGE_BREITE = 300f
 private const val AUGE_HOEHE = 170f

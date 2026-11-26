@@ -15,7 +15,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.Hintergrundmuster
+import de.foody.core.designsystem.stil.grauen.grauenWasserzeichen
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -65,6 +67,8 @@ fun FoodyHintergrund(modifier: Modifier = Modifier, inhalt: @Composable BoxScope
                         Hintergrundmuster.RAUTEN -> rautenband(stil.zier)
                         Hintergrundmuster.STERNE -> sterne(stil.zier)
                     }
+                    // Grauen: das Älteste Zeichen und eine Ranke, blass wie ein Wasserzeichen (beide Gesichter)
+                    if (stil.stil == FoodyStil.GRAUEN) grauenWasserzeichen(stil.zier)
                 },
         )
         CompositionLocalProvider(LocalHazeState provides hazeState) { inhalt() }

@@ -107,3 +107,15 @@ Vorschauen nach `res/drawable-nodpi/widget_vorschau_*`.
 - Kästen bleiben bei Eingabefeldern (Suche, Tagesziel). Karten, Hinweiszeilen und der Knopf „+ Zutat“ folgen mit
   Schritt 3 (Schmuck).
 - Tests: `GrauenKnopfTest` (Blatt in Ominös, Wahlwort in beiden Gesichtern, Notizknopf); Grauen-Bilder neu.
+
+### Schritt 3 · Schmuck
+- Neu `GrauenSchmuck.kt`: `trennerMitAuge`/`GrauenTrenner` (Linien, die zur Mitte kräftiger werden, Auge dazwischen),
+  `grauenWasserzeichen` (Ältestes Zeichen blass unten rechts, Tentakel-Ranke links) und `grauenFraktur` (erster
+  Buchstabe in UnifrakturCook). Alles ohne Semantik.
+- Das Wasserzeichen liegt im `FoodyHintergrund` des Grauens (6–8 % Deckkraft), also auf jeder Seite beider Gesichter.
+- Ohne Kasten, mit Trenner: `StilKarte` (Einstellungen-Abschnitt „Verbindung zum fernen Archiv“, Editor), die
+  Abschnitte der Einstellungen, die Tafel „Das Ritual des Abends“ auf Heute.
+- Fraktur-Initialen: Rezepttitel (Blut `#5C2318` auf Pergament) und nächstes Gericht auf Heute (Glut).
+- Bleiben, weil sie Buchmaterial sind: Pergament-Zettel (Rezeptkopf, Einkaufszettel), die Buchseiten (Zutaten,
+  Kochschritte), Eingabefelder. Seitenzahlen in römischen Ziffern stehen schon auf den Buchseiten.
+- Tests: `GrauenSchmuckTest` (Fraktur nur am ersten Buchstaben, Schmuck ohne Semantik); 24 Grauen-Bilder neu.
