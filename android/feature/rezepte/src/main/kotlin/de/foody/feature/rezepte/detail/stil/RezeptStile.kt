@@ -75,6 +75,7 @@ import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.grauen.GrauenInitiale
 import de.foody.core.designsystem.stil.grauen.GrauenRandnotiz
 import de.foody.core.designsystem.stil.grauen.GrauenSeite
+import de.foody.core.designsystem.stil.grauen.schwung
 import de.foody.core.designsystem.stil.grauen.umblaettern
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.szenenStil
@@ -312,9 +313,15 @@ private fun Portionen(art: RezeptArt, n: Int, onSchritt: (Boolean) -> Unit) {
 private fun Reiterleiste(art: RezeptArt, aktiv: Int, onWahl: (Int) -> Unit) {
     val f = FoodyTheme.farben
     val akzent = FoodyTheme.stil.zier
+    // Grauen: Kapitelwörter ohne Linie, unter dem aktiven ein Schwung (Plan „Zwei Gesichter“, Schritt 2)
+    val buch = FoodyTheme.stil.immersiv(FoodyStil.GRAUEN)
     Row(
         Modifier.fillMaxWidth().selectableGroup().then(
-            if (art.pillen) Modifier else Modifier.drawBehind { drawLine(f.balkenSpur, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx()) },
+            if (art.pillen || buch) {
+                Modifier
+            } else {
+                Modifier.drawBehind { drawLine(f.balkenSpur, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx()) }
+            },
         ),
         horizontalArrangement = Arrangement.spacedBy(if (art.pillen) 8.dp else 0.dp),
     ) {
@@ -327,6 +334,8 @@ private fun Reiterleiste(art: RezeptArt, aktiv: Int, onWahl: (Int) -> Unit) {
                         when {
                             art.pillen && an -> Modifier.background(akzent, form).border(2.dp, f.text, form)
                             art.pillen -> Modifier.border(2.dp, f.text, form)
+                            buch && an -> Modifier.drawBehind { schwung(akzent) }
+                            buch -> Modifier
                             an -> Modifier.drawBehind {
                                 drawLine(akzent, Offset(0f, size.height - 1.dp.toPx()), Offset(size.width, size.height - 1.dp.toPx()), 3.dp.toPx())
                             }
