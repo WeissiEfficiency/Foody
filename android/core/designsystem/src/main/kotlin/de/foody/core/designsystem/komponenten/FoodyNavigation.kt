@@ -1,6 +1,7 @@
 package de.foody.core.designsystem.komponenten
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -25,7 +26,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -37,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
+import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 
@@ -75,7 +82,7 @@ data class NavZiel(val text: String, val symbol: ImageVector, val beschreibung: 
 /** Schwebende Glas-Leiste unten (Handy), 12 dp vom Rand; deckend, wenn der Stil es will (`StilWerte.deckend`). */
 @Composable
 fun FoodyNavigationsleiste(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Unit, modifier: Modifier = Modifier) {
-    GlasFlaeche(GlasStufe.LEICHT, modifier.padding(FoodyAbstaende.s3), form = FoodyTheme.formen.leiste) {
+    LeistenGrund(modifier.padding(FoodyAbstaende.s3)) {
         Row(Modifier.padding(horizontal = FoodyAbstaende.s1), verticalAlignment = Alignment.CenterVertically) {
             ziele.forEachIndexed { i, ziel ->
                 NavEintrag(ziel, i == aktiv, { onWahl(i) }, Modifier.weight(1f))
@@ -87,7 +94,7 @@ fun FoodyNavigationsleiste(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Un
 /** Senkrechte Glas-Leiste links (Tablet, Handy quer); deckend wie die [FoodyNavigationsleiste]. */
 @Composable
 fun FoodyNavigationsRail(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Unit, modifier: Modifier = Modifier) {
-    GlasFlaeche(GlasStufe.LEICHT, modifier.padding(FoodyAbstaende.s3), form = FoodyTheme.formen.leiste) {
+    LeistenGrund(modifier.padding(FoodyAbstaende.s3)) {
         Column(Modifier.padding(vertical = FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s1)) {
             ziele.forEachIndexed { i, ziel ->
                 NavEintrag(ziel, i == aktiv, { onWahl(i) }, Modifier.width(88.dp))
@@ -96,15 +103,55 @@ fun FoodyNavigationsRail(ziele: List<NavZiel>, aktiv: Int, onWahl: (Int) -> Unit
     }
 }
 
+/** Grund der Leiste: Glas des Stils; im Necronomicon dunkles Leder mit mattem Messingrand (Plan „Zwei Gesichter“, Schritt 4). */
+@Composable
+private fun LeistenGrund(modifier: Modifier, inhalt: @Composable () -> Unit) {
+    val form = FoodyTheme.formen.leiste
+    if (FoodyTheme.stil.grauenBuch) {
+        Box(modifier.clip(form).background(Brush.verticalGradient(LEDER), form).border(1.dp, Grauen.messing.copy(alpha = 0.55f), form)) {
+            inhalt()
+        }
+    } else {
+        GlasFlaeche(GlasStufe.LEICHT, modifier, form = form) { inhalt() }
+    }
+}
+
+/** Die zwei Töne des Leders (oben, unten). */
+internal val LEDER = listOf(Color(0xFF33241A), Color(0xFF1E150E))
+
+/** Inaktive Einträge auf dem Leder: gedämpftes Messing, hält 4,5:1 auf beiden Tönen des Leders. */
+internal val LEDER_NEBEN = Color(0xFFA89878)
+
+/** Farben eines Eintrags im Grauen: aktiv, inaktiv und der Strich über dem aktiven. */
+private class GrauenEintrag(val aktiv: Color, val inaktiv: Color, val strich: Color)
+
+/** [GrauenEintrag] im Grauen (beide Gesichter), sonst `null`. */
+@Composable
+private fun grauenEintrag(): GrauenEintrag? {
+    val s = FoodyTheme.stil
+    if (!s.immersiv(FoodyStil.GRAUEN)) return null
+    return if (s.grauenBuch) {
+        GrauenEintrag(Grauen.messing, LEDER_NEBEN, Grauen.messing)
+    } else {
+        GrauenEintrag(FoodyTheme.farben.primaer, FoodyTheme.farben.nebentext, s.zier)
+    }
+}
+
 /**
  * Ein Eintrag wie im Entwurf: Der aktive trägt eine Pille in der Behälterfarbe hinter dem Symbol, der Text wird fett.
+ * Im Grauen statt der Pille ein kurzer Strich über dem Symbol (Glut in Ominös, Messing im Necronomicon).
  * Der Druckeffekt bleibt in dieser Pille, statt den ganzen Eintrag als Rechteck zu füllen.
  */
 @Composable
 private fun NavEintrag(ziel: NavZiel, gewaehlt: Boolean, onKlick: () -> Unit, modifier: Modifier) {
     val aktiv = gewaehlt
     val farben = FoodyTheme.farben
-    val farbe = if (aktiv) farben.primaer else farben.nebentext
+    val grauen = grauenEintrag()
+    val farbe = when {
+        grauen != null -> if (aktiv) grauen.aktiv else grauen.inaktiv
+        aktiv -> farben.primaer
+        else -> farben.nebentext
+    }
     val druck = remember { MutableInteractionSource() }
     Column(
         modifier
@@ -124,12 +171,22 @@ private fun NavEintrag(ziel: NavZiel, gewaehlt: Boolean, onKlick: () -> Unit, mo
         Box(
             Modifier
                 .size(width = 56.dp, height = 30.dp)
-                .clip(CircleShape)
-                .background(if (aktiv) farben.primaerBehaelter else Color.Transparent)
+                .then(
+                    if (grauen != null) {
+                        Modifier.drawBehind {
+                            if (aktiv) {
+                                drawLine(grauen.strich, Offset(size.width * 0.3f, 0f), Offset(size.width * 0.7f, 0f), 2.dp.toPx(), StrokeCap.Round)
+                            }
+                        }
+                    } else {
+                        Modifier.clip(CircleShape).background(if (aktiv) farben.primaerBehaelter else Color.Transparent)
+                    },
+                )
                 .indication(druck, ripple()),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(ziel.symbol, contentDescription = null, tint = if (aktiv) farben.aufPrimaerBehaelter else farbe, modifier = Modifier.size(22.dp))
+            val symbolFarbe = if (aktiv && grauen == null) farben.aufPrimaerBehaelter else farbe
+            Icon(ziel.symbol, contentDescription = null, tint = symbolFarbe, modifier = Modifier.size(22.dp))
         }
         // Eine Zeile: bei großer Schrift lieber etwas kleiner als „Rezep-te“ auf zwei Zeilen (V2)
         Text(

@@ -50,6 +50,11 @@ object Grauen {
     /** Helles Papier als Schrift auf Tinte (im Entwurf #E6DCC2): volle Knöpfe und gewählte Chips in Ruhig. */
     val papierHell = Color(0xFFE6DCC2)
 
+    /** Necronomicon: getrocknetes Blut für Mengen, Initialen und Rubriken; Grünspan nur sparsam; mattes Messing. */
+    val blut = Color(0xFF5C2318)
+    val gruenspan = Color(0xFF3D5446)
+    val messing = Color(0xFFB9A77C)
+
     /** Kapitälchen (IM Fell English SC) für Titel, mit leichter Laufweite [abstand] (em). */
     fun titel(groesse: Float, abstand: Float = 0.04f) = TextStyle(
         fontFamily = ImFellKapitaelchenFamilie,
@@ -75,7 +80,12 @@ object Grauen {
 
 /** Heller Ton für Knopftexte (im Entwurf #E6F2EA), aus dem Text des Stils; in Ruhig (Pergament) der Text selbst. */
 @Composable
-fun grauenHell(): Color = if (FoodyTheme.stil.inszeniert) lerp(FoodyTheme.farben.text, Color.White, 0.45f) else FoodyTheme.farben.text
+fun grauenHell(): Color = if (FoodyTheme.stil.inszeniert && !FoodyTheme.stil.grauenBuch) {
+    lerp(FoodyTheme.farben.text, Color.White, 0.45f)
+} else {
+    // Auf Pergament ist die Tinte selbst der kräftigste Ton
+    FoodyTheme.farben.text
+}
 
 /** Knopftexte, die im Grauen als gezeichnetes Zeichen erscheinen; `null` = Schrift. */
 internal fun grauenZeichenFuer(text: String): GrauenZeichen? = when (text.trim()) {

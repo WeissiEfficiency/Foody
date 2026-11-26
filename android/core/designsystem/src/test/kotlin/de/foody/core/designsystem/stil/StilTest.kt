@@ -1,6 +1,7 @@
 package de.foody.core.designsystem.stil
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import de.foody.core.designsystem.token.Flaechenart
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.FoodyTypografie
@@ -48,9 +49,22 @@ class StilTest {
                 assertEquals(FoodyStil.GRAUEN.dunkel(v, modus), stilWerte(FoodyStil.GRAUEN, v, dunkel = modus).dunkel)
             }
         }
-        assertTrue(FoodyStil.GRAUEN.dunkel(StilVariante.IMMERSIV, false))
-        // Ominös ist das grüne Grauen, dunkel wie Immersiv (ADR 0022)
+        // Das Necronomicon ist helles Pergament, Ominös das dunkle grüne Grauen (ADR 0022)
+        assertFalse(FoodyStil.GRAUEN.dunkel(StilVariante.IMMERSIV, true))
         assertTrue(FoodyStil.GRAUEN.dunkel(StilVariante.RUHIG, false))
+    }
+
+    /** Plan „Zwei Gesichter“, Schritt 4: Pergament als Muster, Tinte als Text, getrocknetes Blut als Zier. */
+    @Test
+    fun necronomiconIstPergamentMitTinteUndBlut() {
+        val buch = stilWerte(FoodyStil.GRAUEN, StilVariante.IMMERSIV)
+        assertEquals(Hintergrundmuster.PERGAMENT, buch.muster)
+        assertFalse(buch.dunkel)
+        assertTrue(buch.farben.text.luminance() < 0.02f, "Tinte statt Glut: ${buch.farben.text}")
+        assertTrue(buch.zier.red > buch.zier.green, "Zier in Blut, nicht in Glut: ${buch.zier}")
+        assertTrue(buch.zier.luminance() < 0.1f, "Blut ist dunkel: ${buch.zier}")
+        // Ominös bleibt das grüne Grauen mit Sternen
+        assertEquals(Hintergrundmuster.STERNE, stilWerte(FoodyStil.GRAUEN, StilVariante.RUHIG).muster)
     }
 
     /** ADR 0022: Beim Grauen sind beide Varianten inszeniert; Ruhig ist „Ominös“, Immersiv das „Necronomicon“. */

@@ -47,7 +47,7 @@ import de.foody.core.designsystem.token.kontrast
 import de.foody.core.designsystem.token.mischen
 
 /** Zeichnung auf dem Hintergrund, nur in [StilVariante.IMMERSIV]; reine Textur, Text liegt nie direkt auf dem Muster. */
-enum class Hintergrundmuster { KEINS, PUNKTE, RAUTEN, STERNE, FASERN }
+enum class Hintergrundmuster { KEINS, PUNKTE, RAUTEN, STERNE, FASERN, PERGAMENT }
 
 /**
  * Alles, was ein Stil in einer Variante festlegt: Farben (als [FarbweltWerte], damit Material und alle Komponenten
@@ -136,17 +136,20 @@ fun stilWerte(
 ): StilWerte {
     val akzent = stil.akzent(akzentName) ?: return milchglasWerte(farbwelt, dunkel)
     val immersiv = variante.inszeniertFuer(stil)
-    val g = stilGrundlage(stil, immersiv, akzent.farbe)
-    val (werte, akzentFarbe) = ableiten(g, akzent.farbe, if (stil == FoodyStil.KREUZER) HoloBlau else null)
+    // Necronomicon (Grauen Immersiv): feste Tinten statt Glut, getrocknetes Blut als Zier (ADR 0022)
+    val buch = stil == FoodyStil.GRAUEN && variante == StilVariante.IMMERSIV
+    val zierFarbe = if (buch) Grauen.blut else akzent.farbe
+    val g = stilGrundlage(stil, immersiv, zierFarbe, buch)
+    val (werte, akzentFarbe) = ableiten(g, zierFarbe, if (stil == FoodyStil.KREUZER) HoloBlau else if (buch) Grauen.gruenspan else null)
     return StilWerte(
         stil = stil, variante = variante, akzent = akzent, dunkel = g.dunkel, werte = werte,
         formen = formen(stil, immersiv), typografie = schrift(stil).typografie, augenbraue = schrift(stil).augenbraue,
         flaeche = Flaechenart.DECKEND,
         kante = if (immersiv && (stil == FoodyStil.ANIME || stil == FoodyStil.BAYRISCH)) 2.dp else 1.dp,
         schatten = if (immersiv && stil == FoodyStil.ANIME) g.text else null,
-        muster = if (!immersiv) Hintergrundmuster.KEINS else muster(stil),
-        zier = if (stil == FoodyStil.KREUZER) HoloBlau else akzent.farbe,
-        herz = angleichen(akzent.farbe, AbzeichenUntergruende, GRAFIK, Color.Black),
+        muster = if (!immersiv) Hintergrundmuster.KEINS else if (buch) Hintergrundmuster.PERGAMENT else muster(stil),
+        zier = if (stil == FoodyStil.KREUZER) HoloBlau else zierFarbe,
+        herz = angleichen(zierFarbe, AbzeichenUntergruende, GRAFIK, Color.Black),
         // Anime: deckend weiß statt grau getöntem Glas über dem rosa Punktmuster
         deckend = if (stil == FoodyStil.ANIME) Color.White else null,
         akzentFarbe = akzentFarbe,
@@ -178,7 +181,8 @@ data class StilGrundlage(
     val unten: Color = Color.Transparent,
 )
 
-fun stilGrundlage(stil: FoodyStil, immersiv: Boolean, akzent: Color): StilGrundlage = when (stil) {
+/** Rohwerte von [stil]; [buch] = das Necronomicon des Grauens (Pergament statt Nachtgrün, ADR 0022). */
+fun stilGrundlage(stil: FoodyStil, immersiv: Boolean, akzent: Color, buch: Boolean = false): StilGrundlage = when (stil) {
     FoodyStil.SAGE -> if (immersiv) {
         StilGrundlage(
             dunkel = true, grund = Color(0xFF0D0C0A), text = Color(0xFFE4DCC8), neben = Color(0xFF9A9079),
@@ -228,7 +232,14 @@ fun stilGrundlage(stil: FoodyStil, immersiv: Boolean, akzent: Color): StilGrundl
             glas = Color(0xFFFFFFFF), linie = Bayrisch.linie, kante = Bayrisch.linie,
         )
     }
-    FoodyStil.GRAUEN -> if (immersiv) {
+    FoodyStil.GRAUEN -> if (buch) {
+        // Necronomicon: verwittertes Pergament, Tinte, Ränder dunkel (Textur: Hintergrundmuster.PERGAMENT)
+        StilGrundlage(
+            dunkel = false, grund = Color(0xFFCDBB93), text = Color(0xFF17110B), neben = Color(0xFF33291B),
+            glas = Color(0xFFD9CAA4), linie = Color(0xFFA8946C), kante = Color(0xFF8C7650),
+            oben = Color(0xFFE4D6B4).copy(alpha = 0.5f), unten = Color(0xFF8A6E45).copy(alpha = 0.18f),
+        )
+    } else if (immersiv) {
         StilGrundlage(
             dunkel = true, grund = Color(0xFF070B0A), text = Color(0xFFCFE0D6), neben = Color(0xFF7F948A),
             glas = Color(0xFF0E1814), linie = Color(0xFF24352E), kante = Color(0xFF2E4A3E),
