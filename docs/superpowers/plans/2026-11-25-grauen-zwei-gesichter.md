@@ -119,3 +119,19 @@ Vorschauen nach `res/drawable-nodpi/widget_vorschau_*`.
 - Bleiben, weil sie Buchmaterial sind: Pergament-Zettel (Rezeptkopf, Einkaufszettel), die Buchseiten (Zutaten,
   Kochschritte), Eingabefelder. Seitenzahlen in römischen Ziffern stehen schon auf den Buchseiten.
 - Tests: `GrauenSchmuckTest` (Fraktur nur am ersten Buchstaben, Schmuck ohne Semantik); 24 Grauen-Bilder neu.
+
+### Schritt 4 · Necronomicon: Grund, Farben, Leiste
+- `stilGrundlage(…, buch = true)`: Pergament `#CDBB93`, Tinte `#17110B`, Nebentext `#33291B` (dunkler als im Entwurf,
+  damit er auf dem dunkelsten Fleck 4,5:1 hält), Blätter `#D9CAA4`. Zier ist getrocknetes Blut (`Grauen.blut`),
+  Grünspan die zweite Farbe. `FoodyStil.dunkel` ist für das Necronomicon `false`: helle Statusleiste mit dunklen Symbolen.
+- `Hintergrundmuster.PERGAMENT`: `res/drawable-nodpi/grauen_pergament.webp` (66 KB), erzeugt mit
+  `werkzeuge/pergament_erzeugen.py` (Fasern, Flecken, Schimmel, Becherrand, verkohlter Rand); über die ganze Fläche
+  gestreckt, das Wasserzeichen liegt darüber.
+- Leiste und Rail im Necronomicon: dunkles Leder mit Messingrand. In beiden Gesichtern zeigt ein kurzer Strich über
+  dem Symbol den aktiven Eintrag statt der Pille (Glut in Ominös, Messing im Necronomicon).
+- Siegel in schwarzem Wachs mit Messingzeichen; `grauenHell()` ist auf Pergament die Tinte.
+- Vorgezogen aus Schritt 5, damit nichts unlesbar wird: `GrauenSeite` ist im Necronomicon ein helles Blatt mit
+  braunen Kanten, die Randnotiz in Blut. Offen für Schritt 5: Auge, Monde, Regal, Kochen-Kästen in Glut-Tönen.
+- Tests: `StilTest.necronomiconIstPergamentMitTinteUndBlut`, `NecronomiconKontrastTest` (Text, Nebentext und Zier auf
+  dem dunkelsten Fleck, Messing auf Leder und Siegel), `KontrastTest` deckt das Necronomicon mit ab; Bilder
+  `stil_grauen_leiste_ominoes`/`_necronomicon` neu, alle Grauen-Bilder neu.

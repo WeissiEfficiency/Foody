@@ -64,13 +64,14 @@ enum class FoodyStil(val anzeigename: String, val akzente: List<StilAkzent>) {
     );
 
     /**
-     * Fester Grund des Stils: Q, U und V dunkel, R, S und T hell. Milchglas folgt dem Modus. Das Necronomicon (Grauen
-     * Immersiv) bekommt sein helles Pergament erst mit Schritt 4 des Plans; bis dahin zeigt es das grüne Grauen.
+     * Fester Grund des Stils: Q und V dunkel, R, S und T hell, Milchglas folgt dem Modus. Beim Grauen ist Ominös
+     * (Ruhig) dunkel, das Necronomicon (Immersiv) helles Pergament (ADR 0022).
      */
-    fun dunkel(@Suppress("UNUSED_PARAMETER") variante: StilVariante, modusDunkel: Boolean): Boolean = when (this) {
+    fun dunkel(variante: StilVariante, modusDunkel: Boolean): Boolean = when (this) {
         MILCHGLAS -> modusDunkel
-        SAGE, KREUZER, GRAUEN -> true
+        SAGE, KREUZER -> true
         ANIME, EDO, BAYRISCH -> false
+        GRAUEN -> variante != StilVariante.IMMERSIV
     }
 
     /** Name der [variante] in den Einstellungen: beim Grauen die zwei Gesichter (ADR 0022), sonst Immersiv und Ruhig. */

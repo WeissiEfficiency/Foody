@@ -53,6 +53,10 @@ import kotlin.math.abs
 private val PAPIER = listOf(Color(0xFF16201C), Color(0xFF101815))
 private val KANTE = Color(0xFF2C3D35)
 
+/** Im Necronomicon: helles Blatt auf dem Pergament, Kanten in altem Braun (ADR 0022). */
+private val PAPIER_BUCH = listOf(Color(0xFFE2D4B0), Color(0xFFD6C59E))
+private val KANTE_BUCH = Color(0xFF9C865E)
+
 /** Das Bändchen in dunklem Weinrot; die Randnotiz in blassem Rosé (auf dem Papier über 7:1). */
 private val BAENDCHEN = Color(0xFF7A2E44)
 private val ROSE = Color(0xFFD9A3B4)
@@ -72,6 +76,9 @@ fun GrauenSeite(
 ) {
     val f = FoodyTheme.farben
     val glut = FoodyTheme.stil.zier
+    val buch = FoodyTheme.stil.grauenBuch
+    val papier = if (buch) PAPIER_BUCH else PAPIER
+    val kante = if (buch) KANTE_BUCH else KANTE
     Column(
         modifier.fillMaxWidth().drawBehind {
             val kanten = 4
@@ -79,7 +86,7 @@ fun GrauenSeite(
             // Gestapelte Seiten rechts und unten, dann das Blatt selbst
             for (i in kanten downTo 1) {
                 val lage = Offset(i * abstand, i * abstand)
-                drawRect(KANTE.copy(alpha = 0.25f + 0.12f * (kanten - i)), lage, Size(size.width - kanten * abstand, size.height - kanten * abstand))
+                drawRect(kante.copy(alpha = 0.25f + 0.12f * (kanten - i)), lage, Size(size.width - kanten * abstand, size.height - kanten * abstand))
             }
             val blatt = Size(size.width - kanten * abstand, size.height - kanten * abstand)
             // Das Blatt, beim Eselsohr ohne die umgeknickte Ecke (darunter sieht man die Kanten der nächsten Seiten)
@@ -92,10 +99,11 @@ fun GrauenSeite(
                 lineTo(0f, blatt.height)
                 close()
             }
-            drawPath(umriss, Brush.verticalGradient(PAPIER))
+            drawPath(umriss, Brush.verticalGradient(papier))
             // Schatten am Bund links und ein Hauch Glut an der Kante
             val bund = 22.dp.toPx()
-            drawRect(Brush.horizontalGradient(listOf(Color.Black.copy(alpha = 0.55f), Color.Transparent), 0f, bund), size = Size(bund, blatt.height))
+            val schatten = Color.Black.copy(alpha = if (buch) 0.22f else 0.55f)
+            drawRect(Brush.horizontalGradient(listOf(schatten, Color.Transparent), 0f, bund), size = Size(bund, blatt.height))
             drawPath(umriss, glut.copy(alpha = 0.35f), style = Stroke(1.dp.toPx()))
             if (eselsohr) {
                 // Die umgeknickte Ecke liegt als helleres Dreieck auf dem Blatt
@@ -105,7 +113,7 @@ fun GrauenSeite(
                     lineTo(blatt.width - ecke, blatt.height)
                     close()
                 }
-                drawPath(ohr, KANTE)
+                drawPath(ohr, kante)
                 drawPath(ohr, glut.copy(alpha = 0.5f), style = Stroke(1.dp.toPx()))
             }
             lesebaendchen(blatt.width)
@@ -192,7 +200,8 @@ fun GrauenRandnotiz(text: String, modifier: Modifier = Modifier) {
     Text(
         "✎ $text",
         modifier.padding(start = 18.dp, top = 6.dp).rotate(-1.5f).semantics { contentDescription = "Notiz: $text" },
-        style = Grauen.text(15.5f, kursiv = true), color = ROSE,
+        // Im Necronomicon in getrocknetem Blut statt Rosé
+        style = Grauen.text(15.5f, kursiv = true), color = if (FoodyTheme.stil.grauenBuch) Grauen.blut else ROSE,
     )
 }
 

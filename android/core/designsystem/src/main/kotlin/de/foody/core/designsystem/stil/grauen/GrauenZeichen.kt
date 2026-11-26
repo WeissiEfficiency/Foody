@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import de.foody.core.designsystem.FoodyTheme
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -134,12 +135,18 @@ fun DrawScope.zeichne(zeichen: GrauenZeichen, farbe: Color) {
 /** Wachs eines Siegels im Ominösen: dunkles Grün mit Licht oben links. */
 private val WACHS = listOf(Color(0xFF3F6A56), Color(0xFF22392F), Color(0xFF101C16))
 
+/** Wachs im Necronomicon: schwarz mit mattem Glanz; das Zeichen darauf in Messing. */
+private val WACHS_SCHWARZ = listOf(Color(0xFF45403A), Color(0xFF1C1915), Color(0xFF080706))
+
 /**
- * Ein Wachssiegel mit gewelltem Rand und [zeichen] in der Mitte, [groesse] groß. Nur Zeichnung: Klick und
- * Beschreibung trägt der Knopf darum.
+ * Ein Wachssiegel mit gewelltem Rand und [zeichen] in der Mitte, [groesse] groß: grünes Wachs in Ominös, schwarzes mit
+ * Messing im Necronomicon. Nur Zeichnung: Klick und Beschreibung trägt der Knopf darum.
  */
 @Composable
 fun GrauenSiegel(zeichen: GrauenZeichen, modifier: Modifier = Modifier, groesse: Dp = 52.dp, farbe: Color = Color(0xFFDFE4D6)) {
+    val buch = FoodyTheme.stil.grauenBuch
+    val wachs = if (buch) WACHS_SCHWARZ else WACHS
+    val zeichenFarbe = if (buch) Grauen.messing else farbe
     Box(modifier.size(groesse).clearAndSetSemantics { }, contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(groesse)) {
             val r = size.minDimension / 2f
@@ -154,11 +161,11 @@ fun GrauenSiegel(zeichen: GrauenZeichen, modifier: Modifier = Modifier, groesse:
                 }
                 close()
             }
-            drawPath(rand, Brush.radialGradient(WACHS, Offset(mitte.x - r * 0.3f, mitte.y - r * 0.35f), r * 1.3f))
+            drawPath(rand, Brush.radialGradient(wachs, Offset(mitte.x - r * 0.3f, mitte.y - r * 0.35f), r * 1.3f))
             // Eingeprägter Ring
-            drawCircle(lerp(WACHS[2], Color.Black, 0.3f), r * 0.78f, mitte, style = Stroke(r * 0.06f))
+            drawCircle(lerp(wachs[2], Color.Black, 0.3f), r * 0.78f, mitte, style = Stroke(r * 0.06f))
             drawCircle(Color.White.copy(alpha = 0.08f), r * 0.84f, mitte, style = Stroke(r * 0.04f))
         }
-        GrauenSymbol(zeichen, farbe, groesse = groesse * 0.46f)
+        GrauenSymbol(zeichen, zeichenFarbe, groesse = groesse * 0.46f)
     }
 }
