@@ -148,7 +148,7 @@ internal class ChipAussehen(
 @Composable
 internal fun stilChip(ausgewaehlt: Boolean): ChipAussehen? {
     val s = FoodyTheme.stil
-    if (s.variante != StilVariante.IMMERSIV) return null
+    if (!s.inszeniert) return null
     val f = FoodyTheme.farben
     return when (s.stil) {
         FoodyStil.ANIME -> ChipAussehen(
@@ -210,7 +210,7 @@ internal class BlattAussehen(val form: Shape, val griff: Color, val griffForm: S
 @Composable
 internal fun stilBlatt(): BlattAussehen? {
     val s = FoodyTheme.stil
-    if (s.variante != StilVariante.IMMERSIV) return null
+    if (!s.inszeniert) return null
     val f = FoodyTheme.farben
     val grund = f.grund
     return when (s.stil) {

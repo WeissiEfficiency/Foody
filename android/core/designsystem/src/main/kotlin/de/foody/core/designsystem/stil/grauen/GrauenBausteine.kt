@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -178,10 +179,33 @@ private fun GrauenKnopfRuhig(text: String, onKlick: () -> Unit, modifier: Modifi
     }
 }
 
-/** Kleiner Knopf in Schreibmaschine mit dünnem Rahmen in der Textfarbe („+ notieren“). */
+/**
+ * Kleiner Knopf in Schreibmaschine („+ notieren“, „Gegessen?“). Inszeniert ohne Kasten: ein führendes „+“ wird zur
+ * Feder, darunter ein Schwung in Glut; sonst mit dünnem Rahmen in der Textfarbe.
+ */
 @Composable
 fun GrauenNotizknopf(text: String, onKlick: () -> Unit, modifier: Modifier = Modifier, beschreibung: String? = null) {
     val f = FoodyTheme.farben
+    if (FoodyTheme.stil.inszeniert) {
+        val feder = text.startsWith("+")
+        val wort = if (feder) text.removePrefix("+").trim() else text
+        val glut = FoodyTheme.stil.zier
+        Row(
+            modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).clickable(role = Role.Button, onClick = onKlick)
+                .then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier)
+                .padding(horizontal = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (feder) GrauenSymbol(GrauenZeichen.FEDER, glut, groesse = 18.dp)
+            Text(
+                wort,
+                Modifier.drawBehind { schwung(glut.copy(alpha = 0.6f)) }.padding(bottom = 6.dp),
+                style = Grauen.maschine(13f), color = f.text,
+            )
+        }
+        return
+    }
     Box(
         modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onKlick)
             .then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier)
@@ -191,5 +215,29 @@ fun GrauenNotizknopf(text: String, onKlick: () -> Unit, modifier: Modifier = Mod
         Box(Modifier.heightIn(min = 40.dp).border(1.dp, f.text).padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
             Text(text, style = Grauen.maschine(13f), color = f.text)
         }
+    }
+}
+
+/**
+ * Wahlwort des Grauens statt eines Chips (Tage, Mahlzeiten, Filter): Kapitälchen ohne Rahmen, gewählt hell mit einem
+ * Schwung in Glut darunter, sonst im Nebentext. Meldet „ausgewählt“ an TalkBack, mindestens 48 dp.
+ */
+@Composable
+fun GrauenWahlwort(text: String, ausgewaehlt: Boolean, onKlick: () -> Unit, modifier: Modifier = Modifier, beschreibung: String? = null) {
+    val glut = FoodyTheme.stil.zier
+    Box(
+        modifier.heightIn(min = 48.dp).widthIn(min = 48.dp)
+            .selectable(selected = ausgewaehlt, onClick = onKlick)
+            .then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier)
+            .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            Modifier.then(if (ausgewaehlt) Modifier.drawBehind { schwung(glut) } else Modifier).padding(bottom = 7.dp),
+            style = Grauen.titel(15.5f, 0.04f),
+            color = if (ausgewaehlt) grauenHell() else FoodyTheme.farben.nebentext,
+            textAlign = TextAlign.Center,
+        )
     }
 }

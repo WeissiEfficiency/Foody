@@ -96,3 +96,14 @@ Vorschauen nach `res/drawable-nodpi/widget_vorschau_*`.
 - Rezept: Reiter ohne Linie, unter dem aktiven ein Schwung (`schwung`).
 - Offen für 2b: `GrauenNotizknopf` („+ notieren“, „Gegessen?“), Chips und Auswahlfelder in Planen.
 - Tests: `GrauenKnopfTest` (Zeichen statt Schrift, Beschreibung, 48 dp, inaktiv); 25 Grauen-Bilder neu.
+
+### Schritt 2b · Wahlwörter, Notizknopf, Segmente
+- Nachtrag zu Schritt 1: `stilChip` und `stilBlatt` fragten noch `IMMERSIV` ab; jetzt `inszeniert`, Ominös hat damit
+  das Blatt des Grauens.
+- `FoodyChip` ist im Grauen ein `GrauenWahlwort`: Kapitälchen ohne Rahmen, gewählt hell mit Schwung (Planen, Einkauf,
+  Rezepte, Zutaten).
+- `GrauenNotizknopf` inszeniert ohne Kasten: „+“ wird zur Feder, darunter ein Schwung („notieren“, „Gegessen?“).
+- Einstellungen: Die Segmente (Variante) sind Wörter mit Schwung statt Felder mit Rahmen.
+- Kästen bleiben bei Eingabefeldern (Suche, Tagesziel). Karten, Hinweiszeilen und der Knopf „+ Zutat“ folgen mit
+  Schritt 3 (Schmuck).
+- Tests: `GrauenKnopfTest` (Blatt in Ominös, Wahlwort in beiden Gesichtern, Notizknopf); Grauen-Bilder neu.
