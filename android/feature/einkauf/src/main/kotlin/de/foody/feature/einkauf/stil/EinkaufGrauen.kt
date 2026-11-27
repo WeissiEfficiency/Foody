@@ -44,6 +44,7 @@ import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.animationenErlaubt
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
+import de.foody.core.designsystem.stil.grauen.grauenFrakturTitel
 import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
 import de.foody.feature.einkauf.PillenAussehen
@@ -117,7 +118,9 @@ private fun Kopf(ansicht: EinkaufsAnsicht?, onListen: () -> Unit) {
                     heading()
                     contentDescription = "Einkauf"
                 },
-                style = Grauen.titel(titelGroesse(32f), 0.02f), color = f.text,
+                // Im Necronomicon in Fraktur wie die übrigen Seitentitel
+                style = if (FoodyTheme.stil.grauenBuch) grauenFrakturTitel(titelGroesse(34f)) else Grauen.titel(titelGroesse(32f), 0.02f),
+                color = f.text,
             )
         }
         Row(Modifier.align(Alignment.Bottom), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

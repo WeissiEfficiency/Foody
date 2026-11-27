@@ -237,7 +237,7 @@ private fun DarstellungInhalt(
 
 /** Satz unter der Variantenwahl; beim Grauen beschreibt er die zwei Gesichter (ADR 0022). */
 internal fun variantenHinweis(stil: FoodyStil, variante: StilVariante): String = when {
-    stil == FoodyStil.GRAUEN && variante == StilVariante.IMMERSIV -> "Die App als verwittertes Buch (im Aufbau)."
+    stil == FoodyStil.GRAUEN && variante == StilVariante.IMMERSIV -> "Die App als verwittertes Buch: Pergament, Tinte und Blut."
     stil == FoodyStil.GRAUEN -> "Das grüne Grauen: Sternenhimmel, Glut und Mondbogen."
     variante == StilVariante.IMMERSIV -> "Mit Muster, Verlauf und kräftigen Kanten."
     else -> "Farben und Schrift des Stils, schlicht."

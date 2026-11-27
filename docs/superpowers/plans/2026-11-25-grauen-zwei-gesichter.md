@@ -162,3 +162,10 @@ Vorschauen nach `res/drawable-nodpi/widget_vorschau_*`.
 - Kochen: Die Zeitkarte hat im Buch keinen Kasten mehr, sondern einen doppelten Randstrich in Blut.
 - Tests: `BrettFederTest` (Brett im Buch kein schwarzer Balken, in Ominös dunkles Holz); Bilder der Bibliothek und
   des Kochschritts neu.
+
+### Schritt 5d · Necronomicon: Einkauf, Eintragen, Einstellungen
+- Einkauf: „Expeditionsliste“ in Fraktur. Eintragen („Notieren“) und die Listen tragen ihre Fraktur-Titel seit 5b
+  über `stilTitel`; die Kacheln von Eintragen mit Rand in Blut bleiben (Schritt 2: eckige Bedienelemente dürfen sein).
+- Einstellungen: Der Hinweis unter der Variante sagt jetzt „Die App als verwittertes Buch: Pergament, Tinte und
+  Blut.“ statt „(im Aufbau)“; `VariantenHinweisTest` schlug vorher fehl.
+- Damit ist Schritt 5 fertig. Offen für Schritt 6: die Widgets zeigen im Necronomicon noch Grün.
