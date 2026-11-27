@@ -20,15 +20,18 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import de.foody.core.data.fotos.KameraDatei
+import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyKnopf
 import de.foody.core.designsystem.komponenten.KnopfArt
 import de.foody.core.designsystem.komponenten.RezeptPlatzhalter
 import de.foody.core.designsystem.komponenten.rezeptBild
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.token.FoodyAbstaende
 import kotlinx.coroutines.launch
 import java.io.File
@@ -54,7 +57,9 @@ internal fun FotoWahl(bild: String?, vm: EditorViewModel, form: Shape = RoundedC
             datei.delete()
         }
     }
-    Box(Modifier.fillMaxWidth().height(hoehe).clip(form)) {
+    // Im Grauen eckig wie eine Tafel im Buch, damit der Rahmen der Bildtafel nicht angeschnitten wird
+    val umriss = if (FoodyTheme.stil.stil == FoodyStil.GRAUEN) RectangleShape else form
+    Box(Modifier.fillMaxWidth().height(hoehe).clip(umriss)) {
         rezeptBild(bild)?.invoke() ?: RezeptPlatzhalter(Modifier.fillMaxSize())
     }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {

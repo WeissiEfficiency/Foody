@@ -42,6 +42,7 @@ import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.grauen.Grauen
+import de.foody.core.designsystem.stil.grauen.GrauenBlaetterKnopf
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.szenenStil
 import de.foody.core.designsystem.stil.szenenWort
@@ -307,6 +308,24 @@ internal fun KochKnoepfeStil(art: KochArt, seite: Int, seitenzahl: Int, onSeite:
         letzte -> art.fertig
         seite == 0 -> art.beginnen
         else -> art.weiter
+    }
+    // Im Grauen ein gleiches Paar aus Wort und gezeichnetem Pfeil; das Siegel bleibt einzelnen Ritualen vorbehalten
+    if (FoodyTheme.stil.stil == FoodyStil.GRAUEN) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GrauenBlaetterKnopf(
+                art.zurueck, vorwaerts = false, { if (seite > 0) onSeite(seite - 1) }, Modifier.heightIn(min = 52.dp),
+                beschreibung = "Zurück", aktiv = seite > 0,
+            )
+            GrauenBlaetterKnopf(
+                text, vorwaerts = true, { if (letzte) onFertig() else onSeite(seite + 1) }, Modifier.heightIn(min = 52.dp),
+                beschreibung = if (letzte) "Fertig" else "Weiter",
+            )
+        }
+        return
     }
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         StilAktion(

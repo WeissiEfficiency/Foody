@@ -241,7 +241,9 @@ wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für 
     Blut, Leiste in Leder mit Messing, Seitentitel in Fraktur (`stilTitel`, `grauenFrakturTitel`), Auge und Monde als
     Federzeichnung (`augeFeder`, `mondFeder`), helles Regalbrett (`brettMalen`). Eine Akzentwahl gibt es beim Grauen
     nicht. Knöpfe ohne Kasten in beiden Gesichtern: `GrauenKnopf` (Zeichen aus `GrauenZeichen`, Siegel, Schwung),
-    `GrauenWahlwort` statt Chips, Trenner mit Auge und Wasserzeichen (`GrauenSchmuck`). Grauen zeigt Rezept und
+    `GrauenWahlwort` statt Chips, Trenner mit Auge und Wasserzeichen (`GrauenSchmuck`). Runde Knöpfe (`RunderKnopf`) werden zu
+    Tinte-Zeichen ohne Kreis (`GrauenRunderKnopf`), Umblättern beim Kochen ist ein Paar aus Wort und Pfeil
+    (`GrauenBlaetterKnopf`), das Siegel bleibt einzelnen Ritualen; statt Fotoplatzhalter eine Bildtafel (`GrauenBildtafel`). Grauen zeigt Rezept und
     Kochmodus als Buch: `GrauenSeite` (Blatt mit Bundschatten, Seitenkanten, Kapitel oben, römische Seitenzahl unten; im
     Necronomicon hell mit Randnotiz in Blut) im
     `HorizontalPager`, `Modifier.umblaettern` kippt das gehende Blatt um den Bund statt es gleiten zu lassen; die Reiter

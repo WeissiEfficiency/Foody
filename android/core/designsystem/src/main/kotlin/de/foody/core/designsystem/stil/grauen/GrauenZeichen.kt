@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
@@ -37,6 +38,9 @@ enum class GrauenZeichen {
 
     /** „∴“: drei Punkte, öffnet ein Menü. */
     MENUE,
+
+    /** Zwei gekreuzte Federstriche: schließen, beenden. */
+    SCHLIESSEN,
 
     /** Lesebändchen, leer: merken. */
     BAND,
@@ -86,6 +90,10 @@ fun DrawScope.zeichne(zeichen: GrauenZeichen, farbe: Color) {
                         },
                     )
                 }
+            }
+            GrauenZeichen.SCHLIESSEN -> {
+                linie(Path().apply { moveTo(6f, 6f); cubicTo(10f, 9f, 14f, 14f, 18f, 18.5f) })
+                linie(Path().apply { moveTo(18f, 5.5f); cubicTo(14f, 9.5f, 10f, 14f, 6f, 18f) })
             }
             GrauenZeichen.MENUE -> listOf(Offset(12f, 6.5f), Offset(6.5f, 17f), Offset(17.5f, 17f)).forEach { drawCircle(farbe, 2.1f, it) }
             GrauenZeichen.BAND, GrauenZeichen.BAND_VOLL -> {
@@ -138,6 +146,9 @@ private val WACHS = listOf(Color(0xFF3F6A56), Color(0xFF22392F), Color(0xFF101C1
 /** Wachs im Necronomicon: schwarz mit mattem Glanz; das Zeichen darauf in Messing. */
 private val WACHS_SCHWARZ = listOf(Color(0xFF45403A), Color(0xFF1C1915), Color(0xFF080706))
 
+/** Test-Kennzeichen jedes Siegels: Seiten prüfen damit, wo ein Siegel steht und wo nicht. */
+const val GRAUEN_SIEGEL_TAG = "grauen_siegel"
+
 /**
  * Ein Wachssiegel mit gewelltem Rand und [zeichen] in der Mitte, [groesse] groß: grünes Wachs in Ominös, schwarzes mit
  * Messing im Necronomicon. Nur Zeichnung: Klick und Beschreibung trägt der Knopf darum.
@@ -147,7 +158,7 @@ fun GrauenSiegel(zeichen: GrauenZeichen, modifier: Modifier = Modifier, groesse:
     val buch = FoodyTheme.stil.grauenBuch
     val wachs = if (buch) WACHS_SCHWARZ else WACHS
     val zeichenFarbe = if (buch) Grauen.messing else farbe
-    Box(modifier.size(groesse).clearAndSetSemantics { }, contentAlignment = Alignment.Center) {
+    Box(modifier.size(groesse).clearAndSetSemantics { testTag = GRAUEN_SIEGEL_TAG }, contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(groesse)) {
             val r = size.minDimension / 2f
             val mitte = center

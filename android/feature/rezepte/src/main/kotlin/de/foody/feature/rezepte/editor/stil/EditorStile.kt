@@ -61,6 +61,7 @@ import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.edoShu
 import de.foody.core.designsystem.stil.grauen.Grauen
+import de.foody.core.designsystem.stil.grauen.GrauenRunderKnopf
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.stilTitel
 import de.foody.core.designsystem.token.FoodyAbstaende
@@ -177,7 +178,11 @@ private fun Kopf(neu: Boolean, a: EditorArt, onZurueck: () -> Unit) {
     val stil = FoodyTheme.stil.stil
     val normal = if (neu) "Neues Rezept" else "Bearbeiten"
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-        IconButton(onClick = onZurueck) { Icon(Icons.Outlined.Close, contentDescription = "Abbrechen", tint = f.text) }
+        if (stil == FoodyStil.GRAUEN) {
+            GrauenRunderKnopf(Icons.Outlined.Close, "Abbrechen", onZurueck)
+        } else {
+            IconButton(onClick = onZurueck) { Icon(Icons.Outlined.Close, contentDescription = "Abbrechen", tint = f.text) }
+        }
         Column(Modifier.weight(1f)) {
             Text(if (neu) a.ueberNeu else "Rezept", style = a.klein, color = f.nebentext)
             Text(
