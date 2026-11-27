@@ -310,8 +310,6 @@ class RezepteStileTest {
         assertEquals(17, sternGroesse(717))
         assertEquals(22, sternGroesse(3000))
         assertEquals("SPINAT", kreuzerKurz(karte(name = "Spinat-Lasagne")))
-        assertEquals("BAND · OFENGERICHT", grauenBand(karte(tags = listOf("Ofengericht"))))
-        assertEquals("BAND · OHNE ORDNUNG", grauenBand(r))
         assertEquals("AUS DER KÜCHE", edoArt(r))
         assertEquals("AUS DA KUCHL", bayrischArt(r))
     }

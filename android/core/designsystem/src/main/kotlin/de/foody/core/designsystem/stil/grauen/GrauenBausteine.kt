@@ -47,9 +47,6 @@ object Grauen {
     val tinte = Color(0xFF2A2418)
     val tinteNeben = Color(0xFF4A4030)
 
-    /** Helles Papier als Schrift auf Tinte (im Entwurf #E6DCC2): volle Knöpfe und gewählte Chips in Ruhig. */
-    val papierHell = Color(0xFFE6DCC2)
-
     /** Necronomicon: getrocknetes Blut für Mengen, Initialen und Rubriken; Grünspan nur sparsam; mattes Messing. */
     val blut = Color(0xFF5C2318)
     val gruenspan = Color(0xFF3D5446)
@@ -78,9 +75,9 @@ object Grauen {
     fun maschine(groesse: Float) = TextStyle(fontFamily = SpecialEliteFamilie, fontSize = groesse.sp, lineHeight = (groesse * 1.35f).sp).mitSilbentrennung()
 }
 
-/** Heller Ton für Knopftexte (im Entwurf #E6F2EA), aus dem Text des Stils; in Ruhig (Pergament) der Text selbst. */
+/** Heller Ton für Knopftexte (im Entwurf #E6F2EA), aus dem Text des Stils; im Necronomicon die Tinte selbst. */
 @Composable
-fun grauenHell(): Color = if (FoodyTheme.stil.inszeniert && !FoodyTheme.stil.grauenBuch) {
+fun grauenHell(): Color = if (!FoodyTheme.stil.grauenBuch) {
     lerp(FoodyTheme.farben.text, Color.White, 0.45f)
 } else {
     // Auf Pergament ist die Tinte selbst der kräftigste Ton
@@ -115,10 +112,6 @@ fun GrauenKnopf(
     umriss: Boolean = false,
     aktiv: Boolean = true,
 ) {
-    if (!FoodyTheme.stil.inszeniert) {
-        GrauenKnopfRuhig(text, onKlick, modifier, beschreibung, umriss, aktiv)
-        return
-    }
     val hell = grauenHell()
     val glut = FoodyTheme.stil.zier
     val zeichen = grauenZeichenFuer(text)
@@ -169,62 +162,29 @@ fun DrawScope.schwung(farbe: Color) {
     drawPath(pfad, farbe, style = Stroke(1.4.dp.toPx(), cap = StrokeCap.Round))
 }
 
-/** Der frühere Knopf mit Rahmen (Pergament, schlicht); nur erreichbar, solange [FoodyTheme.stil] nicht inszeniert ist. */
-@Composable
-private fun GrauenKnopfRuhig(text: String, onKlick: () -> Unit, modifier: Modifier, beschreibung: String?, umriss: Boolean, aktiv: Boolean) {
-    val tinte = FoodyTheme.farben.text
-    val rand = if (umriss) FoodyTheme.farben.nebentext else tinte
-    val flaeche = if (umriss) Color.Transparent else tinte
-    Box(
-        modifier.heightIn(min = 48.dp)
-            .alpha(if (aktiv) 1f else 0.38f)
-            .border(1.dp, rand)
-            .background(flaeche)
-            .clickable(enabled = aktiv, role = Role.Button, onClick = onKlick)
-            .then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text, style = Grauen.titel(17f, 0.06f), color = if (!umriss) Grauen.papierHell else grauenHell(), textAlign = TextAlign.Center)
-    }
-}
-
 /**
- * Kleiner Knopf in Schreibmaschine („+ notieren“, „Gegessen?“). Inszeniert ohne Kasten: ein führendes „+“ wird zur
- * Feder, darunter ein Schwung in Glut; sonst mit dünnem Rahmen in der Textfarbe.
+ * Kleiner Knopf in Schreibmaschine („+ notieren“, „Gegessen?“) ohne Kasten: ein führendes „+“ wird zur Feder, darunter
+ * ein Schwung in Glut.
  */
 @Composable
 fun GrauenNotizknopf(text: String, onKlick: () -> Unit, modifier: Modifier = Modifier, beschreibung: String? = null) {
     val f = FoodyTheme.farben
-    if (FoodyTheme.stil.inszeniert) {
-        val feder = text.startsWith("+")
-        val wort = if (feder) text.removePrefix("+").trim() else text
-        val glut = FoodyTheme.stil.zier
-        Row(
-            modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).clickable(role = Role.Button, onClick = onKlick)
-                .then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier)
-                .padding(horizontal = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (feder) GrauenSymbol(GrauenZeichen.FEDER, glut, groesse = 18.dp)
-            Text(
-                wort,
-                Modifier.drawBehind { schwung(glut.copy(alpha = 0.6f)) }.padding(bottom = 6.dp),
-                style = Grauen.maschine(13f), color = f.text,
-            )
-        }
-        return
-    }
-    Box(
-        modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onKlick)
+    val feder = text.startsWith("+")
+    val wort = if (feder) text.removePrefix("+").trim() else text
+    val glut = FoodyTheme.stil.zier
+    Row(
+        modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).clickable(role = Role.Button, onClick = onKlick)
             .then(if (beschreibung != null) Modifier.semantics { contentDescription = beschreibung } else Modifier)
-            .padding(vertical = 4.dp),
-        contentAlignment = Alignment.Center,
+            .padding(horizontal = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.heightIn(min = 40.dp).border(1.dp, f.text).padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
-            Text(text, style = Grauen.maschine(13f), color = f.text)
-        }
+        if (feder) GrauenSymbol(GrauenZeichen.FEDER, glut, groesse = 18.dp)
+        Text(
+            wort,
+            Modifier.drawBehind { schwung(glut.copy(alpha = 0.6f)) }.padding(bottom = 6.dp),
+            style = Grauen.maschine(13f), color = f.text,
+        )
     }
 }
 

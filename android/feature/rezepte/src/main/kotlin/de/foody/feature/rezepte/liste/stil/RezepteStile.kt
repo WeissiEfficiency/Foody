@@ -103,7 +103,7 @@ internal fun RezepteStil(
         EndlosListe(stil, z, aendern, zuruecksetzen, onNeu, 2, Arrangement.spacedBy(14.dp)) { paar, i, m -> AnimeReihe(paar, i, onOeffnen, m) }
         return
     }
-    if (stil == FoodyStil.GRAUEN && FoodyTheme.stil.inszeniert) {
+    if (stil == FoodyStil.GRAUEN) {
         // Auf dem Handy kommt der Band aus dem Regal und schlägt sich auf; neben dem Detail (Tablet) öffnet er sofort
         val u = rememberRegalUebergang()
         var wurzel by remember { mutableStateOf(Offset.Zero) }
@@ -155,7 +155,6 @@ internal fun RezepteStil(
                 when (stil) {
                     FoodyStil.EDO -> EdoFaecher(aufSeite, r.id, waehlen)
                     FoodyStil.BAYRISCH -> BayrischHerzen(aufSeite, r.id, waehlen)
-                    FoodyStil.GRAUEN -> GrauenRegal(aufSeite, r.id, waehlen)
                     else -> KreuzerKarte(aufSeite, r.id, waehlen)
                 }
             }
@@ -169,7 +168,6 @@ internal fun RezepteStil(
                 when (stil) {
                     FoodyStil.EDO -> EdoBlatt(r, onOeffnen)
                     FoodyStil.BAYRISCH -> BayrischKarte(r, onOeffnen)
-                    FoodyStil.GRAUEN -> GrauenSeite(r, onOeffnen)
                     else -> KreuzerDaten(r, onOeffnen)
                 }
             }

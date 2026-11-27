@@ -125,9 +125,9 @@ class KochenStileTest {
         // Bayrisch Ruhig wie im Entwurf T-Kochen: „Weiter“ und „Fertig“ statt „Weida“ und „Feddig!“
         assertEquals("Weiter", kochArt(FoodyStil.BAYRISCH, inszeniert = false).weiter)
         assertEquals("Fertig", kochArt(FoodyStil.BAYRISCH, inszeniert = false).fertig)
-        // Grauen Ruhig wie im Entwurf U-Kochen: „Fertig“ statt „Vollenden“, arabische Ziffern statt römischer
-        assertEquals("Fertig", kochArt(FoodyStil.GRAUEN, inszeniert = false).fertig)
-        assertEquals("3.", kochArt(FoodyStil.GRAUEN, inszeniert = false).nummer(3, 5))
+        // Grauen hat zwei inszenierte Gesichter (ADR 0022): kein schlichter Kochmodus mehr
+        assertEquals("Vollenden", kochArt(FoodyStil.GRAUEN, inszeniert = false).fertig)
+        assertEquals("III", kochArt(FoodyStil.GRAUEN, inszeniert = false).nummer(3, 5))
         assertEquals("03", kochArt(FoodyStil.KREUZER, inszeniert = false).nummer(3, 5))
         assertEquals("SCHRITT 2 / 5", kochArt(FoodyStil.KREUZER, inszeniert = false).ueberSchritt(2, 5))
         assertEquals("REISTOPF · 2 PORTIONEN", kochArt(FoodyStil.KREUZER, inszeniert = false).kopf("Reistopf", 2))

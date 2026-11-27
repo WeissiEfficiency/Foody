@@ -234,8 +234,16 @@ wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für 
     `zeilenImStil()` die Zeilen der Stile R bis V. Texte nur in Immersiv über `stilText(standard, sage, anime, edo,
     bayrisch, grauen, kreuzer)` (`StilTexte`); TalkBack bekommt die normalen Begriffe. Gemeinsame Bausteine:
     `StilBausteine` (`StilAktion`, `stilTitel`), `StilFelder` (`StilFeld`, `StilAbschnitt`, `StilKarte`) und je Stil
-    `stil/<stil>/…Bausteine.kt` (Seitenkopf, Knöpfe, Zeichnungen). Grauen Immersiv zeigt Rezept und Kochmodus als
-    Buch: `GrauenSeite` (dunkles Blatt mit Bundschatten, Seitenkanten, Kapitel oben, römische Seitenzahl unten) im
+    `stil/<stil>/…Bausteine.kt` (Seitenkopf, Knöpfe, Zeichnungen). Das Kosmische Grauen hat statt Immersiv und Ruhig
+    zwei inszenierte Gesichter (ADR 0022): `inszeniertFuer` ist für Grauen in beiden Varianten `true`, Ruhig zeigt
+    „Ominös“ (grüne Nacht, Glut), Immersiv das „Necronomicon“ (`StilWerte.grauenBuch`): Pergament
+    (`Hintergrundmuster.PERGAMENT`, `grauen_pergament.webp` aus `werkzeuge/pergament_erzeugen.py`), Tinte, Zier in
+    Blut, Leiste in Leder mit Messing, Seitentitel in Fraktur (`stilTitel`, `grauenFrakturTitel`), Auge und Monde als
+    Federzeichnung (`augeFeder`, `mondFeder`), helles Regalbrett (`brettMalen`). Eine Akzentwahl gibt es beim Grauen
+    nicht. Knöpfe ohne Kasten in beiden Gesichtern: `GrauenKnopf` (Zeichen aus `GrauenZeichen`, Siegel, Schwung),
+    `GrauenWahlwort` statt Chips, Trenner mit Auge und Wasserzeichen (`GrauenSchmuck`). Grauen zeigt Rezept und
+    Kochmodus als Buch: `GrauenSeite` (Blatt mit Bundschatten, Seitenkanten, Kapitel oben, römische Seitenzahl unten; im
+    Necronomicon hell mit Randnotiz in Blut) im
     `HorizontalPager`, `Modifier.umblaettern` kippt das gehende Blatt um den Bund statt es gleiten zu lassen; die Reiter
     oben folgen der Seite (`grauenBuchBlaettern`). Auch das Logbuch blättert so: `LogbuchBlaetter` legt jeden Tag
     auf ein Blatt (Seite = Tage seit 2000, Seitenzahl = Tag im Jahr), Wischen meldet den neuen Tag, Pfeile und
@@ -307,7 +315,8 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   bleibt in den Farben des Hintergrundbilds. Die Farben der Stile kommen aus den Entwürfen im Designsystem
   (`stilGrundlage`, über `Entwuerfe` in `WidgetFarben`); Schrift und Nebentext werden gegen die Fläche des Widgets auf
   4,5:1 angeglichen (`lesbarAuf`, geprüft in `WidgetStilTest`). Nur Werte, die es allein auf Widgets gibt (Anime-Gelb,
-  Ringspuren, der Grauen-Zettel), stehen in `app/`. Ein Wechsel des Stils zeichnet alle Widgets neu (`alleAktualisieren`).
+  Ringspuren, der Grauen-Zettel), stehen in `app/`. Im Necronomicon liegt `grauen_pergament` als Bild auf der Fläche
+  (`Flaeche.bild`; die Farbe bleibt die Prüffläche für den Kontrast), Schrift in Tinte, Akzent in Blut (`Entwuerfe.buch`). Ein Wechsel des Stils zeichnet alle Widgets neu (`alleAktualisieren`).
   Jede Aktualisierung geht über `frischZeigen`: Die Ansicht steckt in der Hülle `widget_huelle` und wird jedes Mal
   entfernt und neu eingesetzt. Bei gleichem Layout wendet der Launcher sonst nur die neuen Aufrufe auf die alten Views an,
   und Stempel, Band, Knöpfe oder abgehakte Zeilen blieben aus dem vorigen Stil oder den vorigen Daten stehen. Enge

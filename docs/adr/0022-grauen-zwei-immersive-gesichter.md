@@ -25,3 +25,6 @@ verlieren. Eine schlichte Variante braucht er beim Grauen nicht.
 - Das bisherige „Grauen Ruhig“ (Pergament, schlicht) fällt weg, samt Bildern und Tests.
 - Neue Bilder und Kontrasttests für das Necronomicon.
 - Andere Stile, Daten und Server sind nicht betroffen.
+
+**Umsetzung:** 2026-11-27 abgeschlossen (Plan Schritte 1–7, PRs #334–#344). Die Pfade des schlichten Grauen-Ruhig
+(Pergament mit Kästen, Tageschips, schlichter Ring, Zeilenliste statt Regal) sind entfernt.
