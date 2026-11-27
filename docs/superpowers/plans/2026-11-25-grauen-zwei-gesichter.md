@@ -154,3 +154,11 @@ Vorschauen nach `res/drawable-nodpi/widget_vorschau_*`.
   Kapitälchen. Damit tragen Planen, Einkauf, Einstellungen, Zutaten und der Editor Fraktur-Titel.
 - Tests: `MondFederTest.neumondIstImBuchKeineSchwarzeScheibe` und `GrauenSchmuckTest.seitentitelImBuchInFraktur`
   schlugen vorher fehl; Grauen-Bilder aller Bereiche neu.
+
+### Schritt 5c · Necronomicon: Rezepte und Kochen
+- Bibliothek: „Die Bibliothek“ in Fraktur; das Regalbrett ist im Buch hell mit Kanten, Maserung und schraffiertem
+  Schatten in Tinte (`brettMalen`), die Bände bleiben farbige Ledereinbände.
+- Rezept: Fraktur-Initiale und helle Blätter waren schon da (Schritte 3, 4).
+- Kochen: Die Zeitkarte hat im Buch keinen Kasten mehr, sondern einen doppelten Randstrich in Blut.
+- Tests: `BrettFederTest` (Brett im Buch kein schwarzer Balken, in Ominös dunkles Holz); Bilder der Bibliothek und
+  des Kochschritts neu.

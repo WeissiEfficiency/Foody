@@ -282,9 +282,18 @@ private fun Zeitkarte(art: KochArt, t: StepTimer, onStart: () -> Unit) {
     val f = FoodyTheme.farben
     val akzent = FoodyTheme.stil.zier
     val dauer = restzeit(t.duration.toMillis())
+    // Im Necronomicon kein Kasten: ein doppelter Randstrich in Blut wie eine Anmerkung im Buch
+    val rahmen = if (FoodyTheme.stil.grauenBuch) {
+        Modifier.drawBehind {
+            val strich = 1.dp.toPx()
+            drawLine(akzent, Offset(strich, 0f), Offset(strich, size.height), 1.5f * strich)
+            drawLine(akzent, Offset(4f * strich, 0f), Offset(4f * strich, size.height), 0.8f * strich)
+        }
+    } else {
+        Modifier.border(1.5.dp, akzent, FoodyTheme.formen.klein).background(akzent.copy(alpha = 0.1f), FoodyTheme.formen.klein)
+    }
     Row(
-        Modifier.padding(top = 8.dp).fillMaxWidth().border(1.5.dp, akzent, FoodyTheme.formen.klein)
-            .background(akzent.copy(alpha = 0.1f), FoodyTheme.formen.klein).padding(horizontal = 14.dp, vertical = 10.dp),
+        Modifier.padding(top = 8.dp).fillMaxWidth().then(rahmen).padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
