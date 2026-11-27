@@ -182,10 +182,6 @@ internal fun tagebuchArt(stil: FoodyStil, inszeniert: Boolean = true): TagebuchA
         "Tagebiachl", null, ::mahlzeitBayrisch, "no nix", "Löschen", ::bayrischZusatz,
         { Bayrisch.titel(it) }, { Bayrisch.text(it) }, { Bayrisch.text(it, FontWeight.Bold) },
     )
-    FoodyStil.GRAUEN if !inszeniert -> TagebuchArt(
-        "Tagebuch", "Was du gegessen hast", Mahlzeit::kurzname, "—", "Löschen", ::tagZusatzKurz,
-        { Grauen.titel(it) }, { Grauen.text(it) }, { Grauen.titel(it, 0.1f) },
-    )
     FoodyStil.GRAUEN -> TagebuchArt(
         "Logbuch", "Aufzeichnungen eines Hungrigen", ::mahlzeitGrauen, "nichts verzeichnet", "Tilgen", ::tagZusatzKurz,
         { Grauen.titel(it) }, { Grauen.text(it) }, { Grauen.titel(it, 0.1f) },
@@ -262,10 +258,8 @@ internal fun TagebuchStil(
                         FoodyStil.BAYRISCH -> bayrischSpruch(z, FoodyTheme.stil.inszeniert)?.let {
                             Text(it, style = art.klein(15f), color = FoodyTheme.farben.primaer)
                         }
-                        // Die Notiz zum Tag nur in Immersiv, wie im Entwurf
-                        FoodyStil.GRAUEN -> if (FoodyTheme.stil.inszeniert) {
-                            Text(grauenNotiz(z, heute), style = Grauen.text(16f, kursiv = true), color = FoodyTheme.farben.nebentext)
-                        }
+                        // Die Notiz zum Tag wie im Entwurf
+                        FoodyStil.GRAUEN -> Text(grauenNotiz(z, heute), style = Grauen.text(16f, kursiv = true), color = FoodyTheme.farben.nebentext)
                         else -> Unit
                     }
                     gruppenFolge(stil, z.abschnitte).forEach { a ->
@@ -278,8 +272,8 @@ internal fun TagebuchStil(
                         )
                     }
                 }
-                if (stil == FoodyStil.GRAUEN && FoodyTheme.stil.inszeniert) {
-                    // Grauen in Immersiv: jeder Tag ein Blatt im Logbuch
+                if (stil == FoodyStil.GRAUEN) {
+                    // Grauen: jeder Tag ein Blatt im Logbuch
                     LogbuchBlaetter(datum, onDatum) { seite -> zustand?.takeIf { it.datum == seite && seite == datum }?.let { tag(it) } }
                 } else {
                     zustand?.takeIf { it.datum == datum }?.let { tag(it) }

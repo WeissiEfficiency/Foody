@@ -212,8 +212,9 @@ class TagebuchStileTest {
         assertEquals("ORBIT 1", tagebuchArt(FoodyStil.KREUZER).mahlzeit(Mahlzeit.FRUEHSTUECK))
         assertEquals("ORBIT 4", tagebuchArt(FoodyStil.KREUZER).mahlzeit(Mahlzeit.SNACK))
         assertEquals("Tagebuch", tagebuchArt(FoodyStil.BAYRISCH, inszeniert = false).titel)
-        assertEquals("Tagebuch", tagebuchArt(FoodyStil.GRAUEN, inszeniert = false).titel)
-        assertEquals("Frühstück", tagebuchArt(FoodyStil.GRAUEN, inszeniert = false).mahlzeit(Mahlzeit.FRUEHSTUECK))
+        // Grauen hat zwei inszenierte Gesichter (ADR 0022): auch ohne Inszenierung bleiben die Wörter des Logbuchs
+        assertEquals("Logbuch", tagebuchArt(FoodyStil.GRAUEN, inszeniert = false).titel)
+        assertEquals("Bei Tagesanbruch", tagebuchArt(FoodyStil.GRAUEN, inszeniert = false).mahlzeit(Mahlzeit.FRUEHSTUECK))
         assertEquals("Tagebuch", tagebuchArt(FoodyStil.KREUZER, inszeniert = false).titel)
         assertEquals("FRÜHSTÜCK", tagebuchArt(FoodyStil.KREUZER, inszeniert = false).mahlzeit(Mahlzeit.FRUEHSTUECK))
         val folge = listOf(Mahlzeit.FRUEHSTUECK, Mahlzeit.MITTAGESSEN, Mahlzeit.SNACK, Mahlzeit.ABENDESSEN).map { TagAbschnitt(it, emptyList()) }

@@ -178,3 +178,11 @@ Vorschauen nach `res/drawable-nodpi/widget_vorschau_*`.
 - Ominös bleibt die grüne Tafel mit Glut und dem vergilbten Einkaufszettel.
 - Tests: `NecronomiconWidgetTest` (Pergament, Blut, Kontrast; Ominös dunkel); neue Bilder `widget_grauen_buch_*` und
   `widget_grauen_ominoes_*`. Die Vorschaubilder in der Widget-Auswahl sind Milchglas und bleiben.
+
+### Schritt 7 · Aufräumen und Doku
+- Entfernt, weil Grauen in beiden Gesichtern inszeniert ist (`inszeniertFuer`): `GrauenKnopfRuhig`, der gerahmte
+  `GrauenNotizknopf`, in Heute `SchlichterRing` und `mahlzeitKopf`, die schlichte Tafel; in der Woche Kopf, Tageschips,
+  Tafel und „Leere Tage vorschlagen lassen“; im Einkauf Kästchen und gerades Blatt; in Rezepte `GrauenRegal`/
+  `GrauenListe`/`GrauenSeite`; die Ruhig-Zweige von `tagebuchArt`, `kochArt`, `rezeptArt` und `editorArt`;
+  `szenenWort` in den Grauen-Dateien. Tests prüfen jetzt, dass Grauen auch ohne Inszenierung die Wörter der Szene behält.
+- Doku: `docs/architecture.md` (Stile, Widgets), ADR 0022 „Umsetzung“; ADR 0020 verwies schon auf 0022.

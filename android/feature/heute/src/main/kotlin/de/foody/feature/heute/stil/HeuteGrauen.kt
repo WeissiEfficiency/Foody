@@ -121,7 +121,7 @@ import java.time.format.TextStyle as Wochentagform
  * Iris füllt sich mit den kcal gegen das Ziel, darunter ein Satz dazu. Dann das Ritual (die nächste Mahlzeit) und
  * das Protokoll „Was bisher dargebracht wurde“ mit den Einträgen je Mahlzeit. Zustand und Aktionen wie in der
  * normalen Ansicht; Schweben und Blinzeln ruhen, wenn Animationen aus sind. TalkBack hört die normalen Begriffe.
- * In Ruhig wie im Entwurf auf Pergament: „Heute“, statt des Auges ein schlichter Ring, keine Fangarme, normale Wörter.
+ * So in beiden Gesichtern (ADR 0022); das Necronomicon zeichnet das Auge mit der Feder und hat keine Fangarme.
  */
 @Composable
 internal fun HeuteGrauen(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifier: Modifier = Modifier) {
@@ -130,28 +130,24 @@ internal fun HeuteGrauen(zustand: HeuteZustand?, aktionen: HeuteAktionen, modifi
     val wurzel = remember { mutableStateOf(Offset.Zero) }
     Box(modifier.fillMaxSize().onGloballyPositioned { wurzel.value = it.positionInRoot() }) {
         // Die Fangarme aus der Tiefe nur in Ominös; das Necronomicon hat seine Ranke im Wasserzeichen
-        if (FoodyTheme.stil.inszeniert && !FoodyTheme.stil.grauenBuch) Tiefe(Modifier.matchParentSize())
+        if (!FoodyTheme.stil.grauenBuch) Tiefe(Modifier.matchParentSize())
         HeuteRahmen(innen = PaddingValues(start = 22.dp, end = 10.dp, top = 14.dp)) { rahmen ->
             Column(rahmen, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Kopf(zustand, aktionen.onEinstellungen)
                 if (zustand == null) return@Column
                 Column(Modifier.padding(end = 12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     if (zustand.datenbankLeer) DatenbankLeerHinweis(aktionen.onEinstellungen)
-                    if (FoodyTheme.stil.inszeniert) {
-                        DasAuge(zustand.tagebuch, uebergang, { uebergang.oeffnen(aktionen.onAlleEintraege) }, aktionen.onEinstellungen)
-                    } else {
-                        SchlichterRing(zustand.tagebuch)
-                    }
+                    DasAuge(zustand.tagebuch, uebergang, { uebergang.oeffnen(aktionen.onAlleEintraege) }, aktionen.onEinstellungen)
                     Ritual(zustand, aktionen)
                     Protokoll(zustand.tagebuch, aktionen)
                     zustand.einkauf?.let { e ->
-                        val text = szenenWort("Expeditionsliste", "Einkauf") + " · ${e.anzahl} offen ›"
+                        val text = "Expeditionsliste" + " · ${e.anzahl} offen ›"
                         Verweis(text, "Einkauf, ${e.anzahl} offen") { aktionen.onEinkauf(e.listeId) }
                     }
                 }
             }
         }
-        if (FoodyTheme.stil.inszeniert && zustand != null) {
+        if (zustand != null) {
             val t = zustand.tagebuch
             AugenBlickEbene(
                 uebergang, zielAnteil(t.summe.kcal, t.ziel?.takeIf { it > 0 }), FoodyTheme.stil.zier, { wurzel.value }, Modifier.matchParentSize(),
@@ -173,7 +169,7 @@ private fun Kopf(zustand: HeuteZustand?, onEinstellungen: () -> Unit) {
             // Titel und Datum in einer Zeile wie im Entwurf; bei großer Schrift rückt das Datum unter den Titel
             FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
-                    if (buch) "Heute" else szenenWort("Das Auge", "Heute"),
+                    if (buch) "Heute" else "Das Auge",
                     Modifier.align(Alignment.CenterVertically).semantics {
                         heading()
                         contentDescription = "Heute"
@@ -264,54 +260,6 @@ private fun DasAuge(t: TagebuchHeute, uebergang: AugenUebergang, onTagebuch: () 
     if (ziel == null) Verweis("Tagesziel festlegen ›", "Tagesziel festlegen", onKlick = onZiel)
 }
 
-/** Ruhig wie im Entwurf: statt des Auges ein Ring mit der Summe, daneben das Ziel und die Nährwerte mit Punkten. */
-@Composable
-private fun SchlichterRing(t: TagebuchHeute) {
-    val f = FoodyTheme.farben
-    val akzent = f.primaer
-    val s = t.summe
-    val ziel = t.ziel?.takeIf { it > 0 }
-    val anteil = zielAnteil(s.kcal, ziel)
-    val vorlesen = kcalStand(s.kcal, ziel, s.vollstaendig) +
-        (if (ziel != null && s.kcal > ziel) ", über Ziel" else "") +
-        ": " + makroSatz(s.eiweiss, s.kohlenhydrate, s.fett)
-    Row(
-        Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = vorlesen }
-            .drawBehind {
-                drawLine(f.text, Offset.Zero, Offset(size.width, 0f), 1.dp.toPx())
-                drawLine(f.text, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx())
-            }
-            .padding(vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(Modifier.size(96.dp), contentAlignment = Alignment.Center) {
-            Canvas(Modifier.matchParentSize()) {
-                val dicke = 9.dp.toPx()
-                val ecke = Offset(dicke / 2f, dicke / 2f)
-                val mass = Size(size.width - dicke, size.height - dicke)
-                drawArc(f.text.copy(alpha = 0.15f), 0f, 360f, false, ecke, mass, style = Stroke(dicke))
-                if (anteil != null && anteil > 0f) drawArc(akzent, -90f, 360f * anteil, false, ecke, mass, style = Stroke(dicke))
-            }
-            Text(kcalZahl(s.kcal, s.vollstaendig), style = Grauen.name(22f), color = f.text)
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(if (ziel != null) "von ${ganzzahlDeutsch(ziel)} kcal" else "kcal", style = Grauen.text(16f), color = f.text)
-            Makro("Eiweiß", s.eiweiss, f.makro.eiweiss)
-            Makro("KH", s.kohlenhydrate, f.makro.kohlenhydrate)
-            Makro("Fett", s.fett, f.makro.fett)
-        }
-    }
-}
-
-@Composable
-private fun Makro(name: String, gramm: Int, farbe: Color) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(10.dp).background(farbe, CircleShape))
-        Text("$name $gramm g", style = Grauen.maschine(13.5f), color = FoodyTheme.farben.text)
-    }
-}
-
 /**
  * Das Auge als Zeichnung im Maß des Entwurfs (300 × 170): Schein, Lid mit Adern, Iris, Ring mit dem Anteil in der
  * Glut, Pupille als Schlitz, Glanzpunkt. Es schwebt langsam und blinzelt selten.
@@ -399,37 +347,30 @@ internal fun ritualName(slot: String, morgen: Boolean): String {
     return if (morgen) "$name · morgen" else name
 }
 
-/** Ruhig: die Mahlzeit beim Namen („Abendessen“), „· morgen“ wie in Immersiv. */
-internal fun mahlzeitKopf(slot: String, morgen: Boolean): String {
-    val name = Mahlzeit.ausText(slot)?.anzeigename() ?: slot
-    return if (morgen) "$name · morgen" else name
-}
-
 /** Die nächste geplante Mahlzeit als Tafel mit doppeltem Rahmen; ohne Plan die Eingebung des Tages. */
 @Composable
 private fun Ritual(zustand: HeuteZustand, aktionen: HeuteAktionen) {
     val n = zustand.naechste
     val r = zustand.inspiration
-    val inszeniert = FoodyTheme.stil.inszeniert
     when {
         n != null -> {
             val m = n.mahlzeit
             Tafel(
-                ueber = if (inszeniert) ritualName(m.slot, n.morgen) else mahlzeitKopf(m.slot, n.morgen),
+                ueber = ritualName(m.slot, n.morgen),
                 titel = m.titel,
                 zeile = meta(m.portionen, m.kcalJePortion, m.zeitMinuten),
                 onTitel = { aktionen.onRezept(m.rezeptId) },
-                knopf = szenenWort("Das Ritual beginnen", "Kochen"),
+                knopf = "Das Ritual beginnen",
                 knopfBeschreibung = "Kochen",
                 onKnopf = { aktionen.onKochen(m.rezeptId, m.portionen) },
             )
         }
         r != null -> Tafel(
-            ueber = szenenWort("Eine Eingebung", "Vorschlag"),
+            ueber = "Eine Eingebung",
             titel = r.titel,
             zeile = meta(null, r.kcalJePortion, r.zeitMinuten),
             onTitel = { aktionen.onRezept(r.id) },
-            knopf = szenenWort("Das Buch aufschlagen", "Rezept ansehen"),
+            knopf = "Das Buch aufschlagen",
             knopfBeschreibung = "Rezept ansehen",
             onKnopf = { aktionen.onRezept(r.id) },
         )
@@ -439,35 +380,21 @@ private fun Ritual(zustand: HeuteZustand, aktionen: HeuteAktionen) {
 @Composable
 private fun Tafel(ueber: String, titel: String, zeile: String, onTitel: () -> Unit, knopf: String, knopfBeschreibung: String, onKnopf: () -> Unit) {
     val f = FoodyTheme.farben
-    // Auf dem Pergament (Ruhig) ist die Glut zu hell für Schrift; dort die lesbare Primärfarbe
-    val glut = if (FoodyTheme.stil.inszeniert) FoodyTheme.stil.zier else f.primaer
-    // Inszeniert ohne Kasten: oben und unten ein Trenner mit Auge (Plan „Zwei Gesichter“, Schritt 3)
-    val inszeniert = FoodyTheme.stil.inszeniert
-    val rahmen = if (inszeniert) {
-        val linie = glut.copy(alpha = 0.55f)
-        Modifier.drawBehind {
-            trennerMitAuge(linie, TRENNER_HOEHE.toPx() / 2f)
-            trennerMitAuge(linie, size.height - TRENNER_HOEHE.toPx() / 2f)
-        }.padding(vertical = TRENNER_HOEHE)
-    } else {
-        Modifier.border(1.dp, f.lichtkante).padding(4.dp)
-    }
+    val glut = FoodyTheme.stil.zier
+    // Ohne Kasten: oben und unten ein Trenner mit Auge (Plan „Zwei Gesichter“, Schritt 3)
+    val linie = glut.copy(alpha = 0.55f)
+    val rahmen = Modifier.drawBehind {
+        trennerMitAuge(linie, TRENNER_HOEHE.toPx() / 2f)
+        trennerMitAuge(linie, size.height - TRENNER_HOEHE.toPx() / 2f)
+    }.padding(vertical = TRENNER_HOEHE)
     Box(Modifier.fillMaxWidth().then(rahmen)) {
         Column(
-            Modifier.fillMaxWidth()
-                .then(
-                    if (inszeniert) {
-                        Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
-                    } else {
-                        Modifier.background(SolidColor(Color.White.copy(alpha = 0.35f))).border(1.dp, f.lichtkante)
-                            .padding(horizontal = 16.dp, vertical = 14.dp)
-                    },
-                ),
+            Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(ueber, style = Grauen.titel(15f, 0.06f), color = glut)
             Text(
-                if (inszeniert) grauenFraktur("$titel ›", glut, 25f) else AnnotatedString("$titel ›"),
+                grauenFraktur("$titel ›", glut, 25f),
                 Modifier.rezeptLink(titel, onTitel).padding(vertical = 4.dp),
                 style = Grauen.name(25f), color = f.text,
             )
@@ -499,7 +426,7 @@ private fun Protokoll(t: TagebuchHeute, aktionen: HeuteAktionen) {
     // Geplante Mahlzeit, zu der gerade „Gegessen?“ gefragt wird; übersteht Drehen
     var frage by rememberSaveable { mutableStateOf<String?>(null) }
     Column {
-        Verweis(szenenWort("Was bisher dargebracht wurde", "Tagebuch") + " ›", "Tagebuch, alle Einträge", groesse = 19f, onKlick = aktionen.onAlleEintraege)
+        Verweis("Was bisher dargebracht wurde" + " ›", "Tagebuch, alle Einträge", groesse = 19f, onKlick = aktionen.onAlleEintraege)
         t.mahlzeiten.forEach { a -> Abschnitt(a, aktionen) { frage = it } }
     }
     val offen = t.mahlzeiten.flatMap { a -> a.vorschlaege.map { a.mahlzeit to it } }.firstOrNull { it.second.planEintragId == frage }
@@ -518,8 +445,7 @@ private fun Abschnitt(a: MahlzeitAbschnitt, aktionen: HeuteAktionen, onFrage: (S
     a.vorschlaege.forEach { v -> Vorgesehen(a.mahlzeit, v, onFrage) }
     if (a.eintraege.isEmpty() && a.vorschlaege.isEmpty()) {
         Zeile(a.mahlzeit.protokollKurz(), beschreibung = null, linie = false) {
-            val leer = if (FoodyTheme.stil.inszeniert) a.mahlzeit.fehltNoch() else "$name, noch leer"
-            Text(leer, Modifier.weight(1f), style = Grauen.text(16f, kursiv = true), color = FoodyTheme.farben.nebentext)
+            Text(a.mahlzeit.fehltNoch(), Modifier.weight(1f), style = Grauen.text(16f, kursiv = true), color = FoodyTheme.farben.nebentext)
             GrauenNotizknopf("+ notieren", { aktionen.onEintragen(a.mahlzeit) }, beschreibung = "$name eintragen")
         }
     }
@@ -528,7 +454,7 @@ private fun Abschnitt(a: MahlzeitAbschnitt, aktionen: HeuteAktionen, onFrage: (S
 @Composable
 private fun Vorgesehen(mahlzeit: Mahlzeit, v: GeplanteMahlzeit, onFrage: (String) -> Unit) {
     Zeile(mahlzeit.protokollKurz(), beschreibung = null, linie = false) {
-        val satz = szenenWort("„${v.titel}“ ist vorgesehen …", "${v.titel}, geplant")
+        val satz = "„${v.titel}“ ist vorgesehen …"
         Text(satz, Modifier.weight(1f), style = Grauen.text(16f, kursiv = true), color = FoodyTheme.farben.nebentext)
         GrauenNotizknopf("Gegessen?", { onFrage(v.planEintragId) }, beschreibung = "${mahlzeit.anzeigename()} ${v.titel}: gegessen?")
     }

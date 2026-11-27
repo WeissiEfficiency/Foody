@@ -59,16 +59,14 @@ import de.foody.core.designsystem.stil.titelGroesse
 /*
  * „Rezepte“ im Kosmischen Grauen (U) in Immersiv: „Die Bibliothek – Ein Regal, das niemand aufgestellt hat“, alle
  * Treffer als Bände auf Brettern zu je vier, endlos nach unten; der Titel steht längs auf dem Rücken, Antippen schlägt
- * den Band auf (Wunsch 2026-11-24 statt Seiten mit Pergamentkarte). In Ruhig wie im Entwurf: „Rezepte“, die Treffer als Zeilen mit Name und kcal, eine helle Seite ohne
- * Schein, „Öffnen“.
+ * den Band auf (Wunsch 2026-11-24 statt Seiten mit Pergamentkarte). So in beiden Gesichtern (ADR 0022); im
+ * Necronomicon mit Fraktur-Titel und hellem Brett in Tinte.
  */
 
 /** Einbände und Höhen der Bände. */
 private val EINBAND = listOf(Color(0xFF2E3B2C), Color(0xFF4A2228), Color(0xFF24324A), Color(0xFF5A3A1C), Color(0xFF3A2A48), Color(0xFF1E3A36))
 private val HOEHE = listOf(176, 162, 184, 168, 158, 180)
-private val PERGAMENT = Grauen.pergament
 private val TINTE = Grauen.tinte
-private val TINTE_NEBEN = Grauen.tinteNeben
 private val BRETT = Color(0xFF2B2117)
 private val BRETT_KANTE = Color(0xFF4A3826)
 private val GOLD = Color(0xFFB59A5A)
@@ -83,15 +81,15 @@ internal fun GrauenKopf(n: Int, neu: @Composable () -> Unit) {
     val f = FoodyTheme.farben
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Column(Modifier.align(Alignment.Bottom).padding(end = 8.dp)) {
-            if (FoodyTheme.stil.inszeniert) Text("Ein Regal, das niemand aufgestellt hat", style = Grauen.text(14f, kursiv = true), color = f.nebentext)
+            Text("Ein Regal, das niemand aufgestellt hat", style = Grauen.text(14f, kursiv = true), color = f.nebentext)
             // Der Titel wächst mit der Systemschrift nur bis 130 %
             Text(
-                szenenWort("Die Bibliothek", "Rezepte"), Modifier.semantics { heading() },
+                "Die Bibliothek", Modifier.semantics { heading() },
                 // Im Necronomicon in Fraktur wie die übrigen Seitentitel
                 style = if (FoodyTheme.stil.grauenBuch) grauenFrakturTitel(titelGroesse(34f)) else Grauen.titel(titelGroesse(30f)),
                 color = grauenHell(),
             )
-            if (n > 0) Text(szenenWort("$n Bände", "$n Rezepte"), style = Grauen.text(14f), color = f.nebentext)
+            if (n > 0) Text("$n Bände", style = Grauen.text(14f), color = f.nebentext)
         }
         Box(Modifier.align(Alignment.Bottom)) { neu() }
     }
@@ -180,64 +178,6 @@ private fun Modifier.laengs(): Modifier = layout { messbar, c ->
     val p = messbar.measure(Constraints(maxWidth = c.maxHeight, maxHeight = c.maxWidth))
     layout(p.height, p.width) { p.place((p.height - p.width) / 2, (p.width - p.height) / 2) }
 }.rotate(90f)
-
-/** Ruhig: die Treffer als Zeilen (die Bibliothek mit Brettern gibt es nur in Immersiv). */
-@Composable
-internal fun GrauenRegal(liste: List<RezeptKarte>, gewaehlt: String, onWahl: (String) -> Unit) = GrauenListe(liste, gewaehlt, onWahl)
-
-/** Ruhig wie im Entwurf: die Treffer als Zeilen mit Name und kcal, die gewählte mit einem Hauch Akzent. */
-@Composable
-private fun GrauenListe(liste: List<RezeptKarte>, gewaehlt: String, onWahl: (String) -> Unit) {
-    val f = FoodyTheme.farben
-    val akzent = FoodyTheme.stil.zier
-    Column(Modifier.fillMaxWidth().drawBehind { drawLine(f.lichtkante, Offset.Zero, Offset(size.width, 0f), 1.dp.toPx()) }) {
-        liste.forEach { r ->
-            val an = r.id == gewaehlt
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 48.dp).background(if (an) akzent.copy(alpha = 0.12f) else Color.Transparent)
-                    .drawBehind { drawLine(f.lichtkante, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx()) }
-                    .rezeptWahl(r, an) { onWahl(r.id) }
-                    .padding(horizontal = 6.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(r.name, Modifier.weight(1f), style = Grauen.name(17f), color = f.text)
-                r.kcalJePortion?.let { Text("$it kcal", style = Grauen.maschine(13f), color = f.nebentext) }
-            }
-        }
-    }
-}
-
-/** Die aufgeschlagene Seite des gewählten Bandes; „Aufschlagen“ darunter im Dunkel. */
-@Composable
-internal fun GrauenSeite(r: RezeptKarte, onOeffnen: (String) -> Unit) {
-    val glut = FoodyTheme.stil.zier
-    val inszeniert = FoodyTheme.stil.inszeniert
-    val form = RoundedCornerShape(2.dp)
-    val blatt = if (inszeniert) {
-        Modifier.shadow(18.dp, form, ambientColor = glut, spotColor = glut).background(PERGAMENT, form)
-    } else {
-        Modifier.background(Color.White.copy(alpha = 0.4f), form).border(1.dp, FoodyTheme.farben.lichtkante, form)
-    }
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Column(
-            Modifier.fillMaxWidth().then(blatt)
-                .padding(horizontal = 18.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            val band = if (inszeniert) grauenBand(r) else r.tags.firstOrNull()?.uppercase(java.util.Locale.GERMAN)
-            band?.let { Text(it, style = Grauen.titel(12f, 0.14f), color = TINTE_NEBEN) }
-            Text(r.name, style = Grauen.name(22f), color = TINTE)
-            val werte = listOfNotNull(zeitUndKcal(r)?.let { if (r.kcalJePortion != null) "$it je Portion" else it }, if (r.favorit) "♦ Favorit" else null)
-            if (werte.isNotEmpty()) Text(werte.joinToString(" · "), style = Grauen.text(15f), color = TINTE_NEBEN)
-            zutatenSatz(r)?.let { Text(it, style = Grauen.text(16f, kursiv = true), color = TINTE) }
-        }
-        GrauenKnopf(szenenWort("Aufschlagen", "Öffnen"), { onOeffnen(r.id) }, Modifier.fillMaxWidth(), beschreibung = "Öffnen: ${r.name}")
-    }
-}
-
-/** „BAND · OFENGERICHT“ bzw. „BAND · OHNE ORDNUNG“: der erste Tag als Titel des Bandes. */
-internal fun grauenBand(r: RezeptKarte): String = "Band · ${r.tags.firstOrNull() ?: "ohne Ordnung"}".uppercase(java.util.Locale.GERMAN)
 
 private val BRETT_BUCH = Color(0xFFB09A70)
 
