@@ -33,6 +33,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.boundsInRoot
@@ -50,6 +51,7 @@ import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
+import de.foody.core.designsystem.stil.grauen.grauenFrakturTitel
 import de.foody.core.designsystem.stil.grauen.grauenHell
 import de.foody.core.designsystem.stil.szenenWort
 import de.foody.core.designsystem.stil.titelGroesse
@@ -85,7 +87,9 @@ internal fun GrauenKopf(n: Int, neu: @Composable () -> Unit) {
             // Der Titel wächst mit der Systemschrift nur bis 130 %
             Text(
                 szenenWort("Die Bibliothek", "Rezepte"), Modifier.semantics { heading() },
-                style = Grauen.titel(titelGroesse(30f)), color = grauenHell(),
+                // Im Necronomicon in Fraktur wie die übrigen Seitentitel
+                style = if (FoodyTheme.stil.grauenBuch) grauenFrakturTitel(titelGroesse(34f)) else Grauen.titel(titelGroesse(30f)),
+                color = grauenHell(),
             )
             if (n > 0) Text(szenenWort("$n Bände", "$n Rezepte"), style = Grauen.text(14f), color = f.nebentext)
         }
@@ -108,13 +112,9 @@ internal fun GrauenBrett(
     modifier: Modifier,
     fliegt: () -> String? = { null },
 ) {
+    val feder = FoodyTheme.stil.grauenBuch
     Row(
-        modifier.drawBehind {
-            val dicke = 12.dp.toPx()
-            drawRect(BRETT, Offset(0f, size.height - dicke), Size(size.width, dicke))
-            drawLine(BRETT_KANTE, Offset(0f, size.height - dicke), Offset(size.width, size.height - dicke), 2.dp.toPx())
-            drawRect(Color.Black.copy(alpha = 0.35f), Offset(0f, size.height), Size(size.width, 4.dp.toPx()))
-        }.padding(start = 10.dp, end = 10.dp, bottom = 12.dp),
+        modifier.drawBehind { brettMalen(feder) }.padding(start = 10.dp, end = 10.dp, bottom = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.Bottom,
     ) {
@@ -238,3 +238,35 @@ internal fun GrauenSeite(r: RezeptKarte, onOeffnen: (String) -> Unit) {
 
 /** „BAND · OFENGERICHT“ bzw. „BAND · OHNE ORDNUNG“: der erste Tag als Titel des Bandes. */
 internal fun grauenBand(r: RezeptKarte): String = "Band · ${r.tags.firstOrNull() ?: "ohne Ordnung"}".uppercase(java.util.Locale.GERMAN)
+
+private val BRETT_BUCH = Color(0xFFB09A70)
+
+/**
+ * Das Brett unter den Bänden, 12 dp hoch am unteren Rand: in Ominös dunkles Holz mit Schatten, mit [feder]
+ * (Necronomicon) ein helles Brett mit Kanten und Maserung in Tinte, der Schatten darunter schraffiert.
+ */
+internal fun DrawScope.brettMalen(feder: Boolean) {
+    val dicke = 12.dp.toPx()
+    val oben = size.height - dicke
+    if (!feder) {
+        drawRect(BRETT, Offset(0f, oben), Size(size.width, dicke))
+        drawLine(BRETT_KANTE, Offset(0f, oben), Offset(size.width, oben), 2.dp.toPx())
+        drawRect(Color.Black.copy(alpha = 0.35f), Offset(0f, size.height), Size(size.width, 4.dp.toPx()))
+        return
+    }
+    val strich = 1.dp.toPx()
+    drawRect(BRETT_BUCH, Offset(0f, oben), Size(size.width, dicke))
+    drawLine(TINTE, Offset(0f, oben), Offset(size.width, oben), 1.4f * strich)
+    drawLine(TINTE, Offset(0f, size.height), Offset(size.width, size.height), strich)
+    // Maserung: lange, leicht versetzte Striche
+    listOf(0.35f to 0.1f, 0.6f to 0.45f, 0.8f to 0.2f).forEach { (y, start) ->
+        val hoehe = oben + dicke * y
+        drawLine(TINTE.copy(alpha = 0.35f), Offset(size.width * start, hoehe), Offset(size.width * (start + 0.4f), hoehe), 0.7f * strich)
+    }
+    // Schatten unter dem Brett als kurze Schraffur
+    var x = 0f
+    while (x < size.width) {
+        drawLine(TINTE.copy(alpha = 0.4f), Offset(x, size.height + 1.dp.toPx()), Offset(x + 3.dp.toPx(), size.height + 4.dp.toPx()), 0.7f * strich)
+        x += 3.dp.toPx()
+    }
+}
