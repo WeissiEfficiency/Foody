@@ -8,8 +8,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,6 +25,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -94,6 +98,37 @@ internal fun grauenZeichenFuer(text: String): GrauenZeichen? = when (text.trim()
     else -> null
 }
 
+/** Symbole runder Knöpfe, die im Grauen als gezeichnetes Zeichen erscheinen; `null` = das Symbol in Tinte. */
+internal fun grauenZeichenFuer(symbol: ImageVector): GrauenZeichen? = when (symbol.name.substringAfterLast('.')) {
+    "ArrowBack" -> GrauenZeichen.ZURUECK
+    "ArrowForward" -> GrauenZeichen.WEITER
+    "Close" -> GrauenZeichen.SCHLIESSEN
+    "MoreVert", "MoreHoriz" -> GrauenZeichen.MENUE
+    else -> null
+}
+
+/**
+ * Runder Knopf im Grauen (Zurück, Schließen, Einstellungen, Sortieren): ohne Kreis, das Zeichen in Tinte bzw. im hellen
+ * Ton des Grauens; Zurück, Schließen und Menü gezeichnet ([grauenZeichenFuer]), sonst das Symbol selbst. 48 dp Fläche.
+ */
+@Composable
+fun GrauenRunderKnopf(symbol: ImageVector, beschreibung: String, onKlick: () -> Unit, modifier: Modifier = Modifier, aktiv: Boolean = true) {
+    val farbe = grauenHell()
+    Box(
+        modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp).alpha(if (aktiv) 1f else 0.38f)
+            .clickable(enabled = aktiv, role = Role.Button, onClick = onKlick)
+            .semantics { contentDescription = beschreibung },
+        contentAlignment = Alignment.Center,
+    ) {
+        val zeichen = grauenZeichenFuer(symbol)
+        if (zeichen != null) {
+            GrauenSymbol(zeichen, farbe, groesse = 24.dp)
+        } else {
+            Icon(symbol, contentDescription = null, tint = farbe, modifier = Modifier.size(22.dp))
+        }
+    }
+}
+
 /** Knöpfe, die nur ein Rechenzeichen sind (Portionen, Mengen): ohne Rahmen, groß gesetzt. */
 private val RECHENZEICHEN = setOf("−", "+", "-")
 
@@ -144,6 +179,40 @@ fun GrauenKnopf(
                 Modifier.drawBehind { schwung(glut.copy(alpha = 0.75f)) }.padding(bottom = 7.dp),
                 style = Grauen.titel(16f, 0.06f), color = hell, textAlign = TextAlign.Center,
             )
+        }
+    }
+}
+
+/**
+ * Umblättern im Grauen: [text] mit gezeichnetem Pfeil und Schwung darunter, ohne Siegel. [vorwaerts] setzt den Pfeil
+ * hinter das Wort („Weiter ›“), sonst davor („‹ Zurück“), damit beide Seiten ein gleiches Paar sind.
+ */
+@Composable
+fun GrauenBlaetterKnopf(
+    text: String,
+    vorwaerts: Boolean,
+    onKlick: () -> Unit,
+    modifier: Modifier = Modifier,
+    beschreibung: String = text,
+    aktiv: Boolean = true,
+) {
+    val hell = grauenHell()
+    val glut = FoodyTheme.stil.zier
+    Box(
+        modifier.heightIn(min = 48.dp).widthIn(min = 48.dp)
+            .alpha(if (aktiv) 1f else 0.38f)
+            .clickable(enabled = aktiv, role = Role.Button, onClick = onKlick)
+            .semantics { contentDescription = beschreibung },
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            Modifier.drawBehind { schwung(glut.copy(alpha = 0.75f)) }.padding(horizontal = 6.dp).padding(bottom = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (!vorwaerts) GrauenSymbol(GrauenZeichen.ZURUECK, hell, groesse = 20.dp)
+            Text(text, style = Grauen.titel(17f, 0.06f), color = hell)
+            if (vorwaerts) GrauenSymbol(GrauenZeichen.WEITER, hell, groesse = 20.dp)
         }
     }
 }

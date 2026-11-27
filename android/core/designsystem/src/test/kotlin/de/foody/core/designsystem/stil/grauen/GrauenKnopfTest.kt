@@ -1,6 +1,11 @@
 package de.foody.core.designsystem.stil.grauen
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -20,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.komponenten.FoodyChip
+import de.foody.core.designsystem.komponenten.RunderKnopf
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.stil.stilBlatt
@@ -46,6 +52,28 @@ class GrauenKnopfTest {
         assertEquals(GrauenZeichen.BAND_VOLL, grauenZeichenFuer("♦"))
         assertNull(grauenZeichenFuer("Das Ritual beginnen"))
         assertNull(grauenZeichenFuer("+"))
+    }
+
+    /** Runde Knöpfe oben (Zurück, Schließen, Menü) werden im Grauen zu gezeichneten Zeichen in Tinte. */
+    @Test
+    fun zeichenFuerSymbole() {
+        assertEquals(GrauenZeichen.ZURUECK, grauenZeichenFuer(Icons.AutoMirrored.Outlined.ArrowBack))
+        assertEquals(GrauenZeichen.SCHLIESSEN, grauenZeichenFuer(Icons.Outlined.Close))
+        assertEquals(GrauenZeichen.MENUE, grauenZeichenFuer(Icons.Outlined.MoreVert))
+        assertNull(grauenZeichenFuer(Icons.Outlined.Settings))
+    }
+
+    /** Ohne Kreis: Im Grauen hat ein runder Knopf weiter 48 dp, Klick und Beschreibung, aber kein Glas dahinter. */
+    @Test
+    fun runderKnopfImGrauen() {
+        var klicks = 0
+        compose.setContent {
+            FoodyTheme(stil = FoodyStil.GRAUEN, variante = StilVariante.IMMERSIV) {
+                RunderKnopf(Icons.AutoMirrored.Outlined.ArrowBack, "Zurück", { klicks++ })
+            }
+        }
+        compose.onNodeWithContentDescription("Zurück").assertHasClickAction().assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp).performClick()
+        assertEquals(1, klicks)
     }
 
     /** Vorher stand „‹“ als Schrift in einem Kasten; jetzt ist es gezeichnet, TalkBack hört die Beschreibung. */

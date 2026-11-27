@@ -33,6 +33,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
+import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.grauen.GrauenBildtafel
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 
@@ -176,6 +178,11 @@ private fun Abzeichen(text: String, modifier: Modifier) {
 /** Rezept ohne Foto: Verlauf in der Farbwelt mit Besteck-Symbol – mittig oder ([symbolOben]) im oberen Teil. */
 @Composable
 fun RezeptPlatzhalter(modifier: Modifier = Modifier, symbolOben: Boolean = false, mitSymbol: Boolean = true) {
+    // Im Grauen eine gezeichnete Bildtafel statt des Farbblocks (beide Gesichter)
+    if (FoodyTheme.stil.stil == FoodyStil.GRAUEN) {
+        GrauenBildtafel(modifier.testTag(PLATZHALTER_TAG))
+        return
+    }
     Box(
         modifier
             .testTag(PLATZHALTER_TAG)

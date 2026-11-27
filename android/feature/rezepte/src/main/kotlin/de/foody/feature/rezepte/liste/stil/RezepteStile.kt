@@ -220,7 +220,13 @@ private fun Oben(
     rand: Modifier,
 ) {
     val n = z.treffer.size
-    val neu = @Composable { StilAktion(if (stil == FoodyStil.EDO) "＋ Neu" else "+ Neu", onNeu, beschreibung = "Neues Rezept", voll = true) }
+    // Im Grauen ohne „+“: das Siegel trägt schon das Zeichen
+    val neuText = when (stil) {
+        FoodyStil.EDO -> "＋ Neu"
+        FoodyStil.GRAUEN -> "Neu"
+        else -> "+ Neu"
+    }
+    val neu = @Composable { StilAktion(neuText, onNeu, beschreibung = "Neues Rezept", voll = true) }
     Box(rand) {
         when (stil) {
             FoodyStil.ANIME -> AnimeKopf(n, neu)

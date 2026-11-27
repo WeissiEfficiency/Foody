@@ -29,6 +29,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.glas.GlasFlaeche
+import de.foody.core.designsystem.stil.FoodyStil
+import de.foody.core.designsystem.stil.grauen.GrauenRunderKnopf
 import de.foody.core.designsystem.token.FoodyAbstaende
 import de.foody.core.designsystem.token.GlasStufe
 
@@ -45,6 +47,11 @@ fun RunderKnopf(
     primaer: Boolean = false,
     aktiv: Boolean = true,
 ) {
+    // Im Grauen ohne Kreis: das Zeichen in Tinte wie im Buch (beide Gesichter)
+    if (FoodyTheme.stil.stil == FoodyStil.GRAUEN) {
+        GrauenRunderKnopf(symbol, beschreibung, onKlick, modifier, aktiv)
+        return
+    }
     val farben = FoodyTheme.farben
     val druck = remember { MutableInteractionSource() }
     val groesse = if (primaer) 48.dp else 40.dp
