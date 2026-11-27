@@ -169,3 +169,12 @@ Vorschauen nach `res/drawable-nodpi/widget_vorschau_*`.
 - Einstellungen: Der Hinweis unter der Variante sagt jetzt „Die App als verwittertes Buch: Pergament, Tinte und
   Blut.“ statt „(im Aufbau)“; `VariantenHinweisTest` schlug vorher fehl.
 - Damit ist Schritt 5 fertig. Offen für Schritt 6: die Widgets zeigen im Necronomicon noch Grün.
+
+### Schritt 6 · Widgets
+- Im Necronomicon sind alle Widgets Pergament: `Flaeche.bild` legt `grauen_pergament` auf die Fläche (die Farbe bleibt
+  die Prüffläche für den Kontrast), Rand in der braunen Kante, Schrift in Tinte, Akzent, Ring und Symbole in Blut
+  (`Entwuerfe.buch`, `BLUT`). Der Einkaufszettel ist dort kein eigener Zettel mehr, sondern dasselbe Pergament mit
+  gepunkteten Linien. Wochen-Widget: Monde in Tinte, geplante hell gefüllt, heute mit Rand in Blut, kein Schein.
+- Ominös bleibt die grüne Tafel mit Glut und dem vergilbten Einkaufszettel.
+- Tests: `NecronomiconWidgetTest` (Pergament, Blut, Kontrast; Ominös dunkel); neue Bilder `widget_grauen_buch_*` und
+  `widget_grauen_ominoes_*`. Die Vorschaubilder in der Widget-Auswahl sind Milchglas und bleiben.

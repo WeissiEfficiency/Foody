@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.HoloBlau
+import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.stilGrundlage
 
@@ -12,8 +13,8 @@ import de.foody.core.designsystem.stil.stilGrundlage
  * die Widgets mit. Die Widgets zeigen immer die Farben von Immersiv (Grauen also die dunkle Tafel); [immersiv] = false
  * nur für das Pergament des Grauen-Zettels. Was vom Akzent abhängt, kommt nicht von hier.
  */
-internal class Entwurf(stil: FoodyStil, immersiv: Boolean = true) {
-    private val g = stilGrundlage(stil, immersiv, akzent = Color.Transparent)
+internal class Entwurf(stil: FoodyStil, immersiv: Boolean = true, buch: Boolean = false) {
+    private val g = stilGrundlage(stil, immersiv, akzent = Color.Transparent, buch = buch)
     val grund = g.grund.toArgb()
     val text = g.text.toArgb()
     val neben = g.neben.toArgb()
@@ -31,6 +32,9 @@ internal object Entwuerfe {
     val bayrisch = Entwurf(FoodyStil.BAYRISCH)
     val grauen = Entwurf(FoodyStil.GRAUEN)
     val pergament = Entwurf(FoodyStil.GRAUEN, immersiv = false)
+
+    /** Das Necronomicon: Pergament, Tinte, braune Kante (ADR 0022). */
+    val buch = Entwurf(FoodyStil.GRAUEN, buch = true)
     val kreuzer = Entwurf(FoodyStil.KREUZER)
 }
 
@@ -52,3 +56,9 @@ internal const val ANIME_GELB = 0xFFFFE45C.toInt()
 internal const val ANIME_SPUR = 0xFFF2EEF4.toInt()
 internal const val ZETTEL = 0xFFDCCB98.toInt()
 internal const val ZETTEL_RAND = 0xFF8C7A4E.toInt()
+
+/** Helles Blatt des Necronomicon: geplante Tage im Wochen-Widget. */
+internal const val PAPIER_HELL = 0xFFE2D4B0.toInt()
+
+/** Getrocknetes Blut des Necronomicon: Akzent, Ring und Symbole auf dem Pergament. */
+internal val BLUT = Grauen.blut.toArgb()

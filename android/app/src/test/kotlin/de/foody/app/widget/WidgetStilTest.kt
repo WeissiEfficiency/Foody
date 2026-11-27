@@ -133,7 +133,7 @@ class WidgetStilTest {
     @Test
     fun grauenZettelFolgtDemAkzent() {
         val akzente = FoodyStil.GRAUEN.akzente.map {
-            kartenAussehen(kontext, StilWahl(FoodyStil.GRAUEN.name, "IMMERSIV", it.name), zettel = true).akzent
+            kartenAussehen(kontext, StilWahl(FoodyStil.GRAUEN.name, "RUHIG", it.name), zettel = true).akzent
         }
         assertEquals(akzente.size, akzente.toSet().size, "jeder Akzent eine eigene Tinte")
         akzente.forEach { assertTrue(ColorUtils.calculateContrast(it, ZETTEL) >= 4.5, "Akzent als Text auf dem Zettel") }

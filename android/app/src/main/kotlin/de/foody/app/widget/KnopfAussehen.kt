@@ -7,6 +7,7 @@ import de.foody.app.R
 import de.foody.core.data.StilWahl
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
+import de.foody.core.designsystem.R as DesignR
 
 /** Welcher Knopf: „Scannen“ oder „KI-Foto“. */
 enum class KnopfArt { SCAN, FOTO }
@@ -25,6 +26,8 @@ data class KnopfAussehen(
     val radius: Float,
     val schatten: Boolean,
     val text: String?,
+    /** Bild statt der Fläche (Pergament im Necronomicon). */
+    val bild: Int? = null,
 )
 
 /** Versatz des Schattens (Anime) in dp. */
@@ -55,7 +58,11 @@ fun knopfAussehen(wahl: StilWahl, art: KnopfArt): KnopfAussehen? {
         FoodyStil.EDO -> KnopfAussehen(Entwuerfe.edo.text, Entwuerfe.edo.glas, akzent, null, 0f, 18f, false, null)
         // T: Himmelblau mit dunklem Rand, weiße Schrift
         FoodyStil.BAYRISCH -> KnopfAussehen(akzent, Color.WHITE, Color.WHITE, Entwuerfe.bayrisch.text, 2f, 22f, false, null)
-        // U: dunkle Karte mit Glutrand
+        // U im Necronomicon: Pergament mit brauner Kante, Tinte und ein Symbol in Blut
+        FoodyStil.GRAUEN if wahl.variante == StilVariante.IMMERSIV.name -> KnopfAussehen(
+            Entwuerfe.buch.grund, Entwuerfe.buch.text, BLUT, Entwuerfe.buch.kante, 1.5f, 22f, false, null, DesignR.drawable.grauen_pergament,
+        )
+        // U in Ominös: dunkle Karte mit Glutrand
         FoodyStil.GRAUEN -> KnopfAussehen(Entwuerfe.grauen.glas, Entwuerfe.grauen.text, akzent, akzent, 1f, 22f, false, null)
         // V: Amberfläche mit dunkler Schrift
         FoodyStil.KREUZER -> KnopfAussehen(akzent, AUF_AMBER, AUF_AMBER, null, 0f, 22f, false, null)
@@ -64,7 +71,7 @@ fun knopfAussehen(wahl: StilWahl, art: KnopfArt): KnopfAussehen? {
 
 /** Setzt [a] auf die Ansicht eines Knopf-Widgets (Layout mit Schatten, Rand und Knopf übereinander). */
 internal fun RemoteViews.stilAnwenden(a: KnopfAussehen) {
-    flaecheAnwenden(Flaeche(a.flaeche, a.rand, a.randBreite, a.radius, a.schatten))
+    flaecheAnwenden(Flaeche(a.flaeche, a.rand, a.randBreite, a.radius, a.schatten, a.bild))
     setTextColor(R.id.widget_text, a.inhalt)
     setInt(R.id.widget_symbol, "setColorFilter", a.symbol)
     a.text?.let { setTextViewText(R.id.widget_text, it) }
