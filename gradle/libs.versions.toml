@@ -35,13 +35,13 @@ uiautomator = "2.4.1"
 androidxTestExt = "1.3.0"
 androidxTestRunner = "1.7.0"
 # Sync-Server (Modul :server)
-ktor = "3.5.0"
+ktor = "3.6.2"
 # Netty kommt über ktor-server-netty, ist dort aber oft älter als die neueste Fehlerbehebung (Stufe 9, S1). Die BOM hebt
 # alle Netty-Module des Servers gemeinsam an; nur höher setzen, nie unter den Stand von Ktor.
 netty = "4.2.21.Final"
-sqliteJdbc = "3.53.1.0"
-bouncycastle = "1.86"
-logback = "1.5.37"
+sqliteJdbc = "3.54.1.0"
+bouncycastle = "1.87"
+logback = "1.6.8"
 # JVM-Tests mit Android-Klassen (App-Ende-zu-Ende-Test gegen :server)
 robolectric = "4.18.1"
 # Android für Robolectric (SDK 36), lädt Gradle statt Robolectric selbst (build-logic, robolectricOffline). Muss zur
