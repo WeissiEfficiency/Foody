@@ -1,14 +1,14 @@
 [versions]
 # Versionen hält Dependabot aktuell (wöchentlich, gruppiert; .github/dependabot.yml).
 # AGP 9: eingebautes Kotlin (kein org.jetbrains.kotlin.android mehr) und neue DSL.
-agp = "9.4.1"
+agp = "9.5.3"
 # Hilt liest die Kotlin-Metadaten: Kotlin 2.4 läuft mit Hilt 2.60.
-kotlin = "2.4.20"
-ksp = "2.3.12"
+kotlin = "2.4.21"
+ksp = "2.3.14"
 # Hilt >= 2.59 ist für AGP 9 nötig.
 hilt = "2.60.1"
 coroutines = "1.11.0"
-serialization = "1.11.0"
+serialization = "1.13.0"
 coreKtx = "1.19.1"
 exifinterface = "1.4.2"
 activityCompose = "1.13.0"
