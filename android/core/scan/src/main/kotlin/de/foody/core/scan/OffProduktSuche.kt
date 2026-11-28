@@ -9,7 +9,7 @@ import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentLength
-import io.ktor.utils.io.readRemaining
+import io.ktor.utils.io.readBuffer
 import kotlinx.coroutines.CancellationException
 import kotlinx.io.readByteArray
 import kotlinx.serialization.json.Json
@@ -44,7 +44,7 @@ class OffProduktSuche(private val http: HttpClient, private val appVersion: Stri
     /** Body als Text, höchstens [MAX_ANTWORT_BYTES]; mehr gilt als kaputte Antwort (dann Foto anbieten). */
     private suspend fun HttpResponse.begrenztLesen(): String {
         if ((contentLength() ?: 0) > MAX_ANTWORT_BYTES) throw IOException(ZU_GROSS)
-        val bytes = bodyAsChannel().readRemaining(MAX_ANTWORT_BYTES + 1).readByteArray()
+        val bytes = bodyAsChannel().readBuffer(MAX_ANTWORT_BYTES + 1).readByteArray()
         if (bytes.size > MAX_ANTWORT_BYTES) throw IOException(ZU_GROSS)
         return bytes.decodeToString()
     }
