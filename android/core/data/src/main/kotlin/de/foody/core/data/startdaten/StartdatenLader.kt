@@ -8,6 +8,7 @@ import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.Einstellungsschluessel.SEED_VERSION
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.zutaten.ergaenztUm
+import java.time.Clock
 import javax.inject.Inject
 
 /**
@@ -18,6 +19,8 @@ import javax.inject.Inject
 class StartdatenLader @Inject constructor(
     private val db: FoodyDatenbank,
     @ApplicationContext private val kontext: Context,
+    /** Zeitstempel der angelegten Zutaten (aus [de.foody.core.data.DatenModul.uhr]). */
+    private val uhr: Clock = Clock.systemDefaultZone(),
 ) {
     /** Anzahl angelegter oder geänderter Zutaten; 0, wenn die Version schon geladen ist. */
     suspend fun ladenWennNoetig(): Int {
@@ -27,7 +30,7 @@ class StartdatenLader @Inject constructor(
         val dao = db.zutatDao()
         var geaendert = 0
         db.withTransaction {
-            for (start in Startdaten.zutaten(System.currentTimeMillis())) {
+            for (start in Startdaten.zutaten(uhr.millis())) {
                 // Auch über die ID: Ein umbenannter Starteintrag (v1 oder Sync) darf nicht überschrieben werden
                 val vorhanden = dao.nachNameOhneGross(start.canonicalName) ?: dao.nachId(start.id)
                 val neu = when {
