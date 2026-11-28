@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import de.foody.core.data.woche.WochenTag
 import de.foody.core.data.wochentagKurz
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.stil.StilWerte
 import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.anime.AnimeKnopf
 import de.foody.core.designsystem.stil.anime.animeSchatten
@@ -132,7 +133,7 @@ private fun Panel(t: WochenTag, i: Int, heute: Boolean, an: Boolean, modifier: M
         else -> PANEL[i]
     }
     Box(
-        modifier.padding(end = 6.dp, bottom = 6.dp).then(panelRahmen(i, an, form))
+        modifier.padding(end = 6.dp, bottom = 6.dp).panelRahmen(i, an, form, FoodyTheme.stil, f.text)
             .clip(form).background(grund)
             .then(
                 if (leer && !an) {
@@ -168,13 +169,11 @@ private fun Panel(t: WochenTag, i: Int, heute: Boolean, an: Boolean, modifier: M
  * Schräge und harter Schatten des Panels (gewählt größer); in Ruhig wie im Entwurf gerade, ohne Schatten und das
  * gewählte mit einem Ring im Akzent.
  */
-@Composable
-private fun panelRahmen(i: Int, an: Boolean, form: Shape): Modifier {
-    val s = FoodyTheme.stil
-    if (s.inszeniert) return Modifier.rotate(DREHUNG[i]).animeSchatten(form, FoodyTheme.farben.text, if (an) 6.dp else 3.dp)
-    if (!an) return Modifier
+private fun Modifier.panelRahmen(i: Int, an: Boolean, form: Shape, s: StilWerte, text: Color): Modifier {
+    if (s.inszeniert) return rotate(DREHUNG[i]).animeSchatten(form, text, if (an) 6.dp else 3.dp)
+    if (!an) return this
     val ring = s.zier
-    return Modifier.drawBehind {
+    return drawBehind {
         val r = 3.dp.toPx()
         drawRoundRect(ring, Offset(-r, -r), Size(size.width + 2 * r, size.height + 2 * r), CornerRadius(4.dp.toPx() + r))
     }

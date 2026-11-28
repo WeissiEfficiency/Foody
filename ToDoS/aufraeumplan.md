@@ -27,6 +27,10 @@ Kleinigkeiten P1–P6 und die Ideen O1–O4 in Stufe 8.
 Server ist veraltet (S1, Rebuild nötig), und die CI wird oft rot, weil Robolectric beim Testen herunterlädt (S2). Der
 Rest sind Kleinigkeiten; P2 aus Stufe 8 ist erledigt, P1 und P3 sind weiter offen.
 
+Am selben Tag umgesetzt: S2 (#347), S1 (#348, **Server-Rebuild nötig**), S5 mit P1/P3 und S6 (#349), S7 (#350), S8
+und S10 (#351), S9 (#352). Offen sind S3, S4, S11 und S12 (alles 👤) sowie S13: Dependabot legt seit Oktober keine
+Update-PRs mehr an.
+
 Zusätzlich erledigt: **Z1** Release stürzte bei „Frei“ im Tagebuch ab – R8 entfernte die Konstruktoren der
 ML-Kit-Registrare (`firebase-components` 16.1.0 behält nur die Klasse); Keep-Regel in `proguard-rules.pro` (#139).
 
@@ -269,10 +273,10 @@ Nicht gelaufen sind Emulator-Tests und ein Test am Handy.
 | ID | Was | Vorschlag |
 |---|---|---|
 | ✅ S6 | (erledigt 2026-11-28) `imHintergrund` (`WidgetDaten.kt`) gibt den Empfänger per `goAsync` erst nach der Arbeit frei, ohne Zeitlimit. Android lässt einem Empfänger etwa 10 s | `withTimeout(9_000)` um `arbeit()` |
-| S7 | `animationenErlaubt()` fragt `Settings.Global` bei jeder Recomposition ab. Es gibt 15 Aufrufe, einige in Szenen mit Endlos-Animation | Einmal in `FoodyTheme` lesen und als CompositionLocal weitergeben, oder `remember` |
-| S8 | Lint-Warnungen: 7 zu Modifier-Konventionen (`FoodyTextfeld`, `ListeBereiche`, `RezepteStile`, `StilFelder`, `WocheAnime`), 1 `ComposableNaming` (`StilBausteine.kt:97`), 2 im Katalog-Manifest, 1 zur ABI für ChromeOS (für Foody bedeutungslos) | Beheben, die ChromeOS-Prüfung in der Lint-Konfiguration abschalten |
-| S9 | Uhrzeit nicht überall eingespeist: 15 direkte `now()`-Aufrufe, etwa `LocalTime.now()` als Standardwert in `EintragenViewModel.oeffnen`, während `EinstellungenViewModel` eine `Clock` bekommt | Beim Anfassen auf die eingespeiste `Clock` umstellen |
-| S10 | Versionskatalog: `play-services-*` und `androidx-test-core` haben feste Versionen in `[libraries]` statt in `[versions]`. Der Kommentar „Geprüft … (2026-10)“ ist veraltet | In `[versions]` ziehen |
+| ✅ S7 | (erledigt 2026-11-28, #350: einmal je `FoodyTheme`, neu bei jedem Wechsel des Lebenszyklus) `animationenErlaubt()` fragt `Settings.Global` bei jeder Recomposition ab. Es gibt 15 Aufrufe, einige in Szenen mit Endlos-Animation | Einmal in `FoodyTheme` lesen und als CompositionLocal weitergeben, oder `remember` |
+| ✅ S8 | (erledigt 2026-11-28, #351: Lint 0 Befunde; `FoodyTextfeld` und `Oben` begründet unterdrückt) Lint-Warnungen: 7 zu Modifier-Konventionen (`FoodyTextfeld`, `ListeBereiche`, `RezepteStile`, `StilFelder`, `WocheAnime`), 1 `ComposableNaming` (`StilBausteine.kt:97`), 2 im Katalog-Manifest, 1 zur ABI für ChromeOS (für Foody bedeutungslos) | Beheben, die ChromeOS-Prüfung in der Lint-Konfiguration abschalten |
+| ✅ S9 | (erledigt 2026-11-28, #352: `EintragenViewModel` und `StartdatenLader`; Composables reichen „jetzt“ schon als Parameter weiter) Uhrzeit nicht überall eingespeist: 15 direkte `now()`-Aufrufe, etwa `LocalTime.now()` als Standardwert in `EintragenViewModel.oeffnen`, während `EinstellungenViewModel` eine `Clock` bekommt | Beim Anfassen auf die eingespeiste `Clock` umstellen |
+| ✅ S10 | (erledigt 2026-11-28, #351) Versionskatalog: `play-services-*` und `androidx-test-core` haben feste Versionen in `[libraries]` statt in `[versions]`. Der Kommentar „Geprüft … (2026-10)“ ist veraltet | In `[versions]` ziehen |
 | S11 | Gradle: Die Warnung zu `by creating` (fällt mit Gradle 10 weg) kommt aus einem Plugin, nicht aus eigenen Skripten. `android.overridePathCheck=true` in `~/.gradle/gradle.properties` braucht der Checkout seit dem Umzug nach `C:\Dev` nicht mehr | Plugins aktuell halten; die Zeile auf dem Rechner löschen (👤) |
 | S12 | Repo: 98 gemergte Branches liegen noch auf GitHub. Das Pack ist 147 MiB groß, vor allem durch den Verlauf der Referenzbilder. Im Hauptcheckout liegen `tmp_obj`-Reste | Auf GitHub „Automatically delete head branches“ einschalten, alte Branches löschen, `git gc` im Hauptcheckout (👤) |
 | — | Weiter aus Stufe 8, P6: `Thread.sleep` in 8 Testdateien, `SyncSpeicher.kt` mit 803 Zeilen; dazu jetzt `EintragenViewModel.kt` mit 682 Zeilen | Beim Anfassen |
@@ -306,7 +310,7 @@ Nicht gelaufen sind Emulator-Tests und ein Test am Handy.
 4. ✅ **Vorgezogen auf 31.10./01.11.:** Stufe 3 C1–C8 (#156, #158, #166), Stufe 5 bis auf E6 (beobachten). Nach dem
    Design-Umbau (#170) folgten E5 und Q8 (#171) und E7 Teil 2 (Format-Lauf).
 5. Danach: Fotoerkennung (ADR 0017) und BLS (ADR 0018) in 3.4.1; die KI-Hilfe über den Server ist gestrichen (ADR 0019).
-6. Stufe 9: zuerst S2 (CI zuverlässig), dann S1 (Netty, mit Server-Rebuild), dann P1 und P3 zusammen mit S6. S4 erst
+6. ✅ Stufe 9 (Code): S2, S1, S5 + S6, S7, S8 + S10, S9 am 2026-11-28. Ursprüngliche Reihenfolge: zuerst S2 (CI zuverlässig), dann S1 (Netty, mit Server-Rebuild), dann P1 und P3 zusammen mit S6. S4 erst
    nach dem Blick aufs Handy.
 
 **Geschätzter Gewinn (geschätzt, nicht gemessen):** ~45 Doku-Dateien aus dem Suchpfad neuer Sessions, ~300 Zeilen

@@ -210,6 +210,8 @@ private fun EndlosListe(
 }
 
 /** Kopf mit „+ Neu“, Suche mit Sortierknopf, Filter und die leeren Zustände; [rand] für alles außer den Filtern. */
+// [rand] ist kein Modifier des Ganzen (es gibt keine Wurzel), sondern der Rand mehrerer Kinder
+@Suppress("ModifierParameter")
 @Composable
 private fun Oben(
     stil: FoodyStil,
@@ -240,7 +242,7 @@ private fun Oben(
         LeererZustandFlaeche(Icons.AutoMirrored.Outlined.MenuBook, "Noch keine Rezepte", LEER_TEXT, aktionText = "Anlegen", onAktion = onNeu, modifier = rand)
         return
     }
-    Suche(z.filter, aendern, suchText(stil, FoodyTheme.stil.inszeniert), rand)
+    Suche(z.filter, aendern, rand, suchText(stil, FoodyTheme.stil.inszeniert))
     FilterChips(z.filter, aendern)
     if (z.geladen && z.treffer.isEmpty()) {
         LeererZustandFlaeche(
