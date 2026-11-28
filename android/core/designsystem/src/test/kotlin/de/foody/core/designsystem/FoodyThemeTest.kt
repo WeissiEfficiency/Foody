@@ -108,6 +108,28 @@ class FoodyThemeTest {
         assertFalse(unschaerfe)
     }
 
+    /** S7: Das Theme liest die Einstellung einmal; in- und außerhalb des Themes gilt derselbe Wert. */
+    @Test
+    fun animationenFolgenDerSystemeinstellung() {
+        val resolver = ApplicationProvider.getApplicationContext<android.app.Application>().contentResolver
+        Settings.Global.putFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 0f)
+        var drinnen = true
+        var draussen = true
+        compose.setContent {
+            draussen = animationenErlaubt()
+            FoodyTheme { drinnen = animationenErlaubt() }
+        }
+        assertFalse(drinnen)
+        assertFalse(draussen)
+    }
+
+    @Test
+    fun animationenAnOhneEinstellung() {
+        var drinnen = false
+        compose.setContent { FoodyTheme { drinnen = animationenErlaubt() } }
+        assertTrue(drinnen)
+    }
+
     @Test
     fun schriftenLadenOhneFehler() {
         compose.setContent {
