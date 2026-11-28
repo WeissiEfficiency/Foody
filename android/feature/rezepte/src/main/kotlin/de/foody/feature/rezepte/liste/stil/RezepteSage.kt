@@ -105,7 +105,7 @@ internal fun RezepteSage(
                 )
                 return@Column
             }
-            Suche(z.filter, aendern, szenenWort("Im Grimoire suchen", "Suchen"), rand)
+            Suche(z.filter, aendern, rand, szenenWort("Im Grimoire suchen", "Suchen"))
             FilterChips(z.filter, aendern)
             val r = z.treffer.getOrNull(index)
             if (r == null) {

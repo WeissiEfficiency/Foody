@@ -65,7 +65,7 @@ fun RezeptListeRoute(
             )
             return@Column
         }
-        Suche(z.filter, vm::filter)
+        Suche(z.filter, vm::filter, Modifier.padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s2))
         FilterChips(z.filter, vm::filter)
         if (z.geladen && z.treffer.isEmpty()) {
             LeererZustandFlaeche(

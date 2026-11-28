@@ -12,8 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
 import de.foody.core.designsystem.stil.FoodyStil
-import de.foody.core.designsystem.stil.StilKnopf
 import de.foody.core.designsystem.stil.sage.SageKnopf
+import de.foody.core.designsystem.stil.stilKnopf
 
 /** Primär (gefüllt), Umriss (sekundäre Aktion) oder Text (Link-artig). */
 enum class KnopfArt { PRIMAER, UMRISS, TEXT }
@@ -35,7 +35,7 @@ fun FoodyKnopf(
         SageKnopf(text, onKlick, modifier, art, aktiv)
         return
     }
-    if (StilKnopf(text, onKlick, modifier, art, aktiv)) return
+    if (stilKnopf(text, onKlick, modifier, art, aktiv)) return
     val m = modifier.heightIn(min = 48.dp)
     val farben = FoodyTheme.farben
     when (art) {
