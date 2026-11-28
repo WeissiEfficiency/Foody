@@ -21,11 +21,12 @@ playServicesBase = "18.11.1"
 playServicesTextErkennung = "19.0.2"
 playServicesCodeScanner = "16.1.0"
 androidxTestCore = "1.7.0"
-# Glas mit echter Unschärfe (V3-Designsystem); 2.1.0 baut auf Compose UI 1.12.2 (hebt den BOM-Stand 1.12.1 an)
+# Glas mit echter Unschärfe (V3-Designsystem); 2.1.0 baut auf Compose UI 1.12.2, der BOM hebt auf 1.13.0 an
 haze = "2.1.0"
 # Screenshot-Tests unter Robolectric (Katalog)
 roborazzi = "1.79.0"
-composeBom = "2026.09.00"
+# Compose UI/Foundation 1.13.0, Material 3 1.5.0: braucht compileSdk 37.1 (FoodySdk), Textfelder mit TextFieldState (S14)
+composeBom = "2026.11.01"
 room = "2.8.5"
 coil = "3.6.3"
 junit4 = "4.13.2"

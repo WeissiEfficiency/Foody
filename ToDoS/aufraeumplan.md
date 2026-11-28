@@ -29,7 +29,7 @@ Rest sind Kleinigkeiten; P2 aus Stufe 8 ist erledigt, P1 und P3 sind weiter offe
 
 Am selben Tag umgesetzt: S2 (#347), S1 (#348, **Server-Rebuild nötig**), S5 mit P1/P3 und S6 (#349), S7 (#350), S8
 und S10 (#351), S9 (#352). Offen sind S3, S4, S11 und S12 (alles 👤) sowie S13: Dependabot legt seit Oktober keine
-Update-PRs mehr an.
+Update-PRs mehr an. Die Updates aus S13 sind eingespielt (#355–#358), den Compose-BOM hebt S14 an.
 
 Zusätzlich erledigt: **Z1** Release stürzte bei „Frei“ im Tagebuch ab – R8 entfernte die Konstruktoren der
 ML-Kit-Registrare (`firebase-components` 16.1.0 behält nur die Klasse); Keep-Regel in `proguard-rules.pro` (#139).
@@ -267,6 +267,7 @@ Nicht gelaufen sind Emulator-Tests und ein Test am Handy.
 | S4 | **Heller Start bei dunklem Stil (unbestätigt):** Das Fenster-Theme ist `Theme.Material.Light.NoActionBar` (`AndroidManifest.xml`). Startbildschirm und Fenster bleiben hell, bis Compose den ersten Frame zeichnet. Bei Sage, Sternenkreuzer und dunklem Milchglas könnte es kurz hell aufblitzen | Am Handy beim Kaltstart ansehen. Falls ja: in `MainActivity.onCreate` vor `setContent` den Fenstergrund aus dem gespeicherten Stil setzen (`window.setBackgroundDrawable`), dazu ein DayNight-Theme | 👤 prüft, 🤖 PR |
 | ✅ S5 | (erledigt 2026-11-28: `ModellVerwaltung` räumt beim Start auf, Test `resteEinesAbgebrochenenImportsVerschwindenBeimStart`; Größen, README, `security.md`) **P1 und P3 aus Stufe 8 sind weiter offen** (im Code nachgesehen). Teile eines abgebrochenen Modell-Imports werden nur im Fehlerzweig gelöscht, nicht beim Start. In `ModellVerwaltung.kt:39` und `EinstellungenViewModel.kt:136` steht noch „1,5 GB“ statt 2,95 GB. Die README hat noch den „Stand (2026-10-28)“ | Wie in Stufe 8, ein PR | 🤖 PR |
 | S13 | **Dependabot legt keine Update-PRs an** (gefunden 2026-11-28): Der wöchentliche Gradle-Lauf meldet „created“ für 13 PRs (u. a. Ktor 3.6.1, AGP 9.5.3, Compose-BOM 2026.11.01, Robolectric 4.18.1, Gradle 9.9.2). Auf GitHub gibt es aber keinen davon, auch keinen `dependabot/*`-Branch. Der letzte echte Dependabot-PR war #37 am 2026-10-03. Alle Bibliotheken stehen also auf dem Stand von Anfang Oktober | Auf GitHub unter Insights › Dependency graph › Dependabot (bzw. Settings › Code security) die Fehlermeldung ansehen. Danach die Updates gruppenweise einspielen. Robolectric 4.18 braucht ein neues `robolectricAndroidAll` | 👤 schaut nach, 🤖 PRs |
+| ✅ S14 | (erledigt 2026-11-28: compileSdk 37.1, `FeldBruecke` im Designsystem, Passwort mit `OutlinedSecureTextField`) **Compose-BOM 2026.11.01 ausgelassen** (bei S13): Compose Foundation 1.13 verlangt compileSdk 37.1, und mit `allWarningsAsErrors` brechen veraltete APIs den Build: das wertbasierte `BasicTextField` (`Suchfeld`, `StilFeld`), `rememberModalBottomSheetState` (`GlasBlatt`), `PasswordVisualTransformation` (`VerbindenScreen`) | BOM anheben, Plattform 37.1 lokal und in der CI, Felder auf `TextFieldState` umstellen, ohne dass Eingaben ein Prozessende nicht mehr überstehen | 🤖 |
 
 **Klein** (beim nächsten Anfassen)
 

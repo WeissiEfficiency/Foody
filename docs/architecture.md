@@ -213,7 +213,10 @@ wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für 
     `Seitenkopf` (Überzeile, Titel in Fraunces, optional runder Zurück-Knopf, rechts runde Aktionen), `RunderKnopf`
     (48-dp-Fläche, sichtbar Glas- oder Primärkreis), `FoodyFab` (Pille mit Symbol und Text), `Suchfeld` (Glas-Pille
     mit Leeren-Knopf; Tests finden das Feld über den Platzhalter als Beschreibung), `Tagesleiste` (`LeistenTag`, Rolle
-    Tab), `Initiale`. Druckeffekte sitzen nur auf der sichtbaren Form (Pille der Leiste, Chip, Kreis), nicht auf der
+    Tab), `Initiale`. `Suchfeld` und `StilFeld` nehmen weiter Wert und Rückruf, der Text bleibt also beim Aufrufer
+    (ViewModel, `SavedStateHandle`). Intern verbindet `FeldBruecke` beides mit dem `TextFieldState` von
+    `BasicTextField` (seit Compose 1.13, S14): Eingaben gehen sofort an den Rückruf, ein verspätet zurückkommender Wert
+    setzt das Feld nicht zurück, ein neuer Wert von außen ersetzt den Text (`FeldBrueckeTest`). Druckeffekte sitzen nur auf der sichtbaren Form (Pille der Leiste, Chip, Kreis), nicht auf der
     ganzen 48-dp-Fläche. Einheitlicher Rahmen über alle Stile (seit 2026-11-21, Spec
     `docs/superpowers/specs/2026-11-20-einheitlicher-rahmen-design.md`): `EinstellungenKnopf` (Zahnrad auf
     `RunderKnopf`, in allen Stilen und Varianten oben rechts im Kopf von Heute, gleich groß; der Stil bestimmt nur die
@@ -764,7 +767,9 @@ Servers lässt sie mit `FOODY_SERVER_ONLY` weg): `foody.android.application` (`:
 `foody.android.library` (`:core:*` ohne Compose: `:core:data`, `:core:sync`, `:core:testing`) und
 `foody.android.feature` (Bibliothek + Compose + Test-Abhängigkeiten samt `:core:testing`): alle `:feature:*` sowie
 `:core:designsystem` und `:core:scan`. Sie setzen die
-SDK-Stände aus `FoodySdk` (`compileSdk` 37, `minSdk` 36, `targetSdk` 37), Java 17 und `allWarningsAsErrors`. Die
+SDK-Stände aus `FoodySdk` (`compileSdk` 37.1, `minSdk` 36, `targetSdk` 37), Java 17 und `allWarningsAsErrors`.
+Die Plattform 37.1 verlangt Compose Foundation 1.13 (Compose-BOM 2026.11.01, S14); die CI installiert sie mit
+`sdkmanager`, lokal lädt AGP sie beim ersten Build selbst. Die
 Plugins von AGP und Kotlin stehen im Root-Projekt (`apply false`); `build-logic` braucht sie nur zum Kompilieren
 (`compileOnly`). Ein `:feature:x` liegt unter `android/feature/x`; das Elternprojekt `:feature` zeigt auf
 `android/feature`.

@@ -10,9 +10,10 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -85,8 +85,8 @@ private fun VerbindenInhalt(ui: VerbindenUi, vm: VerbindenViewModel, onZurueck: 
 private fun Anmelden(ui: VerbindenUi, vorbelegt: String, vm: VerbindenViewModel) {
     var adresse by rememberSaveable { mutableStateOf(vorbelegt) }
     var benutzer by rememberSaveable { mutableStateOf("") }
-    // Das Passwort überlebt bewusst keinen Prozess-Neustart (nicht rememberSaveable)
-    var passwort by remember { mutableStateOf("") }
+    // Das Passwort überlebt bewusst keinen Prozess-Neustart (nicht rememberSaveable, auch nicht rememberTextFieldState)
+    val passwort = remember { TextFieldState() }
     val laeuft = ui.schritt == Schritt.LAEUFT
     Text(
         "Melde dich mit deinem Foody-Konto an. Danach gleicht die App Rezepte, Plan, Einkauf und Tagebuch mit dem Server ab.",
@@ -94,16 +94,15 @@ private fun Anmelden(ui: VerbindenUi, vorbelegt: String, vm: VerbindenViewModel)
     )
     FoodyTextfeld("Server-Adresse", adresse, tastatur = KeyboardType.Uri) { adresse = it }
     FoodyTextfeld("Benutzername", benutzer) { benutzer = it }
-    OutlinedTextField(
-        passwort, { passwort = it }, Modifier.fillMaxWidth(), label = { Text("Passwort") }, singleLine = true,
-        visualTransformation = PasswordVisualTransformation(),
+    OutlinedSecureTextField(
+        passwort, Modifier.fillMaxWidth(), label = { Text("Passwort") },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
     )
     ui.fehler?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error) }
     if (laeuft) Text(Verbinden.LAEUFT, style = MaterialTheme.typography.bodyMedium, color = FoodyTheme.farben.nebentext)
     FoodyKnopf(
-        "Anmelden", { vm.anmelden(adresse, benutzer, passwort) }, Modifier.fillMaxWidth(),
-        aktiv = !laeuft && adresse.isNotBlank() && benutzer.isNotBlank() && passwort.isNotEmpty(),
+        "Anmelden", { vm.anmelden(adresse, benutzer, passwort.text.toString()) }, Modifier.fillMaxWidth(),
+        aktiv = !laeuft && adresse.isNotBlank() && benutzer.isNotBlank() && passwort.text.isNotEmpty(),
     )
 }
 
