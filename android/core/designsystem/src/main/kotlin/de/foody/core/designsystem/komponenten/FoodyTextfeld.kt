@@ -18,6 +18,8 @@ import androidx.compose.ui.text.input.KeyboardType
  * Hinweis darunter. Mit [onFertig] trägt die Tastatur „Fertig“ und meldet es; [satzanfangGross] schreibt den ersten
  * Buchstaben groß.
  */
+// Standard volle Breite statt `Modifier`: Fast alle Felder stehen allein in ihrer Zeile (16 von 19 Aufrufen ohne modifier)
+@Suppress("ModifierParameter")
 @Composable
 fun FoodyTextfeld(
     beschriftung: String,

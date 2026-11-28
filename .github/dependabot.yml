@@ -14,6 +14,9 @@ updates:
         patterns: ["org.jetbrains.kotlin*", "com.google.devtools.ksp*", "org.jetbrains.kotlinx*"]
       hilt:
         patterns: ["com.google.dagger*"]
+      # Robolectric und sein Android-Jar (android-all-instrumented) gehören zusammen (libs.versions.toml)
+      robolectric:
+        patterns: ["org.robolectric*"]
   - package-ecosystem: github-actions
     directory: /
     schedule:

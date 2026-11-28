@@ -12,5 +12,6 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
             defaultConfig.targetSdk = FoodySdk.TARGET
         }
         unitTestsNurDebug()
+        robolectricOffline()
     }
 }

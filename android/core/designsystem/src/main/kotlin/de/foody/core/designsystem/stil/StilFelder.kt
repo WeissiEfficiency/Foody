@@ -133,7 +133,7 @@ private fun feldAussehen(stil: FoodyStil, fokus: Boolean): FeldAussehen {
         }
         FoodyStil.EDO -> {
             val linie = if (fokus) edoShu() else f.text
-            FeldAussehen(unterstrich(linie, 1.5.dp), 4.dp, Edo.text(16.5f), Edo.kopf(11.5f))
+            FeldAussehen(Modifier.unterstrich(linie, 1.5.dp), 4.dp, Edo.text(16.5f), Edo.kopf(11.5f))
         }
         FoodyStil.BAYRISCH -> {
             val form = RoundedCornerShape(10.dp)
@@ -164,7 +164,7 @@ private fun feldAussehen(stil: FoodyStil, fokus: Boolean): FeldAussehen {
     }
 }
 
-private fun unterstrich(farbe: Color, staerke: Dp) = Modifier.drawBehind {
+private fun Modifier.unterstrich(farbe: Color, staerke: Dp) = drawBehind {
     val y = size.height - staerke.toPx() / 2
     drawLine(farbe, Offset(0f, y), Offset(size.width, y), staerke.toPx())
 }

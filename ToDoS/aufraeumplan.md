@@ -27,6 +27,10 @@ Kleinigkeiten P1–P6 und die Ideen O1–O4 in Stufe 8.
 Server ist veraltet (S1, Rebuild nötig), und die CI wird oft rot, weil Robolectric beim Testen herunterlädt (S2). Der
 Rest sind Kleinigkeiten; P2 aus Stufe 8 ist erledigt, P1 und P3 sind weiter offen.
 
+Am selben Tag umgesetzt: S2 (#347), S1 (#348, **Server-Rebuild nötig**), S5 mit P1/P3 und S6 (#349), S7 (#350), S8
+und S10 (#351), S9 (#352). Offen sind S3, S4, S11 und S12 (alles 👤) sowie S13: Dependabot legt seit Oktober keine
+Update-PRs mehr an.
+
 Zusätzlich erledigt: **Z1** Release stürzte bei „Frei“ im Tagebuch ab – R8 entfernte die Konstruktoren der
 ML-Kit-Registrare (`firebase-components` 16.1.0 behält nur die Klasse); Keep-Regel in `proguard-rules.pro` (#139).
 
@@ -215,9 +219,9 @@ stichprobenartig. Nicht gelaufen: Emulator-Tests, Bildvergleich, Fotoerkennung a
 
 | ID | Was | Vorschlag | Wer |
 |---|---|---|---|
-| P1 | **Reste eines abgebrochenen Modell-Imports** (`ModellDateien.kt:53`): Endet der Prozess mitten im Import, bleiben `import-0.teil` und `import-1.teil` in `filesDir/modell/` liegen – bis zu 2,95 GB, in den Einstellungen nicht sichtbar, weg erst beim nächsten Import | Beim Start (oder beim ersten Lesen des Stands) alle `import-*.teil` löschen; Test, der vorher fehlschlägt | 🤖 PR |
+| ✅ P1 | (erledigt 2026-11-28, S5) **Reste eines abgebrochenen Modell-Imports** (`ModellDateien.kt:53`): Endet der Prozess mitten im Import, bleiben `import-0.teil` und `import-1.teil` in `filesDir/modell/` liegen – bis zu 2,95 GB, in den Einstellungen nicht sichtbar, weg erst beim nächsten Import | Beim Start (oder beim ersten Lesen des Stands) alle `import-*.teil` löschen; Test, der vorher fehlschlägt | 🤖 PR |
 | ✅ P2 | **Gerätewechsel** (erledigt: `data_extraction_rules.xml` sperrt das Cloud-Backup ganz und lässt beim Gerätewechsel alles außer dem Sync-Token zu) (`AndroidManifest.xml:9`, Lint `DataExtractionRules`): `allowBackup="false"` sperrt nur das Cloud-Backup. Eine Direktübertragung aufs neue Handy könnte Datenbank (mit Tagebuch) und Modell trotzdem kopieren; `docs/security.md` sagt, Daten verlassen das Gerät nur über Sicherung oder Sync | `dataExtractionRules` anlegen und dort bewusst ausschließen oder zulassen, in `security.md` festhalten. Vorher prüfen, ob das Handy diesen Weg überhaupt nutzt | 👤 entscheidet, 🤖 PR |
-| P3 | **Doku hinkt der Fotoerkennung hinterher:** `docs/security.md:17` nennt beim FileProvider `cache/mahlzeit/` nicht (`kamera_pfade.xml` gibt es frei); „1,5 GB“ statt 2,95 GB in `ModellVerwaltung.kt:39` und `EinstellungenViewModel.kt:118`; `README.md:8` mit „Stand (2026-10-28)“ | nachziehen | 🤖 PR (mit P1) |
+| ✅ P3 | (erledigt 2026-11-28, S5) **Doku hinkt der Fotoerkennung hinterher:** `docs/security.md:17` nennt beim FileProvider `cache/mahlzeit/` nicht (`kamera_pfade.xml` gibt es frei); „1,5 GB“ statt 2,95 GB in `ModellVerwaltung.kt:39` und `EinstellungenViewModel.kt:118`; `README.md:8` mit „Stand (2026-10-28)“ | nachziehen | 🤖 PR (mit P1) |
 | P4 | **Worktrees:** unter `.claude/worktrees` liegen sieben von gemergten PRs (#206–#213: `bls-dichte`, `foto-4b`, `foto-text`, `makro-farben`, `portionen-gebaeck`, `scan-widget`, `widget-sichtbar`) und vier ohne Branch. `bold-poincare-7e26f0` (Widget „Foto“) ist seit #214 ebenfalls in `main`; #214 kam nach dieser Prüfung und ist nicht mitgeprüft | Sitzungen archivieren, die App räumt die Worktrees mit weg (wie F8) | 👤 |
 | P5 | **Arbeiten mit Claude:** Ein Worktree hat keine `local.properties`, `JAVA_HOME` und `ANDROID_HOME` sind auf dem Rechner nicht gesetzt; die Sitzung musste beides suchen (seit dem Umzug nach `C:\Dev` war das Gedächtnis der Sitzungen leer, vgl. V6). Die Pfade stehen jetzt wieder dort | Optional: `.claude/settings.json` im Projekt mit erlaubten Gradle-Befehlen, falls nicht schon global erlaubt | 👤 |
 | P6 | Klein: `Thread.sleep` in acht Testdateien (Nebenläufigkeit; können wackeln), `SyncSpeicher.kt` mit 803 Zeilen, 13 Lint-Hinweise `UseKtx` | Beim nächsten Anfassen der Stellen | 🤖 |
@@ -253,7 +257,7 @@ Nicht gelaufen sind Emulator-Tests und ein Test am Handy.
 | ID | Was | Vorschlag | Wer |
 |---|---|---|---|
 | S1 | **Netty im Server ist veraltet.** Ktor 3.5.0 zieht Netty `4.2.13.Final` (`:server:dependencies`, runtimeClasspath). Dependabot meldet dafür offene Lücken (kritisch: SNI-Routing; hoch: HTTP/1- und HTTP/2-Decoder, Speicherlecks), behoben ab `4.2.17.Final`. Traefik davor mildert vieles, aber der Server parst weiter HTTP/1.1. Dependabot hebt die transitive Version nicht selbst an | In `server/sync/build.gradle.kts` `platform("io.netty:netty-bom:4.2.17.Final")` (oder neuer) erzwingen, Server-Tests, Docker-Smoke-Test in der CI. Danach den Server neu bauen | 🤖 PR, 👤 Rebuild |
-| S2 | **CI oft rot ohne Codefehler.** Robolectric lädt seine Android-Jars (`android-all-instrumented`) erst beim Testen von Maven Central (`MavenArtifactFetcher`). `setup-gradle` hält diesen Ordner nicht vor. Seit 14.11. waren 20 von 100 CI-Läufen rot, 12 davon nur deshalb, darunter `main` am 27.11. und der alte Stand von #314 | Im Job `build` `~/.m2/repository/org/robolectric` mit `actions/cache` (auf SHA festgenagelt) vorhalten, Schlüssel aus Robolectric-Version und SDK. Alternativ die Jars als Gradle-Abhängigkeit laden und `robolectric.offline=true` setzen | 🤖 PR |
+| ✅ S2 | (erledigt 2026-11-28: Gradle lädt das Jar, Robolectric läuft offline, siehe `docs/architecture.md` „Build“) **CI oft rot ohne Codefehler.** Robolectric lädt seine Android-Jars (`android-all-instrumented`) erst beim Testen von Maven Central (`MavenArtifactFetcher`). `setup-gradle` hält diesen Ordner nicht vor. Seit 14.11. waren 20 von 100 CI-Läufen rot, 12 davon nur deshalb, darunter `main` am 27.11. und der alte Stand von #314 | Im Job `build` `~/.m2/repository/org/robolectric` mit `actions/cache` (auf SHA festgenagelt) vorhalten, Schlüssel aus Robolectric-Version und SDK. Alternativ die Jars als Gradle-Abhängigkeit laden und `robolectric.offline=true` setzen | 🤖 PR |
 
 **Mittel**
 
@@ -261,17 +265,17 @@ Nicht gelaufen sind Emulator-Tests und ein Test am Handy.
 |---|---|---|---|
 | S3 | **Dependabot-Liste ist unübersichtlich:** rund 45 offene Warnungen. Ein Teil ist längst behoben, bleibt aber offen: `bcprov` steht auf 1.86, `logback` auf 1.5.37. Ein anderer Teil gehört nur zum Build-Werkzeug (AGP/Lint): `guava`, `wire-runtime`, `jose4j`, `jdom2`, `httpclient`, `commons-lang3`, `kotlin-gradle-plugin`. Echte Laufzeit-Lücken fallen so nicht auf | Nach S1 die Liste durchgehen. Was nicht in App oder Server landet, auf GitHub als „nicht ausgeliefert“ schließen | 👤 |
 | S4 | **Heller Start bei dunklem Stil (unbestätigt):** Das Fenster-Theme ist `Theme.Material.Light.NoActionBar` (`AndroidManifest.xml`). Startbildschirm und Fenster bleiben hell, bis Compose den ersten Frame zeichnet. Bei Sage, Sternenkreuzer und dunklem Milchglas könnte es kurz hell aufblitzen | Am Handy beim Kaltstart ansehen. Falls ja: in `MainActivity.onCreate` vor `setContent` den Fenstergrund aus dem gespeicherten Stil setzen (`window.setBackgroundDrawable`), dazu ein DayNight-Theme | 👤 prüft, 🤖 PR |
-| S5 | **P1 und P3 aus Stufe 8 sind weiter offen** (im Code nachgesehen). Teile eines abgebrochenen Modell-Imports werden nur im Fehlerzweig gelöscht, nicht beim Start. In `ModellVerwaltung.kt:39` und `EinstellungenViewModel.kt:136` steht noch „1,5 GB“ statt 2,95 GB. Die README hat noch den „Stand (2026-10-28)“ | Wie in Stufe 8, ein PR | 🤖 PR |
+| ✅ S5 | (erledigt 2026-11-28: `ModellVerwaltung` räumt beim Start auf, Test `resteEinesAbgebrochenenImportsVerschwindenBeimStart`; Größen, README, `security.md`) **P1 und P3 aus Stufe 8 sind weiter offen** (im Code nachgesehen). Teile eines abgebrochenen Modell-Imports werden nur im Fehlerzweig gelöscht, nicht beim Start. In `ModellVerwaltung.kt:39` und `EinstellungenViewModel.kt:136` steht noch „1,5 GB“ statt 2,95 GB. Die README hat noch den „Stand (2026-10-28)“ | Wie in Stufe 8, ein PR | 🤖 PR |
 
 **Klein** (beim nächsten Anfassen)
 
 | ID | Was | Vorschlag |
 |---|---|---|
-| S6 | `imHintergrund` (`WidgetDaten.kt`) gibt den Empfänger per `goAsync` erst nach der Arbeit frei, ohne Zeitlimit. Android lässt einem Empfänger etwa 10 s | `withTimeout(9_000)` um `arbeit()` |
-| S7 | `animationenErlaubt()` fragt `Settings.Global` bei jeder Recomposition ab. Es gibt 15 Aufrufe, einige in Szenen mit Endlos-Animation | Einmal in `FoodyTheme` lesen und als CompositionLocal weitergeben, oder `remember` |
-| S8 | Lint-Warnungen: 7 zu Modifier-Konventionen (`FoodyTextfeld`, `ListeBereiche`, `RezepteStile`, `StilFelder`, `WocheAnime`), 1 `ComposableNaming` (`StilBausteine.kt:97`), 2 im Katalog-Manifest, 1 zur ABI für ChromeOS (für Foody bedeutungslos) | Beheben, die ChromeOS-Prüfung in der Lint-Konfiguration abschalten |
-| S9 | Uhrzeit nicht überall eingespeist: 15 direkte `now()`-Aufrufe, etwa `LocalTime.now()` als Standardwert in `EintragenViewModel.oeffnen`, während `EinstellungenViewModel` eine `Clock` bekommt | Beim Anfassen auf die eingespeiste `Clock` umstellen |
-| S10 | Versionskatalog: `play-services-*` und `androidx-test-core` haben feste Versionen in `[libraries]` statt in `[versions]`. Der Kommentar „Geprüft … (2026-10)“ ist veraltet | In `[versions]` ziehen |
+| ✅ S6 | (erledigt 2026-11-28) `imHintergrund` (`WidgetDaten.kt`) gibt den Empfänger per `goAsync` erst nach der Arbeit frei, ohne Zeitlimit. Android lässt einem Empfänger etwa 10 s | `withTimeout(9_000)` um `arbeit()` |
+| ✅ S7 | (erledigt 2026-11-28, #350: einmal je `FoodyTheme`, neu bei jedem Wechsel des Lebenszyklus) `animationenErlaubt()` fragt `Settings.Global` bei jeder Recomposition ab. Es gibt 15 Aufrufe, einige in Szenen mit Endlos-Animation | Einmal in `FoodyTheme` lesen und als CompositionLocal weitergeben, oder `remember` |
+| ✅ S8 | (erledigt 2026-11-28, #351: Lint 0 Befunde; `FoodyTextfeld` und `Oben` begründet unterdrückt) Lint-Warnungen: 7 zu Modifier-Konventionen (`FoodyTextfeld`, `ListeBereiche`, `RezepteStile`, `StilFelder`, `WocheAnime`), 1 `ComposableNaming` (`StilBausteine.kt:97`), 2 im Katalog-Manifest, 1 zur ABI für ChromeOS (für Foody bedeutungslos) | Beheben, die ChromeOS-Prüfung in der Lint-Konfiguration abschalten |
+| ✅ S9 | (erledigt 2026-11-28, #352: `EintragenViewModel` und `StartdatenLader`; Composables reichen „jetzt“ schon als Parameter weiter) Uhrzeit nicht überall eingespeist: 15 direkte `now()`-Aufrufe, etwa `LocalTime.now()` als Standardwert in `EintragenViewModel.oeffnen`, während `EinstellungenViewModel` eine `Clock` bekommt | Beim Anfassen auf die eingespeiste `Clock` umstellen |
+| ✅ S10 | (erledigt 2026-11-28, #351) Versionskatalog: `play-services-*` und `androidx-test-core` haben feste Versionen in `[libraries]` statt in `[versions]`. Der Kommentar „Geprüft … (2026-10)“ ist veraltet | In `[versions]` ziehen |
 | S11 | Gradle: Die Warnung zu `by creating` (fällt mit Gradle 10 weg) kommt aus einem Plugin, nicht aus eigenen Skripten. `android.overridePathCheck=true` in `~/.gradle/gradle.properties` braucht der Checkout seit dem Umzug nach `C:\Dev` nicht mehr | Plugins aktuell halten; die Zeile auf dem Rechner löschen (👤) |
 | S12 | Repo: 98 gemergte Branches liegen noch auf GitHub. Das Pack ist 147 MiB groß, vor allem durch den Verlauf der Referenzbilder. Im Hauptcheckout liegen `tmp_obj`-Reste | Auf GitHub „Automatically delete head branches“ einschalten, alte Branches löschen, `git gc` im Hauptcheckout (👤) |
 | — | Weiter aus Stufe 8, P6: `Thread.sleep` in 8 Testdateien, `SyncSpeicher.kt` mit 803 Zeilen; dazu jetzt `EintragenViewModel.kt` mit 682 Zeilen | Beim Anfassen |
@@ -305,7 +309,7 @@ Nicht gelaufen sind Emulator-Tests und ein Test am Handy.
 4. ✅ **Vorgezogen auf 31.10./01.11.:** Stufe 3 C1–C8 (#156, #158, #166), Stufe 5 bis auf E6 (beobachten). Nach dem
    Design-Umbau (#170) folgten E5 und Q8 (#171) und E7 Teil 2 (Format-Lauf).
 5. Danach: Fotoerkennung (ADR 0017) und BLS (ADR 0018) in 3.4.1; die KI-Hilfe über den Server ist gestrichen (ADR 0019).
-6. Stufe 9: zuerst S2 (CI zuverlässig), dann S1 (Netty, mit Server-Rebuild), dann P1 und P3 zusammen mit S6. S4 erst
+6. ✅ Stufe 9 (Code): S2, S1, S5 + S6, S7, S8 + S10, S9 am 2026-11-28. Ursprüngliche Reihenfolge: zuerst S2 (CI zuverlässig), dann S1 (Netty, mit Server-Rebuild), dann P1 und P3 zusammen mit S6. S4 erst
    nach dem Blick aufs Handy.
 
 **Geschätzter Gewinn (geschätzt, nicht gemessen):** ~45 Doku-Dateien aus dem Suchpfad neuer Sessions, ~300 Zeilen

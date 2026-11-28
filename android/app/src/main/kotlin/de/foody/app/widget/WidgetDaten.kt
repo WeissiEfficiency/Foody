@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -154,12 +155,16 @@ internal fun oeffnen(context: Context, link: String?, nummer: Int): PendingInten
     PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
 )
 
-/** Lädt in [onUpdate] auf IO und gibt den Empfänger erst danach frei (`goAsync`). */
+/**
+ * Lädt in [onUpdate] auf IO und gibt den Empfänger erst danach frei (`goAsync`). Android lässt einem Empfänger etwa
+ * 10 s; was länger dauert, bricht nach [EMPFAENGER_MS] ab, statt als hängender Empfänger zu enden. Das Widget behält
+ * dann sein altes Bild bis zum nächsten Update.
+ */
 internal fun AppWidgetProvider.imHintergrund(arbeit: suspend () -> Unit) {
     val ende = goAsync()
     CoroutineScope(Dispatchers.IO).launch {
         try {
-            arbeit()
+            withTimeoutOrNull(EMPFAENGER_MS) { arbeit() }
         } finally {
             ende.finish()
         }
@@ -220,6 +225,9 @@ class WidgetBeobachter @Inject constructor(private val quelle: WidgetDatenQuelle
         }
     }
 }
+
+/** Höchstdauer der Arbeit in [imHintergrund], knapp unter den etwa 10 s, die Android einem Empfänger lässt. */
+private const val EMPFAENGER_MS = 9_000L
 
 private const val EINKAUF = "einkauf"
 private const val WOCHE = "woche"

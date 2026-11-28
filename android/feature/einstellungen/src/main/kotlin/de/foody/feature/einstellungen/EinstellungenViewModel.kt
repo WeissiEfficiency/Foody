@@ -133,7 +133,7 @@ class EinstellungenViewModel @Inject constructor(
     /** Wirkt sofort für den Foto-Knopf im Tagebuch; gilt nur für dieses Gerät. */
     fun fotoErkennungSetzen(an: Boolean) = erkennung.setzen(an)
 
-    /** Kopiert die beiden gewählten Modelldateien (bei 1,5 GB dauert das eine Weile); Ergebnis als Meldung. */
+    /** Kopiert die beiden gewählten Modelldateien (bei 2,95 GB dauert das eine Weile); Ergebnis als Meldung. */
     fun modellInstallieren(uris: List<Uri>) = starten(Aktion.MODELL_INSTALLIEREN) {
         modellMeldung(modell.importieren(uris.map(Uri::toString)))
     }

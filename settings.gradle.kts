@@ -3,6 +3,9 @@ pluginManagement {
     if (System.getenv("FOODY_SERVER_ONLY") == null) includeBuild("build-logic")
     repositories {
         google()
+        // Googles Spiegel von Maven Central zuerst: Maven Central lehnt die CI oft mit „429 Too Many Requests“ ab
+        // (Robolectric-Jar mit 213 MB, Kotlin-Plugin im Docker-Build). Was dem Spiegel fehlt, kommt von Maven Central.
+        maven("https://maven-central.storage-download.googleapis.com/maven2/")
         mavenCentral()
         gradlePluginPortal()
     }
@@ -11,6 +14,7 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
+        maven("https://maven-central.storage-download.googleapis.com/maven2/") // Spiegel, siehe oben
         mavenCentral()
     }
 }

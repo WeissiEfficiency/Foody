@@ -33,10 +33,11 @@ class ModellVerwaltung internal constructor(
         Dispatchers.IO,
     )
 
-    private val _stand = MutableStateFlow(dateien.stand())
+    // Beim Start läuft sicher kein Import (er geht nur über diese eine Instanz): Reste eines abgebrochenen wegräumen
+    private val _stand = MutableStateFlow(dateien.apply { resteEntfernen() }.stand())
     val stand: StateFlow<ModellDateien.Stand> = _stand.asStateFlow()
 
-    /** Kopiert die beiden Dateien ([uris] in beliebiger Reihenfolge); dauert bei 1,5 GB eine Weile. */
+    /** Kopiert die beiden Dateien ([uris] in beliebiger Reihenfolge); dauert bei 2,95 GB eine Weile. */
     suspend fun importieren(uris: List<String>): ModellDateien.Import = withContext(io) {
         dateien.importieren(uris.map { uri -> { oeffnen(uri) } }).also { _stand.value = dateien.stand() }
     }

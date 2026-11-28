@@ -12,6 +12,9 @@ val nativBauen = providers.gradleProperty("foody.nativ").isPresent
 android {
     namespace = "de.foody.core.erkennung"
 
+    // Nur arm64 für das Handy (ADR 0017); ChromeOS (x86_64) gibt es im Haushalt nicht
+    lint { disable += "ChromeOsAbiSupport" }
+
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

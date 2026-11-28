@@ -60,6 +60,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalTime
 import javax.inject.Inject
@@ -199,6 +200,8 @@ class EintragenViewModel @Inject constructor(
     private val gedaechtnis: FotoGedaechtnis,
     bls: BlsNachschlag,
     private val zutatenRepo: ZutatenRepository,
+    /** Uhr für die Mahlzeit nach Uhrzeit (aus `DatenModul.uhr`; Tests geben die Uhrzeit beim Öffnen vor). */
+    private val uhr: Clock = Clock.systemDefaultZone(),
 ) : ViewModel() {
     private val eingaben = gespeichert.getMutableStateFlow(EINGABEN, Eingaben())
 
@@ -302,7 +305,7 @@ class EintragenViewModel @Inject constructor(
      * und Packungssuche ab und vergisst die Scan-Meldung. [sofort]: gleich Kamera bzw. Scanner (ohne Play-Dienste
      * bleibt es beim Erfassen).
      */
-    fun oeffnen(datum: LocalDate, mahlzeit: Mahlzeit?, uhrzeit: LocalTime = LocalTime.now(), auftrag: String? = null, sofort: SofortStart? = null) {
+    fun oeffnen(datum: LocalDate, mahlzeit: Mahlzeit?, uhrzeit: LocalTime = LocalTime.now(uhr), auftrag: String? = null, sofort: SofortStart? = null) {
         if (auftrag != null && auftrag == letzterAuftrag) return
         letzterAuftrag = auftrag
         fotoLauf.abbrechen()

@@ -44,13 +44,21 @@ class ModellDateien(private val ordner: File) {
     }
 
     /**
+     * Löscht Teile eines Imports, den ein Prozessende unterbrochen hat (bis zu 2,95 GB, in den Einstellungen unsichtbar).
+     * Nur aufrufen, wenn sicher kein Import läuft – [ModellVerwaltung] tut es einmal beim Start.
+     */
+    fun resteEntfernen() {
+        ordner.listFiles { datei -> datei.name.startsWith(TEIL_ANFANG) && datei.name.endsWith(TEIL_ENDE) }?.forEach { it.delete() }
+    }
+
+    /**
      * Übernimmt zwei GGUF-Dateien in beliebiger Reihenfolge. Welche der Bildteil ist, steht im Kopf der Datei. Erst
      * nach der Prüfung ersetzen sie ein vorhandenes Modell; bei einem Fehler bleibt nichts liegen. Blockiert.
      */
     fun importieren(quellen: List<() -> InputStream>): Import {
         if (quellen.size != 2) return Import.FalscheDateien
         ordner.mkdirs()
-        val teile = quellen.indices.map { File(ordner, "import-$it.teil") }
+        val teile = quellen.indices.map { File(ordner, "$TEIL_ANFANG$it$TEIL_ENDE") }
         try {
             val summen = quellen.zip(teile).map { (quelle, ziel) -> kopieren(quelle, ziel) }
             val arten = teile.map { GgufKopf.architektur(it) ?: return Import.KeinModell }
@@ -82,6 +90,10 @@ class ModellDateien(private val ordner: File) {
         const val BILD = "bild.gguf"
 
         private const val CLIP = "clip"
+
+        /** Zwischendateien des Imports: `import-0.teil`, `import-1.teil`. */
+        private const val TEIL_ANFANG = "import-"
+        private const val TEIL_ENDE = ".teil"
 
         /**
          * Qwen3-VL-4B-Instruct von Qwen (`Qwen3VL-4B-Instruct-Q4_K_M.gguf`, `mmproj-Qwen3VL-4B-Instruct-Q8_0.gguf`),

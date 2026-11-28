@@ -107,7 +107,7 @@ internal fun GrimoireInventar(
                     )
                     return@Column
                 }
-                Suche(z.filter, aendern, "Im Grimoire suchen", rand)
+                Suche(z.filter, aendern, rand, "Im Grimoire suchen")
                 FilterChips(z.filter, aendern)
                 if (z.geladen && n == 0) {
                     LeererZustandFlaeche(

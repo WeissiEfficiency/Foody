@@ -55,8 +55,8 @@ internal fun ListeKopf(anzahl: Int?, onNeu: () -> Unit) {
 internal fun Suche(
     f: ListeFilter,
     aendern: ((ListeFilter) -> ListeFilter) -> Unit,
+    modifier: Modifier = Modifier,
     platzhalter: String = "Rezepte, Zutaten …",
-    modifier: Modifier = Modifier.padding(horizontal = FoodyAbstaende.s4, vertical = FoodyAbstaende.s2),
 ) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2), verticalAlignment = Alignment.CenterVertically) {
         Suchfeld(f.suche, { text -> aendern { it.copy(suche = text) } }, platzhalter, Modifier.weight(1f))
