@@ -114,6 +114,10 @@ private fun marke(k: KartenAussehen, lage: TagLage, kuerzel: String): Marke {
             val hell = stoff == Color.WHITE || stoff == Entwuerfe.bayrisch.grund
             Marke(MarkenForm.WIMPEL, 34f, 44f, stoff, k.text, 1.5f, kuerzel, if (hell) k.text else Color.WHITE, serif = true)
         }
+        // Im Necronomicon Monde in Tinte: geplante Tage hell gefüllt, heute mit Rand in Blut, kein Schein
+        FoodyStil.GRAUEN if k.buch -> Marke(
+            MarkenForm.KREIS, 18f, 18f, if (geplant || heute) PAPIER_HELL else null, if (heute) k.akzent else k.text, if (heute) 2f else 1f,
+        )
         FoodyStil.GRAUEN -> Marke(
             MarkenForm.KREIS, 18f, 18f, if (geplant || heute) 0xFFD9DEC8.toInt() else null, if (heute) k.akzent else k.neben, if (heute) 2f else 1f,
             schein = if (heute) k.akzent else null, scheinPlatz = true,

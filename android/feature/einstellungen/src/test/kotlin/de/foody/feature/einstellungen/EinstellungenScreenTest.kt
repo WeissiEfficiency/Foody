@@ -81,7 +81,7 @@ class EinstellungenScreenTest {
         remember { { gewaehlt(modellDateien.map(Uri::fromFile)) } }
     }
 
-    private fun zeigen(schrift200: Boolean = false): EinstellungenViewModel {
+    private fun zeigen(): EinstellungenViewModel {
         val vm = u.vm()
         compose.setContent {
             FoodyTheme {
@@ -91,7 +91,7 @@ class EinstellungenScreenTest {
                         vm = vm, dateiwahl = dateien, modellwahl = modellwahl,
                     )
                 }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
         return vm
@@ -341,13 +341,6 @@ class EinstellungenScreenTest {
         knopf("Modell installieren").performClick()
         compose.warteAufText("Bitte beide Dateien wählen: Sprachteil und Bildteil (mmproj).")
         compose.onNodeWithText("Kein Modell installiert").assertExists()
-    }
-
-    @Test
-    fun schrift200OhneAbschneiden() {
-        zeigen(schrift200 = true)
-        compose.warteAufText("KONTO")
-        compose.pruefeNichtsAbgeschnitten()
     }
 
     @Test

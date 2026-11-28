@@ -90,12 +90,12 @@ internal class WocheDaten(val woche: WochenAnsicht?, val heute: LocalDate, val z
 internal fun rememberGewaehlt(w: WocheDaten): MutableIntState =
     rememberSaveable(w.woche?.montag) { mutableIntStateOf(w.heuteIndex.coerceAtLeast(0)) }
 
-/** Scrollender Rahmen, so breit wie der Inhalt sonst, unten Platz für die Leiste. */
+/** Scrollender Rahmen, so breit wie der Inhalt sonst (oder [breite]), unten Platz für die Leiste. */
 @Composable
-internal fun WocheRahmen(unten: Dp, abstand: Dp = 12.dp, inhalt: @Composable ColumnScope.() -> Unit) {
+internal fun WocheRahmen(unten: Dp, abstand: Dp = 12.dp, breite: Dp = FoodyBreiten.inhalt, inhalt: @Composable ColumnScope.() -> Unit) {
     Box(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         Column(
-            Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = unten),
+            Modifier.widthIn(max = breite).fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = unten),
             verticalArrangement = Arrangement.spacedBy(abstand),
             content = inhalt,
         )

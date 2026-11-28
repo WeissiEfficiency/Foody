@@ -2,8 +2,6 @@ package de.foody.feature.zutaten
 
 import android.content.Context
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
@@ -11,7 +9,6 @@ import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
 import androidx.room.Room
@@ -116,13 +113,6 @@ fun ComposeTestRule.pruefeUeberLeiste(knoten: androidx.compose.ui.test.Semantics
 }
 
 val LEISTE_FREI = 88.dp
-
-/** Inhalt mit doppelter Schriftgröße (Systemschrift 200 %). */
-@Composable
-fun MitSchrift200(inhalt: @Composable () -> Unit) {
-    val d = LocalDensity.current
-    CompositionLocalProvider(LocalDensity provides Density(d.density, fontScale = 2f)) { inhalt() }
-}
 
 /** Wie in :core:designsystem: zu viele Zeilen, gekürzte Zeile oder zu wenig Höhe. */
 fun ComposeTestRule.pruefeNichtsAbgeschnitten() {

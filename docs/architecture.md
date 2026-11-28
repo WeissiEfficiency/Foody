@@ -234,7 +234,28 @@ wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für 
     `zeilenImStil()` die Zeilen der Stile R bis V. Texte nur in Immersiv über `stilText(standard, sage, anime, edo,
     bayrisch, grauen, kreuzer)` (`StilTexte`); TalkBack bekommt die normalen Begriffe. Gemeinsame Bausteine:
     `StilBausteine` (`StilAktion`, `stilTitel`), `StilFelder` (`StilFeld`, `StilAbschnitt`, `StilKarte`) und je Stil
-    `stil/<stil>/…Bausteine.kt` (Seitenkopf, Knöpfe, Zeichnungen). Die Szenen liegen in den Features unter `stil/`
+    `stil/<stil>/…Bausteine.kt` (Seitenkopf, Knöpfe, Zeichnungen). Das Kosmische Grauen hat statt Immersiv und Ruhig
+    zwei inszenierte Gesichter (ADR 0022): `inszeniertFuer` ist für Grauen in beiden Varianten `true`, Ruhig zeigt
+    „Ominös“ (grüne Nacht, Glut), Immersiv das „Necronomicon“ (`StilWerte.grauenBuch`): Pergament
+    (`Hintergrundmuster.PERGAMENT`, `grauen_pergament.webp` aus `werkzeuge/pergament_erzeugen.py`), Tinte, Zier in
+    Blut, Leiste in Leder mit Messing, Seitentitel in Fraktur (`stilTitel`, `grauenFrakturTitel`), Auge und Monde als
+    Federzeichnung (`augeFeder`, `mondFeder`), helles Regalbrett (`brettMalen`). Eine Akzentwahl gibt es beim Grauen
+    nicht. Knöpfe ohne Kasten in beiden Gesichtern: `GrauenKnopf` (Zeichen aus `GrauenZeichen`, Siegel, Schwung),
+    `GrauenWahlwort` statt Chips, Trenner mit Auge und Wasserzeichen (`GrauenSchmuck`). Runde Knöpfe (`RunderKnopf`) werden zu
+    Tinte-Zeichen ohne Kreis (`GrauenRunderKnopf`), Umblättern beim Kochen ist ein Paar aus Wort und Pfeil
+    (`GrauenBlaetterKnopf`), das Siegel bleibt einzelnen Ritualen; statt Fotoplatzhalter eine Bildtafel (`GrauenBildtafel`). Grauen zeigt Rezept und
+    Kochmodus als Buch: `GrauenSeite` (Blatt mit Bundschatten, Seitenkanten, Kapitel oben, römische Seitenzahl unten; im
+    Necronomicon hell mit Randnotiz in Blut) im
+    `HorizontalPager`, `Modifier.umblaettern` kippt das gehende Blatt um den Bund statt es gleiten zu lassen; die Reiter
+    oben folgen der Seite (`grauenBuchBlaettern`). Auch das Logbuch blättert so: `LogbuchBlaetter` legt jeden Tag
+    auf ein Blatt (Seite = Tage seit 2000, Seitenzahl = Tag im Jahr), Wischen meldet den neuen Tag, Pfeile und
+    Datumswahl blättern das Buch mit. Die Woche ist ein Almanach: `TagBlaetter` (`WocheGrauen.kt`) legt die sieben
+    Tage auf Blätter, Wischen wählt den Tag, die Monde blättern mit; auf dem Tablet eine Doppelseite. Buchschmuck: Lesebändchen
+    im rechten Rand, Eselsohr (`eselsohr`), `GrauenInitiale` am ersten Schritt, `GrauenRandnotiz` für die Rezeptnotiz. Vom Auge auf „Heute“ ins Tagebuch führt ein Blick
+    (`AugenBlick.kt`): Das Auge reißt auf, stürzt um die Pupille heran und versinkt in ihrem Dunkel (`blickStand`,
+    900 ms, gezeichnet auf einer Ebene über der Seite); erst dann navigiert es, und im NavHost taucht das Tagebuch mit
+    Einblenden und Wachsen auf. Ebenso kommt in der Bibliothek ein Band aus dem Regal
+    (`RegalUebergang.kt`, `regalStand`, 1000 ms): herausziehen, heranholen, Deckel aufschlagen, dann das Rezept. Ohne Animationen öffnet es sofort; zurück auf „Heute“ ruht das Auge wieder. Die Szenen liegen in den Features unter `stil/`
     und bekommen denselben Zustand und dieselben Aktionen wie der normale Screen. Die Wahl speichert
     `DarstellungSpeicher` als `StilWahl` (`stil`, `stilVariante`, `stilAkzent`); fehlt sie, gilt Milchglas.
     Den Modus Hell/Dunkel und die Farbwelten gibt es nur bei Milchglas, die Systemleisten folgen dem Grund des Stils.
@@ -244,10 +265,10 @@ wählbare Stile seit ADR 0020 (Plan `ToDoS/stile-plan.md`). Einzige Quelle für 
   `KontrastTest` rechnet jedes Paar aus `kontrastPaare` nach, für jede Farbwelt hell und dunkel und für jeden Stil
   mit Variante und Akzent.
 - **`:katalog`** (`de.foody.katalog`, nie ausgeliefert): alle Komponenten in allen Zuständen, Umschalter
-  hell/dunkel/System, Schrift 200 %, ohne Unschärfe; ab 840 dp zweispaltig.
-- **Tests:** Robolectric-Komponententests mit nativer Grafik (echte Textmessung) und 200-%-Prüfung
-  (`TestHilfen.abgeschnitteneTexte`); Roborazzi-Screenshots aller Katalogseiten (hell/dunkel, Handy 411 dp,
-  Tablet 1280 dp, Schrift 200 %) in `android/katalog/src/test/screenshots/`, Vergleich in der CI
+  hell/dunkel/System, ohne Unschärfe; ab 840 dp zweispaltig.
+- **Tests:** Robolectric-Komponententests mit nativer Grafik (echte Textmessung) und Prüfung auf
+  abgeschnittene Texte (`TestHilfen.abgeschnitteneTexte`); Roborazzi-Screenshots aller Katalogseiten (hell/dunkel, Handy 411 dp,
+  Tablet 1280 dp) in `android/katalog/src/test/screenshots/`, Vergleich in der CI
   (`:katalog:verifyRoborazziDebug`, Toleranz 0,1 %). Neu aufnehmen: `./gradlew :katalog:recordRoborazziDebug`.
   Alle Referenzbilder (Katalog und Features) nutzen `FoodyBildvergleich` aus `:core:testing`: halbe Auflösung, damit
   jedes Neuaufnehmen das Repo nur wenig wachsen lässt.
@@ -296,7 +317,8 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   bleibt in den Farben des Hintergrundbilds. Die Farben der Stile kommen aus den Entwürfen im Designsystem
   (`stilGrundlage`, über `Entwuerfe` in `WidgetFarben`); Schrift und Nebentext werden gegen die Fläche des Widgets auf
   4,5:1 angeglichen (`lesbarAuf`, geprüft in `WidgetStilTest`). Nur Werte, die es allein auf Widgets gibt (Anime-Gelb,
-  Ringspuren, der Grauen-Zettel), stehen in `app/`. Ein Wechsel des Stils zeichnet alle Widgets neu (`alleAktualisieren`).
+  Ringspuren, der Grauen-Zettel), stehen in `app/`. Im Necronomicon liegt `grauen_pergament` als Bild auf der Fläche
+  (`Flaeche.bild`; die Farbe bleibt die Prüffläche für den Kontrast), Schrift in Tinte, Akzent in Blut (`Entwuerfe.buch`). Ein Wechsel des Stils zeichnet alle Widgets neu (`alleAktualisieren`).
   Jede Aktualisierung geht über `frischZeigen`: Die Ansicht steckt in der Hülle `widget_huelle` und wird jedes Mal
   entfernt und neu eingesetzt. Bei gleichem Layout wendet der Launcher sonst nur die neuen Aufrufe auf die alten Views an,
   und Stempel, Band, Knöpfe oder abgehakte Zeilen blieben aus dem vorigen Stil oder den vorigen Daten stehen. Enge
@@ -323,9 +345,9 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   wenn der Kopf mit großer Schrift mehrzeilig wird; der Anime-Kopf hält Titel, Datum und Zahnrad in einer Zeile, verkleinert den Titel
   bis zu einer festen Untergrenze und setzt das Datum sonst unter den Titel. In Edo und Sage Ruhig rückt das Datum
   unter den Titel, sobald es nicht mehr daneben passt (`EinstellungenKnopfLageTest`: alle 14 Kombinationen bei 360 dp,
-  Schrift 100/130/200 %, Zahnrad höchstens 48 dp unter der Oberkante; Bildvergleich aller Köpfe auch bei 360 dp:
+  Schrift 100/130 %, Zahnrad höchstens 48 dp unter der Oberkante; Bildvergleich aller Köpfe auch bei 360 dp:
   `heute_360_*`). Eintragen ist ein eigenes Ziel, siehe „Eintragen (Teil B)“; die Szenen Edo, Sage und Bayrisch haben
-  dafür eigene Knöpfe „Scannen“ und „Foto“ (`HeuteAktionen.onSofort`, „Foto“ nur mit `fotoMoeglich`). Tagebuch in
+  dafür eigene Knöpfe „Scannen“ und „Foto“ (`HeuteAktionen.onSofort`, „Foto“ nur mit `fotoMoeglich`; Sage nur in Ruhig). Tagebuch in
   `tagebuch/`: die Seite Eintragen, Ändern-Dialog, „Alle Einträge“ (`TagebuchTagRoute`, Blättern,
   Datumsauswahl, Löschen mit „Rückgängig“). Fotos per Coil (`file:`-Links), sonst Platzhalter. Inhalte höchstens
   720 dp breit, mittig.
@@ -334,7 +356,7 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase5-heute-design.md`.
   synchronisiert“, letzter Fehler als Klartext, „Jetzt synchronisieren“, „Neu anmelden“ nach abgelaufener Anmeldung,
   Trennen mit Rückfrage). Das Passwort liegt nur im Eingabefeld.
 - **Tests:** Repository-Tests (Room im Speicher), Navigations- und Deep-Link-Tests, Bildschirmtests mit echtem
-  ViewModel (Uhr und Sync-Lage als Flows vorgegeben, Room-Abfragen synchron), Schrift 200 %, Hilt-Graph. Roborazzi-
+  ViewModel (Uhr und Sync-Lage als Flows vorgegeben, Room-Abfragen synchron), Hilt-Graph. Roborazzi-
   Bilder von „Heute“ und „Alle Einträge“ (hell/dunkel × Handy 411 dp/Tablet 1280 dp, erfundene Daten) in
   `android/feature/heute/src/test/screenshots/`, Vergleich in der CI (`:feature:heute:verifyRoborazziDebug`).
   Testumgebung: Robolectric dekodiert unter Windows keine Bilder (Foto-Test mit `coil-test`), und ein Textfeld in einem
@@ -365,7 +387,9 @@ gespeichert wird wie vorher (`EintragenViewModel.schreiben`).
   Erkennung, die Suche „Rezept oder Zutat suchen“ und die Treffer: das offene Geplante des Tags, Rezepte (auch ohne
   Suchtext) und Zutaten samt gescannten Produkten (erst mit Suchtext, Teilstring oder Katalogname), je höchstens 30,
   dazu der BLS (siehe „BLS nachschlagen“). Ganz unten, wenn es „Foto“ gibt, „Nicht dabei? Frei eintragen“. Antippen
-  führt zu Bestätigen.
+  führt zu Bestätigen. Sage Immersiv (`stil/ErfassenSage.kt`) zeigt die vier Wege als Gegenstände in Inventarfeldern
+  unter „Ausrüstung“ (eine Reihe, darunter kurze Namen; TalkBack hört die vollen) und die Treffer als Zeilen mit
+  Rune, Name, Nebenzeile und goldenem Pfeil unter Überschriften zwischen Linien (`eintragen_sage_erfassen_suche`).
 - **Bestätigen** (`Bestaetigen.kt`): je nach Quelle Portionen (− / Feld / +) oder Menge und Einheit, beides mit
   „= … kcal“ (`kcalDazu`); Geplantes nur zur Ansicht („1 Portion · … kcal“, Mahlzeit des Plans fest, gespeichert über
   `ausPlan`); nach einem Scan die Packung (`PackungEingabe`), während Katalog bzw. Open Food Facts suchen mit
@@ -461,7 +485,7 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-24-v3-phase6a-rezepte-design.md`.
   „Rezepte“ – `:app` zeigt das Blatt, weil sich die Features nicht kennen). `RezepteBereich` zeigt ab 840 dp Liste und
   Detail nebeneinander; ein Tipp links fragt erst, wenn rechts ein Editor ungespeicherte Änderungen hat. Inhalte höchstens 720 dp breit.
 - **Tests:** Repository- und Importtests (Room im Speicher), Filter- und Zeilentests, Bildschirmtests mit echtem
-  ViewModel (Schrift 200 %, Doppeltipp auf Speichern, gelöschtes Rezept im Editor, Zustand nach Drehen),
+  ViewModel (Doppeltipp auf Speichern, gelöschtes Rezept im Editor, Zustand nach Drehen),
   Navigationstests in `:app`. Roborazzi-Bilder von Liste, Detail und Editor (hell/dunkel × Handy/Tablet) in
   `android/feature/rezepte/src/test/screenshots/`, Vergleich in der CI.
 
@@ -490,7 +514,7 @@ Spec `docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6b-kochen-design.md`. 
   darf. Benachrichtigungs-Freigabe beim ersten Timer; abgelehnt meldet der offene Kochmodus selbst (Ton, Vibration)
   und sagt das einmal.
 - **Tests:** Repository, Schritte, Sitzung, Timer-Speicher und Zeitplan, ViewModel (Doppeltipp „Fertig“, Sync-
-  Änderung, gelöschtes Rezept, Portionen 0/500), Bildschirm (Schrift 200 %, Drehen, Tablet), Navigation in `:app`.
+  Änderung, gelöschtes Rezept, Portionen 0/500), Bildschirm (Drehen, Tablet), Navigation in `:app`.
   Roborazzi-Bilder in `android/feature/kochen/src/test/screenshots/`, Vergleich in der CI.
 
 ## Woche (`:feature:woche`)
@@ -514,6 +538,10 @@ Schemaänderung.
   Mahlzeit-Blatt (Portionen, Gekocht, Kochen, Rezept ansehen, Verschieben auf Mo–So oder ±7 Tage, Umbenennen,
   Entfernen mit „Rückgängig“), Füllen-Blatt; „Leere Tage füllen“ fest über der Navigationsleiste; Blätter ganz
   geöffnet und scrollbar; ab 840 dp zwei Spalten (Mo–Do | Fr–So).
+  Grauen Immersiv („Mondphasen“, `WocheGrauen`): kein Blättern und kein „planen ›“ im Kopf; ein Tipp auf einen Mond
+  wählt den Tag, Wischen über den Mondbogen (ab 56 dp) blättert die Woche, leise ‹ › in den oberen Ecken des Himmels
+  (für TalkBack „Vorige/Nächste Woche“), „Heute ›“ im Kopf nur in einer anderen Woche. Unten das Ritual „Die dunklen
+  Nächte füllen“ mit „2 von 7 Nächten erhellt“. Ruhig unverändert.
 - **Tests:** Repository (Lesen, Ändern, Vorschlag), ViewModel (Blättern, Jahreswechsel KW 53/KW 1, Füllen mit
   verstellbarer Uhr), Bildschirm (Hinzufügen mit eigenem Namen, Blätter, Rückgängig, Tablet), Navigation. Roborazzi-
   Bilder in `android/feature/woche/src/test/screenshots/`, Vergleich in der CI.
@@ -543,15 +571,22 @@ Menge in der Basiseinheit und Herkunft je `NeedSource`, manuelle Artikel ohne He
   Das ⋮-Menü (`EinkaufMenue`) hat nur Milchglas. In den Szenen Sage bis Kreuzer führt allein der Listen-Knopf
   (Bedienhilfe „Einkaufslisten“) zur `ListenSeite` mit den Reitern „Neue Liste · Abgleich · Frühere“; „Liste
   löschen“ ist dort der Papierkorb „Diese Liste löschen“ im Kopf, nur wenn eine Liste angezeigt wird (auch eine
-  frühere); er löscht die angezeigte Liste. Die
-  aufklappbaren Abteilungen nehmen einen Kopf über den Slot `KlappkopfInhalt` (`zuletztKacheln`, `katalogKacheln`):
-  Milchglas `StandardKlappkopf`, jede Szene ihren eigenen (`sageKlappkopf` … `kreuzerKlappkopf`) in Schrift und
-  Farben ihrer Abschnittsköpfe; Rolle, „Aufklappen“/„Zuklappen“ und 48 dp sind gemeinsam (`Modifier.klappbar`).
-  Anime klappt nicht und scrollt nur senkrecht: kleiner Kopf („QUEST!“, Zähler „1/4“, runder Listen-Knopf mit
-  Klemmbrett), die Posten als Kacheln je Abteilung unter einem bunten Abzeichen (Farbe fest je Abteilung), darunter
-  „Hinzufügen“ mit Zuletzt, den Abteilungen und „Eigene Artikel“ als umbrechende Pillen; nur die Kacheln der
-  gewählten stehen darunter (`animeHinzufuegen`, Wahl in `rememberSaveable`). Neben dem Eingabefeld steht in keinem Stil mehr ein „+“: Eintragen über „Fertig“ oder die Kachel
+  frühere); er löscht die angezeigte Liste. Nur Milchglas klappt Zuletzt und
+  die Katalog-Abteilungen auf (`zuletztKacheln`, `katalogKacheln`, Kopf `StandardKlappkopf`, `Modifier.klappbar`).
+  Alle Szenen (Sage bis Kreuzer, Anime) zeigen „Hinzufügen“ mit Zuletzt, den Abteilungen und „Eigene Artikel“ als
+  umbrechende Pillen, darunter nur die Kacheln der gewählten (`hinzufuegenMitPillen` in `EinkaufHinzufuegen.kt`,
+  Wahl in `rememberSaveable`); gescrollt wird nur senkrecht. Jede Szene bringt ein `PillenAussehen` mit:
+  Überschrift (Sage „Die Waren des Händlers“, Edo „Noch besorgen“, Bayrisch „Wos brauch ma no?“, Grauen „Was die
+  Expedition noch braucht“, Kreuzer „FRACHT ANFORDERN“, Anime „Hinzufügen“; für TalkBack immer „Hinzufügen“), die
+  Namen der Abteilungen wie in ihren Posten (Marktnamen, bairisch, Kisten-Code „OBS · …“) und die Pille
+  (`FoodyChip` im Stil, Anime seine kompakte gelbe). Anime hat dazu einen kleinen Kopf („QUEST!“, Zähler „1/4“,
+  runder Listen-Knopf mit Klemmbrett) und die Posten als Kacheln je Abteilung unter einem bunten Abzeichen (Farbe
+  fest je Abteilung). Neben dem Eingabefeld steht in keinem Stil mehr ein „+“: Eintragen über „Fertig“ oder die Kachel
   „„…“ hinzufügen“ unter den Treffern.
+  Sage Immersiv: Der Händler steht als Schattenriss im Ruinentor mit goldenem Licht, Nebel und steigenden Funken
+  (`HaendlerRuinentor`, Höhe aus der Breite, auf dem Tablet höchstens 230 dp), darunter sein Spruch als Untertitel.
+  Die Posten stehen auf einer Papierrolle (`HaendlerRolle`, ein Eintrag im Raster, ab 560 dp zwei Spalten), die sich
+  beim ersten Zeigen nach unten ausrollt (`rememberSaveable`, ohne Animationen sofort offen). Ruhig behält die Felder.
 - **`:core:designsystem`**: `Kachel` mit `aufDerListe` (rot), `onLangdruck` („Details“) und `zustandsText`;
   `KachelEmoji` für die Katalog-Emojis.
 - **`:feature:rezepte`**: „Auf die Einkaufsliste“ im Rezeptdetail (Portionen-Dialog, Snackbar mit „Ansehen“ →
@@ -565,11 +600,12 @@ Menge in der Basiseinheit und Herkunft je `NeedSource`, manuelle Artikel ohne He
 Spec `docs/superpowers/archiv/v3/specs/2026-10-25-v3-phase6e1-einstellungen-design.md`. Das Zahnrad (`EinstellungenKnopf`) oben rechts
 im Kopf von Heute öffnet in allen Stilen die Einstellungsseite; „Server verbinden“ ist das eigene Ziel
 `ServerVerbinden`. Keine Schemaänderung. Die Stilwahl (`StilWahl`) legt die Kacheln in ein Raster mit fester
-Zellbreite (Stile 88 dp, Akzente 72 dp, mit der Schrift wachsend) und gleichem Innenabstand mit und ohne Auswahl, der
-Name hat immer Platz für zwei Zeilen. Die Spaltenzahl kommt aus der Breite der Seite abzüglich des größten
+Zellbreite (Stile 88 dp, Akzente 64 dp, mit der Schrift wachsend) und gleichem Innenabstand mit und ohne Auswahl, der
+Name hat immer Platz für zwei Zeilen. Die vier Akzente stehen auf dem Handy in einer Reihe; passen sie nicht, zwei zu
+je zwei statt drei und eine allein (`rasterSpalten`, `EinstellungenStileTest.sageFarbenInEinerReihe` bei 361 dp). Die Spaltenzahl kommt aus der Breite der Seite abzüglich des größten
 Karteneinzugs aller Stile (Glaskarte, 2 × 16 dp), nicht aus der Karte des gewählten Stils; auf dem Tablet stehen so
 sechs Stile in einer Reihe. Beim Umschalten ändern die Kacheln weder Spalten noch Breite noch Reihe
-(`EinstellungenStileTest`, alle Stile und Varianten bei 360 dp mit Schrift 130 % und 200 % und auf dem Tablet).
+(`EinstellungenStileTest`, alle Stile und Varianten bei 360 dp mit Schrift 130 % und auf dem Tablet).
 
 - **`:core:data`:** `DarstellungSpeicher` (`themeMode` mit den v1-Werten `SYSTEM`/`LIGHT`/`DARK`, Flow und `aktuell()`
   als Startwert), `TageszielSpeicher.setzen` (500–10.000 kcal, `null` = kein Ziel), `Sicherung.allesLoeschen()`:

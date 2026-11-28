@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.designsystem.FoodyTheme
-import de.foody.core.designsystem.MitSchrift200
 import de.foody.core.designsystem.glas.FoodyHintergrund
 import de.foody.core.designsystem.glas.GlasModusKey
 import de.foody.core.designsystem.pruefeNichtsAbgeschnitten
@@ -177,23 +176,6 @@ class GrundbausteineTest {
                 assertEquals(Color.White, compose.onRoot().captureToImage().toPixelMap()[x.toInt(), y.toInt()], name)
             }
         }
-    }
-
-    @Test
-    fun doppelteSchriftOhneAbschneiden() {
-        compose.setContent {
-            FoodyTheme {
-                MitSchrift200 {
-                    Column(Modifier.width(411.dp)) {
-                        FoodyKnopf("Kochen", onKlick = {})
-                        FoodyChip("Favoriten", ausgewaehlt = true, onKlick = {})
-                        Abschnittskopf("Einkauf", linkText = "6 offen", onLink = {})
-                        FoodyNavigationsleiste(ziele, aktiv = 0, onWahl = {})
-                    }
-                }
-            }
-        }
-        compose.pruefeNichtsAbgeschnitten()
     }
 
     private val fuenf = listOf(

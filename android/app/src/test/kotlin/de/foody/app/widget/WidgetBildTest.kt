@@ -88,6 +88,20 @@ class WidgetBildTest {
         bilder().forEach { (name, b) -> b.captureRoboImage("src/test/screenshots/widget_$name.png", optionen) }
     }
 
+    /** Die Widgets in den zwei Gesichtern des Grauens (ADR 0022): Necronomicon auf Pergament, Ominös auf der Tafel. */
+    @Test
+    fun widgetsImGrauen() {
+        for ((gesicht, variante) in listOf("buch" to "IMMERSIV", "ominoes" to "RUHIG")) {
+            val wahl = StilWahl("GRAUEN", variante)
+            mapOf(
+                "einkauf" to bild(einkaufAnsicht(kontext, einkauf(), wahl), 160, 160),
+                "eintragen" to bild(eintragenAnsicht(kontext, wahl), 160, 160),
+                "heute" to bild(heuteAnsicht(kontext, heute(), wahl), 320, 160),
+                "woche" to bild(wocheAnsicht(kontext, woche(), wahl), 320, 90),
+            ).forEach { (name, b) -> b.captureRoboImage("src/test/screenshots/widget_grauen_${gesicht}_$name.png", optionen) }
+        }
+    }
+
     @Test
     fun vorschauGleichReferenz() {
         listOf("einkauf", "eintragen", "heute", "kalorien", "woche").forEach { name ->

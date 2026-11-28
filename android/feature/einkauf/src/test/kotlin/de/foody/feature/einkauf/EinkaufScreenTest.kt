@@ -59,14 +59,14 @@ class EinkaufScreenTest {
         db.close()
     }
 
-    private fun zeigen(listeId: String? = null, schrift200: Boolean = false, stil: FoodyStil = FoodyStil.MILCHGLAS): EinkaufViewModel {
+    private fun zeigen(listeId: String? = null, stil: FoodyStil = FoodyStil.MILCHGLAS): EinkaufViewModel {
         val vm = u.vm()
         compose.setContent {
             FoodyTheme(stil = stil) {
                 val inhalt = @androidx.compose.runtime.Composable {
                     EinkaufRoute(listeId, onListe = { geoeffnet += it }, onAktuelle = { aktuelle++ }, vm = vm)
                 }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
         return vm
@@ -187,14 +187,6 @@ class EinkaufScreenTest {
         val zwiebeln = compose.onNodeWithText("Zwiebeln").getUnclippedBoundsInRoot()
         val brot = compose.onAllNodesWithText("Brot & Gebäck", substring = true).onFirst().getUnclippedBoundsInRoot()
         assertTrue(brot.left > zwiebeln.right, "Katalog rechts neben der Liste")
-    }
-
-    @Test
-    fun schrift200OhneAbschneiden() {
-        planListe()
-        zeigen(schrift200 = true)
-        compose.warteAufText("Zwiebeln")
-        compose.pruefeNichtsAbgeschnitten()
     }
 
     @Test
@@ -351,12 +343,12 @@ class EinkaufScreenTest {
         planListe()
         zeigen(stil = FoodyStil.SAGE)
         compose.warteAufText("DER HÄNDLER")
-        compose.warteAufText("„Was führt Euch her? Zwei Dinge fehlen Euch noch.“")
+        compose.warteAufText("Was führt Euch her? Zwei Dinge fehlen Euch noch.")
         compose.onNodeWithContentDescription("Zwiebeln", substring = true).performScrollTo().performClick()
-        compose.warteAufText("„Was führt Euch her? Ein Ding fehlt Euch noch.“")
+        compose.warteAufText("Was führt Euch her? Ein Ding fehlt Euch noch.")
         compose.onNodeWithContentDescription("Zwiebeln", substring = true).assert(hasStateDescription("gekauft"))
         compose.onNodeWithContentDescription("Zwiebeln", substring = true).performScrollTo().performClick()
-        compose.warteAufText("„Was führt Euch her? Zwei Dinge fehlen Euch noch.“")
+        compose.warteAufText("Was führt Euch her? Zwei Dinge fehlen Euch noch.")
     }
 
     @Test

@@ -12,10 +12,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.unit.IntSize
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.R
+import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.Hintergrundmuster
+import de.foody.core.designsystem.stil.grauen.grauenWasserzeichen
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -37,6 +44,7 @@ fun FoodyHintergrund(modifier: Modifier = Modifier, inhalt: @Composable BoxScope
     val stil = FoodyTheme.stil
     val linie = FoodyTheme.farben.balkenSpur
     val text = FoodyTheme.farben.text
+    val pergament = if (stil.muster == Hintergrundmuster.PERGAMENT) ImageBitmap.imageResource(R.drawable.grauen_pergament) else null
     Box(modifier.fillMaxSize()) {
         Box(
             Modifier
@@ -64,7 +72,13 @@ fun FoodyHintergrund(modifier: Modifier = Modifier, inhalt: @Composable BoxScope
                         Hintergrundmuster.FASERN -> fasern(linie.copy(alpha = 0.55f))
                         Hintergrundmuster.RAUTEN -> rautenband(stil.zier)
                         Hintergrundmuster.STERNE -> sterne(stil.zier)
+                        Hintergrundmuster.PERGAMENT -> pergament?.let {
+                            // Über die ganze Fläche gestreckt: die verkohlten Ränder liegen immer am Rand
+                            drawImage(it, dstSize = IntSize(size.width.toInt(), size.height.toInt()), filterQuality = FilterQuality.Medium)
+                        }
                     }
+                    // Grauen: das Älteste Zeichen und eine Ranke, blass wie ein Wasserzeichen (beide Gesichter)
+                    if (stil.stil == FoodyStil.GRAUEN) grauenWasserzeichen(stil.zier)
                 },
         )
         CompositionLocalProvider(LocalHazeState provides hazeState) { inhalt() }

@@ -14,18 +14,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -68,6 +72,11 @@ import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.grauen.Grauen
+import de.foody.core.designsystem.stil.grauen.GrauenInitiale
+import de.foody.core.designsystem.stil.grauen.GrauenRandnotiz
+import de.foody.core.designsystem.stil.grauen.GrauenSeite
+import de.foody.core.designsystem.stil.grauen.schwung
+import de.foody.core.designsystem.stil.grauen.umblaettern
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.szenenStil
 import de.foody.core.designsystem.token.FoodyBreiten
@@ -147,12 +156,6 @@ internal fun rezeptArt(stil: FoodyStil, inszeniert: Boolean = true): RezeptArt =
         titel = { Bayrisch.titel(it) }, text = { Bayrisch.text(it) }, klein = { Bayrisch.text(it, FontWeight.Bold) },
         pillen = true, favorit = "♥" to "♡",
     )
-    FoodyStil.GRAUEN if !inszeniert -> RezeptArt(
-        kopf = "Rezept", reiter = REITER, kochen = "Kochen", liste = "Liste",
-        duplizieren = "Duplizieren", archiviert = "ARCHIVIERT", zurueckholen = "wiederherstellen", portionen = ::portionenText,
-        nummer = { "$it." }, werteKopf = listOf("Nährwert", "Portion", "Gesamt"),
-        titel = { Grauen.titel(it) }, text = { Grauen.text(it) }, klein = { Grauen.titel(it, 0.1f) }, favorit = "♦" to "◇",
-    )
     FoodyStil.GRAUEN -> RezeptArt(
         kopf = "Aus der Bibliothek", reiter = REITER, kochen = "Das Ritual beginnen", liste = "Liste",
         duplizieren = "Abschrift anfertigen", archiviert = "VERSIEGELT", zurueckholen = "öffnen", portionen = ::portionenText,
@@ -210,14 +213,40 @@ internal fun RezeptStil(stil: FoodyStil, z: DetailZustand.Da, a: DetailAktionen)
                 }
                 Portionen(art, z.portionen, a.onPortionen)
                 Reiterleiste(art, reiter) { reiter = it }
-                when (reiter) {
-                    0 -> Zutaten(art, z)
-                    1 -> Schritte(art, z.voll.schritte)
-                    else -> Werte(art, z)
+                if (stil == FoodyStil.GRAUEN) {
+                    Buch(art, z, reiter) { reiter = it }
+                } else {
+                    when (reiter) {
+                        0 -> Zutaten(art, z)
+                        1 -> Schritte(art, z.voll.schritte)
+                        else -> Werte(art, z)
+                    }
                 }
             }
         }
         Knopfleiste(art, z, a) { leiste = it }
+    }
+}
+
+/**
+ * Grauen in Immersiv (Runde 2 G2): Zutaten, Zubereitung und Nährwerte sind die Seiten eines Buchs, die man umblättert
+ * (Wischen oder die Reiter als Lesezeichen darüber); jede Seite mit Kapitel und römischer Seitenzahl. Buchschmuck: Seiten
+ * mit Folgeseite haben ein Eselsohr, der erste Schritt eine Initiale, und die Notiz steht als Randnotiz unter den Zutaten
+ * statt bei den Nährwerten.
+ */
+@Composable
+private fun Buch(art: RezeptArt, z: DetailZustand.Da, reiter: Int, onReiter: (Int) -> Unit) {
+    val pager = rememberPagerState(initialPage = reiter) { REITER.size }
+    LaunchedEffect(pager) { snapshotFlow { pager.settledPage }.collect { onReiter(it) } }
+    LaunchedEffect(reiter) { if (pager.currentPage != reiter) pager.animateScrollToPage(reiter) }
+    HorizontalPager(pager, Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, beyondViewportPageCount = 1) { seite ->
+        GrauenSeite(REITER[seite], roemisch(seite + 1), Modifier.umblaettern(pager, seite), eselsohr = seite < REITER.lastIndex) {
+            when (seite) {
+                0 -> Zutaten(art, z, randnotiz = true)
+                1 -> Schritte(art, z.voll.schritte, initiale = true)
+                else -> Werte(art, z, notiz = false)
+            }
+        }
     }
 }
 
@@ -278,9 +307,15 @@ private fun Portionen(art: RezeptArt, n: Int, onSchritt: (Boolean) -> Unit) {
 private fun Reiterleiste(art: RezeptArt, aktiv: Int, onWahl: (Int) -> Unit) {
     val f = FoodyTheme.farben
     val akzent = FoodyTheme.stil.zier
+    // Grauen: Kapitelwörter ohne Linie, unter dem aktiven ein Schwung (Plan „Zwei Gesichter“, Schritt 2)
+    val buch = FoodyTheme.stil.immersiv(FoodyStil.GRAUEN)
     Row(
         Modifier.fillMaxWidth().selectableGroup().then(
-            if (art.pillen) Modifier else Modifier.drawBehind { drawLine(f.balkenSpur, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx()) },
+            if (art.pillen || buch) {
+                Modifier
+            } else {
+                Modifier.drawBehind { drawLine(f.balkenSpur, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx()) }
+            },
         ),
         horizontalArrangement = Arrangement.spacedBy(if (art.pillen) 8.dp else 0.dp),
     ) {
@@ -293,6 +328,8 @@ private fun Reiterleiste(art: RezeptArt, aktiv: Int, onWahl: (Int) -> Unit) {
                         when {
                             art.pillen && an -> Modifier.background(akzent, form).border(2.dp, f.text, form)
                             art.pillen -> Modifier.border(2.dp, f.text, form)
+                            buch && an -> Modifier.drawBehind { schwung(akzent) }
+                            buch -> Modifier
                             an -> Modifier.drawBehind {
                                 drawLine(akzent, Offset(0f, size.height - 1.dp.toPx()), Offset(size.width, size.height - 1.dp.toPx()), 3.dp.toPx())
                             }
@@ -318,7 +355,7 @@ private fun Reiterleiste(art: RezeptArt, aktiv: Int, onWahl: (Int) -> Unit) {
 }
 
 @Composable
-private fun Zutaten(art: RezeptArt, z: DetailZustand.Da) {
+private fun Zutaten(art: RezeptArt, z: DetailZustand.Da, randnotiz: Boolean = false) {
     val f = FoodyTheme.farben
     Column {
         z.voll.zeilen.forEach { zeile ->
@@ -341,11 +378,12 @@ private fun Zutaten(art: RezeptArt, z: DetailZustand.Da) {
             }
         }
         if (z.voll.zeilen.isEmpty()) Text("Noch keine Zutaten.", style = art.text(16f), color = f.nebentext)
+        if (randnotiz) z.voll.rezept.notes?.let { GrauenRandnotiz(it) }
     }
 }
 
 @Composable
-private fun Schritte(art: RezeptArt, schritte: List<String>) {
+private fun Schritte(art: RezeptArt, schritte: List<String>, initiale: Boolean = false) {
     val f = FoodyTheme.farben
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         schritte.forEachIndexed { i, s ->
@@ -354,7 +392,11 @@ private fun Schritte(art: RezeptArt, schritte: List<String>) {
                     art.nummer(i + 1), Modifier.widthIn(min = 34.dp).clearAndSetSemantics { contentDescription = "Schritt ${i + 1}" },
                     style = art.titel(16f), color = f.primaer,
                 )
-                Text(s, Modifier.weight(1f), style = art.text(16f), color = f.text)
+                if (initiale && i == 0 && s.isNotBlank()) {
+                    GrauenInitiale(s, art.text(16f), f.text, Modifier.weight(1f))
+                } else {
+                    Text(s, Modifier.weight(1f), style = art.text(16f), color = f.text)
+                }
             }
         }
         if (schritte.isEmpty()) Text("Noch keine Schritte.", style = art.text(16f), color = f.nebentext)
@@ -362,7 +404,7 @@ private fun Schritte(art: RezeptArt, schritte: List<String>) {
 }
 
 @Composable
-private fun Werte(art: RezeptArt, z: DetailZustand.Da) {
+private fun Werte(art: RezeptArt, z: DetailZustand.Da, notiz: Boolean = true) {
     val f = FoodyTheme.farben
     val zeilen = naehrwertZeilen(z.voll, z.portionen)
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -373,7 +415,7 @@ private fun Werte(art: RezeptArt, z: DetailZustand.Da) {
             zeilen.forEach { WertZeile(art, it.name, it.jePortion, it.gesamt) }
         }
         fehlendeWerte(z.voll)?.let { Text(it, Modifier.padding(top = 6.dp), style = art.text(14.5f), color = f.nebentext) }
-        z.voll.rezept.notes?.let { Text("Notiz: $it", Modifier.padding(top = 8.dp), style = art.text(15f), color = f.nebentext) }
+        if (notiz) z.voll.rezept.notes?.let { Text("Notiz: $it", Modifier.padding(top = 8.dp), style = art.text(15f), color = f.nebentext) }
         z.voll.rezept.sourceUrl?.let { Quelle(art, it) }
     }
 }

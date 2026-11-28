@@ -49,10 +49,8 @@ enum class FoodyStil(val anzeigename: String, val akzente: List<StilAkzent>) {
     GRAUEN(
         "Kosmisches Grauen",
         listOf(
+            // Keine Wahl (ADR 0022): Ominös ist immer Glut, das Necronomicon hat feste Tinten
             StilAkzent("GLUT", "Glut", Color(0xFF8FD1A0)),
-            StilAkzent("ROSE", "Rosé", Color(0xFFE58C98)),
-            StilAkzent("BLAU", "Blau", Color(0xFF9DB6E8)),
-            StilAkzent("LILA", "Lila", Color(0xFFC9A6DE)),
         ),
     ),
     KREUZER(
@@ -65,12 +63,22 @@ enum class FoodyStil(val anzeigename: String, val akzente: List<StilAkzent>) {
         ),
     );
 
-    /** Fester Grund des Stils: Q und V dunkel, R, S und T hell, U je nach [variante]. Milchglas folgt dem Modus. */
+    /**
+     * Fester Grund des Stils: Q und V dunkel, R, S und T hell, Milchglas folgt dem Modus. Beim Grauen ist Ominös
+     * (Ruhig) dunkel, das Necronomicon (Immersiv) helles Pergament (ADR 0022).
+     */
     fun dunkel(variante: StilVariante, modusDunkel: Boolean): Boolean = when (this) {
         MILCHGLAS -> modusDunkel
         SAGE, KREUZER -> true
         ANIME, EDO, BAYRISCH -> false
-        GRAUEN -> variante == StilVariante.IMMERSIV
+        GRAUEN -> variante != StilVariante.IMMERSIV
+    }
+
+    /** Name der [variante] in den Einstellungen: beim Grauen die zwei Gesichter (ADR 0022), sonst Immersiv und Ruhig. */
+    fun variantenName(variante: StilVariante): String = when {
+        this != GRAUEN -> variante.anzeigename
+        variante == StilVariante.IMMERSIV -> "Necronomicon"
+        else -> "Ominös"
     }
 
     /** Akzent zum gespeicherten Namen; unbekannt oder fehlend = der erste (Standard des Stils), bei Milchglas `null`. */
@@ -84,10 +92,16 @@ enum class FoodyStil(val anzeigename: String, val akzente: List<StilAkzent>) {
     }
 }
 
-/** Immersiv: volle Inszenierung (Muster, Verlauf, kräftige Kanten). Ruhig: Farben und Schrift des Stils, schlicht. */
+/**
+ * Immersiv: volle Inszenierung (Muster, Verlauf, kräftige Kanten). Ruhig: Farben und Schrift des Stils, schlicht. Beim
+ * Kosmischen Grauen sind beide Varianten inszeniert: Ruhig ist „Ominös“, Immersiv das „Necronomicon“ (ADR 0022).
+ */
 enum class StilVariante(val anzeigename: String) {
     IMMERSIV("Immersiv"),
     RUHIG("Ruhig");
+
+    /** `true`, wenn [stil] in dieser Variante voll inszeniert ist: in Immersiv immer, beim Grauen in beiden. */
+    fun inszeniertFuer(stil: FoodyStil): Boolean = this == IMMERSIV || stil == FoodyStil.GRAUEN
 
     companion object {
         val Standard = IMMERSIV

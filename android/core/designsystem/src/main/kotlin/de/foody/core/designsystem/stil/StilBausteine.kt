@@ -45,6 +45,7 @@ import de.foody.core.designsystem.stil.edo.EdoKnopf
 import de.foody.core.designsystem.stil.edo.edoShu
 import de.foody.core.designsystem.stil.grauen.Grauen
 import de.foody.core.designsystem.stil.grauen.GrauenKnopf
+import de.foody.core.designsystem.stil.grauen.grauenFrakturTitel
 import de.foody.core.designsystem.stil.grauen.grauenHell
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.kreuzer.KreuzerKnopf
@@ -70,7 +71,8 @@ fun stilTitel(art: TitelArt): TextStyle? {
         TitelArt.BLATT -> 22f
     }
     return when (s.stil) {
-        FoodyStil.GRAUEN -> Grauen.titel(g, 0.02f)
+        // Im Necronomicon stehen Seitentitel in Fraktur wie „Heute“; Blätter bleiben in Kapitälchen
+        FoodyStil.GRAUEN -> if (s.grauenBuch && art != TitelArt.BLATT) grauenFrakturTitel(g + 4f) else Grauen.titel(g, 0.02f)
         FoodyStil.KREUZER -> Kreuzer.titel(g - 2f)
         FoodyStil.BAYRISCH -> if (s.inszeniert) Bayrisch.fraktur(g + 2f) else Bayrisch.titel(g)
         FoodyStil.EDO -> Edo.titel(g - 2f)
@@ -94,7 +96,7 @@ fun stilTitel(art: TitelArt): TextStyle? {
 @Composable
 internal fun StilKnopf(text: String, onKlick: () -> Unit, modifier: Modifier, art: KnopfArt, aktiv: Boolean): Boolean {
     val s = FoodyTheme.stil
-    if (s.variante != StilVariante.IMMERSIV) return false
+    if (!s.inszeniert) return false
     if (art == KnopfArt.TEXT && s.stil != FoodyStil.MILCHGLAS && s.stil != FoodyStil.SAGE) {
         StilTextKnopf(text, onKlick, modifier, aktiv)
         return true
@@ -148,7 +150,7 @@ internal class ChipAussehen(
 @Composable
 internal fun stilChip(ausgewaehlt: Boolean): ChipAussehen? {
     val s = FoodyTheme.stil
-    if (s.variante != StilVariante.IMMERSIV) return null
+    if (!s.inszeniert) return null
     val f = FoodyTheme.farben
     return when (s.stil) {
         FoodyStil.ANIME -> ChipAussehen(
@@ -210,7 +212,7 @@ internal class BlattAussehen(val form: Shape, val griff: Color, val griffForm: S
 @Composable
 internal fun stilBlatt(): BlattAussehen? {
     val s = FoodyTheme.stil
-    if (s.variante != StilVariante.IMMERSIV) return null
+    if (!s.inszeniert) return null
     val f = FoodyTheme.farben
     val grund = f.grund
     return when (s.stil) {

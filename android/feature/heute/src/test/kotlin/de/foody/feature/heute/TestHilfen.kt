@@ -82,10 +82,6 @@ suspend fun FoodyDatenbank.einkauf(vararg namen: String) {
 fun ComposeTestRule.warteAufText(text: String) =
     waitUntil(5_000) { onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
 
-/** Inhalt mit doppelter Schriftgröße (Systemschrift 200 %). */
-@Composable
-fun MitSchrift200(inhalt: @Composable () -> Unit) = MitSchrift(2f, inhalt)
-
 /** Inhalt mit der Systemschrift [faktor] (1,3 = 130 %). */
 @Composable
 fun MitSchrift(faktor: Float, inhalt: @Composable () -> Unit) {

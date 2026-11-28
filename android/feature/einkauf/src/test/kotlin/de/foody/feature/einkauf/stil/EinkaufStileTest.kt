@@ -35,7 +35,6 @@ import de.foody.feature.einkauf.EinkaufTestUmgebung
 import de.foody.feature.einkauf.EinkaufViewModel
 import de.foody.feature.einkauf.MITTWOCH
 import de.foody.feature.einkauf.MONTAG
-import de.foody.feature.einkauf.MitSchrift200
 import de.foody.feature.einkauf.einkaufBestand
 import de.foody.feature.einkauf.planen
 import de.foody.feature.einkauf.pruefeNichtsAbgeschnitten
@@ -55,8 +54,8 @@ import kotlin.test.assertTrue
 
 /**
  * Die Einkaufs-Szenen der Stile R–V in Immersiv: Titel für TalkBack „Einkauf“, Antippen hakt ab, Langdruck öffnet
- * die Details; bei 200 % Schrift wird nichts abgeschnitten. Die Abteilungen des Katalogs klappen in Q–V im Kopf der
- * Szene auf und zu. In Q–V führt nur der Knopf „Listen“ zu den Listen (kein
+ * die Details. Die Abteilungen wählt man in allen Szenen über Pillen
+ * im Stil. In Q–V führt nur der Knopf „Listen“ zu den Listen (kein
  * Menü ⋮), dort steht im Kopf auch „Diese Liste löschen“; Milchglas behält das Menü.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -90,13 +89,13 @@ class EinkaufStileTest {
         u.repo.abhaken(db.einkaufsartikelDao().nachListe(id).single { it.name == "Reis" }.id, true)
     }
 
-    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false): EinkaufViewModel {
+    private fun zeigen(stil: FoodyStil): EinkaufViewModel {
         liste()
         val vm = u.vm()
         compose.setContent {
             FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV) {
                 val inhalt = @Composable { EinkaufRoute(null, {}, {}, vm = vm) }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
         compose.warteAufText("Zwiebeln")
@@ -123,12 +122,6 @@ class EinkaufStileTest {
     }
 
     private fun listenSeiteDa() = compose.onAllNodes(hasContentDescription("Einkaufslisten") and isHeading()).fetchSemanticsNodes().isNotEmpty()
-
-    private fun gross(stil: FoodyStil) {
-        zeigen(stil, schrift200 = true)
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
-    }
 
     @Test fun anime() = pruefen(FoodyStil.ANIME)
 
@@ -161,55 +154,37 @@ class EinkaufStileTest {
         }
     }
 
-    /** Kopf einer Katalog-Abteilung: Button mit dem Label [label] („Aufklappen“ oder „Zuklappen“). */
-    private fun abteilung(name: String, label: String) =
-        hasText(name, substring = true, ignoreCase = true) and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button) and
-            SemanticsMatcher("Label „$label“") { it.config.getOrNull(SemanticsActions.OnClick)?.label == label }
+    /** Pille einer Abteilung unter „Hinzufügen“ (wählbar), deren Text [teil] enthält. */
+    private fun pille(teil: String) = hasText(teil, substring = true) and SemanticsMatcher.keyIsDefined(SemanticsProperties.Selected)
 
-    /** Q–V außer Anime (Immersiv): Die Abteilungen des Katalogs klappen im Kopf der Szene auf und wieder zu. */
+    /**
+     * Alle Szenen (Immersiv): Unter „Hinzufügen“ wählt eine Pille im Stil die Abteilung, darunter stehen nur deren
+     * Kacheln; nichts klappt auf und nichts scrollt waagerecht.
+     */
     @Test
-    fun abteilungKlapptAuf() {
+    fun abteilungPerPille() {
         liste()
         val vm = u.vm()
         var stil by mutableStateOf(FoodyStil.SAGE)
         compose.setContent { FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV) { EinkaufRoute(null, {}, {}, vm = vm) } }
         compose.warteAufText("Zwiebeln")
         val raster = compose.onNode(hasScrollToIndexAction())
-        for (s in listOf(FoodyStil.SAGE, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)) {
+        for (s in listOf(FoodyStil.SAGE, FoodyStil.ANIME, FoodyStil.EDO, FoodyStil.BAYRISCH, FoodyStil.GRAUEN, FoodyStil.KREUZER)) {
             stil = s
             compose.waitForIdle()
-            raster.performScrollToNode(abteilung("Obst & Gemüse", "Aufklappen"))
-            compose.onNode(abteilung("Obst & Gemüse", "Aufklappen")).performClick()
-            // „Äpfel“ steht nur im Katalog, nicht auf der Liste
-            raster.performScrollToNode(hasText("Äpfel"))
-            raster.performScrollToNode(abteilung("Obst & Gemüse", "Zuklappen"))
-            compose.onNode(abteilung("Obst & Gemüse", "Zuklappen")).performClick()
-            compose.onNode(abteilung("Obst & Gemüse", "Aufklappen")).assertExists()
-            compose.onAllNodesWithText("Äpfel").assertCountEquals(0)
+            compose.onNode(hasContentDescription("Hinzufügen") and isHeading()).assertExists()
+            raster.performScrollToNode(pille("Getränke"))
+            compose.onNode(pille("Getränke")).performClick()
+            raster.performScrollToNode(hasText("Mineralwasser"))
+            compose.onAllNodesWithText("Toilettenpapier").assertCountEquals(0)
+            raster.performScrollToNode(pille("Haushalt"))
+            compose.onNode(pille("Haushalt")).performClick()
+            raster.performScrollToNode(hasText("Toilettenpapier"))
+            compose.onAllNodesWithText("Mineralwasser").assertCountEquals(0)
+            compose.onAllNodes(SemanticsMatcher("Aufklappen") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "Aufklappen" })
+                .assertCountEquals(0)
+            compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange)).assertCountEquals(0)
         }
-    }
-
-    /**
-     * Anime: Unter „Hinzufügen“ wählt eine Pille die Abteilung, darunter stehen nur deren Kacheln; nichts klappt und
-     * nichts scrollt waagerecht.
-     */
-    @Test
-    fun animeAbteilungPerPille() {
-        liste()
-        val vm = u.vm()
-        compose.setContent { FoodyTheme(stil = FoodyStil.ANIME, variante = StilVariante.IMMERSIV) { EinkaufRoute(null, {}, {}, vm = vm) } }
-        compose.warteAufText("Zwiebeln")
-        val raster = compose.onNode(hasScrollToIndexAction())
-        val obst = hasText("🥕 Obst & Gemüse") and SemanticsMatcher.keyIsDefined(SemanticsProperties.Selected)
-        raster.performScrollToNode(obst)
-        compose.onNode(obst).performClick()
-        // „Äpfel“ steht nur im Katalog
-        raster.performScrollToNode(hasText("Äpfel"))
-        compose.onNodeWithText("🥤 Getränke").performClick()
-        raster.performScrollToNode(hasText("Wasser", substring = true))
-        compose.onAllNodesWithText("Äpfel").assertCountEquals(0)
-        compose.onAllNodes(SemanticsMatcher("Aufklappen") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "Aufklappen" }).assertCountEquals(0)
-        compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange)).assertCountEquals(0)
     }
 
     /** „Listen“ öffnet die Listen-Seite wie im Entwurf auf dem ersten Reiter „Neue Liste“. */
@@ -243,16 +218,6 @@ class EinkaufStileTest {
         compose.waitUntil(5_000) { !listenSeiteDa() }
         assertNull(vm.blatt.value)
     }
-
-    @Test fun animeSchrift200() = gross(FoodyStil.ANIME)
-
-    @Test fun edoSchrift200() = gross(FoodyStil.EDO)
-
-    @Test fun bayrischSchrift200() = gross(FoodyStil.BAYRISCH)
-
-    @Test fun grauenSchrift200() = gross(FoodyStil.GRAUEN)
-
-    @Test fun kreuzerSchrift200() = gross(FoodyStil.KREUZER)
 
     @Test
     fun texte() {

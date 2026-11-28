@@ -61,6 +61,7 @@ import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.edo.edoShu
 import de.foody.core.designsystem.stil.grauen.Grauen
+import de.foody.core.designsystem.stil.grauen.GrauenRunderKnopf
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.stilTitel
 import de.foody.core.designsystem.token.FoodyAbstaende
@@ -100,10 +101,6 @@ internal fun editorArt(stil: FoodyStil, inszeniert: Boolean = true): EditorArt =
     FoodyStil.BAYRISCH -> EditorArt(
         "Neis Rezept", "Bearbeiten", "Rezept", "Zuadaten", "So geht’s", "Portiona", "Obacht, speichern!",
         Bayrisch.text(15.5f), Bayrisch.text(12.5f),
-    )
-    FoodyStil.GRAUEN if !inszeniert -> EditorArt(
-        "Neues Rezept", "Rezept bearbeiten", "Selbst anlegen oder einlesen", "Zutaten", "Zubereitung", "Portionen",
-        "Speichern", Grauen.maschine(14f), Grauen.maschine(11.5f),
     )
     FoodyStil.GRAUEN -> EditorArt(
         "Neue Abschrift", "Abschrift berichtigen", "Ein neuer Band für die Bibliothek", "Zutaten", "Zubereitung", "Portionen",
@@ -181,7 +178,11 @@ private fun Kopf(neu: Boolean, a: EditorArt, onZurueck: () -> Unit) {
     val stil = FoodyTheme.stil.stil
     val normal = if (neu) "Neues Rezept" else "Bearbeiten"
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-        IconButton(onClick = onZurueck) { Icon(Icons.Outlined.Close, contentDescription = "Abbrechen", tint = f.text) }
+        if (stil == FoodyStil.GRAUEN) {
+            GrauenRunderKnopf(Icons.Outlined.Close, "Abbrechen", onZurueck)
+        } else {
+            IconButton(onClick = onZurueck) { Icon(Icons.Outlined.Close, contentDescription = "Abbrechen", tint = f.text) }
+        }
         Column(Modifier.weight(1f)) {
             Text(if (neu) a.ueberNeu else "Rezept", style = a.klein, color = f.nebentext)
             Text(

@@ -42,6 +42,7 @@ import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.grauen.Grauen
+import de.foody.core.designsystem.stil.grauen.GrauenBlaetterKnopf
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.szenenStil
 import de.foody.core.designsystem.stil.szenenWort
@@ -115,12 +116,6 @@ internal fun kochArt(stil: FoodyStil, inszeniert: Boolean = true): KochArt = whe
         timer = "Uhr aufziehn", portionen = { if (it == 1) "1 Portion" else "$it Portiona" },
         kopf = { name, p -> "$name · " + if (p == 1) "1 Portion" else "$p Portiona" },
         titel = { Bayrisch.titel(it) }, text = { Bayrisch.text(it) }, klein = { Bayrisch.text(it, FontWeight.Bold) },
-    )
-    FoodyStil.GRAUEN if !inszeniert -> KochArt(
-        bereit = "Bereitlegen", ueberSchritt = { n, g -> "Schritt $n von $g" }, ueberBereit = "Vorbereitung", nummer = { n, _ -> "$n." },
-        brauchst = "Du brauchst", naechstes = "Danach", beginnen = "Beginnen", weiter = "Weiter", fertig = "Fertig",
-        zurueck = "Zurück", timer = "Timer starten", portionen = ::portionenText, kopf = { name, p -> "$name · ${portionenText(p)}" },
-        titel = { Grauen.titel(it) }, text = { Grauen.text(it) }, klein = { Grauen.titel(it, 0.1f) },
     )
     FoodyStil.GRAUEN -> KochArt(
         bereit = "Was das Ritual verlangt", ueberSchritt = { n, g -> "Schritt $n von $g" }, ueberBereit = "Vorbereitung",
@@ -282,9 +277,18 @@ private fun Zeitkarte(art: KochArt, t: StepTimer, onStart: () -> Unit) {
     val f = FoodyTheme.farben
     val akzent = FoodyTheme.stil.zier
     val dauer = restzeit(t.duration.toMillis())
+    // Im Necronomicon kein Kasten: ein doppelter Randstrich in Blut wie eine Anmerkung im Buch
+    val rahmen = if (FoodyTheme.stil.grauenBuch) {
+        Modifier.drawBehind {
+            val strich = 1.dp.toPx()
+            drawLine(akzent, Offset(strich, 0f), Offset(strich, size.height), 1.5f * strich)
+            drawLine(akzent, Offset(4f * strich, 0f), Offset(4f * strich, size.height), 0.8f * strich)
+        }
+    } else {
+        Modifier.border(1.5.dp, akzent, FoodyTheme.formen.klein).background(akzent.copy(alpha = 0.1f), FoodyTheme.formen.klein)
+    }
     Row(
-        Modifier.padding(top = 8.dp).fillMaxWidth().border(1.5.dp, akzent, FoodyTheme.formen.klein)
-            .background(akzent.copy(alpha = 0.1f), FoodyTheme.formen.klein).padding(horizontal = 14.dp, vertical = 10.dp),
+        Modifier.padding(top = 8.dp).fillMaxWidth().then(rahmen).padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -304,6 +308,24 @@ internal fun KochKnoepfeStil(art: KochArt, seite: Int, seitenzahl: Int, onSeite:
         letzte -> art.fertig
         seite == 0 -> art.beginnen
         else -> art.weiter
+    }
+    // Im Grauen ein gleiches Paar aus Wort und gezeichnetem Pfeil; das Siegel bleibt einzelnen Ritualen vorbehalten
+    if (FoodyTheme.stil.stil == FoodyStil.GRAUEN) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GrauenBlaetterKnopf(
+                art.zurueck, vorwaerts = false, { if (seite > 0) onSeite(seite - 1) }, Modifier.heightIn(min = 52.dp),
+                beschreibung = "Zurück", aktiv = seite > 0,
+            )
+            GrauenBlaetterKnopf(
+                text, vorwaerts = true, { if (letzte) onFertig() else onSeite(seite + 1) }, Modifier.heightIn(min = 52.dp),
+                beschreibung = if (letzte) "Fertig" else "Weiter",
+            )
+        }
+        return
     }
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         StilAktion(

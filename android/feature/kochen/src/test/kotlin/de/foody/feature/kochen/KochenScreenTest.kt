@@ -51,14 +51,14 @@ class KochenScreenTest {
 
     private val angepasst = mutableListOf<Pair<String, Int>>()
 
-    private fun zeigen(id: String = "r1", schrift200: Boolean = false, portionen: Int? = null, stil: FoodyStil = FoodyStil.MILCHGLAS) {
+    private fun zeigen(id: String = "r1", portionen: Int? = null, stil: FoodyStil = FoodyStil.MILCHGLAS) {
         val vm = u.vm()
         compose.setContent {
             FoodyTheme(stil = stil) {
                 val inhalt = @androidx.compose.runtime.Composable {
                     KochenRoute(id, portionen, onRezeptAnpassen = { r, p -> angepasst += r to p }, onSchliessen = { geschlossen++ }, vm = vm)
                 }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
     }
@@ -160,13 +160,6 @@ class KochenScreenTest {
     }
 
     @Test
-    fun schrift200OhneAbschneiden() {
-        zeigen(schrift200 = true)
-        compose.warteAufText("BEREITLEGEN")
-        compose.pruefeNichtsAbgeschnitten()
-    }
-
-    @Test
     fun ueberstehtDrehen() {
         val vm = u.vm()
         val tester = StateRestorationTester(compose)
@@ -204,12 +197,5 @@ class KochenScreenTest {
         compose.onNodeWithText("Sanduhr", substring = true).performClick()
         compose.waitUntil(5_000) { u.timer.timer.value.isNotEmpty() }
         compose.onNodeWithContentDescription("Timer 20 Minuten beenden").assertExists()
-    }
-
-    @Test
-    fun sageMitSchrift200() {
-        zeigen(schrift200 = true, stil = FoodyStil.SAGE)
-        compose.warteAufText("LEGE BEREIT")
-        compose.pruefeNichtsAbgeschnitten()
     }
 }

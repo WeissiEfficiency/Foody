@@ -32,8 +32,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -67,8 +70,9 @@ import de.foody.feature.rezepte.liste.Suche
  * Gemeinsames der Rezeptlisten-Szenen der Stile R–V in Immersiv: welche Szene gilt, Kopf, Suche und dieselben
  * Filter wie die normale Liste, die Treffer in Seiten zu [SEITE] (‹ Seite 1 / 3 ›), das gewählte Rezept (übersteht
  * das Drehen, beginnt bei jeder neuen Suche vorn) und die leeren Zustände. Jede Szene zeichnet ihren Kopf, die Wahl
- * (Fächer, Herzen, Regal, Sternkarte) und die Karte des gewählten Rezepts in ihrer Art. Anime zeigt statt Seiten alle
- * Treffer in einer Liste, die nur zeichnet, was gerade im Bild ist ([AnimeListe]).
+ * (Fächer, Herzen, Regal, Sternkarte) und die Karte des gewählten Rezepts in ihrer Art. Anime und die Bibliothek des
+ * Grauens (Immersiv) zeigen statt Seiten alle Treffer in einer Liste, die nur zeichnet, was gerade im Bild ist
+ * ([EndlosListe]): Anime als Comic-Karten zu zweit, das Grauen als Bretter mit Bänden.
  */
 internal object RezepteSzene {
     /** Der Stil R–V, dessen Szene die Rezeptliste zeigt; `null` = keiner (Milchglas, Ruhig, Sage hat ihre eigene). */
@@ -96,7 +100,24 @@ internal fun RezepteStil(
     nebenDetail: Boolean = false,
 ) {
     if (stil == FoodyStil.ANIME) {
-        AnimeListe(z, aendern, zuruecksetzen, onOeffnen, onNeu)
+        EndlosListe(stil, z, aendern, zuruecksetzen, onNeu, 2, Arrangement.spacedBy(14.dp)) { paar, i, m -> AnimeReihe(paar, i, onOeffnen, m) }
+        return
+    }
+    if (stil == FoodyStil.GRAUEN) {
+        // Auf dem Handy kommt der Band aus dem Regal und schlägt sich auf; neben dem Detail (Tablet) öffnet er sofort
+        val u = rememberRegalUebergang()
+        var wurzel by remember { mutableStateOf(Offset.Zero) }
+        Box(Modifier.fillMaxSize().onGloballyPositioned { wurzel = it.positionInRoot() }) {
+            EndlosListe(stil, z, aendern, zuruecksetzen, onNeu, JE_BRETT, Arrangement.spacedBy(22.dp)) { baende, i, m ->
+                GrauenBrett(
+                    baende, i, offen,
+                    onOeffnen = { r, lage, farbe -> if (nebenDetail) onOeffnen(r.id) else u.oeffnen(r.id, r.name, lage, farbe) { onOeffnen(r.id) } },
+                    modifier = m,
+                    fliegt = { u.band.takeIf { u.zug.value > 0f } },
+                )
+            }
+            if (!nebenDetail) RegalEbene(u, { wurzel }, Modifier.matchParentSize())
+        }
         return
     }
     // Seite und Wahl beginnen bei jeder neuen Suche oder jedem Filter wieder vorn
@@ -134,7 +155,6 @@ internal fun RezepteStil(
                 when (stil) {
                     FoodyStil.EDO -> EdoFaecher(aufSeite, r.id, waehlen)
                     FoodyStil.BAYRISCH -> BayrischHerzen(aufSeite, r.id, waehlen)
-                    FoodyStil.GRAUEN -> GrauenRegal(aufSeite, r.id, waehlen)
                     else -> KreuzerKarte(aufSeite, r.id, waehlen)
                 }
             }
@@ -148,7 +168,6 @@ internal fun RezepteStil(
                 when (stil) {
                     FoodyStil.EDO -> EdoBlatt(r, onOeffnen)
                     FoodyStil.BAYRISCH -> BayrischKarte(r, onOeffnen)
-                    FoodyStil.GRAUEN -> GrauenSeite(r, onOeffnen)
                     else -> KreuzerDaten(r, onOeffnen)
                 }
             }
@@ -157,18 +176,22 @@ internal fun RezepteStil(
 }
 
 /**
- * Anime: Kopf, Suche und Filter, darunter alle Treffer als Comic-Karten zu zweit. Endlos statt Seiten; die Liste
- * zeichnet nur die Reihen im Bild, und eine neue Suche oder ein Filter beginnt wieder oben.
+ * Kopf, Suche und Filter, darunter alle Treffer in Reihen zu [jeReihe], die [reihe] zeichnet (Reihe, Nummer, Modifier
+ * mit Breite und Rand). Endlos statt Seiten; die Liste zeichnet nur die Reihen im Bild, und eine neue Suche oder ein
+ * Filter beginnt wieder oben.
  */
 @Composable
-private fun AnimeListe(
+private fun EndlosListe(
+    stil: FoodyStil,
     z: ListeZustand,
     aendern: ((ListeFilter) -> ListeFilter) -> Unit,
     zuruecksetzen: () -> Unit,
-    onOeffnen: (String) -> Unit,
     onNeu: () -> Unit,
+    jeReihe: Int,
+    abstand: Arrangement.Vertical,
+    reihe: @Composable (List<RezeptKarte>, Int, Modifier) -> Unit,
 ) {
-    val reihen = remember(z.treffer) { z.treffer.chunked(2) }
+    val reihen = remember(z.treffer, jeReihe) { z.treffer.chunked(jeReihe) }
     val zustand = rememberSaveable(z.filter, saver = LazyListState.Saver) { LazyListState() }
     val breite = Modifier.widthIn(max = FoodyBreiten.inhalt).fillMaxWidth()
     val rand = Modifier.padding(horizontal = 16.dp)
@@ -176,13 +199,13 @@ private fun AnimeListe(
         Modifier.fillMaxSize().safeDrawingPadding(),
         state = zustand,
         contentPadding = PaddingValues(top = 16.dp, bottom = ueberLeiste(PLATZ_FUER_LEISTE)),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = abstand,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         item(key = "oben") {
-            Column(breite, verticalArrangement = Arrangement.spacedBy(14.dp)) { Oben(FoodyStil.ANIME, z, aendern, zuruecksetzen, onNeu, rand) }
+            Column(breite, verticalArrangement = Arrangement.spacedBy(14.dp)) { Oben(stil, z, aendern, zuruecksetzen, onNeu, rand) }
         }
-        itemsIndexed(reihen, key = { _, paar -> paar.first().id }) { reihe, paar -> AnimeReihe(paar, reihe, onOeffnen, breite.then(rand)) }
+        itemsIndexed(reihen, key = { _, r -> r.first().id }) { i, r -> reihe(r, i, breite.then(rand)) }
     }
 }
 
@@ -197,7 +220,13 @@ private fun Oben(
     rand: Modifier,
 ) {
     val n = z.treffer.size
-    val neu = @Composable { StilAktion(if (stil == FoodyStil.EDO) "＋ Neu" else "+ Neu", onNeu, beschreibung = "Neues Rezept", voll = true) }
+    // Im Grauen ohne „+“: das Siegel trägt schon das Zeichen
+    val neuText = when (stil) {
+        FoodyStil.EDO -> "＋ Neu"
+        FoodyStil.GRAUEN -> "Neu"
+        else -> "+ Neu"
+    }
+    val neu = @Composable { StilAktion(neuText, onNeu, beschreibung = "Neues Rezept", voll = true) }
     Box(rand) {
         when (stil) {
             FoodyStil.ANIME -> AnimeKopf(n, neu)

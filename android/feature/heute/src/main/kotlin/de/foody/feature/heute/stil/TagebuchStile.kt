@@ -67,6 +67,7 @@ import de.foody.core.designsystem.stil.anime.animeSzenenTitel
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
 import de.foody.core.designsystem.stil.edo.Edo
 import de.foody.core.designsystem.stil.grauen.Grauen
+import de.foody.core.designsystem.stil.grauen.grauenFrakturTitel
 import de.foody.core.designsystem.stil.kreuzer.Kreuzer
 import de.foody.core.designsystem.stil.szenenStil
 import de.foody.core.designsystem.stil.szenenWort
@@ -181,10 +182,6 @@ internal fun tagebuchArt(stil: FoodyStil, inszeniert: Boolean = true): TagebuchA
         "Tagebiachl", null, ::mahlzeitBayrisch, "no nix", "Löschen", ::bayrischZusatz,
         { Bayrisch.titel(it) }, { Bayrisch.text(it) }, { Bayrisch.text(it, FontWeight.Bold) },
     )
-    FoodyStil.GRAUEN if !inszeniert -> TagebuchArt(
-        "Tagebuch", "Was du gegessen hast", Mahlzeit::kurzname, "—", "Löschen", ::tagZusatzKurz,
-        { Grauen.titel(it) }, { Grauen.text(it) }, { Grauen.titel(it, 0.1f) },
-    )
     FoodyStil.GRAUEN -> TagebuchArt(
         "Logbuch", "Aufzeichnungen eines Hungrigen", ::mahlzeitGrauen, "nichts verzeichnet", "Tilgen", ::tagZusatzKurz,
         { Grauen.titel(it) }, { Grauen.text(it) }, { Grauen.titel(it, 0.1f) },
@@ -255,26 +252,31 @@ internal fun TagebuchStil(
             ) {
                 Kopf(stil, art, onZurueck)
                 Tageswahl(art, datum, heute, onDatum, onWahl)
-                val z = zustand?.takeIf { it.datum == datum } ?: return@Column
-                if (stil == FoodyStil.KREUZER) Balken(art, z) else Ring(art, z)
-                when (stil) {
-                    FoodyStil.BAYRISCH -> bayrischSpruch(z, FoodyTheme.stil.inszeniert)?.let {
-                        Text(it, style = art.klein(15f), color = FoodyTheme.farben.primaer)
+                val tag: @Composable (TagZustand) -> Unit = { z ->
+                    if (stil == FoodyStil.KREUZER) Balken(art, z) else Ring(art, z)
+                    when (stil) {
+                        FoodyStil.BAYRISCH -> bayrischSpruch(z, FoodyTheme.stil.inszeniert)?.let {
+                            Text(it, style = art.klein(15f), color = FoodyTheme.farben.primaer)
+                        }
+                        // Die Notiz zum Tag wie im Entwurf
+                        FoodyStil.GRAUEN -> Text(grauenNotiz(z, heute), style = Grauen.text(16f, kursiv = true), color = FoodyTheme.farben.nebentext)
+                        else -> Unit
                     }
-                    // Die Notiz zum Tag nur in Immersiv, wie im Entwurf
-                    FoodyStil.GRAUEN -> if (FoodyTheme.stil.inszeniert) {
-                        Text(grauenNotiz(z, heute), style = Grauen.text(16f, kursiv = true), color = FoodyTheme.farben.nebentext)
+                    gruppenFolge(stil, z.abschnitte).forEach { a ->
+                        Gruppe(
+                            stil, art, a, offenId,
+                            onWahl = { e -> offenId = if (offenId == e.id) null else e.id },
+                            onEintragen = { onEintragen(a.mahlzeit) },
+                            onAendern = { e -> offenId = null; onAendern(e) },
+                            onLoeschen = { e -> offenId = null; onLoeschen(e) },
+                        )
                     }
-                    else -> Unit
                 }
-                gruppenFolge(stil, z.abschnitte).forEach { a ->
-                    Gruppe(
-                        stil, art, a, offenId,
-                        onWahl = { e -> offenId = if (offenId == e.id) null else e.id },
-                        onEintragen = { onEintragen(a.mahlzeit) },
-                        onAendern = { e -> offenId = null; onAendern(e) },
-                        onLoeschen = { e -> offenId = null; onLoeschen(e) },
-                    )
+                if (stil == FoodyStil.GRAUEN) {
+                    // Grauen: jeder Tag ein Blatt im Logbuch
+                    LogbuchBlaetter(datum, onDatum) { seite -> zustand?.takeIf { it.datum == seite && seite == datum }?.let { tag(it) } }
+                } else {
+                    zustand?.takeIf { it.datum == datum }?.let { tag(it) }
                 }
             }
         }
@@ -310,7 +312,12 @@ private fun KopfText(stil: FoodyStil, art: TagebuchArt) {
                 heading()
                 contentDescription = "Tagebuch"
             },
-            style = if (stil == FoodyStil.ANIME) animeSzenenTitel(groesse) else art.titelSchrift(groesse),
+            style = when {
+                stil == FoodyStil.ANIME -> animeSzenenTitel(groesse)
+                // Im Necronomicon steht der Seitentitel in Fraktur wie „Heute“
+                FoodyTheme.stil.grauenBuch -> grauenFrakturTitel(groesse + 4f)
+                else -> art.titelSchrift(groesse)
+            },
             color = f.text,
         )
     }

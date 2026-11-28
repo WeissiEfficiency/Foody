@@ -1,6 +1,7 @@
 package de.foody.core.designsystem.stil
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import de.foody.core.designsystem.token.Flaechenart
 import de.foody.core.designsystem.token.FoodyFormen
 import de.foody.core.designsystem.token.FoodyTypografie
@@ -31,7 +32,8 @@ class StilTest {
 
     @Test
     fun jederStilHatVierAkzente() {
-        FoodyStil.entries.filter { it != FoodyStil.MILCHGLAS }.forEach { assertEquals(4, it.akzente.size, it.name) }
+        // Das Grauen hat keine Wahl mehr (ADR 0022, eigener Test)
+        FoodyStil.entries.filter { it != FoodyStil.MILCHGLAS && it != FoodyStil.GRAUEN }.forEach { assertEquals(4, it.akzente.size, it.name) }
     }
 
     @Test
@@ -47,8 +49,51 @@ class StilTest {
                 assertEquals(FoodyStil.GRAUEN.dunkel(v, modus), stilWerte(FoodyStil.GRAUEN, v, dunkel = modus).dunkel)
             }
         }
-        assertTrue(FoodyStil.GRAUEN.dunkel(StilVariante.IMMERSIV, false))
-        assertFalse(FoodyStil.GRAUEN.dunkel(StilVariante.RUHIG, true))
+        // Das Necronomicon ist helles Pergament, Ominös das dunkle grüne Grauen (ADR 0022)
+        assertFalse(FoodyStil.GRAUEN.dunkel(StilVariante.IMMERSIV, true))
+        assertTrue(FoodyStil.GRAUEN.dunkel(StilVariante.RUHIG, false))
+    }
+
+    /** Plan „Zwei Gesichter“, Schritt 4: Pergament als Muster, Tinte als Text, getrocknetes Blut als Zier. */
+    @Test
+    fun necronomiconIstPergamentMitTinteUndBlut() {
+        val buch = stilWerte(FoodyStil.GRAUEN, StilVariante.IMMERSIV)
+        assertEquals(Hintergrundmuster.PERGAMENT, buch.muster)
+        assertFalse(buch.dunkel)
+        assertTrue(buch.farben.text.luminance() < 0.02f, "Tinte statt Glut: ${buch.farben.text}")
+        assertTrue(buch.zier.red > buch.zier.green, "Zier in Blut, nicht in Glut: ${buch.zier}")
+        assertTrue(buch.zier.luminance() < 0.1f, "Blut ist dunkel: ${buch.zier}")
+        // Ominös bleibt das grüne Grauen mit Sternen
+        assertEquals(Hintergrundmuster.STERNE, stilWerte(FoodyStil.GRAUEN, StilVariante.RUHIG).muster)
+    }
+
+    /** ADR 0022: Beim Grauen sind beide Varianten inszeniert; Ruhig ist „Ominös“, Immersiv das „Necronomicon“. */
+    @Test
+    fun grauenHatZweiImmersiveGesichter() {
+        val ominoes = stilWerte(FoodyStil.GRAUEN, StilVariante.RUHIG)
+        val buch = stilWerte(FoodyStil.GRAUEN, StilVariante.IMMERSIV)
+        assertTrue(ominoes.inszeniert)
+        assertTrue(ominoes.immersiv(FoodyStil.GRAUEN))
+        assertEquals(Hintergrundmuster.STERNE, ominoes.muster)
+        assertFalse(ominoes.grauenBuch)
+        assertTrue(buch.inszeniert)
+        assertTrue(buch.grauenBuch)
+        assertEquals("Ominös", FoodyStil.GRAUEN.variantenName(StilVariante.RUHIG))
+        assertEquals("Necronomicon", FoodyStil.GRAUEN.variantenName(StilVariante.IMMERSIV))
+        // Die anderen Stile behalten Immersiv und Ruhig
+        for (stil in FoodyStil.entries.filter { it != FoodyStil.GRAUEN && it != FoodyStil.MILCHGLAS }) {
+            assertFalse(stilWerte(stil, StilVariante.RUHIG).inszeniert, stil.name)
+            assertFalse(stilWerte(stil, StilVariante.IMMERSIV).grauenBuch, stil.name)
+            assertEquals("Ruhig", stil.variantenName(StilVariante.RUHIG))
+            assertEquals("Immersiv", stil.variantenName(StilVariante.IMMERSIV))
+        }
+    }
+
+    /** ADR 0022: Beim Grauen gibt es keine Farbe zur Wahl; ein früher gespeicherter Akzent ergibt Glut. */
+    @Test
+    fun grauenOhneFarbwahl() {
+        assertEquals(listOf("GLUT"), FoodyStil.GRAUEN.akzente.map { it.name })
+        assertEquals("GLUT", FoodyStil.GRAUEN.akzent("ROSE")?.name)
     }
 
     @Test
@@ -64,7 +109,8 @@ class StilTest {
     fun stileDeckendUndRuhigOhneMuster() {
         FoodyStil.entries.filter { it != FoodyStil.MILCHGLAS }.forEach { stil ->
             assertEquals(Flaechenart.DECKEND, stilWerte(stil).flaeche)
-            assertEquals(Hintergrundmuster.KEINS, stilWerte(stil, StilVariante.RUHIG).muster)
+            // Ruhig ohne Muster, außer beim Grauen: Dort ist Ruhig das inszenierte „Ominös“ (ADR 0022)
+            if (stil != FoodyStil.GRAUEN) assertEquals(Hintergrundmuster.KEINS, stilWerte(stil, StilVariante.RUHIG).muster)
             assertNull(stilWerte(stil, StilVariante.RUHIG).schatten)
         }
     }

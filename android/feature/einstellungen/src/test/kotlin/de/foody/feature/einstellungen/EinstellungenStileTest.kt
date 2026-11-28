@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
@@ -46,7 +47,7 @@ import kotlin.test.assertEquals
 /**
  * Einstellungen der Stile R–V in Immersiv wie in den Entwürfen: Überschriften mit Stilwort (TalkBack liest das
  * normale Wort), Schalter-Zeilen, Tagesziel mit − und + und Feld, Varianten-Leiste und Farbmuster als Optionsfelder,
- * Abgleich öffnet „Server verbinden“; bei 200 % Schrift wird nichts abgeschnitten. Die Kacheln der Stilwahl behalten
+ * Abgleich öffnet „Server verbinden“. Die Kacheln der Stilwahl behalten
  * beim Wechsel des Stils ihre Größe und stehen in jedem Stil in denselben Spalten und Reihen, auch auf einem schmalen
  * Handy mit großer Schrift und auf dem Tablet.
  */
@@ -100,11 +101,20 @@ class EinstellungenStileTest {
         val verbunden = if (stil == FoodyStil.KREUZER) "VERBUNDEN · HTTP://10.0.2.2:8081" else "Verbunden mit http://10.0.2.2:8081"
         compose.onNodeWithText(verbunden).performScrollTo().performClick()
         assertEquals(1, server)
-        // Variante und Farbe als Optionsfelder
-        compose.onNode(isSelectable() and hasContentDescription(stil.akzente[1].anzeigename)).performScrollTo().performClick()
-        compose.waitUntil(5_000) { vm.zustand.value.akzent == stil.akzente[1].name }
-        compose.onNode(isSelectable() and hasContentDescription(stil.akzente[1].anzeigename)).assertIsSelected()
-        compose.onNodeWithText(if (stil == FoodyStil.KREUZER) "RUHIG" else "Ruhig").performScrollTo().performClick()
+        // Variante und Farbe als Optionsfelder; das Grauen hat keine Farbe zur Wahl und nennt Ruhig „Ominös“ (ADR 0022)
+        if (stil == FoodyStil.GRAUEN) {
+            compose.onAllNodes(hasText("Farbe")).assertCountEquals(0)
+        } else {
+            compose.onNode(isSelectable() and hasContentDescription(stil.akzente[1].anzeigename)).performScrollTo().performClick()
+            compose.waitUntil(5_000) { vm.zustand.value.akzent == stil.akzente[1].name }
+            compose.onNode(isSelectable() and hasContentDescription(stil.akzente[1].anzeigename)).assertIsSelected()
+        }
+        val ruhig = when (stil) {
+            FoodyStil.KREUZER -> "RUHIG"
+            FoodyStil.GRAUEN -> "Ominös"
+            else -> "Ruhig"
+        }
+        compose.onNodeWithText(ruhig).performScrollTo().performClick()
         compose.waitUntil(5_000) { vm.zustand.value.variante == StilVariante.RUHIG }
         // Tagesziel: − und + in Schritten von 50, das Feld nimmt eine eigene Zahl
         compose.onNodeWithContentDescription("Ziel erhöhen").performScrollTo().performClick()
@@ -123,12 +133,6 @@ class EinstellungenStileTest {
         schalter.assertIsOff()
     }
 
-    private fun gross(stil: FoodyStil) {
-        zeigen(stil, schrift = 2f)
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
-    }
-
     @Test fun anime() = bedienen(FoodyStil.ANIME)
 
     @Test fun edo() = bedienen(FoodyStil.EDO)
@@ -138,16 +142,6 @@ class EinstellungenStileTest {
     @Test fun grauen() = bedienen(FoodyStil.GRAUEN)
 
     @Test fun kreuzer() = bedienen(FoodyStil.KREUZER)
-
-    @Test fun animeSchrift200() = gross(FoodyStil.ANIME)
-
-    @Test fun edoSchrift200() = gross(FoodyStil.EDO)
-
-    @Test fun bayrischSchrift200() = gross(FoodyStil.BAYRISCH)
-
-    @Test fun grauenSchrift200() = gross(FoodyStil.GRAUEN)
-
-    @Test fun kreuzerSchrift200() = gross(FoodyStil.KREUZER)
 
     /** Wie in den Entwürfen steht der Abgleich nach Darstellung, Tagesziel und Daten; nur Milchglas behält ihn oben. */
     private fun abgleichUnten(stil: FoodyStil, variante: StilVariante = StilVariante.IMMERSIV, unten: Boolean = true) {
@@ -175,6 +169,20 @@ class EinstellungenStileTest {
     @Test fun ruhigAbgleichUnten() = abgleichUnten(FoodyStil.EDO, StilVariante.RUHIG)
 
     @Test fun milchglasAbgleichOben() = abgleichUnten(FoodyStil.MILCHGLAS, unten = false)
+
+    /**
+     * Sage auf dem Handy des Nutzers (361 dp, Schrift 90 %): Die vier Farben stehen in einer Reihe; vorher rutschte die
+     * vierte allein in eine neue Zeile und das Layout sprang.
+     */
+    @Test
+    @Config(qualifiers = "w361dp-h1600dp")
+    fun sageFarbenInEinerReihe() {
+        zeigen(FoodyStil.SAGE, schrift = 0.9f)
+        val oben = FoodyStil.SAGE.akzente.map {
+            compose.onNode(isSelectable() and hasText(it.anzeigename)).fetchSemanticsNode().positionInRoot.y
+        }
+        assertEquals(1, oben.distinct().size, "Farben in Reihen: $oben")
+    }
 
     /** Wie ein Tipp auf die Kachel (und auf die [variante]): Speicher und Theme zeigen danach [stil]. */
     private fun wechseln(stil: FoodyStil, variante: StilVariante = themaVariante) {
@@ -265,13 +273,6 @@ class EinstellungenStileTest {
     @Config(qualifiers = "w360dp-h1600dp")
     fun kachelnSchmalMitGrosserSchrift() {
         rasterUeberallGleich(1.3f)
-    }
-
-    /** Schmales Handy mit 200 % Schrift: eine Kachel je Reihe, auch ohne Karte. */
-    @Test
-    @Config(qualifiers = "w360dp-h1600dp")
-    fun kachelnSchmalMitSchrift200() {
-        rasterUeberallGleich(2f)
     }
 
     /**

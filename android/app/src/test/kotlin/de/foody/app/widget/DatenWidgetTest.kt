@@ -133,7 +133,8 @@ class DatenWidgetTest {
         assertEquals(true, eintragenAussehen(kontext, wahl(FoodyStil.KREUZER)).eckig)
         assertEquals("Eitragn", eintragenAussehen(kontext, wahl(FoodyStil.BAYRISCH)).titel)
         assertEquals("Notieren", eintragenAussehen(kontext, wahl(FoodyStil.GRAUEN)).titel)
-        assertEquals("Eintragen", eintragenAussehen(kontext, wahl(FoodyStil.GRAUEN, "RUHIG")).titel)
+        // Ominös (Ruhig) ist beim Grauen inszeniert wie Immersiv (ADR 0022)
+        assertEquals("Notieren", eintragenAussehen(kontext, wahl(FoodyStil.GRAUEN, "RUHIG")).titel)
         val v = eintragenAnsicht(kontext, wahl(FoodyStil.KREUZER)).apply(kontext, FrameLayout(kontext))
         assertEquals("SUCHEN · SCANNEN · FOTO", v.text(R.id.widget_fuss))
     }

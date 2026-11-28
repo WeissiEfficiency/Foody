@@ -200,9 +200,10 @@ private fun DarstellungInhalt(
         Unterkopf("Stil")
         StilWahl(z.stil, z.variante, rasterBreite, onStil)
         Unterkopf("Variante")
-        Segmente(StilVariante.entries.map { it to it.anzeigename }, z.variante, onVariante)
-        Klein("Mit Muster, Verlauf und kräftigen Kanten.")
-        z.stil.akzent(z.akzent)?.let { akzent ->
+        Segmente(StilVariante.entries.map { it to z.stil.variantenName(it) }, z.variante, onVariante)
+        Klein(variantenHinweis(z.stil, z.variante))
+        // Beim Grauen gibt es keine Farbe zur Wahl (ADR 0022)
+        z.stil.akzent(z.akzent)?.takeIf { z.stil.akzente.size > 1 }?.let { akzent ->
             Unterkopf("Farbe")
             AkzentReihe(z.stil.akzente, akzent, onAkzent)
         }
@@ -224,18 +225,22 @@ private fun DarstellungInhalt(
     } else {
         Text("Variante", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text, modifier = Modifier.padding(top = FoodyAbstaende.s1))
         Row(horizontalArrangement = Arrangement.spacedBy(FoodyAbstaende.s2)) {
-            StilVariante.entries.forEach { v -> FoodyChip(v.anzeigename, ausgewaehlt = v == z.variante, onKlick = { onVariante(v) }) }
+            StilVariante.entries.forEach { v -> FoodyChip(z.stil.variantenName(v), ausgewaehlt = v == z.variante, onKlick = { onVariante(v) }) }
         }
-        Klein(
-            if (z.variante == StilVariante.IMMERSIV) {
-                "Mit Muster, Verlauf und kräftigen Kanten."
-            } else {
-                "Farben und Schrift des Stils, schlicht."
-            },
-        )
-        Text("Farbe", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text, modifier = Modifier.padding(top = FoodyAbstaende.s1))
-        AkzentWahl(z.stil, akzent, rasterBreite, onAkzent)
+        Klein(variantenHinweis(z.stil, z.variante))
+        if (z.stil.akzente.size > 1) {
+            Text("Farbe", style = MaterialTheme.typography.titleSmall, color = FoodyTheme.farben.text, modifier = Modifier.padding(top = FoodyAbstaende.s1))
+            AkzentWahl(z.stil, akzent, rasterBreite, onAkzent)
+        }
     }
+}
+
+/** Satz unter der Variantenwahl; beim Grauen beschreibt er die zwei Gesichter (ADR 0022). */
+internal fun variantenHinweis(stil: FoodyStil, variante: StilVariante): String = when {
+    stil == FoodyStil.GRAUEN && variante == StilVariante.IMMERSIV -> "Die App als verwittertes Buch: Pergament, Tinte und Blut."
+    stil == FoodyStil.GRAUEN -> "Das grüne Grauen: Sternenhimmel, Glut und Mondbogen."
+    variante == StilVariante.IMMERSIV -> "Mit Muster, Verlauf und kräftigen Kanten."
+    else -> "Farben und Schrift des Stils, schlicht."
 }
 
 /** Hinweis bei ungültigem Tagesziel: „500 bis 10.000 kcal“, aus den Grenzen des Speichers. */

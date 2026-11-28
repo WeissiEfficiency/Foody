@@ -61,7 +61,7 @@ Die 14 Entwürfe je Stil decken alle Bildschirme der App ab:
 - **Barrierefreiheit:** Kontrast WCAG 2.2 AA wie bisher, auch auf den Szenen. Animationen (Flamme, Auge, Orbits)
   ruhen, wenn das System Animationen abschaltet, wie heute schon die Unschärfe (`animationenErlaubt()`). Fraktur und
   Schreibmaschine nur für Titel und kurze Zeilen, Fließtext in der lesbaren Schrift des Stils. Ziele mindestens 48 dp.
-  Große Schrift (200 %) prüfen wir nicht mehr (Nutzer, 2026-11-15); die vorhandenen Tests dazu bleiben.
+  Große Schrift (200 %) prüfen wir nicht mehr (Nutzer, 2026-11-15); seit 2026-11-24 sind auch die Tests dazu gelöscht.
 - **Keine fremden Marken.** Q und V bleiben allgemeines Genre (dunkle Fantasy, Raumschiff), ohne Namen, Logos oder
   Motive aus Spielen oder Filmen, so wie in den Entwürfen.
 - **Kein Sync der Wahl**, wie bei der Farbwelt (ADR 0015). Server-Rebuild: nein.

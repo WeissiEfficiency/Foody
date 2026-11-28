@@ -138,13 +138,6 @@ class HeuteEdoTest {
     }
 
     @Test
-    fun schrift200OhneAbschneiden() {
-        zeigen(schrift = 2f)
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
-    }
-
-    @Test
     fun texte() {
         val tag = LocalDate.of(2026, 10, 24)
         assertEquals("HEUTE ABEND · 24. OKTOBER", edoKopf("ABENDESSEN", morgen = false, datum = tag))

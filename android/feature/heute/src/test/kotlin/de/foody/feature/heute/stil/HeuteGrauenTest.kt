@@ -1,6 +1,9 @@
 package de.foody.feature.heute.stil
 
 import android.provider.Settings
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -10,13 +13,16 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
+import com.github.takahirom.roborazzi.captureScreenRoboImage
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.glas.FoodyHintergrund
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
+import de.foody.core.testing.FoodyBildvergleich
 import de.foody.domain.Mahlzeit
 import de.foody.feature.heute.HeuteAktionen
 import de.foody.feature.heute.HeuteScreen
-import de.foody.feature.heute.MitSchrift200
 import de.foody.feature.heute.beispielZustand
 import de.foody.feature.heute.pruefeNichtsAbgeschnitten
 import org.junit.Before
@@ -56,33 +62,78 @@ class HeuteGrauenTest {
         Settings.Global.putFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 0f)
     }
 
-    private fun zeigen(variante: StilVariante = StilVariante.IMMERSIV, schrift200: Boolean = false) {
+    private fun zeigen(variante: StilVariante = StilVariante.IMMERSIV) {
         compose.setContent {
             FoodyTheme(stil = FoodyStil.GRAUEN, variante = variante, unschaerfe = false) {
-                if (schrift200) MitSchrift200 { HeuteScreen(beispielZustand(), aktionen) } else HeuteScreen(beispielZustand(), aktionen)
+                HeuteScreen(beispielZustand(), aktionen)
             }
         }
     }
 
+    /** Im Necronomicon (Immersiv) heißt die Seite wie im Entwurf „Heute“ mit „Liber I · Vom Tage“; das Auge bleibt. */
     @Test
-    fun immersivZeigtDasAuge() {
+    fun necronomiconHeisstHeuteMitDemAuge() {
         zeigen()
-        compose.onNodeWithText("Das Auge").assertExists()
+        compose.onNodeWithText("Heute").assertExists()
+        compose.onNodeWithText("Liber I · Vom Tage").assertExists()
+        compose.onNodeWithText("Das Auge").assertDoesNotExist()
         compose.onNodeWithText("Das Ritual des Abends").assertExists()
         // Das Auge liest TalkBack als nüchternen Satz
         compose.onNodeWithContentDescription("860 von 2.000 kcal: Eiweiß 42 g, Kohlenhydrate 96 g, Fett 31 g").assertExists()
         compose.onNodeWithContentDescription("Heute").assertExists()
     }
 
+    /** Das Auge öffnet das Energietagebuch; ohne Ziel führt „Tagesziel festlegen“ in die Einstellungen. */
     @Test
-    fun ruhigZeigtSzeneSchlicht() {
-        // Wie im Entwurf U-Heute in Ruhig: „Heute“ auf Pergament, statt des Auges ein Ring, die Mahlzeit beim Namen
+    fun augeUndZiel() {
+        var ziel by mutableStateOf<Int?>(2000)
+        compose.setContent {
+            FoodyTheme(stil = FoodyStil.GRAUEN, variante = StilVariante.IMMERSIV, unschaerfe = false) {
+                val z = beispielZustand()
+                HeuteScreen(z.copy(tagebuch = z.tagebuch.copy(ziel = ziel)), aktionen)
+            }
+        }
+        compose.onNodeWithContentDescription("860 von 2.000 kcal", substring = true).performClick()
+        compose.onNodeWithContentDescription("Tagesziel festlegen").assertDoesNotExist()
+        ziel = null
+        compose.onNodeWithContentDescription("Tagesziel festlegen").performScrollTo().performClick()
+        assertEquals(listOf("alle", "einstellungen"), ausgeloest)
+    }
+
+    /**
+     * Übergang: Mit Animationen reißt das Auge auf und stürzt heran; erst danach öffnet das Tagebuch, ein zweiter Tipp
+     * währenddessen zählt nicht. Das Bild zeigt die Mitte des Blicks.
+     */
+    @OptIn(ExperimentalRoborazziApi::class)
+    @Test
+    fun augeStuerztHeranUndOeffnetDanach() {
+        val resolver = ApplicationProvider.getApplicationContext<android.app.Application>().contentResolver
+        Settings.Global.putFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+        compose.setContent {
+            FoodyTheme(stil = FoodyStil.GRAUEN, variante = StilVariante.IMMERSIV, unschaerfe = false) {
+                FoodyHintergrund { HeuteScreen(beispielZustand(), aktionen) }
+            }
+        }
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        val auge = compose.onNodeWithContentDescription("860 von 2.000 kcal", substring = true)
+        auge.performClick()
+        compose.mainClock.advanceTimeBy(BLICK_MS / 2L)
+        auge.performClick()
+        assertEquals(emptyList(), ausgeloest)
+        captureScreenRoboImage("src/test/screenshots/stil_grauen_blick_mitte.png", roborazziOptions = FoodyBildvergleich)
+        compose.mainClock.advanceTimeBy(BLICK_MS * 3L / 10L)
+        captureScreenRoboImage("src/test/screenshots/stil_grauen_blick_spaet.png", roborazziOptions = FoodyBildvergleich)
+        compose.mainClock.advanceTimeBy(BLICK_MS.toLong())
+        assertEquals(listOf("alle"), ausgeloest)
+    }
+
+    @Test
+    fun ominoesZeigtDasAuge() {
+        // Ruhig ist beim Grauen „Ominös“ (ADR 0022): die volle Szene mit dem Auge, nicht mehr das schlichte Pergament
         zeigen(StilVariante.RUHIG)
-        compose.onNodeWithText("Das Auge").assertDoesNotExist()
-        compose.onNodeWithText("Heute").assertExists()
-        compose.onNodeWithText("Abendessen").assertExists()
-        compose.onNodeWithContentDescription("860 von 2.000 kcal: Eiweiß 42 g, Kohlenhydrate 96 g, Fett 31 g").assertExists()
-        compose.onNodeWithText("Tagebuch ›").assertExists()
+        compose.onNodeWithText("Das Auge").assertExists()
+        compose.onNodeWithText("Tagebuch ›").assertDoesNotExist()
     }
 
     @Test
@@ -116,17 +167,6 @@ class HeuteGrauenTest {
         compose.onNodeWithContentDescription("Abendessen Ofengemüse mit Feta und Kräuterquark: gegessen?").performScrollTo().performClick()
         compose.onNodeWithText("Ja").performClick()
         assertEquals(listOf("gegessen p1"), ausgeloest)
-    }
-
-    @Test
-    fun schrift200OhneAbschneiden() {
-        zeigen(schrift200 = true)
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
-        // Der Titel bleibt einzeilig, das Datum rückt darunter
-        val layout = mutableListOf<TextLayoutResult>()
-        compose.onNodeWithText("Das Auge").fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(layout)
-        assertEquals(1, layout.single().lineCount)
     }
 
     @Test

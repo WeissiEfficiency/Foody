@@ -18,7 +18,6 @@ import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.feature.kochen.KochTestUmgebung
 import de.foody.feature.kochen.KochenRoute
-import de.foody.feature.kochen.MitSchrift200
 import de.foody.feature.kochen.pruefeNichtsAbgeschnitten
 import de.foody.feature.kochen.reistopf
 import de.foody.feature.kochen.testDatenbank
@@ -34,8 +33,7 @@ import org.robolectric.annotation.GraphicsMode
 import kotlin.test.assertEquals
 
 /**
- * Kochmodus der Stile R–V in Immersiv: Bereitlegen mit Abhaken, Weiter und Zurück, Schließen, Timer starten; bei
- * 200 % Schrift wird nichts abgeschnitten.
+ * Kochmodus der Stile R–V in Immersiv: Bereitlegen mit Abhaken, Weiter und Zurück, Schließen, Timer starten.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -62,12 +60,12 @@ class KochenStileTest {
         db.close()
     }
 
-    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false) {
+    private fun zeigen(stil: FoodyStil) {
         val vm = u.vm()
         compose.setContent {
             FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV) {
                 val inhalt = @Composable { KochenRoute("r1", null, onRezeptAnpassen = { _, _ -> }, onSchliessen = { geschlossen++ }, vm = vm) }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
         warteAufTitel("Bereitlegen")
@@ -100,12 +98,6 @@ class KochenStileTest {
         compose.waitUntil(5_000) { u.timer.timer.value.isNotEmpty() }
     }
 
-    private fun gross(stil: FoodyStil) {
-        zeigen(stil, schrift200 = true)
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
-    }
-
     @Test fun anime() = ablauf(FoodyStil.ANIME)
 
     @Test fun edo() = ablauf(FoodyStil.EDO)
@@ -122,16 +114,6 @@ class KochenStileTest {
 
     @Test fun kreuzerTimer() = timer(FoodyStil.KREUZER)
 
-    @Test fun animeSchrift200() = gross(FoodyStil.ANIME)
-
-    @Test fun edoSchrift200() = gross(FoodyStil.EDO)
-
-    @Test fun bayrischSchrift200() = gross(FoodyStil.BAYRISCH)
-
-    @Test fun grauenSchrift200() = gross(FoodyStil.GRAUEN)
-
-    @Test fun kreuzerSchrift200() = gross(FoodyStil.KREUZER)
-
     @Test
     fun texte() {
         assertEquals("XIV", roemisch(14))
@@ -143,9 +125,9 @@ class KochenStileTest {
         // Bayrisch Ruhig wie im Entwurf T-Kochen: „Weiter“ und „Fertig“ statt „Weida“ und „Feddig!“
         assertEquals("Weiter", kochArt(FoodyStil.BAYRISCH, inszeniert = false).weiter)
         assertEquals("Fertig", kochArt(FoodyStil.BAYRISCH, inszeniert = false).fertig)
-        // Grauen Ruhig wie im Entwurf U-Kochen: „Fertig“ statt „Vollenden“, arabische Ziffern statt römischer
-        assertEquals("Fertig", kochArt(FoodyStil.GRAUEN, inszeniert = false).fertig)
-        assertEquals("3.", kochArt(FoodyStil.GRAUEN, inszeniert = false).nummer(3, 5))
+        // Grauen hat zwei inszenierte Gesichter (ADR 0022): kein schlichter Kochmodus mehr
+        assertEquals("Vollenden", kochArt(FoodyStil.GRAUEN, inszeniert = false).fertig)
+        assertEquals("III", kochArt(FoodyStil.GRAUEN, inszeniert = false).nummer(3, 5))
         assertEquals("03", kochArt(FoodyStil.KREUZER, inszeniert = false).nummer(3, 5))
         assertEquals("SCHRITT 2 / 5", kochArt(FoodyStil.KREUZER, inszeniert = false).ueberSchritt(2, 5))
         assertEquals("REISTOPF · 2 PORTIONEN", kochArt(FoodyStil.KREUZER, inszeniert = false).kopf("Reistopf", 2))

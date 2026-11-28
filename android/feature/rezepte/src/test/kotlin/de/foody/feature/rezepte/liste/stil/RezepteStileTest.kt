@@ -1,5 +1,6 @@
 package de.foody.feature.rezepte.liste.stil
 
+import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -19,18 +20,22 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
+import com.github.takahirom.roborazzi.captureScreenRoboImage
 import de.foody.core.data.db.FoodyDatenbank
 import de.foody.core.data.db.RezeptEntity
 import de.foody.core.data.fotos.FotoAblage
 import de.foody.core.data.rezepte.RezeptKarte
 import de.foody.core.data.rezepte.RezeptRepository
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.glas.FoodyHintergrund
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
+import de.foody.core.testing.FoodyBildvergleich
 import de.foody.core.testing.ViewModelHalter
 import de.foody.domain.Einordnung
-import de.foody.feature.rezepte.MitSchrift200
 import de.foody.feature.rezepte.bestand
 import de.foody.feature.rezepte.liste.RezeptListeRoute
 import de.foody.feature.rezepte.liste.RezeptListeViewModel
@@ -50,9 +55,8 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertEquals
 
 /**
- * Die Rezeptlisten-Szenen der Stile R–V in Immersiv: Titel für TalkBack, Rezept wählen und öffnen (Anime öffnet
- * direkt aus dem Raster), Seiten blättern (Anime: endlos), „+ Neu“ öffnet ein neues Rezept, leere Liste bietet „Anlegen“; bei 200 % Schrift wird
- * nichts abgeschnitten.
+ * Die Rezeptlisten-Szenen der Stile R–V in Immersiv: Titel für TalkBack, Rezept wählen und öffnen (Anime und die
+ * Bibliothek des Grauens öffnen direkt), Seiten blättern (Anime und Grauen: endlos), „+ Neu“ öffnet ein neues Rezept, leere Liste bietet „Anlegen“.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -70,6 +74,13 @@ class RezepteStileTest {
     @Before
     fun setUp() {
         db = testDatenbank()
+        // Ohne Animationen öffnet der Band sofort; der Übergang hat seinen eigenen Test
+        animationen(0f)
+    }
+
+    private fun animationen(skala: Float) {
+        val resolver = ApplicationProvider.getApplicationContext<android.app.Application>().contentResolver
+        Settings.Global.putFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, skala)
     }
 
     @After
@@ -91,16 +102,41 @@ class RezepteStileTest {
         }
     }
 
-    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false) {
+    private fun zeigen(stil: FoodyStil, hintergrund: Boolean = false) {
         val vm = halter.behalten(RezeptListeViewModel(RezeptRepository(db, FotoAblage(RuntimeEnvironment.getApplication()), EmptyCoroutineContext) { 1L }))
         compose.setContent {
-            FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV) {
+            FoodyTheme(stil = stil, variante = StilVariante.IMMERSIV, unschaerfe = false) {
                 val inhalt = @Composable {
                     RezeptListeRoute(onOeffnen = { geoeffnet += it }, onNeu = { neu++ }, vm = vm)
                 }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                if (hintergrund) FoodyHintergrund { inhalt() } else inhalt()
             }
         }
+    }
+
+    /**
+     * Grauen: Mit Animationen kommt der Band aus dem Regal, holt sich heran und schlägt sich auf; erst danach öffnet
+     * das Rezept, ein zweiter Tipp währenddessen zählt nicht. Die Bilder zeigen das Heranholen und das Aufschlagen.
+     */
+    @OptIn(ExperimentalRoborazziApi::class)
+    @Test
+    fun grauenBandKommtAusDemRegal() {
+        animationen(1f)
+        rezepte(2)
+        zeigen(FoodyStil.GRAUEN, hintergrund = true)
+        warteAufBeschreibung("Shakshuka")
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        val band = compose.onAllNodes(hasContentDescription("Öffnen: Shakshuka", substring = true)).onFirst()
+        band.performClick()
+        compose.mainClock.advanceTimeBy(REGAL_MS * 45L / 100L)
+        band.performClick()
+        assertEquals(emptyList(), geoeffnet)
+        captureScreenRoboImage("src/test/screenshots/stil_grauen_regal_heran.png", roborazziOptions = FoodyBildvergleich)
+        compose.mainClock.advanceTimeBy(REGAL_MS * 35L / 100L)
+        captureScreenRoboImage("src/test/screenshots/stil_grauen_regal_auf.png", roborazziOptions = FoodyBildvergleich)
+        compose.mainClock.advanceTimeBy(REGAL_MS.toLong())
+        assertEquals(listOf("r3"), geoeffnet)
     }
 
     private fun warteAufBeschreibung(text: String) =
@@ -113,7 +149,7 @@ class RezepteStileTest {
         zeigen(stil)
         warteAufBeschreibung("Shakshuka")
         compose.onAllNodes(isHeading()).onFirst().assertExists()
-        if (stil != FoodyStil.ANIME) {
+        if (stil != FoodyStil.ANIME && stil != FoodyStil.GRAUEN) {
             // Wählen: der Tab ist gewählt, die Karte zeigt das Rezept
             compose.onNode(hasContentDescription("Shakshuka", substring = true) and tab).performClick()
             compose.onNode(hasContentDescription("Shakshuka", substring = true) and tab and isSelected()).assertExists()
@@ -147,14 +183,6 @@ class RezepteStileTest {
         assertEquals(1, neu)
     }
 
-    private fun gross(stil: FoodyStil) {
-        rezepte(7)
-        zeigen(stil, schrift200 = true)
-        warteAufBeschreibung("Shakshuka")
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
-    }
-
     /**
      * Kleiner Bildschirm: Nach dem Antippen eines Rezepts ist „Öffnen“ ohne Scrollen zu sehen. Auf dem Handy lag die
      * Karte vorher unter der schwebenden Leiste (Gerätetest 2026-11-16).
@@ -175,9 +203,6 @@ class RezepteStileTest {
     @Test fun bayrischKarteInsBild() = karteInsBild(FoodyStil.BAYRISCH)
 
     @Config(qualifiers = "w360dp-h640dp")
-    @Test fun grauenKarteInsBild() = karteInsBild(FoodyStil.GRAUEN)
-
-    @Config(qualifiers = "w360dp-h640dp")
     @Test fun kreuzerKarteInsBild() = karteInsBild(FoodyStil.KREUZER)
 
     /**
@@ -195,15 +220,15 @@ class RezepteStileTest {
             )
         }
         zeigen(stil)
-        // Die Sage zeigt ein Rezept nach dem anderen („1 / 4“), die Szenen R–V alle in der Wahl
+        // Die Sage zählt die Gegenstände im Grimoire („4 Rezepte“), die Szenen R–V zeigen alle in der Wahl
         val sage = stil == FoodyStil.SAGE
-        if (sage) compose.warteAufText("1 / 4") else warteAufBeschreibung("Schmorbraten")
+        if (sage) compose.warteAufText("4 Rezepte") else warteAufBeschreibung("Schmorbraten")
         compose.onNode(hasText(alle) and hasContentDescription("Alle") and isSelected()).assertExists()
         compose.onNode(hasText(favoriten) and hasContentDescription("Favoriten")).assertExists()
         compose.onNode(hasText(schnell) and hasContentDescription("Höchstens 30 Minuten")).performClick()
         compose.onNode(hasContentDescription("Höchstens 30 Minuten") and isSelected()).assertExists()
         if (sage) {
-            compose.warteAufText("1 / 3")
+            compose.warteAufText("3 Rezepte")
         } else {
             compose.waitUntil(5_000) { compose.onAllNodesWithContentDescription("Schmorbraten", substring = true).fetchSemanticsNodes().isEmpty() }
             warteAufBeschreibung("Shakshuka")
@@ -232,11 +257,10 @@ class RezepteStileTest {
 
     @Test fun kreuzer() = pruefen(FoodyStil.KREUZER)
 
-    /** Anime zeigt alle Treffer in einer Liste ohne Seiten; das letzte Rezept erreicht man durch Scrollen. */
-    @Test
-    fun animeEndlos() {
+    /** Anime und Grauen zeigen alle Treffer in einer Liste ohne Seiten; das letzte Rezept erreicht man durch Scrollen. */
+    private fun endlos(stil: FoodyStil) {
         rezepte(7)
-        zeigen(FoodyStil.ANIME)
+        zeigen(stil)
         warteAufBeschreibung("Shakshuka")
         compose.onAllNodesWithContentDescription("Seite 1 von", substring = true).assertCountEquals(0)
         val liste = compose.onNode(hasScrollToIndexAction() and SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange))
@@ -245,11 +269,13 @@ class RezepteStileTest {
         assertEquals(listOf("r8"), geoeffnet)
     }
 
+    @Test fun animeEndlos() = endlos(FoodyStil.ANIME)
+
+    @Test fun grauenEndlos() = endlos(FoodyStil.GRAUEN)
+
     @Test fun edoBlaettern() = blaettern(FoodyStil.EDO)
 
     @Test fun bayrischBlaettern() = blaettern(FoodyStil.BAYRISCH)
-
-    @Test fun grauenBlaettern() = blaettern(FoodyStil.GRAUEN)
 
     @Test fun kreuzerBlaettern() = blaettern(FoodyStil.KREUZER)
 
@@ -266,16 +292,6 @@ class RezepteStileTest {
     @Test fun animeLeer() = leer(FoodyStil.ANIME)
 
     @Test fun kreuzerLeer() = leer(FoodyStil.KREUZER)
-
-    @Test fun animeSchrift200() = gross(FoodyStil.ANIME)
-
-    @Test fun edoSchrift200() = gross(FoodyStil.EDO)
-
-    @Test fun bayrischSchrift200() = gross(FoodyStil.BAYRISCH)
-
-    @Test fun grauenSchrift200() = gross(FoodyStil.GRAUEN)
-
-    @Test fun kreuzerSchrift200() = gross(FoodyStil.KREUZER)
 
     @Test
     fun texte() {
@@ -294,8 +310,6 @@ class RezepteStileTest {
         assertEquals(17, sternGroesse(717))
         assertEquals(22, sternGroesse(3000))
         assertEquals("SPINAT", kreuzerKurz(karte(name = "Spinat-Lasagne")))
-        assertEquals("BAND · OFENGERICHT", grauenBand(karte(tags = listOf("Ofengericht"))))
-        assertEquals("BAND · OHNE ORDNUNG", grauenBand(r))
         assertEquals("AUS DER KÜCHE", edoArt(r))
         assertEquals("AUS DA KUCHL", bayrischArt(r))
     }

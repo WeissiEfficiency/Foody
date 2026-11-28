@@ -13,18 +13,28 @@ import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 import androidx.annotation.ColorInt
+import androidx.annotation.DrawableRes
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
 import de.foody.app.R
 import de.foody.core.data.StilWahl
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
+import de.foody.core.designsystem.R as DesignR
 
 /**
  * Fläche eines Widgets: [farbe], Rand ([rand] `null` = keiner) mit [randBreite], Rundung [radius] und der
- * Versatzschatten (Anime, Immersiv). Maße in dp.
+ * Versatzschatten (Anime, Immersiv). Maße in dp. [bild] liegt statt der Farbe auf der Fläche (Pergament im
+ * Necronomicon); [farbe] bleibt die Farbe, gegen die Schrift lesbar sein muss.
  */
-data class Flaeche(@ColorInt val farbe: Int, @ColorInt val rand: Int?, val randBreite: Float, val radius: Float, val schatten: Boolean)
+data class Flaeche(
+    @ColorInt val farbe: Int,
+    @ColorInt val rand: Int?,
+    val randBreite: Float,
+    val radius: Float,
+    val schatten: Boolean,
+    @DrawableRes val bild: Int? = null,
+)
 
 /**
  * Setzt [f] auf ein Widget-Layout mit den Flächen `widget_schatten`, `widget_rand` und `widget_knopf` übereinander:
@@ -55,6 +65,8 @@ internal fun RemoteViews.flaecheAnwenden(f: Flaeche) {
     }
     val rand = if (f.rand != null) f.randBreite else 0f
     flaeche(R.id.widget_knopf, f.farbe, (f.radius - rand).coerceAtLeast(0f))
+    // Das Bild ersetzt die getönte Fläche; die Hülle setzt den Inhalt jedes Mal neu, es bleibt nichts stehen
+    f.bild?.let { setInt(R.id.widget_knopf, "setBackgroundResource", it) }
     abstand(R.id.widget_knopf, rand, rand, rand + versatz, rand + versatz)
 }
 
@@ -77,6 +89,8 @@ data class KartenAussehen(
     val linienArt: Linie,
     val titelSchrift: String?,
     val nebenSchrift: String?,
+    /** Grauen im Necronomicon: Pergament, Tinte und Blut statt der grünen Tafel. */
+    val buch: Boolean = false,
 )
 
 /** Akzent des gewählten Stils als ARGB; Milchglas hat keinen. */
@@ -105,7 +119,7 @@ private const val TEXT_KONTRAST = 4.55
  */
 fun kartenAussehen(context: Context, wahl: StilWahl, zettel: Boolean = false): KartenAussehen {
     val stil = FoodyStil.ausName(wahl.stil)
-    val immersiv = StilVariante.ausName(wahl.variante) == StilVariante.IMMERSIV
+    val immersiv = StilVariante.ausName(wahl.variante).inszeniertFuer(stil)
     val akzent = akzentVon(wahl)
     if (stil == FoodyStil.MILCHGLAS || akzent == null) {
         val text = context.getColor(R.color.widget_inhalt)
@@ -130,6 +144,15 @@ fun kartenAussehen(context: Context, wahl: StilWahl, zettel: Boolean = false): K
         FoodyStil.BAYRISCH -> KartenAussehen(
             stil, immersiv, Flaeche(e.glas, e.text, 2f, 22f, false), e.text, e.neben, akzent, e.linie, Linie.STRICHE, "serif", null,
         )
+        // Necronomicon (ADR 0022): das ganze Widget ist Pergament, auch der Einkaufszettel
+        FoodyStil.GRAUEN if wahl.variante == StilVariante.IMMERSIV.name -> {
+            val b = Entwuerfe.buch
+            KartenAussehen(
+                stil, immersiv, Flaeche(b.grund, b.kante, 1.5f, 22f, false, DesignR.drawable.grauen_pergament),
+                b.text, b.neben, BLUT, ColorUtils.setAlphaComponent(b.text, 0x4D), if (zettel) Linie.PUNKTE else Linie.VOLL, "serif", "monospace",
+                buch = true,
+            )
+        }
         FoodyStil.GRAUEN -> if (zettel) {
             // Schrift des Pergaments, der Akzent als Tinte auf dem Zettel
             val p = Entwuerfe.pergament

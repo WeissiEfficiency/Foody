@@ -2,9 +2,11 @@ package de.foody.feature.woche.stil
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -17,6 +19,8 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.foody.core.data.Einstellungsschluessel
 import de.foody.core.data.db.FoodyDatenbank
@@ -27,7 +31,6 @@ import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.feature.woche.MITTWOCH
 import de.foody.feature.woche.MONTAG
-import de.foody.feature.woche.MitSchrift200
 import de.foody.feature.woche.WocheRoute
 import de.foody.feature.woche.WocheTestUmgebung
 import de.foody.feature.woche.bestand
@@ -49,8 +52,7 @@ import kotlin.test.assertEquals
 
 /**
  * Die Wochen-Szenen der Stile R–V in Immersiv: Titel für TalkBack „Woche“, Tag wählen, Eintrag öffnet das
- * Mahlzeit-Blatt, „+ Mahlzeit“ die Mahlzeitwahl, „Leere Tage füllen“ das Blatt, Blättern zeigt „Heute“; bei 200 %
- * Schrift wird nichts abgeschnitten.
+ * Mahlzeit-Blatt, „+ Mahlzeit“ die Mahlzeitwahl, „Leere Tage füllen“ das Blatt, Blättern zeigt „Heute“.
  */
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(AndroidJUnit4::class)
@@ -80,12 +82,12 @@ class WocheStileTest {
         db.close()
     }
 
-    private fun zeigen(stil: FoodyStil, schrift200: Boolean = false, variante: StilVariante = StilVariante.IMMERSIV) {
+    private fun zeigen(stil: FoodyStil, variante: StilVariante = StilVariante.IMMERSIV) {
         val vm = u.vm()
         compose.setContent {
             FoodyTheme(stil = stil, variante = variante) {
                 val inhalt = @Composable { WocheRoute({ _, _ -> }, {}, vm = vm) }
-                if (schrift200) MitSchrift200(inhalt) else inhalt()
+                inhalt()
             }
         }
         warteAufBeschreibung("Mittwoch, 28.10.")
@@ -128,12 +130,6 @@ class WocheStileTest {
         warteAufBeschreibung("Montag, 2.11.")
         compose.onAllNodes(hasContentDescription("Heute")).onFirst().performClick()
         warteAufBeschreibung("Mittwoch, 28.10.")
-    }
-
-    private fun gross(stil: FoodyStil) {
-        zeigen(stil, schrift200 = true)
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
     }
 
     /** Sage in Ruhig wie im Entwurf: die Szene schlicht, „WOCHE“ mit Tageschips statt der Karte. */
@@ -186,19 +182,54 @@ class WocheStileTest {
 
     @Test fun bayrisch() = pruefen(FoodyStil.BAYRISCH)
 
-    /** Grauen in Ruhig wie im Entwurf: „Woche“, sieben Tageschips statt des Mondbogens, „Leere Tage vorschlagen lassen“. */
+    /** Grauen „Ominös“ (Ruhig, ADR 0022): die volle Szene mit Mondbogen und Ritual. */
     @Test
-    fun grauenRuhigTageschips() {
+    fun grauenOminoesMondphasen() {
+        // Ruhig ist beim Grauen „Ominös“ (ADR 0022): Mondphasen und Ritual statt Tageschips
         zeigen(FoodyStil.GRAUEN, variante = StilVariante.RUHIG)
-        compose.onNodeWithText("Woche").assertExists()
-        compose.onNodeWithText("Mondphasen").assertDoesNotExist()
-        val mittwoch = compose.onNode(hasContentDescription("Mittwoch, 28.10.", substring = true) and isSelectable())
-        mittwoch.performClick()
-        mittwoch.assertIsSelected()
-        compose.onNodeWithText("Leere Tage vorschlagen lassen").performScrollTo().assertExists()
+        compose.onNodeWithText("Mondphasen").assertExists()
+        compose.onNodeWithText("Leere Tage vorschlagen lassen").assertDoesNotExist()
+        compose.onNodeWithText("2 von 7 Nächten erhellt", useUnmergedTree = true).assertExists()
     }
 
     @Test fun grauen() = pruefen(FoodyStil.GRAUEN)
+
+    @Test fun grauenBlaettern() = blaettern(FoodyStil.GRAUEN)
+
+    /**
+     * Grauen in Immersiv (Runde 2 G3): kein Blättern und kein „planen ›“ oben; Wischen über den Mondbogen blättert die
+     * Woche, das Ritual unten nennt den Stand.
+     */
+    @Test
+    fun grauenMondbogenWischen() {
+        zeigen(FoodyStil.GRAUEN)
+        compose.onAllNodes(hasText("planen ›")).assertCountEquals(0)
+        compose.onNodeWithText("2 von 7 Nächten erhellt", useUnmergedTree = true).assertExists()
+        compose.onAllNodes(hasContentDescription("Leere Tage füllen, 2 von 7 Tagen geplant")).onFirst().assertExists()
+        compose.onAllNodes(hasContentDescription("Montag, 26.10.", substring = true)).onFirst().performTouchInput { swipe(center, center - Offset(400f, 0f)) }
+        warteAufBeschreibung("Montag, 2.11.")
+        compose.onAllNodes(hasContentDescription("Montag, 2.11.", substring = true)).onFirst().performTouchInput { swipe(center, center + Offset(400f, 0f)) }
+        warteAufBeschreibung("Mittwoch, 28.10.")
+    }
+
+    /**
+     * Grauen in Immersiv (Buch ausbauen): Der gewählte Tag ist ein Blatt des Almanachs. Wischen blättert zum nächsten
+     * Tag und wählt dessen Mond; ein Tipp auf einen Mond blättert das Buch zu seinem Tag.
+     */
+    @Test
+    fun grauenAlmanachBlaettern() {
+        zeigen(FoodyStil.GRAUEN)
+        compose.onNode(hasText("Mittwoch", substring = true) and isHeading()).performTouchInput {
+            swipe(centerRight - Offset(10f, 0f), centerLeft + Offset(10f, 0f))
+        }
+        compose.waitForIdle()
+        compose.onAllNodes(hasContentDescription("Donnerstag, 29.10.", substring = true) and isSelected()).onFirst().assertExists()
+        compose.onNode(hasText("Donnerstag", substring = true) and isHeading()).assertExists()
+        compose.onAllNodes(hasContentDescription("Montag, 26.10.", substring = true)).onFirst().performClick()
+        compose.waitForIdle()
+        compose.onNode(hasText("Montag", substring = true) and isHeading()).assertExists()
+        compose.onAllNodes(hasText("Donnerstag", substring = true) and isHeading()).assertCountEquals(0)
+    }
 
     @Test fun kreuzer() = pruefen(FoodyStil.KREUZER)
 
@@ -238,20 +269,12 @@ class WocheStileTest {
 
     @Test fun kreuzerBlaettern() = blaettern(FoodyStil.KREUZER)
 
-    @Test fun animeSchrift200() = gross(FoodyStil.ANIME)
-
-    @Test fun edoSchrift200() = gross(FoodyStil.EDO)
-
-    @Test fun bayrischSchrift200() = gross(FoodyStil.BAYRISCH)
-
-    @Test fun grauenSchrift200() = gross(FoodyStil.GRAUEN)
-
-    @Test fun kreuzerSchrift200() = gross(FoodyStil.KREUZER)
-
     @Test
     fun texte() {
         val tag = { tage: Long, n: Int -> WochenTag(MONTAG.plusDays(tage), List(n) { eintrag(MONTAG.plusDays(tage)) }, null) }
         assertEquals("KW 44 · 26. Oktober – 1. November", kwText(MONTAG))
+        assertEquals("2 von 7 Nächten erhellt", naechteStand(2, 7))
+        assertEquals("0 von 1 Nacht erhellt", naechteStand(0, 1))
         assertEquals("KW 45 · 2.–8. November", kwText(MONTAG.plusDays(7)))
         assertEquals("SAMSTAG · HEID", bayrischTagTitel(tag(5, 1), heute = true))
         assertEquals("SUNDA, 1.", bayrischTagTitel(tag(6, 0), heute = false))

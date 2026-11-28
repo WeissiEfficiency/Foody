@@ -431,13 +431,21 @@ class EintragenSeiteTest {
         assertEquals(Mahlzeit.SNACK.name, runBlocking { db.tagebuchDao().alle().single().mahlzeit })
     }
 
-    /** Texte der Knöpfe in Bildschirmreihenfolge (oben nach unten, links nach rechts). */
+    /**
+     * Namen der Knöpfe in Bildschirmreihenfolge (oben nach unten, links nach rechts), wie TalkBack sie liest: die
+     * Beschreibung, sonst der Text (Sage zeigt unter den Inventarfeldern kürzere Namen).
+     */
     private fun knopfTexte(): List<String> =
         compose.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
             .fetchSemanticsNodes()
-            .filter { SemanticsProperties.Text in it.config }
+            .filter { SemanticsProperties.Text in it.config || SemanticsProperties.ContentDescription in it.config }
             .sortedWith(compareBy({ it.boundsInRoot.top }, { it.boundsInRoot.left }))
-            .map { n -> n.config[SemanticsProperties.Text].joinToString(" ") { it.text } }
+            .map { n ->
+                n.config.getOrElseNullable(SemanticsProperties.ContentDescription) { null }?.joinToString(" ")
+                    ?: n.config[SemanticsProperties.Text].joinToString(" ") { it.text }
+            }
+            // Der Pfeil im Kopf gehört nicht zu Erfassen
+            .filterNot { it == "Zurück" }
 
     @Test
     fun gleicherAufbauInAllenStilen() {

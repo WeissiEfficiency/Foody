@@ -130,6 +130,21 @@ class WocheScreenshotTest {
         }
     }
 
+    /**
+     * Grauen, Immersiv, auf dem Tablet: der Almanach als Doppelseite, links der Himmel, rechts der Tag (so hoch wie die
+     * linke Seite, das braucht einen zweiten Durchgang, darum mit der Testregel).
+     */
+    @OptIn(ExperimentalRoborazziApi::class)
+    @Test
+    @Config(qualifiers = "w1280dp-h1200dp")
+    fun grauenTablet() {
+        val vm = u.vm()
+        compose.setContent { FoodyTheme(stil = FoodyStil.GRAUEN, unschaerfe = false) { FoodyHintergrund { WocheRoute({ _, _ -> }, {}, vm = vm) } } }
+        compose.warteAufText("Mondphasen")
+        compose.waitForIdle()
+        captureScreenRoboImage("src/test/screenshots/stil_grauen_woche_tablet.png", roborazziOptions = vergleich)
+    }
+
     private fun bild(name: String, dunkel: Boolean, stil: FoodyStil = FoodyStil.MILCHGLAS, inhalt: @Composable () -> Unit) {
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = vergleich) {
             FoodyTheme(dunkel = dunkel, stil = stil, unschaerfe = false) { FoodyHintergrund { inhalt() } }

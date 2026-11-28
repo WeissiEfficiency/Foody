@@ -21,7 +21,6 @@ import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.feature.heute.HeuteAktionen
 import de.foody.feature.heute.HeuteScreen
-import de.foody.feature.heute.MitSchrift200
 import de.foody.feature.heute.beispielZustand
 import de.foody.feature.heute.pruefeNichtsAbgeschnitten
 import org.junit.Before
@@ -62,10 +61,10 @@ class HeuteAnimeTest {
         Settings.Global.putFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 0f)
     }
 
-    private fun zeigen(variante: StilVariante = StilVariante.IMMERSIV, schrift200: Boolean = false) {
+    private fun zeigen(variante: StilVariante = StilVariante.IMMERSIV) {
         compose.setContent {
             FoodyTheme(stil = FoodyStil.ANIME, variante = variante, unschaerfe = false) {
-                if (schrift200) MitSchrift200 { HeuteScreen(beispielZustand(), aktionen) } else HeuteScreen(beispielZustand(), aktionen)
+                HeuteScreen(beispielZustand(), aktionen)
             }
         }
     }
@@ -115,62 +114,6 @@ class HeuteAnimeTest {
         compose.onNodeWithContentDescription("860 kcal").assertExists()
         compose.onNodeWithText("Tagesziel festlegen ▸").performScrollTo().performClick()
         assertEquals(listOf("einstellungen"), ausgeloest)
-    }
-
-    @Test
-    fun schrift200OhneAbschneiden() {
-        zeigen(schrift200 = true)
-        compose.waitForIdle()
-        compose.pruefeNichtsAbgeschnitten()
-    }
-
-    /**
-     * Schmales Handy, 200 % Schrift und ein langes Datum: Der Titel wird kleiner statt abgeschnitten, das Zahnrad bleibt
-     * oben rechts.
-     */
-    @Test
-    @Config(qualifiers = "w360dp-h800dp")
-    fun schmalUndSchrift200() = kopfMitSchrift200()
-
-    /** Noch schmaler (320 dp): „HEUTE!“ passt auch klein nicht neben Datum und Zahnrad, das Datum rückt unter den Titel. */
-    @Test
-    @Config(qualifiers = "w320dp-h800dp")
-    fun sehrSchmalDatumDarunter() = kopfMitSchrift200 { v ->
-        if (v != StilVariante.IMMERSIV) return@kopfMitSchrift200
-        val titel = compose.onNodeWithContentDescription("Heute", useUnmergedTree = true).getBoundsInRoot()
-        val datum = compose.onNodeWithText("Mi · 30.12.").getBoundsInRoot()
-        assertTrue(datum.top >= titel.bottom, "Datum (oben ${datum.top}) nicht unter dem Titel (unten ${titel.bottom})")
-    }
-
-    /**
-     * In jeder Variante mit 200 % Schrift und langem Datum (Mittwoch, 30. Dezember): Titel und übrige Texte nicht
-     * abgeschnitten, das Datum da, das Zahnrad oben rechts und 48 dp groß; dazu [auch].
-     */
-    private fun kopfMitSchrift200(auch: (StilVariante) -> Unit = {}) {
-        val zustand = beispielZustand().copy(datum = LocalDate.of(2026, 12, 30))
-        var variante by mutableStateOf(StilVariante.IMMERSIV)
-        compose.setContent {
-            FoodyTheme(stil = FoodyStil.ANIME, variante = variante, unschaerfe = false) {
-                MitSchrift200 { HeuteScreen(zustand, aktionen) }
-            }
-        }
-        for (v in StilVariante.entries) {
-            variante = v
-            compose.waitForIdle()
-            val ergebnisse = mutableListOf<TextLayoutResult>()
-            compose.onNodeWithContentDescription("Heute", useUnmergedTree = true).fetchSemanticsNode()
-                .config[SemanticsActions.GetTextLayoutResult].action?.invoke(ergebnisse)
-            assertFalse(ergebnisse.single().hasVisualOverflow, "$v: Titel abgeschnitten")
-            compose.pruefeNichtsAbgeschnitten()
-            compose.onNodeWithText("Mi · 30.12.").assertExists()
-            val b = compose.onNodeWithContentDescription("Einstellungen").getBoundsInRoot()
-            val breite = compose.onRoot().getBoundsInRoot().right
-            assertTrue(b.right >= breite - 32.dp, "$v: Zahnrad nicht rechts")
-            assertTrue(b.top <= 96.dp, "$v: Zahnrad nicht oben")
-            assertEquals(48.dp, b.right - b.left, "$v: Breite")
-            assertEquals(48.dp, b.bottom - b.top, "$v: Höhe")
-            auch(v)
-        }
     }
 
     @Test
