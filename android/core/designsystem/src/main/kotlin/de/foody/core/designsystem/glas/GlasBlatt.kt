@@ -12,7 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -69,7 +69,10 @@ fun GlasBlatt(onSchliessen: () -> Unit, modifier: Modifier = Modifier, ganzOffen
         eigen != null -> eigen.form
         else -> BlattForm
     }
-    val zustand = rememberModalBottomSheetState(skipPartiallyExpanded = ganzOffen)
+    val zustand = rememberBottomSheetState(
+        SheetValue.Hidden,
+        if (ganzOffen) setOf(SheetValue.Hidden, SheetValue.Expanded) else setOf(SheetValue.Hidden, SheetValue.PartiallyExpanded, SheetValue.Expanded),
+    )
     val scope = rememberCoroutineScope()
     ModalBottomSheet(
         onDismissRequest = onSchliessen,

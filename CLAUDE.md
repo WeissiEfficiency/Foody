@@ -19,7 +19,7 @@ Offline-first Android-App für Rezepte, Nährwerte, Wochenplan und Einkaufsliste
 
 ## Bauen und Testen
 
-JDK 21+ (JBR von Android Studio), Android SDK 37. Befehle in PowerShell mit `.\gradlew`.
+JDK 21+ (JBR von Android Studio), Android SDK 37.1. Befehle in PowerShell mit `.\gradlew`.
 
 ```bash
 ./gradlew :domain:test                        # Rechenkern, schnell

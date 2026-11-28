@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.KeyboardActionHandler
+import androidx.compose.foundation.text.input.TextFieldDecorator
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,6 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import de.foody.core.designsystem.FoodyTheme
+import de.foody.core.designsystem.komponenten.rememberFeldBruecke
 import de.foody.core.designsystem.stil.anime.Anime
 import de.foody.core.designsystem.stil.anime.animeSchatten
 import de.foody.core.designsystem.stil.bayrisch.Bayrisch
@@ -92,25 +95,25 @@ fun StilFeld(
             )
         }
         var hatteFokus by remember { mutableStateOf(false) }
+        val bruecke = rememberFeldBruecke(wert, onWert)
         BasicTextField(
-            wert,
-            onWert,
+            bruecke.zustand,
             Modifier.fillMaxWidth().semantics { contentDescription = etikett }.onFocusChanged {
                 if (hatteFokus && !it.isFocused) onFertig?.invoke()
                 hatteFokus = it.isFocused
             },
+            inputTransformation = bruecke.eingabe,
             textStyle = a.schrift.copy(color = f.text, textAlign = if (zentriert) TextAlign.Center else TextAlign.Start),
-            singleLine = einzeilig,
-            minLines = if (einzeilig) 1 else zeilen,
-            cursorBrush = SolidColor(f.primaer),
-            interactionSource = quelle,
             keyboardOptions = KeyboardOptions(
                 keyboardType = tastatur,
                 capitalization = if (satzanfangGross) KeyboardCapitalization.Sentences else KeyboardCapitalization.None,
                 imeAction = if (onFertig != null) ImeAction.Done else ImeAction.Default,
             ),
-            keyboardActions = KeyboardActions(onDone = { onFertig?.invoke() }),
-            decorationBox = { feld ->
+            onKeyboardAction = KeyboardActionHandler { onFertig?.invoke() },
+            lineLimits = if (einzeilig) TextFieldLineLimits.SingleLine else TextFieldLineLimits.MultiLine(minHeightInLines = zeilen),
+            interactionSource = quelle,
+            cursorBrush = SolidColor(f.primaer),
+            decorator = TextFieldDecorator { feld ->
                 Box(Modifier.fillMaxWidth().heightIn(min = 48.dp).then(a.rahmen).padding(horizontal = a.innen, vertical = 10.dp)) { feld() }
             },
         )

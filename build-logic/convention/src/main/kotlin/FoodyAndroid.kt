@@ -21,6 +21,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 /** Android-Versionen aller Module an einer Stelle. Alle Geräte im Haushalt laufen mit dem neuesten Android (ADR 0009). */
 object FoodySdk {
     const val COMPILE = 37
+
+    /** Compose Foundation 1.13 (Compose-BOM 2026.11) verlangt compileSdk 37.1 (S14). */
+    const val COMPILE_MINOR = 1
     const val MIN = 36
     const val TARGET = 37
 }
@@ -31,6 +34,7 @@ internal val Project.libs: VersionCatalog
 /** Gemeinsam für App und Bibliotheken: SDK-Stände, Java 17, Kotlin ohne Warnungen. */
 internal fun Project.configureAndroid(android: CommonExtension) {
     android.compileSdk = FoodySdk.COMPILE
+    android.compileSdkMinor = FoodySdk.COMPILE_MINOR
     android.defaultConfig.minSdk = FoodySdk.MIN
     android.compileOptions.sourceCompatibility = JavaVersion.VERSION_17
     android.compileOptions.targetCompatibility = JavaVersion.VERSION_17

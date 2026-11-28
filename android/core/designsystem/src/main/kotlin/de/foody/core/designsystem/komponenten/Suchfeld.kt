@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.KeyboardActionHandler
+import androidx.compose.foundation.text.input.TextFieldDecorator
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
@@ -46,6 +48,8 @@ fun Suchfeld(
     onFertig: (() -> Unit)? = null,
 ) {
     val farben = FoodyTheme.farben
+    val bruecke = rememberFeldBruecke(wert, onWert)
+    val leer = bruecke.zustand.text.isEmpty()
     GlasFlaeche(GlasStufe.DICHT, modifier.fillMaxWidth().heightIn(min = 52.dp), form = FoodyTheme.formen.knopf, unschaerfeErlaubt = false) {
         Row(
             Modifier.padding(start = FoodyAbstaende.s5, end = FoodyAbstaende.s1).heightIn(min = 52.dp),
@@ -54,22 +58,22 @@ fun Suchfeld(
         ) {
             if (symbol != null) Icon(symbol, contentDescription = null, tint = farben.nebentext, modifier = Modifier.size(20.dp))
             BasicTextField(
-                wert,
-                onWert,
+                bruecke.zustand,
                 Modifier.weight(1f).semantics { contentDescription = platzhalter },
+                inputTransformation = bruecke.eingabe,
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = farben.text),
-                singleLine = true,
-                cursorBrush = SolidColor(farben.primaer),
                 keyboardOptions = KeyboardOptions(imeAction = if (onFertig != null) ImeAction.Done else ImeAction.Search),
-                keyboardActions = KeyboardActions(onDone = onFertig?.let { { it() } }, onSearch = onFertig?.let { { it() } }),
-                decorationBox = { feld ->
+                onKeyboardAction = onFertig?.let { fertig -> KeyboardActionHandler { fertig() } },
+                lineLimits = TextFieldLineLimits.SingleLine,
+                cursorBrush = SolidColor(farben.primaer),
+                decorator = TextFieldDecorator { feld ->
                     Box(contentAlignment = Alignment.CenterStart) {
-                        if (wert.isEmpty()) Text(platzhalter, style = MaterialTheme.typography.bodyLarge, color = farben.nebentext)
+                        if (leer) Text(platzhalter, style = MaterialTheme.typography.bodyLarge, color = farben.nebentext)
                         feld()
                     }
                 },
             )
-            if (wert.isNotEmpty()) {
+            if (!leer) {
                 IconButton(onClick = { onWert("") }) { Icon(Icons.Outlined.Close, contentDescription = "Eingabe leeren", tint = farben.nebentext) }
             } else {
                 Box(Modifier.size(FoodyAbstaende.s3))
