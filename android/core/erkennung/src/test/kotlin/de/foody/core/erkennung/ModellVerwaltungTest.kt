@@ -40,6 +40,16 @@ class ModellVerwaltungTest {
         assertEquals(ModellDateien.Stand.Fehlt, v.stand.value)
     }
 
+    /** P1: Endet der Prozess mitten im Import, liegen bis zu 2,95 GB Teile im Ordner; der nächste Start räumt sie weg. */
+    @Test fun resteEinesAbgebrochenenImportsVerschwindenBeimStart() {
+        val ordner = tmp.newFolder()
+        java.io.File(ordner, "import-0.teil").writeBytes(ByteArray(16))
+        java.io.File(ordner, "import-1.teil").writeBytes(ByteArray(16))
+        java.io.File(ordner, "notiz.txt").writeText("bleibt")
+        ModellVerwaltung(ModellDateien(ordner), { throw FileNotFoundException(it) }, Dispatchers.Unconfined)
+        assertEquals(setOf("notiz.txt"), ordner.list()!!.toSet())
+    }
+
     @Test fun nichtLesbareDateiIstEinFehler() = runTest {
         val v = verwaltung()
         assertEquals(ModellDateien.Import.Fehler, v.importieren(listOf("content://bild", "content://weg")))

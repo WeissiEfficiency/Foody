@@ -6,8 +6,15 @@ import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.newInstance
 import org.gradle.kotlin.dsl.withType
+import org.gradle.process.CommandLineArgumentProvider
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
@@ -40,6 +47,35 @@ internal fun Project.unitTestsNurDebug() {
             (variante as? HasHostTestsBuilder)?.hostTests?.get(HostTestBuilder.UNIT_TEST_TYPE)?.enable = false
         }
     }
+}
+
+/**
+ * Robolectric ohne eigenen Download (Stufe 9, S2): Von sich aus lädt Robolectric sein Android (`android-all-instrumented`,
+ * gut 200 MB) erst im Test von Maven Central, ohne Wiederholung und an Gradles Cache vorbei. In der CI scheiterte das
+ * oft (`MavenArtifactFetcher`). Jetzt lädt Gradle das Jar als gewöhnliche Abhängigkeit (Cache, auch der von
+ * `setup-gradle`), und Robolectric liest es offline aus Gradles Cache-Ordner.
+ */
+internal fun Project.robolectricOffline() {
+    val jars = configurations.create("robolectricAndroid") {
+        isCanBeConsumed = false
+        isTransitive = false
+    }
+    dependencies.add(jars.name, libs.findLibrary("robolectric-android-all").get())
+    val argumente = objects.newInstance<RobolectricOffline>().apply { this.jars.from(jars) }
+    tasks.withType<Test>().configureEach { jvmArgumentProviders.add(argumente) }
+}
+
+/** Schaltet Robolectric für einen Testlauf offline und zeigt ihm den Ordner mit dem Jar. */
+internal abstract class RobolectricOffline : CommandLineArgumentProvider {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    abstract val jars: ConfigurableFileCollection
+
+    // Robolectric sucht im Ordner nach `<artifactId>-<version>.jar`; so heißt die Datei auch in Gradles Cache.
+    override fun asArguments() = listOf(
+        "-Drobolectric.offline=true",
+        "-Drobolectric.dependency.dir=${jars.singleFile.parentFile.absolutePath}",
+    )
 }
 
 internal fun Project.configureKotlin() {

@@ -753,6 +753,12 @@ AGP 9 mit eingebautem Kotlin (kein `org.jetbrains.kotlin.android`-Plugin) und ne
 Kompatibilitäts-Flags in `gradle.properties`. Gradle braucht JDK 21+ (z. B. das JBR von Android Studio): Robolectric startet Android-SDK 35+ nur
 unter Java 21. Der Bytecode bleibt Java 17.
 
+**Robolectric offline:** Robolectric lädt sein Android-Jar nicht selbst nach. `android-all-instrumented` (SDK 36,
+gut 200 MB) steht im Versionskatalog. Gradle lädt es mit Cache, in der CI über `setup-gradle`. Die Testläufe bekommen
+`robolectric.offline=true` und den Ordner des Jars (`robolectricOffline()` in `build-logic`). Vorher lud Robolectric
+es im Test selbst von Maven Central; in der CI scheiterte das oft. Beim Update von Robolectric muss
+`robolectricAndroidAll` mitwandern, Dependabot hebt beide in einer Gruppe an.
+
 **Convention-Plugins** (`build-logic/`, eingebunden über `pluginManagement { includeBuild(...) }`; der Docker-Build des
 Servers lässt sie mit `FOODY_SERVER_ONLY` weg): `foody.android.application` (`:app`, `:katalog`),
 `foody.android.library` (`:core:*` ohne Compose: `:core:data`, `:core:sync`, `:core:testing`) und
