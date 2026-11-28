@@ -13,5 +13,6 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
             lint.targetSdk = FoodySdk.TARGET
         }
         unitTestsNurDebug()
+        robolectricOffline()
     }
 }
