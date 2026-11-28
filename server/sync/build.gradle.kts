@@ -24,6 +24,8 @@ dependencies {
     api(project(":api-protocol"))
     api(libs.ktor.server.core)
     api(libs.ktor.server.netty)
+    // Netty auf den Stand mit allen Sicherheitskorrekturen (libs.versions.toml, „netty“)
+    api(platform(libs.netty.bom))
     api(libs.ktor.server.content.negotiation)
     api(libs.ktor.serialization.kotlinx.json)
     api(libs.ktor.server.status.pages)

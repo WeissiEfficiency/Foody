@@ -1,5 +1,6 @@
 package de.foody.core.designsystem
 
+import android.content.ContentResolver
 import android.provider.Settings
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
@@ -10,12 +11,15 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
 import de.foody.core.designsystem.stil.FoodyStil
 import de.foody.core.designsystem.stil.StilVariante
 import de.foody.core.designsystem.stil.StilWerte
@@ -30,6 +34,9 @@ import de.foody.core.designsystem.token.FoodyFormen
 private val LocalStil = staticCompositionLocalOf { milchglasWerte(Farbwelt.Standard, dunkel = false) }
 private val LocalFarbwelt = staticCompositionLocalOf { Farbwelt.Standard }
 private val LocalUnschaerfe = staticCompositionLocalOf { true }
+
+/** Systemweite Animationen an? Einmal je [FoodyTheme] gelesen; `null` außerhalb, dann liest [animationenErlaubt] selbst. */
+private val LocalAnimationen = staticCompositionLocalOf<Boolean?> { null }
 
 /**
  * Theme der V3. Standard ist [FoodyStil.MILCHGLAS]: wählbare [Farbwelt] (Standard Mango) mit Milchglas, Fraunces/Figtree,
@@ -56,7 +63,13 @@ fun FoodyTheme(
     val schema = remember(farben, gegenstueck, werte.dunkel) { farbschema(farben, gegenstueck, werte.dunkel) }
     // extraSmall: Material zeichnet damit die Eingabefelder; rund wie im Entwurf statt fast eckig
     val shapes = remember(formen) { Shapes(extraSmall = formen.klein, small = formen.klein, medium = formen.mittel, large = formen.gross) }
+    // Einmal hier statt bei jeder Recomposition jeder Szene (S7). Neu gelesen bei jedem Wechsel des Lebenszyklus, also
+    // auch, wenn man aus den Systemeinstellungen zurückkommt.
+    val resolver = LocalContext.current.contentResolver
+    val zustand by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
+    val animationen = remember(resolver, zustand) { animatorAn(resolver) }
     CompositionLocalProvider(
+        LocalAnimationen provides animationen,
         LocalStil provides werte,
         LocalFarbwelt provides farbwelt,
         LocalUnschaerfe provides (unschaerfe && werte.flaeche == Flaechenart.GLAS),
@@ -112,13 +125,12 @@ object FoodyTheme {
 
 /** `false`, wenn Animationen systemweit abgeschaltet sind (Animator-Dauer 0). */
 @Composable
-fun animationenErlaubt(): Boolean {
-    val resolver = LocalContext.current.contentResolver
-    return try {
-        Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) != 0f
-    } catch (_: Exception) {
-        true
-    }
+fun animationenErlaubt(): Boolean = LocalAnimationen.current ?: animatorAn(LocalContext.current.contentResolver)
+
+private fun animatorAn(resolver: ContentResolver): Boolean = try {
+    Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) != 0f
+} catch (_: Exception) {
+    true
 }
 
 /** Unschärfe gehört zu den Effekten, die mit den Animationen entfallen. */
