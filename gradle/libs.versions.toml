@@ -24,7 +24,7 @@ androidxTestCore = "1.7.0"
 # Glas mit echter Unschärfe (V3-Designsystem); 2.0.1 baut auf Compose UI 1.12.1 wie der BOM
 haze = "2.0.1"
 # Screenshot-Tests unter Robolectric (Katalog)
-roborazzi = "1.76.0"
+roborazzi = "1.79.0"
 composeBom = "2026.09.00"
 room = "2.8.5"
 coil = "3.6.3"
@@ -43,11 +43,11 @@ sqliteJdbc = "3.53.1.0"
 bouncycastle = "1.86"
 logback = "1.5.37"
 # JVM-Tests mit Android-Klassen (App-Ende-zu-Ende-Test gegen :server)
-robolectric = "4.16.1"
+robolectric = "4.18.1"
 # Android für Robolectric (SDK 36), lädt Gradle statt Robolectric selbst (build-logic, robolectricOffline). Muss zur
-# Robolectric-Version passen: Jede Version erwartet ihren eigenen Stand (4.16 → „-i7“). Passt er nicht, scheitert jeder
+# Robolectric-Version passen: Jede Version erwartet ihren eigenen Stand (4.18.1 → „13921718-2-i7“). Passt er nicht, scheitert jeder
 # Robolectric-Test mit „Unable to locate“ – dann den Stand aus den Release-Notes von Robolectric nehmen.
-robolectricAndroidAll = "16-robolectric-13921718-i7"
+robolectricAndroidAll = "16-robolectric-13921718-2-i7"
 # Kotlin-Stil (Aufgaben ktlintPruefen/ktlintKorrigieren im Wurzel-Buildskript)
 ktlint = "1.8.0"
 
