@@ -323,6 +323,9 @@ class EinstellungenScreenTest {
         compose.warteAufText("Modell installiert (unbekannte Dateien, ohne Gewähr)")
         compose.warteAufText("Modell installiert · 0 MB")
         knopf("Modell ersetzen").assertExists()
+        // Die Meldung „Modell installiert …“ steht 4 s (Testuhr); „Modell entfernt“ käme erst danach. Unter Last läuft die
+        // Testuhr langsamer als die 5 s von warteAufText, daher die erste Meldung hier ablaufen lassen.
+        compose.mainClock.advanceTimeBy(SNACKBAR_KURZ_MS)
 
         knopf("Modell entfernen").performClick()
         compose.warteAufText("Modell entfernen?")
@@ -356,3 +359,6 @@ class EinstellungenScreenTest {
         compose.warteAufText("500 bis 10.000 kcal")
     }
 }
+
+/** Etwas länger als `SnackbarDuration.Short` (4 s). */
+private const val SNACKBAR_KURZ_MS = 4_500L

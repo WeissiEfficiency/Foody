@@ -94,7 +94,7 @@ fun stilTitel(art: TitelArt): TextStyle? {
  * Gibt `false` zurück, wenn der Stil keinen eigenen Knopf hat; dann zeichnet [de.foody.core.designsystem.komponenten.FoodyKnopf] den normalen.
  */
 @Composable
-internal fun StilKnopf(text: String, onKlick: () -> Unit, modifier: Modifier, art: KnopfArt, aktiv: Boolean): Boolean {
+internal fun stilKnopf(text: String, onKlick: () -> Unit, modifier: Modifier, art: KnopfArt, aktiv: Boolean): Boolean {
     val s = FoodyTheme.stil
     if (!s.inszeniert) return false
     if (art == KnopfArt.TEXT && s.stil != FoodyStil.MILCHGLAS && s.stil != FoodyStil.SAGE) {
